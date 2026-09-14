@@ -40,6 +40,9 @@ yarn-error.log*
 # trigger.dev
 .trigger
 
+# pdf.js worker (copied from node_modules on install)
+/public/pdf.worker.min.mjs
+
 # vercel
 .vercel
 

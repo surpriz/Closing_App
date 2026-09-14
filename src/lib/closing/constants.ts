@@ -14,8 +14,17 @@ export const WORKSPACE_DEFAULTS = {
 export const TRACKING_FLUSH_INTERVAL_MS = 10_000;
 export const LIVE_VIEW_WINDOW_MS = 2 * 60 * 1000;
 
+// Reading time stops counting after this long without scroll, mouse or key
+export const IDLE_TIMEOUT_MS = 2 * 60 * 1000;
+
+// Reopening the link within this window continues the same view
+export const VIEW_SESSION_WINDOW_MS = 30 * 60 * 1000;
+
 // Ignore absurd durations from a single flush (sleeping laptop, stuck tab)
 export const MAX_PAGE_DURATION_PER_FLUSH_MS = 60_000;
+export const MAX_TRACKING_EVENTS_PER_BATCH = 50;
+
+export const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
 
 export const ENGAGEMENT_TIER_THRESHOLDS = {
   HOT: 70,

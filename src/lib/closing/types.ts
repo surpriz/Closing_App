@@ -21,12 +21,16 @@ export type ResolvedFollowupSettings = {
   alertChannels: SellerAlertChannel[];
 };
 
-// Body sent by the viewer to /api/track on each flush
+// Sent by the viewer to /api/track on each flush
 export type TrackingEvent = {
-  viewId: string;
   pageNumber: number;
   durationMs: number;
   scrollDepth?: number;
+};
+
+export type TrackingBatch = {
+  viewId: string;
+  events: TrackingEvent[];
 };
 
 export type EngagementReason = {

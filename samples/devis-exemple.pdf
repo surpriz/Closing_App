@@ -1,0 +1,86 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R 9 0 R 11 0 R] /Count 4 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Length 356 >>
+stream
+BT /F1 28 Tf 72 760 Td (Proposition commerciale) Tj ET
+BT /F1 16 Tf 72 709.6 Td (Refonte du site e-commerce) Tj ET
+BT /F1 12 Tf 72 659.2 Td (Client : Acme SAS \226 \340 l\222attention de Marie Martin) Tj ET
+BT /F1 12 Tf 72 637.6 Td (\311mise par : Studio Nova, le 14 septembre 2026) Tj ET
+BT /F1 12 Tf 72 616 Td (Validit\351 de l\222offre : 30 jours) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 4 0 R >>
+endobj
+6 0 obj
+<< /Length 526 >>
+stream
+BT /F1 22 Tf 72 760 Td (P\351rim\350tre du projet) Tj ET
+BT /F1 12 Tf 72 698.8 Td (\225 Audit UX et refonte des parcours d\222achat) Tj ET
+BT /F1 12 Tf 72 677.1999999999999 Td (\225 Design system et maquettes responsive) Tj ET
+BT /F1 12 Tf 72 655.5999999999999 Td (\225 D\351veloppement Next.js et int\351gration Shopify) Tj ET
+BT /F1 12 Tf 72 633.9999999999999 Td (\225 Migration du catalogue \(4 000 produits\)) Tj ET
+BT /F1 12 Tf 72 612.3999999999999 Td (Livrables : maquettes, code source, documentation, formation.) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 6 0 R >>
+endobj
+8 0 obj
+<< /Length 481 >>
+stream
+BT /F1 22 Tf 72 760 Td (Planning) Tj ET
+BT /F1 12 Tf 72 698.8 Td (Phase 1 \226 Cadrage et audit : 2 semaines) Tj ET
+BT /F1 12 Tf 72 677.1999999999999 Td (Phase 2 \226 Design : 3 semaines) Tj ET
+BT /F1 12 Tf 72 655.5999999999999 Td (Phase 3 \226 D\351veloppement : 6 semaines) Tj ET
+BT /F1 12 Tf 72 633.9999999999999 Td (Phase 4 \226 Recette et mise en ligne : 2 semaines) Tj ET
+BT /F1 12 Tf 72 612.3999999999999 Td (D\351lai total : 13 semaines \340 compter de la signature.) Tj ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 8 0 R >>
+endobj
+10 0 obj
+<< /Length 680 >>
+stream
+BT /F1 22 Tf 72 760 Td (Tarifs et conditions) Tj ET
+BT /F1 12 Tf 72 698.8 Td (Audit et cadrage : 3 500 \200 HT) Tj ET
+BT /F1 12 Tf 72 677.1999999999999 Td (Design : 7 000 \200 HT) Tj ET
+BT /F1 12 Tf 72 655.5999999999999 Td (D\351veloppement et int\351gration : 14 000 \200 HT) Tj ET
+BT /F1 14 Tf 72 633.9999999999999 Td (Total du projet : 24 500 \200 HT \(29 400 \200 TTC\)) Tj ET
+BT /F1 12 Tf 72 608.7999999999998 Td (Option maintenance : 450 \200 HT / mois) Tj ET
+BT /F1 12 Tf 72 587.1999999999998 Td (Conditions de paiement : 30 % d\222acompte \340 la signature,) Tj ET
+BT /F1 12 Tf 72 565.5999999999998 Td (40 % \340 la livraison du design, solde \340 la mise en ligne.) Tj ET
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 10 0 R >>
+endobj
+xref
+0 12
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000134 00000 n 
+0000000231 00000 n 
+0000000638 00000 n 
+0000000764 00000 n 
+0000001341 00000 n 
+0000001467 00000 n 
+0000001999 00000 n 
+0000002125 00000 n 
+0000002857 00000 n 
+trailer
+<< /Size 12 /Root 1 0 R >>
+startxref
+2985
+%%EOF
