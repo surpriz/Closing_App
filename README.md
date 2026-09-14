@@ -54,6 +54,24 @@ src/
 
 Folders are created as each step lands; only the ones with code exist today.
 
+## Follow-up engine
+
+- Hot pricing follow-ups are queued while the prospect reads (`/api/track`),
+  hot lead alerts when a view starts (`/api/track/start`).
+- Anti-ghosting scans and sending run in `runClosingTick()`, exposed at
+  `POST /api/cron/closing` (header `Authorization: Bearer $CRON_SECRET`).
+- `src/trigger/closing-tick.ts` calls that route every 5 minutes. In the
+  Trigger.dev project set `APP_URL` and `CRON_SECRET`, then
+  `npx trigger.dev@latest deploy`.
+- Without AI keys, messages use built-in templates. Without an email provider
+  or Twilio, follow-ups are generated but marked as failed when sent.
+- Locally, the document page has test tools to run the engine and simulate an
+  old link.
+
+```bash
+npm test   # scheduling, scoring, prompts
+```
+
 ## Notes
 
 - PDF rendering uses pdf.js (Apache 2.0) and text extraction uses unpdf (MIT).

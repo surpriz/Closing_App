@@ -21,7 +21,7 @@ export async function sendEmail(input: EmailInput) {
   }
 
   const resend = new Resend(process.env.RESEND_API_KEY);
-  const { error } = await resend.emails.send({
+  const { data, error } = await resend.emails.send({
     from: input.from ?? process.env.AUTH_EMAIL_FROM!,
     to: input.to,
     subject: input.subject,
@@ -33,4 +33,16 @@ export async function sendEmail(input: EmailInput) {
   if (error) {
     throw new Error(`Email not sent: ${error.message}`);
   }
+  return { id: data?.id ?? null };
+}
+
+export function textToHtml(text: string) {
+  const escaped = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+  return escaped
+    .split(/\n{2,}/)
+    .map((paragraph) => `<p>${paragraph.replace(/\n/g, "<br>")}</p>`)
+    .join("");
 }

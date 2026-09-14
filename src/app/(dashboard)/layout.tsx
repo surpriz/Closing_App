@@ -18,9 +18,12 @@ export default async function DashboardLayout({
             <Link href="/documents" className="font-semibold tracking-tight">
               Closing
             </Link>
-            <nav className="text-sm text-muted-foreground">
+            <nav className="flex gap-4 text-sm text-muted-foreground">
               <Link href="/documents" className="hover:text-foreground">
                 Documents
+              </Link>
+              <Link href="/settings" className="hover:text-foreground">
+                Paramètres
               </Link>
             </nav>
           </div>

@@ -3,11 +3,14 @@ import { randomUUID } from "node:crypto";
 import { cookies } from "next/headers";
 import { z } from "zod";
 
+import { inBackground } from "@/lib/closing/background";
 import {
   MAX_PAGE_DURATION_PER_FLUSH_MS,
   MAX_TRACKING_EVENTS_PER_BATCH,
 } from "@/lib/closing/constants";
+import { refreshEngagementScore } from "@/lib/closing/engagement/refresh-score";
 import { VISITOR_COOKIE } from "@/lib/closing/tracking/visitor";
+import { evaluateHotPricing } from "@/lib/closing/triggers/hot-pricing";
 import { prisma } from "@/lib/db";
 
 const batchSchema = z.object({
@@ -44,6 +47,7 @@ export async function POST(request: Request) {
       linkId: true,
       visitorId: true,
       prospectId: true,
+      isBot: true,
       link: { select: { document: { select: { numPages: true } } } },
     },
   });
@@ -100,6 +104,13 @@ export async function POST(request: Request) {
         ]
       : []),
   ]);
+
+  if (!view.isBot) {
+    inBackground("tracking", async () => {
+      await refreshEngagementScore(view.linkId);
+      await evaluateHotPricing(view.id);
+    });
+  }
 
   return new Response(null, { status: 204 });
 }

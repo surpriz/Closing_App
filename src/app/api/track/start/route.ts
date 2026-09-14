@@ -4,7 +4,10 @@ import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
 import { z } from "zod";
 
+import { inBackground } from "@/lib/closing/background";
 import { VIEW_SESSION_WINDOW_MS } from "@/lib/closing/constants";
+import { refreshEngagementScore } from "@/lib/closing/engagement/refresh-score";
+import { cancelOpenFollowups } from "@/lib/closing/followups/queue";
 import { getLinkForViewer, getViewerAccess } from "@/lib/closing/links";
 import {
   getRequestContext,
@@ -14,6 +17,7 @@ import {
   VISITOR_COOKIE,
   VISITOR_COOKIE_MAX_AGE,
 } from "@/lib/closing/tracking/visitor";
+import { evaluateHotLead } from "@/lib/closing/triggers/hot-lead";
 import { prisma } from "@/lib/db";
 
 const bodySchema = z.object({
@@ -115,6 +119,14 @@ export async function POST(request: NextRequest) {
         locale: prospect.locale ?? locale,
         country: prospect.country ?? context.country,
       },
+    });
+  }
+
+  if (!context.isBot) {
+    inBackground("view-started", async () => {
+      await cancelOpenFollowups(link.id, "Le prospect a ouvert la proposition", ["ANTI_GHOSTING"]);
+      await evaluateHotLead(viewId, !!recentView);
+      await refreshEngagementScore(link.id);
     });
   }
 

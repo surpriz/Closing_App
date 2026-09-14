@@ -1,4 +1,4 @@
-import { ArrowLeft, Clock, Eye, History, Users } from "lucide-react";
+import { ArrowLeft, BellRing, Clock, Eye, History, Users } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -6,6 +6,16 @@ import { AutoRefresh } from "@/components/dashboard/auto-refresh";
 import { CopyButton } from "@/components/dashboard/copy-button";
 import { CreateLinkForm } from "@/components/dashboard/create-link-form";
 import { DocumentStatusBadge } from "@/components/dashboard/document-status-badge";
+import { EngagementBadge } from "@/components/dashboard/engagement-badge";
+import { EngineDevTools } from "@/components/dashboard/engine-dev-tools";
+import { FollowupsPanel, type FollowupItem } from "@/components/dashboard/followups-panel";
+import {
+  ALERT_CHANNEL_LABELS,
+  ALERT_TYPE_LABELS,
+  DEAL_STATUS_LABELS,
+  TAG_LABELS,
+} from "@/components/dashboard/labels";
+import { LinkFollowupsToggle } from "@/components/dashboard/link-followups-toggle";
 import { PageTimeChart, type PageTimeDatum } from "@/components/dashboard/page-time-chart";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -23,30 +33,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { DealStatus, PageTag } from "@/generated/prisma/enums";
 import { getAppOrigin } from "@/lib/app-origin";
 import { getDocumentAnalytics } from "@/lib/closing/analytics";
 import { prisma } from "@/lib/db";
 import { formatBytes, formatDate, formatDuration, formatRelative } from "@/lib/format";
 import { requireWorkspace } from "@/lib/session";
-
-const DEAL_STATUS_LABELS: Record<DealStatus, string> = {
-  OPEN: "En cours",
-  VALIDATED: "Validé",
-  CHANGE_REQUESTED: "Ajustement demandé",
-  WON: "Gagné",
-  LOST: "Perdu",
-};
-
-const TAG_LABELS: Record<PageTag, string> = {
-  PRICING: "Tarifs",
-  TERMS: "Conditions",
-  TIMELINE: "Planning",
-  SCOPE: "Périmètre",
-  TEAM: "Équipe",
-  CASE_STUDY: "Références",
-  OTHER: "Autre",
-};
 
 export default async function DocumentDetailPage({ params }: PageProps<"/documents/[id]">) {
   const { id } = await params;
@@ -61,6 +52,7 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
         orderBy: { createdAt: "desc" },
         include: {
           prospects: { select: { email: true, name: true, company: true }, take: 1 },
+          engagementScore: true,
           _count: { select: { views: true } },
         },
       },
@@ -68,9 +60,24 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
   });
   if (!document) notFound();
 
-  const [analytics, origin] = await Promise.all([
+  const [analytics, origin, followups, alerts] = await Promise.all([
     getDocumentAnalytics(document.id),
     getAppOrigin(),
+    prisma.followup.findMany({
+      where: { link: { documentId: document.id } },
+      orderBy: { createdAt: "desc" },
+      take: 30,
+      include: {
+        prospect: { select: { email: true, name: true } },
+        link: { select: { name: true, slug: true } },
+      },
+    }),
+    prisma.sellerAlert.findMany({
+      where: { link: { documentId: document.id } },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+      include: { link: { select: { name: true, slug: true } } },
+    }),
   ]);
 
   const statsByPage = new Map(analytics.pages.map((p) => [p.pageNumber, p]));
@@ -85,6 +92,23 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
     };
   });
   const taggedPages = document.pages.filter((p) => p.tags.length > 0);
+
+  const followupItems: FollowupItem[] = followups.map((f) => ({
+    id: f.id,
+    status: f.status,
+    trigger: f.trigger,
+    channel: f.channel,
+    scheduledFor: f.scheduledFor,
+    timezone: f.timezone,
+    subject: f.subject,
+    body: f.body,
+    error: f.error,
+    aiProvider: f.aiProvider,
+    aiModel: f.aiModel,
+    sentAt: f.sentAt,
+    recipient: f.prospect.name ?? f.prospect.email,
+    linkName: f.link.name ?? f.link.slug,
+  }));
 
   return (
     <div className="space-y-6">
@@ -192,8 +216,10 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
                 <TableRow>
                   <TableHead>Prospect</TableHead>
                   <TableHead>Lien</TableHead>
+                  <TableHead>Intérêt</TableHead>
                   <TableHead className="text-right">Vues</TableHead>
                   <TableHead>Statut</TableHead>
+                  <TableHead>Relances</TableHead>
                   <TableHead className="text-right">Créé</TableHead>
                 </TableRow>
               </TableHeader>
@@ -217,18 +243,32 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
                             href={url}
                             target="_blank"
                             rel="noreferrer"
-                            className="max-w-56 truncate font-mono text-xs hover:underline"
+                            className="max-w-40 truncate font-mono text-xs hover:underline"
                           >
                             /v/{link.slug}
                           </a>
                           <CopyButton value={url} />
                         </div>
                       </TableCell>
+                      <TableCell>
+                        {link.engagementScore ? (
+                          <EngagementBadge
+                            tier={link.engagementScore.tier}
+                            score={link.engagementScore.score}
+                            reasons={link.engagementScore.reasons}
+                          />
+                        ) : (
+                          <span className="text-xs text-muted-foreground">–</span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right">{link._count.views}</TableCell>
                       <TableCell>
                         <Badge variant={link.dealStatus === "VALIDATED" ? "default" : "outline"}>
                           {DEAL_STATUS_LABELS[link.dealStatus]}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <LinkFollowupsToggle linkId={link.id} enabled={link.followupsEnabled} />
                       </TableCell>
                       <TableCell className="text-right text-muted-foreground">
                         {formatRelative(link.createdAt)}
@@ -241,6 +281,59 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
           )}
         </CardContent>
       </Card>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Relances</CardTitle>
+            <CardDescription>
+              Créées automatiquement : à chaud après une longue lecture des tarifs, ou si le lien n&apos;est
+              jamais ouvert. Envoyées aux heures ouvrées du prospect.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {process.env.NODE_ENV === "development" && (
+              <EngineDevTools
+                links={document.links.map((l) => ({ id: l.id, name: l.name ?? l.slug }))}
+              />
+            )}
+            <FollowupsPanel followups={followupItems} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BellRing className="size-4" /> Alertes hot lead
+            </CardTitle>
+            <CardDescription>Lecture à plusieurs ou retour après plusieurs jours</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            {alerts.length === 0 && <p className="text-muted-foreground">Aucune alerte pour l&apos;instant.</p>}
+            {alerts.map((alert) => {
+              const payload = alert.payload as { liveViewers?: number; inactiveDays?: number };
+              return (
+                <div key={alert.id} className="space-y-0.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-medium">{ALERT_TYPE_LABELS[alert.type]}</span>
+                    <span className="text-xs text-muted-foreground">{formatRelative(alert.createdAt)}</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {alert.link.name ?? alert.link.slug}
+                    {payload.liveViewers ? ` · ${payload.liveViewers} lecteurs simultanés` : ""}
+                    {payload.inactiveDays ? ` · après ${payload.inactiveDays} jours` : ""}
+                  </div>
+                  <div className="text-xs">
+                    {alert.sentAt ? "Envoyée" : "Non envoyée"} via{" "}
+                    {alert.channels.map((c) => ALERT_CHANNEL_LABELS[c]).join(", ")}
+                    {alert.error && <span className="block text-destructive">{alert.error}</span>}
+                  </div>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">

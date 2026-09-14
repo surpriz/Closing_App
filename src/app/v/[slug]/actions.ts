@@ -4,6 +4,9 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
+import { inBackground } from "@/lib/closing/background";
+import { refreshEngagementScore } from "@/lib/closing/engagement/refresh-score";
+import { cancelOpenFollowups } from "@/lib/closing/followups/queue";
 import { getLinkForViewer, getViewerAccess } from "@/lib/closing/links";
 import {
   EMAIL_COOKIE_MAX_AGE,
@@ -106,6 +109,15 @@ export async function submitProspectAction(input: z.input<typeof actionSchema>) 
           }),
         ]),
   ]);
+
+  // The prospect answered: automated follow-ups would now be off-key
+  inBackground("prospect-action", async () => {
+    await cancelOpenFollowups(
+      link.id,
+      type === "VALIDATE_SIGN" ? "Proposition validée par le prospect" : "Ajustement demandé par le prospect",
+    );
+    await refreshEngagementScore(link.id);
+  });
 
   return { ok: true };
 }
