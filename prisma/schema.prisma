@@ -1,0 +1,560 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+// Connection URLs live in prisma.config.ts (CLI) and src/lib/db.ts (runtime)
+datasource db {
+  provider = "postgresql"
+}
+
+// =============================================================================
+// Auth (Better Auth core + organization plugin)
+// =============================================================================
+
+model User {
+  id            String   @id
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  sessions    Session[]
+  accounts    Account[]
+  members     Member[]
+  invitations Invitation[]
+
+  documents    Document[]
+  linksCreated Link[]
+
+  @@map("users")
+}
+
+model Session {
+  id                   String   @id
+  expiresAt            DateTime
+  token                String   @unique
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  ipAddress            String?
+  userAgent            String?
+  userId               String
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activeOrganizationId String?
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verifications")
+}
+
+// A workspace = one customer company of the SaaS
+model Organization {
+  id        String   @id
+  name      String
+  slug      String   @unique
+  logo      String?
+  createdAt DateTime
+  metadata  String?
+
+  members     Member[]
+  invitations Invitation[]
+
+  settings        WorkspaceSettings?
+  documents       Document[]
+  links           Link[]
+  stripeCustomerId String?           @unique
+  plan             String            @default("free")
+
+  @@map("organizations")
+}
+
+model Member {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           String       @default("member")
+  createdAt      DateTime
+
+  @@index([organizationId])
+  @@index([userId])
+  @@map("members")
+}
+
+model Invitation {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  email          String
+  role           String?
+  status         String       @default("pending")
+  expiresAt      DateTime
+  createdAt      DateTime     @default(now())
+  inviterId      String
+  user           User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([email])
+  @@map("invitations")
+}
+
+// =============================================================================
+// Enums
+// =============================================================================
+
+enum DocumentStatus {
+  UPLOADED
+  PROCESSING // text extraction + page tagging
+  READY
+  FAILED
+}
+
+enum PageTag {
+  PRICING
+  TERMS
+  TIMELINE
+  SCOPE
+  TEAM
+  CASE_STUDY
+  OTHER
+}
+
+enum PageTagSource {
+  AUTO
+  MANUAL
+}
+
+enum DealStatus {
+  OPEN
+  VALIDATED // prospect clicked "Validate & sign"
+  CHANGE_REQUESTED
+  WON
+  LOST
+}
+
+enum FollowupChannel {
+  EMAIL
+  WHATSAPP
+}
+
+enum FollowupTrigger {
+  HOT_PRICING // long read on the pricing page without validation
+  ANTI_GHOSTING // no view after N days
+  MANUAL // queued by the seller
+}
+
+enum FollowupStatus {
+  PENDING // created, message not generated yet
+  GENERATED // message ready, waiting for its send slot
+  SCHEDULED // delayed run registered in Trigger.dev
+  SENT
+  DELIVERED // confirmed by provider webhook
+  FAILED
+  CANCELLED // deal closed, new activity or cancelled by seller
+  SKIPPED // guard failed at send time (opt-out, no phone, ...)
+}
+
+enum EngagementTier {
+  HOT
+  WARM
+  COLD
+}
+
+enum SellerAlertType {
+  MULTI_VIEWER
+  REOPENED_AFTER_INACTIVITY
+}
+
+enum SellerAlertChannel {
+  EMAIL
+  SLACK
+  WEBHOOK
+}
+
+enum ProspectActionType {
+  VALIDATE_SIGN
+  REQUEST_CHANGE
+}
+
+enum ChatRole {
+  USER
+  ASSISTANT
+}
+
+// =============================================================================
+// Documents & links
+// =============================================================================
+
+model WorkspaceSettings {
+  id             String       @id @default(cuid())
+  organizationId String       @unique
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  defaultChannels           FollowupChannel[] @default([EMAIL])
+  hotPricingThresholdSec    Int               @default(90)
+  inactivityDays            Int[]             @default([3, 5]) // anti-ghosting steps, days since link was sent
+  businessHourStart         Int               @default(9) // prospect local hour, inclusive
+  businessHourEnd           Int               @default(18) // prospect local hour, exclusive
+  businessDays              Int[]             @default([1, 2, 3, 4, 5]) // ISO weekday, 1 = Monday
+  multiViewerThreshold      Int               @default(2) // alert when live unique viewers > threshold
+  reopenAfterInactivityDays Int               @default(3)
+  chatEnabledByDefault      Boolean           @default(false)
+
+  alertChannels      SellerAlertChannel[] @default([EMAIL])
+  alertEmail         String?
+  slackWebhookUrl    String? // encrypted at rest
+  outboundWebhookUrl String?
+  webhookSecret      String? // encrypted at rest, signs outbound webhooks
+
+  aiTone          String? // free text guidance for generated messages
+  senderName      String?
+  senderSignature String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("workspace_settings")
+}
+
+model Document {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  ownerId        String?
+  owner          User?        @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+
+  name            String
+  blobUrl         String
+  blobPathname    String
+  contentType     String         @default("application/pdf")
+  sizeBytes       Int
+  numPages        Int?
+  status          DocumentStatus @default(UPLOADED)
+  processingError String?
+
+  pages DocumentPage[]
+  links Link[]
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  archivedAt DateTime?
+
+  @@index([organizationId, createdAt(sort: Desc)])
+  @@map("documents")
+}
+
+model DocumentPage {
+  id         String   @id @default(cuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  pageNumber Int // 1-based
+  text       String? // extracted text, feeds page tagging and the prospect chat
+  summary    String?
+  tags       PageTag[]
+  tagSource  PageTagSource @default(AUTO)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([documentId, pageNumber])
+  @@map("document_pages")
+}
+
+// One link = one proposal sent to one prospect company. Public URL: /v/[slug]
+model Link {
+  id             String       @id @default(cuid())
+  slug           String       @unique // random, unguessable
+  documentId     String
+  document       Document     @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdById    String?
+  createdBy      User?        @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  name          String?
+  requireEmail  Boolean   @default(true)
+  allowDownload Boolean   @default(false)
+  expiresAt     DateTime?
+
+  dealStatus  DealStatus @default(OPEN)
+  chatEnabled Boolean    @default(false)
+  ctaEnabled  Boolean    @default(true)
+
+  followupsEnabled Boolean           @default(true)
+  channels         FollowupChannel[] // empty = workspace defaults
+  // null / empty = workspace defaults
+  hotPricingThresholdSec Int?
+  inactivityDays         Int[]
+  businessHourStart      Int?
+  businessHourEnd        Int?
+
+  sentAt         DateTime? // baseline for anti-ghosting
+  lastActivityAt DateTime? // last tracked page view, used for reopen detection
+  closedAt       DateTime?
+  archivedAt     DateTime?
+
+  prospects       Prospect[]
+  views           DocumentView[]
+  pageViews       PageView[]
+  engagementScore EngagementScore?
+  followups       Followup[]
+  alerts          SellerAlert[]
+  actions         ProspectAction[]
+  chatMessages    ChatMessage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, createdAt(sort: Desc)])
+  @@index([documentId])
+  @@index([dealStatus, followupsEnabled])
+  @@map("links")
+}
+
+model Prospect {
+  id     String @id @default(cuid())
+  linkId String
+  link   Link   @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  email           String
+  name            String?
+  company         String?
+  phoneE164       String?
+  whatsappOptInAt DateTime? // WhatsApp requires explicit opt-in
+  unsubscribedAt  DateTime?
+
+  // detected on first view (x-vercel-ip-timezone, accept-language), editable by seller
+  locale      String?
+  timezone    String?
+  country     String?
+  firstSeenAt DateTime?
+  lastSeenAt  DateTime?
+
+  views     DocumentView[]
+  followups Followup[]
+  actions   ProspectAction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([linkId, email])
+  @@index([email])
+  @@map("prospects")
+}
+
+// =============================================================================
+// Analytics
+// =============================================================================
+
+// One reading session of a link
+model DocumentView {
+  id         String    @id @default(cuid())
+  linkId     String
+  link       Link      @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  documentId String
+  prospectId String?
+  prospect   Prospect? @relation(fields: [prospectId], references: [id], onDelete: SetNull)
+
+  visitorId String // anonymous id kept in a first-party cookie
+  email     String?
+  ipHash    String? // salted hash, never the raw IP
+
+  country   String?
+  region    String?
+  city      String?
+  latitude  Float?
+  longitude Float?
+  timezone  String?
+  locale    String?
+
+  deviceType String? // desktop | mobile | tablet
+  browser    String?
+  os         String?
+  referrer   String?
+  userAgent  String?
+  isBot      Boolean @default(false)
+
+  startedAt       DateTime @default(now())
+  lastSeenAt      DateTime @default(now())
+  totalDurationMs Int      @default(0)
+  maxPageReached  Int      @default(1)
+
+  pageViews    PageView[]
+  actions      ProspectAction[]
+  chatMessages ChatMessage[]
+
+  @@index([linkId, lastSeenAt(sort: Desc)])
+  @@index([linkId, visitorId])
+  @@index([documentId])
+  @@map("document_views")
+}
+
+// Time spent per page, aggregated per view (upserted on each tracking flush)
+model PageView {
+  id     String       @id @default(cuid())
+  viewId String
+  view   DocumentView @relation(fields: [viewId], references: [id], onDelete: Cascade)
+  linkId String
+  link   Link         @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  pageNumber      Int
+  totalDurationMs Int      @default(0)
+  hits            Int      @default(0) // tracking events received
+  maxScrollDepth  Float? // 0..1, vertical scroll within the page
+  firstSeenAt     DateTime @default(now())
+  lastSeenAt      DateTime @default(now())
+
+  @@unique([viewId, pageNumber])
+  @@index([linkId, pageNumber])
+  @@index([linkId, lastSeenAt])
+  @@map("page_views")
+}
+
+model EngagementScore {
+  id     String @id @default(cuid())
+  linkId String @unique
+  link   Link   @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  score           Int            @default(0) // 0-100
+  tier            EngagementTier @default(COLD)
+  uniqueViewers   Int            @default(0)
+  visitCount      Int            @default(0)
+  totalDurationMs Int            @default(0)
+  reasons         Json? // [{ code, weight, detail }]
+  computedAt      DateTime       @default(now())
+
+  @@index([tier])
+  @@map("engagement_scores")
+}
+
+// =============================================================================
+// Follow-ups, alerts, prospect interactions
+// =============================================================================
+
+model Followup {
+  id         String   @id @default(cuid())
+  linkId     String
+  link       Link     @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  prospectId String
+  prospect   Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+
+  trigger FollowupTrigger
+  channel FollowupChannel
+  status  FollowupStatus  @default(PENDING)
+
+  scheduledFor DateTime // UTC, computed from prospect timezone + business hours
+  timezone     String
+  locale       String   @default("en")
+  context      Json? // behavioral snapshot used to build the prompt
+
+  subject    String? // email only
+  body       String?
+  aiProvider String?
+  aiModel    String?
+
+  triggerRunId      String?
+  providerMessageId String? // Resend email id or Twilio message SID
+  error             String?
+  dedupeKey         String    @unique // e.g. hot_pricing:<prospectId>:<yyyy-mm-dd>
+  sentAt            DateTime?
+  cancelledAt       DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, scheduledFor])
+  @@index([linkId, createdAt(sort: Desc)])
+  @@index([prospectId])
+  @@map("followups_queue")
+}
+
+model SellerAlert {
+  id     String @id @default(cuid())
+  linkId String
+  link   Link   @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  type      SellerAlertType
+  channels  SellerAlertChannel[]
+  payload   Json
+  dedupeKey String               @unique
+  sentAt    DateTime?
+  error     String?
+
+  createdAt DateTime @default(now())
+
+  @@index([linkId, createdAt(sort: Desc)])
+  @@map("seller_alerts")
+}
+
+model ProspectAction {
+  id         String        @id @default(cuid())
+  linkId     String
+  link       Link          @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  viewId     String?
+  view       DocumentView? @relation(fields: [viewId], references: [id], onDelete: SetNull)
+  prospectId String?
+  prospect   Prospect?     @relation(fields: [prospectId], references: [id], onDelete: SetNull)
+
+  type    ProspectActionType
+  message String?
+
+  createdAt DateTime @default(now())
+
+  @@index([linkId, createdAt(sort: Desc)])
+  @@map("prospect_actions")
+}
+
+model ChatMessage {
+  id     String       @id @default(cuid())
+  linkId String
+  link   Link         @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  viewId String
+  view   DocumentView @relation(fields: [viewId], references: [id], onDelete: Cascade)
+
+  role      ChatRole
+  content   String
+  model     String?
+  tokensIn  Int?
+  tokensOut Int?
+
+  createdAt DateTime @default(now())
+
+  @@index([viewId, createdAt])
+  @@index([linkId])
+  @@map("chat_messages")
+}
