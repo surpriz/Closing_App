@@ -32,3 +32,12 @@ export function formatDate(date: Date) {
     timeStyle: "short",
   }).format(date);
 }
+
+// Date as seen by someone living in `timeZone` (e.g. the prospect)
+export function formatInTimeZone(date: Date, timeZone: string) {
+  return new Intl.DateTimeFormat("fr-FR", {
+    timeZone,
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}

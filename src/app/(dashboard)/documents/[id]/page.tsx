@@ -230,7 +230,9 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
                   return (
                     <TableRow key={link.id}>
                       <TableCell>
-                        <div className="font-medium">{link.name ?? "Sans nom"}</div>
+                        <Link href={`/links/${link.id}`} className="font-medium hover:underline">
+                          {link.name ?? "Sans nom"}
+                        </Link>
                         {prospect && (
                           <div className="text-xs text-muted-foreground">
                             {[prospect.name, prospect.email].filter(Boolean).join(" · ")}

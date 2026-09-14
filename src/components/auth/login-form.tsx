@@ -30,7 +30,7 @@ export function LoginForm({ devMode }: { devMode: boolean }) {
 
     const { error } = await authClient.signIn.magicLink({
       email,
-      callbackURL: "/documents",
+      callbackURL: "/dashboard",
     });
 
     if (error) {

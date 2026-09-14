@@ -1,7 +1,13 @@
 import { prisma } from "@/lib/db";
 
-export async function getDocumentAnalytics(documentId: string) {
-  const viewWhere = { documentId, isBot: false };
+type Scope = { documentId: string } | { linkId: string };
+
+// Reading stats for a whole document (all links) or a single prospect link
+export async function getReadingAnalytics(scope: Scope) {
+  const viewWhere =
+    "documentId" in scope
+      ? { documentId: scope.documentId, isBot: false }
+      : { linkId: scope.linkId, isBot: false };
 
   const [totals, visitors, pages, locations, recentViews] = await Promise.all([
     prisma.documentView.aggregate({
@@ -55,4 +61,12 @@ export async function getDocumentAnalytics(documentId: string) {
       .sort((a, b) => b.viewCount - a.viewCount),
     recentViews,
   };
+}
+
+export function getDocumentAnalytics(documentId: string) {
+  return getReadingAnalytics({ documentId });
+}
+
+export function getLinkAnalytics(linkId: string) {
+  return getReadingAnalytics({ linkId });
 }
