@@ -12,6 +12,11 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Generated or copied on install
+    "src/generated/**",
+    "public/pdf.worker.min.mjs",
+    ".vercel/**",
+    ".personal-docs/**",
   ]),
 ]);
 
