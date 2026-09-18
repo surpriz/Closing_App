@@ -10,8 +10,12 @@ const serverEnvSchema = z.object({
   ENCRYPTION_KEY: z.string().min(32),
   IP_HASH_SALT: z.string().min(16),
   DEFAULT_TIMEZONE: z.string().default("Europe/Paris"),
+  CRON_SECRET: z.string().min(32).optional(),
 
-  RESEND_API_KEY: z.string().optional(),
+  SES_REGION: z.string().optional(),
+  SES_ACCESS_KEY_ID: z.string().optional(),
+  SES_SECRET_ACCESS_KEY: z.string().optional(),
+  SES_CONFIGURATION_SET: z.string().optional(),
   AUTH_EMAIL_FROM: z.string().optional(),
   FOLLOWUP_EMAIL_FROM: z.string().optional(),
   FOLLOWUP_EMAIL_REPLY_TO: z.string().optional(),

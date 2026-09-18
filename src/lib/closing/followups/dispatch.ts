@@ -70,7 +70,8 @@ export async function sendFollowup(followupId: string): Promise<Outcome> {
       const result = await sendEmail({
         to: prospect.email,
         from: process.env.FOLLOWUP_EMAIL_FROM ?? process.env.AUTH_EMAIL_FROM,
-        replyTo: process.env.FOLLOWUP_EMAIL_REPLY_TO ?? link.createdBy?.email ?? undefined,
+        // replies go to the seller who created the link
+        replyTo: link.createdBy?.email ?? process.env.FOLLOWUP_EMAIL_REPLY_TO ?? undefined,
         subject: followup.subject ?? "Suite à notre proposition",
         text: followup.body,
         html: textToHtml(followup.body),

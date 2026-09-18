@@ -1,4 +1,4 @@
-import { Resend } from "resend";
+import { SendEmailCommand, SESv2Client } from "@aws-sdk/client-sesv2";
 
 type EmailInput = {
   to: string;
@@ -9,31 +9,56 @@ type EmailInput = {
   replyTo?: string;
 };
 
+let client: SESv2Client | undefined;
+
+// AWS_* names are reserved on Vercel, hence the SES_* variables
 export function isEmailConfigured() {
-  return !!process.env.RESEND_API_KEY;
+  return !!(
+    process.env.SES_REGION &&
+    process.env.SES_ACCESS_KEY_ID &&
+    process.env.SES_SECRET_ACCESS_KEY
+  );
 }
 
-// Single entry point for outgoing email, so swapping the provider (SES later)
-// only touches this file.
+function sesClient() {
+  client ??= new SESv2Client({
+    region: process.env.SES_REGION,
+    credentials: {
+      accessKeyId: process.env.SES_ACCESS_KEY_ID!,
+      secretAccessKey: process.env.SES_SECRET_ACCESS_KEY!,
+    },
+  });
+  return client;
+}
+
+// Single entry point for outgoing email (Amazon SES)
 export async function sendEmail(input: EmailInput) {
   if (!isEmailConfigured()) {
     throw new Error("No email provider configured");
   }
 
-  const resend = new Resend(process.env.RESEND_API_KEY);
-  const { data, error } = await resend.emails.send({
-    from: input.from ?? process.env.AUTH_EMAIL_FROM!,
-    to: input.to,
-    subject: input.subject,
-    html: input.html,
-    text: input.text,
-    replyTo: input.replyTo,
-  });
+  const from = input.from ?? process.env.AUTH_EMAIL_FROM;
+  if (!from) throw new Error("AUTH_EMAIL_FROM is not set");
 
-  if (error) {
-    throw new Error(`Email not sent: ${error.message}`);
-  }
-  return { id: data?.id ?? null };
+  const result = await sesClient().send(
+    new SendEmailCommand({
+      FromEmailAddress: from,
+      Destination: { ToAddresses: [input.to] },
+      ReplyToAddresses: input.replyTo ? [input.replyTo] : undefined,
+      ConfigurationSetName: process.env.SES_CONFIGURATION_SET || undefined,
+      Content: {
+        Simple: {
+          Subject: { Data: input.subject, Charset: "UTF-8" },
+          Body: {
+            Html: { Data: input.html, Charset: "UTF-8" },
+            ...(input.text ? { Text: { Data: input.text, Charset: "UTF-8" } } : {}),
+          },
+        },
+      },
+    }),
+  );
+
+  return { id: result.MessageId ?? null };
 }
 
 export function textToHtml(text: string) {
