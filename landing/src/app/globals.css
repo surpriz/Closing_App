@@ -1,28 +1,49 @@
 @import "tailwindcss";
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-muted-foreground: var(--muted-foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+@theme {
+  --color-paper: #f1f3f0;
+  --color-sheet: #fbfcfa;
+  --color-ink: #16233a;
+  --color-ink-soft: #4f5d72;
+  --color-rule: #d6dcd5;
+  --color-mark: #ffe04a;
+  --color-seal: #1f6f5c;
+
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-newsreader), ui-serif, Georgia, serif;
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-  }
+  color-scheme: light;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+}
+
+/* Une seule séquence animée sur la page : les barres de lecture du héros. */
+@keyframes read-bar {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.read-bar {
+  transform-origin: left center;
+  animation: read-bar 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .read-bar {
+    animation: none;
+  }
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 3px;
 }
