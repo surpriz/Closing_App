@@ -176,3 +176,22 @@ Depuis `landing/` : `npm ci`, `npm run typecheck`, `npm run lint`,
 
 La CI doit être verte sur la PR, et le preview deploy Vercel de l'application
 doit aboutir une fois le Root Directory modifié.
+
+## Piège découvert pendant l'implémentation
+
+Next 16 cherche le App Router à `<racine du paquet>/app` **avant**
+`<racine du paquet>/src/app`. Le paquet s'appelant lui-même `app/`, tout outil
+qui écrit sous un chemin relatif au repo (`app/…`) depuis l'intérieur du paquet
+crée `app/app/`. Next y voit alors un App Router vide : `next typegen` continue
+d'afficher « ✓ Types generated successfully » mais écrit
+`type AppRoutes = never`, et `tsc` échoue sur chaque `PageProps`,
+`LayoutProps` et `RouteContext` avec `TS2344 … does not satisfy the constraint
+'never'`.
+
+C'est arrivé pendant cette migration, un hook ayant déposé un `CLAUDE.md` dans
+`app/app/`. La CI n'est pas concernée — son checkout est propre — mais le piège
+se reproduira en local. Il est documenté dans `CLAUDE.md` et dans
+`.personal-docs/04-decisions-et-pieges.md`.
+
+Renommer le paquet en `web/` ou `product/` supprimerait la classe d'erreur, au
+prix de l'écart avec le sous-domaine `app.clozer.club`.

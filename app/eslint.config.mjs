@@ -16,9 +16,6 @@ const eslintConfig = defineConfig([
     "src/generated/**",
     "public/pdf.worker.min.mjs",
     ".vercel/**",
-    ".personal-docs/**",
-    // Marketing site, separate Vercel project with its own tooling
-    "landing/**",
   ]),
 ]);
 

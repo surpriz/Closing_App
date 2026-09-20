@@ -1,24 +1,16 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Patterns shared by every package. Generated files specific to one package live
+# in that package's own .gitignore.
 
 # dependencies
-/node_modules
-/.pnp
+node_modules/
+.pnp
 .pnp.*
 .yarn/*
 !.yarn/patches
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
-
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
 
 # misc
 .DS_Store
@@ -33,15 +25,6 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 !.env.example
-
-# prisma client (generated on install)
-/src/generated/prisma
-
-# trigger.dev
-.trigger
-
-# pdf.js worker (copied from node_modules on install)
-/public/pdf.worker.min.mjs
 
 # vercel
 .vercel
