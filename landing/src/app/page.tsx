@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const APP_URL = "https://app.clozer.club/login";
 
 const pages = [
@@ -155,12 +157,17 @@ export default function Home() {
 
       <footer className="flex flex-wrap items-center justify-between gap-4 border-t border-rule py-8 text-sm text-ink-soft">
         <span>Clozer</span>
-        <a
-          href="mailto:contact@clozer.club"
-          className="transition-colors hover:text-ink"
-        >
-          contact@clozer.club
-        </a>
+        <div className="flex gap-6">
+          <Link href="/confidentialite" className="transition-colors hover:text-ink">
+            Confidentialité
+          </Link>
+          <a
+            href="mailto:contact@clozer.club"
+            className="transition-colors hover:text-ink"
+          >
+            contact@clozer.club
+          </a>
+        </div>
       </footer>
     </div>
   );

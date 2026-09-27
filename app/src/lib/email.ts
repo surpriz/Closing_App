@@ -7,6 +7,7 @@ type EmailInput = {
   text?: string;
   from?: string;
   replyTo?: string;
+  headers?: Record<string, string>;
 };
 
 let client: SESv2Client | undefined;
@@ -53,6 +54,9 @@ export async function sendEmail(input: EmailInput) {
             Html: { Data: input.html, Charset: "UTF-8" },
             ...(input.text ? { Text: { Data: input.text, Charset: "UTF-8" } } : {}),
           },
+          Headers: input.headers
+            ? Object.entries(input.headers).map(([Name, Value]) => ({ Name, Value }))
+            : undefined,
         },
       },
     }),

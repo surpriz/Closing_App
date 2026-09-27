@@ -25,6 +25,8 @@ export type ViewerLabels = {
   nameLabel: string;
   emailSubmit: string;
   invalidEmail: string;
+  privacyNotice: string;
+  privacyLink: string;
 };
 
 const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
@@ -49,6 +51,8 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     nameLabel: "Name (optional)",
     emailSubmit: "View the document",
     invalidEmail: "Please enter a valid email address.",
+    privacyNotice: "The sender can see which pages of this document are viewed and for how long, to follow up at the right time.",
+    privacyLink: "Privacy",
   },
   fr: {
     loading: "Chargement de la proposition…",
@@ -71,6 +75,8 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     nameLabel: "Nom (facultatif)",
     emailSubmit: "Voir le document",
     invalidEmail: "Adresse email invalide.",
+    privacyNotice: "L'expéditeur voit quelles pages de ce document sont consultées et combien de temps, pour vous recontacter au bon moment.",
+    privacyLink: "Confidentialité",
   },
   es: {
     loading: "Cargando la propuesta…",
@@ -93,6 +99,8 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     nameLabel: "Nombre (opcional)",
     emailSubmit: "Ver el documento",
     invalidEmail: "Introduce un email válido.",
+    privacyNotice: "El remitente puede ver qué páginas de este documento se consultan y durante cuánto tiempo, para contactarte en el momento adecuado.",
+    privacyLink: "Privacidad",
   },
   de: {
     loading: "Angebot wird geladen…",
@@ -115,6 +123,8 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     nameLabel: "Name (optional)",
     emailSubmit: "Dokument ansehen",
     invalidEmail: "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
+    privacyNotice: "Der Absender sieht, welche Seiten dieses Dokuments wie lange angesehen werden, um sich zum richtigen Zeitpunkt zu melden.",
+    privacyLink: "Datenschutz",
   },
 };
 

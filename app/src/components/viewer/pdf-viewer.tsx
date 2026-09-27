@@ -7,6 +7,7 @@ import type { DealStatus } from "@/generated/prisma/enums";
 import type { ViewerLabels } from "@/lib/closing/i18n/viewer";
 
 import { CtaBar } from "./cta-bar";
+import { PrivacyNotice } from "./privacy-notice";
 import { usePageTracking } from "./use-page-tracking";
 
 type PageSize = { width: number; height: number };
@@ -87,6 +88,8 @@ export function PdfViewer({ slug, fileUrl, documentName, labels, ctaEnabled, dea
               registerPage={registerPage}
             />
           ))}
+        {/* Also shown here because the email gate is optional per link */}
+        <PrivacyNotice labels={labels} className="px-2 pt-2 text-center" />
       </main>
 
       {ctaEnabled && pdf && (

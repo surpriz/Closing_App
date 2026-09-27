@@ -15,6 +15,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { ViewerLabels } from "@/lib/closing/i18n/viewer";
 
+import { PrivacyNotice } from "./privacy-notice";
+
 type Props = {
   action: (prev: UnlockState, formData: FormData) => Promise<UnlockState>;
   documentName: string;
@@ -51,6 +53,7 @@ export function EmailGate({ action, documentName, labels }: Props) {
             <Button type="submit" className="w-full" disabled={pending}>
               {labels.emailSubmit}
             </Button>
+            <PrivacyNotice labels={labels} />
           </form>
         </CardContent>
       </Card>

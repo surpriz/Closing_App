@@ -3,6 +3,8 @@ import { prisma } from "@/lib/db";
 import { isEmailConfigured, sendEmail, textToHtml } from "@/lib/email";
 
 import { isWhatsAppConfigured, sendWhatsApp } from "../channels/whatsapp";
+import { unsubscribeOneClickUrl, unsubscribePageUrl } from "../unsubscribe";
+import { unsubscribeFooter } from "../unsubscribe/copy";
 
 type Outcome = "sent" | "failed" | "cancelled" | "skipped" | "ignored";
 
@@ -67,14 +69,21 @@ export async function sendFollowup(followupId: string): Promise<Outcome> {
 
     if (followup.channel === "EMAIL") {
       if (!isEmailConfigured()) throw new Error("Aucun service d'email configuré");
+      // Added at send time only: the seller previews the message without it
+      const footer = unsubscribeFooter(unsubscribePageUrl(prospect.id), followup.locale);
       const result = await sendEmail({
         to: prospect.email,
         from: process.env.FOLLOWUP_EMAIL_FROM ?? process.env.AUTH_EMAIL_FROM,
         // replies go to the seller who created the link
         replyTo: link.createdBy?.email ?? process.env.FOLLOWUP_EMAIL_REPLY_TO ?? undefined,
         subject: followup.subject ?? "Suite à notre proposition",
-        text: followup.body,
-        html: textToHtml(followup.body),
+        text: followup.body + footer.text,
+        html: textToHtml(followup.body) + footer.html,
+        // One-click unsubscribe, required by Gmail and Yahoo (RFC 8058)
+        headers: {
+          "List-Unsubscribe": `<${unsubscribeOneClickUrl(prospect.id)}>`,
+          "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+        },
       });
       providerMessageId = result.id;
     } else {

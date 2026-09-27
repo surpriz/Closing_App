@@ -275,6 +275,9 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
                 <details key={prospect.id} className="rounded-lg border px-3 py-2">
                   <summary className="cursor-pointer select-none text-sm">
                     <span className="font-medium">{prospect.name ?? prospect.email}</span>
+                    {prospect.unsubscribedAt && (
+                      <span className="ml-2 text-xs text-destructive">Désinscrit</span>
+                    )}
                     <span className="block text-xs text-muted-foreground">
                       {prospect.email}
                       {prospect.phoneE164 ? ` · ${prospect.phoneE164}` : ""}
