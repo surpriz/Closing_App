@@ -2,14 +2,8 @@
 
 import { useState, type FormEvent } from "react";
 
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Logo } from "@/components/brand/logo";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
@@ -49,57 +43,60 @@ export function LoginForm({ devMode }: { devMode: boolean }) {
   }
 
   return (
-    <Card className="w-full max-w-sm">
-      <CardHeader>
-        <CardTitle className="text-xl">Connexion</CardTitle>
-        <CardDescription>
-          Recevez un lien de connexion par email, sans mot de passe.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {status === "sent" ? (
-          <div className="space-y-4 text-sm">
-            <p>
-              Lien envoyé à <span className="font-medium">{email}</span>.
-            </p>
-            {devMode && devLink && (
-              <div className="space-y-2 rounded-lg border border-dashed p-3">
-                <p className="text-muted-foreground">
-                  Mode dev : aucun service d&apos;email configuré.
-                </p>
-                <a
-                  href={devLink}
-                  className="inline-flex h-8 w-full items-center justify-center rounded-lg bg-primary px-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/80"
-                >
-                  Ouvrir le lien de connexion
-                </a>
-              </div>
-            )}
-            <Button variant="ghost" className="w-full" onClick={() => setStatus("idle")}>
-              Utiliser une autre adresse
-            </Button>
-          </div>
-        ) : (
-          <form onSubmit={onSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                required
-                autoComplete="email"
-                placeholder="vous@entreprise.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
+    <div className="w-full max-w-sm space-y-8">
+      <Logo />
+      <div className="space-y-2">
+        <h1 className="text-[1.875rem] leading-[1.12] font-medium tracking-[-0.03em] [font-stretch:88%]">
+          {status === "sent" ? "Regardez vos emails." : "Connexion à Clozer"}
+        </h1>
+        <p className="text-[15px] text-muted-foreground">
+          {status === "sent" ? (
+            <>
+              Un lien de connexion vient de partir vers <span className="text-foreground">{email}</span>.
+              Cliquez dessus pour entrer.
+            </>
+          ) : (
+            "Pas de mot de passe : on vous envoie un lien par email."
+          )}
+        </p>
+      </div>
+
+      {status === "sent" ? (
+        <div className="space-y-3 text-sm">
+          {devMode && devLink && (
+            <div className="space-y-3 rounded-xl border border-dashed border-input p-4">
+              <p className="text-muted-foreground">Mode dev : aucun service d&apos;email configuré.</p>
+              <a href={devLink} className={buttonVariants({ size: "lg", className: "w-full" })}>
+                Ouvrir le lien de connexion
+              </a>
             </div>
-            {error && <p className="text-sm text-destructive">{error}</p>}
-            <Button type="submit" className="w-full" disabled={status === "sending"}>
-              {status === "sending" ? "Envoi…" : "Recevoir le lien"}
-            </Button>
-          </form>
-        )}
-      </CardContent>
-    </Card>
+          )}
+          <Button variant="ghost" className="w-full" onClick={() => setStatus("idle")}>
+            Utiliser une autre adresse
+          </Button>
+        </div>
+      ) : (
+        <form onSubmit={onSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="email">Votre email professionnel</Label>
+            <Input
+              id="email"
+              type="email"
+              required
+              autoComplete="email"
+              autoFocus
+              placeholder="vous@entreprise.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="h-10 bg-card text-[15px]"
+            />
+          </div>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          <Button type="submit" size="lg" className="h-10 w-full" disabled={status === "sending"}>
+            {status === "sending" ? "Envoi…" : "Recevoir le lien de connexion"}
+          </Button>
+        </form>
+      )}
+    </div>
   );
 }
