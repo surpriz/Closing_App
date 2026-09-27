@@ -1,21 +1,20 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
-import { DocumentStatusBadge } from "@/components/dashboard/document-status-badge";
-import { EngagementBadge } from "@/components/dashboard/engagement-badge";
-import { UploadDropzone } from "@/components/dashboard/upload-dropzone";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { HeatBar } from "@/components/dashboard/heat";
+import { TIER_LABELS } from "@/components/dashboard/labels";
+import { PageHeader } from "@/components/dashboard/page-header";
+import { UploadButton, UploadDropzone } from "@/components/dashboard/upload-dropzone";
 import { documentUploadPrefix } from "@/lib/blob";
 import { prisma } from "@/lib/db";
 import { formatRelative } from "@/lib/format";
 import { requireWorkspace } from "@/lib/session";
+
+export const metadata: Metadata = { title: "Devis" };
+
+function plural(count: number, one: string, many: string) {
+  return `${count} ${count === 1 ? one : many}`;
+}
 
 export default async function DocumentsPage() {
   const { organization } = await requireWorkspace();
@@ -46,67 +45,71 @@ export default async function DocumentsPage() {
     if (!current || score.score > current.score) bestScore.set(score.link.documentId, score);
   }
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Documents</h1>
-        <p className="text-sm text-muted-foreground">
-          Importez un devis, créez un lien par prospect et suivez sa lecture.
-        </p>
+  const uploadPrefix = documentUploadPrefix(organization.id);
+  const now = new Date();
+
+  if (documents.length === 0) {
+    return (
+      <div className="space-y-8">
+        <PageHeader title="Devis" description="Importez un devis, puis créez un lien par prospect." />
+        <UploadDropzone uploadPrefix={uploadPrefix} />
       </div>
+    );
+  }
 
-      <UploadDropzone uploadPrefix={documentUploadPrefix(organization.id)} />
+  return (
+    <div className="space-y-8">
+      <PageHeader
+        title="Devis"
+        description="Glissez un PDF n'importe où sur la page pour l'importer."
+        action={<UploadButton uploadPrefix={uploadPrefix} />}
+      />
 
-      {documents.length > 0 && (
-        <Card className="py-0">
-          <CardContent className="px-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="pl-4">Nom</TableHead>
-                  <TableHead>Statut</TableHead>
-                  <TableHead>Meilleur intérêt</TableHead>
-                  <TableHead className="text-right">Pages</TableHead>
-                  <TableHead className="text-right">Liens</TableHead>
-                  <TableHead className="text-right">Vues</TableHead>
-                  <TableHead className="pr-4 text-right">Dernière lecture</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {documents.map((document) => {
-                  const stats = statsByDocument.get(document.id);
-                  const score = bestScore.get(document.id);
-                  return (
-                    <TableRow key={document.id}>
-                      <TableCell className="pl-4 font-medium">
-                        <Link href={`/documents/${document.id}`} className="hover:underline">
-                          {document.name}
-                        </Link>
-                      </TableCell>
-                      <TableCell>
-                        <DocumentStatusBadge status={document.status} />
-                      </TableCell>
-                      <TableCell>
-                        {score ? (
-                          <EngagementBadge tier={score.tier} score={score.score} reasons={score.reasons} />
-                        ) : (
-                          <span className="text-xs text-muted-foreground">–</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">{document.numPages ?? "–"}</TableCell>
-                      <TableCell className="text-right">{document._count.links}</TableCell>
-                      <TableCell className="text-right">{stats?._count._all ?? 0}</TableCell>
-                      <TableCell className="pr-4 text-right text-muted-foreground">
-                        {stats?._max.lastSeenAt ? formatRelative(stats._max.lastSeenAt) : "–"}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
+      <ul className="divide-y divide-border overflow-hidden rounded-xl bg-card ring-1 ring-border">
+        {documents.map((document) => {
+          const stats = statsByDocument.get(document.id);
+          const score = bestScore.get(document.id);
+          const reads = stats?._count._all ?? 0;
+          const lastRead = stats?._max.lastSeenAt;
+          return (
+            <li
+              key={document.id}
+              className="relative flex items-stretch gap-4 py-4 pr-5 pl-4 transition-colors hover:bg-muted/50"
+            >
+              <HeatBar tier={score?.tier ?? null} score={score?.score ?? 0} />
+              <div className="min-w-0 flex-1">
+                <Link
+                  href={`/documents/${document.id}`}
+                  className="font-medium outline-none after:absolute after:inset-0 focus-visible:after:ring-3 focus-visible:after:ring-ring/50 focus-visible:after:ring-inset"
+                >
+                  {document.name}
+                </Link>
+                <p className="text-sm text-muted-foreground">
+                  {document.status === "PROCESSING" || document.status === "UPLOADED" ? (
+                    "Analyse en cours…"
+                  ) : document.status === "FAILED" ? (
+                    <span className="text-destructive">L&apos;analyse a échoué</span>
+                  ) : (
+                    [
+                      plural(document._count.links, "prospect", "prospects"),
+                      plural(reads, "lecture", "lectures"),
+                      document.numPages ? plural(document.numPages, "page", "pages") : null,
+                    ]
+                      .filter(Boolean)
+                      .join(", ")
+                  )}
+                </p>
+              </div>
+              <div className="hidden shrink-0 flex-col items-end justify-center text-sm sm:flex">
+                <span className={score ? "" : "text-muted-foreground"}>
+                  {score ? TIER_LABELS[score.tier] : "Pas encore lu"}
+                  {lastRead && <span className="text-muted-foreground">, lu {formatRelative(lastRead, now)}</span>}
+                </span>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }
