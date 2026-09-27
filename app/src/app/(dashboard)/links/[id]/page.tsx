@@ -1,4 +1,5 @@
-import { ArrowLeft, Clock, Eye, History } from "lucide-react";
+import { ArrowLeft, ChevronRight, Plus } from "lucide-react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -6,24 +7,19 @@ import { ActivityTimeline, type TimelineItem } from "@/components/dashboard/acti
 import { ArchiveLinkButton } from "@/components/dashboard/archive-link-button";
 import { CopyButton } from "@/components/dashboard/copy-button";
 import { DealStatusSelect } from "@/components/dashboard/deal-status-select";
-import { HeatDot } from "@/components/dashboard/heat";
 import { FollowupsPanel, type FollowupItem } from "@/components/dashboard/followups-panel";
+import { HEAT_BG } from "@/components/dashboard/heat";
 import {
   ALERT_TYPE_LABELS,
   CHANNEL_LABELS,
   FOLLOWUP_TRIGGER_LABELS,
   SCORE_REASON_LABELS,
+  TIER_LABELS,
 } from "@/components/dashboard/labels";
-import { LinkSettingsForm } from "@/components/dashboard/link-settings-form";
+import { LinkSettingsDialog } from "@/components/dashboard/link-settings-form";
+import { SectionTitle, StatLine, Surface } from "@/components/dashboard/page-header";
 import { PageTimeChart, type PageTimeDatum } from "@/components/dashboard/page-time-chart";
 import { ProspectForm } from "@/components/dashboard/prospect-form";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { getAppOrigin } from "@/lib/app-origin";
 import { getLinkAnalytics } from "@/lib/closing/analytics";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
@@ -31,6 +27,17 @@ import type { EngagementReason } from "@/lib/closing/types";
 import { prisma } from "@/lib/db";
 import { formatDuration, formatRelative } from "@/lib/format";
 import { requireWorkspace } from "@/lib/session";
+import { cn } from "cn";
+
+export async function generateMetadata({ params }: PageProps<"/links/[id]">): Promise<Metadata> {
+  const { id } = await params;
+  const { organization } = await requireWorkspace();
+  const link = await prisma.link.findFirst({
+    where: { id, organizationId: organization.id },
+    select: { name: true, slug: true, prospects: { select: { company: true }, orderBy: { createdAt: "asc" }, take: 1 } },
+  });
+  return { title: link?.prospects[0]?.company ?? link?.name ?? "Prospect" };
+}
 
 export default async function LinkDetailPage({ params }: PageProps<"/links/[id]">) {
   const { id } = await params;
@@ -97,7 +104,7 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
       id: `view-${view.id}`,
       at: view.startedAt,
       kind: "view" as const,
-      title: `Lecture · ${view.prospect?.name ?? view.email ?? "visiteur anonyme"}`,
+      title: `Lecture par ${view.prospect?.name ?? view.email ?? "un lecteur anonyme"}`,
       detail: [
         formatDuration(view.totalDurationMs),
         `jusqu'à la page ${view.maxPageReached}`,
@@ -105,7 +112,7 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
         view.timezone,
       ]
         .filter(Boolean)
-        .join(" · "),
+        .join(", "),
     })),
     ...actions.map((action) => ({
       id: `action-${action.id}`,
@@ -122,7 +129,7 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
         id: `followup-${f.id}`,
         at: f.sentAt!,
         kind: "followup" as const,
-        title: `Relance envoyée · ${FOLLOWUP_TRIGGER_LABELS[f.trigger]}`,
+        title: `Relance envoyée (${FOLLOWUP_TRIGGER_LABELS[f.trigger].toLowerCase()})`,
         detail: `${CHANNEL_LABELS[f.channel]} à ${f.prospect.name ?? f.prospect.email}`,
       })),
     ...alerts.map((alert) => {
@@ -131,7 +138,7 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
         id: `alert-${alert.id}`,
         at: alert.createdAt,
         kind: "alert" as const,
-        title: `Alerte · ${ALERT_TYPE_LABELS[alert.type]}`,
+        title: `Alerte : ${ALERT_TYPE_LABELS[alert.type].toLowerCase()}`,
         detail: payload.liveViewers
           ? `${payload.liveViewers} lecteurs en même temps`
           : payload.inactiveDays
@@ -160,130 +167,173 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
     linkName: link.name ?? link.slug,
   }));
 
+  const now = new Date();
+  const score = link.engagementScore;
+  const contactLine = [mainProspect?.company ? mainProspect.name : null, mainProspect?.email]
+    .filter(Boolean)
+    .join(", ");
+
   return (
-    <div className="space-y-6">
-      <div className="space-y-3">
+    <div className="space-y-10">
+      <div className="space-y-4">
         <Link
           href={`/documents/${link.document.id}`}
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="size-4" /> {link.document.name}
         </Link>
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-              <a href={url} target="_blank" rel="noreferrer" className="font-mono text-xs hover:underline">
-                {url}
-              </a>
-              <CopyButton value={url} />
-            </div>
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div className="min-w-0 space-y-1">
+            <h1 className="text-2xl font-semibold tracking-[-0.02em]">{title}</h1>
+            <p className="flex flex-wrap items-center gap-x-2 text-[15px] text-muted-foreground">
+              {contactLine && <span>{contactLine}</span>}
+              <span className="inline-flex items-center gap-0.5">
+                <a href={url} target="_blank" rel="noreferrer" className="hover:text-foreground hover:underline">
+                  {url.replace(/^https?:\/\//, "")}
+                </a>
+                <CopyButton value={url} />
+              </span>
+            </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <DealStatusSelect linkId={link.id} status={link.dealStatus} />
+            <LinkSettingsDialog
+              linkId={link.id}
+              initial={{
+                version: link.updatedAt.toISOString(),
+                name: link.name ?? "",
+                requireEmail: link.requireEmail,
+                ctaEnabled: link.ctaEnabled,
+                followupsEnabled: link.followupsEnabled,
+                channels: link.channels,
+                hotPricingThresholdSec: link.hotPricingThresholdSec,
+                inactivityDays: link.inactivityDays,
+                businessHourStart: link.businessHourStart,
+                businessHourEnd: link.businessHourEnd,
+              }}
+              defaults={{
+                channels: settings.defaultChannels,
+                hotPricingThresholdSec: settings.hotPricingThresholdSec,
+                inactivityDays: settings.inactivityDays,
+                businessHourStart: settings.businessHourStart,
+                businessHourEnd: settings.businessHourEnd,
+              }}
+            />
             <ArchiveLinkButton linkId={link.id} />
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Card size="sm">
-          <CardContent className="space-y-1.5">
-            <div className="text-xs text-muted-foreground">Intérêt</div>
-            {link.engagementScore ? (
-              <HeatDot
-                tier={link.engagementScore.tier}
-                score={link.engagementScore.score}
-                reasons={link.engagementScore.reasons}
-              />
-            ) : (
-              <div className="text-xl font-semibold">–</div>
+      <Surface className="overflow-hidden">
+        <div className="grid md:grid-cols-[16rem_minmax(0,1fr)]">
+          <div className="relative space-y-3 border-b border-border p-5 md:border-r md:border-b-0">
+            <span
+              aria-hidden
+              className={cn(
+                "absolute inset-y-0 left-0 w-1 origin-bottom animate-heat-fill motion-reduce:animate-none",
+                score ? HEAT_BG[score.tier] : "bg-foreground/10",
+              )}
+            />
+            <p className="text-sm text-muted-foreground">Température</p>
+            <p className="text-[2rem] leading-none font-medium tracking-[-0.03em] [font-stretch:88%]">
+              {score ? TIER_LABELS[score.tier] : "Pas encore lu"}
+            </p>
+            {score && (
+              <p className="text-sm text-muted-foreground">
+                <span className="font-semibold text-foreground tabular-nums">{score.score}</span> sur 100
+              </p>
             )}
-          </CardContent>
-        </Card>
-        <Stat icon={<Eye className="size-4" />} label="Lectures" value={String(analytics.viewCount)} />
-        <Stat icon={<Clock className="size-4" />} label="Temps de lecture" value={formatDuration(analytics.totalDurationMs)} />
-        <Stat
-          icon={<History className="size-4" />}
-          label="Dernière lecture"
-          value={analytics.lastActivityAt ? formatRelative(analytics.lastActivityAt) : "–"}
-        />
-      </div>
+          </div>
+          <div className="p-5">
+            <p className="mb-3 text-sm text-muted-foreground">Pourquoi</p>
+            {reasons.length === 0 ? (
+              <p className="text-[15px]">
+                Rien encore : la température monte dès que le prospect ouvre son lien et lit.
+              </p>
+            ) : (
+              <ul className="grid gap-x-8 gap-y-2 text-[15px] sm:grid-cols-2">
+                {reasons.map((reason) => (
+                  <li key={reason.code} className="flex items-baseline justify-between gap-3">
+                    <span>
+                      {SCORE_REASON_LABELS[reason.code] ?? reason.code}
+                      {reason.detail && <span className="text-muted-foreground"> ({reason.detail})</span>}
+                    </span>
+                    <span className="text-sm text-muted-foreground tabular-nums">+{reason.weight}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {analytics.viewCount > 0 && (
+              <div className="mt-5 border-t border-border pt-4">
+                <StatLine
+                  items={[
+                    { value: analytics.viewCount, label: analytics.viewCount === 1 ? "lecture" : "lectures" },
+                    { value: formatDuration(analytics.totalDurationMs), label: "de lecture" },
+                    ...(analytics.lastActivityAt
+                      ? [{ value: formatRelative(analytics.lastActivityAt, now), label: "lu", labelFirst: true }]
+                      : []),
+                  ]}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      </Surface>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Temps passé par page</CardTitle>
-              <CardDescription>
-                Pour ce prospect uniquement.{" "}
-                <span className="inline-flex items-center gap-1">
-                  <span className="inline-block size-2.5 rounded-sm bg-amber-500" /> page tarifs
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="space-y-10">
+          <section>
+            <SectionTitle
+              hint="pour ce prospect"
+              action={
+                <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <span className="size-2.5 rounded-sm bg-heat-warm" /> page de tarifs
                 </span>
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+              }
+            >
+              Temps passé par page
+            </SectionTitle>
+            <Surface className="p-4">
               <PageTimeChart data={chartData} />
-            </CardContent>
-          </Card>
+            </Surface>
+          </section>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Activité</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ActivityTimeline items={timeline} />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Relances</CardTitle>
-            </CardHeader>
-            <CardContent>
+          <section>
+            <SectionTitle>Relances</SectionTitle>
+            <Surface className="p-4">
               <FollowupsPanel followups={followupItems} />
-            </CardContent>
-          </Card>
+            </Surface>
+          </section>
+
+          <section>
+            <SectionTitle>Activité</SectionTitle>
+            <div className="pl-3">
+              <ActivityTimeline items={timeline} />
+            </div>
+          </section>
         </div>
 
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Pourquoi ce score</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              {reasons.length === 0 && <p className="text-muted-foreground">Pas encore de signal.</p>}
-              {reasons.map((reason) => (
-                <div key={reason.code} className="flex items-center justify-between gap-2">
-                  <span>
-                    {SCORE_REASON_LABELS[reason.code] ?? reason.code}
-                    {reason.detail && <span className="text-muted-foreground"> · {reason.detail}</span>}
-                  </span>
-                  <span className="tabular-nums text-muted-foreground">+{reason.weight}</span>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Contacts</CardTitle>
-              <CardDescription>Destinataires des relances sur ce lien.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
+        <aside>
+          <SectionTitle hint="reçoivent les relances">Contacts</SectionTitle>
+          <Surface>
+            <div className="divide-y divide-border">
               {link.prospects.map((prospect) => (
-                <details key={prospect.id} className="rounded-lg border px-3 py-2">
-                  <summary className="cursor-pointer select-none text-sm">
-                    <span className="font-medium">{prospect.name ?? prospect.email}</span>
-                    {prospect.unsubscribedAt && (
-                      <span className="ml-2 text-xs text-destructive">Désinscrit</span>
-                    )}
-                    <span className="block text-xs text-muted-foreground">
-                      {prospect.email}
-                      {prospect.phoneE164 ? ` · ${prospect.phoneE164}` : ""}
-                      {prospect.whatsappOptInAt ? " · WhatsApp ok" : ""}
-                      {prospect.timezone ? ` · ${prospect.timezone}` : ""}
+                <details key={prospect.id} className="group px-4 py-3">
+                  <summary className="flex cursor-pointer list-none items-start justify-between gap-3 outline-none focus-visible:underline [&::-webkit-details-marker]:hidden">
+                    <span className="min-w-0 text-sm">
+                      <span className="font-medium">{prospect.name ?? prospect.email}</span>
+                      {prospect.unsubscribedAt && <span className="ml-2 text-destructive">désinscrit</span>}
+                      <span className="block truncate text-muted-foreground">
+                        {[
+                          prospect.name ? prospect.email : null,
+                          prospect.phoneE164,
+                          prospect.whatsappOptInAt ? "WhatsApp accepté" : null,
+                        ]
+                          .filter(Boolean)
+                          .join(", ")}
+                      </span>
                     </span>
+                    <ChevronRight className="mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90" />
                   </summary>
                   <ProspectForm
                     linkId={link.id}
@@ -298,59 +348,16 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
                   />
                 </details>
               ))}
-              <details className="rounded-lg border border-dashed px-3 py-2">
-                <summary className="cursor-pointer select-none text-sm font-medium">Ajouter un contact</summary>
+              <details className="group px-4 py-3">
+                <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-medium outline-none focus-visible:underline [&::-webkit-details-marker]:hidden">
+                  <Plus className="size-4" /> Ajouter un contact
+                </summary>
                 <ProspectForm linkId={link.id} />
               </details>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Réglages du lien</CardTitle>
-              <CardDescription>Champs vides : paramètres de l&apos;espace.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <LinkSettingsForm
-                linkId={link.id}
-                initial={{
-                  version: link.updatedAt.toISOString(),
-                  name: link.name ?? "",
-                  requireEmail: link.requireEmail,
-                  ctaEnabled: link.ctaEnabled,
-                  followupsEnabled: link.followupsEnabled,
-                  channels: link.channels,
-                  hotPricingThresholdSec: link.hotPricingThresholdSec,
-                  inactivityDays: link.inactivityDays,
-                  businessHourStart: link.businessHourStart,
-                  businessHourEnd: link.businessHourEnd,
-                }}
-                defaults={{
-                  channels: settings.defaultChannels,
-                  hotPricingThresholdSec: settings.hotPricingThresholdSec,
-                  inactivityDays: settings.inactivityDays,
-                  businessHourStart: settings.businessHourStart,
-                  businessHourEnd: settings.businessHourEnd,
-                }}
-              />
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </Surface>
+        </aside>
       </div>
     </div>
-  );
-}
-
-function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return (
-    <Card size="sm">
-      <CardContent className="space-y-1">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          {icon}
-          {label}
-        </div>
-        <div className="text-xl font-semibold tabular-nums">{value}</div>
-      </CardContent>
-    </Card>
   );
 }

@@ -11,7 +11,7 @@ import {
   DEAL_STATUS_LABELS,
   TIER_LABELS,
 } from "@/components/dashboard/labels";
-import { SectionTitle } from "@/components/dashboard/page-header";
+import { SectionTitle, StatLine } from "@/components/dashboard/page-header";
 import { buildTodayHeadline } from "@/components/dashboard/today-headline";
 import { buttonVariants } from "@/components/ui/button";
 import { getAppOrigin } from "@/lib/app-origin";
@@ -213,11 +213,13 @@ export default async function DashboardPage() {
           {headline}
           <span className="block text-muted-foreground">{hint}</span>
         </h1>
-        <div className="flex flex-wrap gap-x-8 gap-y-2 text-sm">
-          <Stat value={activeCount} label={activeCount === 1 ? "prospect en cours" : "prospects en cours"} />
-          <Stat value={plannedCount} label={plannedCount === 1 ? "relance prévue" : "relances prévues"} />
-          <Stat value={validatedThisMonth} label={validatedThisMonth === 1 ? "validé ce mois" : "validés ce mois"} />
-        </div>
+        <StatLine
+          items={[
+            { value: activeCount, label: activeCount === 1 ? "prospect en cours" : "prospects en cours" },
+            { value: plannedCount, label: plannedCount === 1 ? "relance prévue" : "relances prévues" },
+            { value: validatedThisMonth, label: validatedThisMonth === 1 ? "validé ce mois" : "validés ce mois" },
+          ]}
+        />
       </section>
 
       <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_18rem]">
@@ -358,13 +360,4 @@ function prospectName(link: {
 }) {
   const prospect = link.prospects[0];
   return prospect?.company ?? link.name ?? prospect?.name ?? prospect?.email ?? link.slug;
-}
-
-function Stat({ value, label }: { value: number; label: string }) {
-  return (
-    <p className="flex items-baseline gap-1.5">
-      <span className="font-semibold tabular-nums">{value}</span>
-      <span className="text-muted-foreground">{label}</span>
-    </p>
-  );
 }

@@ -46,41 +46,46 @@ function statusVariant(status: FollowupStatus) {
   return "outline" as const;
 }
 
-export function FollowupsPanel({ followups }: { followups: FollowupItem[] }) {
+export function FollowupsPanel({
+  followups,
+  showLink = false,
+}: {
+  followups: FollowupItem[];
+  showLink?: boolean;
+}) {
   const [pending, startTransition] = useTransition();
 
   if (followups.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        Aucune relance pour l&apos;instant. Elles se créent toutes seules selon le comportement du prospect.
+        Aucune relance pour l&apos;instant. Clozer les prépare tout seul selon ce que fait le prospect.
       </p>
     );
   }
 
   return (
-    <ul className="divide-y">
+    <ul className="divide-y divide-border">
       {followups.map((f) => {
         const open = f.status === "GENERATED" || f.status === "SCHEDULED";
         return (
-          <li key={f.id} className="space-y-2 py-4 first:pt-0 last:pb-0">
-            <div className="flex flex-wrap items-center gap-2 text-sm">
+          <li key={f.id} className="space-y-2.5 py-4 first:pt-0 last:pb-0">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
               <Badge variant={statusVariant(f.status)}>{FOLLOWUP_STATUS_LABELS[f.status]}</Badge>
               <span className="font-medium">{FOLLOWUP_TRIGGER_LABELS[f.trigger]}</span>
               <span className="text-muted-foreground">
-                · {CHANNEL_LABELS[f.channel]} · {f.recipient} · {f.linkName}
+                par {CHANNEL_LABELS[f.channel].toLowerCase()} à {f.recipient}
+                {showLink && `, ${f.linkName}`}
               </span>
             </div>
 
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               {f.sentAt
                 ? `Envoyée le ${formatInZone(f.sentAt, f.timezone)}`
-                : `Prévue le ${formatInZone(f.scheduledFor, f.timezone)} (heure du prospect, ${f.timezone})`}
-              {" · "}
-              {f.aiProvider === "template" ? "modèle de secours (pas de clé IA)" : `rédigée par IA (${f.aiModel})`}
+                : `Prévue le ${formatInZone(f.scheduledFor, f.timezone)}, heure du prospect`}
             </p>
 
             {f.body && (
-              <details className="rounded-lg border bg-muted/30 px-3 py-2 text-sm">
+              <details className="group rounded-lg bg-muted px-3 py-2 text-sm">
                 <summary className="cursor-pointer select-none font-medium">
                   {f.subject ?? "Message WhatsApp"}
                 </summary>
@@ -88,7 +93,7 @@ export function FollowupsPanel({ followups }: { followups: FollowupItem[] }) {
               </details>
             )}
 
-            {f.error && f.status !== "SENT" && <p className="text-xs text-destructive">{f.error}</p>}
+            {f.error && f.status !== "SENT" && <p className="text-sm text-destructive">{f.error}</p>}
 
             {open && (
               <div className="flex gap-2">
@@ -106,7 +111,7 @@ export function FollowupsPanel({ followups }: { followups: FollowupItem[] }) {
                 </Button>
                 <Button
                   size="sm"
-                  variant="outline"
+                  variant="ghost"
                   disabled={pending}
                   onClick={() =>
                     startTransition(async () => {
@@ -115,7 +120,7 @@ export function FollowupsPanel({ followups }: { followups: FollowupItem[] }) {
                     })
                   }
                 >
-                  Annuler
+                  Annuler la relance
                 </Button>
               </div>
             )}

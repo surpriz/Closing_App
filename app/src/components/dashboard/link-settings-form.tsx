@@ -1,10 +1,19 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { Settings2 } from "lucide-react";
+import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { saveLinkSettings, type LinkFormState } from "@/app/(dashboard)/links/actions";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -33,7 +42,7 @@ type Props = {
   };
 };
 
-export function LinkSettingsForm({ linkId, initial, defaults }: Props) {
+function LinkSettingsForm({ linkId, initial, defaults }: Props) {
   const [state, formAction, pending] = useActionState<LinkFormState, FormData>(
     saveLinkSettings.bind(null, linkId),
     null,
@@ -47,7 +56,7 @@ export function LinkSettingsForm({ linkId, initial, defaults }: Props) {
   return (
     <form action={formAction}>
       {/* Remount the fields after each save so uncontrolled inputs show stored values */}
-      <div key={initial.version} className="space-y-4">
+      <div key={initial.version} className="space-y-5">
         <div className="space-y-1.5">
           <Label htmlFor="link-name">Nom du lien</Label>
           <Input id="link-name" name="name" defaultValue={initial.name} />
@@ -55,24 +64,24 @@ export function LinkSettingsForm({ linkId, initial, defaults }: Props) {
 
         <div className="space-y-2">
           <FormCheckbox name="requireEmail" label="Demander l'email avant lecture" defaultChecked={initial.requireEmail} />
-          <FormCheckbox name="ctaEnabled" label="Boutons « Valider » et « Ajustement »" defaultChecked={initial.ctaEnabled} />
+          <FormCheckbox name="ctaEnabled" label="Afficher les boutons « Valider » et « Demander un ajustement »" defaultChecked={initial.ctaEnabled} />
           <FormCheckbox name="followupsEnabled" label="Relances automatiques" defaultChecked={initial.followupsEnabled} />
         </div>
 
         <div className="space-y-2">
-          <Label>Canaux de relance</Label>
+          <Label>Relancer par</Label>
           <div className="flex gap-4">
             <FormCheckbox name="channels" value="EMAIL" label="Email" defaultChecked={initial.channels.includes("EMAIL")} />
             <FormCheckbox name="channels" value="WHATSAPP" label="WhatsApp" defaultChecked={initial.channels.includes("WHATSAPP")} />
           </div>
-          <p className="text-xs text-muted-foreground">
-            Aucun coché : canaux par défaut ({defaults.channels.join(", ").toLowerCase()}).
+          <p className="text-sm text-muted-foreground">
+            Rien de coché : comme dans les réglages ({defaults.channels.join(", ").toLowerCase()}).
           </p>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
-            <Label htmlFor="link-threshold">Seuil tarifs (s)</Label>
+            <Label htmlFor="link-threshold">Secondes sur les tarifs</Label>
             <Input
               id="link-threshold"
               name="hotPricingThresholdSec"
@@ -84,7 +93,7 @@ export function LinkSettingsForm({ linkId, initial, defaults }: Props) {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="link-inactivity">Anti-ghosting (jours)</Label>
+            <Label htmlFor="link-inactivity">Jours sans ouverture</Label>
             <Input
               id="link-inactivity"
               name="inactivityDays"
@@ -93,7 +102,7 @@ export function LinkSettingsForm({ linkId, initial, defaults }: Props) {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="link-start">Envoi dès (h)</Label>
+            <Label htmlFor="link-start">Envoyer à partir de (h)</Label>
             <Input
               id="link-start"
               name="businessHourStart"
@@ -118,10 +127,30 @@ export function LinkSettingsForm({ linkId, initial, defaults }: Props) {
           </div>
         </div>
 
-        <Button type="submit" className="w-full" disabled={pending}>
-          {pending ? "Enregistrement…" : "Enregistrer"}
+        <Button type="submit" size="lg" className="w-full" disabled={pending}>
+          {pending ? "Enregistrement…" : "Enregistrer les réglages du lien"}
         </Button>
       </div>
     </form>
+  );
+}
+
+export function LinkSettingsDialog(props: Props) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger render={<Button variant="outline" size="lg" className="bg-card" />}>
+        <Settings2 />
+        Réglages du lien
+      </DialogTrigger>
+      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-lg">Réglages du lien</DialogTitle>
+          <DialogDescription>Un champ laissé vide reprend les réglages de l&apos;espace.</DialogDescription>
+        </DialogHeader>
+        <LinkSettingsForm {...props} />
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -4,23 +4,28 @@ import { useOptimistic, useTransition } from "react";
 import { toast } from "sonner";
 
 import { updateDealStatus } from "@/app/(dashboard)/links/actions";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { DealStatus } from "@/generated/prisma/enums";
 
 import { DEAL_STATUS_LABELS } from "./labels";
 
-const STATUSES = Object.keys(DEAL_STATUS_LABELS) as DealStatus[];
+const ITEMS = (Object.keys(DEAL_STATUS_LABELS) as DealStatus[]).map((value) => ({
+  value,
+  label: DEAL_STATUS_LABELS[value],
+}));
 
 export function DealStatusSelect({ linkId, status }: { linkId: string; status: DealStatus }) {
   const [optimistic, setOptimistic] = useOptimistic(status);
   const [pending, startTransition] = useTransition();
 
   return (
-    <select
-      aria-label="Statut du deal"
+    <Select
+      items={ITEMS}
       value={optimistic}
       disabled={pending}
-      onChange={(event) => {
-        const next = event.target.value as DealStatus;
+      onValueChange={(value) => {
+        if (!value) return;
+        const next = value as DealStatus;
         startTransition(async () => {
           setOptimistic(next);
           try {
@@ -35,13 +40,17 @@ export function DealStatusSelect({ linkId, status }: { linkId: string; status: D
           }
         });
       }}
-      className="h-8 rounded-lg border bg-background px-2 text-sm"
     >
-      {STATUSES.map((value) => (
-        <option key={value} value={value}>
-          {DEAL_STATUS_LABELS[value]}
-        </option>
-      ))}
-    </select>
+      <SelectTrigger aria-label="Statut du deal" className="h-9 min-w-44 bg-card">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {ITEMS.map((item) => (
+          <SelectItem key={item.value} value={item.value}>
+            {item.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }

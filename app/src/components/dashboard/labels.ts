@@ -45,9 +45,9 @@ export const FOLLOWUP_STATUS_LABELS: Record<FollowupStatus, string> = {
 };
 
 export const FOLLOWUP_TRIGGER_LABELS: Record<FollowupTrigger, string> = {
-  HOT_PRICING: "Relance à chaud · tarifs",
-  ANTI_GHOSTING: "Anti-ghosting",
-  MANUAL: "Manuelle",
+  HOT_PRICING: "Après lecture des tarifs",
+  ANTI_GHOSTING: "Lien pas encore ouvert",
+  MANUAL: "Relance manuelle",
 };
 
 export const CHANNEL_LABELS: Record<FollowupChannel, string> = {
