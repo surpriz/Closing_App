@@ -15,3 +15,4 @@
 # pdf.js worker (copied from node_modules on install)
 /public/pdf.worker.min.mjs
 .env*
+!.env.example
