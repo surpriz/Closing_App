@@ -8,6 +8,7 @@ const base: TodayHeadlineInput = {
   changeRequests: [],
   freshValidations: [],
   activeCount: 4,
+  documentCount: 2,
   unopenedCount: 0,
   nextFollowupLabel: null,
 };
@@ -53,8 +54,17 @@ describe("buildTodayHeadline", () => {
     );
   });
 
-  it("invites to create a link when nothing is in progress", () => {
-    expect(buildTodayHeadline({ ...base, activeCount: 0 }).headline).toBe("Aucun devis en cours.");
+  it("invites to create a link when quotes exist but none is sent", () => {
+    expect(buildTodayHeadline({ ...base, activeCount: 0, documentCount: 1 })).toEqual({
+      headline: "Votre devis est prêt.",
+      hint: "Créez un lien pour l'envoyer à un prospect.",
+    });
+  });
+
+  it("invites to import when there is no quote at all", () => {
+    expect(buildTodayHeadline({ ...base, activeCount: 0, documentCount: 0 }).headline).toBe(
+      "Aucun devis pour l'instant.",
+    );
   });
 
   it("falls back to a quiet day", () => {

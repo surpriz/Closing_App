@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { CopyButton } from "@/components/dashboard/copy-button";
+import { NewLinkDialog } from "@/components/dashboard/create-link-form";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { HeatBar } from "@/components/dashboard/heat";
 import {
@@ -13,8 +14,9 @@ import {
 } from "@/components/dashboard/labels";
 import { SectionTitle, StatLine } from "@/components/dashboard/page-header";
 import { buildTodayHeadline } from "@/components/dashboard/today-headline";
-import { buttonVariants } from "@/components/ui/button";
+import { UploadButton, UploadDropzone } from "@/components/dashboard/upload-dropzone";
 import { getAppOrigin } from "@/lib/app-origin";
+import { documentUploadPrefix } from "@/lib/blob";
 import { prisma } from "@/lib/db";
 import { formatDate, formatInTimeZone, formatRelative } from "@/lib/format";
 import { requireWorkspace } from "@/lib/session";
@@ -45,6 +47,7 @@ export default async function DashboardPage() {
     alerts,
     upcomingFollowups,
     origin,
+    latestReadyDocument,
   ] = await Promise.all([
     prisma.document.count({ where: { organizationId, archivedAt: null } }),
     prisma.link.count({ where: { ...activeLinks, dealStatus: { in: ["OPEN", "CHANGE_REQUESTED"] } } }),
@@ -130,7 +133,13 @@ export default async function DashboardPage() {
       },
     }),
     getAppOrigin(),
+    prisma.document.findFirst({
+      where: { organizationId, archivedAt: null, status: "READY" },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, name: true },
+    }),
   ]);
+  const uploadPrefix = documentUploadPrefix(organizationId);
 
   if (documentCount === 0) {
     return (
@@ -138,15 +147,11 @@ export default async function DashboardPage() {
         <h1 className="max-w-2xl text-[2.25rem] leading-[1.1] font-medium tracking-[-0.03em] [font-stretch:88%]">
           Bienvenue sur Clozer.
         </h1>
-        <EmptyState
-          title="Importez votre premier devis."
-          description="Vous créerez ensuite un lien par prospect, et vous verrez ici qui le lit et qui relancer."
-          action={
-            <Link href="/documents" className={buttonVariants({ size: "lg" })}>
-              Importer un devis
-            </Link>
-          }
-        />
+        <p className="max-w-xl text-[15px] text-muted-foreground">
+          Importez votre premier devis. Vous créerez ensuite un lien par prospect, et vous verrez ici qui le lit
+          et qui relancer.
+        </p>
+        <UploadDropzone uploadPrefix={uploadPrefix} />
       </div>
     );
   }
@@ -161,6 +166,7 @@ export default async function DashboardPage() {
       .filter((action) => action.type === "VALIDATE_SIGN" && now.getTime() - action.createdAt.getTime() < DAY)
       .map((action) => action.prospect?.company ?? prospectName(action.link)),
     activeCount,
+    documentCount,
     unopenedCount,
     nextFollowupLabel: upcomingFollowups[0] ? formatRelative(upcomingFollowups[0].scheduledFor, now) : null,
   });
@@ -209,10 +215,15 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-12">
       <section className="space-y-5">
-        <h1 className="max-w-3xl text-[1.875rem] leading-[1.12] font-medium tracking-[-0.03em] text-balance [font-stretch:88%] sm:text-[2.25rem]">
-          {headline}
-          <span className="block text-muted-foreground">{hint}</span>
-        </h1>
+        <div className="flex flex-col-reverse gap-6 sm:flex-row sm:items-start sm:justify-between">
+          <h1 className="max-w-3xl text-[1.875rem] leading-[1.12] font-medium tracking-[-0.03em] text-balance [font-stretch:88%] sm:text-[2.25rem]">
+            {headline}
+            <span className="block text-muted-foreground">{hint}</span>
+          </h1>
+          <div className="shrink-0 sm:pt-1.5">
+            <UploadButton uploadPrefix={uploadPrefix} />
+          </div>
+        </div>
         <StatLine
           items={[
             { value: activeCount, label: activeCount === 1 ? "prospect en cours" : "prospects en cours" },
@@ -228,7 +239,16 @@ export default async function DashboardPage() {
           {rows.length === 0 ? (
             <EmptyState
               title="Aucun lien prospect pour l'instant."
-              description="Ouvrez un devis et créez un lien par prospect. Chacun apparaîtra ici, classé par température."
+              description={
+                latestReadyDocument
+                  ? `Créez un lien pour « ${latestReadyDocument.name} » et envoyez-le à votre prospect. Il apparaîtra ici, classé par température.`
+                  : "Ouvrez un devis et créez un lien par prospect. Chacun apparaîtra ici, classé par température."
+              }
+              action={
+                latestReadyDocument && (
+                  <NewLinkDialog documentId={latestReadyDocument.id} disabled={false} variant="outline" />
+                )
+              }
             />
           ) : (
             <ul className="divide-y divide-border overflow-hidden rounded-xl bg-card ring-1 ring-border">

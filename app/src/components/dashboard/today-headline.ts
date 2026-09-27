@@ -12,6 +12,8 @@ export type TodayHeadlineInput = {
   /** Prospects who validated in the last 24 hours. */
   freshValidations: string[];
   activeCount: number;
+  /** Quotes imported, with or without links. */
+  documentCount: number;
   /** Active links never opened. */
   unopenedCount: number;
   /** e.g. "demain à 09:00", already formatted; null when none is planned. */
@@ -67,9 +69,12 @@ export function buildTodayHeadline(input: TodayHeadlineInput): TodayHeadline {
   }
 
   if (input.activeCount === 0) {
+    if (input.documentCount === 0) {
+      return { headline: "Aucun devis pour l'instant.", hint: "Importez un PDF pour commencer." };
+    }
     return {
-      headline: "Aucun devis en cours.",
-      hint: "Créez un lien prospect depuis un devis pour commencer.",
+      headline: input.documentCount === 1 ? "Votre devis est prêt." : "Vos devis sont prêts.",
+      hint: "Créez un lien pour l'envoyer à un prospect.",
     };
   }
 
