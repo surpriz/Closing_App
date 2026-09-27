@@ -6,6 +6,8 @@ import { notFound } from "next/navigation";
 import { AutoRefresh } from "@/components/dashboard/auto-refresh";
 import { CopyButton } from "@/components/dashboard/copy-button";
 import { NewLinkDialog } from "@/components/dashboard/create-link-form";
+import { DeleteDocumentButton } from "@/components/dashboard/delete-document-button";
+import { DocumentPreview } from "@/components/dashboard/document-preview";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { EngineDevTools } from "@/components/dashboard/engine-dev-tools";
 import { FollowupsPanel, type FollowupItem } from "@/components/dashboard/followups-panel";
@@ -142,7 +144,12 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
               "Analyse du devis en cours, quelques secondes…"
             )
           }
-          action={<NewLinkDialog documentId={document.id} disabled={!ready} />}
+          action={
+            <div className="flex items-center gap-2">
+              <NewLinkDialog documentId={document.id} disabled={!ready} />
+              <DeleteDocumentButton documentId={document.id} linkCount={document.links.length} />
+            </div>
+          }
         />
         {analytics.viewCount > 0 && (
           <StatLine
@@ -165,6 +172,9 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
         <TabsList variant="line" className="w-full justify-start gap-6 border-b border-border pb-px">
           <TabsTrigger value="prospects" className="flex-none px-0 text-[15px]">
             Prospects <span className="text-muted-foreground tabular-nums">{document.links.length}</span>
+          </TabsTrigger>
+          <TabsTrigger value="preview" className="flex-none px-0 text-[15px]">
+            Aperçu
           </TabsTrigger>
           <TabsTrigger value="reading" className="flex-none px-0 text-[15px]">
             Lecture
@@ -239,6 +249,16 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
                 })}
               </ul>
             </Surface>
+          )}
+        </TabsContent>
+
+        <TabsContent value="preview">
+          {ready ? (
+            <DocumentPreview fileUrl={`/api/documents/${document.id}/file`} />
+          ) : (
+            <p className="py-16 text-center text-sm text-muted-foreground">
+              L&apos;aperçu s&apos;affichera une fois l&apos;analyse terminée.
+            </p>
           )}
         </TabsContent>
 

@@ -1,11 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { z } from "zod";
 
 import { documentUploadPrefix, headPrivateBlob } from "@/lib/blob";
 import { processDocument } from "@/lib/closing/documents/process-document";
+import { cancelOpenFollowups } from "@/lib/closing/followups/queue";
 import { prisma } from "@/lib/db";
 import { randomSlug } from "@/lib/ids";
 import { requireWorkspace } from "@/lib/session";
@@ -108,4 +110,28 @@ export async function createLink(
 
   revalidatePath(`/documents/${document.id}`);
   return { url: `/v/${link.slug}` };
+}
+
+// Soft delete: the quote and its links disappear from the app and stop opening
+// for prospects; pending follow-ups are cancelled. Views stay in the database.
+export async function archiveDocument(documentId: string) {
+  const { organization } = await requireWorkspace();
+  const document = await prisma.document.findFirst({
+    where: { id: documentId, organizationId: organization.id, archivedAt: null },
+    select: { id: true, links: { where: { archivedAt: null }, select: { id: true } } },
+  });
+  if (!document) redirect("/documents");
+
+  const now = new Date();
+  await prisma.$transaction([
+    prisma.link.updateMany({ where: { documentId: document.id, archivedAt: null }, data: { archivedAt: now } }),
+    prisma.document.update({ where: { id: document.id }, data: { archivedAt: now } }),
+  ]);
+  for (const link of document.links) {
+    await cancelOpenFollowups(link.id, "Devis supprimé");
+  }
+
+  revalidatePath("/documents");
+  revalidatePath("/dashboard");
+  redirect("/documents");
 }

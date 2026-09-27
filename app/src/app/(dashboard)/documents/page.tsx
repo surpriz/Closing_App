@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { DeleteDocumentButton } from "@/components/dashboard/delete-document-button";
 import { HeatBar } from "@/components/dashboard/heat";
 import { TIER_LABELS } from "@/components/dashboard/labels";
 import { PageHeader } from "@/components/dashboard/page-header";
@@ -74,7 +75,7 @@ export default async function DocumentsPage() {
           return (
             <li
               key={document.id}
-              className="relative flex items-stretch gap-4 py-4 pr-5 pl-4 transition-colors hover:bg-muted/50"
+              className="relative flex items-stretch gap-4 py-4 pr-3 pl-4 transition-colors hover:bg-muted/50"
             >
               <HeatBar tier={score?.tier ?? null} score={score?.score ?? 0} />
               <div className="min-w-0 flex-1">
@@ -105,6 +106,9 @@ export default async function DocumentsPage() {
                   {score ? TIER_LABELS[score.tier] : "Pas encore lu"}
                   {lastRead && <span className="text-muted-foreground">, lu {formatRelative(lastRead, now)}</span>}
                 </span>
+              </div>
+              <div className="relative z-10 flex items-center">
+                <DeleteDocumentButton documentId={document.id} linkCount={document._count.links} />
               </div>
             </li>
           );

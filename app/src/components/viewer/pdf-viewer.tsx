@@ -10,7 +10,7 @@ import { CtaBar } from "./cta-bar";
 import { PrivacyNotice } from "./privacy-notice";
 import { usePageTracking } from "./use-page-tracking";
 
-type PageSize = { width: number; height: number };
+export type PageSize = { width: number; height: number };
 
 type Props = {
   slug: string;
@@ -103,10 +103,11 @@ type PdfPageProps = {
   pdf: PDFDocumentProxy;
   pageNumber: number;
   size: PageSize;
-  registerPage: (pageNumber: number, element: HTMLElement | null) => void;
+  registerPage?: (pageNumber: number, element: HTMLElement | null) => void;
 };
 
-function PdfPage({ pdf, pageNumber, size, registerPage }: PdfPageProps) {
+// Also used by the seller's preview, which passes no registerPage (no tracking)
+export function PdfPage({ pdf, pageNumber, size, registerPage }: PdfPageProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [nearViewport, setNearViewport] = useState(false);
@@ -169,7 +170,7 @@ function PdfPage({ pdf, pageNumber, size, registerPage }: PdfPageProps) {
     <div
       ref={(element) => {
         containerRef.current = element;
-        registerPage(pageNumber, element);
+        registerPage?.(pageNumber, element);
       }}
       data-page={pageNumber}
       className="relative w-full overflow-hidden rounded-sm bg-white shadow-sm ring-1 ring-black/5"
