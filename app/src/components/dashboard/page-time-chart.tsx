@@ -18,39 +18,46 @@ export type PageTimeDatum = {
   isPricing: boolean;
 };
 
-const PRICING_COLOR = "#f59e0b";
-const PAGE_COLOR = "var(--primary)";
+const PRICING_COLOR = "var(--heat-warm)";
+const PAGE_COLOR = "var(--foreground)";
+const TICK = { fill: "var(--muted-foreground)", fontSize: 12 };
 
 export function PageTimeChart({ data }: { data: PageTimeDatum[] }) {
   return (
     <div className="h-64 w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-          <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--border)" />
+          <CartesianGrid vertical={false} stroke="var(--border)" />
           <XAxis
             dataKey="pageNumber"
             tickFormatter={(page: number) => `p.${page}`}
             tickLine={false}
             axisLine={false}
-            fontSize={12}
+            tick={TICK}
           />
           <YAxis
             tickFormatter={(seconds: number) => `${seconds}s`}
             tickLine={false}
             axisLine={false}
-            fontSize={12}
+            tick={TICK}
             width={44}
             allowDecimals={false}
           />
           <Tooltip
             cursor={{ fill: "var(--muted)" }}
+            contentStyle={{
+              borderRadius: 10,
+              border: "1px solid var(--border)",
+              boxShadow: "0 8px 24px -12px rgb(15 30 51 / 0.25)",
+              fontSize: 13,
+            }}
             labelFormatter={(label) => `Page ${label}`}
             formatter={(value, _name, item) => {
               const datum = item.payload as PageTimeDatum;
               return [`${value} s au total · ${datum.avgSeconds} s par lecture`, datum.isPricing ? "Tarifs" : "Lecture"];
             }}
           />
-          <Bar dataKey="totalSeconds" radius={[4, 4, 0, 0]}>
+          <Bar dataKey="totalSeconds" radius={[5, 5, 1, 1]} maxBarSize={36}>
             {data.map((datum) => (
               <Cell key={datum.pageNumber} fill={datum.isPricing ? PRICING_COLOR : PAGE_COLOR} />
             ))}

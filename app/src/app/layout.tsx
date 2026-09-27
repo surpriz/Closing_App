@@ -1,34 +1,28 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Instrument_Sans } from "next/font/google";
 
 import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const instrumentSans = Instrument_Sans({
+  variable: "--font-instrument-sans",
+  subsets: ["latin", "latin-ext"],
+  axes: ["wdth"],
 });
 
 export const metadata: Metadata = {
-  title: "Closing",
-  description: "Propositions commerciales traquées et relances intelligentes",
+  title: { default: "Clozer", template: "%s · Clozer" },
+  description: "Suivez qui lit vos devis et relancez au bon moment.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="fr"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">
-        {children}
-        <Toaster position="top-center" />
+    <html lang="fr" className={`${instrumentSans.variable} h-full antialiased`}>
+      <body className="flex min-h-full flex-col">
+        <TooltipProvider delay={200}>{children}</TooltipProvider>
+        <Toaster position="bottom-right" />
       </body>
     </html>
   );

@@ -1,7 +1,8 @@
 import Link from "next/link";
 
-import { DashboardNav } from "@/components/dashboard/dashboard-nav";
-import { SignOutButton } from "@/components/dashboard/sign-out-button";
+import { Logo } from "@/components/brand/logo";
+import { DashboardNav, MobileNav } from "@/components/dashboard/dashboard-nav";
+import { UserMenu } from "@/components/dashboard/user-menu";
 import { requireWorkspace } from "@/lib/session";
 
 export default async function DashboardLayout({
@@ -12,25 +13,26 @@ export default async function DashboardLayout({
   const { user, organization } = await requireWorkspace();
 
   return (
-    <div className="flex flex-1 flex-col bg-muted/30">
-      <header className="border-b bg-background">
-        <div className="mx-auto flex min-h-14 max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-2">
-          <Link href="/dashboard" className="font-semibold tracking-tight">
-            Closing
+    <div className="flex flex-1 flex-col">
+      <header className="sticky top-0 z-30 border-b border-border/70 bg-background/85 backdrop-blur">
+        <div className="mx-auto flex h-16 max-w-6xl items-center gap-8 px-4 sm:px-6">
+          <Link
+            href="/dashboard"
+            aria-label="Clozer, aujourd'hui"
+            className="rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+          >
+            <Logo />
           </Link>
-          {/* own row on small screens so the sign-out button keeps its space */}
-          <div className="order-last w-full sm:order-none sm:mr-auto sm:w-auto">
-            <DashboardNav />
-          </div>
-          <div className="flex items-center gap-3 text-sm">
-            <span className="hidden text-muted-foreground sm:inline">
-              {organization.name} · {user.email}
-            </span>
-            <SignOutButton />
+          <DashboardNav />
+          <div className="ml-auto">
+            <UserMenu name={user.name} email={user.email} workspace={organization.name} />
           </div>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-10 pb-28 sm:px-6 sm:pb-16">
+        {children}
+      </main>
+      <MobileNav />
     </div>
   );
 }

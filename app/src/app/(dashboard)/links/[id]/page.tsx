@@ -6,7 +6,7 @@ import { ActivityTimeline, type TimelineItem } from "@/components/dashboard/acti
 import { ArchiveLinkButton } from "@/components/dashboard/archive-link-button";
 import { CopyButton } from "@/components/dashboard/copy-button";
 import { DealStatusSelect } from "@/components/dashboard/deal-status-select";
-import { EngagementBadge } from "@/components/dashboard/engagement-badge";
+import { HeatDot } from "@/components/dashboard/heat";
 import { FollowupsPanel, type FollowupItem } from "@/components/dashboard/followups-panel";
 import {
   ALERT_TYPE_LABELS,
@@ -191,7 +191,7 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
           <CardContent className="space-y-1.5">
             <div className="text-xs text-muted-foreground">Intérêt</div>
             {link.engagementScore ? (
-              <EngagementBadge
+              <HeatDot
                 tier={link.engagementScore.tier}
                 score={link.engagementScore.score}
                 reasons={link.engagementScore.reasons}

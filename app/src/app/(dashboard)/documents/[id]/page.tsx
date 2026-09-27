@@ -6,7 +6,7 @@ import { AutoRefresh } from "@/components/dashboard/auto-refresh";
 import { CopyButton } from "@/components/dashboard/copy-button";
 import { CreateLinkForm } from "@/components/dashboard/create-link-form";
 import { DocumentStatusBadge } from "@/components/dashboard/document-status-badge";
-import { EngagementBadge } from "@/components/dashboard/engagement-badge";
+import { HeatDot } from "@/components/dashboard/heat";
 import { EngineDevTools } from "@/components/dashboard/engine-dev-tools";
 import { FollowupsPanel, type FollowupItem } from "@/components/dashboard/followups-panel";
 import {
@@ -254,7 +254,7 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
                       </TableCell>
                       <TableCell>
                         {link.engagementScore ? (
-                          <EngagementBadge
+                          <HeatDot
                             tier={link.engagementScore.tier}
                             score={link.engagementScore.score}
                             reasons={link.engagementScore.reasons}

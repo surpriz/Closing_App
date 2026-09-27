@@ -13,10 +13,10 @@ export type TimelineItem = {
 const ICONS: Record<TimelineItem["kind"], React.ReactNode> = {
   created: <Link2 className="size-3.5" />,
   view: <Eye className="size-3.5" />,
-  validated: <CheckCircle2 className="size-3.5 text-emerald-600" />,
-  change: <MessageSquare className="size-3.5 text-amber-600" />,
+  validated: <CheckCircle2 className="size-3.5" />,
+  change: <MessageSquare className="size-3.5" />,
   followup: <Send className="size-3.5" />,
-  alert: <BellRing className="size-3.5 text-red-600" />,
+  alert: <BellRing className="size-3.5 text-heat-hot" />,
 };
 
 export function ActivityTimeline({ items }: { items: TimelineItem[] }) {
@@ -28,7 +28,7 @@ export function ActivityTimeline({ items }: { items: TimelineItem[] }) {
     <ol className="relative space-y-4 border-l pl-6">
       {items.map((item) => (
         <li key={item.id} className="relative text-sm">
-          <span className="absolute -left-[33px] flex size-6 items-center justify-center rounded-full border bg-background">
+          <span className="absolute -left-[33px] flex size-6 items-center justify-center rounded-full border bg-card">
             {ICONS[item.kind]}
           </span>
           <div className="flex flex-wrap items-baseline justify-between gap-x-3">
