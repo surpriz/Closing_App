@@ -1,3 +1,6 @@
+import type { Metadata } from "next";
+
+import { PageHeader } from "@/components/dashboard/page-header";
 import { SettingsForm } from "@/components/dashboard/settings-form";
 import { getLanguageModel } from "@/lib/closing/ai/provider";
 import { isWhatsAppConfigured } from "@/lib/closing/channels/whatsapp";
@@ -15,19 +18,16 @@ function safeDecrypt(value: string | null) {
   }
 }
 
+export const metadata: Metadata = { title: "Réglages" };
+
 export default async function SettingsPage() {
   const { organization } = await requireWorkspace();
   const settings = await getWorkspaceSettings(organization.id);
   const llm = getLanguageModel("followup");
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Paramètres</h1>
-        <p className="text-sm text-muted-foreground">
-          Règles par défaut des relances et des alertes pour {organization.name}.
-        </p>
-      </div>
+    <div className="space-y-10">
+      <PageHeader title="Réglages" description={`Relances et alertes de l'espace ${organization.name}.`} />
 
       <SettingsForm
         initial={{
@@ -52,7 +52,6 @@ export default async function SettingsPage() {
           email: isEmailConfigured(),
           whatsapp: isWhatsAppConfigured(),
           ai: llm ? `${llm.provider} · ${llm.modelId}` : null,
-          cron: !!process.env.CRON_SECRET,
         }}
       />
     </div>
