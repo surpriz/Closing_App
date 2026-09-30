@@ -13,6 +13,8 @@ export const WORKSPACE_DEFAULTS = {
 // within this window, which also tolerates short tab switches.
 export const TRACKING_FLUSH_INTERVAL_MS = 10_000;
 export const LIVE_VIEW_WINDOW_MS = 2 * 60 * 1000;
+// A reader counts as "reading now" if a flush arrived this recently
+export const LIVE_READING_WINDOW_MS = 2 * TRACKING_FLUSH_INTERVAL_MS + 5_000;
 
 // Reading time stops counting after this long without scroll, mouse or key
 export const IDLE_TIMEOUT_MS = 2 * 60 * 1000;

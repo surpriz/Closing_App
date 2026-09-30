@@ -31,6 +31,9 @@ export type TrackingEvent = {
 export type TrackingBatch = {
   viewId: string;
   events: TrackingEvent[];
+  currentPage?: number;
+  /** The tab was hidden or closed: the reader is no longer on the document. */
+  left?: boolean;
 };
 
 export type EngagementReason = {

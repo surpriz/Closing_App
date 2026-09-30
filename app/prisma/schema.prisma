@@ -421,6 +421,8 @@ model DocumentView {
   lastSeenAt      DateTime @default(now())
   totalDurationMs Int      @default(0)
   maxPageReached  Int      @default(1)
+  currentPage     Int? // page on screen at the last flush, for the live indicator
+  leftAt          DateTime? // tab hidden or closed; cleared by the next flush with reading time
 
   pageViews    PageView[]
   actions      ProspectAction[]

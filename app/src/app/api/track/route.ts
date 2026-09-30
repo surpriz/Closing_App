@@ -23,8 +23,9 @@ const batchSchema = z.object({
         scrollDepth: z.number().min(0).max(1).optional(),
       }),
     )
-    .min(1)
     .max(MAX_TRACKING_EVENTS_PER_BATCH),
+  currentPage: z.number().int().min(1).max(5000).optional(),
+  left: z.boolean().optional(),
 });
 
 // Receives reading time per page from the viewer (fetch keepalive or sendBeacon)
@@ -38,7 +39,7 @@ export async function POST(request: Request) {
 
   const parsed = batchSchema.safeParse(payload);
   if (!parsed.success) return new Response(null, { status: 400 });
-  const { viewId, events } = parsed.data;
+  const { viewId, events, currentPage, left = false } = parsed.data;
 
   const view = await prisma.documentView.findUnique({
     where: { id: viewId },
@@ -65,11 +66,19 @@ export async function POST(request: Request) {
       ...e,
       durationMs: Math.min(e.durationMs, MAX_PAGE_DURATION_PER_FLUSH_MS),
     }));
-  if (valid.length === 0) return new Response(null, { status: 204 });
+  const now = new Date();
+
+  // An idle reader sends nothing, so only reading time keeps a view live
+  if (valid.length === 0) {
+    if (left) {
+      await prisma.documentView.update({ where: { id: view.id }, data: { leftAt: now } });
+    }
+    return new Response(null, { status: 204 });
+  }
 
   const totalMs = valid.reduce((sum, e) => sum + e.durationMs, 0);
   const maxPage = Math.max(...valid.map((e) => e.pageNumber));
-  const now = new Date();
+  const onScreen = currentPage && currentPage <= numPages ? currentPage : maxPage;
 
   await prisma.$transaction([
     ...valid.map(
@@ -89,7 +98,9 @@ export async function POST(request: Request) {
       UPDATE "document_views" SET
         "totalDurationMs" = "totalDurationMs" + CAST(${totalMs} AS INTEGER),
         "maxPageReached" = GREATEST("maxPageReached", CAST(${maxPage} AS INTEGER)),
-        "lastSeenAt" = ${now}
+        "lastSeenAt" = ${now},
+        "currentPage" = CAST(${onScreen} AS INTEGER),
+        "leftAt" = ${left ? now : null}
       WHERE "id" = ${view.id}`,
     prisma.link.update({
       where: { id: view.linkId },

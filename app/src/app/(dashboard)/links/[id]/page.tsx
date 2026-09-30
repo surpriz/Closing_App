@@ -17,11 +17,15 @@ import {
   TIER_LABELS,
 } from "@/components/dashboard/labels";
 import { LinkSettingsDialog } from "@/components/dashboard/link-settings-form";
+import { LiveActivity } from "@/components/dashboard/live-activity";
 import { SectionTitle, StatLine, Surface } from "@/components/dashboard/page-header";
 import { PageTimeChart, type PageTimeDatum } from "@/components/dashboard/page-time-chart";
 import { ProspectForm } from "@/components/dashboard/prospect-form";
+import { ScoreGuide, TemperatureGauge } from "@/components/dashboard/temperature";
 import { getAppOrigin } from "@/lib/app-origin";
 import { getLinkAnalytics } from "@/lib/closing/analytics";
+import { freshEngagementScore } from "@/lib/closing/engagement/refresh-score";
+import { getLinkLiveState } from "@/lib/closing/live";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
 import type { EngagementReason } from "@/lib/closing/types";
 import { prisma } from "@/lib/db";
@@ -60,7 +64,9 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
   });
   if (!link) notFound();
 
-  const [analytics, settings, origin, followups, alerts, actions] = await Promise.all([
+  const score = await freshEngagementScore(link.id, link.engagementScore);
+
+  const [analytics, settings, origin, followups, alerts, actions, live] = await Promise.all([
     getLinkAnalytics(link.id),
     getWorkspaceSettings(organization.id),
     getAppOrigin(),
@@ -77,6 +83,7 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
       take: 20,
       include: { prospect: { select: { name: true, email: true } } },
     }),
+    getLinkLiveState(link.id),
   ]);
 
   const mainProspect = link.prospects[0];
@@ -95,9 +102,7 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
     };
   });
 
-  const reasons = Array.isArray(link.engagementScore?.reasons)
-    ? (link.engagementScore.reasons as unknown as EngagementReason[])
-    : [];
+  const reasons = Array.isArray(score?.reasons) ? (score.reasons as unknown as EngagementReason[]) : [];
 
   const timeline: TimelineItem[] = [
     { id: `created-${link.id}`, at: link.createdAt, kind: "created" as const, title: "Lien créé" },
@@ -169,7 +174,6 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
   }));
 
   const now = new Date();
-  const score = link.engagementScore;
   const contactLine = [mainProspect?.company ? mainProspect.name : null, mainProspect?.email]
     .filter(Boolean)
     .join(", ");
@@ -225,61 +229,80 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
         </div>
       </div>
 
-      <Surface className="overflow-hidden">
-        <div className="grid md:grid-cols-[16rem_minmax(0,1fr)]">
-          <div className="relative space-y-3 border-b border-border p-5 md:border-r md:border-b-0">
-            <span
-              aria-hidden
-              className={cn(
-                "absolute inset-y-0 left-0 w-1 origin-bottom animate-heat-fill motion-reduce:animate-none",
-                score ? HEAT_BG[score.tier] : "bg-foreground/10",
+      <div className="space-y-4">
+        <LiveActivity
+          key={live.stamp}
+          linkId={link.id}
+          initial={live}
+          pageCount={link.document.kind === "URL" ? null : link.document.pages.length}
+        />
+
+        <Surface className="overflow-hidden">
+          <div className="grid md:grid-cols-[16rem_minmax(0,1fr)]">
+            <div className="relative space-y-3 border-b border-border p-5 md:border-r md:border-b-0">
+              <span
+                aria-hidden
+                className={cn(
+                  "absolute inset-y-0 left-0 w-1 origin-bottom animate-heat-fill motion-reduce:animate-none",
+                  score ? HEAT_BG[score.tier] : "bg-foreground/10",
+                )}
+              />
+              <p className="text-sm text-muted-foreground">Température</p>
+              <p className="text-[2rem] leading-none font-medium tracking-[-0.03em] [font-stretch:88%]">
+                {score ? TIER_LABELS[score.tier] : "Pas encore lu"}
+              </p>
+              {score && (
+                <>
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-semibold text-foreground tabular-nums">{score.score}</span> sur 100
+                  </p>
+                  <TemperatureGauge tier={score.tier} score={score.score} />
+                </>
               )}
-            />
-            <p className="text-sm text-muted-foreground">Température</p>
-            <p className="text-[2rem] leading-none font-medium tracking-[-0.03em] [font-stretch:88%]">
-              {score ? TIER_LABELS[score.tier] : "Pas encore lu"}
-            </p>
-            {score && (
-              <p className="text-sm text-muted-foreground">
-                <span className="font-semibold text-foreground tabular-nums">{score.score}</span> sur 100
-              </p>
-            )}
+            </div>
+            <div className="p-5">
+              <p className="mb-3 text-sm text-muted-foreground">Pourquoi</p>
+              {reasons.length === 0 ? (
+                <p className="text-[15px]">
+                  Rien encore : la température monte dès que le prospect ouvre son lien et lit.
+                </p>
+              ) : (
+                <ul className="grid gap-x-8 gap-y-2 text-[15px] sm:grid-cols-2">
+                  {reasons.map((reason) => (
+                    <li key={reason.code} className="flex items-baseline justify-between gap-3">
+                      <span>
+                        {SCORE_REASON_LABELS[reason.code] ?? reason.code}
+                        {reason.detail && <span className="text-muted-foreground"> ({reason.detail})</span>}
+                      </span>
+                      <span className="text-sm text-muted-foreground tabular-nums">+{reason.weight}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {analytics.viewCount > 0 && (
+                <div className="mt-5 border-t border-border pt-4">
+                  <StatLine
+                    items={[
+                      { value: analytics.viewCount, label: analytics.viewCount === 1 ? "lecture" : "lectures" },
+                      { value: formatDuration(analytics.totalDurationMs), label: "de lecture" },
+                      ...(live.readers.length > 0
+                        ? [{ value: "en ce moment", label: "lu", labelFirst: true }]
+                        : analytics.lastActivityAt
+                          ? [{ value: formatRelative(analytics.lastActivityAt, now), label: "lu", labelFirst: true }]
+                          : []),
+                    ]}
+                  />
+                </div>
+              )}
+              <ScoreGuide
+                hasPages={link.document.kind !== "URL"}
+                hasPricing={link.document.pages.some((page) => page.tags.includes("PRICING"))}
+                pricingThresholdSec={link.hotPricingThresholdSec ?? settings.hotPricingThresholdSec}
+              />
+            </div>
           </div>
-          <div className="p-5">
-            <p className="mb-3 text-sm text-muted-foreground">Pourquoi</p>
-            {reasons.length === 0 ? (
-              <p className="text-[15px]">
-                Rien encore : la température monte dès que le prospect ouvre son lien et lit.
-              </p>
-            ) : (
-              <ul className="grid gap-x-8 gap-y-2 text-[15px] sm:grid-cols-2">
-                {reasons.map((reason) => (
-                  <li key={reason.code} className="flex items-baseline justify-between gap-3">
-                    <span>
-                      {SCORE_REASON_LABELS[reason.code] ?? reason.code}
-                      {reason.detail && <span className="text-muted-foreground"> ({reason.detail})</span>}
-                    </span>
-                    <span className="text-sm text-muted-foreground tabular-nums">+{reason.weight}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-            {analytics.viewCount > 0 && (
-              <div className="mt-5 border-t border-border pt-4">
-                <StatLine
-                  items={[
-                    { value: analytics.viewCount, label: analytics.viewCount === 1 ? "lecture" : "lectures" },
-                    { value: formatDuration(analytics.totalDurationMs), label: "de lecture" },
-                    ...(analytics.lastActivityAt
-                      ? [{ value: formatRelative(analytics.lastActivityAt, now), label: "lu", labelFirst: true }]
-                      : []),
-                  ]}
-                />
-              </div>
-            )}
-          </div>
-        </div>
-      </Surface>
+        </Surface>
+      </div>
 
       <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="space-y-10">

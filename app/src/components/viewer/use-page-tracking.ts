@@ -65,10 +65,12 @@ export function usePageTracking(
 
   const getViewId = useCallback(() => viewIdRef.current, []);
 
-  const flush = useCallback((useBeacon: boolean) => {
+  // `left` is sent even without reading time, so the seller stops seeing the
+  // prospect as live as soon as the tab is hidden or closed
+  const flush = useCallback((useBeacon: boolean, left = false) => {
     const viewId = viewIdRef.current;
     const pending = pendingRef.current;
-    if (!viewId || pending.size === 0) return;
+    if (!viewId || (pending.size === 0 && !left)) return;
 
     const events: TrackingEvent[] = [...pending.entries()]
       .filter(([, value]) => value.ms >= 250)
@@ -78,9 +80,14 @@ export function usePageTracking(
         scrollDepth: Math.round(value.depth * 100) / 100,
       }));
     pending.clear();
-    if (events.length === 0) return;
+    if (events.length === 0 && !left) return;
 
-    const body = JSON.stringify({ viewId, events } satisfies TrackingBatch);
+    const body = JSON.stringify({
+      viewId,
+      events,
+      currentPage: currentPageRef.current,
+      ...(left && { left }),
+    } satisfies TrackingBatch);
     if (useBeacon && navigator.sendBeacon) {
       navigator.sendBeacon("/api/track", new Blob([body], { type: "application/json" }));
       return;
@@ -173,9 +180,9 @@ export function usePageTracking(
 
     const flushTimer = setInterval(() => flush(false), TRACKING_FLUSH_INTERVAL_MS);
     const onVisibilityChange = () => {
-      if (document.visibilityState === "hidden") flush(true);
+      if (document.visibilityState === "hidden") flush(true, true);
     };
-    const onPageHide = () => flush(true);
+    const onPageHide = () => flush(true, true);
     document.addEventListener("visibilitychange", onVisibilityChange);
     window.addEventListener("pagehide", onPageHide);
 
@@ -186,7 +193,7 @@ export function usePageTracking(
       clearInterval(flushTimer);
       document.removeEventListener("visibilitychange", onVisibilityChange);
       window.removeEventListener("pagehide", onPageHide);
-      flush(true);
+      flush(true, true);
     };
   }, [pageCount, flush, embedded, countTime]);
 
