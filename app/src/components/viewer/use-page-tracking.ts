@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
+  EMBED_IDLE_TIMEOUT_MS,
   IDLE_TIMEOUT_MS,
   TRACKING_FLUSH_INTERVAL_MS,
 } from "@/lib/closing/constants";
@@ -33,8 +34,23 @@ function startView(slug: string) {
   return request;
 }
 
+type TrackingOptions = {
+  /**
+   * The content is an iframe (URL documents). Scrolls and clicks inside it
+   * never reach this window, so time counts while the tab is visible and
+   * focused, with a longer idle timeout.
+   */
+  embedded?: boolean;
+  /** False records the opening only (site shown in a new tab). */
+  countTime?: boolean;
+};
+
 // Counts visible, active reading time per page and reports it every ~10s
-export function usePageTracking(slug: string, pageCount: number) {
+export function usePageTracking(
+  slug: string,
+  pageCount: number,
+  { embedded = false, countTime = true }: TrackingOptions = {},
+) {
   const [currentPage, setCurrentPage] = useState(1);
   const viewIdRef = useRef<string | null>(null);
   const currentPageRef = useRef(1);
@@ -120,13 +136,16 @@ export function usePageTracking(slug: string, pageCount: number) {
   }, [pageCount]);
 
   useEffect(() => {
-    if (!pageCount) return;
+    if (!pageCount || !countTime) return;
 
+    const idleTimeoutMs = embedded ? EMBED_IDLE_TIMEOUT_MS : IDLE_TIMEOUT_MS;
     const markActive = () => {
       lastInteractionRef.current = Date.now();
     };
     const activityEvents = ["scroll", "mousemove", "keydown", "touchstart", "wheel", "click"] as const;
     activityEvents.forEach((name) => window.addEventListener(name, markActive, { passive: true }));
+    // Focus moving into the iframe blurs this window
+    if (embedded) window.addEventListener("blur", markActive);
 
     let lastTick = Date.now();
     lastInteractionRef.current = lastTick;
@@ -136,7 +155,8 @@ export function usePageTracking(slug: string, pageCount: number) {
       lastTick = now;
 
       if (document.visibilityState !== "visible") return;
-      if (now - lastInteractionRef.current > IDLE_TIMEOUT_MS) return;
+      if (embedded && !document.hasFocus()) return;
+      if (now - lastInteractionRef.current > idleTimeoutMs) return;
 
       const page = currentPageRef.current;
       const entry = pendingRef.current.get(page) ?? { ms: 0, depth: 0 };
@@ -161,13 +181,14 @@ export function usePageTracking(slug: string, pageCount: number) {
 
     return () => {
       activityEvents.forEach((name) => window.removeEventListener(name, markActive));
+      window.removeEventListener("blur", markActive);
       clearInterval(tick);
       clearInterval(flushTimer);
       document.removeEventListener("visibilitychange", onVisibilityChange);
       window.removeEventListener("pagehide", onPageHide);
       flush(true);
     };
-  }, [pageCount, flush]);
+  }, [pageCount, flush, embedded, countTime]);
 
   return { currentPage, registerPage, getViewId };
 }

@@ -17,7 +17,10 @@ export async function getLinkForViewer(slug: string) {
         select: {
           id: true,
           name: true,
+          kind: true,
           status: true,
+          externalUrl: true,
+          embedUrl: true,
           numPages: true,
           blobPathname: true,
           archivedAt: true,

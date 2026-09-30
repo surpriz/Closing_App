@@ -6,7 +6,7 @@ export type FollowupPromptInput = FollowupDraftInput & {
   pricingExcerpt: string | null;
 };
 
-export const FOLLOWUP_SYSTEM_PROMPT = `You write follow-up messages on behalf of a B2B salesperson whose prospect received a commercial proposal.
+export const FOLLOWUP_SYSTEM_PROMPT = `You write follow-up messages on behalf of a B2B salesperson whose prospect received a document: a commercial proposal, a presentation, a video or a shared web page.
 
 Rules:
 - Write in the language of the given locale (e.g. "fr-FR" means French).
@@ -16,14 +16,14 @@ Rules:
 - No pressure tactics, no fake urgency.
 - EMAIL: subject of 3 to 8 words; body of 50 to 120 words with a greeting, one or two short paragraphs, and the sender signature at the end if provided.
 - WHATSAPP: subject must be null; 1 to 3 short sentences, 60 words maximum.
-- Include the proposal URL exactly once, unchanged.`;
+- Include the document URL exactly once, unchanged.`;
 
 const GOALS: Record<FollowupDraftInput["trigger"], string> = {
   HOT_PRICING:
     "The prospect is likely weighing the investment. Offer to clarify the pricing options or discuss a payment schedule or phasing, and suggest a short call. Stay factual about what the proposal contains.",
   ANTI_GHOSTING:
-    "The prospect has not opened the proposal yet. Send a gentle reminder that brings a small piece of value (for example offering a quick walkthrough). Mention the offer validity only if it appears in the document.",
-  MANUAL: "Send a short, friendly follow-up about the proposal and offer to answer questions.",
+    "The prospect has not opened the document yet. Send a gentle reminder that brings a small piece of value (for example offering a quick walkthrough). Mention the offer validity only if it appears in the document.",
+  MANUAL: "Send a short, friendly follow-up about the document and offer to answer questions.",
 };
 
 function block(label: string, content: string | null | undefined) {
@@ -37,9 +37,9 @@ export function buildFollowupPrompt(input: FollowupPromptInput) {
     `Locale: ${input.locale}`,
     `Prospect name: ${input.prospectName ?? "unknown"}`,
     `Prospect company: ${input.company ?? "unknown"}`,
-    `Proposal title: ${input.documentName}`,
-    `Proposal URL: ${input.proposalUrl}`,
-    input.daysSinceSent !== null ? `Days since the proposal was sent: ${input.daysSinceSent}` : "",
+    `Document title: ${input.documentName}`,
+    `Document URL: ${input.proposalUrl}`,
+    input.daysSinceSent !== null ? `Days since the document was sent: ${input.daysSinceSent}` : "",
     `Sender name: ${input.senderName ?? "unknown"}`,
     input.aiTone ? `Tone requested by the sender: ${input.aiTone}` : "",
     block("sender_signature", input.senderSignature),

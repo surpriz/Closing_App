@@ -17,12 +17,12 @@ describe("buildTodayHeadline", () => {
   it("leads with a fresh validation", () => {
     expect(
       buildTodayHeadline({ ...base, freshValidations: ["Acme"], hotProspects: ["Lumen"] }),
-    ).toEqual({ headline: "Acme a validé son devis.", hint: "Appelez Lumen en premier." });
+    ).toEqual({ headline: "Acme a validé.", hint: "Appelez Lumen en premier." });
   });
 
   it("groups several validations", () => {
     expect(buildTodayHeadline({ ...base, freshValidations: ["Acme", "Lumen", "Norda"] }).headline).toBe(
-      "Acme et 2 autres ont validé leur devis.",
+      "Acme et 2 autres ont validé.",
     );
   });
 
@@ -43,27 +43,27 @@ describe("buildTodayHeadline", () => {
 
   it("stays calm when prospects are only warm", () => {
     expect(buildTodayHeadline({ ...base, warmCount: 3, nextFollowupLabel: "demain à 09:00" })).toEqual({
-      headline: "3 prospects lisent vos devis.",
+      headline: "3 prospects consultent vos documents.",
       hint: "Rien d'urgent. Prochaine relance demain à 09:00.",
     });
   });
 
   it("says when nothing has been opened yet", () => {
     expect(buildTodayHeadline({ ...base, activeCount: 2, unopenedCount: 2 }).headline).toBe(
-      "Aucun devis n'a encore été ouvert.",
+      "Aucun lien n'a encore été ouvert.",
     );
   });
 
-  it("invites to create a link when quotes exist but none is sent", () => {
+  it("invites to create a link when documents exist but none is sent", () => {
     expect(buildTodayHeadline({ ...base, activeCount: 0, documentCount: 1 })).toEqual({
-      headline: "Votre devis est prêt.",
+      headline: "Votre document est prêt.",
       hint: "Créez un lien pour l'envoyer à un prospect.",
     });
   });
 
-  it("invites to import when there is no quote at all", () => {
+  it("invites to import when there is no document at all", () => {
     expect(buildTodayHeadline({ ...base, activeCount: 0, documentCount: 0 }).headline).toBe(
-      "Aucun devis pour l'instant.",
+      "Aucun document pour l'instant.",
     );
   });
 

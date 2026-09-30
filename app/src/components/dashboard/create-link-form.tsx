@@ -60,7 +60,7 @@ function CreateLinkForm({ documentId, onCreated }: { documentId: string; onCreat
         <Input id="name" name="name" placeholder="Acme, version 2" />
       </div>
       <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg bg-muted px-3 py-2.5 text-sm">
-        Demander son email au lecteur avant d&apos;ouvrir le devis
+        Demander son email au lecteur avant d&apos;ouvrir le document
         <Switch checked={requireEmail} onCheckedChange={(checked) => setRequireEmail(checked)} />
         <input type="hidden" name="requireEmail" value={requireEmail ? "true" : "false"} />
       </label>
@@ -87,7 +87,7 @@ export function NewLinkDialog({
       <DialogTrigger
         disabled={disabled}
         render={<Button size="lg" variant={variant} />}
-        title={disabled ? "Disponible une fois l'analyse du devis terminée" : undefined}
+        title={disabled ? "Disponible une fois l'analyse du document terminée" : undefined}
       >
         <Plus />
         Nouveau lien prospect

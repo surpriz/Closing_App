@@ -148,8 +148,8 @@ export default async function DashboardPage() {
           Bienvenue sur Clozer.
         </h1>
         <p className="max-w-xl text-[15px] text-muted-foreground">
-          Importez votre premier devis. Vous créerez ensuite un lien par prospect, et vous verrez ici qui le lit
-          et qui relancer.
+          Ajoutez votre premier document : un devis ou une présentation en PDF, ou un lien Notion, Loom, Figma…
+          Vous créerez ensuite un lien par prospect, et vous verrez ici qui le consulte et qui relancer.
         </p>
         <UploadDropzone uploadPrefix={uploadPrefix} />
       </div>
@@ -242,7 +242,7 @@ export default async function DashboardPage() {
               description={
                 latestReadyDocument
                   ? `Créez un lien pour « ${latestReadyDocument.name} » et envoyez-le à votre prospect. Il apparaîtra ici, classé par température.`
-                  : "Ouvrez un devis et créez un lien par prospect. Chacun apparaîtra ici, classé par température."
+                  : "Ouvrez un document et créez un lien par prospect. Chacun apparaîtra ici, classé par température."
               }
               action={
                 latestReadyDocument && (

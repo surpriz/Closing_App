@@ -16,7 +16,7 @@ type AlertInput = {
 
 function alertText(type: SellerAlertType, who: string, documentName: string, payload: AlertInput["payload"]) {
   if (type === "MULTI_VIEWER") {
-    return `${payload.liveViewers} personnes lisent « ${documentName} » en ce moment (${who}). C'est le bon moment pour appeler.`;
+    return `${payload.liveViewers} personnes consultent « ${documentName} » en ce moment (${who}). C'est le bon moment pour appeler.`;
   }
   return `${who} a rouvert « ${documentName} » après ${payload.inactiveDays} jours sans lecture. C'est le bon moment pour reprendre contact.`;
 }

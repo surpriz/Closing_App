@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 
 import { PdfPage, type PageSize } from "@/components/viewer/pdf-viewer";
 
-/** The seller's own view of the quote. Same rendering as the prospect's, without tracking. */
+/** The seller's own view of a PDF document. Same rendering as the prospect's, without tracking. */
 export function DocumentPreview({ fileUrl }: { fileUrl: string }) {
   const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null);
   const [sizes, setSizes] = useState<PageSize[]>([]);

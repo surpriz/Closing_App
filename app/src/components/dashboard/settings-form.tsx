@@ -234,10 +234,10 @@ export function SettingsForm({ initial, providers }: Props) {
               max={20}
               defaultValue={initial.multiViewerThreshold}
             />
-            personnes lisent le devis en même temps
+            personnes consultent le document en même temps
           </Row>
           <Row>
-            <label htmlFor="reopenAfterInactivityDays">Prévenir si le devis est rouvert après</label>
+            <label htmlFor="reopenAfterInactivityDays">Prévenir si le document est rouvert après</label>
             <Inline
               id="reopenAfterInactivityDays"
               name="reopenAfterInactivityDays"

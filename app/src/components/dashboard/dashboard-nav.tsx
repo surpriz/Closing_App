@@ -8,7 +8,7 @@ import { cn } from "cn";
 
 const ITEMS = [
   { href: "/dashboard", label: "Aujourd'hui", icon: Sun, match: ["/dashboard", "/links"] },
-  { href: "/documents", label: "Devis", icon: FileText, match: ["/documents"] },
+  { href: "/documents", label: "Documents", icon: FileText, match: ["/documents"] },
   { href: "/settings", label: "Réglages", icon: Settings2, match: ["/settings"] },
 ];
 

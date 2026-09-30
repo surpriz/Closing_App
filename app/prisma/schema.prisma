@@ -143,6 +143,11 @@ enum DocumentStatus {
   FAILED
 }
 
+enum DocumentKind {
+  FILE // PDF stored in Blob, rendered with pdf.js
+  URL // external web page (Notion, Loom, Figma...) shown in an iframe
+}
+
 enum PageTag {
   PRICING
   TERMS
@@ -257,11 +262,14 @@ model Document {
   ownerId        String?
   owner          User?        @relation(fields: [ownerId], references: [id], onDelete: SetNull)
 
+  kind            DocumentKind   @default(FILE)
   name            String
-  blobUrl         String
-  blobPathname    String
+  blobUrl         String?
+  blobPathname    String?
   contentType     String         @default("application/pdf")
-  sizeBytes       Int
+  sizeBytes       Int            @default(0)
+  externalUrl     String? // URL documents: the page as pasted by the seller
+  embedUrl        String? // URL documents: what the viewer frames, null when the site refuses framing
   numPages        Int?
   status          DocumentStatus @default(UPLOADED)
   processingError String?

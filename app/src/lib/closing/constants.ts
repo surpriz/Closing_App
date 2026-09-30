@@ -16,6 +16,9 @@ export const LIVE_VIEW_WINDOW_MS = 2 * 60 * 1000;
 
 // Reading time stops counting after this long without scroll, mouse or key
 export const IDLE_TIMEOUT_MS = 2 * 60 * 1000;
+// Same for URL documents, where activity inside the iframe is invisible to us
+// (a Loom video, a long Notion page scrolled under the mouse)
+export const EMBED_IDLE_TIMEOUT_MS = 10 * 60 * 1000;
 
 // Reopening the link within this window continues the same view
 export const VIEW_SESSION_WINDOW_MS = 30 * 60 * 1000;

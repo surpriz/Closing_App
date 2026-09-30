@@ -12,7 +12,7 @@ export type TodayHeadlineInput = {
   /** Prospects who validated in the last 24 hours. */
   freshValidations: string[];
   activeCount: number;
-  /** Quotes imported, with or without links. */
+  /** Documents added (PDFs and web links), with or without prospect links. */
   documentCount: number;
   /** Active links never opened. */
   unopenedCount: number;
@@ -40,8 +40,8 @@ export function buildTodayHeadline(input: TodayHeadlineInput): TodayHeadline {
     return {
       headline:
         others === 0
-          ? `${first} a validé son devis.`
-          : `${first} et ${others} ${plural(others, "autre", "autres")} ont validé leur devis.`,
+          ? `${first} a validé.`
+          : `${first} et ${others} ${plural(others, "autre", "autres")} ont validé.`,
       hint: hotHint(input) ?? "Préparez la suite pendant que c'est chaud.",
     };
   }
@@ -70,10 +70,10 @@ export function buildTodayHeadline(input: TodayHeadlineInput): TodayHeadline {
 
   if (input.activeCount === 0) {
     if (input.documentCount === 0) {
-      return { headline: "Aucun devis pour l'instant.", hint: "Importez un PDF pour commencer." };
+      return { headline: "Aucun document pour l'instant.", hint: "Ajoutez un PDF ou un lien pour commencer." };
     }
     return {
-      headline: input.documentCount === 1 ? "Votre devis est prêt." : "Vos devis sont prêts.",
+      headline: input.documentCount === 1 ? "Votre document est prêt." : "Vos documents sont prêts.",
       hint: "Créez un lien pour l'envoyer à un prospect.",
     };
   }
@@ -86,8 +86,8 @@ export function buildTodayHeadline(input: TodayHeadlineInput): TodayHeadline {
     return {
       headline:
         input.warmCount === 1
-          ? "Un prospect lit votre devis."
-          : `${input.warmCount} prospects lisent vos devis.`,
+          ? "Un prospect consulte votre document."
+          : `${input.warmCount} prospects consultent vos documents.`,
       hint: `Rien d'urgent. ${followupHint}`,
     };
   }
@@ -96,8 +96,8 @@ export function buildTodayHeadline(input: TodayHeadlineInput): TodayHeadline {
     return {
       headline:
         input.unopenedCount === 1
-          ? "Votre devis n'a pas encore été ouvert."
-          : "Aucun devis n'a encore été ouvert.",
+          ? "Votre lien n'a pas encore été ouvert."
+          : "Aucun lien n'a encore été ouvert.",
       hint: followupHint,
     };
   }

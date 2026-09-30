@@ -21,12 +21,12 @@ export function DeleteDocumentButton({ documentId, linkCount }: { documentId: st
 
   return (
     <Dialog>
-      <DialogTrigger render={<Button variant="ghost" size="icon-lg" aria-label="Supprimer le devis" className="text-muted-foreground hover:text-foreground" />}>
+      <DialogTrigger render={<Button variant="ghost" size="icon-lg" aria-label="Supprimer le document" className="text-muted-foreground hover:text-foreground" />}>
         <Trash2 />
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Supprimer ce devis ?</DialogTitle>
+          <DialogTitle>Supprimer ce document ?</DialogTitle>
           <DialogDescription>
             {linkCount === 0
               ? "Il disparaît de Clozer."
@@ -36,13 +36,13 @@ export function DeleteDocumentButton({ documentId, linkCount }: { documentId: st
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <DialogClose render={<Button variant="outline" />}>Garder le devis</DialogClose>
+          <DialogClose render={<Button variant="outline" />}>Garder le document</DialogClose>
           <Button
             variant="destructive"
             disabled={pending}
             onClick={() => startTransition(() => archiveDocument(documentId))}
           >
-            {pending ? "Suppression…" : "Supprimer le devis"}
+            {pending ? "Suppression…" : "Supprimer le document"}
           </Button>
         </DialogFooter>
       </DialogContent>

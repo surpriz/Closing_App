@@ -15,6 +15,7 @@ export async function GET(_request: NextRequest, ctx: RouteContext<"/api/v/[slug
   const access = await getViewerAccess(link);
   if (!access.allowed) return new Response("Forbidden", { status: 403 });
 
+  if (!link.document.blobPathname) return new Response("Not found", { status: 404 });
   const blob = await streamPrivateBlob(link.document.blobPathname);
   if (!blob) return new Response("Not found", { status: 404 });
 

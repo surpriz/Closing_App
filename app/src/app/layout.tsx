@@ -14,7 +14,7 @@ const instrumentSans = Instrument_Sans({
 
 export const metadata: Metadata = {
   title: { default: "Clozer", template: "%s · Clozer" },
-  description: "Suivez qui lit vos devis et relancez au bon moment.",
+  description: "Suivez qui consulte vos documents et relancez au bon moment.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

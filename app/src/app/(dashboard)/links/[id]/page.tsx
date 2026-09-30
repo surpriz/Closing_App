@@ -50,6 +50,7 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
         select: {
           id: true,
           name: true,
+          kind: true,
           pages: { select: { pageNumber: true, tags: true }, orderBy: { pageNumber: "asc" } },
         },
       },
@@ -107,7 +108,7 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
       title: `Lecture par ${view.prospect?.name ?? view.email ?? "un lecteur anonyme"}`,
       detail: [
         formatDuration(view.totalDurationMs),
-        `jusqu'à la page ${view.maxPageReached}`,
+        link.document.kind === "URL" ? null : `jusqu'à la page ${view.maxPageReached}`,
         [view.deviceType, view.browser].filter(Boolean).join(" "),
         view.timezone,
       ]
@@ -282,21 +283,23 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
 
       <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="space-y-10">
-          <section>
-            <SectionTitle
-              hint="pour ce prospect"
-              action={
-                <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                  <span className="size-2.5 rounded-sm bg-heat-warm" /> page de tarifs
-                </span>
-              }
-            >
-              Temps passé par page
-            </SectionTitle>
-            <Surface className="p-4">
-              <PageTimeChart data={chartData} />
-            </Surface>
-          </section>
+          {link.document.kind !== "URL" && (
+            <section>
+              <SectionTitle
+                hint="pour ce prospect"
+                action={
+                  <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <span className="size-2.5 rounded-sm bg-heat-warm" /> page de tarifs
+                  </span>
+                }
+              >
+                Temps passé par page
+              </SectionTitle>
+              <Surface className="p-4">
+                <PageTimeChart data={chartData} />
+              </Surface>
+            </section>
+          )}
 
           <section>
             <SectionTitle>Relances</SectionTitle>

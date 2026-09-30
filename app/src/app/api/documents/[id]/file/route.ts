@@ -15,7 +15,7 @@ export async function GET(_request: NextRequest, ctx: RouteContext<"/api/documen
     where: { id, organizationId: workspace.organization.id, archivedAt: null },
     select: { blobPathname: true, name: true },
   });
-  if (!document) return new Response("Not found", { status: 404 });
+  if (!document?.blobPathname) return new Response("Not found", { status: 404 });
 
   const blob = await streamPrivateBlob(document.blobPathname);
   if (!blob) return new Response("Not found", { status: 404 });

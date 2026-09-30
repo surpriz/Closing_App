@@ -11,10 +11,19 @@ import { prisma } from "@/lib/db";
 import { formatRelative } from "@/lib/format";
 import { requireWorkspace } from "@/lib/session";
 
-export const metadata: Metadata = { title: "Devis" };
+export const metadata: Metadata = { title: "Documents" };
 
 function plural(count: number, one: string, many: string) {
   return `${count} ${count === 1 ? one : many}`;
+}
+
+function hostOf(url: string | null) {
+  if (!url) return null;
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return null;
+  }
 }
 
 export default async function DocumentsPage() {
@@ -52,7 +61,10 @@ export default async function DocumentsPage() {
   if (documents.length === 0) {
     return (
       <div className="space-y-8">
-        <PageHeader title="Devis" description="Importez un devis, puis créez un lien par prospect." />
+        <PageHeader
+          title="Documents"
+          description="Ajoutez un PDF ou collez un lien (Notion, Loom, Figma…), puis créez un lien par prospect."
+        />
         <UploadDropzone uploadPrefix={uploadPrefix} />
       </div>
     );
@@ -61,8 +73,8 @@ export default async function DocumentsPage() {
   return (
     <div className="space-y-8">
       <PageHeader
-        title="Devis"
-        description="Glissez un PDF n'importe où sur la page pour l'importer."
+        title="Documents"
+        description="Glissez un PDF ou collez un lien n'importe où sur la page pour l'ajouter."
         action={<UploadButton uploadPrefix={uploadPrefix} />}
       />
 
@@ -92,6 +104,7 @@ export default async function DocumentsPage() {
                     <span className="text-destructive">L&apos;analyse a échoué</span>
                   ) : (
                     [
+                      document.kind === "URL" ? `Lien web, ${hostOf(document.externalUrl) ?? "page externe"}` : null,
                       plural(document._count.links, "prospect", "prospects"),
                       plural(reads, "lecture", "lectures"),
                       document.numPages ? plural(document.numPages, "page", "pages") : null,

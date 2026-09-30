@@ -14,7 +14,8 @@ export async function processDocument(documentId: string) {
     where: { id: documentId },
     select: { id: true, blobPathname: true },
   });
-  if (!document) return;
+  // URL documents have no file and are ready from the start
+  if (!document?.blobPathname) return;
 
   try {
     const data = await readPrivateBlob(document.blobPathname);

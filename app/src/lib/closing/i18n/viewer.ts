@@ -26,12 +26,16 @@ export type ViewerLabels = {
   emailSubmit: string;
   invalidEmail: string;
   privacyNotice: string;
+  privacyNoticeWeb: string;
   privacyLink: string;
+  openExternal: string;
+  externalTitle: string;
+  externalDescription: string;
 };
 
 const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
   en: {
-    loading: "Loading the proposal…",
+    loading: "Loading the document…",
     loadError: "The document could not be loaded. Please refresh the page.",
     processing: "This document is being prepared. Please come back in a moment.",
     page: "Page",
@@ -45,17 +49,21 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     send: "Send",
     cancel: "Cancel",
     actionError: "Something went wrong, please try again.",
-    emailTitle: "Access the proposal",
+    emailTitle: "Access the document",
     emailDescription: "Enter your email to view this document.",
     emailLabel: "Work email",
     nameLabel: "Name (optional)",
     emailSubmit: "View the document",
     invalidEmail: "Please enter a valid email address.",
     privacyNotice: "The sender can see which pages of this document are viewed and for how long, to follow up at the right time.",
+    privacyNoticeWeb: "The sender can see when this document is opened and for how long, to follow up at the right time.",
     privacyLink: "Privacy",
+    openExternal: "Open in a new tab",
+    externalTitle: "This document opens on its own site",
+    externalDescription: "It cannot be displayed here. Open it in a new tab, then come back to reply.",
   },
   fr: {
-    loading: "Chargement de la proposition…",
+    loading: "Chargement du document…",
     loadError: "Impossible de charger le document. Rechargez la page.",
     processing: "Ce document est en cours de préparation. Revenez dans un instant.",
     page: "Page",
@@ -69,17 +77,21 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     send: "Envoyer",
     cancel: "Annuler",
     actionError: "Une erreur est survenue, réessayez.",
-    emailTitle: "Accéder à la proposition",
+    emailTitle: "Accéder au document",
     emailDescription: "Indiquez votre email pour consulter ce document.",
     emailLabel: "Email professionnel",
     nameLabel: "Nom (facultatif)",
     emailSubmit: "Voir le document",
     invalidEmail: "Adresse email invalide.",
     privacyNotice: "L'expéditeur voit quelles pages de ce document sont consultées et combien de temps, pour vous recontacter au bon moment.",
+    privacyNoticeWeb: "L'expéditeur voit quand ce document est ouvert et combien de temps, pour vous recontacter au bon moment.",
     privacyLink: "Confidentialité",
+    openExternal: "Ouvrir dans un nouvel onglet",
+    externalTitle: "Ce document s'ouvre sur son propre site",
+    externalDescription: "Il ne peut pas s'afficher ici. Ouvrez-le dans un nouvel onglet, puis revenez pour répondre.",
   },
   es: {
-    loading: "Cargando la propuesta…",
+    loading: "Cargando el documento…",
     loadError: "No se pudo cargar el documento. Recarga la página.",
     processing: "Este documento se está preparando. Vuelve en un momento.",
     page: "Página",
@@ -93,17 +105,21 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     send: "Enviar",
     cancel: "Cancelar",
     actionError: "Algo salió mal, inténtalo de nuevo.",
-    emailTitle: "Acceder a la propuesta",
+    emailTitle: "Acceder al documento",
     emailDescription: "Introduce tu email para ver este documento.",
     emailLabel: "Email profesional",
     nameLabel: "Nombre (opcional)",
     emailSubmit: "Ver el documento",
     invalidEmail: "Introduce un email válido.",
     privacyNotice: "El remitente puede ver qué páginas de este documento se consultan y durante cuánto tiempo, para contactarte en el momento adecuado.",
+    privacyNoticeWeb: "El remitente puede ver cuándo se abre este documento y durante cuánto tiempo, para contactarte en el momento adecuado.",
     privacyLink: "Privacidad",
+    openExternal: "Abrir en una pestaña nueva",
+    externalTitle: "Este documento se abre en su propio sitio",
+    externalDescription: "No se puede mostrar aquí. Ábrelo en una pestaña nueva y vuelve para responder.",
   },
   de: {
-    loading: "Angebot wird geladen…",
+    loading: "Dokument wird geladen…",
     loadError: "Das Dokument konnte nicht geladen werden. Bitte Seite neu laden.",
     processing: "Dieses Dokument wird vorbereitet. Bitte versuchen Sie es gleich erneut.",
     page: "Seite",
@@ -117,14 +133,18 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     send: "Senden",
     cancel: "Abbrechen",
     actionError: "Etwas ist schiefgelaufen, bitte erneut versuchen.",
-    emailTitle: "Zum Angebot",
+    emailTitle: "Zum Dokument",
     emailDescription: "Geben Sie Ihre E-Mail ein, um dieses Dokument anzusehen.",
     emailLabel: "Geschäftliche E-Mail",
     nameLabel: "Name (optional)",
     emailSubmit: "Dokument ansehen",
     invalidEmail: "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
     privacyNotice: "Der Absender sieht, welche Seiten dieses Dokuments wie lange angesehen werden, um sich zum richtigen Zeitpunkt zu melden.",
+    privacyNoticeWeb: "Der Absender sieht, wann und wie lange dieses Dokument geöffnet wird, um sich zum richtigen Zeitpunkt zu melden.",
     privacyLink: "Datenschutz",
+    openExternal: "In neuem Tab öffnen",
+    externalTitle: "Dieses Dokument öffnet sich auf seiner eigenen Website",
+    externalDescription: "Es kann hier nicht angezeigt werden. Öffnen Sie es in einem neuen Tab und kommen Sie dann zurück, um zu antworten.",
   },
 };
 

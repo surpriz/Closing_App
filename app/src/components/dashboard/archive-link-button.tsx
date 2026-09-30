@@ -29,7 +29,7 @@ export function ArchiveLinkButton({ linkId }: { linkId: string }) {
         <DialogHeader>
           <DialogTitle>Archiver ce lien ?</DialogTitle>
           <DialogDescription>
-            Le prospect ne pourra plus ouvrir le devis, et les relances prévues sont annulées.
+            Le prospect ne pourra plus ouvrir le document, et les relances prévues sont annulées.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

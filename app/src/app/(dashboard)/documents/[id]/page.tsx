@@ -1,4 +1,4 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ExternalLink } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: PageProps<"/documents/[id]">)
     where: { id, organizationId: organization.id },
     select: { name: true },
   });
-  return { title: document?.name ?? "Devis" };
+  return { title: document?.name ?? "Document" };
 }
 
 export default async function DocumentDetailPage({ params }: PageProps<"/documents/[id]">) {
@@ -112,6 +112,8 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
 
   const now = new Date();
   const ready = document.status === "READY";
+  const isWeb = document.kind === "URL";
+  const webHost = document.externalUrl ? new URL(document.externalUrl).hostname.replace(/^www\./, "") : null;
   const pendingFollowups = followups.filter((f) => ["PENDING", "GENERATED", "SCHEDULED"].includes(f.status)).length;
 
   return (
@@ -123,7 +125,7 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
           href="/documents"
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
         >
-          <ArrowLeft className="size-4" /> Devis
+          <ArrowLeft className="size-4" /> Documents
         </Link>
         <PageHeader
           title={document.name}
@@ -132,6 +134,20 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
               <span className="text-destructive">
                 L&apos;analyse a échoué : {document.processingError ?? "erreur inconnue"}
               </span>
+            ) : isWeb ? (
+              <>
+                Lien web,{" "}
+                <a
+                  href={document.externalUrl ?? undefined}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 underline underline-offset-2 hover:text-foreground"
+                >
+                  {webHost}
+                  <ExternalLink className="size-3.5" />
+                </a>
+                , ajouté le {formatDate(document.createdAt)}
+              </>
             ) : ready ? (
               [
                 document.numPages ? `${document.numPages} pages` : null,
@@ -141,7 +157,7 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
                 .filter(Boolean)
                 .join(", ")
             ) : (
-              "Analyse du devis en cours, quelques secondes…"
+              "Analyse du document en cours, quelques secondes…"
             )
           }
           action={
@@ -189,7 +205,11 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
           {document.links.length === 0 ? (
             <EmptyState
               title="Créez un lien pour chaque prospect."
-              description="Envoyez-le à la place du PDF. Vous verrez qui l'ouvre, combien de temps il lit, et Clozer relancera pour vous."
+              description={
+                isWeb
+                  ? "Envoyez-le à la place du lien d'origine. Vous verrez qui l'ouvre, combien de temps il y passe, et Clozer relancera pour vous."
+                  : "Envoyez-le à la place du PDF. Vous verrez qui l'ouvre, combien de temps il lit, et Clozer relancera pour vous."
+              }
               action={<NewLinkDialog documentId={document.id} disabled={!ready} variant="outline" />}
             />
           ) : (
@@ -253,7 +273,32 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
         </TabsContent>
 
         <TabsContent value="preview">
-          {ready ? (
+          {isWeb ? (
+            document.embedUrl ? (
+              <iframe
+                src={document.embedUrl}
+                title={document.name}
+                className="h-[75vh] w-full rounded-xl bg-white ring-1 ring-border"
+                allow="autoplay; fullscreen; clipboard-write; encrypted-media; picture-in-picture"
+                allowFullScreen
+                referrerPolicy="strict-origin-when-cross-origin"
+                sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms allow-presentation"
+              />
+            ) : (
+              <p className="py-16 text-center text-sm text-muted-foreground">
+                Ce site refuse l&apos;affichage intégré. Vos prospects verront un bouton pour l&apos;ouvrir dans un
+                nouvel onglet.{" "}
+                <a
+                  href={document.externalUrl ?? undefined}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-2 hover:text-foreground"
+                >
+                  Ouvrir la page
+                </a>
+              </p>
+            )
+          ) : ready ? (
             <DocumentPreview fileUrl={`/api/documents/${document.id}/file`} />
           ) : (
             <p className="py-16 text-center text-sm text-muted-foreground">
@@ -263,41 +308,49 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
         </TabsContent>
 
         <TabsContent value="reading" className="space-y-10">
-          <section>
-            <SectionTitle
-              hint="toutes lectures confondues"
-              action={
-                <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                  <span className="size-2.5 rounded-sm bg-heat-warm" /> page de tarifs
-                </span>
-              }
-            >
-              Temps passé par page
-            </SectionTitle>
-            <Surface className="p-4">
-              {chartData.length > 0 ? (
-                <PageTimeChart data={chartData} />
-              ) : (
-                <p className="py-12 text-center text-sm text-muted-foreground">
-                  {ready ? "Aucune page détectée." : "Analyse du devis en cours…"}
+          {isWeb ? (
+            <p className="max-w-2xl text-[15px] text-muted-foreground">
+              {document.embedUrl
+                ? "Pour un lien web, Clozer mesure le temps passé sur la page, sans détail page par page."
+                : "Ce site s'ouvre dans un nouvel onglet : Clozer voit quand le prospect ouvre son lien, mais pas combien de temps il reste sur la page."}
+            </p>
+          ) : (
+            <section>
+              <SectionTitle
+                hint="toutes lectures confondues"
+                action={
+                  <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <span className="size-2.5 rounded-sm bg-heat-warm" /> page de tarifs
+                  </span>
+                }
+              >
+                Temps passé par page
+              </SectionTitle>
+              <Surface className="p-4">
+                {chartData.length > 0 ? (
+                  <PageTimeChart data={chartData} />
+                ) : (
+                  <p className="py-12 text-center text-sm text-muted-foreground">
+                    {ready ? "Aucune page détectée." : "Analyse du document en cours…"}
+                  </p>
+                )}
+              </Surface>
+              {taggedPages.length > 0 && (
+                <p className="mt-3 text-sm text-muted-foreground">
+                  Repéré automatiquement :{" "}
+                  {taggedPages
+                    .map((page) => `page ${page.pageNumber} (${page.tags.map((t) => TAG_LABELS[t].toLowerCase()).join(", ")})`)
+                    .join(", ")}
                 </p>
               )}
-            </Surface>
-            {taggedPages.length > 0 && (
-              <p className="mt-3 text-sm text-muted-foreground">
-                Repéré automatiquement :{" "}
-                {taggedPages
-                  .map((page) => `page ${page.pageNumber} (${page.tags.map((t) => TAG_LABELS[t].toLowerCase()).join(", ")})`)
-                  .join(", ")}
-              </p>
-            )}
-          </section>
+            </section>
+          )}
 
           <section>
             <SectionTitle>Dernières lectures</SectionTitle>
             {analytics.recentViews.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                Personne n&apos;a encore ouvert ce devis. Les lectures s&apos;afficheront ici.
+                Personne n&apos;a encore ouvert ce document. Les lectures s&apos;afficheront ici.
               </p>
             ) : (
               <Surface>

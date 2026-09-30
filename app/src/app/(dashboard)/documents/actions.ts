@@ -5,8 +5,11 @@ import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { z } from "zod";
 
+import { getAppOrigin } from "@/lib/app-origin";
 import { documentUploadPrefix, headPrivateBlob } from "@/lib/blob";
+import { inspectWebLink } from "@/lib/closing/documents/inspect-web-link";
 import { processDocument } from "@/lib/closing/documents/process-document";
+import { parseWebUrl } from "@/lib/closing/documents/web-link";
 import { cancelOpenFollowups } from "@/lib/closing/followups/queue";
 import { prisma } from "@/lib/db";
 import { randomSlug } from "@/lib/ids";
@@ -47,6 +50,33 @@ export async function createDocument(input: { pathname: string; name: string }) 
   });
 
   after(() => processDocument(document.id));
+
+  revalidatePath("/documents");
+  return { id: document.id };
+}
+
+export type CreateWebDocumentResult = { id: string } | { error: string };
+
+// A pasted URL (Notion, Loom, Figma...). Nothing to extract: ready at once.
+export async function createWebDocument(input: { url: string }): Promise<CreateWebDocumentResult> {
+  const { user, organization } = await requireWorkspace();
+  const url = parseWebUrl(String(input.url ?? "").slice(0, 2048));
+  if (!url) return { error: "Ce lien n'est pas valide." };
+
+  const { name, embedUrl } = await inspectWebLink(url, await getAppOrigin());
+  const document = await prisma.document.create({
+    data: {
+      organizationId: organization.id,
+      ownerId: user.id,
+      kind: "URL",
+      name,
+      externalUrl: url.toString(),
+      embedUrl,
+      contentType: "text/html",
+      status: "READY",
+    },
+    select: { id: true },
+  });
 
   revalidatePath("/documents");
   return { id: document.id };
@@ -112,7 +142,7 @@ export async function createLink(
   return { url: `/v/${link.slug}` };
 }
 
-// Soft delete: the quote and its links disappear from the app and stop opening
+// Soft delete: the document and its links disappear from the app and stop opening
 // for prospects; pending follow-ups are cancelled. Views stay in the database.
 export async function archiveDocument(documentId: string) {
   const { organization } = await requireWorkspace();
@@ -128,7 +158,7 @@ export async function archiveDocument(documentId: string) {
     prisma.document.update({ where: { id: document.id }, data: { archivedAt: now } }),
   ]);
   for (const link of document.links) {
-    await cancelOpenFollowups(link.id, "Devis supprimé");
+    await cancelOpenFollowups(link.id, "Document supprimé");
   }
 
   revalidatePath("/documents");

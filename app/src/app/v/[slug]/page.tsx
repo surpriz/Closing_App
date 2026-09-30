@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { EmailGate } from "@/components/viewer/email-gate";
 import { PdfViewer } from "@/components/viewer/pdf-viewer";
+import { WebViewer } from "@/components/viewer/web-viewer";
 import { getViewerLabels, pickLocale } from "@/lib/closing/i18n/viewer";
 import { getLinkForViewer, getViewerAccess } from "@/lib/closing/links";
 
@@ -42,6 +43,20 @@ export default async function ViewerPage({ params }: PageProps<"/v/[slug]">) {
       <main className="flex flex-1 items-center justify-center px-4 text-center text-sm text-muted-foreground">
         {labels.processing}
       </main>
+    );
+  }
+
+  if (link.document.kind === "URL" && link.document.externalUrl) {
+    return (
+      <WebViewer
+        slug={slug}
+        documentName={link.document.name}
+        externalUrl={link.document.externalUrl}
+        embedUrl={link.document.embedUrl}
+        labels={labels}
+        ctaEnabled={link.ctaEnabled}
+        dealStatus={link.dealStatus}
+      />
     );
   }
 

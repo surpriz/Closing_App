@@ -7,10 +7,10 @@ export default function NotFound() {
   return (
     <EmptyState
       title="Cette page n'existe plus."
-      description="Le devis ou le lien a peut-être été archivé."
+      description="Le document ou le lien a peut-être été archivé."
       action={
         <Link href="/documents" className={buttonVariants({ variant: "outline" })}>
-          Retour aux devis
+          Retour aux documents
         </Link>
       }
     />
