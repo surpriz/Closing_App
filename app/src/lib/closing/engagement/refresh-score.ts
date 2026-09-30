@@ -72,3 +72,16 @@ export async function refreshEngagementScore(linkId: string, now = new Date()) {
     update: data,
   });
 }
+
+const SCORE_MAX_AGE_MS = 5 * 60 * 1000;
+
+// Recency points fade with time while the score is only stored on activity:
+// recompute a stored score that is more than a few minutes old
+export async function freshEngagementScore<T extends { computedAt: Date }>(
+  linkId: string,
+  stored: T | null,
+  now = new Date(),
+) {
+  if (!stored || now.getTime() - stored.computedAt.getTime() <= SCORE_MAX_AGE_MS) return stored;
+  return refreshEngagementScore(linkId, now);
+}
