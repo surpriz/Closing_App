@@ -1,0 +1,8 @@
+.output
+.wxt
+web-ext.config.ts
+
+# Public API origins per build mode: safe to commit. Secrets go in .env.local.
+!.env.development
+!.env.staging
+!.env.production
