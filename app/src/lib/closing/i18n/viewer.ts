@@ -31,6 +31,14 @@ export type ViewerLabels = {
   openExternal: string;
   externalTitle: string;
   externalDescription: string;
+  sharedBy: string;
+  readyPrompt: string;
+  confirmTitle: string;
+  confirmAction: string;
+  validatedNext: string;
+  changeTitle: string;
+  notFoundTitle: string;
+  notFoundText: string;
 };
 
 const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
@@ -61,6 +69,14 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     openExternal: "Open in a new tab",
     externalTitle: "This document opens on its own site",
     externalDescription: "It cannot be displayed here. Open it in a new tab, then come back to reply.",
+    sharedBy: "Shared by",
+    readyPrompt: "Ready to move forward?",
+    confirmTitle: "Accept this proposal",
+    confirmAction: "Yes, I accept",
+    validatedNext: "The sender has been notified and will be in touch shortly.",
+    changeTitle: "What would you like to change?",
+    notFoundTitle: "This link is no longer available",
+    notFoundText: "It may have expired or been withdrawn. Ask the sender for a new link.",
   },
   fr: {
     loading: "Chargement du document…",
@@ -89,6 +105,14 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     openExternal: "Ouvrir dans un nouvel onglet",
     externalTitle: "Ce document s'ouvre sur son propre site",
     externalDescription: "Il ne peut pas s'afficher ici. Ouvrez-le dans un nouvel onglet, puis revenez pour répondre.",
+    sharedBy: "Envoyé par",
+    readyPrompt: "Prêt à avancer ?",
+    confirmTitle: "Valider cette proposition",
+    confirmAction: "Oui, je valide",
+    validatedNext: "L'expéditeur est prévenu et revient vers vous rapidement.",
+    changeTitle: "Que souhaitez-vous ajuster ?",
+    notFoundTitle: "Ce lien n'est plus disponible",
+    notFoundText: "Il a peut-être expiré ou été retiré. Demandez un nouveau lien à l'expéditeur.",
   },
   es: {
     loading: "Cargando el documento…",
@@ -117,6 +141,14 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     openExternal: "Abrir en una pestaña nueva",
     externalTitle: "Este documento se abre en su propio sitio",
     externalDescription: "No se puede mostrar aquí. Ábrelo en una pestaña nueva y vuelve para responder.",
+    sharedBy: "Enviado por",
+    readyPrompt: "¿Listo para avanzar?",
+    confirmTitle: "Aceptar esta propuesta",
+    confirmAction: "Sí, acepto",
+    validatedNext: "El remitente ha sido avisado y te contactará en breve.",
+    changeTitle: "¿Qué te gustaría ajustar?",
+    notFoundTitle: "Este enlace ya no está disponible",
+    notFoundText: "Puede haber caducado o haber sido retirado. Pide un nuevo enlace al remitente.",
   },
   de: {
     loading: "Dokument wird geladen…",
@@ -145,6 +177,14 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     openExternal: "In neuem Tab öffnen",
     externalTitle: "Dieses Dokument öffnet sich auf seiner eigenen Website",
     externalDescription: "Es kann hier nicht angezeigt werden. Öffnen Sie es in einem neuen Tab und kommen Sie dann zurück, um zu antworten.",
+    sharedBy: "Gesendet von",
+    readyPrompt: "Bereit für den nächsten Schritt?",
+    confirmTitle: "Dieses Angebot annehmen",
+    confirmAction: "Ja, ich nehme an",
+    validatedNext: "Der Absender wurde benachrichtigt und meldet sich in Kürze.",
+    changeTitle: "Was möchten Sie anpassen?",
+    notFoundTitle: "Dieser Link ist nicht mehr verfügbar",
+    notFoundText: "Er ist möglicherweise abgelaufen oder wurde zurückgezogen. Bitten Sie den Absender um einen neuen Link.",
   },
 };
 

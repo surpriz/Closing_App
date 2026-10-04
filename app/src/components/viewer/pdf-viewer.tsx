@@ -9,6 +9,7 @@ import type { ViewerLabels } from "@/lib/closing/i18n/viewer";
 import { CtaBar } from "./cta-bar";
 import { PrivacyNotice } from "./privacy-notice";
 import { usePageTracking } from "./use-page-tracking";
+import { ViewerHeader } from "./viewer-header";
 
 export type PageSize = { width: number; height: number };
 
@@ -16,12 +17,13 @@ type Props = {
   slug: string;
   fileUrl: string;
   documentName: string;
+  senderName: string | null;
   labels: ViewerLabels;
   ctaEnabled: boolean;
   dealStatus: DealStatus;
 };
 
-export function PdfViewer({ slug, fileUrl, documentName, labels, ctaEnabled, dealStatus }: Props) {
+export function PdfViewer({ slug, fileUrl, documentName, senderName, labels, ctaEnabled, dealStatus }: Props) {
   const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null);
   const [sizes, setSizes] = useState<PageSize[]>([]);
   const [failed, setFailed] = useState(false);
@@ -61,22 +63,36 @@ export function PdfViewer({ slug, fileUrl, documentName, labels, ctaEnabled, dea
   }, [fileUrl]);
 
   return (
-    <div className="flex min-h-full flex-1 flex-col bg-muted">
-      <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
-        <div className="mx-auto flex h-12 max-w-4xl items-center justify-between gap-4 px-4">
-          <h1 className="truncate text-sm font-medium">{documentName}</h1>
-          {sizes.length > 0 && (
-            <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-              {labels.page} {currentPage} {labels.of} {sizes.length}
+    <div className="flex min-h-full flex-1 flex-col bg-muted/60">
+      <ViewerHeader
+        documentName={documentName}
+        senderName={senderName}
+        labels={labels}
+        progress={sizes.length > 0 ? currentPage / sizes.length : undefined}
+        aside={
+          sizes.length > 0 && (
+            <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 font-mono text-xs text-muted-foreground tabular-nums">
+              {currentPage} / {sizes.length}
+              <span className="sr-only">
+                {" "}
+                {labels.page} {currentPage} {labels.of} {sizes.length}
+              </span>
             </span>
-          )}
-        </div>
-      </header>
+          )
+        }
+      />
 
-      <main className="mx-auto w-full max-w-4xl flex-1 space-y-4 px-2 py-4 pb-28 sm:px-4 sm:py-6">
+      <main className="mx-auto w-full max-w-4xl flex-1 space-y-4 px-2 py-4 pb-40 sm:space-y-6 sm:px-4 sm:py-8">
         {failed && <p className="py-24 text-center text-sm text-muted-foreground">{labels.loadError}</p>}
         {!failed && !pdf && (
-          <p className="py-24 text-center text-sm text-muted-foreground">{labels.loading}</p>
+          <div role="status" aria-label={labels.loading} className="space-y-4 sm:space-y-6">
+            {[0, 1].map((i) => (
+              <div
+                key={i}
+                className="aspect-[1/1.414] w-full animate-pulse rounded-sm bg-card shadow-md ring-1 ring-border"
+              />
+            ))}
+          </div>
         )}
         {pdf &&
           sizes.map((size, index) => (
@@ -93,7 +109,14 @@ export function PdfViewer({ slug, fileUrl, documentName, labels, ctaEnabled, dea
       </main>
 
       {ctaEnabled && pdf && (
-        <CtaBar slug={slug} labels={labels} initialStatus={dealStatus} getViewId={getViewId} />
+        <CtaBar
+          slug={slug}
+          labels={labels}
+          initialStatus={dealStatus}
+          getViewId={getViewId}
+          documentName={documentName}
+          atEnd={sizes.length > 0 && currentPage >= sizes.length}
+        />
       )}
     </div>
   );

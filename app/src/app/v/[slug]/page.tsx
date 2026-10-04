@@ -1,3 +1,4 @@
+import { Loader2 } from "lucide-react";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
@@ -7,6 +8,7 @@ import { PdfViewer } from "@/components/viewer/pdf-viewer";
 import { WebViewer } from "@/components/viewer/web-viewer";
 import { getViewerLabels, pickLocale } from "@/lib/closing/i18n/viewer";
 import { getLinkForViewer, getViewerAccess } from "@/lib/closing/links";
+import { prisma } from "@/lib/db";
 import { isWorkspaceMember } from "@/lib/session";
 
 import { unlockWithEmail } from "./actions";
@@ -29,13 +31,21 @@ export default async function ViewerPage({ params }: PageProps<"/v/[slug]">) {
 
   const locale = pickLocale((await headers()).get("accept-language"));
   const labels = getViewerLabels(locale);
-  const access = await getViewerAccess(link);
+  const [access, settings] = await Promise.all([
+    getViewerAccess(link),
+    prisma.workspaceSettings.findUnique({
+      where: { organizationId: link.organizationId },
+      select: { senderName: true },
+    }),
+  ]);
+  const senderName = settings?.senderName?.trim() || null;
 
   if (!access.allowed) {
     return (
       <EmailGate
         action={unlockWithEmail.bind(null, slug)}
         documentName={link.document.name}
+        senderName={senderName}
         labels={labels}
       />
     );
@@ -43,8 +53,11 @@ export default async function ViewerPage({ params }: PageProps<"/v/[slug]">) {
 
   if (link.document.status !== "READY") {
     return (
-      <main className="flex flex-1 items-center justify-center px-4 text-center text-sm text-muted-foreground">
-        {labels.processing}
+      <main className="flex flex-1 items-center justify-center px-4">
+        <p role="status" className="flex items-center gap-3 text-sm text-muted-foreground">
+          <Loader2 className="size-4 animate-spin" aria-hidden />
+          {labels.processing}
+        </p>
       </main>
     );
   }
@@ -66,6 +79,7 @@ export default async function ViewerPage({ params }: PageProps<"/v/[slug]">) {
         <WebViewer
           slug={slug}
           documentName={link.document.name}
+          senderName={senderName}
           externalUrl={link.document.externalUrl}
           embedUrl={link.document.embedUrl}
           labels={labels}
@@ -83,6 +97,7 @@ export default async function ViewerPage({ params }: PageProps<"/v/[slug]">) {
         slug={slug}
         fileUrl={`/api/v/${slug}/file`}
         documentName={link.document.name}
+        senderName={senderName}
         labels={labels}
         ctaEnabled={link.ctaEnabled}
         dealStatus={link.dealStatus}

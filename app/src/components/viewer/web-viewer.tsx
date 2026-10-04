@@ -9,10 +9,12 @@ import type { ViewerLabels } from "@/lib/closing/i18n/viewer";
 import { CtaBar } from "./cta-bar";
 import { PrivacyNotice } from "./privacy-notice";
 import { usePageTracking } from "./use-page-tracking";
+import { ViewerHeader } from "./viewer-header";
 
 type Props = {
   slug: string;
   documentName: string;
+  senderName: string | null;
   externalUrl: string;
   /** Null when the site refuses to be framed: the prospect opens it in a new tab. */
   embedUrl: string | null;
@@ -22,29 +24,33 @@ type Props = {
 };
 
 // URL documents (Notion, Loom, Figma...) are tracked as a single page
-export function WebViewer({ slug, documentName, externalUrl, embedUrl, labels, ctaEnabled, dealStatus }: Props) {
+export function WebViewer({ slug, documentName, senderName, externalUrl, embedUrl, labels, ctaEnabled, dealStatus }: Props) {
   const { getViewId } = usePageTracking(slug, 1, { embedded: true, countTime: !!embedUrl });
 
   return (
-    <div className="flex h-dvh flex-col bg-muted">
-      <header className="shrink-0 border-b bg-background">
-        <div className="mx-auto flex h-12 max-w-6xl items-center justify-between gap-4 px-4">
-          <h1 className="truncate text-sm font-medium">{documentName}</h1>
-          {embedUrl && (
+    <div className="flex h-dvh flex-col bg-muted/60">
+      <ViewerHeader
+        className="shrink-0"
+        documentName={documentName}
+        senderName={senderName}
+        labels={labels}
+        aside={
+          embedUrl && (
             <a
               href={externalUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+              aria-label={labels.openExternal}
+              className={buttonVariants({ variant: "ghost", size: "sm" })}
             >
-              <ExternalLink className="size-3.5" />
+              <ExternalLink />
               <span className="hidden sm:inline">{labels.openExternal}</span>
             </a>
-          )}
-        </div>
-      </header>
+          )
+        }
+      />
 
-      <main className={`flex min-h-0 flex-1 flex-col gap-2 px-2 pt-2 sm:px-4 ${ctaEnabled ? "pb-24" : "pb-2"}`}>
+      <main className={`flex min-h-0 flex-1 flex-col gap-2 px-2 pt-2 sm:px-4 ${ctaEnabled ? "pb-36 sm:pb-24" : "pb-2"}`}>
         {embedUrl ? (
           <iframe
             src={embedUrl}
@@ -75,7 +81,15 @@ export function WebViewer({ slug, documentName, externalUrl, embedUrl, labels, c
         <PrivacyNotice labels={labels} web className="px-2 text-center" />
       </main>
 
-      {ctaEnabled && <CtaBar slug={slug} labels={labels} initialStatus={dealStatus} getViewId={getViewId} />}
+      {ctaEnabled && (
+        <CtaBar
+          slug={slug}
+          labels={labels}
+          initialStatus={dealStatus}
+          getViewId={getViewId}
+          documentName={documentName}
+        />
+      )}
     </div>
   );
 }
