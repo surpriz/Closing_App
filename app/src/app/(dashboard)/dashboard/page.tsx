@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AutopilotBanner } from "@/components/dashboard/autopilot-banner";
 import { NewLinkDialog } from "@/components/dashboard/create-link-form";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { FirstSteps } from "@/components/dashboard/first-steps";
 import {
   CHANNEL_LABELS,
   DEAL_STATUS_LABELS,
@@ -70,6 +71,8 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
     origin,
     settings,
     sentAlone,
+    linkCount,
+    firstRead,
   ] = await Promise.all([
     prisma.document.count({ where: { organizationId, archivedAt: null } }),
     prisma.document.findFirst({
@@ -95,23 +98,31 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
         sentAt: { gte: new Date(now.getTime() - 24 * 60 * 60 * 1000) },
       },
     }),
+    prisma.link.count({ where: { organizationId, archivedAt: null } }),
+    // Bots and the seller's own reads are flagged isBot
+    prisma.documentView.findFirst({ where: { link: { organizationId }, isBot: false }, select: { id: true } }),
   ]);
   const uploadPrefix = documentUploadPrefix(organizationId);
 
   if (documentCount === 0) {
     return (
       <div className="space-y-8">
-        <h1 className="max-w-2xl text-display [font-stretch:88%]">
-          Bienvenue sur Clozer.
-        </h1>
-        <p className="max-w-xl text-body text-muted-foreground">
-          Ajoutez votre premier document : un devis ou une présentation en PDF, ou un lien Notion, Loom, Figma…
-          Vous créerez ensuite un lien par prospect, et vous verrez ici qui le consulte et qui relancer.
-        </p>
-        <UploadDropzone uploadPrefix={uploadPrefix} />
+        <div className="space-y-3">
+          <h1 className="max-w-2xl text-display [font-stretch:88%]">Bienvenue sur Clozer.</h1>
+          <p className="max-w-xl text-body text-muted-foreground">
+            Trois étapes, et vous verrez ici qui lit vos propositions et qui relancer.
+          </p>
+        </div>
+        <FirstSteps
+          hasDocument={false}
+          hasLink={false}
+          hasRead={false}
+          action={<UploadDropzone uploadPrefix={uploadPrefix} />}
+        />
       </div>
     );
   }
+  const showFirstSteps = linkCount === 0 || !firstRead;
 
   const readingLinks = new Set(live.readers.map((reader) => reader.linkId));
   const rows = deals
@@ -156,6 +167,17 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
         </div>
         <LiveStrip key={live.stamp} initial={live} />
         {settings.autonomy === "AUTOPILOT" && <AutopilotBanner sentToday={sentAlone} />}
+        {showFirstSteps && (
+          <FirstSteps
+            hasDocument
+            hasLink={linkCount > 0}
+            hasRead={!!firstRead}
+            action={
+              linkCount === 0 &&
+              latestReadyDocument && <NewLinkDialog documentId={latestReadyDocument.id} disabled={false} />
+            }
+          />
+        )}
       </section>
 
       <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1fr)_18rem]">

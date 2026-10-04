@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowRight, Mail } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
 import { Logo } from "@/components/brand/logo";
@@ -9,6 +10,17 @@ import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
 
 type Status = "idle" | "sending" | "sent" | "error";
+
+// Webmails worth a shortcut after "check your inbox"
+const WEBMAILS: { match: RegExp; label: string; url: string }[] = [
+  { match: /@(gmail|googlemail)\.com$/i, label: "Ouvrir Gmail", url: "https://mail.google.com/mail/u/0/#inbox" },
+  {
+    match: /@(outlook|hotmail|live|msn)\.[a-z.]+$/i,
+    label: "Ouvrir Outlook",
+    url: "https://outlook.live.com/mail/0/inbox",
+  },
+  { match: /@(yahoo|ymail)\.[a-z.]+$/i, label: "Ouvrir Yahoo Mail", url: "https://mail.yahoo.com" },
+];
 
 export function LoginForm({ devMode }: { devMode: boolean }) {
   const [email, setEmail] = useState("");
@@ -43,7 +55,7 @@ export function LoginForm({ devMode }: { devMode: boolean }) {
   }
 
   return (
-    <div className="w-full max-w-sm space-y-8">
+    <div className="w-full max-w-sm animate-rise space-y-8">
       <Logo />
       <div className="space-y-2">
         <h1 className="text-title [font-stretch:88%]">
@@ -56,15 +68,31 @@ export function LoginForm({ devMode }: { devMode: boolean }) {
               Cliquez dessus pour entrer.
             </>
           ) : (
-            "Pas de mot de passe : on vous envoie un lien par email."
+            "Pas de mot de passe : on vous envoie un lien par email. Premier compte ? Il se crée tout seul."
           )}
         </p>
       </div>
 
       {status === "sent" ? (
         <div className="space-y-3 text-sm">
+          {(() => {
+            const webmail = WEBMAILS.find((w) => w.match.test(email));
+            return (
+              webmail && (
+                <a
+                  href={webmail.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={buttonVariants({ size: "lg", className: "h-11 w-full" })}
+                >
+                  <Mail data-icon="inline-start" />
+                  {webmail.label}
+                </a>
+              )
+            );
+          })()}
           {devMode && devLink && (
-            <div className="space-y-3 rounded-xl border border-dashed border-input p-4">
+            <div className="space-y-3 rounded-xl bg-card p-4 shadow-xs ring-1 ring-border">
               <p className="text-muted-foreground">Mode dev : aucun service d&apos;email configuré.</p>
               <a href={devLink} className={buttonVariants({ size: "lg", className: "w-full" })}>
                 Ouvrir le lien de connexion
@@ -88,12 +116,13 @@ export function LoginForm({ devMode }: { devMode: boolean }) {
               placeholder="vous@entreprise.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="h-10 bg-card text-body"
+              className="h-11 text-body"
             />
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
-          <Button type="submit" size="lg" className="h-10 w-full" disabled={status === "sending"}>
+          <Button type="submit" size="lg" className="h-11 w-full" disabled={status === "sending"}>
             {status === "sending" ? "Envoi…" : "Recevoir le lien de connexion"}
+            {status !== "sending" && <ArrowRight data-icon="inline-end" />}
           </Button>
         </form>
       )}

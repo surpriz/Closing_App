@@ -38,19 +38,21 @@ type Props = {
 function Section({
   title,
   description,
+  id,
   children,
 }: {
   title: string;
-  description: string;
+  description: React.ReactNode;
+  id: string;
   children: React.ReactNode;
 }) {
   return (
-    <section className="space-y-3">
-      <div>
-        <h2 className="text-lg font-semibold tracking-[-0.01em]">{title}</h2>
+    <section id={id} className="scroll-mt-24 space-y-3">
+      <div className="space-y-1">
+        <h2 className="text-heading">{title}</h2>
         <p className="text-body text-muted-foreground">{description}</p>
       </div>
-      <div className="divide-y divide-border rounded-xl bg-card ring-1 ring-border">{children}</div>
+      <div className="divide-y divide-border rounded-xl bg-card shadow-xs ring-1 ring-border">{children}</div>
     </section>
   );
 }
@@ -115,6 +117,7 @@ export function SettingsForm({ initial, providers }: Props) {
       {/* Remount the fields after each save so uncontrolled inputs show stored values */}
       <div key={initial.version} className="space-y-12">
         <Section
+          id="pilote"
           title="Pilote automatique"
           description={
             providers.ai
@@ -162,6 +165,7 @@ export function SettingsForm({ initial, providers }: Props) {
         </Section>
 
         <Section
+          id="offre"
           title="Votre offre"
           description={
             initial.offerInferredFrom
@@ -223,6 +227,7 @@ export function SettingsForm({ initial, providers }: Props) {
         </Section>
 
         <Section
+          id="messages"
           title="Vos messages"
           description="Les relances sont écrites en votre nom : comment vous signez, et sur quel ton."
         >
@@ -254,6 +259,7 @@ export function SettingsForm({ initial, providers }: Props) {
         </Section>
 
         <Section
+          id="alertes"
           title="Être prévenu"
           description="Quand un prospect se réveille, lit à plusieurs, ou qu'une relance attend votre accord."
         >
@@ -340,7 +346,7 @@ export function SettingsForm({ initial, providers }: Props) {
 
       <div
         className={cn(
-          "sticky bottom-20 z-20 mt-10 flex items-center justify-between gap-4 rounded-xl bg-foreground py-2.5 pr-2.5 pl-5 text-background shadow-[0_12px_32px_-12px_rgb(15_30_51/0.45)] transition-all duration-200 sm:bottom-6 motion-reduce:transition-none",
+          "sticky bottom-20 z-20 mt-10 flex items-center justify-between gap-4 rounded-xl bg-foreground py-2.5 pr-2.5 pl-5 text-background shadow-lg transition-all duration-200 sm:bottom-6 motion-reduce:transition-none",
           dirty || pending ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0",
         )}
         aria-hidden={!(dirty || pending)}
