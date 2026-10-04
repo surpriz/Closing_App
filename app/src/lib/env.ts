@@ -37,6 +37,8 @@ const serverEnvSchema = z.object({
   TWILIO_WHATSAPP_TEMPLATE_SID_FOLLOWUP: z.string().optional(),
 
   TRIGGER_SECRET_KEY: z.string().optional(),
+  // Time travel and manual engine runs; ignored in production
+  ENABLE_TEST_TOOLS: z.enum(["true", "false"]).optional(),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;

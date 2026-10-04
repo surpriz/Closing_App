@@ -6,14 +6,14 @@ import { toast } from "sonner";
 import { runEngineNow, simulateLinkSentDaysAgo } from "@/app/(dashboard)/followup-actions";
 import { Button } from "@/components/ui/button";
 
-// Rendered in local development only
+// Rendered when test tools are on (local dev, staging), never in production
 export function EngineDevTools({ links }: { links: { id: string; name: string }[] }) {
   const [pending, startTransition] = useTransition();
   const [linkId, setLinkId] = useState(links[0]?.id ?? "");
 
   return (
     <div className="space-y-3 rounded-lg border border-dashed p-3 text-sm">
-      <p className="font-medium">Outils de test (local uniquement)</p>
+      <p className="font-medium">Outils de test (hors production)</p>
       <div className="flex flex-wrap items-center gap-2">
         <Button
           size="sm"

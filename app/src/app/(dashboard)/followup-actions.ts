@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { DAY_MS } from "@/lib/closing/constants";
+import { refreshEngagementScore } from "@/lib/closing/engagement/refresh-score";
+import { shiftLinkBack } from "@/lib/closing/testing/time-travel";
 import { runClosingTick } from "@/lib/closing/engine";
 import { sendFollowup } from "@/lib/closing/followups/dispatch";
 import { cancelOpenFollowups, OPEN_FOLLOWUP_STATUSES } from "@/lib/closing/followups/queue";
@@ -15,6 +17,7 @@ import {
 } from "@/lib/closing/followups/review";
 import { prisma } from "@/lib/db";
 import { requireWorkspace } from "@/lib/session";
+import { testToolsEnabled } from "@/lib/test-tools";
 
 async function requireOwnedLink(linkId: string) {
   const { organization } = await requireWorkspace();
@@ -42,8 +45,8 @@ function revalidateFollowup(followup: { link: { id: string; documentId: string }
   revalidatePath("/dashboard");
 }
 
-function assertDev() {
-  if (process.env.NODE_ENV !== "development") throw new Error("Disponible en local uniquement");
+function assertTestTools() {
+  if (!testToolsEnabled()) throw new Error("Outils de test désactivés");
 }
 
 export async function toggleLinkFollowups(linkId: string, enabled: boolean) {
@@ -111,18 +114,27 @@ export async function regenerateFollowup(followupId: string, instruction: string
   return ok ? { ok: true } : { error: "Cette relance ne peut plus être réécrite." };
 }
 
-// Local testing helpers: run the engine without waiting for the scheduler,
-// and pretend a link was sent days ago to trigger anti-ghosting.
+// Testing helpers (local dev, staging): run the engine without waiting for the
+// scheduler, and make a deal look days older.
 export async function runEngineNow() {
-  assertDev();
+  assertTestTools();
   await requireWorkspace();
   const result = await runClosingTick();
-  revalidatePath("/documents", "layout");
+  revalidatePath("/", "layout");
   return result;
 }
 
+/** Makes `days` pass for this deal, then refreshes what depends on time. */
+export async function timeTravelLink(linkId: string, days: number) {
+  assertTestTools();
+  const link = await requireOwnedLink(linkId);
+  await shiftLinkBack(link.id, days);
+  await refreshEngagementScore(link.id);
+  revalidatePath("/", "layout");
+}
+
 export async function simulateLinkSentDaysAgo(linkId: string, days: number) {
-  assertDev();
+  assertTestTools();
   const link = await requireOwnedLink(linkId);
   await prisma.link.update({
     where: { id: link.id },

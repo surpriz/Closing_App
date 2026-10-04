@@ -1,7 +1,10 @@
-# Runs one cycle of the follow-up engine every 5 minutes (anti-ghosting scan and
-# sending due follow-ups). Vercel Hobby only allows daily crons, hence GitHub.
-# Needs repository secrets APP_URL (e.g. https://app.clozer.club) and CRON_SECRET
-# (same value as on Vercel).
+# Runs one cycle of the follow-up engine every 5 minutes (anti-ghosting scan,
+# sending due follow-ups, deal analyses) on production and staging. Vercel Hobby
+# only allows daily crons, hence GitHub.
+# Repository secrets: APP_URL + CRON_SECRET for production, STAGING_APP_URL +
+# STAGING_CRON_SECRET for staging (same values as on Vercel). A target whose
+# secrets are missing is skipped.
+# Scheduled runs use the workflow file of the default branch (main).
 name: Closing engine tick
 
 on:
@@ -16,17 +19,22 @@ concurrency:
 jobs:
   tick:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 6
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [production, staging]
     steps:
       - name: Run one engine cycle
         env:
-          APP_URL: ${{ secrets.APP_URL }}
-          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          APP_URL: ${{ matrix.target == 'production' && secrets.APP_URL || secrets.STAGING_APP_URL }}
+          CRON_SECRET: ${{ matrix.target == 'production' && secrets.CRON_SECRET || secrets.STAGING_CRON_SECRET }}
         run: |
           if [ -z "$APP_URL" ] || [ -z "$CRON_SECRET" ]; then
-            echo "::warning::APP_URL or CRON_SECRET secret is missing, skipping"
+            echo "::warning::secrets for ${{ matrix.target }} are missing, skipping"
             exit 0
           fi
-          curl --fail-with-body -sS --max-time 150 -X POST \
+          # The route may run up to 300 s (page reading and deal analyses call an LLM)
+          curl --fail-with-body -sS --max-time 310 -X POST \
             -H "Authorization: Bearer $CRON_SECRET" \
             "$APP_URL/api/cron/closing"
