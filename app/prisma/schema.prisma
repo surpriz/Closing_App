@@ -213,6 +213,14 @@ enum SellerActivityType {
   MANUAL_SEND
 }
 
+enum InsightTrigger {
+  SESSION_ENDED // a prospect closed the document
+  PROSPECT_ACTION // validation or change request
+  SELLER_UPDATE // deal context or logged exchange changed
+  TIME_THRESHOLD // silence crossed a step (1, 3, 7… days), caught by the engine
+  MANUAL // "Réanalyser"
+}
+
 enum EngagementTier {
   HOT
   WARM
@@ -385,6 +393,8 @@ model Link {
   sellerNotes       String?
   snoozedUntil      DateTime?
 
+  brainDirtyAt DateTime? // something happened since the last deal analysis
+
   prospects        Prospect[]
   views            DocumentView[]
   pageViews        PageView[]
@@ -394,6 +404,7 @@ model Link {
   actions          ProspectAction[]
   chatMessages     ChatMessage[]
   sellerActivities SellerActivity[]
+  insights         DealInsight[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -606,6 +617,42 @@ model SellerActivity {
 
   @@index([linkId, occurredAt(sort: Desc)])
   @@map("seller_activities")
+}
+
+// The AI reading of a deal at one point in time. Append-only, last 20 kept per link.
+// The engagement score stays the measured truth; this is the interpretation.
+model DealInsight {
+  id             String         @id @default(cuid())
+  linkId         String
+  link           Link           @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  organizationId String
+  trigger        InsightTrigger
+  inputHash      String // facts fingerprint: same facts, no new call
+
+  stage             String // NOT_ENGAGED, DISCOVERING, EVALUATING…
+  momentum          String // RISING, STEADY, COOLING
+  confidence        Int // 0-100
+  priority          Int // 1 (can wait) - 5 (act today)
+  headline          String
+  summary           String
+  signals           Json // [{ label, factIds }]
+  frictions         Json // [{ kind, detail, severity, factIds }]
+  risks             Json // string[]
+  recommendedAction Json // { type, channel, timing, recipient, prospectId, why, factIds }
+  followupBrief     Json? // { goal, angle, topics, avoid }
+  scoreNuance       String?
+  factsSnapshot     Json // the facts the model saw, for audit and evals
+
+  provider  String? // null: written by rules (deal never opened)
+  model     String?
+  tokensIn  Int     @default(0)
+  tokensOut Int     @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@index([linkId, createdAt(sort: Desc)])
+  @@index([organizationId, createdAt])
+  @@map("deal_insights")
 }
 
 // One row per LLM call, for cost tracking and quotas

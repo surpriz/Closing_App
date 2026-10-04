@@ -22,6 +22,8 @@ export type TodoRow = {
   state: string;
   lastActivityAt: Date | null;
   action: NextAction;
+  /** One-line AI reading of the deal, when it still matches the latest reading. */
+  insightHeadline: string | null;
   url: string;
 };
 
@@ -72,6 +74,11 @@ export function TodoList({ rows, now }: { rows: TodoRow[]; now: Date }) {
                 {row.action.kind === "call_now" && <LiveDot className="size-2" />}
                 {describeNextAction(row.action, now)}
               </p>
+              {row.insightHeadline && (
+                <p className="truncate text-sm text-muted-foreground" title={row.insightHeadline}>
+                  IA : {row.insightHeadline}
+                </p>
+              )}
             </div>
             <div className="relative z-10 flex items-center">
               <CopyButton value={row.url} />

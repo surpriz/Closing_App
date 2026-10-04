@@ -7,6 +7,7 @@ import { ActivityTimeline, type TimelineItem } from "@/components/dashboard/acti
 import { ArchiveLinkButton } from "@/components/dashboard/archive-link-button";
 import { CopyButton } from "@/components/dashboard/copy-button";
 import { DealContextForm } from "@/components/dashboard/deal-context-form";
+import { DealInsightPanel } from "@/components/dashboard/deal-insight-panel";
 import { DealStatusSelect } from "@/components/dashboard/deal-status-select";
 import { toFollowupItem, type FollowupItem } from "@/components/dashboard/followup-item";
 import { FollowupsPanel } from "@/components/dashboard/followups-panel";
@@ -27,7 +28,9 @@ import { ProspectForm } from "@/components/dashboard/prospect-form";
 import { SellerActivityForm, SnoozeControl } from "@/components/dashboard/seller-activity-form";
 import { ScoreGuide, TemperatureGauge } from "@/components/dashboard/temperature";
 import { getAppOrigin } from "@/lib/app-origin";
+import { getLanguageModel } from "@/lib/closing/ai/provider";
 import { getLinkAnalytics } from "@/lib/closing/analytics";
+import { getLatestInsight } from "@/lib/closing/brain/latest";
 import { freshEngagementScore } from "@/lib/closing/engagement/refresh-score";
 import { getLinkLiveState } from "@/lib/closing/live";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
@@ -70,7 +73,7 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
 
   const score = await freshEngagementScore(link.id, link.engagementScore);
 
-  const [analytics, settings, origin, followups, alerts, actions, live, sellerActivities] = await Promise.all([
+  const [analytics, settings, origin, followups, alerts, actions, live, sellerActivities, insight] = await Promise.all([
     getLinkAnalytics(link.id),
     getWorkspaceSettings(organization.id),
     getAppOrigin(),
@@ -89,7 +92,11 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
     }),
     getLinkLiveState(link.id),
     prisma.sellerActivity.findMany({ where: { linkId: link.id }, orderBy: { occurredAt: "desc" }, take: 20 }),
+    getLatestInsight(link.id),
   ]);
+  const insightRecipient = insight?.recommendedAction.prospectId
+    ? link.prospects.find((p) => p.id === insight.recommendedAction.prospectId)
+    : null;
 
   const mainProspect = link.prospects[0];
   const title = mainProspect?.company ?? link.name ?? mainProspect?.email ?? link.slug;
@@ -245,7 +252,7 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
                   score ? HEAT_BG[score.tier] : "bg-foreground/10",
                 )}
               />
-              <p className="text-sm text-muted-foreground">Température</p>
+              <p className="text-sm text-muted-foreground">Température mesurée</p>
               <p className="text-[2rem] leading-none font-medium tracking-[-0.03em] [font-stretch:88%]">
                 {score ? TIER_LABELS[score.tier] : "Pas encore lu"}
               </p>
@@ -257,6 +264,7 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
                   <TemperatureGauge tier={score.tier} score={score.score} />
                 </>
               )}
+              {insight?.scoreNuance && <p className="text-sm text-muted-foreground">{insight.scoreNuance}</p>}
             </div>
             <div className="p-5">
               <p className="mb-3 text-sm text-muted-foreground">Pourquoi</p>
@@ -300,6 +308,14 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
             </div>
           </div>
         </Surface>
+
+        <DealInsightPanel
+          linkId={link.id}
+          insight={insight}
+          recipientName={insightRecipient ? (insightRecipient.name ?? insightRecipient.email) : null}
+          aiAvailable={getLanguageModel("analyze") !== null}
+          now={now}
+        />
       </div>
 
       <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem]">

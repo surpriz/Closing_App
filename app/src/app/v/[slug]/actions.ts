@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { inBackground } from "@/lib/closing/background";
+import { analyzeDeal } from "@/lib/closing/brain/analyze-deal";
 import { refreshEngagementScore } from "@/lib/closing/engagement/refresh-score";
 import { cancelOpenFollowups } from "@/lib/closing/followups/queue";
 import { getLinkForViewer, getViewerAccess } from "@/lib/closing/links";
@@ -117,6 +118,7 @@ export async function submitProspectAction(input: z.input<typeof actionSchema>) 
       type === "VALIDATE_SIGN" ? "Proposition validée par le prospect" : "Ajustement demandé par le prospect",
     );
     await refreshEngagementScore(link.id);
+    if (type === "REQUEST_CHANGE") await analyzeDeal(link.id, "PROSPECT_ACTION");
   });
 
   return { ok: true };

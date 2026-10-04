@@ -55,11 +55,18 @@ export async function getOpenDeals(organizationId: string) {
         select: { occurredAt: true },
       },
       _count: { select: { followups: { where: { status: "DRAFT" } } } },
+      insights: {
+        where: { model: { not: null } },
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: { headline: true, createdAt: true },
+      },
     },
   });
 
-  return deals.map(({ views: [lastView], sellerActivities: [lastContact], _count, ...deal }) => ({
+  return deals.map(({ views: [lastView], sellerActivities: [lastContact], _count, insights: [insight], ...deal }) => ({
     ...deal,
+    insight: insight ?? null,
     draftCount: _count.followups,
     lastSellerContactAt: lastContact?.occurredAt ?? null,
     dealStatus: deal.dealStatus as "OPEN" | "CHANGE_REQUESTED",

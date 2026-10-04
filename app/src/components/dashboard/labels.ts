@@ -93,3 +93,57 @@ export const SCORE_REASON_LABELS: Record<string, string> = {
   read_halfway: "Lu à moitié",
   change_requested: "Ajustement demandé",
 };
+
+export const STAGE_LABELS: Record<string, string> = {
+  NOT_ENGAGED: "Pas encore engagé",
+  DISCOVERING: "Découvre l'offre",
+  EVALUATING: "Évalue",
+  NEGOTIATING: "Négocie",
+  DECIDING: "Proche de la décision",
+  STALLED: "Au point mort",
+  LIKELY_LOST: "Probablement perdu",
+};
+
+export const MOMENTUM_LABELS: Record<string, string> = {
+  RISING: "en hausse",
+  STEADY: "stable",
+  COOLING: "en baisse",
+};
+
+export const FRICTION_LABELS: Record<string, string> = {
+  PRICE: "Prix",
+  SCOPE: "Périmètre",
+  TIMING: "Calendrier",
+  DECISION_MAKER: "Décideur",
+  COMPETITION: "Concurrence",
+  TRUST: "Confiance",
+  STALLED_AT_SECTION: "Bloque sur une partie",
+  OTHER: "Autre",
+};
+
+export const INSIGHT_ACTION_LABELS: Record<string, string> = {
+  send_followup: "Relancer par écrit",
+  call: "Appeler",
+  reply_to_request: "Répondre à sa demande",
+  involve_decision_maker: "Faire entrer le décideur dans la boucle",
+  wait: "Attendre",
+  close_lost: "Classer le deal",
+};
+
+export const TIMING_LABELS: Record<string, string> = {
+  now: "maintenant",
+  next_business_morning: "demain matin",
+  in_2_business_days: "d'ici 2 jours ouvrés",
+  in_1_week: "dans une semaine",
+  before_deadline: "avant l'échéance",
+};
+
+export const FOLLOWUP_GOAL_LABELS: Record<string, string> = {
+  gentle_reminder: "Petit rappel",
+  clarify_pricing: "Clarifier le budget",
+  propose_call: "Proposer un échange",
+  address_objection: "Lever une objection",
+  share_case_study: "Partager une référence",
+  involve_decision_maker: "Impliquer le décideur",
+  reactivate: "Relancer la discussion",
+};

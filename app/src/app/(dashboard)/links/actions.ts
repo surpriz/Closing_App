@@ -6,6 +6,8 @@ import { z } from "zod";
 
 import { DEAL_STATUS_LABELS } from "@/components/dashboard/labels";
 import type { DealStatus } from "@/generated/prisma/enums";
+import { inBackground } from "@/lib/closing/background";
+import { analyzeDeal } from "@/lib/closing/brain/analyze-deal";
 import { refreshEngagementScore } from "@/lib/closing/engagement/refresh-score";
 import { cancelOpenFollowups, isUniqueViolation } from "@/lib/closing/followups/queue";
 import { prisma } from "@/lib/db";
@@ -237,6 +239,7 @@ export async function saveDealContext(linkId: string, _prev: LinkFormState, form
 
   const { dealAmount, ...rest } = parsed.data;
   await prisma.link.update({ where: { id: link.id }, data: { ...rest, dealAmountCents: dealAmount } });
+  inBackground("brain", () => analyzeDeal(link.id, "SELLER_UPDATE"));
   revalidateLink(link);
   return { ok: true };
 }
@@ -268,6 +271,7 @@ export async function logSellerActivity(
   if (parsed.data.occurredAt.getTime() > Date.now() + 60_000) return { error: "Cette date est dans le futur." };
 
   await prisma.sellerActivity.create({ data: { linkId: link.id, userId: user.id, ...parsed.data } });
+  inBackground("brain", () => analyzeDeal(link.id, "SELLER_UPDATE"));
   revalidateLink(link);
   return { ok: true };
 }
@@ -284,3 +288,24 @@ export async function snoozeDeal(linkId: string, until: string | null) {
   revalidateLink(link);
   return { ok: true };
 }
+
+/** "Réanalyser": a fresh reading even when nothing changed, at most every two minutes. */
+export async function reanalyzeDeal(linkId: string) {
+  const link = await requireOwnedLink(linkId);
+  const recent = await prisma.dealInsight.findFirst({
+    where: { linkId: link.id, model: { not: null }, createdAt: { gte: new Date(Date.now() - 2 * 60 * 1000) } },
+    select: { id: true },
+  });
+  if (recent) return { error: "Analyse toute fraîche, réessayez dans deux minutes." };
+
+  const outcome = await analyzeDeal(link.id, "MANUAL", { force: true });
+  revalidateLink(link);
+  const errors: Partial<Record<typeof outcome, string>> = {
+    no_ai: "Aucune IA n'est configurée.",
+    budget: "Quota d'analyses du jour atteint.",
+    failed: "L'analyse a échoué, réessayez dans un moment.",
+    skipped: "Ce deal n'est plus en cours.",
+  };
+  return errors[outcome] ? { error: errors[outcome] } : { ok: true };
+}
+

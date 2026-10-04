@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { z } from "zod";
 
 import { inBackground } from "@/lib/closing/background";
+import { analyzeDeal, markDealDirty } from "@/lib/closing/brain/analyze-deal";
 import {
   MAX_PAGE_DURATION_PER_FLUSH_MS,
   MAX_TRACKING_EVENTS_PER_BATCH,
@@ -12,6 +13,9 @@ import { refreshEngagementScore } from "@/lib/closing/engagement/refresh-score";
 import { VISITOR_COOKIE } from "@/lib/closing/tracking/visitor";
 import { evaluateHotPricing } from "@/lib/closing/triggers/hot-pricing";
 import { prisma } from "@/lib/db";
+
+// The deal analysis runs after the response when a reader leaves
+export const maxDuration = 60;
 
 const batchSchema = z.object({
   viewId: z.string().min(1).max(64),
@@ -72,6 +76,7 @@ export async function POST(request: Request) {
   if (valid.length === 0) {
     if (left) {
       await prisma.documentView.update({ where: { id: view.id }, data: { leftAt: now } });
+      if (!view.isBot) inBackground("brain", () => analyzeDeal(view.linkId, "SESSION_ENDED"));
     }
     return new Response(null, { status: 204 });
   }
@@ -125,6 +130,10 @@ export async function POST(request: Request) {
     inBackground("tracking", async () => {
       await refreshEngagementScore(view.linkId);
       await evaluateHotPricing(view.id);
+      // The reader left: read the deal now. Otherwise flag it, the engine catches
+      // sessions whose "left" beacon never arrived.
+      if (left) await analyzeDeal(view.linkId, "SESSION_ENDED");
+      else await markDealDirty(view.linkId, now);
     });
   }
 

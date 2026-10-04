@@ -2,7 +2,8 @@ import { timingSafeEqual } from "node:crypto";
 
 import { runClosingTick } from "@/lib/closing/engine";
 
-export const maxDuration = 120;
+// Page reading and deal analyses call an LLM; each step bounds its own time
+export const maxDuration = 300;
 
 function authorized(request: Request) {
   const secret = process.env.CRON_SECRET;

@@ -3,14 +3,15 @@ import { createOpenAI } from "@ai-sdk/openai";
 
 import type { AiProvider } from "../types";
 
-export type AiPurpose = "followup" | "chat" | "classify";
+export type AiPurpose = "followup" | "chat" | "classify" | "analyze";
 
 const DEFAULT_MODELS: Record<AiProvider, Record<AiPurpose, string>> = {
-  openai: { followup: "gpt-4o", chat: "gpt-4o-mini", classify: "gpt-4o-mini" },
+  openai: { followup: "gpt-4o", chat: "gpt-4o-mini", classify: "gpt-4o-mini", analyze: "gpt-4o" },
   anthropic: {
     followup: "claude-sonnet-5",
     chat: "claude-sonnet-5",
     classify: "claude-haiku-4-5-20251001",
+    analyze: "claude-sonnet-5-5",
   },
 };
 
@@ -23,6 +24,9 @@ const MODEL_ENV: Record<AiPurpose, string | undefined> = {
   },
   get classify() {
     return process.env.AI_MODEL_CLASSIFY;
+  },
+  get analyze() {
+    return process.env.AI_MODEL_ANALYZE;
   },
 };
 

@@ -263,6 +263,11 @@ function toTodoRow(
       lastSellerContactAt: deal.lastSellerContactAt,
       snoozedUntil: deal.snoozedUntil,
     }),
+    // An analysis older than the last reading no longer describes the deal
+    insightHeadline:
+      deal.insight && (!deal.lastActivityAt || deal.insight.createdAt >= deal.lastActivityAt)
+        ? deal.insight.headline
+        : null,
     url: `${origin}/v/${deal.slug}`,
   };
 }

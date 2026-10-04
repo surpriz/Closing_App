@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 
+import { analyzePendingDeals } from "./brain/analyze-deal";
 import { readPendingDocuments } from "./documents/read-pages";
 import { refreshEngagementScore } from "./engagement/refresh-score";
 import { dispatchDueFollowups } from "./followups/dispatch";
@@ -50,5 +51,7 @@ export async function runClosingTick(now = new Date()) {
   const dispatched = await dispatchDueFollowups(now);
   const rescored = await refreshStaleScores(now);
   const documentsRead = await readPendingDocuments(now);
-  return { antiGhostingQueued, regenerated: stale.length, dispatched, rescored, documentsRead };
+  // Scores first: the analysis reads them
+  const dealsAnalyzed = await analyzePendingDeals(now);
+  return { antiGhostingQueued, regenerated: stale.length, dispatched, rescored, documentsRead, dealsAnalyzed };
 }
