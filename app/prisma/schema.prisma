@@ -291,6 +291,8 @@ model WorkspaceSettings {
   valueProps        String?
   commonObjections  String?
   avgSalesCycleDays Int?
+  // Name of the document the offer was guessed from, until the seller saves the settings
+  offerInferredFrom String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

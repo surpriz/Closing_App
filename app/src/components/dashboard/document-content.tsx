@@ -28,11 +28,14 @@ export function DocumentPages({
   pages,
   aiRead,
   aiAvailable,
+  aiGaveUp,
 }: {
   documentId: string;
   pages: ContentPage[];
   aiRead: boolean;
   aiAvailable: boolean;
+  /** Three readings failed: only the button retries now. */
+  aiGaveUp: boolean;
 }) {
   const [pending, startTransition] = useTransition();
 
@@ -42,8 +45,10 @@ export function DocumentPages({
         <p className="max-w-2xl text-[15px] text-muted-foreground">
           {aiRead
             ? "Résumé de chaque page, lu par l'IA. Les étiquettes disent à Clozer où sont les tarifs, le planning… Corrigez-les si besoin : votre choix ne sera plus touché."
-            : aiAvailable
-              ? "La lecture des pages par l'IA est en cours ou n'a pas abouti. En attendant, les étiquettes viennent de mots-clés."
+            : aiAvailable && aiGaveUp
+              ? "L'IA n'a pas réussi à lire ce document. Réessayez avec « Relire les pages »."
+              : aiAvailable
+                ? "L'IA est en train de lire les pages (une minute environ). Rechargez la page pour voir les résumés."
               : "Étiquettes repérées par mots-clés. Corrigez-les si besoin : votre choix ne sera plus touché."}
         </p>
         {aiAvailable && (

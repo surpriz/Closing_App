@@ -9,7 +9,6 @@ import { NewLinkDialog } from "@/components/dashboard/create-link-form";
 import { DeleteDocumentButton } from "@/components/dashboard/delete-document-button";
 import { DocumentPreview } from "@/components/dashboard/document-preview";
 import { EmptyState } from "@/components/dashboard/empty-state";
-import { EngineDevTools } from "@/components/dashboard/engine-dev-tools";
 import { toFollowupItem, type FollowupItem } from "@/components/dashboard/followup-item";
 import { FollowupsPanel } from "@/components/dashboard/followups-panel";
 import { HeatBar } from "@/components/dashboard/heat";
@@ -28,11 +27,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getAppOrigin } from "@/lib/app-origin";
 import { getDocumentAnalytics } from "@/lib/closing/analytics";
 import { getLanguageModel } from "@/lib/closing/ai/provider";
+import { catchUpInBackground } from "@/lib/closing/catch-up";
 import { buildDocumentFrictions } from "@/lib/closing/dashboard/frictions";
 import { prisma } from "@/lib/db";
 import { formatBytes, formatDate, formatDuration, formatRelative } from "@/lib/format";
 import { requireWorkspace } from "@/lib/session";
-import { testToolsEnabled } from "@/lib/test-tools";
 
 export async function generateMetadata({ params }: PageProps<"/documents/[id]">): Promise<Metadata> {
   const { id } = await params;
@@ -67,6 +66,7 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
     },
   });
   if (!document) notFound();
+  catchUpInBackground({ organizationId: organization.id, documentId: document.id });
 
   const linkIds = document.links.map((link) => link.id);
   const [analytics, origin, followups, alerts, furthest, insights] = await Promise.all([
@@ -342,6 +342,7 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
               documentId={document.id}
               pages={document.pages}
               aiRead={document.aiProcessedAt !== null}
+              aiGaveUp={document.aiAttempts >= 3}
               aiAvailable={getLanguageModel("classify") !== null}
             />
           )}
@@ -441,13 +442,9 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
         <TabsContent value="followups" className="space-y-10">
           <section className="space-y-4">
             <p className="max-w-2xl text-[15px] text-muted-foreground">
-              Clozer prépare une relance quand un prospect lit longtemps vos tarifs sans répondre, ou
-              n&apos;ouvre pas son lien. Elle part aux heures de bureau du prospect, et vous pouvez la lire,
-              l&apos;envoyer tout de suite ou l&apos;annuler avant.
+              Les relances de tous les prospects de ce document. Clozer en écrit une quand il juge que c&apos;est
+              le bon moment ; vous la relisez ici ou sur la fiche du prospect, puis vous la validez.
             </p>
-            {testToolsEnabled() && (
-              <EngineDevTools links={document.links.map((l) => ({ id: l.id, name: l.name ?? l.slug }))} />
-            )}
             <Surface className="p-4">
               <FollowupsPanel followups={followupItems} showLink />
             </Surface>

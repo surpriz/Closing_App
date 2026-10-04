@@ -84,7 +84,8 @@ export async function saveWorkspaceSettings(_prev: SettingsState, formData: Form
 
   await prisma.workspaceSettings.update({
     where: { organizationId: organization.id },
-    data: { ...values, slackWebhookUrl: slack, webhookSecret },
+    // Saving means the seller has seen the offer: it is no longer a guess
+    data: { ...values, slackWebhookUrl: slack, webhookSecret, offerInferredFrom: null },
   });
   if (current.autonomy === "AUTOPILOT" && values.autonomy === "COPILOT") {
     await backToApproval(organization.id);

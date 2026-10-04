@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { DAY_MS } from "@/lib/closing/constants";
 import { refreshEngagementScore } from "@/lib/closing/engagement/refresh-score";
 import { shiftLinkBack } from "@/lib/closing/testing/time-travel";
 import { runClosingTick } from "@/lib/closing/engine";
@@ -133,12 +132,3 @@ export async function timeTravelLink(linkId: string, days: number) {
   revalidatePath("/", "layout");
 }
 
-export async function simulateLinkSentDaysAgo(linkId: string, days: number) {
-  assertTestTools();
-  const link = await requireOwnedLink(linkId);
-  await prisma.link.update({
-    where: { id: link.id },
-    data: { sentAt: new Date(Date.now() - days * DAY_MS) },
-  });
-  revalidatePath(`/documents/${link.documentId}`);
-}

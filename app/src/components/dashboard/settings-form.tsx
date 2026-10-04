@@ -29,6 +29,8 @@ type Props = {
     valueProps: string;
     commonObjections: string;
     avgSalesCycleDays: string;
+    /** Document the offer was guessed from, until the seller saves. */
+    offerInferredFrom: string | null;
   };
   providers: { email: boolean; ai: string | null };
 };
@@ -133,7 +135,10 @@ export function SettingsForm({ initial, providers }: Props) {
                 />
                 <span>
                   Je la relis et je valide
-                  <span className="block text-sm text-muted-foreground">Recommandé pour commencer.</span>
+                  <span className="block text-sm text-muted-foreground">
+                    Recommandé pour commencer. Vous recevez un email, et la relance vous attend sur le tableau de
+                    bord (« Relances à valider ») et sur la fiche du prospect, rubrique Relances.
+                  </span>
                 </span>
               </label>
               <label className="flex cursor-pointer items-start gap-2.5">
@@ -158,7 +163,11 @@ export function SettingsForm({ initial, providers }: Props) {
 
         <Section
           title="Votre offre"
-          description="Ce que vous vendez et à qui. Clozer s'en sert pour lire vos deals et écrire des relances qui tombent juste."
+          description={
+            initial.offerInferredFrom
+              ? `Pré-rempli par Clozer à partir de « ${initial.offerInferredFrom} ». Corrigez si besoin et enregistrez : vos relances n'en seront que plus justes.`
+              : "Facultatif. Sans rien ici, Clozer se base sur vos documents ; il pré-remplit cette partie à la lecture du premier."
+          }
         >
           <div className="space-y-1.5 px-5 py-4">
             <Label htmlFor="offerDescription">Ce que vous vendez</Label>

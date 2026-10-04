@@ -214,48 +214,99 @@ export function markDealDirty(linkId: string, now = new Date()) {
 const ENGINE_MAX_ANALYSES = 12;
 const ENGINE_PARALLEL = 4;
 const ENGINE_TIME_BUDGET_MS = 60_000;
-/** A session that ended without its "left" beacon is caught this long after its last flush. */
-const DIRTY_GRACE_MS = 10 * 60 * 1000;
+/**
+ * A reader silent this long is done for now. Covers sessions whose "left"
+ * beacon never came (tab left open, phone locked, app in the background).
+ */
+const READING_DONE_MS = 5 * 60 * 1000;
 /** Deals read in this window get a daily look, so silence is noticed. */
 const ACTIVE_WINDOW_MS = 45 * DAY_MS;
+/** Outcomes after which the deal still needs a look. */
+const RETRY_OUTCOMES: AnalyzeOutcome[] = ["cooldown", "budget", "failed"];
+
+type PendingScope = {
+  organizationId?: string;
+  linkId?: string;
+  /** Daily re-check of quiet deals: the engine does it, page views don't. */
+  includeQuiet?: boolean;
+  max?: number;
+};
 
 /**
- * Engine step: deals flagged by tracking, then deals with no analysis for a
- * day (silence crossing a step). Bounded in count, parallelism and time so
- * the cron request stays well under its limit.
+ * Deals that need a fresh reading: read since the last analysis and now
+ * quiet, opened but never analysed, and (engine only) quiet for a day.
+ * Run by the engine, and by the dashboard and prospect pages so the
+ * analysis never waits on the cron. Each deal is claimed before it is
+ * analysed, so two runs never pay for the same analysis.
  */
-export async function analyzePendingDeals(now = new Date()) {
+export async function analyzePendingDeals(now = new Date(), scope: PendingScope = {}) {
   if (!getLanguageModel("analyze")) return 0;
   const startedAt = Date.now();
-  const open = { archivedAt: null, dealStatus: { in: ["OPEN" as const, "CHANGE_REQUESTED" as const] } };
+  const max = scope.max ?? ENGINE_MAX_ANALYSES;
+  const base = {
+    archivedAt: null,
+    dealStatus: { in: ["OPEN" as const, "CHANGE_REQUESTED" as const] },
+    ...(scope.organizationId && { organizationId: scope.organizationId }),
+    ...(scope.linkId && { id: scope.linkId }),
+  };
+  const readingDone = new Date(now.getTime() - READING_DONE_MS);
 
   const dirty = await prisma.link.findMany({
-    where: { ...open, brainDirtyAt: { lte: new Date(now.getTime() - DIRTY_GRACE_MS) } },
-    orderBy: { brainDirtyAt: "asc" },
-    take: ENGINE_MAX_ANALYSES,
-    select: { id: true },
-  });
-  const stale = await prisma.link.findMany({
     where: {
-      ...open,
-      id: { notIn: dirty.map((link) => link.id) },
-      views: { some: { isBot: false, lastSeenAt: { gte: new Date(now.getTime() - ACTIVE_WINDOW_MS) } } },
-      insights: { none: { createdAt: { gte: new Date(now.getTime() - DAY_MS) } } },
+      ...base,
+      brainDirtyAt: { not: null },
+      OR: [{ lastActivityAt: null }, { lastActivityAt: { lte: readingDone } }],
     },
-    orderBy: { lastActivityAt: "desc" },
-    take: ENGINE_MAX_ANALYSES - dirty.length,
+    orderBy: { brainDirtyAt: "asc" },
+    take: max,
     select: { id: true },
   });
+  const neverAnalysed = await prisma.link.findMany({
+    where: {
+      ...base,
+      id: { notIn: dirty.map((link) => link.id) },
+      views: { some: { isBot: false, lastSeenAt: { lte: readingDone } } },
+      insights: { none: {} },
+    },
+    take: Math.max(0, max - dirty.length),
+    select: { id: true },
+  });
+  const quiet = scope.includeQuiet
+    ? await prisma.link.findMany({
+        where: {
+          ...base,
+          id: { notIn: [...dirty, ...neverAnalysed].map((link) => link.id) },
+          views: { some: { isBot: false, lastSeenAt: { gte: new Date(now.getTime() - ACTIVE_WINDOW_MS) } } },
+          insights: { none: { createdAt: { gte: new Date(now.getTime() - DAY_MS) } } },
+        },
+        orderBy: { lastActivityAt: "desc" },
+        take: Math.max(0, max - dirty.length - neverAnalysed.length),
+        select: { id: true },
+      })
+    : [];
 
   const queue = [
-    ...dirty.map((link) => ({ id: link.id, trigger: "SESSION_ENDED" as const })),
-    ...stale.map((link) => ({ id: link.id, trigger: "TIME_THRESHOLD" as const })),
+    ...dirty.map((link) => ({ id: link.id, trigger: "SESSION_ENDED" as const, claim: true })),
+    ...neverAnalysed.map((link) => ({ id: link.id, trigger: "SESSION_ENDED" as const, claim: false })),
+    ...quiet.map((link) => ({ id: link.id, trigger: "TIME_THRESHOLD" as const, claim: false })),
   ];
+
   let analyzed = 0;
   for (let i = 0; i < queue.length; i += ENGINE_PARALLEL) {
     if (Date.now() - startedAt > ENGINE_TIME_BUDGET_MS) break;
     const outcomes = await Promise.all(
-      queue.slice(i, i + ENGINE_PARALLEL).map((job) => analyzeDeal(job.id, job.trigger, { now })),
+      queue.slice(i, i + ENGINE_PARALLEL).map(async (job) => {
+        if (job.claim) {
+          const claimed = await prisma.link.updateMany({
+            where: { id: job.id, brainDirtyAt: { not: null } },
+            data: { brainDirtyAt: null },
+          });
+          if (claimed.count === 0) return "skipped" as const;
+        }
+        const outcome = await analyzeDeal(job.id, job.trigger, { now });
+        if (job.claim && RETRY_OUTCOMES.includes(outcome)) await markDealDirty(job.id, now);
+        return outcome;
+      }),
     );
     analyzed += outcomes.filter((outcome) => outcome === "analyzed").length;
   }

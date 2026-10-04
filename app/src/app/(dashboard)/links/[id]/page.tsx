@@ -32,6 +32,7 @@ import { getAppOrigin } from "@/lib/app-origin";
 import { getLanguageModel } from "@/lib/closing/ai/provider";
 import { getLinkAnalytics } from "@/lib/closing/analytics";
 import { getLatestInsight } from "@/lib/closing/brain/latest";
+import { catchUpInBackground } from "@/lib/closing/catch-up";
 import { freshEngagementScore } from "@/lib/closing/engagement/refresh-score";
 import { getLinkLiveState } from "@/lib/closing/live";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
@@ -74,6 +75,7 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
   if (!link) notFound();
 
   const score = await freshEngagementScore(link.id, link.engagementScore);
+  catchUpInBackground({ organizationId: organization.id, linkId: link.id, documentId: link.document.id });
 
   const [analytics, settings, origin, followups, alerts, actions, live, sellerActivities, insight] = await Promise.all([
     getLinkAnalytics(link.id),
@@ -333,7 +335,16 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
           <section id="relances" className="scroll-mt-20">
             <SectionTitle>Relances</SectionTitle>
             <Surface className="p-4">
-              <FollowupsPanel followups={followupItems} />
+              <FollowupsPanel
+                followups={followupItems}
+                emptyHint={
+                  insight?.byAi
+                    ? insight.recommendedAction.type === "send_followup"
+                      ? `L'analyse conseille de relancer, mais ce n'est pas encore le moment (${insight.recommendedAction.why}). Vous pouvez aussi cliquer « Préparer une relance » plus haut.`
+                      : `L'analyse conseille plutôt : ${insight.recommendedAction.why} Besoin d'écrire quand même ? « Préparer une relance » plus haut.`
+                    : null
+                }
+              />
             </Surface>
           </section>
 

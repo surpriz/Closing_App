@@ -53,15 +53,22 @@ function toastResult(result: { ok?: boolean; error?: string }, success: string) 
 export function FollowupsPanel({
   followups,
   showLink = false,
+  emptyHint,
 }: {
   followups: FollowupItem[];
   showLink?: boolean;
+  /** Why there is nothing yet, e.g. what the latest analysis advised. */
+  emptyHint?: string | null;
 }) {
   if (followups.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">
-        Aucune relance pour l&apos;instant. Clozer les prépare selon ce que fait le prospect, et vous les validez.
-      </p>
+      <div className="space-y-1.5 text-sm">
+        <p className="font-medium">Aucune relance pour l&apos;instant.</p>
+        <p className="text-muted-foreground">
+          {emptyHint ??
+            "Dès que Clozer juge qu'il faut relancer, il écrit le message et le met ici. Vous recevez un email, vous relisez, vous validez."}
+        </p>
+      </div>
     );
   }
 

@@ -31,6 +31,7 @@ import {
   getUpcomingFollowups,
   type OpenDeal,
 } from "@/lib/closing/dashboard/queries";
+import { catchUpInBackground } from "@/lib/closing/catch-up";
 import { getWorkspaceLiveState } from "@/lib/closing/live";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
 import { prisma } from "@/lib/db";
@@ -47,6 +48,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
   const organizationId = organization.id;
   const now = new Date();
   const period = parsePeriod((await props.searchParams).p);
+  catchUpInBackground({ organizationId });
   const since = periodStart(period, now);
 
   const [

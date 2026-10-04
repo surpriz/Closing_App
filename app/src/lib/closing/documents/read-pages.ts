@@ -4,6 +4,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 
 import { getLanguageModel } from "../ai/provider";
+import { inferOfferFromDocument } from "./infer-offer";
 import { recordAiUsage } from "../ai/usage";
 import {
   buildPageReadingPrompt,
@@ -61,7 +62,12 @@ export async function readDocumentPages(documentId: string): Promise<ReadPagesOu
   if (document.aiAttempts >= MAX_AI_ATTEMPTS) return "skipped";
 
   const withText = document.pages.filter((page) => page.text);
-  await prisma.document.update({ where: { id: document.id }, data: { aiAttempts: { increment: 1 } } });
+  // Claim this attempt: two page views must not read the same document twice
+  const claimed = await prisma.document.updateMany({
+    where: { id: document.id, aiAttempts: document.aiAttempts },
+    data: { aiAttempts: { increment: 1 } },
+  });
+  if (claimed.count === 0) return "skipped";
   if (withText.length === 0) {
     await prisma.document.update({ where: { id: document.id }, data: { aiProcessedAt: new Date() } });
     return "done";
@@ -134,6 +140,8 @@ export async function readDocumentPages(documentId: string): Promise<ReadPagesOu
 
   if (failures === 0) {
     await prisma.document.update({ where: { id: document.id }, data: { aiProcessedAt: new Date() } });
+    // First document of a seller who skipped "Votre offre": guess it from here
+    await inferOfferFromDocument(document.id);
     return "done";
   }
   return readings.length > 0 ? "partial" : "failed";
@@ -143,7 +151,11 @@ export async function readDocumentPages(documentId: string): Promise<ReadPagesOu
 const RETRY_AFTER_MS = 10 * 60 * 1000;
 
 /** Catches up documents uploaded before the AI was configured, or whose reading failed. */
-export async function readPendingDocuments(now = new Date(), limit = 2) {
+export async function readPendingDocuments(
+  now = new Date(),
+  limit = 2,
+  scope: { organizationId?: string; documentId?: string } = {},
+) {
   if (!getLanguageModel("classify")) return 0;
   const pending = await prisma.document.findMany({
     where: {
@@ -153,6 +165,8 @@ export async function readPendingDocuments(now = new Date(), limit = 2) {
       aiProcessedAt: null,
       aiAttempts: { lt: MAX_AI_ATTEMPTS },
       updatedAt: { lte: new Date(now.getTime() - RETRY_AFTER_MS) },
+      ...(scope.organizationId && { organizationId: scope.organizationId }),
+      ...(scope.documentId && { id: scope.documentId }),
     },
     orderBy: { createdAt: "desc" },
     take: limit,

@@ -53,7 +53,7 @@ export async function runClosingTick(now = new Date()) {
   const rescored = await refreshStaleScores(now);
   const documentsRead = await readPendingDocuments(now);
   // Scores first: the analysis reads them
-  const dealsAnalyzed = await analyzePendingDeals(now);
+  const dealsAnalyzed = await analyzePendingDeals(now, { includeQuiet: true });
   const digests = await sendAutopilotDigests(now);
   return { antiGhostingQueued, regenerated: stale.length, dispatched, rescored, documentsRead, dealsAnalyzed, digests };
 }

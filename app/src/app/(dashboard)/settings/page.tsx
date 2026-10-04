@@ -45,6 +45,7 @@ export default async function SettingsPage() {
           valueProps: settings.valueProps ?? "",
           commonObjections: settings.commonObjections ?? "",
           avgSalesCycleDays: settings.avgSalesCycleDays?.toString() ?? "",
+          offerInferredFrom: settings.offerInferredFrom,
         }}
         providers={{
           email: isEmailConfigured(),
