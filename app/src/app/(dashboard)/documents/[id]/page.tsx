@@ -28,9 +28,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getAppOrigin } from "@/lib/app-origin";
 import { getDocumentAnalytics } from "@/lib/closing/analytics";
 import { getLanguageModel } from "@/lib/closing/ai/provider";
+import { buildDocumentFrictions } from "@/lib/closing/dashboard/frictions";
 import { prisma } from "@/lib/db";
 import { formatBytes, formatDate, formatDuration, formatRelative } from "@/lib/format";
 import { requireWorkspace } from "@/lib/session";
+import { testToolsEnabled } from "@/lib/test-tools";
 
 export async function generateMetadata({ params }: PageProps<"/documents/[id]">): Promise<Metadata> {
   const { id } = await params;
@@ -66,7 +68,8 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
   });
   if (!document) notFound();
 
-  const [analytics, origin, followups, alerts] = await Promise.all([
+  const linkIds = document.links.map((link) => link.id);
+  const [analytics, origin, followups, alerts, furthest, insights] = await Promise.all([
     getDocumentAnalytics(document.id),
     getAppOrigin(),
     prisma.followup.findMany({
@@ -84,7 +87,32 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
       take: 10,
       include: { link: { select: { name: true, slug: true } } },
     }),
+    prisma.documentView.groupBy({
+      by: ["linkId"],
+      where: { linkId: { in: linkIds }, isBot: false },
+      _max: { maxPageReached: true },
+    }),
+    prisma.dealInsight.findMany({
+      where: { linkId: { in: linkIds }, model: { not: null } },
+      orderBy: { createdAt: "desc" },
+      take: 400,
+      select: { linkId: true, frictions: true },
+    }),
   ]);
+
+  // The latest analysis of each deal only
+  const latestFrictions = new Map<string, string[]>();
+  for (const insight of insights) {
+    if (latestFrictions.has(insight.linkId)) continue;
+    latestFrictions.set(insight.linkId, (insight.frictions as { kind: string }[]).map((f) => f.kind));
+  }
+  const furthestByLink = new Map(furthest.map((row) => [row.linkId, row._max.maxPageReached]));
+  const frictions = buildDocumentFrictions({
+    numPages: document.kind === "FILE" ? document.pages.length : 0,
+    pages: document.pages,
+    deals: linkIds.map((id) => ({ furthestPage: furthestByLink.get(id) ?? null })),
+    aiFrictions: [...latestFrictions.values()],
+  });
 
   const statsByPage = new Map(analytics.pages.map((p) => [p.pageNumber, p]));
   const chartData: PageTimeDatum[] = document.pages.map((page) => {
@@ -320,6 +348,18 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
         </TabsContent>
 
         <TabsContent value="reading" className="space-y-10">
+          {frictions.length > 0 && (
+            <section>
+              <SectionTitle hint="sur tous les prospects de ce document">Ce qui bloque</SectionTitle>
+              <Surface className="p-4">
+                <ul className="space-y-1.5 text-[15px]">
+                  {frictions.map((line) => (
+                    <li key={line}>{line}</li>
+                  ))}
+                </ul>
+              </Surface>
+            </section>
+          )}
           {isWeb ? (
             <p className="max-w-2xl text-[15px] text-muted-foreground">
               {document.embedUrl
@@ -405,7 +445,7 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
               n&apos;ouvre pas son lien. Elle part aux heures de bureau du prospect, et vous pouvez la lire,
               l&apos;envoyer tout de suite ou l&apos;annuler avant.
             </p>
-            {process.env.NODE_ENV === "development" && (
+            {testToolsEnabled() && (
               <EngineDevTools links={document.links.map((l) => ({ id: l.id, name: l.name ?? l.slug }))} />
             )}
             <Surface className="p-4">

@@ -278,11 +278,12 @@ model WorkspaceSettings {
   senderName      String?
   senderSignature String?
 
-  autonomy                  Autonomy @default(COPILOT)
-  autopilotMinConfidence    Int      @default(80) // 0-100
-  maxFollowupsPer30Days     Int      @default(3) // per prospect
-  minDaysBetweenFollowups   Int      @default(3)
-  minDelayAfterReadingHours Int      @default(3) // a follow-up right after a read gives the tracking away
+  autonomy                  Autonomy  @default(COPILOT)
+  autopilotMinConfidence    Int       @default(80) // 0-100
+  maxFollowupsPer30Days     Int       @default(3) // per prospect
+  minDaysBetweenFollowups   Int       @default(3)
+  minDelayAfterReadingHours Int       @default(3) // a follow-up right after a read gives the tracking away
+  lastDigestAt              DateTime? // last daily email listing what autopilot sent
 
   // What the seller sells, fed to the AI
   offerDescription  String?

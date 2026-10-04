@@ -18,12 +18,26 @@ export type TodayHeadlineInput = {
   unopenedCount: number;
   /** e.g. "demain à 09:00", already formatted; null when none is planned. */
   nextFollowupLabel: string | null;
+  /** The deal the analysis ranks most urgent (priority 4 or 5), with its one-line reading. */
+  aiFocus?: { label: string; headline: string } | null;
+  /** Follow-ups written and waiting for the seller's approval. */
+  draftsToReview?: number;
 };
 
 export type TodayHeadline = { headline: string; hint: string };
 
 function plural(count: number, one: string, many: string) {
   return count === 1 ? one : many;
+}
+
+function lowerFirst(text: string) {
+  return text.charAt(0).toLowerCase() + text.slice(1);
+}
+
+function draftsHint(input: TodayHeadlineInput) {
+  const drafts = input.draftsToReview ?? 0;
+  if (drafts === 0) return null;
+  return drafts === 1 ? "Une relance attend votre accord." : `${drafts} relances attendent votre accord.`;
 }
 
 function hotHint(input: TodayHeadlineInput) {
@@ -58,6 +72,13 @@ export function buildTodayHeadline(input: TodayHeadlineInput): TodayHeadline {
     };
   }
 
+  if (input.aiFocus) {
+    return {
+      headline: `${input.aiFocus.label} : ${lowerFirst(input.aiFocus.headline)}`,
+      hint: draftsHint(input) ?? "Commencez par là.",
+    };
+  }
+
   if (hot > 0) {
     return {
       headline:
@@ -78,9 +99,11 @@ export function buildTodayHeadline(input: TodayHeadlineInput): TodayHeadline {
     };
   }
 
-  const followupHint = input.nextFollowupLabel
-    ? `Prochaine relance ${input.nextFollowupLabel}.`
-    : "Les relances partent toutes seules.";
+  const followupHint =
+    draftsHint(input) ??
+    (input.nextFollowupLabel
+      ? `Prochaine relance ${input.nextFollowupLabel}.`
+      : "Clozer prépare les relances quand il le faut.");
 
   if (input.warmCount > 0) {
     return {

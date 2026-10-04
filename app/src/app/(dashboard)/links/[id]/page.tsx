@@ -21,6 +21,7 @@ import {
   TIER_LABELS,
 } from "@/components/dashboard/labels";
 import { LinkSettingsDialog } from "@/components/dashboard/link-settings-form";
+import { LinkTestTools } from "@/components/dashboard/link-test-tools";
 import { LiveActivity } from "@/components/dashboard/live-activity";
 import { SectionTitle, StatLine, Surface } from "@/components/dashboard/page-header";
 import { PageTimeChart, type PageTimeDatum } from "@/components/dashboard/page-time-chart";
@@ -38,6 +39,7 @@ import type { EngagementReason } from "@/lib/closing/types";
 import { prisma } from "@/lib/db";
 import { formatDuration, formatRelative } from "@/lib/format";
 import { requireWorkspace } from "@/lib/session";
+import { testToolsEnabled } from "@/lib/test-tools";
 import { cn } from "cn";
 
 export async function generateMetadata({ params }: PageProps<"/links/[id]">): Promise<Metadata> {
@@ -345,6 +347,8 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
               <FollowupsPanel followups={followupItems} />
             </Surface>
           </section>
+
+          {testToolsEnabled() && <LinkTestTools linkId={link.id} />}
 
           <section>
             <SectionTitle>Activité</SectionTitle>

@@ -70,7 +70,27 @@ describe("buildTodayHeadline", () => {
   it("falls back to a quiet day", () => {
     expect(buildTodayHeadline({ ...base, unopenedCount: 1 })).toEqual({
       headline: "Rien d'urgent aujourd'hui.",
-      hint: "Les relances partent toutes seules.",
+      hint: "Clozer prépare les relances quand il le faut.",
     });
+  });
+});
+
+describe("with the deal analysis", () => {
+  it("leads with the deal the analysis ranks most urgent, after answers owed", () => {
+    expect(
+      buildTodayHeadline({
+        ...base,
+        hotProspects: ["Lumen"],
+        aiFocus: { label: "Acme", headline: "Le DAF entre dans la boucle." },
+        draftsToReview: 2,
+      }),
+    ).toEqual({ headline: "Acme : le DAF entre dans la boucle.", hint: "2 relances attendent votre accord." });
+    expect(
+      buildTodayHeadline({ ...base, changeRequests: ["Lumen"], aiFocus: { label: "Acme", headline: "X." } }).headline,
+    ).toBe("Lumen demande un ajustement.");
+  });
+
+  it("points at drafts waiting on a quiet day", () => {
+    expect(buildTodayHeadline({ ...base, draftsToReview: 1 }).hint).toBe("Une relance attend votre accord.");
   });
 });

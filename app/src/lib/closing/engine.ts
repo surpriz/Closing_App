@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 
+import { sendAutopilotDigests } from "./alerts/autopilot-digest";
 import { analyzePendingDeals } from "./brain/analyze-deal";
 import { readPendingDocuments } from "./documents/read-pages";
 import { refreshEngagementScore } from "./engagement/refresh-score";
@@ -53,5 +54,6 @@ export async function runClosingTick(now = new Date()) {
   const documentsRead = await readPendingDocuments(now);
   // Scores first: the analysis reads them
   const dealsAnalyzed = await analyzePendingDeals(now);
-  return { antiGhostingQueued, regenerated: stale.length, dispatched, rescored, documentsRead, dealsAnalyzed };
+  const digests = await sendAutopilotDigests(now);
+  return { antiGhostingQueued, regenerated: stale.length, dispatched, rescored, documentsRead, dealsAnalyzed, digests };
 }

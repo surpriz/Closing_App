@@ -3,6 +3,7 @@ import { getPublicAppUrl } from "@/lib/app-origin";
 import { prisma } from "@/lib/db";
 
 import { draftFollowup } from "../ai/generate-followup";
+import { reviewFollowupWithLlm } from "../ai/guard-llm";
 import type { FollowupPromptInput } from "../ai/prompts";
 import { notifyDraftReady } from "../alerts/draft-ready";
 import { autopilotEligible } from "../brain/policy";
@@ -89,6 +90,13 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
   const context = (followup.context ?? {}) as { brief?: FollowupPromptInput["brief"] };
   const brief = followup.trigger === "AI_DECISION" ? (context.brief ?? null) : null;
   const now = new Date();
+  const sourceText = guardSourceText({
+    pages,
+    sellerDescription: link.document.sellerDescription,
+    senderSignature: settings?.senderSignature ?? null,
+    offerDescription: settings?.offerDescription ?? null,
+    valueProps: settings?.valueProps ?? null,
+  });
 
   const draft = await draftFollowup(
     {
@@ -128,19 +136,13 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
     {
       organizationId: link.organizationId,
       linkId: link.id,
-      sourceText: guardSourceText({
-        pages,
-        sellerDescription: link.document.sellerDescription,
-        senderSignature: settings?.senderSignature ?? null,
-        offerDescription: settings?.offerDescription ?? null,
-        valueProps: settings?.valueProps ?? null,
-      }),
+      sourceText,
     },
   );
 
   // Autopilot only for messages that need no human eye; a rewrite asked by the seller is always reviewed
   const autopilot = settings?.autonomy === "AUTOPILOT" && !instruction && draft.issues.length === 0;
-  const sendsAlone =
+  let sendsAlone =
     autopilot &&
     (followup.trigger !== "AI_DECISION" ||
       autopilotEligible({
@@ -154,6 +156,16 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
         offerDescribed: !!settings.offerDescription,
       }));
 
+  // Nobody reads it before it leaves: a second, model-based check
+  const issues = [...draft.issues];
+  if (sendsAlone && draft.aiProvider !== "template") {
+    const review = await reviewFollowupWithLlm(draft, { sourceText, organizationId: link.organizationId, linkId: link.id });
+    if (!review.ok) {
+      sendsAlone = false;
+      issues.push(...review.issues);
+    }
+  }
+
   // Only move forward if nobody cancelled it while the AI was writing
   const saved = await prisma.followup.updateMany({
     where: { id: followupId, status: "PENDING" },
@@ -163,7 +175,7 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
       aiProvider: draft.aiProvider,
       aiModel: draft.aiModel,
       regenerateInstruction: instruction ?? null,
-      error: draft.issues.length ? `À relire : ${draft.issues.join(" ")}` : null,
+      error: issues.length ? `À relire : ${issues.join(" ")}` : null,
       status: sendsAlone ? "GENERATED" : "DRAFT",
     },
   });

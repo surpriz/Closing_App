@@ -24,6 +24,8 @@ export type TodoRow = {
   action: NextAction;
   /** One-line AI reading of the deal, when it still matches the latest reading. */
   insightHeadline: string | null;
+  /** 1-5 from the same analysis, null when it is missing or stale. */
+  aiPriority: number | null;
   url: string;
 };
 

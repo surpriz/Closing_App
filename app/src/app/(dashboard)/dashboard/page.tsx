@@ -2,6 +2,7 @@ import { PenLine, Send } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { AutopilotBanner } from "@/components/dashboard/autopilot-banner";
 import { NewLinkDialog } from "@/components/dashboard/create-link-form";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { CHANNEL_LABELS, DEAL_STATUS_LABELS, TIER_LABELS } from "@/components/dashboard/labels";
@@ -18,8 +19,9 @@ import { documentUploadPrefix } from "@/lib/blob";
 import { buildFeed } from "@/lib/closing/dashboard/feed";
 import { buildFunnel, buildHeatDistribution } from "@/lib/closing/dashboard/funnel";
 import { prospectLabel } from "@/lib/closing/dashboard/labels";
-import { compareByUrgency, computeNextAction } from "@/lib/closing/dashboard/next-action";
+import { computeNextAction } from "@/lib/closing/dashboard/next-action";
 import { parsePeriod, periodStart, PERIODS } from "@/lib/closing/dashboard/period";
+import { compareDeals } from "@/lib/closing/dashboard/rank";
 import {
   getFeedSource,
   getFreshValidations,
@@ -30,6 +32,7 @@ import {
   type OpenDeal,
 } from "@/lib/closing/dashboard/queries";
 import { getWorkspaceLiveState } from "@/lib/closing/live";
+import { getWorkspaceSettings } from "@/lib/closing/settings";
 import { prisma } from "@/lib/db";
 import { formatInTimeZone, formatRelative } from "@/lib/format";
 import { requireWorkspace } from "@/lib/session";
@@ -57,6 +60,8 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
     freshValidations,
     live,
     origin,
+    settings,
+    sentAlone,
   ] = await Promise.all([
     prisma.document.count({ where: { organizationId, archivedAt: null } }),
     prisma.document.findFirst({
@@ -72,6 +77,16 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
     getFreshValidations(organizationId, now),
     getWorkspaceLiveState(organizationId, now),
     getAppOrigin(),
+    getWorkspaceSettings(organizationId),
+    prisma.followup.count({
+      where: {
+        link: { organizationId },
+        status: { in: ["SENT", "DELIVERED"] },
+        sentVia: "PLATFORM",
+        approvedAt: null,
+        sentAt: { gte: new Date(now.getTime() - 24 * 60 * 60 * 1000) },
+      },
+    }),
   ]);
   const uploadPrefix = documentUploadPrefix(organizationId);
 
@@ -93,7 +108,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
   const readingLinks = new Set(live.readers.map((reader) => reader.linkId));
   const rows = deals
     .map((deal) => toTodoRow(deal, { now, readingNow: readingLinks.has(deal.id), origin }))
-    .sort(compareByUrgency);
+    .sort(compareDeals);
   const distribution = buildHeatDistribution(rows.map((row) => ({ opened: row.opened, tier: row.tier })));
   const funnel = buildFunnel(funnelFacts);
   const feed = buildFeed(feedSource, FEED_LIMIT);
@@ -107,6 +122,11 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
     documentCount,
     unopenedCount: distribution.unopened,
     nextFollowupLabel: upcomingFollowups[0] ? formatRelative(upcomingFollowups[0].scheduledFor, now) : null,
+    aiFocus: (() => {
+      const focus = rows.find((row) => (row.aiPriority ?? 0) >= 4 && row.insightHeadline);
+      return focus ? { label: focus.label, headline: focus.insightHeadline! } : null;
+    })(),
+    draftsToReview: deals.reduce((sum, deal) => sum + deal.draftCount, 0),
   });
 
   const periodHint = PERIODS[period].hint;
@@ -124,6 +144,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
           </div>
         </div>
         <LiveStrip key={live.stamp} initial={live} />
+        {settings.autonomy === "AUTOPILOT" && <AutopilotBanner sentToday={sentAlone} />}
       </section>
 
       <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1fr)_18rem]">
@@ -263,11 +284,7 @@ function toTodoRow(
       lastSellerContactAt: deal.lastSellerContactAt,
       snoozedUntil: deal.snoozedUntil,
     }),
-    // An analysis older than the last reading no longer describes the deal
-    insightHeadline:
-      deal.insight && (!deal.lastActivityAt || deal.insight.createdAt >= deal.lastActivityAt)
-        ? deal.insight.headline
-        : null,
+    ...currentInsight(deal),
     url: `${origin}/v/${deal.slug}`,
   };
 }
@@ -277,3 +294,13 @@ function dealState(dealStatus: TodoRow["dealStatus"], opened: boolean, tier: Tod
   if (!opened) return "Pas encore ouvert";
   return tier ? TIER_LABELS[tier] : "Ouvert";
 }
+
+// An analysis older than the last reading no longer describes the deal
+function currentInsight(deal: OpenDeal) {
+  const current = deal.insight && (!deal.lastActivityAt || deal.insight.createdAt >= deal.lastActivityAt);
+  return {
+    insightHeadline: current ? deal.insight!.headline : null,
+    aiPriority: current ? deal.insight!.priority : null,
+  };
+}
+

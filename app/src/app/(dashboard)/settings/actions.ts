@@ -113,14 +113,27 @@ export async function saveWorkspaceSettings(_prev: SettingsState, formData: Form
     where: { organizationId: organization.id },
     data: { ...values, slackWebhookUrl: slack, webhookSecret },
   });
-  // Back to copilot: what was queued under autopilot waits for the seller again
   if (current.autonomy === "AUTOPILOT" && values.autonomy === "COPILOT") {
-    await prisma.followup.updateMany({
-      where: { link: { organizationId: organization.id }, status: "GENERATED", approvedAt: null },
-      data: { status: "DRAFT" },
-    });
+    await backToApproval(organization.id);
   }
 
   revalidatePath("/settings");
   return { ok: true };
 }
+
+// Back to copilot: what was queued under autopilot waits for the seller again
+async function backToApproval(organizationId: string) {
+  await prisma.followup.updateMany({
+    where: { link: { organizationId }, status: "GENERATED", approvedAt: null },
+    data: { status: "DRAFT" },
+  });
+}
+
+/** The dashboard's "pause" switch: stop sending alone right now, keep everything as drafts. */
+export async function pauseAutopilot() {
+  const { organization } = await requireWorkspace();
+  await prisma.workspaceSettings.update({ where: { organizationId: organization.id }, data: { autonomy: "COPILOT" } });
+  await backToApproval(organization.id);
+  revalidatePath("/", "layout");
+}
+
