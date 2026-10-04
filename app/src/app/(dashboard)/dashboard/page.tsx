@@ -143,7 +143,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
   const periodHint = PERIODS[period].hint;
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-10">
       <section className="space-y-6">
         <div className="flex flex-col-reverse gap-6 sm:flex-row sm:items-start sm:justify-between">
           <h1 className="max-w-3xl text-title text-balance [font-stretch:88%] sm:text-display">
@@ -159,48 +159,49 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
       </section>
 
       <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1fr)_18rem]">
-        <section>
-          <SectionTitle hint={periodHint} action={<PeriodTabs current={period} />}>
-            Vos envois
-          </SectionTitle>
-          <FunnelStrip funnel={funnel} />
-        </section>
-        <section>
-          <SectionTitle hint="en ce moment">Deals en cours</SectionTitle>
-          <HeatDistributionBar distribution={distribution} />
-        </section>
-      </div>
+        <div className="min-w-0 space-y-12">
+          <section>
+            <SectionTitle hint="du plus urgent au moins urgent">À traiter</SectionTitle>
+            {rows.length === 0 ? (
+              <EmptyState
+                title="Aucun deal en cours."
+                description={
+                  latestReadyDocument
+                    ? `Créez un lien pour « ${latestReadyDocument.name} » et envoyez-le à votre prospect. Il apparaîtra ici avec ce qu'il y a à faire.`
+                    : "Ouvrez un document et créez un lien par prospect. Chacun apparaîtra ici avec ce qu'il y a à faire."
+                }
+                action={
+                  latestReadyDocument && (
+                    <NewLinkDialog documentId={latestReadyDocument.id} disabled={false} variant="outline" />
+                  )
+                }
+              />
+            ) : (
+              <>
+                <TodoList rows={rows.slice(0, TODO_LIMIT)} now={now} />
+                {rows.length > TODO_LIMIT && (
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    Et {rows.length - TODO_LIMIT} autres deals en cours, moins urgents.
+                  </p>
+                )}
+              </>
+            )}
+          </section>
 
-      <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1fr)_18rem]">
-        <section>
-          <SectionTitle hint="du plus urgent au moins urgent">À traiter</SectionTitle>
-          {rows.length === 0 ? (
-            <EmptyState
-              title="Aucun deal en cours."
-              description={
-                latestReadyDocument
-                  ? `Créez un lien pour « ${latestReadyDocument.name} » et envoyez-le à votre prospect. Il apparaîtra ici avec ce qu'il y a à faire.`
-                  : "Ouvrez un document et créez un lien par prospect. Chacun apparaîtra ici avec ce qu'il y a à faire."
-              }
-              action={
-                latestReadyDocument && (
-                  <NewLinkDialog documentId={latestReadyDocument.id} disabled={false} variant="outline" />
-                )
-              }
-            />
-          ) : (
-            <>
-              <TodoList rows={rows.slice(0, TODO_LIMIT)} now={now} />
-              {rows.length > TODO_LIMIT && (
-                <p className="mt-3 text-sm text-muted-foreground">
-                  Et {rows.length - TODO_LIMIT} autres deals en cours, moins urgents.
-                </p>
-              )}
-            </>
-          )}
-        </section>
+          <section>
+            <SectionTitle hint={periodHint} action={<PeriodTabs current={period} />}>
+              Vos envois
+            </SectionTitle>
+            <FunnelStrip funnel={funnel} />
+          </section>
+        </div>
 
         <aside className="space-y-10">
+          <section>
+            <SectionTitle hint="en ce moment">Deals en cours</SectionTitle>
+            <HeatDistributionBar distribution={distribution} />
+          </section>
+
           {drafts.length > 0 && (
             <section>
               <SectionTitle hint="rien ne part sans vous">Relances à valider</SectionTitle>

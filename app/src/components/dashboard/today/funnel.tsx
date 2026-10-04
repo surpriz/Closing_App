@@ -30,7 +30,7 @@ function percent(value: number, total: number) {
 /** What became of the links sent in the period. Ink only, no heat colour. */
 export function FunnelStrip({ funnel }: { funnel: Funnel }) {
   return (
-    <ol className="grid grid-cols-2 overflow-hidden rounded-xl bg-card ring-1 ring-border sm:grid-cols-4">
+    <ol className="grid grid-cols-2 overflow-hidden rounded-xl bg-card shadow-xs ring-1 ring-border sm:grid-cols-4">
       {STEPS.map((step, index) => {
         const value = funnel[step.key];
         const share = percent(value, funnel.sent);
@@ -39,14 +39,14 @@ export function FunnelStrip({ funnel }: { funnel: Funnel }) {
             key={step.key}
             title={STEP_HINTS[step.key]}
             className={cn(
-              "flex flex-col gap-2 px-4 py-3.5",
+              "flex flex-col gap-2.5 px-4 py-4",
               index > 0 && "sm:border-l sm:border-border",
               index % 2 === 1 && "border-l border-border",
               index > 1 && "border-t border-border sm:border-t-0",
             )}
           >
             <p className="flex items-baseline gap-2">
-              <span className="text-2xl font-medium tracking-[-0.02em] tabular-nums">{value}</span>
+              <span className="font-mono text-2xl font-medium tracking-tight tabular-nums">{value}</span>
               {index > 0 && funnel.sent > 0 && (
                 <span className="text-xs text-muted-foreground tabular-nums">{share} %</span>
               )}

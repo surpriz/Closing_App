@@ -29,7 +29,7 @@ export function DashboardNav() {
   const isActive = useActive();
 
   return (
-    <nav aria-label="Navigation principale" className="hidden items-center gap-1 sm:flex">
+    <nav aria-label="Navigation principale" className="hidden items-center gap-0.5 sm:flex">
       {ITEMS.map((item) => {
         const active = isActive(item.match);
         return (
@@ -38,10 +38,10 @@ export function DashboardNav() {
             href={item.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "rounded-full px-3.5 py-1.5 text-sm transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+              "rounded-lg px-3 py-1.5 text-sm transition-colors duration-150 outline-none focus-visible:ring-3 focus-visible:ring-ring/30",
               active
-                ? "bg-foreground/[0.07] font-medium text-foreground"
-                : "text-muted-foreground hover:text-foreground",
+                ? "bg-card font-medium text-foreground shadow-xs ring-1 ring-border"
+                : "text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground",
             )}
           >
             {item.label}
@@ -71,11 +71,12 @@ export function MobileNav() {
               href={item.href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex flex-col items-center gap-1 py-2.5 text-micro outline-none focus-visible:bg-muted",
+                "relative flex min-h-14 flex-col items-center justify-center gap-1 py-2 text-micro outline-none focus-visible:bg-muted focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-inset",
                 active ? "font-medium text-foreground" : "text-muted-foreground",
               )}
             >
-              <Icon className="size-5" strokeWidth={active ? 2.2 : 1.8} />
+              {active && <span aria-hidden className="absolute inset-x-6 top-0 h-0.5 rounded-full bg-foreground" />}
+              <Icon className="size-5" strokeWidth={active ? 2.2 : 1.8} aria-hidden />
               {"short" in item ? item.short : item.label}
             </Link>
           );
