@@ -1,4 +1,4 @@
-import { Send } from "lucide-react";
+import { PenLine, Send } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -23,6 +23,7 @@ import { parsePeriod, periodStart, PERIODS } from "@/lib/closing/dashboard/perio
 import {
   getFeedSource,
   getFreshValidations,
+  getDraftsToReview,
   getFunnelFacts,
   getOpenDeals,
   getUpcomingFollowups,
@@ -52,6 +53,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
     funnelFacts,
     feedSource,
     upcomingFollowups,
+    drafts,
     freshValidations,
     live,
     origin,
@@ -66,6 +68,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
     getFunnelFacts(organizationId, since),
     getFeedSource(organizationId, since),
     getUpcomingFollowups(organizationId),
+    getDraftsToReview(organizationId),
     getFreshValidations(organizationId, now),
     getWorkspaceLiveState(organizationId, now),
     getAppOrigin(),
@@ -166,6 +169,28 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
         </section>
 
         <aside className="space-y-10">
+          {drafts.length > 0 && (
+            <section>
+              <SectionTitle hint="rien ne part sans vous">Relances à valider</SectionTitle>
+              <ul className="space-y-3 text-sm">
+                {drafts.map((draft) => (
+                  <li key={draft.id} className="flex gap-3">
+                    <PenLine className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+                    <div className="min-w-0">
+                      <Link href={`/links/${draft.link.id}#relances`} className="font-medium hover:underline">
+                        {draft.prospect.company ?? draft.prospect.name ?? draft.prospect.email}
+                      </Link>
+                      <p className="truncate text-muted-foreground">
+                        {CHANNEL_LABELS[draft.channel]}
+                        {draft.subject ? ` : ${draft.subject}` : ""}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
           <section>
             <SectionTitle hint={periodHint}>Ce qui s&apos;est passé</SectionTitle>
             {feed.length === 0 ? (
@@ -234,6 +259,9 @@ function toTodoRow(
       sentAt: deal.sentAt ?? deal.createdAt,
       followupsEnabled: deal.followupsEnabled,
       nextFollowup: deal.followups[0] ?? null,
+      draftToReview: deal.draftCount > 0,
+      lastSellerContactAt: deal.lastSellerContactAt,
+      snoozedUntil: deal.snoozedUntil,
     }),
     url: `${origin}/v/${deal.slug}`,
   };

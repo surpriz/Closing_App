@@ -22,18 +22,36 @@ export type NextActionInput = {
   sentAt: Date;
   followupsEnabled: boolean;
   nextFollowup: { scheduledFor: Date } | null;
+  /** A follow-up is written and waits for the seller's approval. */
+  draftToReview: boolean;
+  /** Last call, reply or meeting the seller logged. */
+  lastSellerContactAt: Date | null;
+  snoozedUntil: Date | null;
 };
 
 export type NextAction =
   | { kind: "call_now" }
   | { kind: "reply" }
+  | { kind: "review_draft" }
   | { kind: "call"; pricing: boolean }
   | { kind: "followup_planned"; at: Date; opened: boolean }
   | { kind: "nudge"; days: number; opened: boolean }
-  | { kind: "wait"; days: number; opened: boolean; tier: Tier | null };
+  | { kind: "wait"; days: number; opened: boolean; tier: Tier | null }
+  | { kind: "in_touch"; at: Date }
+  | { kind: "snoozed"; until: Date };
 
 /** Most urgent first. */
-const URGENCY: NextAction["kind"][] = ["call_now", "reply", "call", "nudge", "followup_planned", "wait"];
+const URGENCY: NextAction["kind"][] = [
+  "call_now",
+  "reply",
+  "review_draft",
+  "call",
+  "nudge",
+  "followup_planned",
+  "in_touch",
+  "wait",
+  "snoozed",
+];
 
 /** The seller has something to do, as opposed to waiting. */
 export function isUrgent(action: NextAction) {
@@ -44,6 +62,8 @@ export function isUrgent(action: NextAction) {
 const QUIET_DAYS_BEFORE_NUDGE = 3;
 /** Pricing read this recently is still worth a call. */
 const PRICING_CALL_WINDOW_MS = 3 * DAY_MS;
+/** After a call or a reply logged by the seller, the ball is in the prospect's court for a while. */
+const IN_TOUCH_WINDOW_MS = 2 * DAY_MS;
 
 function daysSince(date: Date, now: Date) {
   return Math.max(0, Math.floor((now.getTime() - date.getTime()) / DAY_MS));
@@ -53,6 +73,11 @@ export function computeNextAction(input: NextActionInput): NextAction {
   const { now } = input;
   if (input.readingNow) return { kind: "call_now" };
   if (input.dealStatus === "CHANGE_REQUESTED") return { kind: "reply" };
+  if (input.draftToReview) return { kind: "review_draft" };
+  if (input.snoozedUntil && input.snoozedUntil > now) return { kind: "snoozed", until: input.snoozedUntil };
+  if (input.lastSellerContactAt && now.getTime() - input.lastSellerContactAt.getTime() < IN_TOUCH_WINDOW_MS) {
+    return { kind: "in_touch", at: input.lastSellerContactAt };
+  }
 
   if (!input.opened) {
     // Anti-ghosting follow-ups only exist for links never opened.
@@ -81,6 +106,12 @@ export function describeNextAction(action: NextAction, now: Date): string {
       return "Lecture en cours : appelez maintenant.";
     case "reply":
       return "Demande d'ajustement en attente : répondez.";
+    case "review_draft":
+      return "Relance prête : relisez-la et validez.";
+    case "in_touch":
+      return `Échange noté ${formatRelative(action.at, now)}, laissez-lui le temps.`;
+    case "snoozed":
+      return `En pause jusqu'au ${new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long" }).format(action.until)}.`;
     case "call":
       return action.pricing ? "Longue lecture des tarifs : appelez." : "Lu de près : appelez aujourd'hui.";
     case "followup_planned":

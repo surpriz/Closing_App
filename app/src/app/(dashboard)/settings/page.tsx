@@ -47,6 +47,12 @@ export default async function SettingsPage() {
           aiTone: settings.aiTone ?? "",
           senderName: settings.senderName ?? "",
           senderSignature: settings.senderSignature ?? "",
+          autonomy: settings.autonomy,
+          offerDescription: settings.offerDescription ?? "",
+          targetCustomer: settings.targetCustomer ?? "",
+          valueProps: settings.valueProps ?? "",
+          commonObjections: settings.commonObjections ?? "",
+          avgSalesCycleDays: settings.avgSalesCycleDays?.toString() ?? "",
         }}
         providers={{
           email: isEmailConfigured(),

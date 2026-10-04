@@ -12,7 +12,10 @@ import { firstProspect, linkLabelSelect, prospectLabel } from "./labels";
  * next to this file.
  */
 
-const OPEN_FOLLOWUP_STATUSES = ["PENDING", "GENERATED", "SCHEDULED"] as const;
+/** Follow-ups that will go out without the seller doing anything. */
+const PLANNED_FOLLOWUP_STATUSES = ["PENDING", "GENERATED", "SCHEDULED"] as const;
+/** Kinds of logged exchange that mean the seller and the prospect talked. */
+const CONTACT_ACTIVITY_TYPES = ["CALL", "EMAIL_REPLY_RECEIVED", "MEETING", "MANUAL_SEND"] as const;
 const FEED_TAKE = 15;
 /** Open deals loaded for the temperature bar and the "À traiter" list. */
 const DEALS_TAKE = 200;
@@ -34,21 +37,31 @@ export async function getOpenDeals(organizationId: string) {
       createdAt: true,
       lastActivityAt: true,
       followupsEnabled: true,
+      snoozedUntil: true,
       engagementScore: { select: { score: true, tier: true, reasons: true } },
       document: { select: { name: true } },
       prospects: firstProspect,
       followups: {
-        where: { status: { in: [...OPEN_FOLLOWUP_STATUSES] } },
+        where: { status: { in: [...PLANNED_FOLLOWUP_STATUSES] } },
         orderBy: { scheduledFor: "asc" },
         take: 1,
         select: { scheduledFor: true, channel: true, timezone: true },
       },
       views: { where: { isBot: false }, orderBy: { lastSeenAt: "desc" }, take: 1, select: { lastSeenAt: true } },
+      sellerActivities: {
+        where: { type: { in: [...CONTACT_ACTIVITY_TYPES] } },
+        orderBy: { occurredAt: "desc" },
+        take: 1,
+        select: { occurredAt: true },
+      },
+      _count: { select: { followups: { where: { status: "DRAFT" } } } },
     },
   });
 
-  return deals.map(({ views: [lastView], ...deal }) => ({
+  return deals.map(({ views: [lastView], sellerActivities: [lastContact], _count, ...deal }) => ({
     ...deal,
+    draftCount: _count.followups,
+    lastSellerContactAt: lastContact?.occurredAt ?? null,
     dealStatus: deal.dealStatus as "OPEN" | "CHANGE_REQUESTED",
     opened: lastView !== undefined,
     // Only flushes with reading time set lastActivityAt: a prospect who
@@ -256,3 +269,20 @@ export async function getFreshValidations(organizationId: string, now: Date) {
   });
   return actions.map((action) => action.prospect?.company ?? prospectLabel(action.link));
 }
+
+/** Follow-ups written and waiting for the seller's go, oldest slot first. */
+export function getDraftsToReview(organizationId: string) {
+  return prisma.followup.findMany({
+    where: { link: { organizationId, archivedAt: null }, status: "DRAFT" },
+    orderBy: { scheduledFor: "asc" },
+    take: 6,
+    select: {
+      id: true,
+      channel: true,
+      subject: true,
+      link: { select: { id: true } },
+      prospect: { select: { name: true, email: true, company: true } },
+    },
+  });
+}
+

@@ -194,3 +194,93 @@ export async function saveProspect(
   revalidateLink(link);
   return { ok: true };
 }
+
+const optionalText = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max)
+    .transform((v) => v || null);
+
+const optionalDate = z
+  .string()
+  .trim()
+  .transform((v) => (v === "" ? null : new Date(`${v}T12:00:00Z`)))
+  .refine((v) => v === null || !Number.isNaN(v.getTime()), { message: "Date invalide." });
+
+const dealContextSchema = z.object({
+  dealAmount: z
+    .string()
+    .trim()
+    .transform((v) => v.replace(/[\s ]/g, "").replace(",", "."))
+    .transform((v) => (v === "" ? null : Math.round(Number(v) * 100)))
+    .pipe(z.number().int().min(0).max(2_000_000_000).nullable()),
+  dealCurrency: z.enum(["EUR", "USD", "GBP", "CHF", "CAD"]),
+  decisionDeadline: optionalDate,
+  decisionMakerName: optionalText(120),
+  decisionMakerRole: optionalText(120),
+  sellerNotes: optionalText(2000),
+});
+
+// What the seller knows about the deal and the prospect can't see: amount, deadline, decision maker, notes
+export async function saveDealContext(linkId: string, _prev: LinkFormState, formData: FormData): Promise<LinkFormState> {
+  const link = await requireOwnedLink(linkId);
+  const parsed = dealContextSchema.safeParse({
+    dealAmount: String(formData.get("dealAmount") ?? ""),
+    dealCurrency: String(formData.get("dealCurrency") ?? "EUR"),
+    decisionDeadline: String(formData.get("decisionDeadline") ?? ""),
+    decisionMakerName: String(formData.get("decisionMakerName") ?? ""),
+    decisionMakerRole: String(formData.get("decisionMakerRole") ?? ""),
+    sellerNotes: String(formData.get("sellerNotes") ?? ""),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Contexte invalide." };
+
+  const { dealAmount, ...rest } = parsed.data;
+  await prisma.link.update({ where: { id: link.id }, data: { ...rest, dealAmountCents: dealAmount } });
+  revalidateLink(link);
+  return { ok: true };
+}
+
+const sellerActivitySchema = z.object({
+  type: z.enum(["CALL", "EMAIL_REPLY_RECEIVED", "MEETING", "NOTE"]),
+  note: optionalText(1000),
+  occurredAt: z
+    .string()
+    .trim()
+    .transform((v) => (v === "" ? new Date() : new Date(v)))
+    .refine((v) => !Number.isNaN(v.getTime()), { message: "Date invalide." }),
+});
+
+// Calls, replies and meetings happen outside Clozer: without them the advice would be blind
+export async function logSellerActivity(
+  linkId: string,
+  _prev: LinkFormState,
+  formData: FormData,
+): Promise<LinkFormState> {
+  const link = await requireOwnedLink(linkId);
+  const { user } = await requireWorkspace();
+  const parsed = sellerActivitySchema.safeParse({
+    type: String(formData.get("type") ?? ""),
+    note: String(formData.get("note") ?? ""),
+    occurredAt: String(formData.get("occurredAt") ?? ""),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Échange invalide." };
+  if (parsed.data.occurredAt.getTime() > Date.now() + 60_000) return { error: "Cette date est dans le futur." };
+
+  await prisma.sellerActivity.create({ data: { linkId: link.id, userId: user.id, ...parsed.data } });
+  revalidateLink(link);
+  return { ok: true };
+}
+
+/** Pauses advice and automatic follow-ups until a date, or resumes them with null. */
+export async function snoozeDeal(linkId: string, until: string | null) {
+  const link = await requireOwnedLink(linkId);
+  const date = until ? new Date(`${until}T08:00:00Z`) : null;
+  if (date && (Number.isNaN(date.getTime()) || date.getTime() < Date.now())) {
+    return { error: "Choisissez une date à venir." };
+  }
+  await prisma.link.update({ where: { id: link.id }, data: { snoozedUntil: date } });
+  if (date) await cancelOpenFollowups(link.id, "Deal mis en pause par le vendeur");
+  revalidateLink(link);
+  return { ok: true };
+}

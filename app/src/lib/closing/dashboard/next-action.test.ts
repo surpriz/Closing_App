@@ -23,6 +23,9 @@ const base: NextActionInput = {
   sentAt: ago(5),
   followupsEnabled: true,
   nextFollowup: null,
+  draftToReview: false,
+  lastSellerContactAt: null,
+  snoozedUntil: null,
 };
 
 describe("computeNextAction", () => {
@@ -132,5 +135,43 @@ describe("compareByUrgency", () => {
       ["wait", 40, ago(0)],
       ["wait", 40, ago(2)],
     ]);
+  });
+});
+
+describe("seller-side context", () => {
+  it("asks to review a waiting draft right after a change request", () => {
+    expect(computeNextAction({ ...base, tier: "HOT", draftToReview: true })).toEqual({ kind: "review_draft" });
+    expect(computeNextAction({ ...base, dealStatus: "CHANGE_REQUESTED", draftToReview: true })).toEqual({
+      kind: "reply",
+    });
+    expect(isUrgent({ kind: "review_draft" })).toBe(true);
+  });
+
+  it("waits after a call or a reply logged less than two days ago", () => {
+    const at = new Date(now.getTime() - 1 * DAY);
+    expect(computeNextAction({ ...base, tier: "HOT", lastSellerContactAt: at })).toEqual({ kind: "in_touch", at });
+    expect(computeNextAction({ ...base, tier: "HOT", lastSellerContactAt: ago(3) }).kind).toBe("call");
+  });
+
+  it("stays quiet while the deal is snoozed, then resumes", () => {
+    const until = new Date(now.getTime() + 2 * DAY);
+    expect(computeNextAction({ ...base, lastActivityAt: ago(10), snoozedUntil: until })).toEqual({
+      kind: "snoozed",
+      until,
+    });
+    expect(computeNextAction({ ...base, lastActivityAt: ago(10), snoozedUntil: ago(1) }).kind).toBe("nudge");
+  });
+
+  it("still flags a live reader on a snoozed deal", () => {
+    expect(computeNextAction({ ...base, readingNow: true, snoozedUntil: new Date(now.getTime() + DAY) }).kind).toBe(
+      "call_now",
+    );
+  });
+
+  it("puts snoozed deals last", () => {
+    const row = (action: Parameters<typeof describeNextAction>[0]) => ({ action, score: 50, lastActivityAt: null });
+    expect(
+      compareByUrgency(row({ kind: "snoozed", until: now }), row({ kind: "wait", days: 1, opened: true, tier: null })),
+    ).toBeGreaterThan(0);
   });
 });

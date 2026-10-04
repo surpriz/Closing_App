@@ -1,3 +1,4 @@
+import type { FollowupStatus } from "@/generated/prisma/enums";
 import { getPublicAppUrl } from "@/lib/app-origin";
 import { prisma } from "@/lib/db";
 import { isEmailConfigured, sendEmail, textToHtml } from "@/lib/email";
@@ -20,8 +21,14 @@ async function finish(id: string, status: "CANCELLED" | "SKIPPED" | "FAILED", re
   });
 }
 
-// Re-checks everything at send time: the situation may have changed since queueing
-export async function sendFollowup(followupId: string): Promise<Outcome> {
+const SENDABLE: FollowupStatus[] = ["GENERATED", "SCHEDULED"];
+
+// Re-checks everything at send time: the situation may have changed since queueing.
+// `approvedById` lets the seller send a DRAFT right away: approval and send in one go.
+export async function sendFollowup(
+  followupId: string,
+  { approvedById }: { approvedById?: string } = {},
+): Promise<Outcome> {
   const followup = await prisma.followup.findUnique({
     where: { id: followupId },
     include: {
@@ -29,7 +36,8 @@ export async function sendFollowup(followupId: string): Promise<Outcome> {
       link: { include: { createdBy: { select: { email: true } } } },
     },
   });
-  if (!followup || !["GENERATED", "SCHEDULED"].includes(followup.status) || !followup.body) {
+  const statuses: FollowupStatus[] = approvedById ? [...SENDABLE, "DRAFT"] : SENDABLE;
+  if (!followup || !statuses.includes(followup.status) || !followup.body) {
     return "ignored";
   }
 
@@ -43,11 +51,17 @@ export async function sendFollowup(followupId: string): Promise<Outcome> {
     await finish(followup.id, "CANCELLED", "Le prospect a déjà répondu sur la proposition");
     return "cancelled";
   }
+  if (link.snoozedUntil && link.snoozedUntil > new Date()) {
+    await finish(followup.id, "CANCELLED", "Deal mis en pause par le vendeur");
+    return "cancelled";
+  }
   if (prospect.unsubscribedAt) {
     await finish(followup.id, "SKIPPED", "Prospect désinscrit");
     return "skipped";
   }
-  if (followup.trigger === "ANTI_GHOSTING") {
+  // A message the seller approved stands: they saw the situation when they did
+  const sellerApproved = !!followup.approvedAt || !!approvedById;
+  if (followup.trigger === "ANTI_GHOSTING" && !sellerApproved) {
     const openedSince = await prisma.documentView.count({
       where: { linkId: link.id, isBot: false, startedAt: { gte: followup.createdAt } },
     });
@@ -58,9 +72,16 @@ export async function sendFollowup(followupId: string): Promise<Outcome> {
   }
 
   // Claim it so two concurrent ticks can't send the same message twice
+  const now = new Date();
   const claimed = await prisma.followup.updateMany({
-    where: { id: followup.id, status: { in: ["GENERATED", "SCHEDULED"] } },
-    data: { status: "SENT", sentAt: new Date(), error: null },
+    where: { id: followup.id, status: { in: statuses } },
+    data: {
+      status: "SENT",
+      sentAt: now,
+      sentVia: "PLATFORM",
+      error: null,
+      ...(approvedById && !followup.approvedAt ? { approvedAt: now, approvedById } : {}),
+    },
   });
   if (claimed.count === 0) return "ignored";
 
@@ -115,7 +136,7 @@ export async function sendFollowup(followupId: string): Promise<Outcome> {
 
 export async function dispatchDueFollowups(now = new Date(), limit = 25) {
   const due = await prisma.followup.findMany({
-    where: { status: { in: ["GENERATED", "SCHEDULED"] }, scheduledFor: { lte: now } },
+    where: { status: { in: SENDABLE }, scheduledFor: { lte: now } },
     orderBy: { scheduledFor: "asc" },
     select: { id: true },
     take: limit,

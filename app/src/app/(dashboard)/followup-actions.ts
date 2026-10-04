@@ -1,11 +1,18 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 
 import { DAY_MS } from "@/lib/closing/constants";
 import { runClosingTick } from "@/lib/closing/engine";
 import { sendFollowup } from "@/lib/closing/followups/dispatch";
-import { cancelOpenFollowups } from "@/lib/closing/followups/queue";
+import { cancelOpenFollowups, OPEN_FOLLOWUP_STATUSES } from "@/lib/closing/followups/queue";
+import {
+  approveFollowup as approve,
+  markFollowupSentManually,
+  regenerateFollowup as regenerate,
+  updateFollowupDraft,
+} from "@/lib/closing/followups/review";
 import { prisma } from "@/lib/db";
 import { requireWorkspace } from "@/lib/session";
 
@@ -20,13 +27,19 @@ async function requireOwnedLink(linkId: string) {
 }
 
 async function requireOwnedFollowup(followupId: string) {
-  const { organization } = await requireWorkspace();
+  const { organization, user } = await requireWorkspace();
   const followup = await prisma.followup.findFirst({
     where: { id: followupId, link: { organizationId: organization.id } },
-    select: { id: true, link: { select: { documentId: true } } },
+    select: { id: true, link: { select: { id: true, documentId: true } } },
   });
   if (!followup) throw new Error("Relance introuvable");
-  return followup;
+  return { ...followup, userId: user.id };
+}
+
+function revalidateFollowup(followup: { link: { id: string; documentId: string } }) {
+  revalidatePath(`/links/${followup.link.id}`);
+  revalidatePath(`/documents/${followup.link.documentId}`);
+  revalidatePath("/dashboard");
 }
 
 function assertDev() {
@@ -42,19 +55,60 @@ export async function toggleLinkFollowups(linkId: string, enabled: boolean) {
 
 export async function sendFollowupNow(followupId: string) {
   const followup = await requireOwnedFollowup(followupId);
-  // sendFollowup ignores scheduledFor, so the planned slot stays visible
-  const outcome = await sendFollowup(followup.id);
-  revalidatePath(`/documents/${followup.link.documentId}`);
+  // sendFollowup ignores scheduledFor, so the planned slot stays visible.
+  // Sending a draft from here counts as approving it.
+  const outcome = await sendFollowup(followup.id, { approvedById: followup.userId });
+  revalidateFollowup(followup);
   return { outcome };
 }
 
 export async function cancelFollowup(followupId: string) {
   const followup = await requireOwnedFollowup(followupId);
   await prisma.followup.updateMany({
-    where: { id: followup.id, status: { in: ["PENDING", "GENERATED", "SCHEDULED"] } },
+    where: { id: followup.id, status: { in: [...OPEN_FOLLOWUP_STATUSES] } },
     data: { status: "CANCELLED", cancelledAt: new Date(), error: "Annulée par le vendeur" },
   });
-  revalidatePath(`/documents/${followup.link.documentId}`);
+  revalidateFollowup(followup);
+}
+
+const draftSchema = z.object({
+  subject: z
+    .string()
+    .trim()
+    .max(200)
+    .transform((v) => v || null),
+  body: z.string().trim().min(1, "Le message est vide.").max(4000),
+});
+
+export async function saveFollowupDraft(followupId: string, draft: { subject: string; body: string }) {
+  const followup = await requireOwnedFollowup(followupId);
+  const parsed = draftSchema.safeParse(draft);
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Message invalide." };
+  const ok = await updateFollowupDraft(followup.id, parsed.data);
+  revalidateFollowup(followup);
+  return ok ? { ok: true } : { error: "Cette relance ne peut plus être modifiée." };
+}
+
+export async function approveFollowup(followupId: string) {
+  const followup = await requireOwnedFollowup(followupId);
+  const ok = await approve(followup.id, followup.userId);
+  revalidateFollowup(followup);
+  return ok ? { ok: true } : { error: "Cette relance n'est plus à valider." };
+}
+
+export async function markFollowupSentByMe(followupId: string) {
+  const followup = await requireOwnedFollowup(followupId);
+  const ok = await markFollowupSentManually(followup.id, followup.userId);
+  revalidateFollowup(followup);
+  return ok ? { ok: true } : { error: "Cette relance est déjà partie ou annulée." };
+}
+
+export async function regenerateFollowup(followupId: string, instruction: string) {
+  const followup = await requireOwnedFollowup(followupId);
+  const cleaned = instruction.trim().slice(0, 300) || null;
+  const ok = await regenerate(followup.id, cleaned);
+  revalidateFollowup(followup);
+  return ok ? { ok: true } : { error: "Cette relance ne peut plus être réécrite." };
 }
 
 // Local testing helpers: run the engine without waiting for the scheduler,

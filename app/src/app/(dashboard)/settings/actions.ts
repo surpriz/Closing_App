@@ -45,6 +45,16 @@ const settingsSchema = z
     aiTone: optionalText(300),
     senderName: optionalText(80),
     senderSignature: optionalText(500),
+    autonomy: z.enum(["COPILOT", "AUTOPILOT"]),
+    offerDescription: optionalText(1500),
+    targetCustomer: optionalText(500),
+    valueProps: optionalText(1500),
+    commonObjections: optionalText(1500),
+    avgSalesCycleDays: z
+      .string()
+      .trim()
+      .transform((v) => (v === "" ? null : Number(v)))
+      .pipe(z.number().int().min(1).max(730).nullable()),
   })
   .refine((s) => s.businessHourEnd > s.businessHourStart, {
     message: "L'heure de fin doit être après l'heure de début.",
@@ -70,6 +80,12 @@ export async function saveWorkspaceSettings(_prev: SettingsState, formData: Form
     aiTone: String(formData.get("aiTone") ?? ""),
     senderName: String(formData.get("senderName") ?? ""),
     senderSignature: String(formData.get("senderSignature") ?? ""),
+    autonomy: String(formData.get("autonomy") ?? "COPILOT"),
+    offerDescription: String(formData.get("offerDescription") ?? ""),
+    targetCustomer: String(formData.get("targetCustomer") ?? ""),
+    valueProps: String(formData.get("valueProps") ?? ""),
+    commonObjections: String(formData.get("commonObjections") ?? ""),
+    avgSalesCycleDays: String(formData.get("avgSalesCycleDays") ?? ""),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Paramètres invalides." };
@@ -89,6 +105,13 @@ export async function saveWorkspaceSettings(_prev: SettingsState, formData: Form
     where: { organizationId: organization.id },
     data: { ...values, slackWebhookUrl: slack, webhookSecret },
   });
+  // Back to copilot: what was queued under autopilot waits for the seller again
+  if (current.autonomy === "AUTOPILOT" && values.autonomy === "COPILOT") {
+    await prisma.followup.updateMany({
+      where: { link: { organizationId: organization.id }, status: "GENERATED", approvedAt: null },
+      data: { status: "DRAFT" },
+    });
+  }
 
   revalidatePath("/settings");
   return { ok: true };

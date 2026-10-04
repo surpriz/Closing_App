@@ -1,5 +1,5 @@
 export type FollowupDraftInput = {
-  trigger: "HOT_PRICING" | "ANTI_GHOSTING" | "MANUAL";
+  trigger: "HOT_PRICING" | "ANTI_GHOSTING" | "MANUAL" | "AI_DECISION";
   channel: "EMAIL" | "WHATSAPP";
   locale: string;
   prospectName: string | null;

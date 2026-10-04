@@ -5,6 +5,7 @@ import type {
   FollowupStatus,
   FollowupTrigger,
   PageTag,
+  SellerActivityType,
   SellerAlertChannel,
   SellerAlertType,
 } from "@/generated/prisma/enums";
@@ -35,6 +36,7 @@ export const TIER_LABELS: Record<EngagementTier, string> = {
 
 export const FOLLOWUP_STATUS_LABELS: Record<FollowupStatus, string> = {
   PENDING: "Rédaction…",
+  DRAFT: "À valider",
   GENERATED: "Planifiée",
   SCHEDULED: "Planifiée",
   SENT: "Envoyée",
@@ -48,6 +50,15 @@ export const FOLLOWUP_TRIGGER_LABELS: Record<FollowupTrigger, string> = {
   HOT_PRICING: "Après lecture des tarifs",
   ANTI_GHOSTING: "Lien pas encore ouvert",
   MANUAL: "Relance manuelle",
+  AI_DECISION: "Conseillée par l'analyse",
+};
+
+export const SELLER_ACTIVITY_LABELS: Record<SellerActivityType, string> = {
+  CALL: "Appel",
+  EMAIL_REPLY_RECEIVED: "Réponse reçue",
+  MEETING: "Rendez-vous",
+  NOTE: "Note",
+  MANUAL_SEND: "Message envoyé",
 };
 
 export const CHANNEL_LABELS: Record<FollowupChannel, string> = {

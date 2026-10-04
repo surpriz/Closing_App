@@ -6,14 +6,17 @@ import { notFound } from "next/navigation";
 import { ActivityTimeline, type TimelineItem } from "@/components/dashboard/activity-timeline";
 import { ArchiveLinkButton } from "@/components/dashboard/archive-link-button";
 import { CopyButton } from "@/components/dashboard/copy-button";
+import { DealContextForm } from "@/components/dashboard/deal-context-form";
 import { DealStatusSelect } from "@/components/dashboard/deal-status-select";
-import { FollowupsPanel, type FollowupItem } from "@/components/dashboard/followups-panel";
+import { toFollowupItem, type FollowupItem } from "@/components/dashboard/followup-item";
+import { FollowupsPanel } from "@/components/dashboard/followups-panel";
 import { HEAT_BG } from "@/components/dashboard/heat";
 import {
   ALERT_TYPE_LABELS,
   CHANNEL_LABELS,
   FOLLOWUP_TRIGGER_LABELS,
   SCORE_REASON_LABELS,
+  SELLER_ACTIVITY_LABELS,
   TIER_LABELS,
 } from "@/components/dashboard/labels";
 import { LinkSettingsDialog } from "@/components/dashboard/link-settings-form";
@@ -21,6 +24,7 @@ import { LiveActivity } from "@/components/dashboard/live-activity";
 import { SectionTitle, StatLine, Surface } from "@/components/dashboard/page-header";
 import { PageTimeChart, type PageTimeDatum } from "@/components/dashboard/page-time-chart";
 import { ProspectForm } from "@/components/dashboard/prospect-form";
+import { SellerActivityForm, SnoozeControl } from "@/components/dashboard/seller-activity-form";
 import { ScoreGuide, TemperatureGauge } from "@/components/dashboard/temperature";
 import { getAppOrigin } from "@/lib/app-origin";
 import { getLinkAnalytics } from "@/lib/closing/analytics";
@@ -66,7 +70,7 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
 
   const score = await freshEngagementScore(link.id, link.engagementScore);
 
-  const [analytics, settings, origin, followups, alerts, actions, live] = await Promise.all([
+  const [analytics, settings, origin, followups, alerts, actions, live, sellerActivities] = await Promise.all([
     getLinkAnalytics(link.id),
     getWorkspaceSettings(organization.id),
     getAppOrigin(),
@@ -84,6 +88,7 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
       include: { prospect: { select: { name: true, email: true } } },
     }),
     getLinkLiveState(link.id),
+    prisma.sellerActivity.findMany({ where: { linkId: link.id }, orderBy: { occurredAt: "desc" }, take: 20 }),
   ]);
 
   const mainProspect = link.prospects[0];
@@ -138,6 +143,13 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
         title: `Relance envoyée (${FOLLOWUP_TRIGGER_LABELS[f.trigger].toLowerCase()})`,
         detail: `${CHANNEL_LABELS[f.channel]} à ${f.prospect.name ?? f.prospect.email}`,
       })),
+    ...sellerActivities.map((activity) => ({
+      id: `seller-${activity.id}`,
+      at: activity.occurredAt,
+      kind: "seller" as const,
+      title: `${SELLER_ACTIVITY_LABELS[activity.type]} (noté par vous)`,
+      detail: activity.note,
+    })),
     ...alerts.map((alert) => {
       const payload = alert.payload as { liveViewers?: number; inactiveDays?: number };
       return {
@@ -156,22 +168,7 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
     .sort((a, b) => b.at.getTime() - a.at.getTime())
     .slice(0, 40);
 
-  const followupItems: FollowupItem[] = followups.map((f) => ({
-    id: f.id,
-    status: f.status,
-    trigger: f.trigger,
-    channel: f.channel,
-    scheduledFor: f.scheduledFor,
-    timezone: f.timezone,
-    subject: f.subject,
-    body: f.body,
-    error: f.error,
-    aiProvider: f.aiProvider,
-    aiModel: f.aiModel,
-    sentAt: f.sentAt,
-    recipient: f.prospect.name ?? f.prospect.email,
-    linkName: link.name ?? link.slug,
-  }));
+  const followupItems: FollowupItem[] = followups.map((f) => toFollowupItem(f, link.name ?? link.slug));
 
   const now = new Date();
   const contactLine = [mainProspect?.company ? mainProspect.name : null, mainProspect?.email]
@@ -324,7 +321,7 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
             </section>
           )}
 
-          <section>
+          <section id="relances" className="scroll-mt-20">
             <SectionTitle>Relances</SectionTitle>
             <Surface className="p-4">
               <FollowupsPanel followups={followupItems} />
@@ -339,7 +336,8 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
           </section>
         </div>
 
-        <aside>
+        <aside className="space-y-10">
+          <section>
           <SectionTitle hint="reçoivent les relances">Contacts</SectionTitle>
           <Surface>
             <div className="divide-y divide-border">
@@ -382,6 +380,46 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
               </details>
             </div>
           </Surface>
+          </section>
+
+          <section>
+            <SectionTitle hint="vous seul le voyez">Le deal</SectionTitle>
+            <Surface>
+              <div className="divide-y divide-border">
+                <DealContextForm
+                  linkId={link.id}
+                  initial={{
+                    // Not updatedAt: it moves on every tracking flush and the page refreshes itself
+                    version: [
+                      link.dealAmountCents,
+                      link.dealCurrency,
+                      link.decisionDeadline?.getTime(),
+                      link.decisionMakerName,
+                      link.decisionMakerRole,
+                      link.sellerNotes,
+                    ].join("|"),
+                    dealAmount: link.dealAmountCents !== null ? String(link.dealAmountCents / 100) : "",
+                    dealCurrency: link.dealCurrency ?? "EUR",
+                    decisionDeadline: link.decisionDeadline?.toISOString().slice(0, 10) ?? "",
+                    decisionMakerName: link.decisionMakerName ?? "",
+                    decisionMakerRole: link.decisionMakerRole ?? "",
+                    sellerNotes: link.sellerNotes ?? "",
+                  }}
+                />
+                <SnoozeControl
+                  linkId={link.id}
+                  snoozedUntil={link.snoozedUntil && link.snoozedUntil > now ? link.snoozedUntil.toISOString() : null}
+                />
+              </div>
+            </Surface>
+          </section>
+
+          <section>
+            <SectionTitle hint="appels, réponses, rendez-vous">Noter un échange</SectionTitle>
+            <Surface>
+              <SellerActivityForm linkId={link.id} />
+            </Surface>
+          </section>
         </aside>
       </div>
     </div>

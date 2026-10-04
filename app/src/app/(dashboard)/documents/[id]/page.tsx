@@ -10,7 +10,8 @@ import { DeleteDocumentButton } from "@/components/dashboard/delete-document-but
 import { DocumentPreview } from "@/components/dashboard/document-preview";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { EngineDevTools } from "@/components/dashboard/engine-dev-tools";
-import { FollowupsPanel, type FollowupItem } from "@/components/dashboard/followups-panel";
+import { toFollowupItem, type FollowupItem } from "@/components/dashboard/followup-item";
+import { FollowupsPanel } from "@/components/dashboard/followups-panel";
 import { HeatBar } from "@/components/dashboard/heat";
 import {
   ALERT_CHANNEL_LABELS,
@@ -68,7 +69,7 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
       orderBy: { createdAt: "desc" },
       take: 30,
       include: {
-        prospect: { select: { email: true, name: true } },
+        prospect: { select: { name: true, email: true } },
         link: { select: { name: true, slug: true } },
       },
     }),
@@ -93,28 +94,13 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
   });
   const taggedPages = document.pages.filter((p) => p.tags.length > 0);
 
-  const followupItems: FollowupItem[] = followups.map((f) => ({
-    id: f.id,
-    status: f.status,
-    trigger: f.trigger,
-    channel: f.channel,
-    scheduledFor: f.scheduledFor,
-    timezone: f.timezone,
-    subject: f.subject,
-    body: f.body,
-    error: f.error,
-    aiProvider: f.aiProvider,
-    aiModel: f.aiModel,
-    sentAt: f.sentAt,
-    recipient: f.prospect.name ?? f.prospect.email,
-    linkName: f.link.name ?? f.link.slug,
-  }));
+  const followupItems: FollowupItem[] = followups.map((f) => toFollowupItem(f, f.link.name ?? f.link.slug));
 
   const now = new Date();
   const ready = document.status === "READY";
   const isWeb = document.kind === "URL";
   const webHost = document.externalUrl ? new URL(document.externalUrl).hostname.replace(/^www\./, "") : null;
-  const pendingFollowups = followups.filter((f) => ["PENDING", "GENERATED", "SCHEDULED"].includes(f.status)).length;
+  const pendingFollowups = followups.filter((f) => ["PENDING", "DRAFT", "GENERATED", "SCHEDULED"].includes(f.status)).length;
 
   return (
     <div className="space-y-8">

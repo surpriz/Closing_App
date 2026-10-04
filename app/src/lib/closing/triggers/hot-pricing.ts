@@ -30,6 +30,7 @@ export async function evaluateHotPricing(viewId: string, now = new Date()) {
 
   const { link } = view;
   if (!link.followupsEnabled || link.dealStatus !== "OPEN" || link.archivedAt) return;
+  if (link.snoozedUntil && link.snoozedUntil > now) return;
 
   const pricingPages = link.document.pages.map((p) => p.pageNumber);
   if (pricingPages.length === 0) return;

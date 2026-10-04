@@ -30,6 +30,12 @@ type Props = {
     aiTone: string;
     senderName: string;
     senderSignature: string;
+    autonomy: "COPILOT" | "AUTOPILOT";
+    offerDescription: string;
+    targetCustomer: string;
+    valueProps: string;
+    commonObjections: string;
+    avgSalesCycleDays: string;
   };
   providers: { email: boolean; whatsapp: boolean; ai: string | null };
 };
@@ -117,6 +123,31 @@ export function SettingsForm({ initial, providers }: Props) {
           title="Relances"
           description="Clozer relance vos prospects tout seul. Ces règles valent pour tous les liens, sauf réglage contraire sur un lien."
         >
+          <Row hint="Vous gardez la main : relisez, retouchez ou réécrivez chaque message avant qu'il parte.">
+            <span className="mb-1 block">Avant d&apos;envoyer une relance</span>
+            <div className="flex flex-col gap-1.5">
+              <label className="flex cursor-pointer items-center gap-2.5">
+                <input
+                  type="radio"
+                  name="autonomy"
+                  value="COPILOT"
+                  defaultChecked={initial.autonomy === "COPILOT"}
+                  className="accent-foreground"
+                />
+                Je la valide d&apos;abord
+              </label>
+              <label className="flex cursor-pointer items-center gap-2.5">
+                <input
+                  type="radio"
+                  name="autonomy"
+                  value="AUTOPILOT"
+                  defaultChecked={initial.autonomy === "AUTOPILOT"}
+                  className="accent-foreground"
+                />
+                Elle part toute seule à l&apos;heure prévue
+              </label>
+            </div>
+          </Row>
           <Row hint="WhatsApp n'est utilisé que si le prospect a donné son numéro et son accord.">
             <span className="mb-1 block">Relancer par</span>
             <div className="flex flex-wrap gap-x-6 gap-y-2">
@@ -218,6 +249,63 @@ export function SettingsForm({ initial, providers }: Props) {
               placeholder={"Jérôme Laval\nStudio Nova, 06 12 34 56 78"}
             />
           </div>
+        </Section>
+
+        <Section
+          title="Votre offre"
+          description="Ce que vous vendez et à qui. Clozer s'en sert pour lire vos deals et écrire des relances qui tombent juste."
+        >
+          <div className="space-y-1.5 px-5 py-4">
+            <Label htmlFor="offerDescription">Ce que vous vendez</Label>
+            <Textarea
+              id="offerDescription"
+              name="offerDescription"
+              rows={3}
+              defaultValue={initial.offerDescription}
+              placeholder="Refonte de sites e-commerce Shopify, de l'audit à la mise en ligne, en 8 à 12 semaines."
+            />
+          </div>
+          <div className="space-y-1.5 px-5 py-4">
+            <Label htmlFor="targetCustomer">Vos clients</Label>
+            <Input
+              id="targetCustomer"
+              name="targetCustomer"
+              defaultValue={initial.targetCustomer}
+              placeholder="Marques DTC de 2 à 20 M€ de CA, décision par le fondateur ou le directeur e-commerce"
+            />
+          </div>
+          <div className="space-y-1.5 px-5 py-4">
+            <Label htmlFor="valueProps">Pourquoi ils vous choisissent</Label>
+            <Textarea
+              id="valueProps"
+              name="valueProps"
+              rows={2}
+              defaultValue={initial.valueProps}
+              placeholder="Prix forfaitaire, taux de conversion +18 % en moyenne, une équipe dédiée"
+            />
+          </div>
+          <div className="space-y-1.5 px-5 py-4">
+            <Label htmlFor="commonObjections">Les objections que vous entendez souvent</Label>
+            <Textarea
+              id="commonObjections"
+              name="commonObjections"
+              rows={2}
+              defaultValue={initial.commonObjections}
+              placeholder="Trop cher par rapport à un freelance, peur de perdre le SEO, pas le bon moment"
+            />
+          </div>
+          <Row>
+            <label htmlFor="avgSalesCycleDays">Un deal se signe en général en</label>
+            <Inline
+              id="avgSalesCycleDays"
+              name="avgSalesCycleDays"
+              type="number"
+              min={1}
+              max={730}
+              defaultValue={initial.avgSalesCycleDays}
+            />
+            jours
+          </Row>
         </Section>
 
         <Section

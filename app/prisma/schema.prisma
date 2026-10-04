@@ -92,11 +92,11 @@ model Organization {
   members     Member[]
   invitations Invitation[]
 
-  settings        WorkspaceSettings?
-  documents       Document[]
-  links           Link[]
-  stripeCustomerId String?           @unique
-  plan             String            @default("free")
+  settings         WorkspaceSettings?
+  documents        Document[]
+  links            Link[]
+  stripeCustomerId String?            @unique
+  plan             String             @default("free")
 
   @@map("organizations")
 }
@@ -180,17 +180,37 @@ enum FollowupTrigger {
   HOT_PRICING // long read on the pricing page without validation
   ANTI_GHOSTING // no view after N days
   MANUAL // queued by the seller
+  AI_DECISION // decided by the deal analysis
 }
 
 enum FollowupStatus {
   PENDING // created, message not generated yet
-  GENERATED // message ready, waiting for its send slot
+  DRAFT // message ready, waiting for the seller to approve it (copilot mode)
+  GENERATED // message approved (or autopilot), waiting for its send slot
   SCHEDULED // delayed run registered in Trigger.dev
   SENT
   DELIVERED // confirmed by provider webhook
   FAILED
   CANCELLED // deal closed, new activity or cancelled by seller
   SKIPPED // guard failed at send time (opt-out, no phone, ...)
+}
+
+enum FollowupSentVia {
+  PLATFORM // sent by Clozer (SES, Twilio)
+  MANUAL // the seller sent it from their own mailbox
+}
+
+enum Autonomy {
+  COPILOT // every follow-up waits for the seller's approval
+  AUTOPILOT // confident follow-ups go out on their own
+}
+
+enum SellerActivityType {
+  CALL
+  EMAIL_REPLY_RECEIVED
+  MEETING
+  NOTE
+  MANUAL_SEND
 }
 
 enum EngagementTier {
@@ -248,6 +268,19 @@ model WorkspaceSettings {
   aiTone          String? // free text guidance for generated messages
   senderName      String?
   senderSignature String?
+
+  autonomy                  Autonomy @default(COPILOT)
+  autopilotMinConfidence    Int      @default(80) // 0-100
+  maxFollowupsPer30Days     Int      @default(3) // per prospect
+  minDaysBetweenFollowups   Int      @default(3)
+  minDelayAfterReadingHours Int      @default(3) // a follow-up right after a read gives the tracking away
+
+  // What the seller sells, fed to the AI
+  offerDescription  String?
+  targetCustomer    String?
+  valueProps        String?
+  commonObjections  String?
+  avgSalesCycleDays Int?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -323,8 +356,8 @@ model Link {
   chatEnabled Boolean    @default(false)
   ctaEnabled  Boolean    @default(true)
 
-  followupsEnabled Boolean           @default(true)
-  channels         FollowupChannel[] // empty = workspace defaults
+  followupsEnabled       Boolean           @default(true)
+  channels               FollowupChannel[] // empty = workspace defaults
   // null / empty = workspace defaults
   hotPricingThresholdSec Int?
   inactivityDays         Int[]
@@ -336,14 +369,24 @@ model Link {
   closedAt       DateTime?
   archivedAt     DateTime?
 
-  prospects       Prospect[]
-  views           DocumentView[]
-  pageViews       PageView[]
-  engagementScore EngagementScore?
-  followups       Followup[]
-  alerts          SellerAlert[]
-  actions         ProspectAction[]
-  chatMessages    ChatMessage[]
+  // Deal context typed by the seller. sellerNotes is private: never sent to the message writer.
+  dealAmountCents   Int?
+  dealCurrency      String?
+  decisionDeadline  DateTime?
+  decisionMakerName String?
+  decisionMakerRole String?
+  sellerNotes       String?
+  snoozedUntil      DateTime?
+
+  prospects        Prospect[]
+  views            DocumentView[]
+  pageViews        PageView[]
+  engagementScore  EngagementScore?
+  followups        Followup[]
+  alerts           SellerAlert[]
+  actions          ProspectAction[]
+  chatMessages     ChatMessage[]
+  sellerActivities SellerActivity[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -417,10 +460,10 @@ model DocumentView {
   userAgent  String?
   isBot      Boolean @default(false)
 
-  startedAt       DateTime @default(now())
-  lastSeenAt      DateTime @default(now())
-  totalDurationMs Int      @default(0)
-  maxPageReached  Int      @default(1)
+  startedAt       DateTime  @default(now())
+  lastSeenAt      DateTime  @default(now())
+  totalDurationMs Int       @default(0)
+  maxPageReached  Int       @default(1)
   currentPage     Int? // page on screen at the last flush, for the live indicator
   leftAt          DateTime? // tab hidden or closed; cleared by the next flush with reading time
 
@@ -497,6 +540,15 @@ model Followup {
   aiProvider String?
   aiModel    String?
 
+  sentVia               FollowupSentVia?
+  approvedAt            DateTime?
+  approvedById          String?
+  editedAt              DateTime?
+  rationale             String? // why this follow-up, shown to the seller
+  confidence            Int? // 0-100, AI decisions only
+  insightId             String?
+  regenerateInstruction String?
+
   triggerRunId      String?
   providerMessageId String? // Resend email id or Twilio message SID
   error             String?
@@ -529,6 +581,46 @@ model SellerAlert {
 
   @@index([linkId, createdAt(sort: Desc)])
   @@map("seller_alerts")
+}
+
+// What happened outside Clozer, logged by the seller: calls, replies, meetings
+model SellerActivity {
+  id         String  @id @default(cuid())
+  linkId     String
+  link       Link    @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  prospectId String?
+  userId     String?
+
+  type       SellerActivityType
+  note       String?
+  occurredAt DateTime           @default(now())
+
+  createdAt DateTime @default(now())
+
+  @@index([linkId, occurredAt(sort: Desc)])
+  @@map("seller_activities")
+}
+
+// One row per LLM call, for cost tracking and quotas
+model AiUsage {
+  id             String  @id @default(cuid())
+  organizationId String
+  linkId         String?
+
+  purpose      String
+  provider     String
+  model        String
+  tokensIn     Int     @default(0)
+  tokensOut    Int     @default(0)
+  cachedTokens Int     @default(0)
+  costMicroUsd Int     @default(0)
+  latencyMs    Int     @default(0)
+  ok           Boolean @default(true)
+
+  createdAt DateTime @default(now())
+
+  @@index([organizationId, createdAt])
+  @@map("ai_usage")
 }
 
 model ProspectAction {

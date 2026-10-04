@@ -60,7 +60,7 @@ export async function unsubscribeByToken(token: string) {
     prisma.followup.updateMany({
       where: {
         prospect: sameAddress,
-        status: { in: ["PENDING", "GENERATED", "SCHEDULED"] },
+        status: { in: ["PENDING", "DRAFT", "GENERATED", "SCHEDULED"] },
       },
       data: { status: "CANCELLED", cancelledAt: now, error: "Prospect désinscrit" },
     }),

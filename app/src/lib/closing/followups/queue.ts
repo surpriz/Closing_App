@@ -35,8 +35,12 @@ export async function queueFollowup(input: QueueFollowupInput) {
   }
 }
 
-// Writes the message (AI or template) so the seller can review it before it goes out
-export async function generateFollowupMessage(followupId: string) {
+/** Follow-ups not sent yet and not dropped: what the seller can still act on. */
+export const OPEN_FOLLOWUP_STATUSES = ["PENDING", "DRAFT", "GENERATED", "SCHEDULED"] as const;
+
+// Writes the message (AI or template). In copilot mode it then waits for the
+// seller's approval as a DRAFT; in autopilot mode it goes straight to the queue.
+export async function generateFollowupMessage(followupId: string, regenerateInstruction?: string | null) {
   const followup = await prisma.followup.findUnique({
     where: { id: followupId },
     include: {
@@ -59,6 +63,7 @@ export async function generateFollowupMessage(followupId: string) {
     },
   });
   if (!followup || followup.status !== "PENDING") return;
+  const instruction = regenerateInstruction ?? followup.regenerateInstruction;
 
   const { link, prospect } = followup;
   const settings = link.organization.settings;
@@ -77,6 +82,7 @@ export async function generateFollowupMessage(followupId: string) {
     daysSinceSent: link.sentAt ? Math.floor((Date.now() - link.sentAt.getTime()) / DAY_MS) : null,
     aiTone: settings?.aiTone ?? null,
     documentIntro: pages[0]?.text?.slice(0, 600) ?? null,
+    instruction: instruction ?? null,
     pricingExcerpt:
       followup.trigger === "HOT_PRICING"
         ? pages
@@ -95,7 +101,8 @@ export async function generateFollowupMessage(followupId: string) {
       body: draft.body,
       aiProvider: draft.aiProvider,
       aiModel: draft.aiModel,
-      status: "GENERATED",
+      regenerateInstruction: instruction ?? null,
+      status: settings?.autonomy === "AUTOPILOT" ? "GENERATED" : "DRAFT",
     },
   });
 }
@@ -104,7 +111,7 @@ export function cancelOpenFollowups(linkId: string, reason: string, triggers?: F
   return prisma.followup.updateMany({
     where: {
       linkId,
-      status: { in: ["PENDING", "GENERATED", "SCHEDULED"] },
+      status: { in: [...OPEN_FOLLOWUP_STATUSES] },
       ...(triggers ? { trigger: { in: triggers } } : {}),
     },
     data: { status: "CANCELLED", cancelledAt: new Date(), error: reason },
