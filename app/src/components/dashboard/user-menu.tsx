@@ -4,6 +4,7 @@ import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 
+import { ThemeMenuItems } from "@/components/theme/theme-menu-items";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -50,6 +51,8 @@ export function UserMenu({
           <p className="truncate text-sm font-medium">{workspace}</p>
           <p className="truncate text-xs text-muted-foreground">{email}</p>
         </div>
+        <DropdownMenuSeparator />
+        <ThemeMenuItems />
         <DropdownMenuSeparator />
         <DropdownMenuItem
           disabled={pending}

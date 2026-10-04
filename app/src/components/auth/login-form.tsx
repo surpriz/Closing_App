@@ -46,10 +46,10 @@ export function LoginForm({ devMode }: { devMode: boolean }) {
     <div className="w-full max-w-sm space-y-8">
       <Logo />
       <div className="space-y-2">
-        <h1 className="text-[1.875rem] leading-[1.12] font-medium tracking-[-0.03em] [font-stretch:88%]">
+        <h1 className="text-title [font-stretch:88%]">
           {status === "sent" ? "Regardez vos emails." : "Connexion à Clozer"}
         </h1>
-        <p className="text-[15px] text-muted-foreground">
+        <p className="text-body text-muted-foreground">
           {status === "sent" ? (
             <>
               Un lien de connexion vient de partir vers <span className="text-foreground">{email}</span>.
@@ -88,7 +88,7 @@ export function LoginForm({ devMode }: { devMode: boolean }) {
               placeholder="vous@entreprise.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="h-10 bg-card text-[15px]"
+              className="h-10 bg-card text-body"
             />
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}

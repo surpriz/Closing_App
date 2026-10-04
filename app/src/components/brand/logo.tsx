@@ -1,4 +1,4 @@
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 
 /** An open ring that the hot dot closes: a deal about to be signed. */
 export function LogoMark({ className }: { className?: string }) {

@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { EngagementTier } from "@/generated/prisma/enums";
 import { describeNextAction, isUrgent, type NextAction } from "@/lib/closing/dashboard/next-action";
 import { formatRelative } from "@/lib/format";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 
 import { CopyButton } from "../copy-button";
 import { HeatBar, LiveDot } from "../heat";

@@ -42,7 +42,7 @@ import { prisma } from "@/lib/db";
 import { formatDuration, formatRelative } from "@/lib/format";
 import { requireWorkspace } from "@/lib/session";
 import { testToolsEnabled } from "@/lib/test-tools";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 
 export async function generateMetadata({ params }: PageProps<"/links/[id]">): Promise<Metadata> {
   const { id } = await params;
@@ -201,7 +201,7 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="min-w-0 space-y-1">
             <h1 className="text-2xl font-semibold tracking-[-0.02em]">{title}</h1>
-            <p className="flex flex-wrap items-center gap-x-2 text-[15px] text-muted-foreground">
+            <p className="flex flex-wrap items-center gap-x-2 text-body text-muted-foreground">
               {contactLine && <span>{contactLine}</span>}
               <span className="inline-flex items-center gap-0.5">
                 <a href={url} target="_blank" rel="noreferrer" className="hover:text-foreground hover:underline">
@@ -248,7 +248,7 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
                 )}
               />
               <p className="text-sm text-muted-foreground">Température mesurée</p>
-              <p className="text-[2rem] leading-none font-medium tracking-[-0.03em] [font-stretch:88%]">
+              <p className="font-mono text-[2rem] leading-none font-medium tracking-tight tabular-nums">
                 {score ? TIER_LABELS[score.tier] : "Pas encore lu"}
               </p>
               {score && (
@@ -264,11 +264,11 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
             <div className="p-5">
               <p className="mb-3 text-sm text-muted-foreground">Pourquoi</p>
               {reasons.length === 0 ? (
-                <p className="text-[15px]">
+                <p className="text-body">
                   Rien encore : la température monte dès que le prospect ouvre son lien et lit.
                 </p>
               ) : (
-                <ul className="grid gap-x-8 gap-y-2 text-[15px] sm:grid-cols-2">
+                <ul className="grid gap-x-8 gap-y-2 text-body sm:grid-cols-2">
                   {reasons.map((reason) => (
                     <li key={reason.code} className="flex items-baseline justify-between gap-3">
                       <span>

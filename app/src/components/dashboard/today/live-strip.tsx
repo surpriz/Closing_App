@@ -21,7 +21,7 @@ export function LiveStrip({ initial }: { initial: WorkspaceLiveState }) {
       role="status"
       className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl bg-card px-4 py-3 ring-1 ring-heat-hot/40"
     >
-      <span className="flex items-center gap-2.5 text-[15px] font-medium">
+      <span className="flex items-center gap-2.5 text-body font-medium">
         <LiveDot />
         En train de lire
       </span>

@@ -19,7 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { MAX_UPLOAD_BYTES } from "@/lib/closing/constants";
 import { parseWebUrl } from "@/lib/closing/documents/web-link";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 
 function safeFileName(name: string) {
   return name
@@ -347,7 +347,7 @@ export function UploadButton({ uploadPrefix }: { uploadPrefix: string }) {
       </Dialog>
       {dragging && !open && (
         <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-foreground/60 backdrop-blur-sm">
-          <p className="rounded-full bg-card px-5 py-2.5 text-[15px] font-medium shadow-lg">
+          <p className="rounded-full bg-card px-5 py-2.5 text-body font-medium shadow-lg">
             Déposez le fichier ou le lien pour l&apos;ajouter
           </p>
         </div>

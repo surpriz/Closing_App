@@ -3,7 +3,7 @@ import { ChevronRight, Sparkles } from "lucide-react";
 import type { Fact } from "@/lib/closing/brain/facts";
 import type { StoredInsight } from "@/lib/closing/brain/latest";
 import { formatRelative } from "@/lib/format";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 
 import {
   FOLLOWUP_GOAL_LABELS,
@@ -33,7 +33,7 @@ function Sources({ ids, facts }: { ids: string[]; facts: Map<string, Fact> }) {
         <span
           key={id}
           title={facts.get(id)?.text}
-          className="cursor-help rounded bg-muted px-1 text-[11px] text-muted-foreground tabular-nums"
+          className="cursor-help rounded bg-muted px-1 text-micro text-muted-foreground tabular-nums"
         >
           {id}
         </span>
@@ -64,7 +64,7 @@ export function DealInsightPanel({
   if (!insight) {
     return (
       <Surface className="flex flex-wrap items-center justify-between gap-3 p-5">
-        <p className="text-[15px] text-muted-foreground">
+        <p className="text-body text-muted-foreground">
           {aiAvailable
             ? "Pas encore de lecture IA de ce deal. Elle arrive dès que le prospect a lu, ou maintenant :"
             : "La lecture IA des deals demande une clé d'IA configurée."}
@@ -117,8 +117,8 @@ export function DealInsightPanel({
         )}
 
         <div className="space-y-1.5">
-          <p className="text-[15px] font-medium">{insight.headline}</p>
-          <p className="text-[15px] text-muted-foreground">{insight.summary}</p>
+          <p className="text-body font-medium">{insight.headline}</p>
+          <p className="text-body text-muted-foreground">{insight.summary}</p>
         </div>
 
         {(insight.signals.length > 0 || insight.frictions.length > 0) && (
@@ -126,7 +126,7 @@ export function DealInsightPanel({
             {insight.signals.length > 0 && (
               <div>
                 <p className="mb-1.5 text-sm text-muted-foreground">Ce qui compte</p>
-                <ul className="space-y-1.5 text-[15px]">
+                <ul className="space-y-1.5 text-body">
                   {insight.signals.map((signal, i) => (
                     <li key={i}>
                       {signal.label}
@@ -139,7 +139,7 @@ export function DealInsightPanel({
             {insight.frictions.length > 0 && (
               <div>
                 <p className="mb-1.5 text-sm text-muted-foreground">Ce qui coince</p>
-                <ul className="space-y-1.5 text-[15px]">
+                <ul className="space-y-1.5 text-body">
                   {insight.frictions.map((friction, i) => (
                     <li key={i} className="flex gap-2">
                       <span
@@ -176,7 +176,7 @@ export function DealInsightPanel({
             )}
           </div>
         )}
-        <p className="text-[15px]">
+        <p className="text-body">
           <span className="font-medium">
             {INSIGHT_ACTION_LABELS[action.type] ?? action.type}
             {action.type !== "wait" && action.type !== "close_lost" && ` ${TIMING_LABELS[action.timing] ?? ""}`}

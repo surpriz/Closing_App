@@ -1,4 +1,4 @@
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 
 export function PageHeader({
   title,
@@ -13,11 +13,11 @@ export function PageHeader({
 }) {
   return (
     <div className={cn("flex flex-wrap items-end justify-between gap-4", className)}>
-      <div className="min-w-0 space-y-1">
-        <h1 className="text-2xl font-semibold tracking-[-0.02em]">{title}</h1>
-        {description && <p className="text-[15px] text-muted-foreground">{description}</p>}
+      <div className="min-w-0 space-y-1.5">
+        <h1 className="text-title [font-stretch:92%]">{title}</h1>
+        {description && <p className="max-w-2xl text-body text-muted-foreground">{description}</p>}
       </div>
-      {action}
+      {action && <div className="flex flex-wrap items-center gap-2">{action}</div>}
     </div>
   );
 }
@@ -34,7 +34,7 @@ export function SectionTitle({
 }) {
   return (
     <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-      <h2 className="text-[15px] font-semibold">
+      <h2 className="text-body font-semibold">
         {children}
         {hint && <span className="ml-2 font-normal text-muted-foreground">{hint}</span>}
       </h2>
@@ -62,7 +62,65 @@ export function StatLine({
   );
 }
 
-/** White surface for a list or a chart, without the card chrome. */
-export function Surface({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={cn("rounded-xl bg-card ring-1 ring-border", className)}>{children}</div>;
+/** One key figure: label above, value in mono, optional hint below. */
+export function Stat({
+  label,
+  value,
+  hint,
+  tone,
+  className,
+}: {
+  label: React.ReactNode;
+  value: React.ReactNode;
+  hint?: React.ReactNode;
+  tone?: "hot" | "warm" | "cold" | "success";
+  className?: string;
+}) {
+  return (
+    <div className={cn("min-w-0 space-y-1", className)}>
+      <p className="flex items-center gap-1.5 text-small text-muted-foreground">
+        {tone && (
+          <span
+            aria-hidden
+            className={cn(
+              "size-1.5 rounded-full",
+              tone === "hot" && "bg-heat-hot",
+              tone === "warm" && "bg-heat-warm",
+              tone === "cold" && "bg-heat-cold",
+              tone === "success" && "bg-success",
+            )}
+          />
+        )}
+        {label}
+      </p>
+      <p className="font-mono text-2xl font-medium tracking-tight tabular-nums">{value}</p>
+      {hint && <p className="text-small text-muted-foreground">{hint}</p>}
+    </div>
+  );
+}
+
+/**
+ * White surface for a list or a chart, without the card chrome. Same look as
+ * `Card`; `interactive` lifts it on hover for clickable rows and tiles.
+ */
+export function Surface({
+  children,
+  className,
+  interactive = false,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  interactive?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-xl bg-card shadow-xs ring-1 ring-border",
+        interactive && "transition-shadow duration-200 hover:shadow-md",
+        className,
+      )}
+    >
+      {children}
+    </div>
+  );
 }

@@ -26,7 +26,7 @@ export function WebViewer({ slug, documentName, externalUrl, embedUrl, labels, c
   const { getViewId } = usePageTracking(slug, 1, { embedded: true, countTime: !!embedUrl });
 
   return (
-    <div className="flex h-dvh flex-col bg-neutral-100">
+    <div className="flex h-dvh flex-col bg-muted">
       <header className="shrink-0 border-b bg-background">
         <div className="mx-auto flex h-12 max-w-6xl items-center justify-between gap-4 px-4">
           <h1 className="truncate text-sm font-medium">{documentName}</h1>
@@ -49,7 +49,7 @@ export function WebViewer({ slug, documentName, externalUrl, embedUrl, labels, c
           <iframe
             src={embedUrl}
             title={documentName}
-            className="mx-auto min-h-0 w-full max-w-6xl flex-1 rounded-sm bg-white shadow-sm ring-1 ring-black/5"
+            className="mx-auto min-h-0 w-full max-w-6xl flex-1 rounded-sm bg-white shadow-md ring-1 ring-border"
             allow="autoplay; fullscreen; clipboard-write; encrypted-media; picture-in-picture"
             allowFullScreen
             referrerPolicy="strict-origin-when-cross-origin"

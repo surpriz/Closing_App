@@ -61,7 +61,7 @@ export function PdfViewer({ slug, fileUrl, documentName, labels, ctaEnabled, dea
   }, [fileUrl]);
 
   return (
-    <div className="flex min-h-full flex-1 flex-col bg-neutral-100">
+    <div className="flex min-h-full flex-1 flex-col bg-muted">
       <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
         <div className="mx-auto flex h-12 max-w-4xl items-center justify-between gap-4 px-4">
           <h1 className="truncate text-sm font-medium">{documentName}</h1>
@@ -173,7 +173,7 @@ export function PdfPage({ pdf, pageNumber, size, registerPage }: PdfPageProps) {
         registerPage?.(pageNumber, element);
       }}
       data-page={pageNumber}
-      className="relative w-full overflow-hidden rounded-sm bg-white shadow-sm ring-1 ring-black/5"
+      className="relative w-full overflow-hidden rounded-sm bg-white shadow-md ring-1 ring-border"
       style={{ aspectRatio: `${size.width} / ${size.height}` }}
       onContextMenu={(event) => event.preventDefault()}
     >

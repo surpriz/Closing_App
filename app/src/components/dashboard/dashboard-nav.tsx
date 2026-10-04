@@ -4,7 +4,7 @@ import { Brain, FileText, Settings2, Sun } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 
 const ITEMS = [
   { href: "/dashboard", label: "Aujourd'hui", icon: Sun, match: ["/dashboard", "/links"] },
@@ -71,7 +71,7 @@ export function MobileNav() {
               href={item.href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex flex-col items-center gap-1 py-2.5 text-[11px] outline-none focus-visible:bg-muted",
+                "flex flex-col items-center gap-1 py-2.5 text-micro outline-none focus-visible:bg-muted",
                 active ? "font-medium text-foreground" : "text-muted-foreground",
               )}
             >

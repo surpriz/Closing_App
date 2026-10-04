@@ -48,7 +48,7 @@ export function CtaBar({ slug, labels, initialStatus, getViewId }: Props) {
     <div className="fixed inset-x-0 bottom-0 z-20 border-t bg-background/95 backdrop-blur">
       <div className="mx-auto max-w-4xl space-y-2 px-4 py-3">
         {done ? (
-          <p className="flex items-center justify-center gap-2 text-sm font-medium text-emerald-700">
+          <p className="flex items-center justify-center gap-2 text-sm font-medium text-success">
             <CheckCircle2 className="size-4" /> {labels.validated}
           </p>
         ) : editing ? (

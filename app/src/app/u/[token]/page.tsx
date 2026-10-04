@@ -22,7 +22,7 @@ export default async function UnsubscribePage({ params }: PageProps<"/u/[token]"
 
   return (
     <main className="flex flex-1 items-center justify-center bg-muted/40 px-4 py-16">
-      <div className="w-full max-w-sm rounded-xl bg-background p-6 text-sm shadow-sm ring-1 ring-black/5">
+      <div className="w-full max-w-sm rounded-xl bg-background p-6 text-sm shadow-sm ring-1 ring-border">
         <h1 className="mb-3 text-lg font-medium">{copy.pageTitle}</h1>
         {prospect ? (
           <UnsubscribeForm

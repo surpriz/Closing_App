@@ -1,12 +1,12 @@
 import Link from "next/link";
 
 import { PERIODS, type PeriodKey } from "@/lib/closing/dashboard/period";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 
 /** Plain links: the period lives in the URL and survives live refreshes. */
 export function PeriodTabs({ current }: { current: PeriodKey }) {
   return (
-    <nav aria-label="Période" className="flex gap-0.5 rounded-full bg-foreground/[0.04] p-0.5 text-[13px]">
+    <nav aria-label="Période" className="flex gap-0.5 rounded-full bg-foreground/[0.04] p-0.5 text-small">
       {(Object.keys(PERIODS) as PeriodKey[]).map((key) => (
         <Link
           key={key}

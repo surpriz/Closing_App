@@ -2,7 +2,7 @@ import { ChevronRight } from "lucide-react";
 
 import type { EngagementTier } from "@/generated/prisma/enums";
 import { ENGAGEMENT_TIER_THRESHOLDS } from "@/lib/closing/constants";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 
 import { HEAT_BG } from "./heat";
 import { TIER_LABELS } from "./labels";

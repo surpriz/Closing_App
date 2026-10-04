@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 
 type Props = {
   initial: {
@@ -48,7 +48,7 @@ function Section({
     <section className="space-y-3">
       <div>
         <h2 className="text-lg font-semibold tracking-[-0.01em]">{title}</h2>
-        <p className="text-[15px] text-muted-foreground">{description}</p>
+        <p className="text-body text-muted-foreground">{description}</p>
       </div>
       <div className="divide-y divide-border rounded-xl bg-card ring-1 ring-border">{children}</div>
     </section>
@@ -58,7 +58,7 @@ function Section({
 function Row({ children, hint }: { children: React.ReactNode; hint?: React.ReactNode }) {
   return (
     <div className="space-y-1.5 px-5 py-4">
-      <div className="text-[15px] leading-9">{children}</div>
+      <div className="text-body leading-9">{children}</div>
       {hint && <p className="text-sm text-muted-foreground">{hint}</p>}
     </div>
   );
@@ -294,7 +294,7 @@ export function SettingsForm({ initial, providers }: Props) {
             />
           </div>
           <details className="group px-5 py-4">
-            <summary className="flex cursor-pointer list-none items-center gap-1.5 text-[15px] font-medium outline-none focus-visible:underline [&::-webkit-details-marker]:hidden">
+            <summary className="flex cursor-pointer list-none items-center gap-1.5 text-body font-medium outline-none focus-visible:underline [&::-webkit-details-marker]:hidden">
               <ChevronRight className="size-4 transition-transform group-open:rotate-90" />
               Brancher Slack ou un outil externe
             </summary>
@@ -345,7 +345,7 @@ export function SettingsForm({ initial, providers }: Props) {
         )}
         aria-hidden={!(dirty || pending)}
       >
-        <span className="text-[15px]">Modifications non enregistrées</span>
+        <span className="text-body">Modifications non enregistrées</span>
         <Button type="submit" variant="secondary" size="lg" disabled={pending} tabIndex={dirty || pending ? 0 : -1}>
           {pending ? "Enregistrement…" : "Enregistrer les réglages"}
         </Button>

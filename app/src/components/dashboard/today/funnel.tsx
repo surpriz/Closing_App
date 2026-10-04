@@ -1,5 +1,5 @@
 import type { Funnel, HeatDistribution } from "@/lib/closing/dashboard/funnel";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 
 import { HEAT_BG } from "../heat";
 

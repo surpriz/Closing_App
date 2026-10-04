@@ -1,7 +1,7 @@
 import type { EngagementTier } from "@/generated/prisma/enums";
 import type { EngagementReason } from "@/lib/closing/types";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 
 import { SCORE_REASON_LABELS, TIER_LABELS } from "./labels";
 

@@ -101,10 +101,10 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
   if (documentCount === 0) {
     return (
       <div className="space-y-8">
-        <h1 className="max-w-2xl text-[2.25rem] leading-[1.1] font-medium tracking-[-0.03em] [font-stretch:88%]">
+        <h1 className="max-w-2xl text-display [font-stretch:88%]">
           Bienvenue sur Clozer.
         </h1>
-        <p className="max-w-xl text-[15px] text-muted-foreground">
+        <p className="max-w-xl text-body text-muted-foreground">
           Ajoutez votre premier document : un devis ou une présentation en PDF, ou un lien Notion, Loom, Figma…
           Vous créerez ensuite un lien par prospect, et vous verrez ici qui le consulte et qui relancer.
         </p>
@@ -146,7 +146,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
     <div className="space-y-12">
       <section className="space-y-6">
         <div className="flex flex-col-reverse gap-6 sm:flex-row sm:items-start sm:justify-between">
-          <h1 className="max-w-3xl text-[1.875rem] leading-[1.12] font-medium tracking-[-0.03em] text-balance [font-stretch:88%] sm:text-[2.25rem]">
+          <h1 className="max-w-3xl text-title text-balance [font-stretch:88%] sm:text-display">
             {headline}
             <span className="block text-muted-foreground">{hint}</span>
           </h1>

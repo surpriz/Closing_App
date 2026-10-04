@@ -209,19 +209,19 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
 
       <Tabs defaultValue="prospects" className="gap-6">
         <TabsList variant="line" className="w-full justify-start gap-6 border-b border-border pb-px">
-          <TabsTrigger value="prospects" className="flex-none px-0 text-[15px]">
+          <TabsTrigger value="prospects" className="flex-none px-0 text-body">
             Prospects <span className="text-muted-foreground tabular-nums">{document.links.length}</span>
           </TabsTrigger>
-          <TabsTrigger value="preview" className="flex-none px-0 text-[15px]">
+          <TabsTrigger value="preview" className="flex-none px-0 text-body">
             Aperçu
           </TabsTrigger>
-          <TabsTrigger value="reading" className="flex-none px-0 text-[15px]">
+          <TabsTrigger value="reading" className="flex-none px-0 text-body">
             Lecture
           </TabsTrigger>
-          <TabsTrigger value="content" className="flex-none px-0 text-[15px]">
+          <TabsTrigger value="content" className="flex-none px-0 text-body">
             Contenu
           </TabsTrigger>
-          <TabsTrigger value="followups" className="flex-none px-0 text-[15px]">
+          <TabsTrigger value="followups" className="flex-none px-0 text-body">
             Relances
             {pendingFollowups > 0 && <span className="text-muted-foreground tabular-nums">{pendingFollowups}</span>}
           </TabsTrigger>
@@ -304,7 +304,7 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
               <iframe
                 src={document.embedUrl}
                 title={document.name}
-                className="h-[75vh] w-full rounded-xl bg-white ring-1 ring-border"
+                className="h-[75vh] w-full rounded-xl bg-card ring-1 ring-border"
                 allow="autoplay; fullscreen; clipboard-write; encrypted-media; picture-in-picture"
                 allowFullScreen
                 referrerPolicy="strict-origin-when-cross-origin"
@@ -358,7 +358,7 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
             <section>
               <SectionTitle hint="sur tous les prospects de ce document">Ce qui bloque</SectionTitle>
               <Surface className="p-4">
-                <ul className="space-y-1.5 text-[15px]">
+                <ul className="space-y-1.5 text-body">
                   {frictions.map((line) => (
                     <li key={line}>{line}</li>
                   ))}
@@ -367,7 +367,7 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
             </section>
           )}
           {isWeb ? (
-            <p className="max-w-2xl text-[15px] text-muted-foreground">
+            <p className="max-w-2xl text-body text-muted-foreground">
               {document.embedUrl
                 ? "Pour un lien web, Clozer mesure le temps passé sur la page, sans détail page par page."
                 : "Ce site s'ouvre dans un nouvel onglet : Clozer voit quand le prospect ouvre son lien, mais pas combien de temps il reste sur la page."}
@@ -456,7 +456,7 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
 
         <TabsContent value="followups" className="space-y-10">
           <section className="space-y-4">
-            <p className="max-w-2xl text-[15px] text-muted-foreground">
+            <p className="max-w-2xl text-body text-muted-foreground">
               Les relances de tous les prospects de ce document. Clozer en écrit une quand il juge que c&apos;est
               le bon moment ; vous la relisez ici ou sur la fiche du prospect, puis vous la validez.
             </p>

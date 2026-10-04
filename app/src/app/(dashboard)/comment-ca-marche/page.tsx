@@ -118,7 +118,7 @@ function Step({ icon: Icon, title, body, index }: (typeof STEPS)[number] & { ind
           <span className="text-muted-foreground tabular-nums">{index}. </span>
           {title}
         </h3>
-        <p className="text-[15px] text-muted-foreground">{body}</p>
+        <p className="text-body text-muted-foreground">{body}</p>
       </div>
     </li>
   );
@@ -133,7 +133,7 @@ export default function HowItWorksPage() {
       />
 
       <section>
-        <p className="text-[1.375rem] leading-snug font-medium tracking-[-0.01em] text-balance">
+        <p className="text-xl leading-snug font-medium tracking-[-0.01em] text-balance">
           Clozer voit comment votre prospect lit votre document, comprend où en est le deal comme le ferait un
           commercial expérimenté, et prépare la bonne relance au bon moment. Vous validez et vous appelez ceux qui sont
           prêts.
@@ -156,7 +156,7 @@ export default function HowItWorksPage() {
             <p className="flex items-center gap-2 font-medium">
               <Gauge className="size-4" /> Température (sur 100)
             </p>
-            <p className="text-[15px] text-muted-foreground">
+            <p className="text-body text-muted-foreground">
               <span className="text-foreground">Combien il lit.</span> Calculée sans IA : lecture récente, temps passé,
               visites répétées, plusieurs lecteurs, tarifs lus, lecture jusqu&apos;au bout. Chaque point a sa raison,
               affichée sur la fiche.
@@ -166,7 +166,7 @@ export default function HowItWorksPage() {
             <p className="flex items-center gap-2 font-medium">
               <Sparkles className="size-4" /> Lecture IA (et sa fiabilité)
             </p>
-            <p className="text-[15px] text-muted-foreground">
+            <p className="text-body text-muted-foreground">
               <span className="text-foreground">Ce que ça veut dire.</span> L&apos;IA interprète : un prospect peut
               être « chaud » (beaucoup de lectures) avec une lecture IA prudente (lectures courtes, trop tôt pour
               conclure). La fiabilité dit à quel point l&apos;IA est sûre d&apos;elle : faible quand il y a peu de
@@ -179,7 +179,7 @@ export default function HowItWorksPage() {
       <section>
         <SectionTitle>Les règles qu&apos;il respecte toujours</SectionTitle>
         <Surface className="p-5">
-          <ul className="space-y-2.5 text-[15px]">
+          <ul className="space-y-2.5 text-body">
             {GUARDRAILS.map((rule) => (
               <li key={rule} className="flex gap-2.5">
                 <ShieldCheck className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
@@ -192,7 +192,7 @@ export default function HowItWorksPage() {
 
       <section>
         <SectionTitle>Ce que vous faites, vous</SectionTitle>
-        <ol className="list-inside list-decimal space-y-1.5 text-[15px]">
+        <ol className="list-inside list-decimal space-y-1.5 text-body">
           <li>
             Décrire votre offre une fois, dans les{" "}
             <Link href="/settings" className="underline underline-offset-4">
@@ -208,7 +208,7 @@ export default function HowItWorksPage() {
 
       <section>
         <SectionTitle>Sous le capot</SectionTitle>
-        <div className="space-y-2 text-[15px] text-muted-foreground">
+        <div className="space-y-2 text-body text-muted-foreground">
           <p>
             Deux modèles d&apos;IA d&apos;Anthropic. Claude Haiku, rapide, lit les documents et fait un second contrôle
             avant tout envoi automatique. Claude Sonnet, plus réfléchi, analyse chaque deal et rédige les relances.
@@ -223,7 +223,7 @@ export default function HowItWorksPage() {
 
       <section>
         <SectionTitle>Ce qui n&apos;est pas encore là</SectionTitle>
-        <ul className="list-inside list-disc space-y-1.5 text-[15px] text-muted-foreground">
+        <ul className="list-inside list-disc space-y-1.5 text-body text-muted-foreground">
           <li>Les relances partent de l&apos;adresse de Clozer, avec votre email en adresse de réponse.</li>
           <li>Clozer ne voit pas encore les réponses reçues par email : notez-les sur la fiche du prospect.</li>
           <li>Les relances WhatsApp arrivent bientôt.</li>

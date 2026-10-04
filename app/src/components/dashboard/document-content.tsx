@@ -8,7 +8,7 @@ import { rereadDocument, saveSellerDescription, setPageTags } from "@/app/(dashb
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import type { PageTag, PageTagSource } from "@/generated/prisma/enums";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 
 import { DOC_TYPE_LABELS, tagLabels, type DocType } from "@/lib/closing/documents/doc-types";
 
@@ -47,13 +47,13 @@ export function DocumentPages({
   return (
     <div className="space-y-4">
       {docType && (
-        <p className="text-[15px]">
+        <p className="text-body">
           <span className="font-medium">{DOC_TYPE_LABELS[docType as DocType] ?? "Document"}</span>
           {docPurpose && <span className="text-muted-foreground"> : {docPurpose}</span>}
         </p>
       )}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="max-w-2xl text-[15px] text-muted-foreground">
+        <p className="max-w-2xl text-body text-muted-foreground">
           {aiRead
             ? "Résumé de chaque page, lu par l'IA. Les étiquettes disent à Clozer où sont les tarifs, le planning… Corrigez-les si besoin : votre choix ne sera plus touché."
             : aiAvailable && aiGaveUp
@@ -122,7 +122,7 @@ function PageRow({
     <li className="grid gap-x-4 gap-y-2 px-4 py-3 sm:grid-cols-[3rem_minmax(0,1fr)]">
       <span className="text-sm font-medium text-muted-foreground tabular-nums">p.{page.pageNumber}</span>
       <div className="min-w-0 space-y-2">
-        {page.summary && <p className="text-[15px]">{page.summary}</p>}
+        {page.summary && <p className="text-body">{page.summary}</p>}
         {page.keyFacts.length > 0 && (
           <p className="text-sm text-muted-foreground">{page.keyFacts.join(" · ")}</p>
         )}
@@ -171,7 +171,7 @@ export function SellerDescriptionForm({ documentId, initial }: { documentId: str
         });
       }}
     >
-      <p className="text-[15px] text-muted-foreground">
+      <p className="text-body text-muted-foreground">
         Clozer ne peut pas lire le contenu d&apos;une page web. Dites en quelques lignes ce qu&apos;elle présente
         (offre, prix, options, planning) : l&apos;IA s&apos;en servira pour comprendre vos deals et écrire les relances.
       </p>
