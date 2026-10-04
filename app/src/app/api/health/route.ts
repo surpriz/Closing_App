@@ -50,6 +50,7 @@ export async function GET(request: Request) {
       email: isEmailConfigured(),
       whatsapp: isWhatsAppConfigured(),
       ai: llm ? `${llm.provider}:${llm.modelId}` : null,
+      extension: !!process.env.EXTENSION_IDS,
     },
     database,
     vercelEnv: process.env.VERCEL_ENV ?? null,

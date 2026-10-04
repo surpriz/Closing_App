@@ -2,19 +2,17 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { after } from "next/server";
 import { z } from "zod";
 
 import { getAppOrigin } from "@/lib/app-origin";
-import { documentUploadPrefix, headPrivateBlob } from "@/lib/blob";
+import { createFileDocument } from "@/lib/closing/documents/create-document";
+import { createDocumentLink } from "@/lib/closing/documents/create-link";
 import { inspectWebLink } from "@/lib/closing/documents/inspect-web-link";
 import { PAGE_TAGS } from "@/lib/closing/documents/page-reading";
-import { processDocument } from "@/lib/closing/documents/process-document";
 import { readDocumentPages } from "@/lib/closing/documents/read-pages";
 import { parseWebUrl } from "@/lib/closing/documents/web-link";
 import { cancelOpenFollowups } from "@/lib/closing/followups/queue";
 import { prisma } from "@/lib/db";
-import { randomSlug } from "@/lib/ids";
 import { requireWorkspace } from "@/lib/session";
 
 const createDocumentSchema = z.object({
@@ -27,31 +25,12 @@ export async function createDocument(input: { pathname: string; name: string }) 
   const { user, organization } = await requireWorkspace();
   const { pathname, name } = createDocumentSchema.parse(input);
 
-  if (!pathname.startsWith(documentUploadPrefix(organization.id))) {
-    throw new Error("Invalid document path");
-  }
-
-  // Trust Blob metadata, not what the browser claims
-  const blob = await headPrivateBlob(pathname);
-  if (blob.contentType !== "application/pdf") {
-    throw new Error("Only PDF files are supported");
-  }
-
-  const document = await prisma.document.create({
-    data: {
-      organizationId: organization.id,
-      ownerId: user.id,
-      name: name.replace(/\.pdf$/i, ""),
-      blobUrl: blob.url,
-      blobPathname: blob.pathname,
-      contentType: blob.contentType,
-      sizeBytes: blob.size,
-      status: "PROCESSING",
-    },
-    select: { id: true },
+  const { document } = await createFileDocument({
+    organizationId: organization.id,
+    userId: user.id,
+    pathname,
+    name,
   });
-
-  after(() => processDocument(document.id));
 
   revalidatePath("/documents");
   return { id: document.id };
@@ -101,12 +80,6 @@ export async function createLink(
 ): Promise<CreateLinkState> {
   const { user, organization } = await requireWorkspace();
 
-  const document = await prisma.document.findFirst({
-    where: { id: documentId, organizationId: organization.id },
-    select: { id: true },
-  });
-  if (!document) return { error: "Document introuvable." };
-
   const parsed = createLinkSchema.safeParse({
     name: formData.get("name") ?? undefined,
     prospectEmail: String(formData.get("prospectEmail") ?? "").trim().toLowerCase(),
@@ -118,29 +91,19 @@ export async function createLink(
 
   const { name, prospectEmail, prospectName, prospectCompany, requireEmail } = parsed.data;
 
-  const link = await prisma.link.create({
-    data: {
-      slug: randomSlug(12),
-      documentId: document.id,
-      organizationId: organization.id,
-      createdById: user.id,
-      name: name || prospectCompany || prospectEmail || null,
-      requireEmail: requireEmail === "true",
-      sentAt: new Date(),
-      prospects: prospectEmail
-        ? {
-            create: {
-              email: prospectEmail,
-              name: prospectName || null,
-              company: prospectCompany || null,
-            },
-          }
-        : undefined,
-    },
-    select: { slug: true },
+  const link = await createDocumentLink({
+    organizationId: organization.id,
+    userId: user.id,
+    documentId,
+    name,
+    prospect: prospectEmail
+      ? { email: prospectEmail, name: prospectName, company: prospectCompany }
+      : null,
+    requireEmail: requireEmail === "true",
   });
+  if (!link) return { error: "Document introuvable." };
 
-  revalidatePath(`/documents/${document.id}`);
+  revalidatePath(`/documents/${documentId}`);
   return { url: `/v/${link.slug}` };
 }
 

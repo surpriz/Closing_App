@@ -1,4 +1,4 @@
-import { get, head } from "@vercel/blob";
+import { del, get, head } from "@vercel/blob";
 
 // Always pass the token explicitly: when BLOB_STORE_ID is set the SDK switches
 // to OIDC auth, which is disabled for local development.
@@ -14,6 +14,10 @@ export function documentUploadPrefix(organizationId: string) {
 
 export function headPrivateBlob(pathname: string) {
   return head(pathname, { token: blobToken() });
+}
+
+export function deletePrivateBlob(pathname: string) {
+  return del(pathname, { token: blobToken() });
 }
 
 export async function streamPrivateBlob(pathname: string) {

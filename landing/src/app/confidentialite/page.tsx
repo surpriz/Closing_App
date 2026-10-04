@@ -67,6 +67,16 @@ export default function Privacy() {
           accessibles que par les liens que vous créez.
         </p>
 
+        <h2>L&apos;extension Chrome</h2>
+        <p>
+          L&apos;extension s&apos;active seulement dans Gmail et Outlook, quand vous rédigez un
+          email. Elle ne lit pas le contenu de vos emails. Quand vous lui demandez de
+          remplacer un PDF par un lien, elle envoie à Clozer ce PDF et l&apos;adresse et le
+          nom du premier destinataire, pour créer le lien à son nom. Rien d&apos;autre ne sort
+          de votre navigateur. Elle garde dans Chrome un jeton de connexion, que vous
+          pouvez révoquer à tout moment dans les réglages de Clozer.
+        </p>
+
         <h2>Cookies</h2>
         <ul>
           <li>

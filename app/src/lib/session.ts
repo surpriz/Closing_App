@@ -51,9 +51,10 @@ export const getWorkspace = cache(async () => {
   return { user, organization };
 });
 
-export async function requireWorkspace() {
+// `next` brings the seller back to this page after signing in
+export async function requireWorkspace(next?: string) {
   const workspace = await getWorkspace();
-  if (!workspace) redirect("/login");
+  if (!workspace) redirect(next ? `/login?next=${encodeURIComponent(next)}` : "/login");
   return workspace;
 }
 

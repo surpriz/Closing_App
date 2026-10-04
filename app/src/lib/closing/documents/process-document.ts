@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import { extractText, getDocumentProxy } from "unpdf";
 
 import { readPrivateBlob } from "@/lib/blob";
@@ -20,6 +22,8 @@ export async function processDocument(documentId: string) {
 
   try {
     const data = await readPrivateBlob(document.blobPathname);
+    // Before parsing: pdf.js may take ownership of the buffer. The hash the client sent is only a hint.
+    const contentSha256 = createHash("sha256").update(data).digest("hex");
     const pdf = await getDocumentProxy(data);
     const { totalPages, text } = await extractText(pdf, { mergePages: false });
 
@@ -46,6 +50,7 @@ export async function processDocument(documentId: string) {
         where: { id: documentId },
         data: {
           numPages: totalPages,
+          contentSha256,
           status: "READY",
           processingError: null,
           aiProcessedAt: null,

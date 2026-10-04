@@ -26,8 +26,9 @@ model User {
   members     Member[]
   invitations Invitation[]
 
-  documents    Document[]
-  linksCreated Link[]
+  documents       Document[]
+  linksCreated    Link[]
+  extensionTokens ExtensionToken[]
 
   @@map("users")
 }
@@ -97,6 +98,7 @@ model Organization {
   links            Link[]
   stripeCustomerId String?            @unique
   plan             String             @default("free")
+  extensionTokens  ExtensionToken[]
 
   @@map("organizations")
 }
@@ -130,6 +132,25 @@ model Invitation {
   @@index([organizationId])
   @@index([email])
   @@map("invitations")
+}
+
+// Lets the browser extension call /api/ext/* on behalf of one seller. Only the hash is stored.
+model ExtensionToken {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tokenHash  String    @unique
+  hint       String // last characters, shown in settings
+  label      String? // browser and OS at connection time
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
+  @@map("extension_tokens")
 }
 
 // =============================================================================
@@ -327,6 +348,8 @@ model Document {
   // What kind of document this is (QUOTE, RESUME…, see documents/doc-types.ts) and what it is for, guessed by the AI
   docType           String?
   docPurpose        String?
+  // sha256 of the PDF bytes, so the same file sent twice is stored and read once
+  contentSha256     String?
 
   pages DocumentPage[]
   links Link[]
@@ -336,6 +359,7 @@ model Document {
   archivedAt DateTime?
 
   @@index([organizationId, createdAt(sort: Desc)])
+  @@index([organizationId, contentSha256])
   @@map("documents")
 }
 
@@ -401,6 +425,7 @@ model Link {
   snoozedUntil      DateTime?
 
   brainDirtyAt DateTime? // something happened since the last deal analysis
+  source       String? // where the link was created: null = dashboard, "extension_gmail", "extension_outlook"
 
   prospects        Prospect[]
   views            DocumentView[]

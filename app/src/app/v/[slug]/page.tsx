@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 
+import { AutoRefresh } from "@/components/dashboard/auto-refresh";
 import { EmailGate } from "@/components/viewer/email-gate";
 import { PdfViewer } from "@/components/viewer/pdf-viewer";
 import { WebViewer } from "@/components/viewer/web-viewer";
@@ -51,9 +52,21 @@ export default async function ViewerPage({ params }: PageProps<"/v/[slug]">) {
     );
   }
 
+  if (link.document.status === "FAILED") {
+    return (
+      <main className="flex flex-1 items-center justify-center px-4">
+        <p role="status" className="text-sm text-muted-foreground">
+          {labels.unavailable}
+        </p>
+      </main>
+    );
+  }
+
+  // Links made from the mail extension can be opened while the PDF is still being read
   if (link.document.status !== "READY") {
     return (
       <main className="flex flex-1 items-center justify-center px-4">
+        <AutoRefresh intervalMs={4000} />
         <p role="status" className="flex items-center gap-3 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" aria-hidden />
           {labels.processing}

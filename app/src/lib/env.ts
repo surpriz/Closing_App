@@ -37,6 +37,11 @@ const serverEnvSchema = z.object({
   TWILIO_WHATSAPP_TEMPLATE_SID_FOLLOWUP: z.string().optional(),
 
   TRIGGER_SECRET_KEY: z.string().optional(),
+
+  // Browser extension: allowed IDs (comma-separated) and a remote kill switch
+  EXTENSION_IDS: z.string().optional(),
+  EXTENSION_MIN_VERSION: z.string().optional(),
+  EXTENSION_DISABLED_HOSTS: z.string().optional(),
   // Time travel and manual engine runs; ignored in production
   ENABLE_TEST_TOOLS: z.enum(["true", "false"]).optional(),
 });

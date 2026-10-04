@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 
+import { ExtensionTokens } from "@/components/dashboard/extension-tokens";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { SettingsForm } from "@/components/dashboard/settings-form";
 import { getLanguageModel } from "@/lib/closing/ai/provider";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
 import { decryptSecret } from "@/lib/crypto";
+import { prisma } from "@/lib/db";
 import { isEmailConfigured } from "@/lib/email";
 import { requireWorkspace } from "@/lib/session";
 
@@ -24,11 +26,19 @@ const SECTIONS = [
   { id: "offre", label: "Votre offre" },
   { id: "messages", label: "Vos messages" },
   { id: "alertes", label: "Être prévenu" },
+  { id: "extension", label: "Extension Chrome" },
 ];
 
 export default async function SettingsPage() {
-  const { organization } = await requireWorkspace();
-  const settings = await getWorkspaceSettings(organization.id);
+  const { user, organization } = await requireWorkspace();
+  const [settings, tokens] = await Promise.all([
+    getWorkspaceSettings(organization.id),
+    prisma.extensionToken.findMany({
+      where: { userId: user.id, organizationId: organization.id, revokedAt: null },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, label: true, hint: true, createdAt: true, lastUsedAt: true },
+    }),
+  ]);
   const llm = getLanguageModel("followup");
 
   return (
@@ -50,30 +60,39 @@ export default async function SettingsPage() {
             ))}
           </ul>
         </nav>
-        <SettingsForm
-          initial={{
-            version: settings.updatedAt.toISOString(),
-            alertChannels: settings.alertChannels,
-            alertEmail: settings.alertEmail ?? "",
-            slackConfigured: !!settings.slackWebhookUrl,
-            outboundWebhookUrl: settings.outboundWebhookUrl ?? "",
-            webhookSecret: safeDecrypt(settings.webhookSecret),
-            aiTone: settings.aiTone ?? "",
-            senderName: settings.senderName ?? "",
-            senderSignature: settings.senderSignature ?? "",
-            autonomy: settings.autonomy,
-            offerDescription: settings.offerDescription ?? "",
-            targetCustomer: settings.targetCustomer ?? "",
-            valueProps: settings.valueProps ?? "",
-            commonObjections: settings.commonObjections ?? "",
-            avgSalesCycleDays: settings.avgSalesCycleDays?.toString() ?? "",
-            offerInferredFrom: settings.offerInferredFrom,
-          }}
-          providers={{
-            email: isEmailConfigured(),
-            ai: llm ? `${llm.provider} · ${llm.modelId}` : null,
-          }}
-        />
+        <div className="space-y-10">
+          <SettingsForm
+            initial={{
+              version: settings.updatedAt.toISOString(),
+              alertChannels: settings.alertChannels,
+              alertEmail: settings.alertEmail ?? "",
+              slackConfigured: !!settings.slackWebhookUrl,
+              outboundWebhookUrl: settings.outboundWebhookUrl ?? "",
+              webhookSecret: safeDecrypt(settings.webhookSecret),
+              aiTone: settings.aiTone ?? "",
+              senderName: settings.senderName ?? "",
+              senderSignature: settings.senderSignature ?? "",
+              autonomy: settings.autonomy,
+              offerDescription: settings.offerDescription ?? "",
+              targetCustomer: settings.targetCustomer ?? "",
+              valueProps: settings.valueProps ?? "",
+              commonObjections: settings.commonObjections ?? "",
+              avgSalesCycleDays: settings.avgSalesCycleDays?.toString() ?? "",
+              offerInferredFrom: settings.offerInferredFrom,
+            }}
+            providers={{
+              email: isEmailConfigured(),
+              ai: llm ? `${llm.provider} · ${llm.modelId}` : null,
+            }}
+          />
+          <ExtensionTokens
+            tokens={tokens.map((token) => ({
+              ...token,
+              createdAt: token.createdAt.toISOString(),
+              lastUsedAt: token.lastUsedAt?.toISOString() ?? null,
+            }))}
+          />
+        </div>
       </div>
     </div>
   );

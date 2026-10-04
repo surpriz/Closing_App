@@ -8,6 +8,7 @@ export type ViewerLabels = {
   loading: string;
   loadError: string;
   processing: string;
+  unavailable: string;
   page: string;
   of: string;
   validate: string;
@@ -46,6 +47,7 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     loading: "Loading the document…",
     loadError: "The document could not be loaded. Please refresh the page.",
     processing: "This document is being prepared. Please come back in a moment.",
+    unavailable: "This document can't be displayed. Please ask the sender for a new link.",
     page: "Page",
     of: "of",
     validate: "Accept & sign",
@@ -82,6 +84,7 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     loading: "Chargement du document…",
     loadError: "Impossible de charger le document. Rechargez la page.",
     processing: "Ce document est en cours de préparation. Revenez dans un instant.",
+    unavailable: "Ce document ne peut pas être affiché. Demandez un nouveau lien à l'expéditeur.",
     page: "Page",
     of: "sur",
     validate: "Valider & signer",
@@ -118,6 +121,7 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     loading: "Cargando el documento…",
     loadError: "No se pudo cargar el documento. Recarga la página.",
     processing: "Este documento se está preparando. Vuelve en un momento.",
+    unavailable: "Este documento no se puede mostrar. Pide un nuevo enlace al remitente.",
     page: "Página",
     of: "de",
     validate: "Aceptar y firmar",
@@ -154,6 +158,7 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     loading: "Dokument wird geladen…",
     loadError: "Das Dokument konnte nicht geladen werden. Bitte Seite neu laden.",
     processing: "Dieses Dokument wird vorbereitet. Bitte versuchen Sie es gleich erneut.",
+    unavailable: "Dieses Dokument kann nicht angezeigt werden. Bitte fordern Sie beim Absender einen neuen Link an.",
     page: "Seite",
     of: "von",
     validate: "Annehmen & unterschreiben",
