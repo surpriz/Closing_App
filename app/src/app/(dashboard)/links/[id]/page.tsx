@@ -59,7 +59,7 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
           id: true,
           name: true,
           kind: true,
-          pages: { select: { pageNumber: true, tags: true }, orderBy: { pageNumber: "asc" } },
+          pages: { select: { pageNumber: true, tags: true, summary: true }, orderBy: { pageNumber: "asc" } },
         },
       },
       prospects: { orderBy: { createdAt: "asc" } },
@@ -104,6 +104,7 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
       totalSeconds: Math.round(total / 1000),
       avgSeconds: stat?.viewCount ? Math.round(total / stat.viewCount / 1000) : 0,
       isPricing: page.tags.includes("PRICING"),
+      summary: page.summary,
     };
   });
 

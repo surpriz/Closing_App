@@ -16,6 +16,8 @@ export type PageTimeDatum = {
   totalSeconds: number;
   avgSeconds: number;
   isPricing: boolean;
+  /** What the page is about, from the AI reading. */
+  summary?: string | null;
 };
 
 const PRICING_COLOR = "var(--heat-warm)";
@@ -46,12 +48,17 @@ export function PageTimeChart({ data }: { data: PageTimeDatum[] }) {
           <Tooltip
             cursor={{ fill: "var(--muted)" }}
             contentStyle={{
+              maxWidth: 280,
+              whiteSpace: "normal",
               borderRadius: 10,
               border: "1px solid var(--border)",
               boxShadow: "0 8px 24px -12px rgb(15 30 51 / 0.25)",
               fontSize: 13,
             }}
-            labelFormatter={(label) => `Page ${label}`}
+            labelFormatter={(label, payload) => {
+              const summary = (payload?.[0]?.payload as PageTimeDatum | undefined)?.summary;
+              return summary ? `Page ${label} : ${summary}` : `Page ${label}`;
+            }}
             formatter={(value, _name, item) => {
               const datum = item.payload as PageTimeDatum;
               return [`${value} s au total · ${datum.avgSeconds} s par lecture`, datum.isPricing ? "Tarifs" : "Lecture"];

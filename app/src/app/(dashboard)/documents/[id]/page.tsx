@@ -22,10 +22,12 @@ import {
 } from "@/components/dashboard/labels";
 import { LinkFollowupsToggle } from "@/components/dashboard/link-followups-toggle";
 import { PageHeader, SectionTitle, StatLine, Surface } from "@/components/dashboard/page-header";
+import { DocumentPages, SellerDescriptionForm } from "@/components/dashboard/document-content";
 import { PageTimeChart, type PageTimeDatum } from "@/components/dashboard/page-time-chart";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getAppOrigin } from "@/lib/app-origin";
 import { getDocumentAnalytics } from "@/lib/closing/analytics";
+import { getLanguageModel } from "@/lib/closing/ai/provider";
 import { prisma } from "@/lib/db";
 import { formatBytes, formatDate, formatDuration, formatRelative } from "@/lib/format";
 import { requireWorkspace } from "@/lib/session";
@@ -47,7 +49,10 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
   const document = await prisma.document.findFirst({
     where: { id, organizationId: organization.id },
     include: {
-      pages: { select: { pageNumber: true, tags: true }, orderBy: { pageNumber: "asc" } },
+      pages: {
+        select: { pageNumber: true, tags: true, tagSource: true, summary: true, keyFacts: true },
+        orderBy: { pageNumber: "asc" },
+      },
       links: {
         where: { archivedAt: null },
         orderBy: { createdAt: "desc" },
@@ -90,6 +95,7 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
       totalSeconds: Math.round(total / 1000),
       avgSeconds: stat?.viewCount ? Math.round(total / stat.viewCount / 1000) : 0,
       isPricing: page.tags.includes("PRICING"),
+      summary: page.summary,
     };
   });
   const taggedPages = document.pages.filter((p) => p.tags.length > 0);
@@ -180,6 +186,9 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
           </TabsTrigger>
           <TabsTrigger value="reading" className="flex-none px-0 text-[15px]">
             Lecture
+          </TabsTrigger>
+          <TabsTrigger value="content" className="flex-none px-0 text-[15px]">
+            Contenu
           </TabsTrigger>
           <TabsTrigger value="followups" className="flex-none px-0 text-[15px]">
             Relances
@@ -290,6 +299,23 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
             <p className="py-16 text-center text-sm text-muted-foreground">
               L&apos;aperçu s&apos;affichera une fois l&apos;analyse terminée.
             </p>
+          )}
+        </TabsContent>
+
+        <TabsContent value="content">
+          {isWeb ? (
+            <SellerDescriptionForm documentId={document.id} initial={document.sellerDescription ?? ""} />
+          ) : document.pages.length === 0 ? (
+            <p className="py-12 text-center text-sm text-muted-foreground">
+              {ready ? "Aucune page détectée." : "Analyse du document en cours…"}
+            </p>
+          ) : (
+            <DocumentPages
+              documentId={document.id}
+              pages={document.pages}
+              aiRead={document.aiProcessedAt !== null}
+              aiAvailable={getLanguageModel("classify") !== null}
+            />
           )}
         </TabsContent>
 

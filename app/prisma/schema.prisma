@@ -307,6 +307,12 @@ model Document {
   status          DocumentStatus @default(UPLOADED)
   processingError String?
 
+  // AI reading of the pages (summaries, tags, key facts). Retried by the engine until it works, 3 tries max.
+  aiProcessedAt     DateTime?
+  aiAttempts        Int       @default(0)
+  // URL documents have no text: the seller says what the page is about
+  sellerDescription String?
+
   pages DocumentPage[]
   links Link[]
 
@@ -325,7 +331,8 @@ model DocumentPage {
 
   pageNumber Int // 1-based
   text       String? // extracted text, feeds page tagging and the prospect chat
-  summary    String?
+  summary    String? // one or two sentences, written by the AI at upload
+  keyFacts   String[]      @default([]) // amounts, durations, options stated on the page
   tags       PageTag[]
   tagSource  PageTagSource @default(AUTO)
 

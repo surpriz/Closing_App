@@ -52,6 +52,7 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
           document: {
             select: {
               name: true,
+              sellerDescription: true,
               pages: {
                 select: { pageNumber: true, text: true, tags: true },
                 orderBy: { pageNumber: "asc" },
@@ -81,7 +82,8 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
     senderSignature: settings?.senderSignature ?? null,
     daysSinceSent: link.sentAt ? Math.floor((Date.now() - link.sentAt.getTime()) / DAY_MS) : null,
     aiTone: settings?.aiTone ?? null,
-    documentIntro: pages[0]?.text?.slice(0, 600) ?? null,
+    // Web links have no text: the seller's description stands in for the first page
+    documentIntro: (pages[0]?.text ?? link.document.sellerDescription)?.slice(0, 600) ?? null,
     instruction: instruction ?? null,
     pricingExcerpt:
       followup.trigger === "HOT_PRICING"

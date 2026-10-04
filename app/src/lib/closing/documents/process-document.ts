@@ -4,6 +4,7 @@ import { readPrivateBlob } from "@/lib/blob";
 import { prisma } from "@/lib/db";
 
 import { detectPageTags } from "./page-tags";
+import { readDocumentPages } from "./read-pages";
 
 const MAX_PAGE_TEXT_CHARS = 20_000;
 
@@ -43,7 +44,13 @@ export async function processDocument(documentId: string) {
       prisma.documentPage.createMany({ data: pages }),
       prisma.document.update({
         where: { id: documentId },
-        data: { numPages: totalPages, status: "READY", processingError: null },
+        data: {
+          numPages: totalPages,
+          status: "READY",
+          processingError: null,
+          aiProcessedAt: null,
+          aiAttempts: 0,
+        },
       }),
     ]);
   } catch (error) {
@@ -56,5 +63,13 @@ export async function processDocument(documentId: string) {
           error instanceof Error ? error.message.slice(0, 500) : "Unknown error",
       },
     });
+    return;
+  }
+
+  // The document is usable from here; the AI reading only adds summaries and finer tags
+  try {
+    await readDocumentPages(documentId);
+  } catch (error) {
+    console.error(`[documents] AI page reading failed for ${documentId}`, error);
   }
 }

@@ -8,7 +8,9 @@ import { z } from "zod";
 import { getAppOrigin } from "@/lib/app-origin";
 import { documentUploadPrefix, headPrivateBlob } from "@/lib/blob";
 import { inspectWebLink } from "@/lib/closing/documents/inspect-web-link";
+import { PAGE_TAGS } from "@/lib/closing/documents/page-reading";
 import { processDocument } from "@/lib/closing/documents/process-document";
+import { readDocumentPages } from "@/lib/closing/documents/read-pages";
 import { parseWebUrl } from "@/lib/closing/documents/web-link";
 import { cancelOpenFollowups } from "@/lib/closing/followups/queue";
 import { prisma } from "@/lib/db";
@@ -164,4 +166,56 @@ export async function archiveDocument(documentId: string) {
   revalidatePath("/documents");
   revalidatePath("/dashboard");
   redirect("/documents");
+}
+
+async function requireOwnedDocument(documentId: string) {
+  const { organization } = await requireWorkspace();
+  const document = await prisma.document.findFirst({
+    where: { id: documentId, organizationId: organization.id, archivedAt: null },
+    select: { id: true, kind: true },
+  });
+  if (!document) throw new Error("Document introuvable");
+  return document;
+}
+
+const pageTagsSchema = z.array(z.enum(PAGE_TAGS)).max(PAGE_TAGS.length);
+
+// A tag fixed by the seller is never overwritten by the keyword guess or the AI
+export async function setPageTags(documentId: string, pageNumber: number, tags: string[]) {
+  const document = await requireOwnedDocument(documentId);
+  const parsed = pageTagsSchema.safeParse([...new Set(tags)]);
+  if (!parsed.success) return { error: "Étiquettes invalides." };
+  await prisma.documentPage.update({
+    where: { documentId_pageNumber: { documentId: document.id, pageNumber } },
+    data: { tags: parsed.data, tagSource: "MANUAL" },
+  });
+  revalidatePath(`/documents/${document.id}`);
+  return { ok: true };
+}
+
+const sellerDescriptionSchema = z
+  .string()
+  .trim()
+  .max(1500)
+  .transform((v) => v || null);
+
+// Web links have no text Clozer can read: the seller says what the page is about
+export async function saveSellerDescription(documentId: string, description: string) {
+  const document = await requireOwnedDocument(documentId);
+  const parsed = sellerDescriptionSchema.safeParse(description);
+  if (!parsed.success) return { error: "Description trop longue." };
+  await prisma.document.update({ where: { id: document.id }, data: { sellerDescription: parsed.data } });
+  revalidatePath(`/documents/${document.id}`);
+  return { ok: true };
+}
+
+export async function rereadDocument(documentId: string) {
+  const document = await requireOwnedDocument(documentId);
+  if (document.kind !== "FILE") return { error: "Rien à relire pour un lien web." };
+  await prisma.document.update({ where: { id: document.id }, data: { aiProcessedAt: null, aiAttempts: 0 } });
+  const outcome = await readDocumentPages(document.id);
+  revalidatePath(`/documents/${document.id}`);
+  if (outcome === "no_ai") return { error: "Aucune IA n'est configurée." };
+  if (outcome === "failed") return { error: "La lecture a échoué, réessayez dans un moment." };
+  return { ok: true };
 }
