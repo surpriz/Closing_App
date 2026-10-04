@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
     await prisma.prospect.update({
       where: { id: prospect.id },
       data: {
-        lastSeenAt: now,
+        lastSeenAt: context.isBot ? undefined : now,
         firstSeenAt: prospect.firstSeenAt ?? now,
         timezone: prospect.timezone ?? timezone,
         locale: prospect.locale ?? locale,

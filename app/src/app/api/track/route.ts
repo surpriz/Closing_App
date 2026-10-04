@@ -102,11 +102,16 @@ export async function POST(request: Request) {
         "currentPage" = CAST(${onScreen} AS INTEGER),
         "leftAt" = ${left ? now : null}
       WHERE "id" = ${view.id}`,
-    prisma.link.update({
-      where: { id: view.linkId },
-      data: { lastActivityAt: now },
-    }),
-    ...(view.prospectId
+    // Bots keep their own rows but never make a link look opened.
+    ...(view.isBot
+      ? []
+      : [
+          prisma.link.update({
+            where: { id: view.linkId },
+            data: { lastActivityAt: now },
+          }),
+        ]),
+    ...(view.prospectId && !view.isBot
       ? [
           prisma.prospect.update({
             where: { id: view.prospectId },
