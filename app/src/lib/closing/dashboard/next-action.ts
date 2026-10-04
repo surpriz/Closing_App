@@ -38,7 +38,9 @@ export type NextAction =
   | { kind: "nudge"; days: number; opened: boolean }
   | { kind: "wait"; days: number; opened: boolean; tier: Tier | null }
   | { kind: "in_touch"; at: Date }
-  | { kind: "snoozed"; until: Date };
+  | { kind: "snoozed"; until: Date }
+  /** What the deal analysis recommends, when it is current. */
+  | { kind: "ai_advice"; text: string; urgent: boolean };
 
 /** Most urgent first. */
 const URGENCY: NextAction["kind"][] = [
@@ -46,6 +48,7 @@ const URGENCY: NextAction["kind"][] = [
   "reply",
   "review_draft",
   "call",
+  "ai_advice",
   "nudge",
   "followup_planned",
   "in_touch",
@@ -55,7 +58,32 @@ const URGENCY: NextAction["kind"][] = [
 
 /** The seller has something to do, as opposed to waiting. */
 export function isUrgent(action: NextAction) {
+  if (action.kind === "ai_advice") return action.urgent;
   return URGENCY.indexOf(action.kind) <= URGENCY.indexOf("nudge");
+}
+
+/** Rule outcomes that describe a fact of the moment: they stay, whatever the analysis says. */
+const FACTUAL: NextAction["kind"][] = ["call_now", "reply", "review_draft", "in_touch", "snoozed"];
+
+/**
+ * The analysis has the last word on what to do, except for facts of the
+ * moment (someone reading now, a change request, a draft waiting, a pause).
+ * Without it, the rules decide alone.
+ */
+export function withAiAdvice(
+  action: NextAction,
+  advice: { type: string; timing: string; priority: number } | null,
+  labels: { action: Record<string, string>; timing: Record<string, string> },
+): NextAction {
+  if (!advice || FACTUAL.includes(action.kind)) return action;
+  const verb = labels.action[advice.type] ?? advice.type;
+  const text =
+    advice.type === "wait"
+      ? "Rien à faire pour l'instant, Clozer surveille."
+      : advice.type === "close_lost"
+        ? "Deal sans doute perdu : à classer ?"
+        : `${verb} ${labels.timing[advice.timing] ?? ""}.`.replace(" .", ".");
+  return { kind: "ai_advice", text, urgent: advice.priority >= 4 && advice.type !== "wait" };
 }
 
 /** A prospect who read and went quiet this long needs a word from the seller. */
@@ -110,6 +138,8 @@ export function describeNextAction(action: NextAction, now: Date): string {
       return "Relance prête : relisez-la et validez.";
     case "in_touch":
       return `Échange noté ${formatRelative(action.at, now)}, laissez-lui le temps.`;
+    case "ai_advice":
+      return action.text;
     case "snoozed":
       return `En pause jusqu'au ${new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long" }).format(action.until)}.`;
     case "call":

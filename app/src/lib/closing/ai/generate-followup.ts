@@ -45,7 +45,8 @@ export async function draftFollowup(
         system: FOLLOWUP_SYSTEM_PROMPT,
         prompt: buildFollowupPrompt({ ...input, fixIssues: issues }),
         output: Output.object({ schema: draftSchema }),
-        maxOutputTokens: 800,
+        // Room for the model's thinking, the message itself stays short
+        maxOutputTokens: 3000,
         abortSignal: AbortSignal.timeout(45_000),
       });
       await recordAiUsage({

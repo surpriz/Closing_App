@@ -324,6 +324,9 @@ model Document {
   aiAttempts        Int       @default(0)
   // URL documents have no text: the seller says what the page is about
   sellerDescription String?
+  // What kind of document this is (QUOTE, RESUME…, see documents/doc-types.ts) and what it is for, guessed by the AI
+  docType           String?
+  docPurpose        String?
 
   pages DocumentPage[]
   links Link[]

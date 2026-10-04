@@ -11,6 +11,7 @@ const CONFIDENCE_PENALTY_PER_DROP = 8;
 const HEADLINE_MAX = 90;
 const SUMMARY_MAX = 500;
 const TEXT_MAX = 240;
+const WHY_MAX = 400;
 
 const clip = (text: string, max: number) => {
   const clean = text.replace(/\s+/g, " ").trim();
@@ -70,7 +71,9 @@ export function validateInsight(raw: RawInsight, story: DealStory): { insight: I
   if (action.type === "call" && action.channel !== "PHONE") action = { ...action, channel: "PHONE" };
   if (action.type === "send_followup" && action.channel === "PHONE") action = { ...action, channel: "EMAIL" };
 
-  const confidence = Math.round(Math.max(0, Math.min(100, raw.confidence - dropped * CONFIDENCE_PENALTY_PER_DROP)));
+  // Some answers come as a fraction (0.4) despite the prompt
+  const rawConfidence = raw.confidence > 0 && raw.confidence <= 1 ? raw.confidence * 100 : raw.confidence;
+  const confidence = Math.round(Math.max(0, Math.min(100, rawConfidence - dropped * CONFIDENCE_PENALTY_PER_DROP)));
   const priority = Math.round(Math.max(1, Math.min(5, raw.priority)));
 
   return {
@@ -85,7 +88,7 @@ export function validateInsight(raw: RawInsight, story: DealStory): { insight: I
       signals,
       frictions,
       risks: raw.risks.map((risk) => clip(risk, TEXT_MAX)).filter(Boolean).slice(0, 4),
-      recommendedAction: { ...action, why: clip(action.why, TEXT_MAX), prospectId },
+      recommendedAction: { ...action, why: clip(action.why, WHY_MAX), prospectId },
       followupBrief: brief && {
         ...brief,
         angle: clip(brief.angle, TEXT_MAX),

@@ -6,6 +6,7 @@ import {
   describeNextAction,
   isUrgent,
   type NextActionInput,
+  withAiAdvice,
 } from "./next-action";
 
 const now = new Date("2026-10-04T10:00:00Z");
@@ -175,3 +176,37 @@ describe("seller-side context", () => {
     ).toBeGreaterThan(0);
   });
 });
+
+describe("withAiAdvice", () => {
+  const labels = {
+    action: { wait: "Attendre", call: "Appeler", send_followup: "Relancer par écrit" },
+    timing: { next_business_morning: "demain matin", now: "maintenant" },
+  };
+
+  it("lets a current analysis overrule the score-based call", () => {
+    const action = withAiAdvice({ kind: "call", pricing: false }, { type: "wait", timing: "now", priority: 2 }, labels);
+    expect(action).toEqual({ kind: "ai_advice", text: "Rien à faire pour l'instant, Clozer surveille.", urgent: false });
+    expect(isUrgent(action)).toBe(false);
+  });
+
+  it("phrases an urgent recommendation", () => {
+    const action = withAiAdvice(
+      { kind: "wait", days: 1, opened: true, tier: "WARM" },
+      { type: "call", timing: "next_business_morning", priority: 5 },
+      labels,
+    );
+    expect(action).toEqual({ kind: "ai_advice", text: "Appeler demain matin.", urgent: true });
+  });
+
+  it("never hides a fact of the moment", () => {
+    for (const fact of [{ kind: "call_now" }, { kind: "reply" }, { kind: "review_draft" }] as const) {
+      expect(withAiAdvice(fact, { type: "wait", timing: "now", priority: 1 }, labels)).toBe(fact);
+    }
+  });
+
+  it("keeps the rules when there is no current analysis", () => {
+    const rule = { kind: "nudge", days: 4, opened: true } as const;
+    expect(withAiAdvice(rule, null, labels)).toBe(rule);
+  });
+});
+

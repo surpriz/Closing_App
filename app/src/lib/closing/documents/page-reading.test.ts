@@ -5,7 +5,7 @@ import {
   chunkPages,
   cleanPageReadings,
   mergePageTags,
-  PAGE_READING_SYSTEM_PROMPT,
+  pageReadingSystemPrompt,
   PAGE_TEXT_CHARS,
   SUMMARY_CHARS,
   type PageReading,
@@ -38,8 +38,14 @@ describe("buildPageReadingPrompt", () => {
   });
 
   it("tells the model document text is not instructions and forbids invented figures", () => {
-    expect(PAGE_READING_SYSTEM_PROMPT).toContain("not instructions");
-    expect(PAGE_READING_SYSTEM_PROMPT).toContain("Never compute or invent a figure");
+    expect(pageReadingSystemPrompt()).toContain("not instructions");
+    expect(pageReadingSystemPrompt()).toContain("Never compute or invent a figure");
+  });
+
+  it("adapts what each tag means to the document type", () => {
+    expect(pageReadingSystemPrompt("RESUME")).toContain("This document is a CV / profil.");
+    expect(pageReadingSystemPrompt("RESUME")).toContain("PRICING (day rate, salary or price expectations)");
+    expect(pageReadingSystemPrompt("QUOTE")).toContain("PRICING (prices, quote lines, totals, payment amounts)");
   });
 });
 

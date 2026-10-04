@@ -16,6 +16,8 @@ export async function loadDealForAnalysis(linkId: string, now: Date) {
           name: true,
           kind: true,
           sellerDescription: true,
+          docType: true,
+          docPurpose: true,
           pages: {
             select: { pageNumber: true, tags: true, summary: true, text: true },
             orderBy: { pageNumber: "asc" },
@@ -74,6 +76,7 @@ export async function loadDealForAnalysis(linkId: string, now: Date) {
     document: {
       name: link.document.name,
       kind: link.document.kind,
+      docType: link.document.docType,
       pages: link.document.pages.map((page) => ({
         pageNumber: page.pageNumber,
         tags: page.tags,
@@ -100,6 +103,8 @@ export async function loadDealForAnalysis(linkId: string, now: Date) {
   const deal: AnalyzerDeal = {
     documentName: link.document.name,
     documentKind: link.document.kind,
+    docType: link.document.docType,
+    docPurpose: link.document.docPurpose,
     sellerDescription: link.document.sellerDescription,
     pages: link.document.pages.map(({ pageNumber, tags, summary }) => ({ pageNumber, tags, summary })),
     dealStatus: link.dealStatus,

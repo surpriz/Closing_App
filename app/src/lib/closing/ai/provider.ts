@@ -8,8 +8,8 @@ export type AiPurpose = "followup" | "chat" | "classify" | "analyze";
 const DEFAULT_MODELS: Record<AiProvider, Record<AiPurpose, string>> = {
   openai: { followup: "gpt-4o", chat: "gpt-4o-mini", classify: "gpt-4o-mini", analyze: "gpt-4o" },
   anthropic: {
-    followup: "claude-sonnet-5",
-    chat: "claude-sonnet-5",
+    followup: "claude-sonnet-5-5",
+    chat: "claude-sonnet-5-5",
     classify: "claude-haiku-4-5-20251001",
     analyze: "claude-sonnet-5-5",
   },

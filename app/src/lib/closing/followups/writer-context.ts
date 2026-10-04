@@ -1,6 +1,6 @@
 import type { PageTag } from "@/generated/prisma/enums";
 
-import { TAG_NAMES } from "../brain/facts";
+import { tagLabels } from "../documents/doc-types";
 
 /**
  * Which parts of the document the message writer gets, by follow-up goal.
@@ -29,13 +29,15 @@ export function pickRelevantSections(
   pages: { tags: PageTag[]; summary: string | null; keyFacts: string[] }[],
   goal: string | null,
   trigger: string,
+  docType?: string | null,
 ) {
+  const names = tagLabels(docType);
   const wanted = SECTIONS_BY_GOAL[goal ?? TRIGGER_GOAL[trigger] ?? "gentle_reminder"] ?? [];
   const sections: { section: string; summary: string | null; keyFacts: string[] }[] = [];
   for (const tag of wanted) {
     for (const page of pages) {
       if (!page.tags.includes(tag) || (!page.summary && page.keyFacts.length === 0)) continue;
-      sections.push({ section: TAG_NAMES[tag], summary: page.summary, keyFacts: page.keyFacts });
+      sections.push({ section: names[tag], summary: page.summary, keyFacts: page.keyFacts });
       if (sections.length >= MAX_SECTIONS) return sections;
     }
   }

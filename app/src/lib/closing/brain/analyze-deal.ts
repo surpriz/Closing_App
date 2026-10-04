@@ -87,7 +87,8 @@ export async function analyzeDeal(
       system: ANALYZER_SYSTEM_PROMPT,
       prompt: buildAnalyzerPrompt(loaded.profile, loaded.deal, story.facts),
       output: Output.object({ schema: insightSchema }),
-      maxOutputTokens: 1500,
+      // Sonnet 5.5 thinks before answering and that counts here: leave room
+      maxOutputTokens: 8000,
       abortSignal: AbortSignal.timeout(CALL_TIMEOUT_MS),
     });
     await recordAiUsage({

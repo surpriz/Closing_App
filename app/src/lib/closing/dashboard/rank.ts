@@ -26,6 +26,7 @@ const RULE_PRIORITY: Record<NextAction["kind"], number> = {
   nudge: 3,
   followup_planned: 2,
   in_touch: 1,
+  ai_advice: 2,
   wait: 1,
   snoozed: 0,
 };

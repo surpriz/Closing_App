@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { PageTag, PageTagSource } from "@/generated/prisma/enums";
 import { cn } from "cn";
 
-import { TAG_LABELS } from "./labels";
+import { DOC_TYPE_LABELS, tagLabels, type DocType } from "@/lib/closing/documents/doc-types";
 
 const EDITABLE_TAGS: PageTag[] = ["PRICING", "TERMS", "TIMELINE", "SCOPE", "TEAM", "CASE_STUDY"];
 
@@ -29,18 +29,29 @@ export function DocumentPages({
   aiRead,
   aiAvailable,
   aiGaveUp,
+  docType,
+  docPurpose,
 }: {
   documentId: string;
   pages: ContentPage[];
+  docType: string | null;
+  docPurpose: string | null;
   aiRead: boolean;
   aiAvailable: boolean;
   /** Three readings failed: only the button retries now. */
   aiGaveUp: boolean;
 }) {
   const [pending, startTransition] = useTransition();
+  const labels = tagLabels(docType);
 
   return (
     <div className="space-y-4">
+      {docType && (
+        <p className="text-[15px]">
+          <span className="font-medium">{DOC_TYPE_LABELS[docType as DocType] ?? "Document"}</span>
+          {docPurpose && <span className="text-muted-foreground"> : {docPurpose}</span>}
+        </p>
+      )}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="max-w-2xl text-[15px] text-muted-foreground">
           {aiRead
@@ -71,14 +82,27 @@ export function DocumentPages({
       <ul className="divide-y divide-border rounded-xl bg-card ring-1 ring-border">
         {pages.map((page) => (
           // Remount when the stored tags change (AI reread), so the row shows them
-          <PageRow key={`${page.pageNumber}:${page.tags.join()}`} documentId={documentId} page={page} />
+          <PageRow
+            key={`${page.pageNumber}:${page.tags.join()}:${docType}`}
+            documentId={documentId}
+            page={page}
+            labels={labels}
+          />
         ))}
       </ul>
     </div>
   );
 }
 
-function PageRow({ documentId, page }: { documentId: string; page: ContentPage }) {
+function PageRow({
+  documentId,
+  page,
+  labels,
+}: {
+  documentId: string;
+  page: ContentPage;
+  labels: Record<PageTag, string>;
+}) {
   const [tags, setTags] = useState(page.tags);
   const [pending, startTransition] = useTransition();
 
@@ -119,7 +143,7 @@ function PageRow({ documentId, page }: { documentId: string; page: ContentPage }
                     : "text-muted-foreground ring-border hover:text-foreground",
                 )}
               >
-                {TAG_LABELS[tag]}
+                {labels[tag]}
               </button>
             );
           })}

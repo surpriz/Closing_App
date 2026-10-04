@@ -4,15 +4,17 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 
 import { getLanguageModel } from "../ai/provider";
-import { inferOfferFromDocument } from "./infer-offer";
 import { recordAiUsage } from "../ai/usage";
+import { DOC_TYPES } from "./doc-types";
+import { inferOfferFromDocument } from "./infer-offer";
 import {
   buildPageReadingPrompt,
   chunkPages,
   cleanPageReadings,
+  DOC_CLASSIFY_SYSTEM_PROMPT,
   mergePageTags,
-  PAGE_READING_SYSTEM_PROMPT,
   PAGE_TAGS,
+  pageReadingSystemPrompt,
   type PageReading,
 } from "./page-reading";
 
@@ -31,6 +33,40 @@ const readingSchema = z.object({
     }),
   ),
 });
+
+const classifySchema = z.object({ docType: z.enum(DOC_TYPES), purpose: z.string() });
+/** Enough of the start of a document to tell a quote from a résumé. */
+const CLASSIFY_CHARS = 4000;
+
+type Llm = NonNullable<ReturnType<typeof getLanguageModel>>;
+
+/** Quote, résumé, deck…: decides what the page tags mean and how deals are read. Null on failure. */
+async function classifyDocument(llm: Llm, document: { name: string; organizationId: string }, text: string) {
+  const startedAt = Date.now();
+  try {
+    const { output, usage } = await generateText({
+      model: llm.model,
+      system: DOC_CLASSIFY_SYSTEM_PROMPT,
+      prompt: `Document title: ${document.name}\n<document>\n${text.slice(0, CLASSIFY_CHARS)}\n</document>`,
+      output: Output.object({ schema: classifySchema }),
+      maxOutputTokens: 200,
+      abortSignal: AbortSignal.timeout(CALL_TIMEOUT_MS),
+    });
+    await recordAiUsage({
+      organizationId: document.organizationId,
+      purpose: "classify",
+      provider: llm.provider,
+      modelId: llm.modelId,
+      usage,
+      latencyMs: Date.now() - startedAt,
+      ok: true,
+    });
+    return { docType: output.docType, purpose: output.purpose.trim().slice(0, 200) || null };
+  } catch (error) {
+    console.error("[documents] classification failed", error);
+    return null;
+  }
+}
 
 export type ReadPagesOutcome = "done" | "partial" | "failed" | "no_ai" | "skipped";
 
@@ -73,6 +109,15 @@ export async function readDocumentPages(documentId: string): Promise<ReadPagesOu
     return "done";
   }
 
+  const classified = await classifyDocument(llm, document, withText.map((page) => page.text).join("\n"));
+  if (classified) {
+    await prisma.document.update({
+      where: { id: document.id },
+      data: { docType: classified.docType, docPurpose: classified.purpose },
+    });
+  }
+  const systemPrompt = pageReadingSystemPrompt(classified?.docType);
+
   const chunks = chunkPages(withText);
   const readings: PageReading[] = [];
   let failures = 0;
@@ -84,7 +129,7 @@ export async function readDocumentPages(documentId: string): Promise<ReadPagesOu
         try {
           const { output, usage } = await generateText({
             model: llm.model,
-            system: PAGE_READING_SYSTEM_PROMPT,
+            system: systemPrompt,
             prompt: buildPageReadingPrompt(document.name, chunk),
             output: Output.object({ schema: readingSchema }),
             maxOutputTokens: 300 * chunk.length,

@@ -59,6 +59,8 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
             select: {
               name: true,
               sellerDescription: true,
+              docType: true,
+              docPurpose: true,
               pages: {
                 select: { pageNumber: true, text: true, tags: true, summary: true, keyFacts: true },
                 orderBy: { pageNumber: "asc" },
@@ -124,7 +126,8 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
           : null,
       brief,
       offer: { description: settings?.offerDescription ?? null, valueProps: settings?.valueProps ?? null },
-      relevantSections: pickRelevantSections(pages, brief?.goal ?? null, followup.trigger),
+      relevantSections: pickRelevantSections(pages, brief?.goal ?? null, followup.trigger, link.document.docType),
+      documentPurpose: link.document.docPurpose,
       previousFollowups: link.followups.map((f) => ({
         daysAgo: Math.floor((now.getTime() - f.sentAt!.getTime()) / DAY_MS),
         channel: f.channel,

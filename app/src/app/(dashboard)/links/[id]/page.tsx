@@ -32,6 +32,7 @@ import { getAppOrigin } from "@/lib/app-origin";
 import { getLanguageModel } from "@/lib/closing/ai/provider";
 import { getLinkAnalytics } from "@/lib/closing/analytics";
 import { getLatestInsight } from "@/lib/closing/brain/latest";
+import { labelReaders } from "@/lib/closing/dashboard/readers";
 import { catchUpInBackground } from "@/lib/closing/catch-up";
 import { freshEngagementScore } from "@/lib/closing/engagement/refresh-score";
 import { getLinkLiveState } from "@/lib/closing/live";
@@ -121,13 +122,14 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
 
   const reasons = Array.isArray(score?.reasons) ? (score.reasons as unknown as EngagementReason[]) : [];
 
+  const readerLabels = labelReaders(analytics.recentViews);
   const timeline: TimelineItem[] = [
     { id: `created-${link.id}`, at: link.createdAt, kind: "created" as const, title: "Lien créé" },
     ...analytics.recentViews.map((view) => ({
       id: `view-${view.id}`,
       at: view.startedAt,
       kind: "view" as const,
-      title: `Lecture par ${view.prospect?.name ?? view.email ?? "un lecteur anonyme"}`,
+      title: `Lecture par ${readerLabels.get(view.id)?.name ?? "un lecteur"}`,
       detail: [
         formatDuration(view.totalDurationMs),
         link.document.kind === "URL" ? null : `jusqu'à la page ${view.maxPageReached}`,

@@ -5,7 +5,13 @@ import Link from "next/link";
 import { AutopilotBanner } from "@/components/dashboard/autopilot-banner";
 import { NewLinkDialog } from "@/components/dashboard/create-link-form";
 import { EmptyState } from "@/components/dashboard/empty-state";
-import { CHANNEL_LABELS, DEAL_STATUS_LABELS, TIER_LABELS } from "@/components/dashboard/labels";
+import {
+  CHANNEL_LABELS,
+  DEAL_STATUS_LABELS,
+  INSIGHT_ACTION_LABELS,
+  TIER_LABELS,
+  TIMING_LABELS,
+} from "@/components/dashboard/labels";
 import { SectionTitle } from "@/components/dashboard/page-header";
 import { ActivityFeed } from "@/components/dashboard/today/activity-feed";
 import { FunnelStrip, HeatDistributionBar } from "@/components/dashboard/today/funnel";
@@ -19,7 +25,7 @@ import { documentUploadPrefix } from "@/lib/blob";
 import { buildFeed } from "@/lib/closing/dashboard/feed";
 import { buildFunnel, buildHeatDistribution } from "@/lib/closing/dashboard/funnel";
 import { prospectLabel } from "@/lib/closing/dashboard/labels";
-import { computeNextAction } from "@/lib/closing/dashboard/next-action";
+import { computeNextAction, withAiAdvice } from "@/lib/closing/dashboard/next-action";
 import { parsePeriod, periodStart, PERIODS } from "@/lib/closing/dashboard/period";
 import { compareDeals } from "@/lib/closing/dashboard/rank";
 import {
@@ -116,7 +122,10 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
   const feed = buildFeed(feedSource, FEED_LIMIT);
 
   const { headline, hint } = buildTodayHeadline({
-    hotProspects: rows.filter((row) => row.dealStatus === "OPEN" && row.tier === "HOT").map((row) => row.label),
+    // "Hot" by the score alone, unless the analysis reads the deal as calm
+    hotProspects: rows
+      .filter((row) => row.dealStatus === "OPEN" && row.tier === "HOT" && (row.aiPriority ?? 5) >= 4)
+      .map((row) => row.label),
     warmCount: distribution.WARM,
     changeRequests: rows.filter((row) => row.dealStatus === "CHANGE_REQUESTED").map((row) => row.label),
     freshValidations,
@@ -259,6 +268,7 @@ function toTodoRow(
   { now, readingNow, origin }: { now: Date; readingNow: boolean; origin: string },
 ): TodoRow {
   const prospect = deal.prospects[0];
+  const ai = currentInsight(deal);
   const tier = deal.opened ? (deal.engagementScore?.tier ?? null) : null;
 
   return {
@@ -271,7 +281,8 @@ function toTodoRow(
     score: deal.opened ? (deal.engagementScore?.score ?? 0) : 0,
     state: dealState(deal.dealStatus, deal.opened, tier),
     lastActivityAt: deal.lastActivityAt,
-    action: computeNextAction({
+    action: withAiAdvice(
+      computeNextAction({
       now,
       dealStatus: deal.dealStatus,
       readingNow,
@@ -285,8 +296,12 @@ function toTodoRow(
       draftToReview: deal.draftCount > 0,
       lastSellerContactAt: deal.lastSellerContactAt,
       snoozedUntil: deal.snoozedUntil,
-    }),
-    ...currentInsight(deal),
+      }),
+      ai.advice,
+      { action: INSIGHT_ACTION_LABELS, timing: TIMING_LABELS },
+    ),
+    insightHeadline: ai.insightHeadline,
+    aiPriority: ai.aiPriority,
     url: `${origin}/v/${deal.slug}`,
   };
 }
@@ -300,9 +315,11 @@ function dealState(dealStatus: TodoRow["dealStatus"], opened: boolean, tier: Tod
 // An analysis older than the last reading no longer describes the deal
 function currentInsight(deal: OpenDeal) {
   const current = deal.insight && (!deal.lastActivityAt || deal.insight.createdAt >= deal.lastActivityAt);
+  const action = deal.insight?.recommendedAction as { type: string; timing: string } | undefined;
   return {
     insightHeadline: current ? deal.insight!.headline : null,
     aiPriority: current ? deal.insight!.priority : null,
+    advice: current && action ? { type: action.type, timing: action.timing, priority: deal.insight!.priority } : null,
   };
 }
 

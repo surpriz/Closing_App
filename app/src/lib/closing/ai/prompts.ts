@@ -14,6 +14,8 @@ export type FollowupPromptInput = FollowupDraftInput & {
   /** The angle chosen by the deal analysis (AI decisions only). */
   brief?: { goal: string; angle: string; topics: string[]; avoid: string[] } | null;
   offer?: { description: string | null; valueProps: string | null } | null;
+  /** What the document is for ("Présenter mon profil pour décrocher une mission"). */
+  documentPurpose?: string | null;
   /** Sections of the document relevant to the brief: name, summary, key facts. No page numbers. */
   relevantSections?: { section: string; summary: string | null; keyFacts: string[] }[];
   previousFollowups?: { daysAgo: number; channel: string; subject: string | null; excerpt: string }[];
@@ -74,6 +76,7 @@ export function buildFollowupPrompt(input: FollowupPromptInput) {
     `Prospect name: ${input.prospectName ?? "unknown"}`,
     `Prospect company: ${input.company ?? "unknown"}`,
     `Document title: ${input.documentName}`,
+    input.documentPurpose ? `What the document is for: ${input.documentPurpose}` : "",
     `Document URL: ${input.proposalUrl}`,
     input.daysSinceSent !== null ? `Days since the document was sent: ${input.daysSinceSent}` : "",
     `Sender name: ${input.senderName ?? "unknown"}`,

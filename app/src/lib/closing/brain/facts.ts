@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import type { PageTag } from "@/generated/prisma/enums";
 
 import { DAY_MS } from "../constants";
+import { tagLabels } from "../documents/doc-types";
 
 /**
  * Turns everything known about a deal into numbered, dated facts the model
@@ -27,15 +28,8 @@ const REOPEN_AFTER_FOLLOWUP_MS = 3 * DAY_MS;
 /** Silence steps that warrant a fresh look even when nothing happened. */
 export const QUIET_BUCKETS = [0, 1, 3, 7, 14, 30] as const;
 
-export const TAG_NAMES: Record<PageTag, string> = {
-  PRICING: "Tarifs",
-  TERMS: "Conditions",
-  TIMELINE: "Planning",
-  SCOPE: "Périmètre",
-  TEAM: "Équipe",
-  CASE_STUDY: "Références",
-  OTHER: "Autre",
-};
+/** Default section names; buildDealStory adapts them to the document type. */
+export const TAG_NAMES: Record<PageTag, string> = tagLabels(null);
 
 export type DealFactsInput = {
   now: Date;
@@ -53,6 +47,8 @@ export type DealFactsInput = {
   document: {
     name: string;
     kind: "FILE" | "URL";
+    /** QUOTE, RESUME…: section names follow it ("TJM" rather than "Tarifs" on a résumé). */
+    docType?: string | null;
     pages: { pageNumber: number; tags: PageTag[]; summary: string | null; wordCount: number }[];
   };
   /** Contacts on the link, the main one first. Names only, never emails. */
@@ -203,6 +199,7 @@ export function buildDealStory(input: DealFactsInput): DealStory {
   const origin = deal.sentAt ?? deal.createdAt;
   const dayOf = (date: Date) => `J+${Math.max(0, Math.floor((date.getTime() - origin.getTime()) / DAY_MS))}`;
   const pageByNumber = new Map(document.pages.map((page) => [page.pageNumber, page]));
+  const sectionNames = tagLabels(document.docType);
   const numPages = document.kind === "FILE" ? document.pages.length : 0;
   const mainProspectId = input.prospects[0]?.id ?? null;
 
@@ -265,7 +262,7 @@ export function buildDealStory(input: DealFactsInput): DealStory {
         const tag = page?.tags.find((t) => t !== "OTHER");
         const ratio = page ? p.totalDurationMs / expectedReadMs(page.wordCount) : 0;
         const ratioText = ratio >= 1.8 ? ` (≈${Math.round(ratio)}× le temps de lecture)` : "";
-        return `${tag ? `${TAG_NAMES[tag]} ` : ""}p.${p.pageNumber} ${fmtDuration(p.totalDurationMs)}${ratioText}`;
+        return `${tag ? `${sectionNames[tag]} ` : ""}p.${p.pageNumber} ${fmtDuration(p.totalDurationMs)}${ratioText}`;
       });
 
     const parts = [
@@ -347,7 +344,7 @@ export function buildDealStory(input: DealFactsInput): DealStory {
       summary.push({
         kind: "SECTION_ATTENTION",
         at: null,
-        text: `${TAG_NAMES[tag]} (${pageRanges(entry.pages)}) : ${entry.ms ? `${fmtDuration(entry.ms)} au total, ≈${ratio < 1 ? ratio.toFixed(1) : Math.round(ratio)}× le temps d'une lecture` : "jamais lu"}`,
+        text: `${sectionNames[tag]} (${pageRanges(entry.pages)}) : ${entry.ms ? `${fmtDuration(entry.ms)} au total, ≈${ratio < 1 ? ratio.toFixed(1) : Math.round(ratio)}× le temps d'une lecture` : "jamais lu"}`,
         hashed: true,
       });
     }

@@ -59,7 +59,7 @@ export async function getOpenDeals(organizationId: string) {
         where: { model: { not: null } },
         orderBy: { createdAt: "desc" },
         take: 1,
-        select: { headline: true, priority: true, createdAt: true },
+        select: { headline: true, priority: true, recommendedAction: true, createdAt: true },
       },
     },
   });

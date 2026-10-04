@@ -16,7 +16,6 @@ import {
   ALERT_CHANNEL_LABELS,
   ALERT_TYPE_LABELS,
   DEAL_STATUS_LABELS,
-  TAG_LABELS,
   TIER_LABELS,
 } from "@/components/dashboard/labels";
 import { LinkFollowupsToggle } from "@/components/dashboard/link-followups-toggle";
@@ -29,6 +28,8 @@ import { getDocumentAnalytics } from "@/lib/closing/analytics";
 import { getLanguageModel } from "@/lib/closing/ai/provider";
 import { catchUpInBackground } from "@/lib/closing/catch-up";
 import { buildDocumentFrictions } from "@/lib/closing/dashboard/frictions";
+import { labelReaders } from "@/lib/closing/dashboard/readers";
+import { tagLabels } from "@/lib/closing/documents/doc-types";
 import { prisma } from "@/lib/db";
 import { formatBytes, formatDate, formatDuration, formatRelative } from "@/lib/format";
 import { requireWorkspace } from "@/lib/session";
@@ -131,6 +132,8 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
   const followupItems: FollowupItem[] = followups.map((f) => toFollowupItem(f, f.link.name ?? f.link.slug));
 
   const now = new Date();
+  const readerLabels = labelReaders(analytics.recentViews);
+  const anonymousReaders = [...readerLabels.values()].some((label) => !label.identified);
   const ready = document.status === "READY";
   const isWeb = document.kind === "URL";
   const webHost = document.externalUrl ? new URL(document.externalUrl).hostname.replace(/^www\./, "") : null;
@@ -343,6 +346,8 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
               pages={document.pages}
               aiRead={document.aiProcessedAt !== null}
               aiGaveUp={document.aiAttempts >= 3}
+              docType={document.docType}
+              docPurpose={document.docPurpose}
               aiAvailable={getLanguageModel("classify") !== null}
             />
           )}
@@ -392,7 +397,7 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
                 <p className="mt-3 text-sm text-muted-foreground">
                   Repéré automatiquement :{" "}
                   {taggedPages
-                    .map((page) => `page ${page.pageNumber} (${page.tags.map((t) => TAG_LABELS[t].toLowerCase()).join(", ")})`)
+                    .map((page) => `page ${page.pageNumber} (${page.tags.map((t) => tagLabels(document.docType)[t].toLowerCase()).join(", ")})`)
                     .join(", ")}
                 </p>
               )}
@@ -412,8 +417,11 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
                     <li key={view.id} className="flex items-center justify-between gap-4 px-4 py-3 text-sm">
                       <div className="min-w-0">
                         <p className="font-medium">
-                          {view.prospect?.name ?? view.email ?? "Lecteur anonyme"}
-                          <span className="font-normal text-muted-foreground">, {view.link.name ?? view.link.slug}</span>
+                          {readerLabels.get(view.id)?.name}
+                          <span className="font-normal text-muted-foreground">
+                            {" "}
+                            sur le lien « {view.link.name ?? view.link.slug} »
+                          </span>
                         </p>
                         <p className="truncate text-muted-foreground">
                           {[
@@ -435,6 +443,13 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
                   ))}
                 </ul>
               </Surface>
+            )}
+            {anonymousReaders && (
+              <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
+                Ces lecteurs n&apos;ont pas donné leur email. Une même lettre, c&apos;est un même navigateur ; deux
+                lettres, souvent deux personnes (ou la même sur deux appareils). Pour savoir exactement qui lit,
+                activez « Demander l&apos;email avant lecture » dans les réglages du lien.
+              </p>
             )}
           </section>
         </TabsContent>
