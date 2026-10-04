@@ -212,23 +212,12 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
             <LinkSettingsDialog
               linkId={link.id}
               initial={{
-                version: link.updatedAt.toISOString(),
+                // Not updatedAt: it moves on every tracking flush and the page refreshes itself
+                version: [link.name, link.requireEmail, link.ctaEnabled, link.followupsEnabled].join("|"),
                 name: link.name ?? "",
                 requireEmail: link.requireEmail,
                 ctaEnabled: link.ctaEnabled,
                 followupsEnabled: link.followupsEnabled,
-                channels: link.channels,
-                hotPricingThresholdSec: link.hotPricingThresholdSec,
-                inactivityDays: link.inactivityDays,
-                businessHourStart: link.businessHourStart,
-                businessHourEnd: link.businessHourEnd,
-              }}
-              defaults={{
-                channels: settings.defaultChannels,
-                hotPricingThresholdSec: settings.hotPricingThresholdSec,
-                inactivityDays: settings.inactivityDays,
-                businessHourStart: settings.businessHourStart,
-                businessHourEnd: settings.businessHourEnd,
               }}
             />
             <ArchiveLinkButton linkId={link.id} />

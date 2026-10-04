@@ -15,13 +15,6 @@ import { cn } from "cn";
 type Props = {
   initial: {
     version: string;
-    defaultChannels: string[];
-    hotPricingThresholdSec: number;
-    inactivityDays: string;
-    businessHourStart: number;
-    businessHourEnd: number;
-    multiViewerThreshold: number;
-    reopenAfterInactivityDays: number;
     alertChannels: string[];
     alertEmail: string;
     slackConfigured: boolean;
@@ -31,17 +24,13 @@ type Props = {
     senderName: string;
     senderSignature: string;
     autonomy: "COPILOT" | "AUTOPILOT";
-    autopilotMinConfidence: number;
-    maxFollowupsPer30Days: number;
-    minDaysBetweenFollowups: number;
-    minDelayAfterReadingHours: number;
     offerDescription: string;
     targetCustomer: string;
     valueProps: string;
     commonObjections: string;
     avgSalesCycleDays: string;
   };
-  providers: { email: boolean; whatsapp: boolean; ai: string | null };
+  providers: { email: boolean; ai: string | null };
 };
 
 function Section({
@@ -124,181 +113,47 @@ export function SettingsForm({ initial, providers }: Props) {
       {/* Remount the fields after each save so uncontrolled inputs show stored values */}
       <div key={initial.version} className="space-y-12">
         <Section
-          title="Relances"
-          description="Clozer relance vos prospects tout seul. Ces règles valent pour tous les liens, sauf réglage contraire sur un lien."
+          title="Pilote automatique"
+          description={
+            providers.ai
+              ? "Clozer lit chaque deal comme un closer expérimenté : qui lit quoi, ce qui coince, quand relancer. Il prépare les relances tout seul."
+              : "Les relances sont préparées à partir de règles simples tant qu'aucune IA n'est configurée."
+          }
         >
-          <Row hint="Vous gardez la main : relisez, retouchez ou réécrivez chaque message avant qu'il parte.">
-            <span className="mb-1 block">Avant d&apos;envoyer une relance</span>
+          <Row hint="Dans tous les cas : 3 relances par mois et par contact au maximum, jamais juste après une lecture, toujours aux heures de bureau du prospect, et jamais d'allusion au fait que vous voyez ce qu'il lit.">
+            <span className="mb-1 block">Quand Clozer a préparé une relance</span>
             <div className="flex flex-col gap-1.5">
-              <label className="flex cursor-pointer items-center gap-2.5">
+              <label className="flex cursor-pointer items-start gap-2.5">
                 <input
                   type="radio"
                   name="autonomy"
                   value="COPILOT"
                   defaultChecked={initial.autonomy === "COPILOT"}
-                  className="accent-foreground"
+                  className="mt-2.5 accent-foreground"
                 />
-                Je la valide d&apos;abord
+                <span>
+                  Je la relis et je valide
+                  <span className="block text-sm text-muted-foreground">Recommandé pour commencer.</span>
+                </span>
               </label>
-              <label className="flex cursor-pointer items-center gap-2.5">
+              <label className="flex cursor-pointer items-start gap-2.5">
                 <input
                   type="radio"
                   name="autonomy"
                   value="AUTOPILOT"
                   defaultChecked={initial.autonomy === "AUTOPILOT"}
-                  className="accent-foreground"
+                  className="mt-2.5 accent-foreground"
                 />
-                Elle part toute seule quand Clozer est sûr de lui
+                <span>
+                  Elle part seule quand Clozer est sûr de lui
+                  <span className="block text-sm text-muted-foreground">
+                    Les cas délicats (objection, message du prospect, doute) attendent quand même votre accord. Un
+                    récapitulatif vous arrive chaque matin.
+                  </span>
+                </span>
               </label>
             </div>
           </Row>
-          <Row hint="En mode automatique, une relance moins sûre, ou qui répond à un message du prospect, attend quand même votre accord.">
-            <label htmlFor="autopilotMinConfidence">Envoyer seul à partir de</label>
-            <Inline
-              id="autopilotMinConfidence"
-              name="autopilotMinConfidence"
-              type="number"
-              min={50}
-              max={100}
-              defaultValue={initial.autopilotMinConfidence}
-            />
-            % de confiance
-          </Row>
-          <Row hint="Pour ne jamais harceler un prospect, quoi que conseille l'analyse.">
-            <label htmlFor="maxFollowupsPer30Days">Au plus</label>
-            <Inline
-              id="maxFollowupsPer30Days"
-              name="maxFollowupsPer30Days"
-              type="number"
-              min={1}
-              max={10}
-              defaultValue={initial.maxFollowupsPer30Days}
-            />
-            relances par mois et par contact, espacées d&apos;au moins
-            <Inline
-              id="minDaysBetweenFollowups"
-              name="minDaysBetweenFollowups"
-              aria-label="Jours minimum entre deux relances"
-              type="number"
-              min={1}
-              max={30}
-              defaultValue={initial.minDaysBetweenFollowups}
-            />
-            jours
-          </Row>
-          <Row hint="Une relance qui arrive juste après une lecture donne l'impression d'être observé.">
-            <label htmlFor="minDelayAfterReadingHours">Attendre au moins</label>
-            <Inline
-              id="minDelayAfterReadingHours"
-              name="minDelayAfterReadingHours"
-              type="number"
-              min={0}
-              max={72}
-              defaultValue={initial.minDelayAfterReadingHours}
-            />
-            heures après une lecture
-          </Row>
-          <Row hint="WhatsApp n'est utilisé que si le prospect a donné son numéro et son accord.">
-            <span className="mb-1 block">Relancer par</span>
-            <div className="flex flex-wrap gap-x-6 gap-y-2">
-              <ChannelBox
-                name="defaultChannels"
-                value="EMAIL"
-                label="Email"
-                defaultChecked={initial.defaultChannels.includes("EMAIL")}
-                note={providers.email ? undefined : "pas encore branché"}
-                onChange={markDirty}
-              />
-              <ChannelBox
-                name="defaultChannels"
-                value="WHATSAPP"
-                label="WhatsApp"
-                defaultChecked={initial.defaultChannels.includes("WHATSAPP")}
-                note={providers.whatsapp ? undefined : "pas encore branché"}
-                onChange={markDirty}
-              />
-            </div>
-          </Row>
-          <Row>
-            <label htmlFor="hotPricingThresholdSec">Relancer si le prospect passe plus de</label>
-            <Inline
-              id="hotPricingThresholdSec"
-              name="hotPricingThresholdSec"
-              type="number"
-              min={10}
-              max={3600}
-              defaultValue={initial.hotPricingThresholdSec}
-            />
-            secondes sur les tarifs
-          </Row>
-          <Row hint="Plusieurs délais possibles, séparés par une virgule.">
-            <label htmlFor="inactivityDays">Relancer si le lien n&apos;est pas ouvert après</label>
-            <Inline
-              id="inactivityDays"
-              name="inactivityDays"
-              defaultValue={initial.inactivityDays}
-              placeholder="3, 5"
-              className="w-20"
-            />
-            jours
-          </Row>
-          <Row hint="À l'heure du prospect, jours ouvrés uniquement.">
-            <label htmlFor="businessHourStart">Envoyer entre</label>
-            <Inline
-              id="businessHourStart"
-              name="businessHourStart"
-              type="number"
-              min={0}
-              max={23}
-              defaultValue={initial.businessHourStart}
-            />
-            h et
-            <Inline
-              id="businessHourEnd"
-              name="businessHourEnd"
-              aria-label="Heure de fin d'envoi"
-              type="number"
-              min={1}
-              max={24}
-              defaultValue={initial.businessHourEnd}
-            />
-            h
-          </Row>
-        </Section>
-
-        <Section
-          title="Vos messages"
-          description={
-            providers.ai
-              ? "Les relances sont rédigées pour chaque prospect, avec votre nom, votre ton et votre signature."
-              : "Les relances partent à partir de modèles pré-écrits, avec votre nom et votre signature."
-          }
-        >
-          <div className="grid gap-4 px-5 py-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="senderName">Signé par</Label>
-              <Input id="senderName" name="senderName" defaultValue={initial.senderName} placeholder="Jérôme" />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="aiTone">Ton</Label>
-              <Input
-                id="aiTone"
-                name="aiTone"
-                defaultValue={initial.aiTone}
-                placeholder="direct, vouvoiement, sans jargon"
-              />
-            </div>
-          </div>
-          <div className="space-y-1.5 px-5 py-4">
-            <Label htmlFor="senderSignature">Signature</Label>
-            <Textarea
-              id="senderSignature"
-              name="senderSignature"
-              rows={3}
-              defaultValue={initial.senderSignature}
-              placeholder={"Jérôme Laval\nStudio Nova, 06 12 34 56 78"}
-            />
-          </div>
         </Section>
 
         <Section
@@ -359,33 +214,40 @@ export function SettingsForm({ initial, providers }: Props) {
         </Section>
 
         <Section
-          title="Alertes"
-          description="Soyez prévenu tout de suite quand un prospect se réveille."
+          title="Vos messages"
+          description="Les relances sont écrites en votre nom : comment vous signez, et sur quel ton."
         >
-          <Row>
-            <label htmlFor="multiViewerThreshold">Prévenir si plus de</label>
-            <Inline
-              id="multiViewerThreshold"
-              name="multiViewerThreshold"
-              type="number"
-              min={1}
-              max={20}
-              defaultValue={initial.multiViewerThreshold}
+          <div className="grid gap-4 px-5 py-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="senderName">Signé par</Label>
+              <Input id="senderName" name="senderName" defaultValue={initial.senderName} placeholder="Jérôme" />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="aiTone">Ton</Label>
+              <Input
+                id="aiTone"
+                name="aiTone"
+                defaultValue={initial.aiTone}
+                placeholder="direct, vouvoiement, sans jargon"
+              />
+            </div>
+          </div>
+          <div className="space-y-1.5 px-5 py-4">
+            <Label htmlFor="senderSignature">Signature</Label>
+            <Textarea
+              id="senderSignature"
+              name="senderSignature"
+              rows={3}
+              defaultValue={initial.senderSignature}
+              placeholder={"Jérôme Laval\nStudio Nova, 06 12 34 56 78"}
             />
-            personnes consultent le document en même temps
-          </Row>
-          <Row>
-            <label htmlFor="reopenAfterInactivityDays">Prévenir si le document est rouvert après</label>
-            <Inline
-              id="reopenAfterInactivityDays"
-              name="reopenAfterInactivityDays"
-              type="number"
-              min={1}
-              max={60}
-              defaultValue={initial.reopenAfterInactivityDays}
-            />
-            jours de silence
-          </Row>
+          </div>
+        </Section>
+
+        <Section
+          title="Être prévenu"
+          description="Quand un prospect se réveille, lit à plusieurs, ou qu'une relance attend votre accord."
+        >
           <Row>
             <span className="mb-1 block">Prévenir par</span>
             <div className="flex flex-wrap gap-x-6 gap-y-2">

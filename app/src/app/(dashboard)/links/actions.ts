@@ -60,34 +60,12 @@ export async function archiveLink(linkId: string) {
 
 const checkbox = z.literal("on").optional().transform((v) => v === "on");
 
-const nullableInt = (min: number, max: number) =>
-  z
-    .string()
-    .trim()
-    .transform((v) => (v === "" ? null : Number(v)))
-    .pipe(z.number().int().min(min).max(max).nullable());
-
-const linkSettingsSchema = z
-  .object({
-    name: z.string().trim().max(120).transform((v) => v || null),
-    requireEmail: checkbox,
-    ctaEnabled: checkbox,
-    followupsEnabled: checkbox,
-    channels: z.array(z.enum(["EMAIL", "WHATSAPP"])),
-    hotPricingThresholdSec: nullableInt(10, 3600),
-    inactivityDays: z
-      .string()
-      .transform((v) =>
-        [...new Set(v.split(/[,;\s]+/).filter(Boolean).map(Number))].sort((a, b) => a - b),
-      )
-      .pipe(z.array(z.number().int().min(1).max(60)).max(5)),
-    businessHourStart: nullableInt(0, 23),
-    businessHourEnd: nullableInt(1, 24),
-  })
-  .refine(
-    (s) => s.businessHourStart === null || s.businessHourEnd === null || s.businessHourEnd > s.businessHourStart,
-    { message: "L'heure de fin doit être après l'heure de début." },
-  );
+const linkSettingsSchema = z.object({
+  name: z.string().trim().max(120).transform((v) => v || null),
+  requireEmail: checkbox,
+  ctaEnabled: checkbox,
+  followupsEnabled: checkbox,
+});
 
 export async function saveLinkSettings(
   linkId: string,
@@ -101,17 +79,23 @@ export async function saveLinkSettings(
     requireEmail: formData.get("requireEmail") ?? undefined,
     ctaEnabled: formData.get("ctaEnabled") ?? undefined,
     followupsEnabled: formData.get("followupsEnabled") ?? undefined,
-    channels: formData.getAll("channels"),
-    hotPricingThresholdSec: String(formData.get("hotPricingThresholdSec") ?? ""),
-    inactivityDays: String(formData.get("inactivityDays") ?? ""),
-    businessHourStart: String(formData.get("businessHourStart") ?? ""),
-    businessHourEnd: String(formData.get("businessHourEnd") ?? ""),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Réglages invalides." };
   }
 
-  await prisma.link.update({ where: { id: link.id }, data: parsed.data });
+  await prisma.link.update({
+    where: { id: link.id },
+    // Per-link rule overrides belong to the rule engine the analysis replaced: back to the defaults
+    data: {
+      ...parsed.data,
+      channels: [],
+      hotPricingThresholdSec: null,
+      inactivityDays: [],
+      businessHourStart: null,
+      businessHourEnd: null,
+    },
+  });
   if (!parsed.data.followupsEnabled) {
     await cancelOpenFollowups(link.id, "Relances désactivées sur ce lien");
   }

@@ -20,62 +20,39 @@ const optionalText = (max: number) =>
     .max(max)
     .transform((v) => v || null);
 
-const settingsSchema = z
-  .object({
-    defaultChannels: z.array(z.enum(["EMAIL", "WHATSAPP"])).min(1, "Choisissez au moins un canal de relance."),
-    hotPricingThresholdSec: z.coerce.number().int().min(10).max(3600),
-    inactivityDays: z
-      .string()
-      .transform((v) =>
-        [...new Set(v.split(/[,;\s]+/).filter(Boolean).map(Number))].sort((a, b) => a - b),
-      )
-      .pipe(z.array(z.number().int().min(1).max(60)).min(1, "Indiquez au moins un délai.").max(5)),
-    businessHourStart: z.coerce.number().int().min(0).max(23),
-    businessHourEnd: z.coerce.number().int().min(1).max(24),
-    multiViewerThreshold: z.coerce.number().int().min(1).max(20),
-    reopenAfterInactivityDays: z.coerce.number().int().min(1).max(60),
-    alertChannels: z.array(z.enum(["EMAIL", "SLACK", "WEBHOOK"])),
-    alertEmail: z.union([z.literal(""), z.email()]).transform((v) => v || null),
-    slackWebhookUrl: z
-      .union([z.literal(""), z.url().refine((v) => v.startsWith("https://hooks.slack.com/"), "URL Slack invalide")]),
-    removeSlack: z.boolean(),
-    outboundWebhookUrl: z
-      .union([z.literal(""), z.url().refine(isSafeOutboundUrl, "URL de webhook non autorisée")])
-      .transform((v) => v || null),
-    aiTone: optionalText(300),
-    senderName: optionalText(80),
-    senderSignature: optionalText(500),
-    autonomy: z.enum(["COPILOT", "AUTOPILOT"]),
-    autopilotMinConfidence: z.coerce.number().int().min(50).max(100),
-    maxFollowupsPer30Days: z.coerce.number().int().min(1).max(10),
-    minDaysBetweenFollowups: z.coerce.number().int().min(1).max(30),
-    minDelayAfterReadingHours: z.coerce.number().int().min(0).max(72),
-    offerDescription: optionalText(1500),
-    targetCustomer: optionalText(500),
-    valueProps: optionalText(1500),
-    commonObjections: optionalText(1500),
-    avgSalesCycleDays: z
-      .string()
-      .trim()
-      .transform((v) => (v === "" ? null : Number(v)))
-      .pipe(z.number().int().min(1).max(730).nullable()),
-  })
-  .refine((s) => s.businessHourEnd > s.businessHourStart, {
-    message: "L'heure de fin doit être après l'heure de début.",
-  });
+// Only what the seller decides. Timing and limits are the pilot's job: their
+// columns keep the defaults the analysis policy reads.
+const settingsSchema = z.object({
+  alertChannels: z.array(z.enum(["EMAIL", "SLACK", "WEBHOOK"])),
+  alertEmail: z.union([z.literal(""), z.email()]).transform((v) => v || null),
+  slackWebhookUrl: z.union([
+    z.literal(""),
+    z.url().refine((v) => v.startsWith("https://hooks.slack.com/"), "URL Slack invalide"),
+  ]),
+  removeSlack: z.boolean(),
+  outboundWebhookUrl: z
+    .union([z.literal(""), z.url().refine(isSafeOutboundUrl, "URL de webhook non autorisée")])
+    .transform((v) => v || null),
+  aiTone: optionalText(300),
+  senderName: optionalText(80),
+  senderSignature: optionalText(500),
+  autonomy: z.enum(["COPILOT", "AUTOPILOT"]),
+  offerDescription: optionalText(1500),
+  targetCustomer: optionalText(500),
+  valueProps: optionalText(1500),
+  commonObjections: optionalText(1500),
+  avgSalesCycleDays: z
+    .string()
+    .trim()
+    .transform((v) => (v === "" ? null : Number(v)))
+    .pipe(z.number().int().min(1).max(730).nullable()),
+});
 
 export async function saveWorkspaceSettings(_prev: SettingsState, formData: FormData): Promise<SettingsState> {
   const { organization } = await requireWorkspace();
   const current = await getWorkspaceSettings(organization.id);
 
   const parsed = settingsSchema.safeParse({
-    defaultChannels: formData.getAll("defaultChannels"),
-    hotPricingThresholdSec: formData.get("hotPricingThresholdSec"),
-    inactivityDays: String(formData.get("inactivityDays") ?? ""),
-    businessHourStart: formData.get("businessHourStart"),
-    businessHourEnd: formData.get("businessHourEnd"),
-    multiViewerThreshold: formData.get("multiViewerThreshold"),
-    reopenAfterInactivityDays: formData.get("reopenAfterInactivityDays"),
     alertChannels: formData.getAll("alertChannels"),
     alertEmail: String(formData.get("alertEmail") ?? "").trim(),
     slackWebhookUrl: String(formData.get("slackWebhookUrl") ?? "").trim(),
@@ -85,10 +62,6 @@ export async function saveWorkspaceSettings(_prev: SettingsState, formData: Form
     senderName: String(formData.get("senderName") ?? ""),
     senderSignature: String(formData.get("senderSignature") ?? ""),
     autonomy: String(formData.get("autonomy") ?? "COPILOT"),
-    autopilotMinConfidence: formData.get("autopilotMinConfidence"),
-    maxFollowupsPer30Days: formData.get("maxFollowupsPer30Days"),
-    minDaysBetweenFollowups: formData.get("minDaysBetweenFollowups"),
-    minDelayAfterReadingHours: formData.get("minDelayAfterReadingHours"),
     offerDescription: String(formData.get("offerDescription") ?? ""),
     targetCustomer: String(formData.get("targetCustomer") ?? ""),
     valueProps: String(formData.get("valueProps") ?? ""),

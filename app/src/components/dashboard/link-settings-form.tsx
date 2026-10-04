@@ -27,22 +27,10 @@ type Props = {
     requireEmail: boolean;
     ctaEnabled: boolean;
     followupsEnabled: boolean;
-    channels: string[];
-    hotPricingThresholdSec: number | null;
-    inactivityDays: number[];
-    businessHourStart: number | null;
-    businessHourEnd: number | null;
-  };
-  defaults: {
-    channels: string[];
-    hotPricingThresholdSec: number;
-    inactivityDays: number[];
-    businessHourStart: number;
-    businessHourEnd: number;
   };
 };
 
-function LinkSettingsForm({ linkId, initial, defaults }: Props) {
+function LinkSettingsForm({ linkId, initial }: Props) {
   const [state, formAction, pending] = useActionState<LinkFormState, FormData>(
     saveLinkSettings.bind(null, linkId),
     null,
@@ -65,66 +53,12 @@ function LinkSettingsForm({ linkId, initial, defaults }: Props) {
         <div className="space-y-2">
           <FormCheckbox name="requireEmail" label="Demander l'email avant lecture" defaultChecked={initial.requireEmail} />
           <FormCheckbox name="ctaEnabled" label="Afficher les boutons « Valider » et « Demander un ajustement »" defaultChecked={initial.ctaEnabled} />
-          <FormCheckbox name="followupsEnabled" label="Relances automatiques" defaultChecked={initial.followupsEnabled} />
-        </div>
-
-        <div className="space-y-2">
-          <Label>Relancer par</Label>
-          <div className="flex gap-4">
-            <FormCheckbox name="channels" value="EMAIL" label="Email" defaultChecked={initial.channels.includes("EMAIL")} />
-            <FormCheckbox name="channels" value="WHATSAPP" label="WhatsApp" defaultChecked={initial.channels.includes("WHATSAPP")} />
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Rien de coché : comme dans les réglages ({defaults.channels.join(", ").toLowerCase()}).
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="link-threshold">Secondes sur les tarifs</Label>
-            <Input
-              id="link-threshold"
-              name="hotPricingThresholdSec"
-              type="number"
-              min={10}
-              max={3600}
-              defaultValue={initial.hotPricingThresholdSec ?? ""}
-              placeholder={`${defaults.hotPricingThresholdSec} par défaut`}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="link-inactivity">Jours sans ouverture</Label>
-            <Input
-              id="link-inactivity"
-              name="inactivityDays"
-              defaultValue={initial.inactivityDays.join(", ")}
-              placeholder={`${defaults.inactivityDays.join(", ")} par défaut`}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="link-start">Envoyer à partir de (h)</Label>
-            <Input
-              id="link-start"
-              name="businessHourStart"
-              type="number"
-              min={0}
-              max={23}
-              defaultValue={initial.businessHourStart ?? ""}
-              placeholder={`${defaults.businessHourStart} par défaut`}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="link-end">Jusqu&apos;à (h)</Label>
-            <Input
-              id="link-end"
-              name="businessHourEnd"
-              type="number"
-              min={1}
-              max={24}
-              defaultValue={initial.businessHourEnd ?? ""}
-              placeholder={`${defaults.businessHourEnd} par défaut`}
-            />
-          </div>
+          <FormCheckbox
+            name="followupsEnabled"
+            label="Pilote automatique sur ce deal"
+            hint="Décoché : Clozer continue d'analyser le deal mais ne prépare plus aucune relance."
+            defaultChecked={initial.followupsEnabled}
+          />
         </div>
 
         <Button type="submit" size="lg" className="w-full" disabled={pending}>
@@ -147,7 +81,7 @@ export function LinkSettingsDialog(props: Props) {
       <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-lg">Réglages du lien</DialogTitle>
-          <DialogDescription>Un champ laissé vide reprend les réglages de l&apos;espace.</DialogDescription>
+          <DialogDescription>Ce que voit le prospect, et si Clozer s&apos;occupe des relances.</DialogDescription>
         </DialogHeader>
         <LinkSettingsForm {...props} />
       </DialogContent>

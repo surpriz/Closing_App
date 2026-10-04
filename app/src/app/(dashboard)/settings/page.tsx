@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { SettingsForm } from "@/components/dashboard/settings-form";
 import { getLanguageModel } from "@/lib/closing/ai/provider";
-import { isWhatsAppConfigured } from "@/lib/closing/channels/whatsapp";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
 import { decryptSecret } from "@/lib/crypto";
 import { isEmailConfigured } from "@/lib/email";
@@ -27,18 +26,11 @@ export default async function SettingsPage() {
 
   return (
     <div className="space-y-10">
-      <PageHeader title="Réglages" description={`Relances et alertes de l'espace ${organization.name}.`} />
+      <PageHeader title="Réglages" description={`Le pilote automatique de l'espace ${organization.name}.`} />
 
       <SettingsForm
         initial={{
           version: settings.updatedAt.toISOString(),
-          defaultChannels: settings.defaultChannels,
-          hotPricingThresholdSec: settings.hotPricingThresholdSec,
-          inactivityDays: settings.inactivityDays.join(", "),
-          businessHourStart: settings.businessHourStart,
-          businessHourEnd: settings.businessHourEnd,
-          multiViewerThreshold: settings.multiViewerThreshold,
-          reopenAfterInactivityDays: settings.reopenAfterInactivityDays,
           alertChannels: settings.alertChannels,
           alertEmail: settings.alertEmail ?? "",
           slackConfigured: !!settings.slackWebhookUrl,
@@ -48,10 +40,6 @@ export default async function SettingsPage() {
           senderName: settings.senderName ?? "",
           senderSignature: settings.senderSignature ?? "",
           autonomy: settings.autonomy,
-          autopilotMinConfidence: settings.autopilotMinConfidence,
-          maxFollowupsPer30Days: settings.maxFollowupsPer30Days,
-          minDaysBetweenFollowups: settings.minDaysBetweenFollowups,
-          minDelayAfterReadingHours: settings.minDelayAfterReadingHours,
           offerDescription: settings.offerDescription ?? "",
           targetCustomer: settings.targetCustomer ?? "",
           valueProps: settings.valueProps ?? "",
@@ -60,7 +48,6 @@ export default async function SettingsPage() {
         }}
         providers={{
           email: isEmailConfigured(),
-          whatsapp: isWhatsAppConfigured(),
           ai: llm ? `${llm.provider} · ${llm.modelId}` : null,
         }}
       />
