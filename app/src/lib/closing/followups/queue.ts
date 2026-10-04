@@ -3,8 +3,7 @@ import { getPublicAppUrl } from "@/lib/app-origin";
 import { prisma } from "@/lib/db";
 
 import { draftFollowup } from "../ai/generate-followup";
-
-const DAY_MS = 24 * 60 * 60 * 1000;
+import { DAY_MS } from "../constants";
 
 export function isUniqueViolation(error: unknown) {
   return typeof error === "object" && error !== null && "code" in error && error.code === "P2002";

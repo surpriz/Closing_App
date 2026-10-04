@@ -1,10 +1,9 @@
 import { prisma } from "@/lib/db";
 
+import { DAY_MS } from "../constants";
 import { generateFollowupMessage, queueFollowup } from "../followups/queue";
 import { nextBusinessSlot } from "../scheduling/business-hours";
 import { defaultTimezone, resolveFollowupSettings } from "../settings";
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
  * Links never opened N days after being sent (N from the inactivity steps,

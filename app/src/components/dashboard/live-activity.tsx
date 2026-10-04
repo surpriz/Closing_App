@@ -1,12 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-
 import type { LinkLiveState } from "@/lib/closing/live";
-import { cn } from "cn";
 
-const POLL_INTERVAL_MS = 5_000;
+import { LiveDot } from "./heat";
+import { useLivePoll } from "./use-live-poll";
 
 const DEVICE_LABELS: Record<string, string> = {
   mobile: "sur mobile",
@@ -15,10 +12,8 @@ const DEVICE_LABELS: Record<string, string> = {
 };
 
 /**
- * Polls the link's live state. Shows who is reading right now and re-renders
- * the server page as soon as new reading data, a follow-up or an alert lands,
- * so the seller never has to reload. Key it by `initial.stamp` so a server
- * re-render resets it.
+ * Shows who is reading the link right now, and re-renders the server page as
+ * soon as new reading data, a follow-up or an alert lands.
  */
 export function LiveActivity({
   linkId,
@@ -30,49 +25,7 @@ export function LiveActivity({
   /** Null for web documents, which have no pages. */
   pageCount: number | null;
 }) {
-  const router = useRouter();
-  const [state, setState] = useState(initial);
-  const stampRef = useRef(initial.stamp);
-
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    let stopped = false;
-
-    const poll = async () => {
-      clearTimeout(timer);
-      if (document.visibilityState === "visible") {
-        try {
-          const res = await fetch(`/api/links/${linkId}/live`, { cache: "no-store" });
-          if (res.ok) {
-            const next = (await res.json()) as LinkLiveState;
-            if (stopped) return;
-            setState(next);
-            if (next.stamp !== stampRef.current) {
-              stampRef.current = next.stamp;
-              router.refresh();
-            }
-          }
-        } catch {
-          // Offline or deploy in progress: try again on the next tick
-        }
-      }
-      if (!stopped) timer = setTimeout(poll, POLL_INTERVAL_MS);
-    };
-
-    const onVisible = () => {
-      if (document.visibilityState === "visible") poll();
-    };
-
-    timer = setTimeout(poll, POLL_INTERVAL_MS);
-    document.addEventListener("visibilitychange", onVisible);
-    return () => {
-      stopped = true;
-      clearTimeout(timer);
-      document.removeEventListener("visibilitychange", onVisible);
-    };
-  }, [linkId, router]);
-
-  const { readers } = state;
+  const { readers } = useLivePoll(`/api/links/${linkId}/live`, initial);
 
   if (readers.length === 0) {
     return (
@@ -111,14 +64,5 @@ export function LiveActivity({
         ))}
       </ul>
     </div>
-  );
-}
-
-export function LiveDot({ className }: { className?: string }) {
-  return (
-    <span className={cn("relative flex size-2.5", className)} aria-hidden>
-      <span className="absolute inline-flex size-full animate-ping rounded-full bg-heat-hot opacity-60 motion-reduce:animate-none" />
-      <span className="relative inline-flex size-2.5 rounded-full bg-heat-hot" />
-    </span>
   );
 }

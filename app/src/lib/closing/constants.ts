@@ -11,6 +11,8 @@ export const WORKSPACE_DEFAULTS = {
 
 // The viewer flushes tracking every ~10s. A view is "live" if it pinged
 // within this window, which also tolerates short tab switches.
+export const DAY_MS = 24 * 60 * 60 * 1000;
+
 export const TRACKING_FLUSH_INTERVAL_MS = 10_000;
 export const LIVE_VIEW_WINDOW_MS = 2 * 60 * 1000;
 // A reader counts as "reading now" if a flush arrived this recently
@@ -39,3 +41,15 @@ export const ENGAGEMENT_TIER_THRESHOLDS = {
 export const SUPPORTED_LOCALES = ["en", "fr", "es", "de", "it", "pt"] as const;
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 export const DEFAULT_LOCALE: SupportedLocale = "en";
+
+/**
+ * "Lu en profondeur" on the dashboard funnel. A PDF counts once half of it was
+ * reached with some real reading time (maxPageReached alone is a scroll, not a
+ * read). Web documents have no pages, and their time runs on a 10 min idle
+ * timeout, hence a higher bar.
+ */
+export const DEEP_READ = {
+  pdfCompletion: 0.5,
+  pdfMinMs: 30_000,
+  webMinMs: 60_000,
+} as const;

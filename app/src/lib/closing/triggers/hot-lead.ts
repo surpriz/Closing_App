@@ -1,10 +1,8 @@
 import { prisma } from "@/lib/db";
 
 import { createAndDeliverAlert } from "../alerts/send-alert";
-import { LIVE_VIEW_WINDOW_MS } from "../constants";
+import { DAY_MS, LIVE_VIEW_WINDOW_MS } from "../constants";
 import { getWorkspaceSettings } from "../settings";
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
  * Real-time seller alerts when a view starts:

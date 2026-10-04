@@ -93,3 +93,13 @@ export function HeatDot({
     </Tooltip>
   );
 }
+
+/** Pulsing hot dot: someone is reading right now. */
+export function LiveDot({ className }: { className?: string }) {
+  return (
+    <span className={cn("relative flex size-2.5", className)} aria-hidden>
+      <span className="absolute inline-flex size-full animate-ping rounded-full bg-heat-hot opacity-60 motion-reduce:animate-none" />
+      <span className="relative inline-flex size-2.5 rounded-full bg-heat-hot" />
+    </span>
+  );
+}

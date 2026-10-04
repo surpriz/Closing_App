@@ -1,143 +1,74 @@
-import { BellRing, Check, MessageSquare, Send } from "lucide-react";
+import { Send } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { CopyButton } from "@/components/dashboard/copy-button";
 import { NewLinkDialog } from "@/components/dashboard/create-link-form";
 import { EmptyState } from "@/components/dashboard/empty-state";
-import { HeatBar } from "@/components/dashboard/heat";
-import {
-  ALERT_TYPE_LABELS,
-  CHANNEL_LABELS,
-  DEAL_STATUS_LABELS,
-  TIER_LABELS,
-} from "@/components/dashboard/labels";
-import { SectionTitle, StatLine } from "@/components/dashboard/page-header";
+import { CHANNEL_LABELS, DEAL_STATUS_LABELS, TIER_LABELS } from "@/components/dashboard/labels";
+import { SectionTitle } from "@/components/dashboard/page-header";
+import { ActivityFeed } from "@/components/dashboard/today/activity-feed";
+import { FunnelStrip, HeatDistributionBar } from "@/components/dashboard/today/funnel";
+import { LiveStrip } from "@/components/dashboard/today/live-strip";
+import { PeriodTabs } from "@/components/dashboard/today/period-tabs";
+import { TodoList, type TodoRow } from "@/components/dashboard/today/todo-list";
 import { buildTodayHeadline } from "@/components/dashboard/today-headline";
 import { UploadButton, UploadDropzone } from "@/components/dashboard/upload-dropzone";
 import { getAppOrigin } from "@/lib/app-origin";
 import { documentUploadPrefix } from "@/lib/blob";
+import { buildFeed } from "@/lib/closing/dashboard/feed";
+import { buildFunnel, buildHeatDistribution } from "@/lib/closing/dashboard/funnel";
+import { prospectLabel } from "@/lib/closing/dashboard/labels";
+import { compareByUrgency, computeNextAction } from "@/lib/closing/dashboard/next-action";
+import { parsePeriod, periodStart, PERIODS } from "@/lib/closing/dashboard/period";
+import {
+  getFeedSource,
+  getFreshValidations,
+  getFunnelFacts,
+  getOpenDeals,
+  getUpcomingFollowups,
+  type OpenDeal,
+} from "@/lib/closing/dashboard/queries";
+import { getWorkspaceLiveState } from "@/lib/closing/live";
 import { prisma } from "@/lib/db";
-import { formatDate, formatInTimeZone, formatRelative } from "@/lib/format";
+import { formatInTimeZone, formatRelative } from "@/lib/format";
 import { requireWorkspace } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Aujourd'hui" };
 
-const OPEN_FOLLOWUP_STATUSES = ["PENDING", "GENERATED", "SCHEDULED"] as const;
-const DAY = 24 * 60 * 60 * 1000;
+const TODO_LIMIT = 15;
+const FEED_LIMIT = 12;
 
-export default async function DashboardPage() {
+export default async function DashboardPage(props: PageProps<"/dashboard">) {
   const { organization } = await requireWorkspace();
   const organizationId = organization.id;
   const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const activeLinks = { organizationId, archivedAt: null };
+  const period = parsePeriod((await props.searchParams).p);
+  const since = periodStart(period, now);
 
   const [
     documentCount,
-    activeCount,
-    unopenedCount,
-    warmCount,
-    plannedCount,
-    validatedThisMonth,
-    priorityLinks,
-    unopenedLinks,
-    changeRequested,
-    prospectActions,
-    alerts,
-    upcomingFollowups,
-    origin,
     latestReadyDocument,
+    deals,
+    funnelFacts,
+    feedSource,
+    upcomingFollowups,
+    freshValidations,
+    live,
+    origin,
   ] = await Promise.all([
     prisma.document.count({ where: { organizationId, archivedAt: null } }),
-    prisma.link.count({ where: { ...activeLinks, dealStatus: { in: ["OPEN", "CHANGE_REQUESTED"] } } }),
-    prisma.link.count({ where: { ...activeLinks, dealStatus: "OPEN", lastActivityAt: null } }),
-    prisma.link.count({
-      where: { ...activeLinks, dealStatus: "OPEN", engagementScore: { is: { tier: "WARM" } } },
-    }),
-    prisma.followup.count({
-      where: { link: activeLinks, status: { in: [...OPEN_FOLLOWUP_STATUSES] } },
-    }),
-    prisma.prospectAction.count({
-      where: { link: { organizationId }, type: "VALIDATE_SIGN", createdAt: { gte: monthStart } },
-    }),
-    prisma.link.findMany({
-      where: {
-        ...activeLinks,
-        dealStatus: { in: ["OPEN", "CHANGE_REQUESTED"] },
-        engagementScore: { isNot: null },
-      },
-      orderBy: { engagementScore: { score: "desc" } },
-      take: 10,
-      include: {
-        engagementScore: true,
-        document: { select: { name: true } },
-        prospects: { orderBy: { createdAt: "asc" }, take: 1 },
-        followups: {
-          where: { status: { in: [...OPEN_FOLLOWUP_STATUSES] } },
-          orderBy: { scheduledFor: "asc" },
-          take: 1,
-        },
-      },
-    }),
-    prisma.link.findMany({
-      where: { ...activeLinks, dealStatus: "OPEN", lastActivityAt: null },
-      orderBy: { createdAt: "desc" },
-      take: 5,
-      include: {
-        document: { select: { name: true } },
-        prospects: { orderBy: { createdAt: "asc" }, take: 1 },
-        followups: {
-          where: { status: { in: [...OPEN_FOLLOWUP_STATUSES] } },
-          orderBy: { scheduledFor: "asc" },
-          take: 1,
-        },
-      },
-    }),
-    prisma.link.findMany({
-      where: { ...activeLinks, dealStatus: "CHANGE_REQUESTED" },
-      orderBy: { updatedAt: "desc" },
-      take: 5,
-      select: { name: true, slug: true, prospects: { orderBy: { createdAt: "asc" }, take: 1 } },
-    }),
-    prisma.prospectAction.findMany({
-      where: { link: { organizationId } },
-      orderBy: { createdAt: "desc" },
-      take: 8,
-      include: {
-        link: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            document: { select: { name: true } },
-            prospects: { orderBy: { createdAt: "asc" }, take: 1 },
-          },
-        },
-        prospect: { select: { name: true, email: true, company: true } },
-      },
-    }),
-    prisma.sellerAlert.findMany({
-      where: { link: { organizationId } },
-      orderBy: { createdAt: "desc" },
-      take: 8,
-      include: { link: { select: { id: true, name: true, slug: true } } },
-    }),
-    prisma.followup.findMany({
-      where: { link: activeLinks, status: { in: ["GENERATED", "SCHEDULED"] } },
-      orderBy: { scheduledFor: "asc" },
-      take: 4,
-      include: {
-        link: { select: { id: true, name: true, slug: true } },
-        prospect: { select: { name: true, email: true, company: true } },
-      },
-    }),
-    getAppOrigin(),
     prisma.document.findFirst({
       where: { organizationId, archivedAt: null, status: "READY" },
       orderBy: { createdAt: "desc" },
       select: { id: true, name: true },
     }),
+    getOpenDeals(organizationId),
+    getFunnelFacts(organizationId, since),
+    getFeedSource(organizationId, since),
+    getUpcomingFollowups(organizationId),
+    getFreshValidations(organizationId, now),
+    getWorkspaceLiveState(organizationId, now),
+    getAppOrigin(),
   ]);
   const uploadPrefix = documentUploadPrefix(organizationId);
 
@@ -156,65 +87,30 @@ export default async function DashboardPage() {
     );
   }
 
+  const readingLinks = new Set(live.readers.map((reader) => reader.linkId));
+  const rows = deals
+    .map((deal) => toTodoRow(deal, { now, readingNow: readingLinks.has(deal.id), origin }))
+    .sort(compareByUrgency);
+  const distribution = buildHeatDistribution(rows.map((row) => ({ opened: row.opened, tier: row.tier })));
+  const funnel = buildFunnel(funnelFacts);
+  const feed = buildFeed(feedSource, FEED_LIMIT);
+
   const { headline, hint } = buildTodayHeadline({
-    hotProspects: priorityLinks
-      .filter((link) => link.dealStatus === "OPEN" && link.engagementScore?.tier === "HOT")
-      .map((link) => prospectName(link)),
-    warmCount,
-    changeRequests: changeRequested.map((link) => prospectName(link)),
-    freshValidations: prospectActions
-      .filter((action) => action.type === "VALIDATE_SIGN" && now.getTime() - action.createdAt.getTime() < DAY)
-      .map((action) => action.prospect?.company ?? prospectName(action.link)),
-    activeCount,
+    hotProspects: rows.filter((row) => row.dealStatus === "OPEN" && row.tier === "HOT").map((row) => row.label),
+    warmCount: distribution.WARM,
+    changeRequests: rows.filter((row) => row.dealStatus === "CHANGE_REQUESTED").map((row) => row.label),
+    freshValidations,
+    activeCount: deals.length,
     documentCount,
-    unopenedCount,
+    unopenedCount: distribution.unopened,
     nextFollowupLabel: upcomingFollowups[0] ? formatRelative(upcomingFollowups[0].scheduledFor, now) : null,
   });
 
-  const rows = [
-    ...priorityLinks.map((link) => ({ ...link, score: link.engagementScore })),
-    ...unopenedLinks.map((link) => ({ ...link, score: null })),
-  ];
-
-  const feed = [
-    ...prospectActions.map((action) => ({
-      id: action.id,
-      at: action.createdAt,
-      linkId: action.link.id,
-      who: action.prospect?.company ?? action.prospect?.name ?? prospectName(action.link),
-      icon: action.type === "VALIDATE_SIGN" ? <Check /> : <MessageSquare />,
-      strong: action.type === "VALIDATE_SIGN",
-      what:
-        action.type === "VALIDATE_SIGN"
-          ? `a validé ${action.link.document.name}`
-          : `demande un ajustement sur ${action.link.document.name}`,
-      quote: action.message,
-    })),
-    ...alerts.map((alert) => {
-      const payload = alert.payload as { liveViewers?: number; inactiveDays?: number };
-      return {
-        id: alert.id,
-        at: alert.createdAt,
-        linkId: alert.link.id,
-        who: alert.link.name ?? alert.link.slug,
-        icon: <BellRing className="text-heat-hot" />,
-        strong: false,
-        what:
-          alert.type === "MULTI_VIEWER" && payload.liveViewers
-            ? `est lu par ${payload.liveViewers} personnes en même temps`
-            : alert.type === "REOPENED_AFTER_INACTIVITY" && payload.inactiveDays
-              ? `a été rouvert après ${payload.inactiveDays} jours de silence`
-              : ALERT_TYPE_LABELS[alert.type].toLowerCase(),
-        quote: null,
-      };
-    }),
-  ]
-    .sort((a, b) => b.at.getTime() - a.at.getTime())
-    .slice(0, 8);
+  const periodHint = PERIODS[period].hint;
 
   return (
     <div className="space-y-12">
-      <section className="space-y-5">
+      <section className="space-y-6">
         <div className="flex flex-col-reverse gap-6 sm:flex-row sm:items-start sm:justify-between">
           <h1 className="max-w-3xl text-[1.875rem] leading-[1.12] font-medium tracking-[-0.03em] text-balance [font-stretch:88%] sm:text-[2.25rem]">
             {headline}
@@ -224,25 +120,32 @@ export default async function DashboardPage() {
             <UploadButton uploadPrefix={uploadPrefix} />
           </div>
         </div>
-        <StatLine
-          items={[
-            { value: activeCount, label: activeCount === 1 ? "prospect en cours" : "prospects en cours" },
-            { value: plannedCount, label: plannedCount === 1 ? "relance prévue" : "relances prévues" },
-            { value: validatedThisMonth, label: validatedThisMonth === 1 ? "validé ce mois" : "validés ce mois" },
-          ]}
-        />
+        <LiveStrip key={live.stamp} initial={live} />
       </section>
 
-      <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_18rem]">
+      <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1fr)_18rem]">
         <section>
-          <SectionTitle hint="du plus chaud au plus froid">À traiter</SectionTitle>
+          <SectionTitle hint={periodHint} action={<PeriodTabs current={period} />}>
+            Vos envois
+          </SectionTitle>
+          <FunnelStrip funnel={funnel} />
+        </section>
+        <section>
+          <SectionTitle hint="en ce moment">Deals en cours</SectionTitle>
+          <HeatDistributionBar distribution={distribution} />
+        </section>
+      </div>
+
+      <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1fr)_18rem]">
+        <section>
+          <SectionTitle hint="du plus urgent au moins urgent">À traiter</SectionTitle>
           {rows.length === 0 ? (
             <EmptyState
-              title="Aucun lien prospect pour l'instant."
+              title="Aucun deal en cours."
               description={
                 latestReadyDocument
-                  ? `Créez un lien pour « ${latestReadyDocument.name} » et envoyez-le à votre prospect. Il apparaîtra ici, classé par température.`
-                  : "Ouvrez un document et créez un lien par prospect. Chacun apparaîtra ici, classé par température."
+                  ? `Créez un lien pour « ${latestReadyDocument.name} » et envoyez-le à votre prospect. Il apparaîtra ici avec ce qu'il y a à faire.`
+                  : "Ouvrez un document et créez un lien par prospect. Chacun apparaîtra ici avec ce qu'il y a à faire."
               }
               action={
                 latestReadyDocument && (
@@ -251,96 +154,26 @@ export default async function DashboardPage() {
               }
             />
           ) : (
-            <ul className="divide-y divide-border overflow-hidden rounded-xl bg-card ring-1 ring-border">
-              {rows.map((link) => {
-                const prospect = link.prospects[0];
-                const next = link.followups[0];
-                const score = link.score;
-                const state =
-                  link.dealStatus !== "OPEN"
-                    ? DEAL_STATUS_LABELS[link.dealStatus]
-                    : score
-                      ? TIER_LABELS[score.tier]
-                      : "Pas encore ouvert";
-                const read = link.lastActivityAt ? `, lu ${formatRelative(link.lastActivityAt, now)}` : "";
-                return (
-                  <li
-                    key={link.id}
-                    className="group relative flex items-stretch gap-4 py-3.5 pr-3 pl-4 transition-colors hover:bg-muted/50"
-                  >
-                    <HeatBar tier={score?.tier ?? null} score={score?.score ?? 0} />
-                    <div className="min-w-0 flex-1">
-                      <Link
-                        href={`/links/${link.id}`}
-                        className="font-medium outline-none after:absolute after:inset-0 focus-visible:after:ring-3 focus-visible:after:ring-ring/50 focus-visible:after:ring-inset"
-                      >
-                        {prospectName(link)}
-                      </Link>
-                      <p className="truncate text-sm text-muted-foreground">
-                        {[prospect?.company && (prospect.name ?? prospect.email), link.document.name]
-                          .filter(Boolean)
-                          .join(", ")}
-                      </p>
-                      <p className="mt-0.5 text-sm sm:hidden">
-                        {state}
-                        <span className="text-muted-foreground">{read}</span>
-                      </p>
-                    </div>
-                    <div className="hidden shrink-0 flex-col items-end justify-center text-sm sm:flex">
-                      <span className={score || link.dealStatus !== "OPEN" ? "" : "text-muted-foreground"}>
-                        {state}
-                        <span className="text-muted-foreground">{read}</span>
-                      </span>
-                      {next && (
-                        <span
-                          className="text-muted-foreground"
-                          title={`${formatInTimeZone(next.scheduledFor, next.timezone)}, heure du prospect`}
-                        >
-                          Relance {CHANNEL_LABELS[next.channel].toLowerCase()} {formatRelative(next.scheduledFor, now)}
-                        </span>
-                      )}
-                    </div>
-                    <div className="relative z-10 flex items-center">
-                      <CopyButton value={`${origin}/v/${link.slug}`} />
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+            <>
+              <TodoList rows={rows.slice(0, TODO_LIMIT)} now={now} />
+              {rows.length > TODO_LIMIT && (
+                <p className="mt-3 text-sm text-muted-foreground">
+                  Et {rows.length - TODO_LIMIT} autres deals en cours, moins urgents.
+                </p>
+              )}
+            </>
           )}
         </section>
 
         <aside className="space-y-10">
           <section>
-            <SectionTitle>Ce qui s&apos;est passé</SectionTitle>
+            <SectionTitle hint={periodHint}>Ce qui s&apos;est passé</SectionTitle>
             {feed.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                Les réponses de vos prospects et les alertes s&apos;afficheront ici.
+                Les lectures, les réponses de vos prospects et les relances envoyées s&apos;afficheront ici.
               </p>
             ) : (
-              <ol className="space-y-4">
-                {feed.map((item) => (
-                  <li key={item.id} className="flex gap-3 text-sm">
-                    <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-card ring-1 ring-border [&_svg]:size-3.5">
-                      {item.icon}
-                    </span>
-                    <div className="min-w-0 space-y-1">
-                      <p>
-                        <Link href={`/links/${item.linkId}`} className="font-medium hover:underline">
-                          {item.who}
-                        </Link>{" "}
-                        <span className={item.strong ? "" : "text-muted-foreground"}>{item.what}</span>
-                      </p>
-                      {item.quote && (
-                        <p className="border-l-2 border-border pl-2.5 text-pretty text-muted-foreground">{item.quote}</p>
-                      )}
-                      <time className="block text-xs text-muted-foreground" title={formatDate(item.at)}>
-                        {formatRelative(item.at, now)}
-                      </time>
-                    </div>
-                  </li>
-                ))}
-              </ol>
+              <ActivityFeed items={feed} now={now} />
             )}
           </section>
 
@@ -373,11 +206,41 @@ export default async function DashboardPage() {
   );
 }
 
-function prospectName(link: {
-  name: string | null;
-  slug: string;
-  prospects: { company: string | null; name: string | null; email: string | null }[];
-}) {
-  const prospect = link.prospects[0];
-  return prospect?.company ?? link.name ?? prospect?.name ?? prospect?.email ?? link.slug;
+function toTodoRow(
+  deal: OpenDeal,
+  { now, readingNow, origin }: { now: Date; readingNow: boolean; origin: string },
+): TodoRow {
+  const prospect = deal.prospects[0];
+  const tier = deal.opened ? (deal.engagementScore?.tier ?? null) : null;
+
+  return {
+    id: deal.id,
+    dealStatus: deal.dealStatus,
+    opened: deal.opened,
+    label: prospectLabel(deal),
+    subtitle: [prospect?.company && (prospect.name ?? prospect.email), deal.document.name].filter(Boolean).join(", "),
+    tier,
+    score: deal.opened ? (deal.engagementScore?.score ?? 0) : 0,
+    state: dealState(deal.dealStatus, deal.opened, tier),
+    lastActivityAt: deal.lastActivityAt,
+    action: computeNextAction({
+      now,
+      dealStatus: deal.dealStatus,
+      readingNow,
+      opened: deal.opened,
+      tier,
+      pricingFocus: deal.pricingFocus,
+      lastActivityAt: deal.lastActivityAt,
+      sentAt: deal.sentAt ?? deal.createdAt,
+      followupsEnabled: deal.followupsEnabled,
+      nextFollowup: deal.followups[0] ?? null,
+    }),
+    url: `${origin}/v/${deal.slug}`,
+  };
+}
+
+function dealState(dealStatus: TodoRow["dealStatus"], opened: boolean, tier: TodoRow["tier"]) {
+  if (dealStatus !== "OPEN") return DEAL_STATUS_LABELS[dealStatus];
+  if (!opened) return "Pas encore ouvert";
+  return tier ? TIER_LABELS[tier] : "Ouvert";
 }

@@ -2,13 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 
+import { DAY_MS } from "@/lib/closing/constants";
 import { runClosingTick } from "@/lib/closing/engine";
 import { sendFollowup } from "@/lib/closing/followups/dispatch";
 import { cancelOpenFollowups } from "@/lib/closing/followups/queue";
 import { prisma } from "@/lib/db";
 import { requireWorkspace } from "@/lib/session";
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 async function requireOwnedLink(linkId: string) {
   const { organization } = await requireWorkspace();
