@@ -194,17 +194,22 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
       <div className="space-y-4">
         <Link
           href={`/documents/${link.document.id}`}
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          className="inline-flex items-center gap-1.5 rounded-md text-sm text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/30"
         >
-          <ArrowLeft className="size-4" /> {link.document.name}
+          <ArrowLeft className="size-4" aria-hidden /> {link.document.name}
         </Link>
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="min-w-0 space-y-1">
-            <h1 className="text-2xl font-semibold tracking-[-0.02em]">{title}</h1>
-            <p className="flex flex-wrap items-center gap-x-2 text-body text-muted-foreground">
+            <h1 className="text-title [font-stretch:92%]">{title}</h1>
+            <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-body text-muted-foreground">
               {contactLine && <span>{contactLine}</span>}
-              <span className="inline-flex items-center gap-0.5">
-                <a href={url} target="_blank" rel="noreferrer" className="hover:text-foreground hover:underline">
+              <span className="inline-flex items-center gap-0.5 rounded-md bg-muted py-0.5 pr-0.5 pl-2 font-mono text-small ring-1 ring-border">
+                <a
+                  href={url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="truncate hover:text-foreground hover:underline"
+                >
                   {url.replace(/^https?:\/\//, "")}
                 </a>
                 <CopyButton value={url} />
@@ -237,8 +242,18 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
           pageCount={link.document.kind === "URL" ? null : link.document.pages.length}
         />
 
+        <DealInsightPanel
+          linkId={link.id}
+          insight={insight}
+          recipientName={insightRecipient ? (insightRecipient.name ?? insightRecipient.email) : null}
+          aiAvailable={getLanguageModel("analyze") !== null}
+          readSince={!!insight && !!link.lastActivityAt && link.lastActivityAt > insight.createdAt}
+          draftWaiting={followups.some((f) => f.trigger === "AI_DECISION" && (f.status === "DRAFT" || f.status === "PENDING"))}
+          now={now}
+        />
+
         <Surface className="overflow-hidden">
-          <div className="grid md:grid-cols-[16rem_minmax(0,1fr)]">
+          <div className="grid grid-cols-1 md:grid-cols-[16rem_minmax(0,1fr)]">
             <div className="relative space-y-3 border-b border-border p-5 md:border-r md:border-b-0">
               <span
                 aria-hidden
@@ -248,13 +263,13 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
                 )}
               />
               <p className="text-sm text-muted-foreground">Température mesurée</p>
-              <p className="font-mono text-[2rem] leading-none font-medium tracking-tight tabular-nums">
+              <p className="text-[2rem] leading-none font-medium tracking-[-0.03em] [font-stretch:88%]">
                 {score ? TIER_LABELS[score.tier] : "Pas encore lu"}
               </p>
               {score && (
                 <>
                   <p className="text-sm text-muted-foreground">
-                    <span className="font-semibold text-foreground tabular-nums">{score.score}</span> sur 100
+                    <span className="font-mono font-semibold text-foreground tabular-nums">{score.score}</span> sur 100
                   </p>
                   <TemperatureGauge tier={score.tier} score={score.score} />
                 </>
@@ -304,18 +319,9 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
           </div>
         </Surface>
 
-        <DealInsightPanel
-          linkId={link.id}
-          insight={insight}
-          recipientName={insightRecipient ? (insightRecipient.name ?? insightRecipient.email) : null}
-          aiAvailable={getLanguageModel("analyze") !== null}
-          readSince={!!insight && !!link.lastActivityAt && link.lastActivityAt > insight.createdAt}
-          draftWaiting={followups.some((f) => f.trigger === "AI_DECISION" && (f.status === "DRAFT" || f.status === "PENDING"))}
-          now={now}
-        />
       </div>
 
-      <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem]">
+      <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="space-y-10">
           {link.document.kind !== "URL" && (
             <section>
@@ -363,7 +369,7 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
 
         <aside className="space-y-10">
           <section>
-          <SectionTitle hint="reçoivent les relances">Contacts</SectionTitle>
+            <SectionTitle hint="reçoivent les relances">Contacts</SectionTitle>
           <Surface>
             <div className="divide-y divide-border">
               {link.prospects.map((prospect) => (

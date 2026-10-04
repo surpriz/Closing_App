@@ -1,3 +1,4 @@
+import { FileText, Globe } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -78,7 +79,7 @@ export default async function DocumentsPage() {
         action={<UploadButton uploadPrefix={uploadPrefix} />}
       />
 
-      <ul className="divide-y divide-border overflow-hidden rounded-xl bg-card ring-1 ring-border">
+      <ul className="stagger divide-y divide-border overflow-hidden rounded-xl bg-card shadow-xs ring-1 ring-border">
         {documents.map((document) => {
           const stats = statsByDocument.get(document.id);
           const score = bestScore.get(document.id);
@@ -87,19 +88,29 @@ export default async function DocumentsPage() {
           return (
             <li
               key={document.id}
-              className="relative flex items-stretch gap-4 py-4 pr-3 pl-4 transition-colors hover:bg-muted/50"
+              className="relative flex items-stretch gap-4 py-4 pr-3 pl-4 transition-colors duration-150 hover:bg-muted/40"
             >
               <HeatBar tier={score?.tier ?? null} score={score?.score ?? 0} />
-              <div className="min-w-0 flex-1">
+              <span className="flex size-10 shrink-0 items-center justify-center self-center rounded-lg bg-muted text-muted-foreground ring-1 ring-border">
+                {document.kind === "URL" ? (
+                  <Globe className="size-4.5" aria-hidden />
+                ) : (
+                  <FileText className="size-4.5" aria-hidden />
+                )}
+              </span>
+              <div className="min-w-0 flex-1 self-center">
                 <Link
                   href={`/documents/${document.id}`}
-                  className="font-medium outline-none after:absolute after:inset-0 focus-visible:after:ring-3 focus-visible:after:ring-ring/50 focus-visible:after:ring-inset"
+                  className="block truncate font-semibold outline-none after:absolute after:inset-0 focus-visible:after:ring-3 focus-visible:after:ring-ring/30 focus-visible:after:ring-inset"
                 >
                   {document.name}
                 </Link>
-                <p className="text-sm text-muted-foreground">
+                <p className="truncate text-small text-muted-foreground">
                   {document.status === "PROCESSING" || document.status === "UPLOADED" ? (
-                    "Analyse en cours…"
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="size-1.5 animate-pulse rounded-full bg-brand" aria-hidden />
+                      Analyse en cours…
+                    </span>
                   ) : document.status === "FAILED" ? (
                     <span className="text-destructive">L&apos;analyse a échoué</span>
                   ) : (

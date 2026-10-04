@@ -212,14 +212,11 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
           <TabsTrigger value="prospects" className="flex-none px-0 text-body">
             Prospects <span className="text-muted-foreground tabular-nums">{document.links.length}</span>
           </TabsTrigger>
-          <TabsTrigger value="preview" className="flex-none px-0 text-body">
-            Aperçu
-          </TabsTrigger>
           <TabsTrigger value="reading" className="flex-none px-0 text-body">
             Lecture
           </TabsTrigger>
           <TabsTrigger value="content" className="flex-none px-0 text-body">
-            Contenu
+            Le document
           </TabsTrigger>
           <TabsTrigger value="followups" className="flex-none px-0 text-body">
             Relances
@@ -240,7 +237,7 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
             />
           ) : (
             <Surface>
-              <ul className="divide-y divide-border">
+              <ul className="stagger divide-y divide-border">
                 {document.links.map((link) => {
                   const prospect = link.prospects[0];
                   const url = `${origin}/v/${link.slug}`;
@@ -254,13 +251,13 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
                   return (
                     <li
                       key={link.id}
-                      className="relative flex items-stretch gap-4 py-3.5 pr-3 pl-4 transition-colors hover:bg-muted/50"
+                      className="relative flex items-stretch gap-4 py-4 pr-3 pl-4 transition-colors duration-150 hover:bg-muted/40"
                     >
                       <HeatBar tier={score?.tier ?? null} score={score?.score ?? 0} />
                       <div className="min-w-0 flex-1">
                         <Link
                           href={`/links/${link.id}`}
-                          className="font-medium outline-none after:absolute after:inset-0 focus-visible:after:ring-3 focus-visible:after:ring-ring/50 focus-visible:after:ring-inset"
+                          className="font-semibold outline-none after:absolute after:inset-0 focus-visible:after:ring-3 focus-visible:after:ring-ring/30 focus-visible:after:ring-inset"
                         >
                           {prospect?.company ?? link.name ?? prospect?.name ?? prospect?.email ?? "Sans nom"}
                         </Link>
@@ -298,59 +295,62 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
           )}
         </TabsContent>
 
-        <TabsContent value="preview">
-          {isWeb ? (
-            document.embedUrl ? (
-              <iframe
-                src={document.embedUrl}
-                title={document.name}
-                className="h-[75vh] w-full rounded-xl bg-card ring-1 ring-border"
-                allow="autoplay; fullscreen; clipboard-write; encrypted-media; picture-in-picture"
-                allowFullScreen
-                referrerPolicy="strict-origin-when-cross-origin"
-                sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms allow-presentation"
-              />
+        <TabsContent value="content" className="space-y-10">
+          <section>
+            <SectionTitle hint="page par page, ce que Clozer a compris">Contenu</SectionTitle>
+              {isWeb ? (
+                <SellerDescriptionForm documentId={document.id} initial={document.sellerDescription ?? ""} />
+              ) : document.pages.length === 0 ? (
+                <p className="py-12 text-center text-sm text-muted-foreground">
+                  {ready ? "Aucune page détectée." : "Analyse du document en cours…"}
+                </p>
+              ) : (
+                <DocumentPages
+                  documentId={document.id}
+                  pages={document.pages}
+                  aiRead={document.aiProcessedAt !== null}
+                  aiGaveUp={document.aiAttempts >= 3}
+                  docType={document.docType}
+                  docPurpose={document.docPurpose}
+                  aiAvailable={getLanguageModel("classify") !== null}
+                />
+              )}
+          </section>
+          <section>
+            <SectionTitle hint="tel que vos prospects le voient">Aperçu</SectionTitle>
+            {isWeb ? (
+              document.embedUrl ? (
+                <iframe
+                  src={document.embedUrl}
+                  title={document.name}
+                  className="h-[75vh] w-full rounded-xl bg-card ring-1 ring-border"
+                  allow="autoplay; fullscreen; clipboard-write; encrypted-media; picture-in-picture"
+                  allowFullScreen
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms allow-presentation"
+                />
+              ) : (
+                <p className="py-16 text-center text-sm text-muted-foreground">
+                  Ce site refuse l&apos;affichage intégré. Vos prospects verront un bouton pour l&apos;ouvrir dans un
+                  nouvel onglet.{" "}
+                  <a
+                    href={document.externalUrl ?? undefined}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline underline-offset-2 hover:text-foreground"
+                  >
+                    Ouvrir la page
+                  </a>
+                </p>
+              )
+            ) : ready ? (
+              <DocumentPreview fileUrl={`/api/documents/${document.id}/file`} />
             ) : (
               <p className="py-16 text-center text-sm text-muted-foreground">
-                Ce site refuse l&apos;affichage intégré. Vos prospects verront un bouton pour l&apos;ouvrir dans un
-                nouvel onglet.{" "}
-                <a
-                  href={document.externalUrl ?? undefined}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline underline-offset-2 hover:text-foreground"
-                >
-                  Ouvrir la page
-                </a>
+                L&apos;aperçu s&apos;affichera une fois l&apos;analyse terminée.
               </p>
-            )
-          ) : ready ? (
-            <DocumentPreview fileUrl={`/api/documents/${document.id}/file`} />
-          ) : (
-            <p className="py-16 text-center text-sm text-muted-foreground">
-              L&apos;aperçu s&apos;affichera une fois l&apos;analyse terminée.
-            </p>
-          )}
-        </TabsContent>
-
-        <TabsContent value="content">
-          {isWeb ? (
-            <SellerDescriptionForm documentId={document.id} initial={document.sellerDescription ?? ""} />
-          ) : document.pages.length === 0 ? (
-            <p className="py-12 text-center text-sm text-muted-foreground">
-              {ready ? "Aucune page détectée." : "Analyse du document en cours…"}
-            </p>
-          ) : (
-            <DocumentPages
-              documentId={document.id}
-              pages={document.pages}
-              aiRead={document.aiProcessedAt !== null}
-              aiGaveUp={document.aiAttempts >= 3}
-              docType={document.docType}
-              docPurpose={document.docPurpose}
-              aiAvailable={getLanguageModel("classify") !== null}
-            />
-          )}
+            )}
+          </section>
         </TabsContent>
 
         <TabsContent value="reading" className="space-y-10">
