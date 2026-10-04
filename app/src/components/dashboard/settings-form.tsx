@@ -31,6 +31,10 @@ type Props = {
     senderName: string;
     senderSignature: string;
     autonomy: "COPILOT" | "AUTOPILOT";
+    autopilotMinConfidence: number;
+    maxFollowupsPer30Days: number;
+    minDaysBetweenFollowups: number;
+    minDelayAfterReadingHours: number;
     offerDescription: string;
     targetCustomer: string;
     valueProps: string;
@@ -144,9 +148,55 @@ export function SettingsForm({ initial, providers }: Props) {
                   defaultChecked={initial.autonomy === "AUTOPILOT"}
                   className="accent-foreground"
                 />
-                Elle part toute seule à l&apos;heure prévue
+                Elle part toute seule quand Clozer est sûr de lui
               </label>
             </div>
+          </Row>
+          <Row hint="En mode automatique, une relance moins sûre, ou qui répond à un message du prospect, attend quand même votre accord.">
+            <label htmlFor="autopilotMinConfidence">Envoyer seul à partir de</label>
+            <Inline
+              id="autopilotMinConfidence"
+              name="autopilotMinConfidence"
+              type="number"
+              min={50}
+              max={100}
+              defaultValue={initial.autopilotMinConfidence}
+            />
+            % de confiance
+          </Row>
+          <Row hint="Pour ne jamais harceler un prospect, quoi que conseille l'analyse.">
+            <label htmlFor="maxFollowupsPer30Days">Au plus</label>
+            <Inline
+              id="maxFollowupsPer30Days"
+              name="maxFollowupsPer30Days"
+              type="number"
+              min={1}
+              max={10}
+              defaultValue={initial.maxFollowupsPer30Days}
+            />
+            relances par mois et par contact, espacées d&apos;au moins
+            <Inline
+              id="minDaysBetweenFollowups"
+              name="minDaysBetweenFollowups"
+              aria-label="Jours minimum entre deux relances"
+              type="number"
+              min={1}
+              max={30}
+              defaultValue={initial.minDaysBetweenFollowups}
+            />
+            jours
+          </Row>
+          <Row hint="Une relance qui arrive juste après une lecture donne l'impression d'être observé.">
+            <label htmlFor="minDelayAfterReadingHours">Attendre au moins</label>
+            <Inline
+              id="minDelayAfterReadingHours"
+              name="minDelayAfterReadingHours"
+              type="number"
+              min={0}
+              max={72}
+              defaultValue={initial.minDelayAfterReadingHours}
+            />
+            heures après une lecture
           </Row>
           <Row hint="WhatsApp n'est utilisé que si le prospect a donné son numéro et son accord.">
             <span className="mb-1 block">Relancer par</span>

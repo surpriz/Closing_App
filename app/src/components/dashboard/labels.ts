@@ -75,6 +75,7 @@ export const ALERT_CHANNEL_LABELS: Record<SellerAlertChannel, string> = {
 export const ALERT_TYPE_LABELS: Record<SellerAlertType, string> = {
   MULTI_VIEWER: "Lecture à plusieurs",
   REOPENED_AFTER_INACTIVITY: "Réouverture après inactivité",
+  DRAFT_READY: "Relance prête à valider",
 };
 
 export const SCORE_REASON_LABELS: Record<string, string> = {

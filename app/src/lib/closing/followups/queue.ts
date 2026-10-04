@@ -3,7 +3,11 @@ import { getPublicAppUrl } from "@/lib/app-origin";
 import { prisma } from "@/lib/db";
 
 import { draftFollowup } from "../ai/generate-followup";
+import type { FollowupPromptInput } from "../ai/prompts";
+import { notifyDraftReady } from "../alerts/draft-ready";
+import { autopilotEligible } from "../brain/policy";
 import { DAY_MS } from "../constants";
+import { guardSourceText, pickRelevantSections } from "./writer-context";
 
 export function isUniqueViolation(error: unknown) {
   return typeof error === "object" && error !== null && "code" in error && error.code === "P2002";
@@ -39,7 +43,8 @@ export async function queueFollowup(input: QueueFollowupInput) {
 export const OPEN_FOLLOWUP_STATUSES = ["PENDING", "DRAFT", "GENERATED", "SCHEDULED"] as const;
 
 // Writes the message (AI or template). In copilot mode it then waits for the
-// seller's approval as a DRAFT; in autopilot mode it goes straight to the queue.
+// seller's approval as a DRAFT; in autopilot mode it goes straight to the queue
+// when it is safe to (see autopilotEligible).
 export async function generateFollowupMessage(followupId: string, regenerateInstruction?: string | null) {
   const followup = await prisma.followup.findUnique({
     where: { id: followupId },
@@ -54,10 +59,22 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
               name: true,
               sellerDescription: true,
               pages: {
-                select: { pageNumber: true, text: true, tags: true },
+                select: { pageNumber: true, text: true, tags: true, summary: true, keyFacts: true },
                 orderBy: { pageNumber: "asc" },
               },
             },
+          },
+          followups: {
+            where: { status: { in: ["SENT", "DELIVERED"] }, sentAt: { not: null } },
+            orderBy: { sentAt: "desc" },
+            take: 3,
+            select: { sentAt: true, channel: true, subject: true, body: true },
+          },
+          actions: {
+            where: { message: { not: null } },
+            orderBy: { createdAt: "desc" },
+            take: 3,
+            select: { message: true, createdAt: true },
           },
         },
       },
@@ -69,34 +86,76 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
   const { link, prospect } = followup;
   const settings = link.organization.settings;
   const pages = link.document.pages;
+  const context = (followup.context ?? {}) as { brief?: FollowupPromptInput["brief"] };
+  const brief = followup.trigger === "AI_DECISION" ? (context.brief ?? null) : null;
+  const now = new Date();
 
-  const draft = await draftFollowup({
-    trigger: followup.trigger,
-    channel: followup.channel,
-    locale: followup.locale,
-    prospectName: prospect.name,
-    company: prospect.company,
-    documentName: link.document.name,
-    proposalUrl: `${getPublicAppUrl()}/v/${link.slug}`,
-    senderName: settings?.senderName ?? link.createdBy?.name ?? null,
-    senderSignature: settings?.senderSignature ?? null,
-    daysSinceSent: link.sentAt ? Math.floor((Date.now() - link.sentAt.getTime()) / DAY_MS) : null,
-    aiTone: settings?.aiTone ?? null,
-    // Web links have no text: the seller's description stands in for the first page
-    documentIntro: (pages[0]?.text ?? link.document.sellerDescription)?.slice(0, 600) ?? null,
-    instruction: instruction ?? null,
-    pricingExcerpt:
-      followup.trigger === "HOT_PRICING"
-        ? pages
-            .filter((p) => p.tags.includes("PRICING"))
-            .map((p) => p.text ?? "")
-            .join("\n")
-            .slice(0, 1500) || null
-        : null,
-  });
+  const draft = await draftFollowup(
+    {
+      trigger: followup.trigger,
+      channel: followup.channel,
+      locale: followup.locale,
+      prospectName: prospect.name,
+      company: prospect.company,
+      documentName: link.document.name,
+      proposalUrl: `${getPublicAppUrl()}/v/${link.slug}`,
+      senderName: settings?.senderName ?? link.createdBy?.name ?? null,
+      senderSignature: settings?.senderSignature ?? null,
+      daysSinceSent: link.sentAt ? Math.floor((now.getTime() - link.sentAt.getTime()) / DAY_MS) : null,
+      aiTone: settings?.aiTone ?? null,
+      // Web links have no text: the seller's description stands in for the first page
+      documentIntro: (pages[0]?.text ?? link.document.sellerDescription)?.slice(0, 600) ?? null,
+      instruction: instruction ?? null,
+      pricingExcerpt:
+        followup.trigger === "HOT_PRICING"
+          ? pages
+              .filter((p) => p.tags.includes("PRICING"))
+              .map((p) => p.text ?? "")
+              .join("\n")
+              .slice(0, 1500) || null
+          : null,
+      brief,
+      offer: { description: settings?.offerDescription ?? null, valueProps: settings?.valueProps ?? null },
+      relevantSections: pickRelevantSections(pages, brief?.goal ?? null, followup.trigger),
+      previousFollowups: link.followups.map((f) => ({
+        daysAgo: Math.floor((now.getTime() - f.sentAt!.getTime()) / DAY_MS),
+        channel: f.channel,
+        subject: f.subject,
+        excerpt: (f.body ?? "").slice(0, 300),
+      })),
+      prospectMessages: link.actions.map((a) => a.message!.slice(0, 600)),
+    },
+    {
+      organizationId: link.organizationId,
+      linkId: link.id,
+      sourceText: guardSourceText({
+        pages,
+        sellerDescription: link.document.sellerDescription,
+        senderSignature: settings?.senderSignature ?? null,
+        offerDescription: settings?.offerDescription ?? null,
+        valueProps: settings?.valueProps ?? null,
+      }),
+    },
+  );
+
+  // Autopilot only for messages that need no human eye; a rewrite asked by the seller is always reviewed
+  const autopilot = settings?.autonomy === "AUTOPILOT" && !instruction && draft.issues.length === 0;
+  const sendsAlone =
+    autopilot &&
+    (followup.trigger !== "AI_DECISION" ||
+      autopilotEligible({
+        now,
+        autonomy: settings.autonomy,
+        minConfidence: settings.autopilotMinConfidence,
+        confidence: followup.confidence ?? 0,
+        goal: (brief?.goal ?? null) as Parameters<typeof autopilotEligible>[0]["goal"],
+        lastProspectTextAt: link.actions[0]?.createdAt ?? null,
+        guardPassedFirstTry: draft.passedFirstTry && draft.aiProvider !== "template",
+        offerDescribed: !!settings.offerDescription,
+      }));
 
   // Only move forward if nobody cancelled it while the AI was writing
-  await prisma.followup.updateMany({
+  const saved = await prisma.followup.updateMany({
     where: { id: followupId, status: "PENDING" },
     data: {
       subject: draft.subject,
@@ -104,9 +163,13 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
       aiProvider: draft.aiProvider,
       aiModel: draft.aiModel,
       regenerateInstruction: instruction ?? null,
-      status: settings?.autonomy === "AUTOPILOT" ? "GENERATED" : "DRAFT",
+      error: draft.issues.length ? `À relire : ${draft.issues.join(" ")}` : null,
+      status: sendsAlone ? "GENERATED" : "DRAFT",
     },
   });
+  if (saved.count > 0 && !sendsAlone && !instruction) {
+    await notifyDraftReady(link.id, link.organizationId, now);
+  }
 }
 
 export function cancelOpenFollowups(linkId: string, reason: string, triggers?: FollowupTrigger[]) {

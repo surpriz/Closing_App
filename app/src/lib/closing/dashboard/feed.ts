@@ -81,6 +81,7 @@ function describeAlert(type: SellerAlertType, payload: unknown) {
   if (type === "MULTI_VIEWER") {
     return liveViewers ? `est lu par ${liveViewers} personnes en même temps` : "est lu à plusieurs";
   }
+  if (type === "DRAFT_READY") return "a une relance prête à valider";
   return inactiveDays ? `a été rouvert après ${inactiveDays} jours de silence` : "a été rouvert après un silence";
 }
 

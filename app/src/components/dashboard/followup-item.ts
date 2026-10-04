@@ -15,6 +15,8 @@ export type FollowupItem = {
   aiProvider: string | null;
   aiModel: string | null;
   rationale: string | null;
+  /** 0-100, follow-ups decided by the deal analysis only. */
+  confidence: number | null;
   sentAt: Date | null;
   sentVia: FollowupSentVia | null;
   edited: boolean;
@@ -44,6 +46,7 @@ export function toFollowupItem(f: FollowupRow, linkName: string): FollowupItem {
     aiProvider: f.aiProvider,
     aiModel: f.aiModel,
     rationale: f.rationale,
+    confidence: f.confidence,
     sentAt: f.sentAt,
     sentVia: f.sentVia,
     edited: f.editedAt !== null,

@@ -71,6 +71,25 @@ export async function sendFollowup(
     }
   }
 
+  // Autopilot AI follow-ups rest on one reading of the deal: if the prospect read again
+  // since, that reading is stale. Drop it and let the analysis look again.
+  if (followup.trigger === "AI_DECISION" && !sellerApproved && followup.insightId) {
+    const insight = await prisma.dealInsight.findUnique({
+      where: { id: followup.insightId },
+      select: { createdAt: true },
+    });
+    const readSince = insight
+      ? await prisma.documentView.count({
+          where: { linkId: link.id, isBot: false, startedAt: { gt: insight.createdAt } },
+        })
+      : 0;
+    if (readSince > 0) {
+      await finish(followup.id, "CANCELLED", "La situation a changé depuis l'analyse");
+      await prisma.link.update({ where: { id: link.id }, data: { brainDirtyAt: new Date() } });
+      return "cancelled";
+    }
+  }
+
   // Claim it so two concurrent ticks can't send the same message twice
   const now = new Date();
   const claimed = await prisma.followup.updateMany({

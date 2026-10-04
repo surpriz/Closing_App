@@ -14,9 +14,18 @@ type AlertInput = {
   payload: { liveViewers?: number; inactiveDays?: number };
 };
 
+const SUBJECTS: Record<SellerAlertType, (who: string) => string> = {
+  MULTI_VIEWER: (who) => `Hot lead : ${who}`,
+  REOPENED_AFTER_INACTIVITY: (who) => `Hot lead : ${who}`,
+  DRAFT_READY: (who) => `Relance à valider : ${who}`,
+};
+
 function alertText(type: SellerAlertType, who: string, documentName: string, payload: AlertInput["payload"]) {
   if (type === "MULTI_VIEWER") {
     return `${payload.liveViewers} personnes consultent « ${documentName} » en ce moment (${who}). C'est le bon moment pour appeler.`;
+  }
+  if (type === "DRAFT_READY") {
+    return `Une relance pour ${who} (« ${documentName} ») est prête. Relisez-la et validez-la : rien ne part sans vous.`;
   }
   return `${who} a rouvert « ${documentName} » après ${payload.inactiveDays} jours sans lecture. C'est le bon moment pour reprendre contact.`;
 }
@@ -61,7 +70,10 @@ export async function createAndDeliverAlert(input: AlertInput) {
   const prospect = link.prospects[0];
   const who = prospect?.company ?? prospect?.name ?? link.name ?? "Un prospect";
   const text = alertText(input.type, who, link.document.name, input.payload);
-  const dashboardUrl = `${getPublicAppUrl()}/documents/${link.document.id}`;
+  const dashboardUrl =
+    input.type === "DRAFT_READY"
+      ? `${getPublicAppUrl()}/links/${link.id}#relances`
+      : `${getPublicAppUrl()}/documents/${link.document.id}`;
   const errors: string[] = [];
 
   for (const channel of channels) {
@@ -72,13 +84,14 @@ export async function createAndDeliverAlert(input: AlertInput) {
         if (!isEmailConfigured()) throw new Error("aucun service d'email configuré");
         await sendEmail({
           to,
-          subject: `Hot lead : ${who}`,
+          subject: SUBJECTS[input.type](who),
           text: `${text}\n\n${dashboardUrl}`,
           html: textToHtml(`${text}\n\n${dashboardUrl}`),
         });
       } else if (channel === "SLACK") {
         if (!settings?.slackWebhookUrl) throw new Error("webhook Slack non configuré");
-        await postSlackMessage(decryptSecret(settings.slackWebhookUrl), `🔥 ${text}\n${dashboardUrl}`);
+        const icon = input.type === "DRAFT_READY" ? "✍️" : "🔥";
+        await postSlackMessage(decryptSecret(settings.slackWebhookUrl), `${icon} ${text}\n${dashboardUrl}`);
       } else if (channel === "WEBHOOK") {
         if (!settings?.outboundWebhookUrl || !settings.webhookSecret) throw new Error("webhook non configuré");
         await postSignedWebhook(

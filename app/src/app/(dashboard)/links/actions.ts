@@ -7,6 +7,7 @@ import { z } from "zod";
 import { DEAL_STATUS_LABELS } from "@/components/dashboard/labels";
 import type { DealStatus } from "@/generated/prisma/enums";
 import { inBackground } from "@/lib/closing/background";
+import { actOnInsight } from "@/lib/closing/brain/act";
 import { analyzeDeal } from "@/lib/closing/brain/analyze-deal";
 import { refreshEngagementScore } from "@/lib/closing/engagement/refresh-score";
 import { cancelOpenFollowups, isUniqueViolation } from "@/lib/closing/followups/queue";
@@ -309,3 +310,18 @@ export async function reanalyzeDeal(linkId: string) {
   return errors[outcome] ? { error: errors[outcome] } : { ok: true };
 }
 
+
+/** "Préparer une relance": a draft from the latest analysis, whatever it recommended. The policy still applies. */
+export async function prepareFollowupFromInsight(linkId: string) {
+  const link = await requireOwnedLink(linkId);
+  const insight = await prisma.dealInsight.findFirst({
+    where: { linkId: link.id, model: { not: null } },
+    orderBy: { createdAt: "desc" },
+    select: { id: true },
+  });
+  if (!insight) return { error: "Analysez d'abord ce deal." };
+
+  const result = await actOnInsight(insight.id, { force: true });
+  revalidateLink(link);
+  return result.ok ? { ok: true } : { error: result.reasons.join(" ") || "Impossible de préparer une relance." };
+}

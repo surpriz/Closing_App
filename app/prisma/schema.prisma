@@ -230,6 +230,7 @@ enum EngagementTier {
 enum SellerAlertType {
   MULTI_VIEWER
   REOPENED_AFTER_INACTIVITY
+  DRAFT_READY // a follow-up waits for the seller's approval (at most one per hour per workspace)
 }
 
 enum SellerAlertChannel {

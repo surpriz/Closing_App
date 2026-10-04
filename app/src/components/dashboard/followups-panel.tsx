@@ -96,7 +96,13 @@ function FollowupRow({ followup: f, showLink }: { followup: FollowupItem; showLi
             : `Prévue le ${formatInZone(f.scheduledFor, f.timezone)}, heure du prospect`}
       </p>
 
-      {f.rationale && <p className="text-sm">{f.rationale}</p>}
+      {f.rationale && (
+        <p className="text-sm">
+          <span className="font-medium">Pourquoi : </span>
+          {f.rationale}
+          {f.confidence !== null && <span className="text-muted-foreground"> (confiance {f.confidence} %)</span>}
+        </p>
+      )}
 
       {editable && f.body ? (
         <DraftEditor key={f.version} followup={f} />

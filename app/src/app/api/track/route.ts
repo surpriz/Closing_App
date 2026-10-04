@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { cookies } from "next/headers";
 import { z } from "zod";
 
+import { getLanguageModel } from "@/lib/closing/ai/provider";
 import { inBackground } from "@/lib/closing/background";
 import { analyzeDeal, markDealDirty } from "@/lib/closing/brain/analyze-deal";
 import {
@@ -15,7 +16,7 @@ import { evaluateHotPricing } from "@/lib/closing/triggers/hot-pricing";
 import { prisma } from "@/lib/db";
 
 // The deal analysis runs after the response when a reader leaves
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 const batchSchema = z.object({
   viewId: z.string().min(1).max(64),
@@ -129,7 +130,8 @@ export async function POST(request: Request) {
   if (!view.isBot) {
     inBackground("tracking", async () => {
       await refreshEngagementScore(view.linkId);
-      await evaluateHotPricing(view.id);
+      // With the deal analysis available, it decides follow-ups; the pricing rule is the fallback
+      if (!getLanguageModel("analyze")) await evaluateHotPricing(view.id);
       // The reader left: read the deal now. Otherwise flag it, the engine catches
       // sessions whose "left" beacon never arrived.
       if (left) await analyzeDeal(view.linkId, "SESSION_ENDED");

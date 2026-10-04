@@ -8,6 +8,7 @@ import { prisma } from "@/lib/db";
 import { getLanguageModel } from "../ai/provider";
 import { recordAiUsage } from "../ai/usage";
 import { DAY_MS } from "../constants";
+import { actOnInsight } from "./act";
 import { canAnalyze } from "./budget";
 import { buildDealStory, type DealStory } from "./facts";
 import { ANALYZER_SYSTEM_PROMPT, buildAnalyzerPrompt } from "./prompts";
@@ -101,13 +102,18 @@ export async function analyzeDeal(
     });
 
     const { insight } = validateInsight(output, story);
-    await saveInsight(loaded.link.organizationId, linkId, trigger, inputHash, story, insight, {
+    const insightId = await saveInsight(loaded.link.organizationId, linkId, trigger, inputHash, story, insight, {
       provider: llm.provider,
       model: llm.modelId,
       tokensIn: usage.inputTokens ?? 0,
       tokensOut: usage.outputTokens ?? 0,
     });
     await clearDirty(linkId);
+    // The analysis recommends writing: prepare the draft (the policy has the last word)
+    if (insight.recommendedAction.type === "send_followup") {
+      const acted = await actOnInsight(insightId, { now });
+      if (!acted.ok) console.info(`[brain] no follow-up for ${linkId}: ${acted.reasons.join(" ")}`);
+    }
     return "analyzed";
   } catch (error) {
     console.error(`[brain] analysis failed for ${linkId}`, error);
@@ -161,7 +167,7 @@ async function saveInsight(
   llm: { provider: string; model: string; tokensIn: number; tokensOut: number } | null,
 ) {
   const json = (value: unknown) => JSON.parse(JSON.stringify(value));
-  await prisma.dealInsight.create({
+  const { id } = await prisma.dealInsight.create({
     data: {
       linkId,
       organizationId,
@@ -182,6 +188,7 @@ async function saveInsight(
       factsSnapshot: json(story.facts),
       ...(llm ?? {}),
     },
+    select: { id: true },
   });
 
   // Keep a short history per deal
@@ -192,6 +199,7 @@ async function saveInsight(
     select: { id: true },
   });
   if (old.length > 0) await prisma.dealInsight.deleteMany({ where: { id: { in: old.map((row) => row.id) } } });
+  return id;
 }
 
 function clearDirty(linkId: string) {

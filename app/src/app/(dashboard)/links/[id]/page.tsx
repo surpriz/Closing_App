@@ -314,6 +314,7 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
           insight={insight}
           recipientName={insightRecipient ? (insightRecipient.name ?? insightRecipient.email) : null}
           aiAvailable={getLanguageModel("analyze") !== null}
+          draftWaiting={followups.some((f) => f.trigger === "AI_DECISION" && (f.status === "DRAFT" || f.status === "PENDING"))}
           now={now}
         />
       </div>

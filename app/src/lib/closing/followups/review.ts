@@ -14,7 +14,8 @@ const EDITABLE: FollowupStatus[] = ["DRAFT", "GENERATED", "SCHEDULED"];
 export async function updateFollowupDraft(followupId: string, draft: { subject: string | null; body: string }) {
   const result = await prisma.followup.updateMany({
     where: { id: followupId, status: { in: EDITABLE } },
-    data: { subject: draft.subject, body: draft.body, editedAt: new Date() },
+    // The seller read and rewrote it: the guard's "à relire" note is answered
+    data: { subject: draft.subject, body: draft.body, editedAt: new Date(), error: null },
   });
   return result.count > 0;
 }

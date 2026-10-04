@@ -14,6 +14,7 @@ import {
   TIMING_LABELS,
 } from "./labels";
 import { Surface } from "./page-header";
+import { PrepareFollowupButton } from "./prepare-followup-button";
 import { ReanalyzeButton } from "./reanalyze-button";
 
 const SEVERITY_DOT = { low: "bg-foreground/25", medium: "bg-heat-warm", high: "bg-heat-hot" } as const;
@@ -40,12 +41,15 @@ export function DealInsightPanel({
   insight,
   recipientName,
   aiAvailable,
+  draftWaiting,
   now,
 }: {
   linkId: string;
   insight: StoredInsight | null;
   recipientName: string | null;
   aiAvailable: boolean;
+  /** A follow-up from the analysis already waits in "Relances". */
+  draftWaiting: boolean;
   now: Date;
 }) {
   if (!insight) {
@@ -140,6 +144,17 @@ export function DealInsightPanel({
       </div>
 
       <div className="space-y-1.5 border-t border-border bg-muted/40 px-5 py-4">
+        {insight.byAi && aiAvailable && (
+          <div className="float-right ml-3">
+            {draftWaiting ? (
+              <a href="#relances" className="text-sm font-medium underline-offset-4 hover:underline">
+                Voir la relance prête
+              </a>
+            ) : (
+              <PrepareFollowupButton linkId={linkId} />
+            )}
+          </div>
+        )}
         <p className="text-[15px]">
           <span className="font-medium">
             {INSIGHT_ACTION_LABELS[action.type] ?? action.type}
