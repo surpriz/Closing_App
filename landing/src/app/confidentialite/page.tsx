@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { SiteFooter } from "@/components/site-footer";
+import { SiteHeader } from "@/components/site-header";
 
 export const metadata: Metadata = {
   title: "Confidentialité — Clozer",
@@ -10,15 +11,11 @@ const UPDATED_AT = "27 septembre 2026";
 
 export default function Privacy() {
   return (
-    <div className="mx-auto w-full max-w-5xl px-6">
-      <header className="flex items-center justify-between border-b border-rule py-6">
-        <Link href="/" className="font-display text-lg font-semibold tracking-tight">
-          Clozer
-        </Link>
-      </header>
+    <div className="flex min-h-full flex-col">
+      <SiteHeader />
 
-      <main className="max-w-2xl py-16 text-ink-soft [&_h2]:font-display [&_h2]:mt-12 [&_h2]:mb-4 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:text-ink [&_li]:mt-2 [&_p]:mt-4 [&_ul]:mt-4 [&_ul]:list-disc [&_ul]:pl-5">
-        <h1 className="font-display text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
+      <main className="mx-auto w-full max-w-2xl flex-1 px-5 py-16 text-body text-ink-soft sm:px-6 md:py-20 [&_h2]:mt-12 [&_h2]:mb-4 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:tracking-[-0.01em] [&_h2]:text-ink [&_li]:mt-2 [&_p]:mt-4 [&_ul]:mt-4 [&_ul]:list-disc [&_ul]:pl-5">
+        <h1 className="text-title font-medium text-ink [font-stretch:92%]">
           Confidentialité
         </h1>
         <p>Mise à jour le {UPDATED_AT}.</p>
@@ -124,14 +121,7 @@ export default function Privacy() {
         </p>
       </main>
 
-      <footer className="flex flex-wrap items-center justify-between gap-4 border-t border-rule py-8 text-sm text-ink-soft">
-        <Link href="/" className="transition-colors hover:text-ink">
-          Clozer
-        </Link>
-        <a href="mailto:contact@clozer.club" className="transition-colors hover:text-ink">
-          contact@clozer.club
-        </a>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

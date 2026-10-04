@@ -1,49 +1,117 @@
 @import "tailwindcss";
 
+/*
+ * Same ink & heat as the app (app/src/app/globals.css): ink on cold paper,
+ * the only colours say how hot a prospect is, one blue for what you can click.
+ */
 @theme {
-  --color-paper: #f1f3f0;
-  --color-sheet: #fbfcfa;
-  --color-ink: #16233a;
-  --color-ink-soft: #4f5d72;
-  --color-rule: #d6dcd5;
-  --color-mark: #ffe04a;
-  --color-seal: #1f6f5c;
+  --color-paper: oklch(0.982 0.004 255);
+  --color-sheet: oklch(1 0 0);
+  --color-ink: oklch(0.235 0.045 258);
+  --color-ink-soft: oklch(0.5 0.035 258);
+  --color-muted: oklch(0.955 0.008 255);
+  --color-rule: oklch(0.92 0.008 255);
+  --color-brand: oklch(0.52 0.17 262);
+  --color-success: oklch(0.52 0.12 155);
+  --color-heat-hot: oklch(0.63 0.2 33);
+  --color-heat-warm: oklch(0.76 0.14 70);
+  --color-heat-cold: oklch(0.72 0.06 255);
 
-  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
-  --font-body: var(--font-newsreader), ui-serif, Georgia, serif;
+  --font-sans: var(--font-instrument-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --text-display: 3.5rem;
+  --text-display--line-height: 1.04;
+  --text-display--letter-spacing: -0.035em;
+  --text-title: 2.25rem;
+  --text-title--line-height: 1.1;
+  --text-title--letter-spacing: -0.03em;
+  --text-body: 0.9375rem;
+  --text-body--line-height: 1.6;
+  --text-small: 0.8125rem;
+  --text-small--line-height: 1.45;
+  --text-micro: 0.6875rem;
+  --text-micro--line-height: 1.3;
+
+  --shadow-xs: 0 1px 2px oklch(0.235 0.045 258 / 0.05);
+  --shadow-sm: 0 1px 2px oklch(0.235 0.045 258 / 0.04), 0 2px 8px -2px oklch(0.235 0.045 258 / 0.08);
+  --shadow-md: 0 2px 4px oklch(0.235 0.045 258 / 0.04), 0 8px 24px -6px oklch(0.235 0.045 258 / 0.12);
+  --shadow-lg: 0 4px 8px oklch(0.235 0.045 258 / 0.04), 0 24px 56px -12px oklch(0.235 0.045 258 / 0.22);
+
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-rise: rise 500ms var(--ease-out-soft) both;
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+  }
 }
 
 :root {
   color-scheme: light;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   background-color: var(--color-paper);
   color: var(--color-ink);
+  font-feature-settings: "ss01", "cv11";
 }
 
-/* Une seule séquence animée sur la page : les barres de lecture du héros. */
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+::selection {
+  background: color-mix(in oklch, var(--color-brand) 22%, transparent);
+}
+
+/* Reading bars in the hero fill once, left to right. */
 @keyframes read-bar {
   from {
     transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
   }
 }
 
 .read-bar {
   transform-origin: left center;
-  animation: read-bar 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation: read-bar 0.9s var(--ease-out-soft) both;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .read-bar {
-    animation: none;
+@keyframes live-ping {
+  75%,
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
   }
 }
 
+.live-ping {
+  animation: live-ping 1.6s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
 :focus-visible {
-  outline: 2px solid var(--color-ink);
+  outline: 2px solid var(--color-brand);
   outline-offset: 3px;
+  border-radius: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
