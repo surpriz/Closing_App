@@ -19,6 +19,7 @@ import {
 } from "@/lib/closing/tracking/visitor";
 import { evaluateHotLead } from "@/lib/closing/triggers/hot-lead";
 import { prisma } from "@/lib/db";
+import { isWorkspaceMember } from "@/lib/session";
 
 const bodySchema = z.object({
   slug: z.string().min(1).max(64),
@@ -57,6 +58,9 @@ export async function POST(request: NextRequest) {
   }
 
   const context = getRequestContext(request.headers);
+  // Treated like a bot from here on: kept for the record, never counted
+  const fromSeller = await isWorkspaceMember(link.organizationId);
+  const excluded = context.isBot || fromSeller;
   // IP-based timezone on Vercel, browser timezone as fallback (local dev)
   const timezone =
     context.timezone ??
@@ -103,17 +107,18 @@ export async function POST(request: NextRequest) {
           os: context.os,
           referrer: context.referrer,
           userAgent: context.userAgent,
-          isBot: context.isBot,
+          isBot: excluded,
+          fromSeller,
         },
         select: { id: true },
       })
     ).id;
 
-  if (prospect) {
+  if (prospect && !fromSeller) {
     await prisma.prospect.update({
       where: { id: prospect.id },
       data: {
-        lastSeenAt: context.isBot ? undefined : now,
+        lastSeenAt: excluded ? undefined : now,
         firstSeenAt: prospect.firstSeenAt ?? now,
         timezone: prospect.timezone ?? timezone,
         locale: prospect.locale ?? locale,
@@ -122,7 +127,7 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  if (!context.isBot) {
+  if (!excluded) {
     inBackground("view-started", async () => {
       await cancelOpenFollowups(link.id, "Le prospect a ouvert la proposition", ["ANTI_GHOSTING"]);
       await evaluateHotLead(viewId, !!recentView);

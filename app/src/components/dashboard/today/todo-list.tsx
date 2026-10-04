@@ -14,8 +14,10 @@ export type TodoRow = {
   /** At least one reading session, bots aside. */
   opened: boolean;
   label: string;
-  /** Contact and document, e.g. "Léa Martin, Devis 2026". */
-  subtitle: string;
+  /** Company when known, else the contact. */
+  company: string | null;
+  contact: string | null;
+  documentName: string;
   tier: EngagementTier | null;
   score: number;
   /** "Chaud", "Ajustement demandé", "Pas encore ouvert"… */
@@ -59,13 +61,21 @@ export function TodoList({ rows, now }: { rows: TodoRow[]; now: Date }) {
                   href={`/links/${row.id}`}
                   className="truncate font-medium outline-none after:absolute after:inset-0 focus-visible:after:ring-3 focus-visible:after:ring-ring/50 focus-visible:after:ring-inset"
                 >
+                  {row.company && <span className="font-normal text-muted-foreground">Société : </span>}
                   {row.label}
                 </Link>
                 <span className={cn("hidden shrink-0 text-sm sm:block", !row.tier && "text-muted-foreground")}>
                   {state}
                 </span>
               </div>
-              {row.subtitle && <p className="truncate text-sm text-muted-foreground">{row.subtitle}</p>}
+              <p className="truncate text-sm text-muted-foreground">
+                {[
+                  row.company && row.contact ? `Contact : ${row.contact}` : null,
+                  `Document : ${row.documentName}`,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
               <p className={cn("text-sm sm:hidden", !row.tier && "text-muted-foreground")}>{state}</p>
               <p
                 className={cn(

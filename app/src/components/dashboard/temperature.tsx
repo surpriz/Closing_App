@@ -18,7 +18,7 @@ const SEGMENTS: { tier: EngagementTier; from: number; to: number }[] = [
 function nextStep(score: number) {
   if (score < WARM) return `Encore ${WARM - score} point${WARM - score > 1 ? "s" : ""} pour passer tiède.`;
   if (score < HOT) return `Encore ${HOT - score} point${HOT - score > 1 ? "s" : ""} pour passer chaud.`;
-  return "Le prospect est chaud : c'est le moment de le relancer.";
+  return "Lecture intense. Quoi faire : voyez la Lecture IA juste en dessous.";
 }
 
 /** Three-band scale with a marker at the score, and what the next band takes. */

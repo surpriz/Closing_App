@@ -33,7 +33,7 @@ Rules:
 - Never mention or hint that you know how the prospect read the document: no reading time, no page names, no "I noticed you looked at". The prospect must not feel watched.
 - Never invent prices, discounts, deadlines, features or facts that are not in the context.
 - No pressure tactics, no fake urgency.
-- EMAIL: subject of 3 to 8 words; body of 50 to 120 words with a greeting, one or two short paragraphs, and the sender signature at the end if provided.
+- EMAIL: subject of 3 to 8 words; body of 50 to 120 words with a greeting, one or two short paragraphs, and at the end the sender signature, or the sender name when there is no signature.
 - WHATSAPP: subject must be null; 1 to 3 short sentences, 60 words maximum.
 - Include the document URL exactly once, unchanged.
 - Raise topics as the natural next step of a sales conversation. Never refer to pages, sections being read, how long or when the document was read.

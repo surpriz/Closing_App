@@ -56,3 +56,15 @@ export async function requireWorkspace() {
   if (!workspace) redirect("/login");
   return workspace;
 }
+
+/** The seller (or a teammate) is signed in on this browser: their own link views are not a prospect reading. */
+export async function isWorkspaceMember(organizationId: string) {
+  const session = await getSession().catch(() => null);
+  if (!session) return false;
+  const member = await prisma.member.findFirst({
+    where: { userId: session.user.id, organizationId },
+    select: { id: true },
+  });
+  return member !== null;
+}
+

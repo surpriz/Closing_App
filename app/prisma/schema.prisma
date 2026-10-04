@@ -483,7 +483,8 @@ model DocumentView {
   os         String?
   referrer   String?
   userAgent  String?
-  isBot      Boolean @default(false)
+  isBot      Boolean @default(false) // also true for the seller's own views (see fromSeller): excluded everywhere
+  fromSeller Boolean @default(false) // opened by a member of the workspace that owns the link
 
   startedAt       DateTime  @default(now())
   lastSeenAt      DateTime  @default(now())

@@ -17,6 +17,12 @@ import { Surface } from "./page-header";
 import { PrepareFollowupButton } from "./prepare-followup-button";
 import { ReanalyzeButton } from "./reanalyze-button";
 
+function reliability(confidence: number) {
+  if (confidence < 40) return "faible";
+  if (confidence < 70) return "moyenne";
+  return "élevée";
+}
+
 const SEVERITY_DOT = { low: "bg-foreground/25", medium: "bg-heat-warm", high: "bg-heat-hot" } as const;
 
 /** The fact ids an item rests on, with the fact itself on hover. */
@@ -42,6 +48,7 @@ export function DealInsightPanel({
   recipientName,
   aiAvailable,
   draftWaiting,
+  readSince,
   now,
 }: {
   linkId: string;
@@ -50,6 +57,8 @@ export function DealInsightPanel({
   aiAvailable: boolean;
   /** A follow-up from the analysis already waits in "Relances". */
   draftWaiting: boolean;
+  /** The prospect read again after this analysis: it will be refreshed once they stop. */
+  readSince: boolean;
   now: Date;
 }) {
   if (!insight) {
@@ -88,12 +97,24 @@ export function DealInsightPanel({
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span>
-              {insight.byAi ? `Confiance ${insight.confidence} %, analysé ` : "Mis à jour "}
+              {insight.byAi && (
+                <span title="À quel point l'IA est sûre de sa lecture. Peu de signaux = fiabilité faible, même si le prospect est « chaud ».">
+                  Fiabilité {reliability(insight.confidence)} ({insight.confidence} %),{" "}
+                </span>
+              )}
+              {insight.byAi ? "analysé " : "mis à jour "}
               {formatRelative(insight.createdAt, now)}
             </span>
             {aiAvailable && <ReanalyzeButton linkId={linkId} />}
           </div>
         </div>
+
+        {readSince && (
+          <p className="rounded-lg bg-muted px-3 py-2 text-sm">
+            Le prospect a relu depuis cette analyse. Clozer la met à jour quelques minutes après la fin de sa lecture,
+            ou tout de suite avec « Réanalyser ».
+          </p>
+        )}
 
         <div className="space-y-1.5">
           <p className="text-[15px] font-medium">{insight.headline}</p>

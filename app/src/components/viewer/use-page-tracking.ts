@@ -179,8 +179,16 @@ export function usePageTracking(
     }, 1000);
 
     const flushTimer = setInterval(() => flush(false), TRACKING_FLUSH_INTERVAL_MS);
+    let resumeTimer: ReturnType<typeof setTimeout> | undefined;
     const onVisibilityChange = () => {
-      if (document.visibilityState === "hidden") flush(true, true);
+      if (document.visibilityState === "hidden") {
+        clearTimeout(resumeTimer);
+        flush(true, true);
+        return;
+      }
+      // Back on the tab: report a second of reading right away, so the seller
+      // sees the reader live again without waiting for the next periodic flush
+      resumeTimer = setTimeout(() => flush(false), 1500);
     };
     const onPageHide = () => flush(true, true);
     document.addEventListener("visibilitychange", onVisibilityChange);
@@ -191,6 +199,7 @@ export function usePageTracking(
       window.removeEventListener("blur", markActive);
       clearInterval(tick);
       clearInterval(flushTimer);
+      clearTimeout(resumeTimer);
       document.removeEventListener("visibilitychange", onVisibilityChange);
       window.removeEventListener("pagehide", onPageHide);
       flush(true, true);

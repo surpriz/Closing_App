@@ -107,7 +107,7 @@ function FollowupRow({ followup: f, showLink }: { followup: FollowupItem; showLi
         <p className="text-sm">
           <span className="font-medium">Pourquoi : </span>
           {f.rationale}
-          {f.confidence !== null && <span className="text-muted-foreground"> (confiance {f.confidence} %)</span>}
+          {f.confidence !== null && <span className="text-muted-foreground"> (fiabilité de l&apos;analyse {f.confidence} %)</span>}
         </p>
       )}
 

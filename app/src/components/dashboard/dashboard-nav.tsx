@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, Settings2, Sun } from "lucide-react";
+import { Brain, FileText, Settings2, Sun } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -9,6 +9,13 @@ import { cn } from "cn";
 const ITEMS = [
   { href: "/dashboard", label: "Aujourd'hui", icon: Sun, match: ["/dashboard", "/links"] },
   { href: "/documents", label: "Documents", icon: FileText, match: ["/documents"] },
+  {
+    href: "/comment-ca-marche",
+    label: "Comment ça marche",
+    short: "Le pilote",
+    icon: Brain,
+    match: ["/comment-ca-marche"],
+  },
   { href: "/settings", label: "Réglages", icon: Settings2, match: ["/settings"] },
 ];
 
@@ -54,7 +61,7 @@ export function MobileNav() {
       aria-label="Navigation principale"
       className="fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur sm:hidden"
     >
-      <div className="grid grid-cols-3">
+      <div className="grid grid-cols-4">
         {ITEMS.map((item) => {
           const active = isActive(item.match);
           const Icon = item.icon;
@@ -69,7 +76,7 @@ export function MobileNav() {
               )}
             >
               <Icon className="size-5" strokeWidth={active ? 2.2 : 1.8} />
-              {item.label}
+              {"short" in item ? item.short : item.label}
             </Link>
           );
         })}

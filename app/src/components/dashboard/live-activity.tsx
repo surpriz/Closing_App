@@ -31,7 +31,8 @@ export function LiveActivity({
     return (
       <p className="flex items-center gap-2 text-sm text-muted-foreground">
         <span className="size-1.5 rounded-full bg-foreground/25" />
-        Personne ne lit en ce moment. La page se met à jour toute seule.
+        Personne ne lit en ce moment. Dès qu&apos;un lecteur ouvre le document, ça s&apos;affiche ici (en
+        quelques secondes).
       </p>
     );
   }
