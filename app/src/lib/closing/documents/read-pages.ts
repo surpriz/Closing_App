@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { getLanguageModel } from "../ai/provider";
 import { recordAiUsage } from "../ai/usage";
 import { DOC_TYPES } from "./doc-types";
+import { cleanDisplayTitle } from "./link-title";
 import { inferOfferFromDocument } from "./infer-offer";
 import {
   buildPageReadingPrompt,
@@ -34,7 +35,7 @@ const readingSchema = z.object({
   ),
 });
 
-const classifySchema = z.object({ docType: z.enum(DOC_TYPES), purpose: z.string() });
+const classifySchema = z.object({ docType: z.enum(DOC_TYPES), purpose: z.string(), title: z.string() });
 /** Enough of the start of a document to tell a quote from a résumé. */
 const CLASSIFY_CHARS = 4000;
 
@@ -61,7 +62,11 @@ async function classifyDocument(llm: Llm, document: { name: string; organization
       latencyMs: Date.now() - startedAt,
       ok: true,
     });
-    return { docType: output.docType, purpose: output.purpose.trim().slice(0, 200) || null };
+    return {
+      docType: output.docType,
+      purpose: output.purpose.trim().slice(0, 200) || null,
+      title: cleanDisplayTitle(output.title),
+    };
   } catch (error) {
     console.error("[documents] classification failed", error);
     return null;
@@ -113,7 +118,7 @@ export async function readDocumentPages(documentId: string): Promise<ReadPagesOu
   if (classified) {
     await prisma.document.update({
       where: { id: document.id },
-      data: { docType: classified.docType, docPurpose: classified.purpose },
+      data: { docType: classified.docType, docPurpose: classified.purpose, displayTitle: classified.title },
     });
   }
   const systemPrompt = pageReadingSystemPrompt(classified?.docType);

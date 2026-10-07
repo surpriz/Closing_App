@@ -22,7 +22,7 @@ export async function createDocumentLink(input: {
       archivedAt: null,
       status: { not: "FAILED" },
     },
-    select: { id: true, name: true, docType: true },
+    select: { id: true, name: true, docType: true, displayTitle: true },
   });
   if (!document) return null;
 
@@ -49,5 +49,5 @@ export async function createDocumentLink(input: {
     },
     select: { id: true, slug: true, name: true },
   });
-  return { ...link, title: linkTitle({ name: document.name, docType: document.docType, company: prospect?.company }) };
+  return { ...link, title: linkTitle({ ...document, company: prospect?.company }) };
 }

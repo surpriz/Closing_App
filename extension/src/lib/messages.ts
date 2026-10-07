@@ -4,7 +4,8 @@ import type { Recipient } from "./recipients";
 
 export type MailHost = "gmail" | "outlook";
 
-export type DocumentSummary = { id: string; name: string; status: string };
+// titled: the AI has given the document a readable title (or never will)
+export type DocumentSummary = { id: string; name: string; status: string; titled?: boolean };
 
 export type Account = {
   user: { name: string; email: string };

@@ -37,6 +37,9 @@ type Compose = {
 const POLL_MS = 3000;
 const POLL_TRIES = 20;
 const UPLOAD_TIMEOUT_MS = 3 * 60_000;
+// A fresh PDF gets its readable title from the AI a few seconds after upload
+const TITLE_WAIT_MS = 15_000;
+const TITLE_POLL_MS = 1000;
 // Lets the mail app show its attachment chip before the offer appears next to it
 const OFFER_DELAY_MS = 300;
 
@@ -202,6 +205,19 @@ export default defineContentScript({
       void watchProcessing(compose, document);
     }
 
+    // So the link reads "Devis rénovation cuisine" rather than the file name. Gives up after a few seconds.
+    async function waitForTitle(compose: Compose, document: DocumentSummary) {
+      const deadline = Date.now() + TITLE_WAIT_MS;
+      while (Date.now() < deadline && ctx.isValid) {
+        compose.widget.progress("Lecture du document…", 75 + Math.round((10 * (TITLE_WAIT_MS - (deadline - Date.now()))) / TITLE_WAIT_MS));
+        await sleep(TITLE_POLL_MS);
+        const latest = await ask<DocumentSummary>({ type: "document", id: document.id }).catch(() => null);
+        if (latest) document = latest;
+        if (document.titled || document.status === "FAILED") break;
+      }
+      return document;
+    }
+
     async function replaceFile(compose: Compose, file: File, isAttachment: boolean) {
       if (file.size > MAX_UPLOAD_BYTES) throw new ClozerError("too_large", "Ce PDF dépasse 25 Mo.");
       compose.widget.progress("Préparation…", null);
@@ -212,8 +228,9 @@ export default defineContentScript({
 
       const sha256 = await sha256Hex(buffer);
       const existing = await ask<DocumentSummary | null>({ type: "lookup", sha256 });
-      const document =
-        existing ?? (await uploadPdf(file.name, bytes, sha256, (percent) => compose.widget.progress("Envoi du PDF…", Math.min(percent, 85))));
+      let document =
+        existing ?? (await uploadPdf(file.name, bytes, sha256, (percent) => compose.widget.progress("Envoi du PDF…", Math.min(percent, 70))));
+      if (!existing) document = await waitForTitle(compose, document);
 
       await insertDocument(compose, document, isAttachment ? file.name : undefined);
     }
