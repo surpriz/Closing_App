@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { composeRoot, findAttachmentRemover, firstRecipient, insertionAnchor, sameFileName } from "./mail";
+import { composeRoot, findAttachmentRemover, firstRecipient, insertionAnchor, press, sameFileName } from "./mail";
 
 // Simplified from Gmail and Outlook web compose markup. The real markup must be
 // checked by hand after any breakage: see extension/README.md.
@@ -120,5 +120,44 @@ describe("thread safety", () => {
     document.body.innerHTML = `<div role="dialog" id="root"><div id="body" contenteditable="true" role="textbox"></div><div data-hovercard-id="after@x.fr"></div></div>`;
     const body = document.getElementById("body")!;
     expect(firstRecipient("gmail", document.getElementById("root")!, body)).toBeNull();
+  });
+});
+
+describe("attachment removal", () => {
+  const CHIPS = `
+    <div role="dialog" id="root">
+      <div id="body" contenteditable="true" role="textbox"></div>
+      <div class="attachments">
+        <div class="dL"><a class="dO"><div class="vI">autre.pdf</div><div class="vJ">(12 Ko)</div></a><div role="button" class="vq" id="x-other"></div></div>
+        <div class="dL"><a class="dO"><div class="vI">2026-09-AD.pdf</div><div class="vJ">(39 Ko)</div></a><div role="button" class="vq" id="x-mine"></div></div>
+      </div>
+    </div>`;
+
+  it("finds an unlabelled remove control next to the right chip", () => {
+    const { root, body } = mount(CHIPS);
+    expect(findAttachmentRemover(root, body, "2026-09-AD.pdf")?.id).toBe("x-mine");
+    expect(findAttachmentRemover(root, body, "autre.pdf")?.id).toBe("x-other");
+  });
+
+  it("recognises a lone × glyph", () => {
+    const { root, body } = mount(`<div role="dialog" id="root"><div id="body" contenteditable="true" role="textbox"></div>
+      <div><span>devis.pdf</span><button id="x">×</button></div></div>`);
+    expect(findAttachmentRemover(root, body, "devis.pdf")?.id).toBe("x");
+  });
+
+  it("looks outside the compose when the chips are rendered elsewhere", () => {
+    document.body.innerHTML = `<div role="dialog" id="root"><div id="body" contenteditable="true" role="textbox"></div></div>
+      <div><span>devis.pdf</span><div role="button" aria-label="Supprimer la pièce jointe" id="x"></div></div>`;
+    const root = document.getElementById("root")!;
+    const body = document.getElementById("body")!;
+    expect(findAttachmentRemover(root, body, "devis.pdf")?.id).toBe("x");
+  });
+
+  it("press() reaches buttons that only listen to mousedown", () => {
+    const { root, body } = mount(CHIPS);
+    const remover = findAttachmentRemover(root, body, "2026-09-AD.pdf")!;
+    remover.addEventListener("mousedown", () => remover.closest(".dL")!.remove());
+    press(remover);
+    expect(findAttachmentRemover(root, body, "2026-09-AD.pdf")).toBeNull();
   });
 });

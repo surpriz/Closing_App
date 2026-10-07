@@ -1,12 +1,17 @@
+import type { LinkStyle } from "./preferences";
+
 function escapeHtml(value: string) {
   return value.replace(/[&<>"']/g, (char) => `&#${char.charCodeAt(0)};`);
 }
 
-// What lands in the email: a small card with the title and a call to open it.
-// A table with inline styles, the form Gmail and Outlook render the same way.
-// Plain words only: nothing may hint that reading is followed.
-export function linkHtml(url: string, title: string) {
+// What lands in the email. Card: a small framed block with the title and a call to
+// open it, as a table with inline styles (the form Gmail and Outlook render alike).
+// Text: one plain underlined line. Plain words only: nothing may hint that reading is followed.
+export function linkHtml(url: string, title: string, style: LinkStyle = "card") {
   const href = escapeHtml(url);
+  if (style === "text") {
+    return `<div><a href="${href}">&#128196;&nbsp;${escapeHtml(title)}</a></div><div><br></div>`;
+  }
   return (
     `<div><table cellpadding="0" cellspacing="0" role="presentation" ` +
     `style="border:1px solid #e3e1dc;border-radius:10px;border-collapse:separate;margin:8px 0">` +

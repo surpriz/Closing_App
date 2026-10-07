@@ -36,3 +36,9 @@ button {
   color: inherit;
 }
 button.primary { background: var(--fg); color: var(--bg); border-color: transparent; }
+fieldset { border: 1px solid var(--line); border-radius: 10px; margin: 0; padding: 8px 10px 10px; display: grid; gap: 8px; }
+legend { padding: 0 4px; color: var(--muted); font-size: 12px; }
+.choice { display: flex; gap: 8px; align-items: flex-start; cursor: pointer; }
+.choice input { margin: 2px 0 0; accent-color: var(--fg); }
+.choice > span { display: grid; gap: 1px; }
+.choice .muted { font-size: 12px; }

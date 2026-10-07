@@ -2,7 +2,7 @@ import { browser } from "wxt/browser";
 import { defineContentScript } from "wxt/utils/define-content-script";
 
 import { insertLink } from "@/adapters/insert";
-import { composeRoot, findAttachmentRemover, findBodies, firstRecipient, insertionAnchor } from "@/adapters/mail";
+import { composeRoot, findAttachmentRemover, findBodies, firstRecipient, insertionAnchor, press } from "@/adapters/mail";
 import { splitChunks } from "@/lib/chunks";
 import { MAX_UPLOAD_BYTES } from "@/lib/config";
 import { MAIL_MATCHES, mailHost } from "@/lib/hosts";
@@ -19,6 +19,7 @@ import {
   type UploadOut,
 } from "@/lib/messages";
 import { hasPdfMagic, looksLikePdf } from "@/lib/pdf";
+import { getLinkStyle } from "@/lib/preferences";
 import { sha256Hex } from "@/lib/sha256";
 import { isOlder } from "@/lib/version";
 import { ComposeWidget, removeLayer } from "@/ui/widget";
@@ -176,17 +177,18 @@ export default defineContentScript({
         link = await ask<{ url: string; title: string }>({ type: "link", documentId: document.id, recipient, source: host });
         compose.links.set(document.id, link);
       }
-      const { url, title } = link;
-
-      if (!insertLink(compose.body, compose.saved, insertionAnchor(host, compose.body), url, title)) {
-        throw new ClozerError("insert", `Le lien n'a pas pu être inséré. Copiez-le : ${url}`);
+      const style = await getLinkStyle();
+      if (!insertLink(compose.body, compose.saved, insertionAnchor(host, compose.body), { ...link, style })) {
+        throw new ClozerError("insert", `Le lien n'a pas pu être inséré. Copiez-le : ${link.url}`);
       }
 
       let attachmentLeft = false;
       if (attachmentName) {
         const remover = findAttachmentRemover(compose.root, compose.body, attachmentName);
-        remover?.click();
-        if (remover) await sleep(1200);
+        if (remover) {
+          press(remover);
+          await sleep(1200);
+        }
         attachmentLeft = !remover || !!findAttachmentRemover(compose.root, compose.body, attachmentName);
       }
 

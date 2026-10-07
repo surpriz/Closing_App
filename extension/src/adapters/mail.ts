@@ -30,7 +30,9 @@ const CONFIG: Record<MailHost, HostConfig> = {
 
 const MIN_BODY_HEIGHT = 60;
 const MAX_CLIMB = 14;
-const REMOVE_LABEL = /remove|supprimer|retirer|enlever|entfernen|quitar|eliminar|rimuovi|verwijder/i;
+const REMOVE_LABEL = /remove|delete|supprimer|retirer|enlever|entfernen|löschen|quitar|eliminar|rimuovi|verwijder/i;
+const REMOVE_GLYPH = /^[×✕✖xX]$/;
+const CHIP_CLIMB = 8;
 
 // Message bodies: editable text boxes, and tall. Recipient and subject fields are short.
 export function findBodies(doc: Document = document) {
@@ -97,20 +99,54 @@ export function sameFileName(shown: string, fileName: string) {
   return tail !== undefined && head.length >= 3 && name.startsWith(head) && name.endsWith(tail);
 }
 
-// The attachment chip showing this file name, and its remove control
-export function findAttachmentRemover(root: HTMLElement, body: HTMLElement, fileName: string) {
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  for (let text = walker.nextNode(); text; text = walker.nextNode()) {
-    const parent = text.parentElement;
-    if (!parent || body.contains(parent) || !sameFileName(text.textContent ?? "", fileName)) continue;
+function looksLikeRemover(el: HTMLElement) {
+  const label = `${el.getAttribute("aria-label") ?? ""} ${el.getAttribute("data-tooltip") ?? ""} ${el.title}`;
+  if (REMOVE_LABEL.test(label)) return true;
+  // Unlabelled close icons: a lone "×", or Gmail's remove control
+  const clickable = el.matches('[role="button"], button');
+  return clickable && (REMOVE_GLYPH.test(el.textContent?.trim() ?? "") || el.classList.contains("vq"));
+}
 
-    let chip: HTMLElement | null = parent;
-    for (let i = 0; chip && chip !== root && i < 6; i++, chip = chip.parentElement) {
-      const remover = Array.from(chip.querySelectorAll<HTMLElement>('[role="button"], button')).find((button) =>
-        REMOVE_LABEL.test(`${button.getAttribute("aria-label") ?? ""} ${button.getAttribute("data-tooltip") ?? ""} ${button.title}`),
-      );
-      if (remover) return remover;
-    }
+function removerNear(nameNode: Node, scope: HTMLElement, body: HTMLElement) {
+  let chip: HTMLElement | null = nameNode.parentElement;
+  for (let i = 0; chip && i < CHIP_CLIMB; i++) {
+    const candidates = Array.from(chip.querySelectorAll<HTMLElement>('[role="button"], button, [aria-label], [data-tooltip], [title]'))
+      .filter((el) => !body.contains(el) && looksLikeRemover(el));
+    // Several chips in view: the × of this one comes right after its name
+    const after = candidates.find((el) => nameNode.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING);
+    if (after ?? candidates[0]) return after ?? candidates[0];
+    if (chip === scope) break;
+    chip = chip.parentElement;
   }
   return null;
+}
+
+function findRemoverIn(scope: HTMLElement, body: HTMLElement, fileName: string) {
+  const found: HTMLElement[] = [];
+  const walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT);
+  for (let text = walker.nextNode(); text; text = walker.nextNode()) {
+    if (body.contains(text) || !sameFileName(text.textContent ?? "", fileName)) continue;
+    const remover = removerNear(text, scope, body);
+    if (remover && !found.includes(remover)) found.push(remover);
+  }
+  return found;
+}
+
+// The remove control of the attachment chip showing this file name. Looks in the
+// compose first, then in the page when exactly one chip carries that name.
+export function findAttachmentRemover(root: HTMLElement, body: HTMLElement, fileName: string) {
+  const inCompose = findRemoverIn(root, body, fileName);
+  if (inCompose.length) return inCompose[0];
+  const inPage = findRemoverIn(document.body, body, fileName);
+  return inPage.length === 1 ? inPage[0] : null;
+}
+
+// Gmail and Outlook buttons often react to the mouse sequence, not to click() alone
+export function press(el: HTMLElement) {
+  const options = { bubbles: true, cancelable: true, composed: true, view: window, button: 0 };
+  el.dispatchEvent(new PointerEvent("pointerdown", options));
+  el.dispatchEvent(new MouseEvent("mousedown", options));
+  el.dispatchEvent(new PointerEvent("pointerup", options));
+  el.dispatchEvent(new MouseEvent("mouseup", options));
+  el.dispatchEvent(new MouseEvent("click", options));
 }

@@ -66,8 +66,14 @@ describe("link card", () => {
     expect(html).not.toContain("<Acme>");
   });
 
+  it("has a plain text form", () => {
+    const html = linkHtml("https://x.test/v/a", "Devis – Acme", "text");
+    expect(html).toContain('<a href="https://x.test/v/a">');
+    expect(html).not.toContain("<table");
+  });
+
   it("never hints that reading is followed", () => {
-    const text = linkHtml("https://app.clozer.club/v/abc", "Proposition").toLowerCase();
+    const text = (linkHtml("https://app.clozer.club/v/abc", "Proposition") + linkHtml("https://app.clozer.club/v/abc", "Proposition", "text")).toLowerCase();
     for (const word of ["suivi", "track", "notif", "lecture", "ouvert", "clozer"]) {
       expect(text.replaceAll("app.clozer.club", "")).not.toContain(word);
     }

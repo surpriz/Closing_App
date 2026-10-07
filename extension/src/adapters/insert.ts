@@ -1,4 +1,5 @@
 import { linkHtml } from "@/lib/link-html";
+import type { LinkStyle } from "@/lib/preferences";
 
 // The block of the body that holds this node (a line in Gmail and Outlook)
 function lineOf(body: HTMLElement, node: Node) {
@@ -9,7 +10,12 @@ function lineOf(body: HTMLElement, node: Node) {
 
 // Inserts through the editor's own input pipeline (execCommand), so Gmail and
 // Outlook save the draft and keep undo working. False when the editor refused.
-export function insertLink(body: HTMLElement, saved: Range | null, anchor: Element | null, url: string, title: string) {
+export function insertLink(
+  body: HTMLElement,
+  saved: Range | null,
+  anchor: Element | null,
+  link: { url: string; title: string; style: LinkStyle },
+) {
   body.focus();
   const selection = window.getSelection();
   if (!selection) return false;
@@ -39,5 +45,5 @@ export function insertLink(body: HTMLElement, saved: Range | null, anchor: Eleme
   selection.removeAllRanges();
   selection.addRange(range);
 
-  return document.execCommand("insertHTML", false, linkHtml(url, title));
+  return document.execCommand("insertHTML", false, linkHtml(link.url, link.title, link.style));
 }
