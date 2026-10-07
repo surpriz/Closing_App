@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/db";
 import { randomSlug } from "@/lib/ids";
 
+import { linkTitle } from "./link-title";
+
 export type LinkSource = "extension_gmail" | "extension_outlook";
 
 // One link = one proposal sent to one prospect company
@@ -20,12 +22,12 @@ export async function createDocumentLink(input: {
       archivedAt: null,
       status: { not: "FAILED" },
     },
-    select: { id: true },
+    select: { id: true, name: true, docType: true },
   });
   if (!document) return null;
 
   const { prospect } = input;
-  return prisma.link.create({
+  const link = await prisma.link.create({
     data: {
       slug: randomSlug(12),
       documentId: document.id,
@@ -47,4 +49,5 @@ export async function createDocumentLink(input: {
     },
     select: { id: true, slug: true, name: true },
   });
+  return { ...link, title: linkTitle({ name: document.name, docType: document.docType, company: prospect?.company }) };
 }

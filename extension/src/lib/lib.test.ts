@@ -58,17 +58,18 @@ describe("recipients", () => {
   });
 });
 
-describe("link text", () => {
+describe("link card", () => {
   it("escapes the title and the url", () => {
-    expect(linkHtml("https://x.test/v/a?b=1&c=2", "Devis <Acme>")).toBe(
-      '<div><a href="https://x.test/v/a?b=1&#38;c=2">Devis &#60;Acme&#62;</a></div>',
-    );
+    const html = linkHtml("https://x.test/v/a?b=1&c=2", "Devis <Acme>");
+    expect(html).toContain('href="https://x.test/v/a?b=1&#38;c=2"');
+    expect(html).toContain("Devis &#60;Acme&#62;");
+    expect(html).not.toContain("<Acme>");
   });
 
   it("never hints that reading is followed", () => {
     const text = linkHtml("https://app.clozer.club/v/abc", "Proposition").toLowerCase();
-    for (const word of ["suivi", "track", "notif", "lecture", "clozer.club/t", "ouvert"]) {
-      expect(text).not.toContain(word);
+    for (const word of ["suivi", "track", "notif", "lecture", "ouvert", "clozer"]) {
+      expect(text.replaceAll("app.clozer.club", "")).not.toContain(word);
     }
   });
 });

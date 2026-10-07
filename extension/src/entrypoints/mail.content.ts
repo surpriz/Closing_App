@@ -28,8 +28,8 @@ type Compose = {
   root: HTMLElement;
   widget: ComposeWidget;
   saved: Range | null;
-  // documentId → link already inserted in this email, so a retry reuses it
-  links: Map<string, string>;
+  // documentId → link already created for this email, so a retry reuses it
+  links: Map<string, { url: string; title: string }>;
   busy: boolean;
 };
 
@@ -171,13 +171,14 @@ export default defineContentScript({
       compose.widget.progress("Création du lien…", 90);
       const recipient = firstRecipient(host, compose.root, compose.body);
 
-      let url = compose.links.get(document.id);
-      if (!url) {
-        url = (await ask<{ url: string }>({ type: "link", documentId: document.id, recipient, source: host })).url;
-        compose.links.set(document.id, url);
+      let link = compose.links.get(document.id);
+      if (!link) {
+        link = await ask<{ url: string; title: string }>({ type: "link", documentId: document.id, recipient, source: host });
+        compose.links.set(document.id, link);
       }
+      const { url, title } = link;
 
-      if (!insertLink(compose.body, compose.saved, insertionAnchor(host, compose.body), url, document.name)) {
+      if (!insertLink(compose.body, compose.saved, insertionAnchor(host, compose.body), url, title)) {
         throw new ClozerError("insert", `Le lien n'a pas pu être inséré. Copiez-le : ${url}`);
       }
 

@@ -52,7 +52,7 @@ async function handle(request: Request): Promise<unknown> {
       return (await api<{ document: DocumentSummary }>(`/api/ext/documents/${encodeURIComponent(request.id)}`)).document;
     case "link":
       return (
-        await api<{ link: { id: string; name: string | null; url: string } }>("/api/ext/links", {
+        await api<{ link: { id: string; name: string | null; title: string; url: string } }>("/api/ext/links", {
           body: { documentId: request.documentId, recipient: request.recipient, source: request.source },
         })
       ).link;

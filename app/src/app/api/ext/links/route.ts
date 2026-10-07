@@ -32,7 +32,7 @@ export const POST = withExtensionAuth(async (request, { user, organization }) =>
 
   revalidatePath(`/documents/${documentId}`);
   return Response.json(
-    { link: { id: link.id, name: link.name, url: `${getPublicAppUrl()}/v/${link.slug}` } },
+    { link: { id: link.id, name: link.name, title: link.title, url: `${getPublicAppUrl()}/v/${link.slug}` } },
     { status: 201 },
   );
 });
