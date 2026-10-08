@@ -56,6 +56,8 @@ async function handle(request: Request): Promise<unknown> {
           body: { documentId: request.documentId, recipient: request.recipient, source: request.source },
         })
       ).link;
+    case "sent":
+      return api(`/api/ext/links/${encodeURIComponent(request.linkId)}/sent`, { body: { recipient: request.recipient } });
   }
 }
 

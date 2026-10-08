@@ -2,7 +2,15 @@ import { browser } from "wxt/browser";
 import { defineContentScript } from "wxt/utils/define-content-script";
 
 import { insertLink } from "@/adapters/insert";
-import { composeRoot, findAttachmentRemover, findBodies, firstRecipient, insertionAnchor, press } from "@/adapters/mail";
+import {
+  composeRoot,
+  findAttachmentRemover,
+  findBodies,
+  firstRecipient,
+  insertionAnchor,
+  isSendControl,
+  press,
+} from "@/adapters/mail";
 import { splitChunks } from "@/lib/chunks";
 import { MAX_UPLOAD_BYTES } from "@/lib/config";
 import { MAIL_MATCHES, mailHost } from "@/lib/hosts";
@@ -30,8 +38,9 @@ type Compose = {
   widget: ComposeWidget;
   saved: Range | null;
   // documentId → link already created for this email, so a retry reuses it
-  links: Map<string, { url: string; title: string }>;
+  links: Map<string, { id: string; url: string; title: string }>;
   busy: boolean;
+  sending: boolean;
 };
 
 const POLL_MS = 3000;
@@ -42,6 +51,8 @@ const TITLE_WAIT_MS = 15_000;
 const TITLE_POLL_MS = 1000;
 // Lets the mail app show its attachment chip before the offer appears next to it
 const OFFER_DELAY_MS = 300;
+// After Send, the mail app closes the compose within a few seconds when the email really left
+const SENT_WATCH_MS = 10_000;
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -177,7 +188,7 @@ export default defineContentScript({
 
       let link = compose.links.get(document.id);
       if (!link) {
-        link = await ask<{ url: string; title: string }>({ type: "link", documentId: document.id, recipient, source: host });
+        link = await ask<{ id: string; url: string; title: string }>({ type: "link", documentId: document.id, recipient, source: host });
         compose.links.set(document.id, link);
       }
       const style = await getLinkStyle();
@@ -196,7 +207,9 @@ export default defineContentScript({
       }
 
       const notes = [
-        recipient ? `Prospect : ${recipient.displayName ?? recipient.email}.` : "Aucun destinataire : le prospect donnera son email à l'ouverture.",
+        recipient
+          ? `Prospect : ${recipient.displayName ?? recipient.email}. Le suivi démarre à l'envoi.`
+          : "Le suivi démarre à l'envoi, avec le destinataire de l'email.",
         attachmentLeft ? "Pensez à retirer la pièce jointe." : null,
       ].filter(Boolean);
       compose.widget.message("Lien inséré", notes.join(" "), [{ label: "OK", run: () => compose.widget.hide() }]);
@@ -283,6 +296,7 @@ export default defineContentScript({
           saved: null,
           links: new Map(),
           busy: false,
+          sending: false,
         };
         composes.set(body, compose);
       }
@@ -316,6 +330,43 @@ export default defineContentScript({
     ctx.addEventListener(document, "focusin", (event) => {
       lastCompose = composeOf(event.target) ?? lastCompose;
     });
+
+    // Send pressed: keep the recipients as they are now, then confirm once the compose closes.
+    // A compose that stays open means the mail app refused to send; nothing is confirmed.
+    async function onSend(compose: Compose) {
+      if (!compose.links.size || compose.sending) return;
+      compose.sending = true;
+      const recipient = firstRecipient(host, compose.root, compose.body);
+      const deadline = Date.now() + SENT_WATCH_MS;
+      while (compose.body.isConnected && Date.now() < deadline && ctx.isValid) await sleep(500);
+      if (compose.body.isConnected) {
+        compose.sending = false;
+        return;
+      }
+      for (const link of compose.links.values()) {
+        await ask({ type: "sent", linkId: link.id, recipient }).catch(() => undefined);
+      }
+    }
+
+    ctx.addEventListener(
+      document,
+      "mousedown",
+      (event) => {
+        const compose = composeOf(event.target);
+        if (compose && isSendControl(event.target, compose.root, compose.body)) void onSend(compose);
+      },
+      { capture: true },
+    );
+    ctx.addEventListener(
+      document,
+      "keydown",
+      (event) => {
+        if (event.key !== "Enter" || !(event.metaKey || event.ctrlKey)) return;
+        const compose = composeOf(event.target);
+        if (compose) void onSend(compose);
+      },
+      { capture: true },
+    );
 
     // Dropped or pasted into a compose: the event target tells which one
     ctx.addEventListener(window, "drop", (event) => offerFirstPdf(event.dataTransfer?.files, composeOf(event.target) ?? lastCompose), {

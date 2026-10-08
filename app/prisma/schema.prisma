@@ -428,6 +428,8 @@ model Link {
 
   brainDirtyAt DateTime? // something happened since the last deal analysis
   source       String? // where the link was created: null = dashboard, "extension_gmail", "extension_outlook"
+  // Inserted in an email from the extension, not sent yet: hidden from the seller, archived after 7 days
+  draftAt      DateTime?
 
   prospects        Prospect[]
   views            DocumentView[]

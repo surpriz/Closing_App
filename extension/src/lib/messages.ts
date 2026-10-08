@@ -23,7 +23,9 @@ export type Request =
   | { type: "documents"; q?: string }
   | { type: "lookup"; sha256: string }
   | { type: "document"; id: string }
-  | { type: "link"; documentId: string; recipient: Recipient | null; source: MailHost };
+  | { type: "link"; documentId: string; recipient: Recipient | null; source: MailHost }
+  // The email holding this link was sent: the draft becomes a deal
+  | { type: "sent"; linkId: string; recipient: Recipient | null };
 
 // MAIN-world capture script → isolated content script (window.postMessage)
 export const CAPTURE_SOURCE = "clozer-capture";

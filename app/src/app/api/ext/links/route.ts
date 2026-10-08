@@ -26,6 +26,7 @@ export const POST = withExtensionAuth(async (request, { user, organization }) =>
     documentId,
     prospect: recipient ? prospectFromRecipient(recipient) : null,
     requireEmail: true,
+    draft: true,
     source: source === "gmail" ? "extension_gmail" : "extension_outlook",
   });
   if (!link) return extError(404, "not_found", "Document introuvable.");

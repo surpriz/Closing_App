@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { inBackground } from "@/lib/closing/background";
 import { VIEW_SESSION_WINDOW_MS } from "@/lib/closing/constants";
+import { confirmDraftOnOpen } from "@/lib/closing/documents/create-link";
 import { refreshEngagementScore } from "@/lib/closing/engagement/refresh-score";
 import { cancelOpenFollowups } from "@/lib/closing/followups/queue";
 import { getLinkForViewer, getViewerAccess } from "@/lib/closing/links";
@@ -128,6 +129,7 @@ export async function POST(request: NextRequest) {
   }
 
   if (!excluded) {
+    await confirmDraftOnOpen(link.id, now);
     inBackground("view-started", async () => {
       await cancelOpenFollowups(link.id, "Le prospect a ouvert la proposition", ["ANTI_GHOSTING"]);
       await evaluateHotLead(viewId, !!recentView);

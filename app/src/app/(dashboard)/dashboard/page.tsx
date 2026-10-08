@@ -98,7 +98,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
         sentAt: { gte: new Date(now.getTime() - 24 * 60 * 60 * 1000) },
       },
     }),
-    prisma.link.count({ where: { organizationId, archivedAt: null } }),
+    prisma.link.count({ where: { organizationId, archivedAt: null, draftAt: null } }),
     // Bots and the seller's own reads are flagged isBot
     prisma.documentView.findFirst({ where: { link: { organizationId }, isBot: false }, select: { id: true } }),
   ]);

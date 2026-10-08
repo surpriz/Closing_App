@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 
 import { sendAutopilotDigests } from "./alerts/autopilot-digest";
 import { analyzePendingDeals } from "./brain/analyze-deal";
+import { archiveStaleDrafts } from "./documents/create-link";
 import { readPendingDocuments } from "./documents/read-pages";
 import { refreshEngagementScore } from "./engagement/refresh-score";
 import { dispatchDueFollowups } from "./followups/dispatch";
@@ -55,5 +56,6 @@ export async function runClosingTick(now = new Date()) {
   // Scores first: the analysis reads them
   const dealsAnalyzed = await analyzePendingDeals(now, { includeQuiet: true });
   const digests = await sendAutopilotDigests(now);
-  return { antiGhostingQueued, regenerated: stale.length, dispatched, rescored, documentsRead, dealsAnalyzed, digests };
+  const draftsArchived = await archiveStaleDrafts(now);
+  return { antiGhostingQueued, regenerated: stale.length, dispatched, rescored, documentsRead, dealsAnalyzed, digests, draftsArchived };
 }

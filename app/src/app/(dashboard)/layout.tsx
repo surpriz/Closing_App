@@ -17,7 +17,7 @@ export default async function DashboardLayout({
 
   const [links, documents] = await Promise.all([
     prisma.link.findMany({
-      where: { organizationId: organization.id, archivedAt: null },
+      where: { organizationId: organization.id, archivedAt: null, draftAt: null },
       orderBy: { updatedAt: "desc" },
       take: 300,
       select: { ...linkLabelSelect, document: { select: { name: true } } },

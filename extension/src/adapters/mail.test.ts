@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { composeRoot, findAttachmentRemover, firstRecipient, insertionAnchor, press, sameFileName } from "./mail";
+import { composeRoot, findAttachmentRemover, firstRecipient, insertionAnchor, isSendControl, press, sameFileName } from "./mail";
 
 // Simplified from Gmail and Outlook web compose markup. The real markup must be
 // checked by hand after any breakage: see extension/README.md.
@@ -159,5 +159,24 @@ describe("attachment removal", () => {
     remover.addEventListener("mousedown", () => remover.closest(".dL")!.remove());
     press(remover);
     expect(findAttachmentRemover(root, body, "2026-09-AD.pdf")).toBeNull();
+  });
+});
+
+describe("isSendControl", () => {
+  it("recognises Gmail and Outlook send buttons", () => {
+    document.body.innerHTML = `<div id="root"><div id="body" contenteditable="true" role="textbox"><button id="in-body">Envoyer</button></div>
+      <div role="button" class="T-I aoO" data-tooltip="Envoyer ‪(⌘Entrée)‬" id="gmail"><span id="gmail-label">Envoyer</span></div>
+      <button aria-label="Send" id="outlook"></button>
+      <div role="button" aria-label="Plus d'options d'envoi" id="more"></div>
+      <div role="button" aria-label="Supprimer le brouillon" id="discard"></div></div>`;
+    const root = document.getElementById("root")!;
+    const body = document.getElementById("body")!;
+    const is = (id: string) => isSendControl(document.getElementById(id), root, body);
+    expect(is("gmail")).toBe(true);
+    expect(is("gmail-label")).toBe(true);
+    expect(is("outlook")).toBe(true);
+    expect(is("more")).toBe(false);
+    expect(is("discard")).toBe(false);
+    expect(is("in-body")).toBe(false);
   });
 });

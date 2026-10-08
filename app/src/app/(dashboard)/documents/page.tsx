@@ -33,7 +33,7 @@ export default async function DocumentsPage() {
   const documents = await prisma.document.findMany({
     where: { organizationId: organization.id, archivedAt: null },
     orderBy: { createdAt: "desc" },
-    include: { _count: { select: { links: { where: { archivedAt: null } } } } },
+    include: { _count: { select: { links: { where: { archivedAt: null, draftAt: null } } } } },
   });
   const documentIds = documents.map((d) => d.id);
 

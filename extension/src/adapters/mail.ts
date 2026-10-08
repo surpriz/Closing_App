@@ -150,3 +150,18 @@ export function press(el: HTMLElement) {
   el.dispatchEvent(new MouseEvent("mouseup", options));
   el.dispatchEvent(new MouseEvent("click", options));
 }
+
+const SEND_LABEL = /^(envoyer|send|senden|enviar|invia|verzenden|wy\u015blij)\b/i;
+
+// The Send button of this compose (Gmail: "Envoyer ‪(⌘Entrée)‬", Outlook: "Envoyer"), or one of its children
+export function isSendControl(target: EventTarget | null, root: HTMLElement, body: HTMLElement) {
+  let el = target instanceof Element ? target : null;
+  for (let i = 0; el && el !== root && i < 4; i++, el = el.parentElement) {
+    if (body.contains(el)) return false;
+    if (!el.matches('[role="button"], button')) continue;
+    if (el.getAttribute("data-testid") === "ComposeSendButton" || el.classList.contains("aoO")) return true;
+    const label = (el.getAttribute("aria-label") || el.getAttribute("data-tooltip") || el.getAttribute("title") || el.textContent || "").trim();
+    return SEND_LABEL.test(label);
+  }
+  return false;
+}

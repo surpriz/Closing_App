@@ -25,7 +25,7 @@ const COHORT_TAKE = 2000;
 /** Deals still in play, with what the "À traiter" list and the temperature bar need. */
 export async function getOpenDeals(organizationId: string) {
   const deals = await prisma.link.findMany({
-    where: { organizationId, archivedAt: null, dealStatus: { in: ["OPEN", "CHANGE_REQUESTED"] } },
+    where: { organizationId, archivedAt: null, draftAt: null, dealStatus: { in: ["OPEN", "CHANGE_REQUESTED"] } },
     orderBy: { createdAt: "desc" },
     take: DEALS_TAKE,
     select: {
@@ -86,6 +86,7 @@ export async function getFunnelFacts(organizationId: string, since: Date | null)
     where: {
       organizationId,
       archivedAt: null,
+      draftAt: null,
       ...(since && { OR: [{ sentAt: { gte: since } }, { sentAt: null, createdAt: { gte: since } }] }),
     },
     orderBy: { createdAt: "desc" },

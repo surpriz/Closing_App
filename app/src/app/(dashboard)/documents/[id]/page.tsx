@@ -56,7 +56,7 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
         orderBy: { pageNumber: "asc" },
       },
       links: {
-        where: { archivedAt: null },
+        where: { archivedAt: null, draftAt: null },
         orderBy: { createdAt: "desc" },
         include: {
           prospects: { select: { email: true, name: true, company: true }, take: 1 },
