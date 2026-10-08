@@ -22,10 +22,25 @@ const DEALS_TAKE = 200;
 /** Cohort size the funnel is computed on; beyond that it undercounts. */
 const COHORT_TAKE = 2000;
 
+/** One seller's deals: the links they created, plus orphan links for the workspace owner. */
+export type SellerScope = { userId: string; isOwner: boolean };
+
+export function sellerLinks(scope: SellerScope) {
+  return scope.isOwner
+    ? { OR: [{ createdById: scope.userId }, { createdById: null }] }
+    : { createdById: scope.userId };
+}
+
 /** Deals still in play, with what the "À traiter" list and the temperature bar need. */
-export async function getOpenDeals(organizationId: string) {
+export async function getOpenDeals(organizationId: string, scope: { owner?: SellerScope } = {}) {
   const deals = await prisma.link.findMany({
-    where: { organizationId, archivedAt: null, draftAt: null, dealStatus: { in: ["OPEN", "CHANGE_REQUESTED"] } },
+    where: {
+      organizationId,
+      archivedAt: null,
+      draftAt: null,
+      dealStatus: { in: ["OPEN", "CHANGE_REQUESTED"] },
+      ...(scope.owner && sellerLinks(scope.owner)),
+    },
     orderBy: { createdAt: "desc" },
     take: DEALS_TAKE,
     select: {
@@ -156,7 +171,7 @@ export async function getFeedSource(organizationId: string, since: Date | null):
       },
     }),
     prisma.sellerAlert.findMany({
-      where: { ...ofWorkspace, ...(since && { createdAt: { gte: since } }) },
+      where: { ...ofWorkspace, type: { notIn: ["PROSPECT_VALIDATED", "CHANGE_REQUESTED"] }, ...(since && { createdAt: { gte: since } }) },
       orderBy: { createdAt: "desc" },
       take: FEED_TAKE,
       select: { id: true, createdAt: true, type: true, payload: true, link: { select: linkLabelSelect } },

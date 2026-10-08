@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronRight } from "lucide-react";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { saveWorkspaceSettings, type SettingsState } from "@/app/(dashboard)/settings/actions";
@@ -32,8 +32,19 @@ type Props = {
     /** Document the offer was guessed from, until the seller saves. */
     offerInferredFrom: string | null;
   };
+  /** The signed-in seller's own notification settings. */
+  notifications: {
+    emailActions: boolean;
+    emailCallMoments: boolean;
+    extensionCallMoments: boolean;
+    morningDigest: boolean;
+    digestHour: number;
+    extensionConnected: boolean;
+  };
   providers: { email: boolean; ai: string | null };
 };
+
+const DIGEST_HOURS = [6, 7, 8, 9, 10];
 
 function Section({
   title,
@@ -100,12 +111,18 @@ function ChannelBox({
   );
 }
 
-export function SettingsForm({ initial, providers }: Props) {
+export function SettingsForm({ initial, notifications, providers }: Props) {
   const [state, formAction, pending] = useActionState<SettingsState, FormData>(saveWorkspaceSettings, null);
   // Tied to the saved version: a successful save changes it, which clears the flag.
   const [dirtyVersion, setDirtyVersion] = useState<string | null>(null);
   const dirty = dirtyVersion === initial.version;
   const markDirty = () => setDirtyVersion(initial.version);
+
+  // The seller's time zone, for the morning digest hour
+  const timezoneRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (timezoneRef.current) timezoneRef.current.value = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  }, []);
 
   useEffect(() => {
     if (state?.ok) toast.success("Réglages enregistrés");
@@ -114,6 +131,7 @@ export function SettingsForm({ initial, providers }: Props) {
 
   return (
     <form action={formAction} onInput={markDirty} onChange={markDirty} className="max-w-2xl">
+      <input ref={timezoneRef} type="hidden" name="timezone" defaultValue="" />
       {/* Remount the fields after each save so uncontrolled inputs show stored values */}
       <div key={initial.version} className="space-y-12">
         <Section
@@ -261,18 +279,65 @@ export function SettingsForm({ initial, providers }: Props) {
         <Section
           id="alertes"
           title="Être prévenu"
-          description="Quand un prospect se réveille, lit à plusieurs, ou qu'une relance attend votre accord."
+          description="Seulement quand ça vaut le coup : un prospect qui répond, un bon moment pour appeler, et un point chaque matin. Ces réglages ne concernent que vous."
         >
-          <Row>
-            <span className="mb-1 block">Prévenir par</span>
-            <div className="flex flex-wrap gap-x-6 gap-y-2">
+          <Row hint="Validation ou demande d'ajustement : c'est rare, et le prospect attend votre retour.">
+            <ChannelBox
+              name="emailActions"
+              value="on"
+              label="Un email dès qu'un prospect valide ou demande un ajustement"
+              defaultChecked={notifications.emailActions}
+              onChange={markDirty}
+            />
+          </Row>
+          <Row
+            hint={
+              notifications.extensionConnected
+                ? "Extension connectée. Une notification arrive quand un prospect ouvre votre proposition pour la première fois, revient après un silence, s'attarde sur les tarifs ou la lit à plusieurs. Jamais le soir ni le week-end, 4 par heure au plus."
+                : "Extension non connectée : installez-la plus bas pour recevoir une alerte pendant la lecture."
+            }
+          >
+            <span className="mb-1 block">Quand c&apos;est le moment d&apos;appeler</span>
+            <div className="flex flex-col gap-1.5">
               <ChannelBox
-                name="alertChannels"
-                value="EMAIL"
-                label="Email"
-                defaultChecked={initial.alertChannels.includes("EMAIL")}
+                name="extensionCallMoments"
+                value="on"
+                label="Notification de l'extension Chrome"
+                defaultChecked={notifications.extensionCallMoments}
                 onChange={markDirty}
               />
+              <ChannelBox
+                name="emailCallMoments"
+                value="on"
+                label="Un email aussi"
+                note="si l'extension n'est pas ouverte"
+                defaultChecked={notifications.emailCallMoments}
+                onChange={markDirty}
+              />
+            </div>
+          </Row>
+          <Row hint="Qui recontacter aujourd'hui et pourquoi, puis les réponses et lectures de la veille. Du lundi au vendredi, rien s'il n'y a rien à dire.">
+            <label className="flex cursor-pointer items-center gap-2.5">
+              <Checkbox name="morningDigest" value="on" defaultChecked={notifications.morningDigest} onCheckedChange={markDirty} />
+              <span>
+                Un compte rendu chaque matin à
+                <select
+                  name="digestHour"
+                  defaultValue={String(notifications.digestHour)}
+                  className="mx-1.5 h-8 rounded-md border border-input bg-transparent px-2 tabular-nums"
+                >
+                  {DIGEST_HOURS.map((hour) => (
+                    <option key={hour} value={hour}>
+                      {hour} h
+                    </option>
+                  ))}
+                </select>
+              </span>
+            </label>
+          </Row>
+          <Row>
+            <span className="mb-1 block">Pour toute l&apos;équipe, prévenir aussi sur</span>
+            <div className="flex flex-wrap gap-x-6 gap-y-2">
               <ChannelBox
                 name="alertChannels"
                 value="SLACK"
@@ -290,13 +355,13 @@ export function SettingsForm({ initial, providers }: Props) {
             </div>
           </Row>
           <div className="space-y-1.5 px-5 py-4">
-            <Label htmlFor="alertEmail">Envoyer les alertes à</Label>
+            <Label htmlFor="alertEmail">Mettre en copie des emails d&apos;alerte</Label>
             <Input
               id="alertEmail"
               name="alertEmail"
               type="email"
               defaultValue={initial.alertEmail}
-              placeholder="Par défaut : la personne qui a créé le lien"
+              placeholder="Facultatif, ex. direction commerciale"
             />
           </div>
           <details className="group px-5 py-4">

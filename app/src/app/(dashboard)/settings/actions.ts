@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { isSafeOutboundUrl } from "@/lib/closing/channels/webhooks";
+import { upsertSellerPrefs } from "@/lib/closing/notify/preferences";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
 import { encryptSecret } from "@/lib/crypto";
 import { prisma } from "@/lib/db";
@@ -48,8 +49,31 @@ const settingsSchema = z.object({
     .pipe(z.number().int().min(1).max(730).nullable()),
 });
 
+// The signed-in seller's own notifications, saved with the same form
+const prefsSchema = z.object({
+  emailActions: z.boolean(),
+  emailCallMoments: z.boolean(),
+  extensionCallMoments: z.boolean(),
+  morningDigest: z.boolean(),
+  digestHour: z.coerce.number().int().min(0).max(23),
+  timezone: z
+    .string()
+    .max(64)
+    .refine((tz) => tz === "" || isValidTimezone(tz))
+    .transform((tz) => tz || undefined),
+});
+
+function isValidTimezone(timeZone: string) {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function saveWorkspaceSettings(_prev: SettingsState, formData: FormData): Promise<SettingsState> {
-  const { organization } = await requireWorkspace();
+  const { user, organization } = await requireWorkspace();
   const current = await getWorkspaceSettings(organization.id);
 
   const parsed = settingsSchema.safeParse({
@@ -71,6 +95,15 @@ export async function saveWorkspaceSettings(_prev: SettingsState, formData: Form
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Paramètres invalides." };
   }
+  const prefs = prefsSchema.safeParse({
+    emailActions: formData.get("emailActions") === "on",
+    emailCallMoments: formData.get("emailCallMoments") === "on",
+    extensionCallMoments: formData.get("extensionCallMoments") === "on",
+    morningDigest: formData.get("morningDigest") === "on",
+    digestHour: String(formData.get("digestHour") ?? "8"),
+    timezone: String(formData.get("timezone") ?? ""),
+  });
+  if (!prefs.success) return { error: "Réglages de notification invalides." };
 
   const { slackWebhookUrl, removeSlack, ...values } = parsed.data;
 
@@ -87,6 +120,7 @@ export async function saveWorkspaceSettings(_prev: SettingsState, formData: Form
     // Saving means the seller has seen the offer: it is no longer a guess
     data: { ...values, slackWebhookUrl: slack, webhookSecret, offerInferredFrom: null },
   });
+  await upsertSellerPrefs(user.id, organization.id, prefs.data);
   if (current.autonomy === "AUTOPILOT" && values.autonomy === "COPILOT") {
     await backToApproval(organization.id);
   }

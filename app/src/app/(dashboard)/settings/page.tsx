@@ -4,6 +4,7 @@ import { ExtensionTokens } from "@/components/dashboard/extension-tokens";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { SettingsForm } from "@/components/dashboard/settings-form";
 import { getLanguageModel } from "@/lib/closing/ai/provider";
+import { getSellerPrefs } from "@/lib/closing/notify/preferences";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
 import { decryptSecret } from "@/lib/crypto";
 import { prisma } from "@/lib/db";
@@ -31,13 +32,14 @@ const SECTIONS = [
 
 export default async function SettingsPage() {
   const { user, organization } = await requireWorkspace();
-  const [settings, tokens] = await Promise.all([
+  const [settings, tokens, prefs] = await Promise.all([
     getWorkspaceSettings(organization.id),
     prisma.extensionToken.findMany({
       where: { userId: user.id, organizationId: organization.id, revokedAt: null },
       orderBy: { createdAt: "desc" },
       select: { id: true, label: true, hint: true, createdAt: true, lastUsedAt: true },
     }),
+    getSellerPrefs(user.id, organization.id),
   ]);
   const llm = getLanguageModel("followup");
 
@@ -79,6 +81,14 @@ export default async function SettingsPage() {
               commonObjections: settings.commonObjections ?? "",
               avgSalesCycleDays: settings.avgSalesCycleDays?.toString() ?? "",
               offerInferredFrom: settings.offerInferredFrom,
+            }}
+            notifications={{
+              emailActions: prefs.emailActions,
+              emailCallMoments: prefs.emailCallMoments,
+              extensionCallMoments: prefs.extensionCallMoments,
+              morningDigest: prefs.morningDigest,
+              digestHour: prefs.digestHour,
+              extensionConnected: tokens.length > 0,
             }}
             providers={{
               email: isEmailConfigured(),

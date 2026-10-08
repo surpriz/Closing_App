@@ -6,13 +6,7 @@ import { AutopilotBanner } from "@/components/dashboard/autopilot-banner";
 import { NewLinkDialog } from "@/components/dashboard/create-link-form";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { FirstSteps } from "@/components/dashboard/first-steps";
-import {
-  CHANNEL_LABELS,
-  DEAL_STATUS_LABELS,
-  INSIGHT_ACTION_LABELS,
-  TIER_LABELS,
-  TIMING_LABELS,
-} from "@/components/dashboard/labels";
+import { CHANNEL_LABELS, DEAL_STATUS_LABELS, TIER_LABELS } from "@/components/dashboard/labels";
 import { SectionTitle } from "@/components/dashboard/page-header";
 import { ActivityFeed } from "@/components/dashboard/today/activity-feed";
 import { FunnelStrip, HeatDistributionBar } from "@/components/dashboard/today/funnel";
@@ -23,10 +17,10 @@ import { buildTodayHeadline } from "@/components/dashboard/today-headline";
 import { UploadButton, UploadDropzone } from "@/components/dashboard/upload-dropzone";
 import { getAppOrigin } from "@/lib/app-origin";
 import { documentUploadPrefix } from "@/lib/blob";
+import { dealAction } from "@/lib/closing/dashboard/deal-action";
 import { buildFeed } from "@/lib/closing/dashboard/feed";
 import { buildFunnel, buildHeatDistribution } from "@/lib/closing/dashboard/funnel";
 import { prospectLabel } from "@/lib/closing/dashboard/labels";
-import { computeNextAction, withAiAdvice } from "@/lib/closing/dashboard/next-action";
 import { parsePeriod, periodStart, PERIODS } from "@/lib/closing/dashboard/period";
 import { compareDeals } from "@/lib/closing/dashboard/rank";
 import {
@@ -291,8 +285,7 @@ function toTodoRow(
   { now, readingNow, origin }: { now: Date; readingNow: boolean; origin: string },
 ): TodoRow {
   const prospect = deal.prospects[0];
-  const ai = currentInsight(deal);
-  const tier = deal.opened ? (deal.engagementScore?.tier ?? null) : null;
+  const { action, tier, score, insightHeadline, aiPriority } = dealAction(deal, now, readingNow);
 
   return {
     id: deal.id,
@@ -303,30 +296,12 @@ function toTodoRow(
     contact: prospect ? (prospect.name ?? prospect.email) : null,
     documentName: deal.document.name,
     tier,
-    score: deal.opened ? (deal.engagementScore?.score ?? 0) : 0,
+    score,
     state: dealState(deal.dealStatus, deal.opened, tier),
     lastActivityAt: deal.lastActivityAt,
-    action: withAiAdvice(
-      computeNextAction({
-      now,
-      dealStatus: deal.dealStatus,
-      readingNow,
-      opened: deal.opened,
-      tier,
-      pricingFocus: deal.pricingFocus,
-      lastActivityAt: deal.lastActivityAt,
-      sentAt: deal.sentAt ?? deal.createdAt,
-      followupsEnabled: deal.followupsEnabled,
-      nextFollowup: deal.followups[0] ?? null,
-      draftToReview: deal.draftCount > 0,
-      lastSellerContactAt: deal.lastSellerContactAt,
-      snoozedUntil: deal.snoozedUntil,
-      }),
-      ai.advice,
-      { action: INSIGHT_ACTION_LABELS, timing: TIMING_LABELS },
-    ),
-    insightHeadline: ai.insightHeadline,
-    aiPriority: ai.aiPriority,
+    action,
+    insightHeadline,
+    aiPriority,
     url: `${origin}/v/${deal.slug}`,
   };
 }
@@ -337,14 +312,4 @@ function dealState(dealStatus: TodoRow["dealStatus"], opened: boolean, tier: Tod
   return tier ? TIER_LABELS[tier] : "Ouvert";
 }
 
-// An analysis older than the last reading no longer describes the deal
-function currentInsight(deal: OpenDeal) {
-  const current = deal.insight && (!deal.lastActivityAt || deal.insight.createdAt >= deal.lastActivityAt);
-  const action = deal.insight?.recommendedAction as { type: string; timing: string } | undefined;
-  return {
-    insightHeadline: current ? deal.insight!.headline : null,
-    aiPriority: current ? deal.insight!.priority : null,
-    advice: current && action ? { type: action.type, timing: action.timing, priority: deal.insight!.priority } : null,
-  };
-}
 
