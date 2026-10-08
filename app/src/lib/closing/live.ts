@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 
 import { LIVE_READING_WINDOW_MS } from "./constants";
 import { linkLabelSelect, prospectLabel } from "./dashboard/labels";
+import { sellerLinks, type SellerScope } from "./dashboard/queries";
 import { isReadingNow } from "./tracking/live-status";
 
 export type LiveReader = {
@@ -79,7 +80,12 @@ export type WorkspaceLiveState = {
  * 10 s flush, and refreshing the whole dashboard that often is not worth it.
  * Deal changes made by the seller already revalidate the page.
  */
-export async function getWorkspaceLiveState(organizationId: string, now = new Date()): Promise<WorkspaceLiveState> {
+export async function getWorkspaceLiveState(
+  organizationId: string,
+  now = new Date(),
+  /** Only this seller's links (the extension). */
+  owner?: SellerScope,
+): Promise<WorkspaceLiveState> {
   const since = new Date(now.getTime() - LIVE_READING_WINDOW_MS);
   const ofWorkspace = { link: { organizationId } };
   const [recent, sessions, followup, alert, action] = await Promise.all([
@@ -88,7 +94,7 @@ export async function getWorkspaceLiveState(organizationId: string, now = new Da
         isBot: false,
         lastSeenAt: { gte: since },
         leftAt: null,
-        link: { organizationId, archivedAt: null },
+        link: { organizationId, archivedAt: null, ...(owner && sellerLinks(owner)) },
       },
       orderBy: { lastSeenAt: "desc" },
       select: { ...readerSelect, link: { select: linkLabelSelect } },

@@ -3,6 +3,7 @@ import { browser } from "wxt/browser";
 import { API_ORIGIN } from "@/lib/config";
 import { ask, type Account } from "@/lib/messages";
 import { getLinkStyle, setLinkStyle, type LinkStyle } from "@/lib/preferences";
+import { readerLine, type PulseReader } from "@/lib/pulse";
 import { h } from "@/ui/dom";
 
 const app = document.getElementById("app")!;
@@ -40,6 +41,44 @@ async function linkStyleField() {
   );
 }
 
+// Who reads the seller's proposals right now (last pulse, at most 30 s old)
+async function readingNow() {
+  const readers = await ask<PulseReader[]>({ type: "readers" }).catch(() => []);
+  if (!readers.length) return h("p", { class: "muted" }, "Personne ne lit vos propositions en ce moment.");
+  return h(
+    "fieldset",
+    {},
+    h("legend", {}, "En train de lire"),
+    ...readers.map((reader) =>
+      h(
+        "button",
+        { class: "reader", onclick: () => void browser.tabs.create({ url: `${API_ORIGIN}/links/${reader.linkId}` }) },
+        h("span", { class: "dot" }),
+        readerLine(reader),
+      ),
+    ),
+  );
+}
+
+async function callMomentsField() {
+  const enabled = await ask<boolean>({ type: "callMoments" }).catch(() => true);
+  return h(
+    "label",
+    { class: "choice" },
+    h("input", {
+      type: "checkbox",
+      checked: enabled,
+      onchange: (event: Event) => void ask({ type: "callMoments", enabled: (event.target as HTMLInputElement).checked }),
+    }),
+    h(
+      "span",
+      {},
+      h("strong", {}, "Me prévenir quand c'est le moment d'appeler"),
+      h("span", { class: "muted" }, "Première ouverture, retour après un silence, tarifs, lecture à plusieurs"),
+    ),
+  );
+}
+
 async function show() {
   render(h("p", { class: "muted" }, "Chargement…"));
   let account: Account | null = null;
@@ -63,9 +102,12 @@ async function show() {
     return;
   }
 
+  const notifications = account.notificationsEnabled !== false;
   render(
     h("p", {}, `Connecté : ${account.user.email}`),
     h("p", { class: "muted" }, `Espace ${account.organization.name}`),
+    notifications ? await readingNow() : null,
+    notifications ? await callMomentsField() : null,
     await linkStyleField(),
     h(
       "div",

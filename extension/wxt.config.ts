@@ -9,8 +9,9 @@ export default defineConfig({
     const devKey = process.env.WXT_MANIFEST_KEY;
     return {
       name: mode === "production" ? "Clozer" : `Clozer (${mode})`,
-      description: "Remplacez une pièce jointe PDF par un lien Clozer dans Gmail et Outlook.",
-      permissions: ["storage"],
+      description: "Remplacez une pièce jointe PDF par un lien Clozer dans Gmail et Outlook, et sachez quand un prospect lit votre proposition.",
+      // notifications + alarms + idle: "your prospect is reading right now", polled every 30 s
+      permissions: ["storage", "notifications", "alarms", "idle"],
       host_permissions: [`${apiOrigin}/*`],
       externally_connectable: { matches: [`${apiOrigin}/extension/connect*`] },
       ...(mode !== "production" && devKey ? { key: devKey } : {}),

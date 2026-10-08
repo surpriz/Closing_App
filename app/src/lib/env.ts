@@ -42,6 +42,7 @@ const serverEnvSchema = z.object({
   EXTENSION_IDS: z.string().optional(),
   EXTENSION_MIN_VERSION: z.string().optional(),
   EXTENSION_DISABLED_HOSTS: z.string().optional(),
+  EXTENSION_NOTIFICATIONS_DISABLED: z.enum(["true", "false"]).optional(),
   // Time travel and manual engine runs; ignored in production
   ENABLE_TEST_TOOLS: z.enum(["true", "false"]).optional(),
 });

@@ -13,6 +13,8 @@ export type Account = {
   appOrigin: string;
   minVersion: string | null;
   disabledHosts: string[];
+  /** Server kill switch for the badge and notifications. */
+  notificationsEnabled?: boolean;
 };
 
 // Content script / popup → background (one-shot)
@@ -25,7 +27,10 @@ export type Request =
   | { type: "document"; id: string }
   | { type: "link"; documentId: string; recipient: Recipient | null; source: MailHost }
   // The email holding this link was sent: the draft becomes a deal
-  | { type: "sent"; linkId: string; recipient: Recipient | null };
+  | { type: "sent"; linkId: string; recipient: Recipient | null }
+  // Popup: who is reading now, and the "notify me" switch
+  | { type: "readers" }
+  | { type: "callMoments"; enabled?: boolean };
 
 // MAIN-world capture script → isolated content script (window.postMessage)
 export const CAPTURE_SOURCE = "clozer-capture";

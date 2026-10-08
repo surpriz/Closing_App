@@ -42,3 +42,8 @@ legend { padding: 0 4px; color: var(--muted); font-size: 12px; }
 .choice input { margin: 2px 0 0; accent-color: var(--fg); }
 .choice > span { display: grid; gap: 1px; }
 .choice .muted { font-size: 12px; }
+.reader { display: flex; align-items: center; gap: 8px; width: 100%; padding: 6px 8px; border: 0; text-align: left; font-weight: 400; }
+.reader:hover { background: color-mix(in oklch, var(--fg) 6%, transparent); }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: oklch(0.62 0.17 45); flex: none; animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .dot { animation: none; } }

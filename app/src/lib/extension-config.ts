@@ -15,5 +15,6 @@ export function extensionRemoteConfig() {
   return {
     minVersion: env.EXTENSION_MIN_VERSION ?? null,
     disabledHosts: list(env.EXTENSION_DISABLED_HOSTS),
+    notificationsEnabled: env.EXTENSION_NOTIFICATIONS_DISABLED !== "true",
   };
 }

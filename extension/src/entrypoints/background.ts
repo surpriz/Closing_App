@@ -16,6 +16,16 @@ import {
   type UploadOut,
 } from "@/lib/messages";
 import { safeFileName } from "@/lib/pdf";
+import {
+  CALL_MOMENTS_KEY,
+  getCallMoments,
+  lastReaders,
+  listenToNotifications,
+  pulse,
+  PULSE_ALARM,
+  startPulse,
+  stopPulse,
+} from "@/lib/pulse-runner";
 
 const NONCE_KEY = "connectNonce";
 
@@ -40,7 +50,17 @@ async function handle(request: Request): Promise<unknown> {
     case "disconnect":
       await api("/api/ext/token", { method: "DELETE" }).catch(() => undefined);
       await setToken(null);
+      await stopPulse();
       return null;
+    case "readers":
+      return lastReaders();
+    case "callMoments": {
+      if (request.enabled === undefined) return getCallMoments();
+      await browser.storage.local.set({ [CALL_MOMENTS_KEY]: request.enabled });
+      // Same switch as in the app settings: stops the email fallback too
+      await api("/api/ext/preferences", { method: "PATCH", body: { extensionCallMoments: request.enabled } }).catch(() => undefined);
+      return request.enabled;
+    }
     case "documents": {
       const q = request.q ? `?q=${encodeURIComponent(request.q)}` : "";
       return (await api<{ documents: DocumentSummary[] }>(`/api/ext/documents${q}`)).documents;
@@ -141,6 +161,7 @@ export default defineBackground(() => {
       if (!nonce || stored[NONCE_KEY] !== nonce) return sendResponse({ ok: false });
       await browser.storage.session.remove(NONCE_KEY);
       await setToken(token);
+      await startPulse();
       sendResponse({ ok: true });
     });
     return true;
@@ -149,4 +170,12 @@ export default defineBackground(() => {
   browser.runtime.onConnect.addListener((port) => {
     if (port.name === UPLOAD_PORT) receiveUpload(port);
   });
+
+  // "Reading now": alarms survive the service worker going to sleep
+  browser.alarms.onAlarm.addListener((alarm) => {
+    if (alarm.name === PULSE_ALARM) void pulse();
+  });
+  browser.runtime.onStartup.addListener(() => void startPulse());
+  browser.runtime.onInstalled.addListener(() => void startPulse());
+  listenToNotifications();
 });
