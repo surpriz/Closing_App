@@ -1,6 +1,16 @@
 import { describe, expect, it } from "vitest";
 
-import { alertsToShow, badgeText, pruneSnoozes, readerLine, rememberSeen, type PulseAlert, type PulseReader } from "./pulse";
+import {
+  alertsToShow,
+  badgeText,
+  bannersToShow,
+  keepMailAlerts,
+  pruneSnoozes,
+  readerLine,
+  rememberSeen,
+  type PulseAlert,
+  type PulseReader,
+} from "./pulse";
 
 const reader = (linkId: string, viewId = linkId): PulseReader => ({
   viewId,
@@ -62,5 +72,24 @@ describe("helpers", () => {
   it("names the reader and the page", () => {
     expect(readerLine(reader("l1"))).toBe("Acme · Léa Martin, page 4");
     expect(readerLine({ ...reader("l1"), name: null, currentPage: null })).toBe("Acme");
+  });
+});
+
+describe("mail banners", () => {
+  const MIN = 60_000;
+
+  it("keeps the newest three, without the dismissed ones", () => {
+    const alerts = keepMailAlerts([], ["a", "b", "c", "d"].map((id) => alert(id, "CALL")), 0);
+    expect(bannersToShow(alerts, ["d"], MIN).map((a) => a.id)).toEqual(["c", "b", "a"]);
+  });
+
+  it("drops a call moment after a few minutes, keeps a validation", () => {
+    const alerts = keepMailAlerts([], [alert("call", "CALL"), alert("won", "ACTION")], 0);
+    expect(bannersToShow(alerts, [], 10 * MIN).map((a) => a.id)).toEqual(["won"]);
+  });
+
+  it("forgets alerts older than a day", () => {
+    const old = keepMailAlerts([], [alert("won", "ACTION")], 0);
+    expect(keepMailAlerts(old, [alert("new", "CALL")], 25 * 60 * MIN).map((a) => a.id)).toEqual(["new"]);
   });
 });

@@ -28,8 +28,10 @@ import {
 } from "@/lib/messages";
 import { hasPdfMagic, looksLikePdf } from "@/lib/pdf";
 import { getLinkStyle } from "@/lib/preferences";
+import { bannersToShow, MAIL_ALERTS_KEY, MAIL_DISMISSED_KEY, type MailAlert } from "@/lib/pulse";
 import { sha256Hex } from "@/lib/sha256";
 import { isOlder } from "@/lib/version";
+import { renderBanners } from "@/ui/banner";
 import { ComposeWidget, removeLayer } from "@/ui/widget";
 
 type Compose = {
@@ -122,8 +124,31 @@ export default defineContentScript({
       return;
     }
 
+    // "Reading now" banners: same alerts as the Chrome notifications, shown in
+    // the page so they work even when the OS blocks Chrome's notifications
+    const showBanners = async () => {
+      if (!account || account.notificationsEnabled === false) return renderBanners([], bannerHandlers);
+      const stored = await browser.storage.local.get([MAIL_ALERTS_KEY, MAIL_DISMISSED_KEY]);
+      const alerts = (stored[MAIL_ALERTS_KEY] as MailAlert[] | undefined) ?? [];
+      const dismissed = (stored[MAIL_DISMISSED_KEY] as string[] | undefined) ?? [];
+      renderBanners(bannersToShow(alerts, dismissed, Date.now()), bannerHandlers);
+    };
+    const bannerHandlers = {
+      open: (alert: MailAlert) => {
+        void ask({ type: "openUrl", url: alert.url });
+        void ask({ type: "dismissBanner", alertId: alert.id });
+      },
+      later: (alert: MailAlert) => void ask({ type: "dismissBanner", alertId: alert.id, snoozeLinkId: alert.linkId }),
+      close: (alert: MailAlert) => void ask({ type: "dismissBanner", alertId: alert.id }),
+    };
+    void showBanners();
+    // Call moments go stale after a few minutes even without a new alert
+    const bannerTimer = setInterval(() => void showBanners(), 60_000);
+
     const onStorage = (changes: Record<string, unknown>, area: string) => {
-      if (area === "local" && "token" in changes) void loadAccount();
+      if (area !== "local") return;
+      if ("token" in changes) void loadAccount().then(showBanners);
+      if (MAIL_ALERTS_KEY in changes || MAIL_DISMISSED_KEY in changes) void showBanners();
     };
     browser.storage.onChanged.addListener(onStorage);
 
@@ -131,6 +156,7 @@ export default defineContentScript({
     let lastCompose: Compose | null = null;
 
     ctx.onInvalidated(() => {
+      clearInterval(bannerTimer);
       browser.storage.onChanged.removeListener(onStorage);
       composes.clear();
       removeLayer();

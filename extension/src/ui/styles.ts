@@ -41,7 +41,25 @@ li button {
 li button:hover, li button:focus-visible { background: oklch(0.95 0.008 70); outline: none; }
 .bar { height: 4px; border-radius: 999px; background: oklch(0.93 0.008 70); margin-top: 10px; overflow: hidden; }
 .bar > span { display: block; height: 100%; background: oklch(0.65 0.15 45); transition: width 150ms; }
+/* "Reading now" banners, top right of Gmail / Outlook */
+.banners { position: fixed; top: 72px; right: 16px; display: grid; gap: 8px; width: 340px; max-width: calc(100vw - 32px); pointer-events: none; }
+.banner {
+  pointer-events: auto; display: grid; grid-template-columns: auto 1fr auto; gap: 4px 10px; align-items: start;
+  background: oklch(0.99 0.004 80); color: oklch(0.2 0.01 60); border: 1px solid oklch(0.9 0.01 60);
+  border-radius: 12px; box-shadow: 0 8px 24px rgb(0 0 0 / 0.14); padding: 12px; font-size: 13px; line-height: 1.4;
+  animation: in 180ms ease-out;
+}
+.banner .dot { width: 8px; height: 8px; margin-top: 5px; border-radius: 50%; background: oklch(0.62 0.17 45); animation: blink 1.6s ease-in-out infinite; }
+.banner.action .dot { background: oklch(0.6 0.13 150); animation: none; }
+.banner .text { min-width: 0; }
+.banner .close { background: transparent; border: 0; color: inherit; opacity: 0.55; cursor: pointer; font-size: 16px; line-height: 1; padding: 0 2px; }
+.banner .close:hover, .banner .close:focus-visible { opacity: 1; outline: none; }
+.banner .row { grid-column: 2 / 4; margin-top: 4px; }
+@keyframes in { from { opacity: 0; transform: translateY(-6px); } }
+@keyframes blink { 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .banner, .banner .dot { animation: none; } }
 @media (prefers-color-scheme: dark) {
+  .banner { background: oklch(0.22 0.01 60); color: oklch(0.95 0.004 80); border-color: oklch(0.32 0.01 60); }
   .panel { background: oklch(0.22 0.01 60); color: oklch(0.95 0.004 80); border-color: oklch(0.32 0.01 60); }
   button.primary { background: oklch(0.95 0.004 80); color: oklch(0.2 0.01 60); }
   button.ghost, input.search { border-color: oklch(0.35 0.01 60); }

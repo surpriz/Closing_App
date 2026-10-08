@@ -6,7 +6,7 @@ import { STYLES } from "./styles";
 let host: HTMLElement | null = null;
 let layer: HTMLElement | null = null;
 
-function getLayer() {
+export function getLayer() {
   if (host?.isConnected && layer) return layer;
   host = document.createElement("clozer-root");
   const shadow = host.attachShadow({ mode: "open" });

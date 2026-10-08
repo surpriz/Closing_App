@@ -1,7 +1,19 @@
 import { browser } from "wxt/browser";
 
 import { api, getToken } from "./api";
-import { alertsToShow, badgeText, pruneSnoozes, rememberSeen, SNOOZE_MS, type Pulse, type PulseReader } from "./pulse";
+import {
+  alertsToShow,
+  badgeText,
+  keepMailAlerts,
+  MAIL_ALERTS_KEY,
+  MAIL_DISMISSED_KEY,
+  pruneSnoozes,
+  rememberSeen,
+  SNOOZE_MS,
+  type MailAlert,
+  type Pulse,
+  type PulseReader,
+} from "./pulse";
 
 // Runs in the background service worker. Every 30 s (the shortest MV3 alarm)
 // it asks the app who is reading and what deserves a notification.
@@ -84,6 +96,12 @@ export async function pulse() {
       });
     }
 
+    if (show.length) {
+      const local = await browser.storage.local.get(MAIL_ALERTS_KEY);
+      const current = (local[MAIL_ALERTS_KEY] as MailAlert[] | undefined) ?? [];
+      await browser.storage.local.set({ [MAIL_ALERTS_KEY]: keepMailAlerts(current, show, now) });
+    }
+
     await browser.storage.session.set({
       [SEEN]: rememberSeen(seen, data.alerts.map((a) => a.id)),
       [NOTICES]: Object.fromEntries(Object.entries(notices).slice(-30)),
@@ -95,6 +113,35 @@ export async function pulse() {
   } finally {
     running = false;
   }
+}
+
+/** "Later" from a notification or a Gmail banner: no call moment on this deal for a while. */
+export async function snoozeDeal(linkId: string) {
+  const stored = await browser.storage.session.get(SNOOZED);
+  const snoozed = (stored[SNOOZED] as Record<string, number> | undefined) ?? {};
+  await browser.storage.session.set({ [SNOOZED]: { ...snoozed, [linkId]: Date.now() + SNOOZE_MS } });
+}
+
+/** Closed in one mail tab: closed in all of them. */
+export async function dismissBanner(alertId: string) {
+  const stored = await browser.storage.local.get(MAIL_DISMISSED_KEY);
+  const dismissed = (stored[MAIL_DISMISSED_KEY] as string[] | undefined) ?? [];
+  await browser.storage.local.set({ [MAIL_DISMISSED_KEY]: rememberSeen(dismissed, [alertId]) });
+}
+
+/**
+ * Shown right after connecting, and from the popup's test button. The first
+ * notification Chrome sends is also when macOS asks whether to allow them.
+ */
+export async function testNotification() {
+  await browser.notifications.create(`${NOTICE_PREFIX}test`, {
+    type: "basic",
+    iconUrl: browser.runtime.getURL("/icon/128.png"),
+    title: "Clozer est prêt",
+    message: "C'est ainsi qu'on vous préviendra quand un prospect lit votre proposition.",
+    priority: 2,
+  });
+  return true;
 }
 
 async function notice(id: string) {
@@ -114,11 +161,7 @@ export function listenToNotifications() {
     if (!id.startsWith(NOTICE_PREFIX)) return;
     const target = await notice(id);
     if (target && index === 0) await browser.tabs.create({ url: target.url });
-    if (target && index === 1) {
-      const stored = await browser.storage.session.get(SNOOZED);
-      const snoozed = (stored[SNOOZED] as Record<string, number> | undefined) ?? {};
-      await browser.storage.session.set({ [SNOOZED]: { ...snoozed, [target.linkId]: Date.now() + SNOOZE_MS } });
-    }
+    if (target && index === 1) await snoozeDeal(target.linkId);
     await browser.notifications.clear(id);
   });
 }

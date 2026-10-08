@@ -66,3 +66,31 @@ export function readerLine(reader: PulseReader) {
   const who = reader.name && reader.name !== reader.label ? `${reader.label} · ${reader.name}` : reader.label;
   return reader.currentPage ? `${who}, page ${reader.currentPage}` : who;
 }
+
+// In-page banners in Gmail / Outlook: they work even when the OS blocks
+// Chrome's notifications. The background keeps the recent alerts in
+// storage.local; every mail tab renders them and hides the dismissed ones.
+
+export const MAIL_ALERTS_KEY = "mailAlerts";
+export const MAIL_DISMISSED_KEY = "mailDismissed";
+
+/** A call moment is stale after this; a prospect action stays until closed. */
+const CALL_BANNER_MS = 5 * 60 * 1000;
+const ACTION_BANNER_MS = 24 * 60 * 60 * 1000;
+const BANNERS_MAX = 3;
+
+export type MailAlert = PulseAlert & { shownAt: number };
+
+export function keepMailAlerts(current: MailAlert[], added: PulseAlert[], now: number) {
+  const fresh = current.filter((alert) => now - alert.shownAt < ACTION_BANNER_MS);
+  return [...fresh, ...added.map((alert) => ({ ...alert, shownAt: now }))].slice(-10);
+}
+
+/** Newest first, at most three, without the dismissed and the stale ones. */
+export function bannersToShow(alerts: MailAlert[], dismissed: string[], now: number) {
+  return alerts
+    .filter((alert) => !dismissed.includes(alert.id))
+    .filter((alert) => now - alert.shownAt < (alert.priority === "ACTION" ? ACTION_BANNER_MS : CALL_BANNER_MS))
+    .reverse()
+    .slice(0, BANNERS_MAX);
+}

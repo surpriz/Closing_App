@@ -47,3 +47,4 @@ legend { padding: 0 4px; color: var(--muted); font-size: 12px; }
 .dot { width: 7px; height: 7px; border-radius: 50%; background: oklch(0.62 0.17 45); flex: none; animation: pulse 1.6s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: .35; } }
 @media (prefers-reduced-motion: reduce) { .dot { animation: none; } }
+button.link { justify-self: start; border: 0; padding: 2px 0 0; font-weight: 400; font-size: 12px; text-decoration: underline; color: var(--muted); }

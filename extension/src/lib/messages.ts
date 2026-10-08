@@ -30,7 +30,11 @@ export type Request =
   | { type: "sent"; linkId: string; recipient: Recipient | null }
   // Popup: who is reading now, and the "notify me" switch
   | { type: "readers" }
-  | { type: "callMoments"; enabled?: boolean };
+  | { type: "callMoments"; enabled?: boolean }
+  | { type: "testNotification" }
+  // Gmail / Outlook banner buttons
+  | { type: "dismissBanner"; alertId: string; snoozeLinkId?: string }
+  | { type: "openUrl"; url: string };
 
 // MAIN-world capture script → isolated content script (window.postMessage)
 export const CAPTURE_SOURCE = "clozer-capture";

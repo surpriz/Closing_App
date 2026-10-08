@@ -18,13 +18,16 @@ import {
 import { safeFileName } from "@/lib/pdf";
 import {
   CALL_MOMENTS_KEY,
+  dismissBanner,
   getCallMoments,
   lastReaders,
   listenToNotifications,
   pulse,
   PULSE_ALARM,
+  snoozeDeal,
   startPulse,
   stopPulse,
+  testNotification,
 } from "@/lib/pulse-runner";
 
 const NONCE_KEY = "connectNonce";
@@ -61,6 +64,17 @@ async function handle(request: Request): Promise<unknown> {
       await api("/api/ext/preferences", { method: "PATCH", body: { extensionCallMoments: request.enabled } }).catch(() => undefined);
       return request.enabled;
     }
+    case "testNotification":
+      return testNotification();
+    case "dismissBanner":
+      if (request.snoozeLinkId) await snoozeDeal(request.snoozeLinkId);
+      await dismissBanner(request.alertId);
+      return null;
+    case "openUrl":
+      // Only our own pages: a content script must not open arbitrary tabs
+      if (new URL(request.url).origin !== API_ORIGIN) return null;
+      await browser.tabs.create({ url: request.url });
+      return null;
     case "documents": {
       const q = request.q ? `?q=${encodeURIComponent(request.q)}` : "";
       return (await api<{ documents: DocumentSummary[] }>(`/api/ext/documents${q}`)).documents;
@@ -155,13 +169,20 @@ export default defineBackground(() => {
   // The app's /extension/connect page hands over the token
   browser.runtime.onMessageExternal.addListener((message: unknown, sender, sendResponse) => {
     const { type, token, nonce } = (message ?? {}) as { type?: string; token?: string; nonce?: string };
-    if (type !== "clozer:connect" || sender.origin !== API_ORIGIN || typeof token !== "string") return;
+    if (sender.origin !== API_ORIGIN) return;
+    // The connect page asks again when the seller did not see the first one
+    if (type === "clozer:test-notification") {
+      void testNotification().then(() => sendResponse({ ok: true }), () => sendResponse({ ok: false }));
+      return true;
+    }
+    if (type !== "clozer:connect" || typeof token !== "string") return;
 
     browser.storage.session.get(NONCE_KEY).then(async (stored) => {
       if (!nonce || stored[NONCE_KEY] !== nonce) return sendResponse({ ok: false });
       await browser.storage.session.remove(NONCE_KEY);
       await setToken(token);
       await startPulse();
+      await testNotification().catch(() => undefined);
       sendResponse({ ok: true });
     });
     return true;

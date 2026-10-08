@@ -75,6 +75,11 @@ async function callMomentsField() {
       {},
       h("strong", {}, "Me prévenir quand c'est le moment d'appeler"),
       h("span", { class: "muted" }, "Première ouverture, retour après un silence, tarifs, lecture à plusieurs"),
+      h(
+        "button",
+        { class: "link", type: "button", onclick: () => void ask({ type: "testNotification" }) },
+        "Tester la notification",
+      ),
     ),
   );
 }

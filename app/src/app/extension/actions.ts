@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 
+import { upsertSellerPrefs } from "@/lib/closing/notify/preferences";
 import { prisma } from "@/lib/db";
 import { generateExtensionToken, hashExtensionToken, tokenHint } from "@/lib/extension-tokens";
 import { requireWorkspace } from "@/lib/session";
@@ -47,5 +48,13 @@ export async function revokeExtensionToken(id: string) {
     where: { id, userId: user.id, organizationId: organization.id, revokedAt: null },
     data: { revokedAt: new Date() },
   });
+  revalidatePath("/settings");
+}
+
+// The seller did not see the test notification (blocked by the OS): call
+// moments are emailed too, until they can be shown again
+export async function enableCallMomentEmails() {
+  const { user, organization } = await requireWorkspace();
+  await upsertSellerPrefs(user.id, organization.id, { emailCallMoments: true });
   revalidatePath("/settings");
 }
