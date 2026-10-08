@@ -9,6 +9,7 @@ import { analyzeDeal } from "@/lib/closing/brain/analyze-deal";
 import { refreshEngagementScore } from "@/lib/closing/engagement/refresh-score";
 import { cancelOpenFollowups } from "@/lib/closing/followups/queue";
 import { getLinkForViewer, getViewerAccess } from "@/lib/closing/links";
+import { notifySeller } from "@/lib/closing/notify/notify";
 import {
   EMAIL_COOKIE_MAX_AGE,
   VISITOR_COOKIE,
@@ -85,13 +86,13 @@ export async function submitProspectAction(input: z.input<typeof actionSchema>) 
   const prospect = access.email
     ? await prisma.prospect.findUnique({
         where: { linkId_email: { linkId: link.id, email: access.email } },
-        select: { id: true },
+        select: { id: true, name: true, email: true },
       })
     : null;
 
   const closed = link.dealStatus === "WON" || link.dealStatus === "LOST";
 
-  await prisma.$transaction([
+  const [action] = await prisma.$transaction([
     prisma.prospectAction.create({
       data: {
         linkId: link.id,
@@ -100,6 +101,7 @@ export async function submitProspectAction(input: z.input<typeof actionSchema>) 
         type,
         message: message || null,
       },
+      select: { id: true },
     }),
     ...(closed
       ? []
@@ -112,6 +114,16 @@ export async function submitProspectAction(input: z.input<typeof actionSchema>) 
   ]);
 
   // The prospect answered: automated follow-ups would now be off-key
+  // The viewer tells the prospect the seller has been told: make it true
+  inBackground("prospect-action-alert", () =>
+    notifySeller({
+      linkId: link.id,
+      type: type === "VALIDATE_SIGN" ? "PROSPECT_VALIDATED" : "CHANGE_REQUESTED",
+      dedupeKey: `prospect_action:${action.id}`,
+      payload: { message: message || null, prospectName: prospect?.name ?? null, prospectEmail: prospect?.email ?? access.email ?? null },
+    }),
+  );
+
   inBackground("prospect-action", async () => {
     await cancelOpenFollowups(
       link.id,

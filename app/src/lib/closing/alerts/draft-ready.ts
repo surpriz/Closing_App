@@ -1,4 +1,4 @@
-import { createAndDeliverAlert } from "./send-alert";
+import { notifySeller } from "../notify/notify";
 
 /**
  * Tells the seller a follow-up waits for them. Grouped: one alert per hour per
@@ -6,10 +6,11 @@ import { createAndDeliverAlert } from "./send-alert";
  */
 export function notifyDraftReady(linkId: string, organizationId: string, now: Date) {
   const hour = now.toISOString().slice(0, 13);
-  return createAndDeliverAlert({
+  return notifySeller({
     linkId,
     type: "DRAFT_READY",
     dedupeKey: `draft_ready:${organizationId}:${hour}`,
     payload: {},
+    now,
   });
 }

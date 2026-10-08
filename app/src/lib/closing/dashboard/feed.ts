@@ -77,7 +77,14 @@ function describeRead(view: FeedSource["views"][number]) {
 }
 
 function describeAlert(type: SellerAlertType, payload: unknown) {
-  const { liveViewers, inactiveDays } = (payload ?? {}) as { liveViewers?: number; inactiveDays?: number };
+  const { liveViewers, inactiveDays, reason } = (payload ?? {}) as {
+    liveViewers?: number;
+    inactiveDays?: number;
+    reason?: string;
+  };
+  if (type === "CALL_MOMENT") return reason ? `est lu en ce moment (${reason.toLowerCase()})` : "est lu en ce moment";
+  if (type === "PROSPECT_VALIDATED") return "a été validé";
+  if (type === "CHANGE_REQUESTED") return "fait l'objet d'une demande d'ajustement";
   if (type === "MULTI_VIEWER") {
     return liveViewers ? `est lu par ${liveViewers} personnes en même temps` : "est lu à plusieurs";
   }

@@ -26,9 +26,11 @@ model User {
   members     Member[]
   invitations Invitation[]
 
-  documents       Document[]
-  linksCreated    Link[]
-  extensionTokens ExtensionToken[]
+  documents               Document[]
+  linksCreated            Link[]
+  extensionTokens         ExtensionToken[]
+  sellerAlerts            SellerAlert[]
+  notificationPreferences NotificationPreference[]
 
   @@map("users")
 }
@@ -99,6 +101,8 @@ model Organization {
   stripeCustomerId String?            @unique
   plan             String             @default("free")
   extensionTokens  ExtensionToken[]
+
+  notificationPreferences NotificationPreference[]
 
   @@map("organizations")
 }
@@ -252,12 +256,23 @@ enum SellerAlertType {
   MULTI_VIEWER
   REOPENED_AFTER_INACTIVITY
   DRAFT_READY // a follow-up waits for the seller's approval (at most one per hour per workspace)
+  PROSPECT_VALIDATED // the prospect clicked "Valider & signer"
+  CHANGE_REQUESTED // the prospect asked for an adjustment
+  CALL_MOMENT // the prospect is reading right now and it is worth a call
 }
 
 enum SellerAlertChannel {
   EMAIL
   SLACK
   WEBHOOK
+  EXTENSION // stored only, the browser extension polls for it
+}
+
+// How hard an alert may interrupt the seller (notify/policy.ts)
+enum AlertPriority {
+  ACTION // the prospect did something: validated, asked for a change
+  CALL // reading right now, a call would land well
+  INFO // can wait for the morning digest
 }
 
 enum ProspectActionType {
@@ -304,7 +319,7 @@ model WorkspaceSettings {
   maxFollowupsPer30Days     Int       @default(3) // per prospect
   minDaysBetweenFollowups   Int       @default(3)
   minDelayAfterReadingHours Int       @default(3) // a follow-up right after a read gives the tracking away
-  lastDigestAt              DateTime? // last daily email listing what autopilot sent
+  lastDigestAt              DateTime? // unused: the morning digest is per seller (notification_preferences)
 
   // What the seller sells, fed to the AI
   offerDescription  String?
@@ -632,10 +647,42 @@ model SellerAlert {
   sentAt    DateTime?
   error     String?
 
+  // Seller the alert is for (link creator, or the workspace owner)
+  userId   String?
+  user     User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  priority AlertPriority @default(INFO)
+
   createdAt DateTime @default(now())
 
   @@index([linkId, createdAt(sort: Desc)])
+  @@index([userId, createdAt])
   @@map("seller_alerts")
+}
+
+// What one seller wants to be told about, in one workspace. No row = defaults.
+model NotificationPreference {
+  id             String       @id @default(cuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  emailActions         Boolean @default(true) // prospect validated or asked for a change
+  emailCallMoments     Boolean @default(false) // "reading now" by email, when the extension is not running
+  extensionCallMoments Boolean @default(true)
+  morningDigest        Boolean @default(true)
+  digestHour           Int     @default(8) // seller local hour
+  timezone             String? // seller's, from the browser; null = DEFAULT_TIMEZONE
+
+  lastDigestAt    DateTime?
+  digestClaimedAt DateTime? // lock while a digest is being built and sent
+  extensionSeenAt DateTime? // last extension poll: is it running?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, organizationId])
+  @@map("notification_preferences")
 }
 
 // What happened outside Clozer, logged by the seller: calls, replies, meetings

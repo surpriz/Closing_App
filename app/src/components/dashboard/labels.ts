@@ -70,12 +70,16 @@ export const ALERT_CHANNEL_LABELS: Record<SellerAlertChannel, string> = {
   EMAIL: "Email",
   SLACK: "Slack",
   WEBHOOK: "Webhook",
+  EXTENSION: "Extension",
 };
 
 export const ALERT_TYPE_LABELS: Record<SellerAlertType, string> = {
   MULTI_VIEWER: "Lecture à plusieurs",
   REOPENED_AFTER_INACTIVITY: "Réouverture après inactivité",
   DRAFT_READY: "Relance prête à valider",
+  PROSPECT_VALIDATED: "Proposition validée",
+  CHANGE_REQUESTED: "Ajustement demandé",
+  CALL_MOMENT: "Moment d'appeler",
 };
 
 export const SCORE_REASON_LABELS: Record<string, string> = {

@@ -83,7 +83,7 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
       },
     }),
     prisma.sellerAlert.findMany({
-      where: { link: { documentId: document.id } },
+      where: { link: { documentId: document.id }, type: { notIn: ["PROSPECT_VALIDATED", "CHANGE_REQUESTED"] } },
       orderBy: { createdAt: "desc" },
       take: 10,
       include: { link: { select: { name: true, slug: true } } },
@@ -471,7 +471,7 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
               <Surface>
                 <ul className="divide-y divide-border">
                   {alerts.map((alert) => {
-                    const payload = alert.payload as { liveViewers?: number; inactiveDays?: number };
+                    const payload = alert.payload as { liveViewers?: number; inactiveDays?: number; reason?: string };
                     return (
                       <li key={alert.id} className="flex items-start justify-between gap-4 px-4 py-3 text-sm">
                         <div>
@@ -479,13 +479,17 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
                             {ALERT_TYPE_LABELS[alert.type]}
                             <span className="font-normal text-muted-foreground">
                               , {alert.link.name ?? alert.link.slug}
-                              {payload.liveViewers ? `, ${payload.liveViewers} lecteurs en même temps` : ""}
-                              {payload.inactiveDays ? `, après ${payload.inactiveDays} jours` : ""}
+                              {payload.reason
+                                ? `, ${payload.reason.toLowerCase()}`
+                                : `${payload.liveViewers ? `, ${payload.liveViewers} lecteurs en même temps` : ""}${payload.inactiveDays ? `, après ${payload.inactiveDays} jours` : ""}`}
                             </span>
                           </p>
                           <p className="text-muted-foreground">
-                            {alert.sentAt ? "Envoyée" : "Non envoyée"} par{" "}
-                            {alert.channels.map((c) => ALERT_CHANNEL_LABELS[c].toLowerCase()).join(", ")}
+                            {alert.channels.length === 0
+                              ? "Pas envoyée (hors horaires ou désactivée)"
+                              : `${alert.sentAt ? "Envoyée" : "Non envoyée"} par ${alert.channels
+                                  .map((c) => ALERT_CHANNEL_LABELS[c].toLowerCase())
+                                  .join(", ")}`}
                           </p>
                           {alert.error && <p className="text-destructive">{alert.error}</p>}
                         </div>

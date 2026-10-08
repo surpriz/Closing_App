@@ -88,7 +88,8 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
       take: 30,
       include: { prospect: { select: { name: true, email: true } } },
     }),
-    prisma.sellerAlert.findMany({ where: { linkId: link.id }, orderBy: { createdAt: "desc" }, take: 20 }),
+    // Prospect actions have their own timeline entries
+    prisma.sellerAlert.findMany({ where: { linkId: link.id, type: { notIn: ["PROSPECT_VALIDATED", "CHANGE_REQUESTED"] } }, orderBy: { createdAt: "desc" }, take: 20 }),
     prisma.prospectAction.findMany({
       where: { linkId: link.id },
       orderBy: { createdAt: "desc" },
@@ -165,13 +166,15 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
       detail: activity.note,
     })),
     ...alerts.map((alert) => {
-      const payload = alert.payload as { liveViewers?: number; inactiveDays?: number };
+      const payload = alert.payload as { liveViewers?: number; inactiveDays?: number; reason?: string };
       return {
         id: `alert-${alert.id}`,
         at: alert.createdAt,
         kind: "alert" as const,
         title: `Alerte : ${ALERT_TYPE_LABELS[alert.type].toLowerCase()}`,
-        detail: payload.liveViewers
+        detail: payload.reason
+          ? payload.reason
+          : payload.liveViewers
           ? `${payload.liveViewers} lecteurs en même temps`
           : payload.inactiveDays
             ? `après ${payload.inactiveDays} jours sans lecture`

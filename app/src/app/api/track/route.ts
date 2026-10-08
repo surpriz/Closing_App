@@ -12,6 +12,7 @@ import {
 } from "@/lib/closing/constants";
 import { refreshEngagementScore } from "@/lib/closing/engagement/refresh-score";
 import { VISITOR_COOKIE } from "@/lib/closing/tracking/visitor";
+import { evaluatePricingCallMoment } from "@/lib/closing/triggers/hot-lead";
 import { evaluateHotPricing } from "@/lib/closing/triggers/hot-pricing";
 import { prisma } from "@/lib/db";
 
@@ -135,7 +136,10 @@ export async function POST(request: Request) {
       // The reader left: read the deal now. Otherwise flag it, the engine catches
       // sessions whose "left" beacon never arrived.
       if (left) await analyzeDeal(view.linkId, "SESSION_ENDED");
-      else await markDealDirty(view.linkId, now);
+      else {
+        await markDealDirty(view.linkId, now);
+        await evaluatePricingCallMoment(view.id, now);
+      }
     });
   }
 
