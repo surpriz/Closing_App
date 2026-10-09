@@ -7,7 +7,7 @@ import { setProspectRole } from "@/app/(dashboard)/links/actions";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { ProspectRole } from "@/generated/prisma/enums";
 
-import { ROLE_LABELS } from "./labels";
+import { PROSPECT_ROLE_LABELS } from "./labels";
 
 const AUTO = "auto";
 
@@ -28,8 +28,8 @@ export function ProspectRoleSelect({
   const [pending, startTransition] = useTransition();
 
   const items = [
-    { value: AUTO, label: detected ? `Auto (${ROLE_LABELS[detected]})` : "Auto" },
-    ...(Object.keys(ROLE_LABELS) as ProspectRole[]).map((value) => ({ value, label: ROLE_LABELS[value] })),
+    { value: AUTO, label: detected ? `Auto (${PROSPECT_ROLE_LABELS[detected]})` : "Auto" },
+    ...(Object.keys(PROSPECT_ROLE_LABELS) as ProspectRole[]).map((value) => ({ value, label: PROSPECT_ROLE_LABELS[value] })),
   ];
 
   return (

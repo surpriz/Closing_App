@@ -1,4 +1,4 @@
-import { ROLE_LABELS } from "@/components/dashboard/labels";
+import { PROSPECT_ROLE_LABELS } from "@/components/dashboard/labels";
 
 import type { Person, ReaderMap, ReaderOrigin } from "./reader-map";
 import { isDecisionRole } from "./roles";
@@ -40,7 +40,7 @@ const ownerOf = (map: ReaderMap, viewId: string) => map.persons.find((p) => p.vi
 
 function roleText(person: Person) {
   if (!person.role) return "";
-  return `${ROLE_LABELS[person.role.role]}, ${person.role.source === "seller" ? "tagué" : "détecté"}`;
+  return `${PROSPECT_ROLE_LABELS[person.role.role]}, ${person.role.source === "seller" ? "tagué" : "détecté"}`;
 }
 
 export function detectCommittee(map: ReaderMap, linkId: string, threshold: number, now: Date): ReaderAlert | null {

@@ -87,7 +87,7 @@ export const ALERT_TYPE_LABELS: Record<SellerAlertType, string> = {
   DECISION_MAKER_DETECTED: "Décideur en lecture",
 };
 
-export const ROLE_LABELS: Record<ProspectRole, string> = {
+export const PROSPECT_ROLE_LABELS: Record<ProspectRole, string> = {
   DECISION_MAKER: "Décideur",
   FINANCE: "Finance / achats",
   TECHNICAL: "Technique",

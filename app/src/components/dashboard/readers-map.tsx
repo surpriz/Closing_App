@@ -4,7 +4,7 @@ import { isDecisionRole } from "@/lib/closing/committee/roles";
 import { formatDuration, formatRelative } from "@/lib/format";
 
 import { LiveDot } from "./heat";
-import { READER_ORIGIN_LABELS, ROLE_LABELS } from "./labels";
+import { READER_ORIGIN_LABELS, PROSPECT_ROLE_LABELS } from "./labels";
 import { Surface } from "./page-header";
 import { ProspectRoleSelect } from "./prospect-role-select";
 
@@ -58,7 +58,7 @@ function PersonRow({ linkId, person, now }: { linkId: string; person: Person; no
             Décideur{person.role.source === "detected" ? " (détecté)" : ""}
           </Badge>
         )}
-        {!decision && person.role && person.role.role !== "OTHER" && <Badge variant="secondary">{ROLE_LABELS[person.role.role]}</Badge>}
+        {!decision && person.role && person.role.role !== "OTHER" && <Badge variant="secondary">{PROSPECT_ROLE_LABELS[person.role.role]}</Badge>}
         <Badge variant={person.origin === "forwarded_internal" ? "warning" : "outline"}>{READER_ORIGIN_LABELS[person.origin]}</Badge>
         {person.viaNetwork && <span className="text-small text-muted-foreground">même réseau</span>}
       </div>
