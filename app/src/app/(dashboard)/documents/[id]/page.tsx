@@ -32,6 +32,7 @@ import { labelReaders } from "@/lib/closing/dashboard/readers";
 import { tagLabels } from "@/lib/closing/documents/doc-types";
 import { prisma } from "@/lib/db";
 import { formatBytes, formatDate, formatDuration, formatRelative } from "@/lib/format";
+import { isManagerRole } from "@/lib/roles";
 import { requireWorkspace } from "@/lib/session";
 
 export async function generateMetadata({ params }: PageProps<"/documents/[id]">): Promise<Metadata> {
@@ -46,7 +47,7 @@ export async function generateMetadata({ params }: PageProps<"/documents/[id]">)
 
 export default async function DocumentDetailPage({ params }: PageProps<"/documents/[id]">) {
   const { id } = await params;
-  const { organization } = await requireWorkspace();
+  const { organization, role } = await requireWorkspace();
 
   const document = await prisma.document.findFirst({
     where: { id, organizationId: organization.id },
@@ -186,7 +187,10 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
           action={
             <div className="flex items-center gap-2">
               <NewLinkDialog documentId={document.id} disabled={!ready} />
-              <DeleteDocumentButton documentId={document.id} linkCount={document.links.length} />
+              {/* Deleting takes every seller's links down with it */}
+              {isManagerRole(role) && (
+                <DeleteDocumentButton documentId={document.id} linkCount={document.links.length} />
+              )}
             </div>
           }
         />

@@ -15,6 +15,7 @@ import { HEAT_BG } from "@/components/dashboard/heat";
 import {
   ALERT_TYPE_LABELS,
   CHANNEL_LABELS,
+  DEAL_STATUS_LABELS,
   FOLLOWUP_TRIGGER_LABELS,
   SCORE_REASON_LABELS,
   SELLER_ACTIVITY_LABELS,
@@ -34,6 +35,7 @@ import { getLanguageModel } from "@/lib/closing/ai/provider";
 import { getLinkAnalytics } from "@/lib/closing/analytics";
 import { getLatestInsight } from "@/lib/closing/brain/latest";
 import { getReaderMap } from "@/lib/closing/committee/queries";
+import { canEditDeal } from "@/lib/closing/dashboard/queries";
 import { labelReaders } from "@/lib/closing/dashboard/readers";
 import { catchUpInBackground } from "@/lib/closing/catch-up";
 import { freshEngagementScore } from "@/lib/closing/engagement/refresh-score";
@@ -58,7 +60,8 @@ export async function generateMetadata({ params }: PageProps<"/links/[id]">): Pr
 
 export default async function LinkDetailPage({ params }: PageProps<"/links/[id]">) {
   const { id } = await params;
-  const { organization } = await requireWorkspace();
+  const workspace = await requireWorkspace();
+  const { organization } = workspace;
 
   const link = await prisma.link.findFirst({
     where: { id, organizationId: organization.id, archivedAt: null },
@@ -76,6 +79,13 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
     },
   });
   if (!link) notFound();
+
+  // A teammate's deal opens read-only: its seller and the managers make the calls
+  const canEdit = canEditDeal(link.createdById, workspace);
+  const seller =
+    !canEdit && link.createdById
+      ? await prisma.user.findUnique({ where: { id: link.createdById }, select: { name: true, email: true } })
+      : null;
 
   const score = await freshEngagementScore(link.id, link.engagementScore);
   catchUpInBackground({ organizationId: organization.id, linkId: link.id, documentId: link.document.id });
@@ -222,248 +232,262 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
               </span>
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <DealStatusSelect linkId={link.id} status={link.dealStatus} />
-            <LinkSettingsDialog
-              linkId={link.id}
-              initial={{
-                // Not updatedAt: it moves on every tracking flush and the page refreshes itself
-                version: [link.name, link.requireEmail, link.ctaEnabled, link.followupsEnabled].join("|"),
-                name: link.name ?? "",
-                requireEmail: link.requireEmail,
-                ctaEnabled: link.ctaEnabled,
-                followupsEnabled: link.followupsEnabled,
-              }}
-            />
-            <ArchiveLinkButton linkId={link.id} />
-          </div>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <LiveActivity
-          key={live.stamp}
-          linkId={link.id}
-          initial={live}
-          pageCount={link.document.kind === "URL" ? null : link.document.pages.length}
-        />
-
-        <DealInsightPanel
-          linkId={link.id}
-          insight={insight}
-          recipientName={insightRecipient ? (insightRecipient.name ?? insightRecipient.email) : null}
-          aiAvailable={getLanguageModel("analyze") !== null}
-          readSince={!!insight && !!link.lastActivityAt && link.lastActivityAt > insight.createdAt}
-          draftWaiting={followups.some((f) => f.trigger === "AI_DECISION" && (f.status === "DRAFT" || f.status === "PENDING"))}
-          now={now}
-        />
-
-        <Surface className="overflow-hidden">
-          <div className="grid grid-cols-1 md:grid-cols-[16rem_minmax(0,1fr)]">
-            <div className="relative space-y-3 border-b border-border p-5 md:border-r md:border-b-0">
-              <span
-                aria-hidden
-                className={cn(
-                  "absolute inset-y-0 left-0 w-1 origin-bottom animate-heat-fill motion-reduce:animate-none",
-                  score ? HEAT_BG[score.tier] : "bg-foreground/10",
-                )}
+          {canEdit ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <DealStatusSelect linkId={link.id} status={link.dealStatus} />
+              <LinkSettingsDialog
+                linkId={link.id}
+                initial={{
+                  // Not updatedAt: it moves on every tracking flush and the page refreshes itself
+                  version: [link.name, link.requireEmail, link.ctaEnabled, link.followupsEnabled].join("|"),
+                  name: link.name ?? "",
+                  requireEmail: link.requireEmail,
+                  ctaEnabled: link.ctaEnabled,
+                  followupsEnabled: link.followupsEnabled,
+                }}
               />
-              <p className="text-sm text-muted-foreground">Température mesurée</p>
-              <p className="text-[2rem] leading-none font-medium tracking-[-0.03em] [font-stretch:88%]">
-                {score ? TIER_LABELS[score.tier] : "Pas encore lu"}
-              </p>
-              {score && (
-                <>
-                  <p className="text-sm text-muted-foreground">
-                    <span className="font-mono font-semibold text-foreground tabular-nums">{score.score}</span> sur 100
-                  </p>
-                  <TemperatureGauge tier={score.tier} score={score.score} />
-                </>
-              )}
-              {insight?.scoreNuance && <p className="text-sm text-muted-foreground">{insight.scoreNuance}</p>}
+              <ArchiveLinkButton linkId={link.id} />
             </div>
-            <div className="p-5">
-              <p className="mb-3 text-sm text-muted-foreground">Pourquoi</p>
-              {reasons.length === 0 ? (
-                <p className="text-body">
-                  Rien encore : la température monte dès que le prospect ouvre son lien et lit.
-                </p>
-              ) : (
-                <ul className="grid gap-x-8 gap-y-2 text-body sm:grid-cols-2">
-                  {reasons.map((reason) => (
-                    <li key={reason.code} className="flex items-baseline justify-between gap-3">
-                      <span>
-                        {SCORE_REASON_LABELS[reason.code] ?? reason.code}
-                        {reason.detail && <span className="text-muted-foreground"> ({reason.detail})</span>}
-                      </span>
-                      <span className="text-sm text-muted-foreground tabular-nums">+{reason.weight}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              {analytics.viewCount > 0 && (
-                <div className="mt-5 border-t border-border pt-4">
-                  <StatLine
-                    items={[
-                      { value: analytics.viewCount, label: analytics.viewCount === 1 ? "lecture" : "lectures" },
-                      { value: formatDuration(analytics.totalDurationMs), label: "de lecture" },
-                      ...(live.readers.length > 0
-                        ? [{ value: "en ce moment", label: "lu", labelFirst: true }]
-                        : analytics.lastActivityAt
-                          ? [{ value: formatRelative(analytics.lastActivityAt, now), label: "lu", labelFirst: true }]
-                          : []),
-                    ]}
-                  />
-                </div>
-              )}
-              <ScoreGuide
-                hasPages={link.document.kind !== "URL"}
-                hasPricing={link.document.pages.some((page) => page.tags.includes("PRICING"))}
-                pricingThresholdSec={link.hotPricingThresholdSec ?? settings.hotPricingThresholdSec}
-              />
-            </div>
-          </div>
-        </Surface>
-
-      </div>
-
-      <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="space-y-10">
-          {link.document.kind !== "URL" && (
-            <section>
-              <SectionTitle
-                hint="pour ce prospect"
-                action={
-                  <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <span className="size-2.5 rounded-sm bg-heat-warm" /> page de tarifs
-                  </span>
-                }
-              >
-                Temps passé par page
-              </SectionTitle>
-              <Surface className="p-4">
-                <PageTimeChart data={chartData} />
-              </Surface>
-            </section>
+          ) : (
+            <span className="text-sm text-muted-foreground">{DEAL_STATUS_LABELS[link.dealStatus]}</span>
           )}
-
-          <section id="relances" className="scroll-mt-20">
-            <SectionTitle>Relances</SectionTitle>
-            <Surface className="p-4">
-              <FollowupsPanel
-                followups={followupItems}
-                emptyHint={
-                  insight?.byAi
-                    ? insight.recommendedAction.type === "send_followup"
-                      ? `L'analyse conseille de relancer, mais ce n'est pas encore le moment (${insight.recommendedAction.why}). Vous pouvez aussi cliquer « Préparer une relance » plus haut.`
-                      : `L'analyse conseille plutôt : ${insight.recommendedAction.why} Besoin d'écrire quand même ? « Préparer une relance » plus haut.`
-                    : null
-                }
-              />
-            </Surface>
-          </section>
-
-          {testToolsEnabled() && <LinkTestTools linkId={link.id} />}
-
-          <section>
-            <SectionTitle>Activité</SectionTitle>
-            <div className="pl-3">
-              <ActivityTimeline items={timeline} />
-            </div>
-          </section>
         </div>
+        {!canEdit && (
+          <p className="rounded-xl bg-muted px-4 py-3 text-sm text-muted-foreground">
+            Deal de {seller?.name || seller?.email || "un autre commercial"}. Vous pouvez le consulter, seuls son
+            commercial et les admins peuvent le modifier.
+          </p>
+        )}
+      </div>
 
-        <aside className="space-y-10">
-          <section id="qui-lit" className="scroll-mt-20">
-            <SectionTitle hint="qui a ouvert la proposition">Qui lit</SectionTitle>
-            <ReadersMap linkId={link.id} map={readerMap} now={now} />
-          </section>
+      {/* Disables every form and button below for a read-only visit */}
+      <fieldset disabled={!canEdit} className="min-w-0 space-y-10">
 
-          <section>
-            <SectionTitle hint="reçoivent les relances">Contacts</SectionTitle>
-          <Surface>
-            <div className="divide-y divide-border">
-              {link.prospects.map((prospect) => (
-                <details key={prospect.id} className="group px-4 py-3">
-                  <summary className="flex cursor-pointer list-none items-start justify-between gap-3 outline-none focus-visible:underline [&::-webkit-details-marker]:hidden">
-                    <span className="min-w-0 text-sm">
-                      <span className="font-medium">{prospect.name ?? prospect.email}</span>
-                      {prospect.unsubscribedAt && <span className="ml-2 text-destructive">désinscrit</span>}
-                      <span className="block truncate text-muted-foreground">
-                        {[
-                          prospect.name ? prospect.email : null,
-                          prospect.phoneE164,
-                          prospect.whatsappOptInAt ? "WhatsApp accepté" : null,
-                        ]
-                          .filter(Boolean)
-                          .join(", ")}
-                      </span>
-                    </span>
-                    <ChevronRight className="mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90" />
-                  </summary>
-                  <ProspectForm
-                    linkId={link.id}
-                    prospect={{
-                      id: prospect.id,
-                      email: prospect.email,
-                      name: prospect.name,
-                      company: prospect.company,
-                      phoneE164: prospect.phoneE164,
-                      whatsappOptIn: !!prospect.whatsappOptInAt,
-                    }}
-                  />
-                </details>
-              ))}
-              <details className="group px-4 py-3">
-                <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-medium outline-none focus-visible:underline [&::-webkit-details-marker]:hidden">
-                  <Plus className="size-4" /> Ajouter un contact
-                </summary>
-                <ProspectForm linkId={link.id} />
-              </details>
-            </div>
-          </Surface>
-          </section>
+        <div className="space-y-4">
+          <LiveActivity
+            key={live.stamp}
+            linkId={link.id}
+            initial={live}
+            pageCount={link.document.kind === "URL" ? null : link.document.pages.length}
+          />
 
-          <section>
-            <SectionTitle hint="votre équipe le voit, pas le prospect">Le deal</SectionTitle>
-            <Surface>
-              <div className="divide-y divide-border">
-                <DealContextForm
-                  linkId={link.id}
-                  initial={{
-                    // Not updatedAt: it moves on every tracking flush and the page refreshes itself
-                    version: [
-                      link.dealAmountCents,
-                      link.dealCurrency,
-                      link.decisionDeadline?.getTime(),
-                      link.decisionMakerName,
-                      link.decisionMakerRole,
-                      link.sellerNotes,
-                    ].join("|"),
-                    dealAmount: link.dealAmountCents !== null ? String(link.dealAmountCents / 100) : "",
-                    dealCurrency: link.dealCurrency ?? "EUR",
-                    decisionDeadline: link.decisionDeadline?.toISOString().slice(0, 10) ?? "",
-                    decisionMakerName: link.decisionMakerName ?? "",
-                    decisionMakerRole: link.decisionMakerRole ?? "",
-                    sellerNotes: link.sellerNotes ?? "",
-                  }}
+          <DealInsightPanel
+            linkId={link.id}
+            insight={insight}
+            recipientName={insightRecipient ? (insightRecipient.name ?? insightRecipient.email) : null}
+            aiAvailable={getLanguageModel("analyze") !== null}
+            readSince={!!insight && !!link.lastActivityAt && link.lastActivityAt > insight.createdAt}
+            draftWaiting={followups.some((f) => f.trigger === "AI_DECISION" && (f.status === "DRAFT" || f.status === "PENDING"))}
+            now={now}
+          />
+
+          <Surface className="overflow-hidden">
+            <div className="grid grid-cols-1 md:grid-cols-[16rem_minmax(0,1fr)]">
+              <div className="relative space-y-3 border-b border-border p-5 md:border-r md:border-b-0">
+                <span
+                  aria-hidden
+                  className={cn(
+                    "absolute inset-y-0 left-0 w-1 origin-bottom animate-heat-fill motion-reduce:animate-none",
+                    score ? HEAT_BG[score.tier] : "bg-foreground/10",
+                  )}
                 />
-                <SnoozeControl
-                  linkId={link.id}
-                  snoozedUntil={link.snoozedUntil && link.snoozedUntil > now ? link.snoozedUntil.toISOString() : null}
+                <p className="text-sm text-muted-foreground">Température mesurée</p>
+                <p className="text-[2rem] leading-none font-medium tracking-[-0.03em] [font-stretch:88%]">
+                  {score ? TIER_LABELS[score.tier] : "Pas encore lu"}
+                </p>
+                {score && (
+                  <>
+                    <p className="text-sm text-muted-foreground">
+                      <span className="font-mono font-semibold text-foreground tabular-nums">{score.score}</span> sur 100
+                    </p>
+                    <TemperatureGauge tier={score.tier} score={score.score} />
+                  </>
+                )}
+                {insight?.scoreNuance && <p className="text-sm text-muted-foreground">{insight.scoreNuance}</p>}
+              </div>
+              <div className="p-5">
+                <p className="mb-3 text-sm text-muted-foreground">Pourquoi</p>
+                {reasons.length === 0 ? (
+                  <p className="text-body">
+                    Rien encore : la température monte dès que le prospect ouvre son lien et lit.
+                  </p>
+                ) : (
+                  <ul className="grid gap-x-8 gap-y-2 text-body sm:grid-cols-2">
+                    {reasons.map((reason) => (
+                      <li key={reason.code} className="flex items-baseline justify-between gap-3">
+                        <span>
+                          {SCORE_REASON_LABELS[reason.code] ?? reason.code}
+                          {reason.detail && <span className="text-muted-foreground"> ({reason.detail})</span>}
+                        </span>
+                        <span className="text-sm text-muted-foreground tabular-nums">+{reason.weight}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {analytics.viewCount > 0 && (
+                  <div className="mt-5 border-t border-border pt-4">
+                    <StatLine
+                      items={[
+                        { value: analytics.viewCount, label: analytics.viewCount === 1 ? "lecture" : "lectures" },
+                        { value: formatDuration(analytics.totalDurationMs), label: "de lecture" },
+                        ...(live.readers.length > 0
+                          ? [{ value: "en ce moment", label: "lu", labelFirst: true }]
+                          : analytics.lastActivityAt
+                            ? [{ value: formatRelative(analytics.lastActivityAt, now), label: "lu", labelFirst: true }]
+                            : []),
+                      ]}
+                    />
+                  </div>
+                )}
+                <ScoreGuide
+                  hasPages={link.document.kind !== "URL"}
+                  hasPricing={link.document.pages.some((page) => page.tags.includes("PRICING"))}
+                  pricingThresholdSec={link.hotPricingThresholdSec ?? settings.hotPricingThresholdSec}
                 />
               </div>
-            </Surface>
-          </section>
+            </div>
+          </Surface>
 
-          <section>
-            <SectionTitle hint="appels, réponses, rendez-vous">Noter un échange</SectionTitle>
+        </div>
+
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_20rem]">
+          <div className="space-y-10">
+            {link.document.kind !== "URL" && (
+              <section>
+                <SectionTitle
+                  hint="pour ce prospect"
+                  action={
+                    <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                      <span className="size-2.5 rounded-sm bg-heat-warm" /> page de tarifs
+                    </span>
+                  }
+                >
+                  Temps passé par page
+                </SectionTitle>
+                <Surface className="p-4">
+                  <PageTimeChart data={chartData} />
+                </Surface>
+              </section>
+            )}
+
+            <section id="relances" className="scroll-mt-20">
+              <SectionTitle>Relances</SectionTitle>
+              <Surface className="p-4">
+                <FollowupsPanel
+                  followups={followupItems}
+                  emptyHint={
+                    insight?.byAi
+                      ? insight.recommendedAction.type === "send_followup"
+                        ? `L'analyse conseille de relancer, mais ce n'est pas encore le moment (${insight.recommendedAction.why}). Vous pouvez aussi cliquer « Préparer une relance » plus haut.`
+                        : `L'analyse conseille plutôt : ${insight.recommendedAction.why} Besoin d'écrire quand même ? « Préparer une relance » plus haut.`
+                      : null
+                  }
+                />
+              </Surface>
+            </section>
+
+            {testToolsEnabled() && <LinkTestTools linkId={link.id} />}
+
+            <section>
+              <SectionTitle>Activité</SectionTitle>
+              <div className="pl-3">
+                <ActivityTimeline items={timeline} />
+              </div>
+            </section>
+          </div>
+
+          <aside className="space-y-10">
+            <section id="qui-lit" className="scroll-mt-20">
+              <SectionTitle hint="qui a ouvert la proposition">Qui lit</SectionTitle>
+              <ReadersMap linkId={link.id} map={readerMap} now={now} />
+            </section>
+
+            <section>
+              <SectionTitle hint="reçoivent les relances">Contacts</SectionTitle>
             <Surface>
-              <SellerActivityForm linkId={link.id} />
+              <div className="divide-y divide-border">
+                {link.prospects.map((prospect) => (
+                  <details key={prospect.id} className="group px-4 py-3">
+                    <summary className="flex cursor-pointer list-none items-start justify-between gap-3 outline-none focus-visible:underline [&::-webkit-details-marker]:hidden">
+                      <span className="min-w-0 text-sm">
+                        <span className="font-medium">{prospect.name ?? prospect.email}</span>
+                        {prospect.unsubscribedAt && <span className="ml-2 text-destructive">désinscrit</span>}
+                        <span className="block truncate text-muted-foreground">
+                          {[
+                            prospect.name ? prospect.email : null,
+                            prospect.phoneE164,
+                            prospect.whatsappOptInAt ? "WhatsApp accepté" : null,
+                          ]
+                            .filter(Boolean)
+                            .join(", ")}
+                        </span>
+                      </span>
+                      <ChevronRight className="mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90" />
+                    </summary>
+                    <ProspectForm
+                      linkId={link.id}
+                      prospect={{
+                        id: prospect.id,
+                        email: prospect.email,
+                        name: prospect.name,
+                        company: prospect.company,
+                        phoneE164: prospect.phoneE164,
+                        whatsappOptIn: !!prospect.whatsappOptInAt,
+                      }}
+                    />
+                  </details>
+                ))}
+                <details className="group px-4 py-3">
+                  <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-medium outline-none focus-visible:underline [&::-webkit-details-marker]:hidden">
+                    <Plus className="size-4" /> Ajouter un contact
+                  </summary>
+                  <ProspectForm linkId={link.id} />
+                </details>
+              </div>
             </Surface>
-          </section>
-        </aside>
-      </div>
+            </section>
+
+            <section>
+              <SectionTitle hint="votre équipe le voit, pas le prospect">Le deal</SectionTitle>
+              <Surface>
+                <div className="divide-y divide-border">
+                  <DealContextForm
+                    linkId={link.id}
+                    initial={{
+                      // Not updatedAt: it moves on every tracking flush and the page refreshes itself
+                      version: [
+                        link.dealAmountCents,
+                        link.dealCurrency,
+                        link.decisionDeadline?.getTime(),
+                        link.decisionMakerName,
+                        link.decisionMakerRole,
+                        link.sellerNotes,
+                      ].join("|"),
+                      dealAmount: link.dealAmountCents !== null ? String(link.dealAmountCents / 100) : "",
+                      dealCurrency: link.dealCurrency ?? "EUR",
+                      decisionDeadline: link.decisionDeadline?.toISOString().slice(0, 10) ?? "",
+                      decisionMakerName: link.decisionMakerName ?? "",
+                      decisionMakerRole: link.decisionMakerRole ?? "",
+                      sellerNotes: link.sellerNotes ?? "",
+                    }}
+                  />
+                  <SnoozeControl
+                    linkId={link.id}
+                    snoozedUntil={link.snoozedUntil && link.snoozedUntil > now ? link.snoozedUntil.toISOString() : null}
+                  />
+                </div>
+              </Surface>
+            </section>
+
+            <section>
+              <SectionTitle hint="appels, réponses, rendez-vous">Noter un échange</SectionTitle>
+              <Surface>
+                <SellerActivityForm linkId={link.id} />
+              </Surface>
+            </section>
+          </aside>
+        </div>
+      </fieldset>
     </div>
   );
 }

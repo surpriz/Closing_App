@@ -13,7 +13,7 @@ import { readDocumentPages } from "@/lib/closing/documents/read-pages";
 import { parseWebUrl } from "@/lib/closing/documents/web-link";
 import { cancelOpenFollowups } from "@/lib/closing/followups/queue";
 import { prisma } from "@/lib/db";
-import { requireWorkspace } from "@/lib/session";
+import { requireManager, requireWorkspace } from "@/lib/session";
 
 const createDocumentSchema = z.object({
   pathname: z.string().min(1).max(512),
@@ -109,8 +109,9 @@ export async function createLink(
 
 // Soft delete: the document and its links disappear from the app and stop opening
 // for prospects; pending follow-ups are cancelled. Views stay in the database.
+// Every seller's links go with it, hence managers only.
 export async function archiveDocument(documentId: string) {
-  const { organization } = await requireWorkspace();
+  const { organization } = await requireManager();
   const document = await prisma.document.findFirst({
     where: { id: documentId, organizationId: organization.id, archivedAt: null },
     select: { id: true, links: { where: { archivedAt: null }, select: { id: true } } },
