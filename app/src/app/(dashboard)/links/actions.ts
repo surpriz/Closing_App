@@ -10,16 +10,18 @@ import { inBackground } from "@/lib/closing/background";
 import { actOnInsight } from "@/lib/closing/brain/act";
 import { analyzeDeal } from "@/lib/closing/brain/analyze-deal";
 import { refreshEngagementScore } from "@/lib/closing/engagement/refresh-score";
+import { editableLinks } from "@/lib/closing/dashboard/queries";
 import { cancelOpenFollowups, isUniqueViolation } from "@/lib/closing/followups/queue";
 import { prisma } from "@/lib/db";
 import { requireWorkspace } from "@/lib/session";
 
 export type LinkFormState = { ok?: boolean; error?: string } | null;
 
+// A teammate's deal can be opened, not changed: it reads as not found here
 async function requireOwnedLink(linkId: string) {
-  const { organization } = await requireWorkspace();
+  const workspace = await requireWorkspace();
   const link = await prisma.link.findFirst({
-    where: { id: linkId, organizationId: organization.id },
+    where: { id: linkId, organizationId: workspace.organization.id, ...editableLinks(workspace) },
     select: { id: true, documentId: true },
   });
   if (!link) throw new Error("Lien introuvable");

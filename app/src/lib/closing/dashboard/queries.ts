@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { isManagerRole } from "@/lib/roles";
 
 import { DAY_MS } from "../constants";
 import { hasReason } from "../engagement/reasons";
@@ -29,6 +30,21 @@ export function sellerLinks(scope: SellerScope) {
   return scope.isOwner
     ? { OR: [{ createdById: scope.userId }, { createdById: null }] }
     : { createdById: scope.userId };
+}
+
+/** Anyone in the workspace may read a deal; only its seller and the managers change it. */
+type DealEditor = { role: string; scope: SellerScope };
+
+export function editableLinks(editor: DealEditor) {
+  return isManagerRole(editor.role) ? {} : sellerLinks(editor.scope);
+}
+
+export function canEditDeal(createdById: string | null, editor: DealEditor) {
+  return (
+    isManagerRole(editor.role) ||
+    createdById === editor.scope.userId ||
+    (createdById === null && editor.scope.isOwner)
+  );
 }
 
 /** Deals still in play, with what the "À traiter" list and the temperature bar need. */

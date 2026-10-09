@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { editableLinks } from "@/lib/closing/dashboard/queries";
 import { refreshEngagementScore } from "@/lib/closing/engagement/refresh-score";
 import { shiftLinkBack } from "@/lib/closing/testing/time-travel";
 import { runClosingTick } from "@/lib/closing/engine";
@@ -18,10 +19,11 @@ import { prisma } from "@/lib/db";
 import { requireWorkspace } from "@/lib/session";
 import { testToolsEnabled } from "@/lib/test-tools";
 
+// A teammate's deal can be opened, not changed: it reads as not found here
 async function requireOwnedLink(linkId: string) {
-  const { organization } = await requireWorkspace();
+  const workspace = await requireWorkspace();
   const link = await prisma.link.findFirst({
-    where: { id: linkId, organizationId: organization.id },
+    where: { id: linkId, organizationId: workspace.organization.id, ...editableLinks(workspace) },
     select: { id: true, documentId: true },
   });
   if (!link) throw new Error("Lien introuvable");
@@ -29,9 +31,10 @@ async function requireOwnedLink(linkId: string) {
 }
 
 async function requireOwnedFollowup(followupId: string) {
-  const { organization, user } = await requireWorkspace();
+  const workspace = await requireWorkspace();
+  const { organization, user } = workspace;
   const followup = await prisma.followup.findFirst({
-    where: { id: followupId, link: { organizationId: organization.id } },
+    where: { id: followupId, link: { organizationId: organization.id, ...editableLinks(workspace) } },
     select: { id: true, link: { select: { id: true, documentId: true } } },
   });
   if (!followup) throw new Error("Relance introuvable");
