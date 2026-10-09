@@ -3,8 +3,13 @@
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 
+import { getPublicAppUrl } from "@/lib/app-origin";
+import { inBackground } from "@/lib/closing/background";
 import { upsertSellerPrefs } from "@/lib/closing/notify/preferences";
+import { encryptSecret } from "@/lib/crypto";
 import { prisma } from "@/lib/db";
+import { isEmailConfigured, sendEmail } from "@/lib/email";
+import { normalizeUserCode, outlookConnectedEmail } from "@/lib/extension-pairing";
 import { generateExtensionToken, hashExtensionToken, tokenHint } from "@/lib/extension-tokens";
 import { requireWorkspace } from "@/lib/session";
 
@@ -22,24 +27,51 @@ function browserLabel(userAgent: string) {
   return os ? `${browser} · ${os}` : browser;
 }
 
+async function createToken(userId: string, organizationId: string, label: string) {
+  const token = generateExtensionToken();
+  const { id } = await prisma.extensionToken.create({
+    data: { organizationId, userId, tokenHash: hashExtensionToken(token), hint: tokenHint(token), label },
+    select: { id: true },
+  });
+  return { id, token };
+}
+
 // The plain token is returned once, handed to the extension, and never stored
 export async function connectExtension() {
   const { user, organization } = await requireWorkspace();
-  const token = generateExtensionToken();
-
-  const { id } = await prisma.extensionToken.create({
-    data: {
-      organizationId: organization.id,
-      userId: user.id,
-      tokenHash: hashExtensionToken(token),
-      hint: tokenHint(token),
-      label: browserLabel((await headers()).get("user-agent") ?? ""),
-    },
-    select: { id: true },
-  });
-
+  const created = await createToken(user.id, organization.id, browserLabel((await headers()).get("user-agent") ?? ""));
   revalidatePath("/settings");
-  return { id, token };
+  return created;
+}
+
+// The seller typed the code shown in the Outlook add-in. The token waits, encrypted,
+// on the pairing row until the add-in polls for it.
+export async function claimOutlookPairing(input: string): Promise<{ ok: true } | { ok: false; message: string }> {
+  const { user, organization } = await requireWorkspace();
+  const code = normalizeUserCode(input);
+  const pairing = code
+    ? await prisma.extensionPairing.findUnique({ where: { userCode: code }, select: { id: true, expiresAt: true, tokenCiphertext: true } })
+    : null;
+  if (!pairing || pairing.expiresAt < new Date() || pairing.tokenCiphertext) {
+    return { ok: false, message: "Code inconnu ou expiré. Vérifiez le code affiché dans Outlook." };
+  }
+
+  const { id, token } = await createToken(user.id, organization.id, "Outlook · complément");
+  const { count } = await prisma.extensionPairing.updateMany({
+    where: { id: pairing.id, tokenCiphertext: null },
+    data: { tokenCiphertext: encryptSecret(token) },
+  });
+  if (count === 0) {
+    await prisma.extensionToken.update({ where: { id }, data: { revokedAt: new Date() } });
+    return { ok: false, message: "Ce code vient d'être utilisé. Recommencez depuis Outlook." };
+  }
+
+  if (isEmailConfigured()) {
+    const email = outlookConnectedEmail({ at: new Date(), settingsUrl: `${getPublicAppUrl()}/settings#extension` });
+    inBackground("outlook-connected-email", () => sendEmail({ to: user.email, ...email }));
+  }
+  revalidatePath("/settings");
+  return { ok: true };
 }
 
 export async function revokeExtensionToken(id: string) {

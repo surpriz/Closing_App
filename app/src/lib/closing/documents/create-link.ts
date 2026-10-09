@@ -3,7 +3,7 @@ import { randomSlug } from "@/lib/ids";
 
 import { linkTitle } from "./link-title";
 
-export type LinkSource = "extension_gmail" | "extension_outlook";
+export type LinkSource = "extension_gmail" | "extension_outlook" | "outlook_addin";
 
 // One link = one proposal sent to one prospect company
 export async function createDocumentLink(input: {

@@ -29,7 +29,7 @@ const SECTIONS = [
   { id: "offre", label: "Votre offre" },
   { id: "messages", label: "Vos messages" },
   { id: "alertes", label: "Être prévenu" },
-  { id: "extension", label: "Extension Chrome" },
+  { id: "extension", label: "Chrome et Outlook" },
   { id: "equipe", label: "Équipe", managerOnly: true },
 ];
 

@@ -40,7 +40,8 @@ const serverEnvSchema = z.object({
 
   TRIGGER_SECRET_KEY: z.string().optional(),
 
-  // Browser extension: allowed IDs (comma-separated) and a remote kill switch
+  // Browser extension: allowed IDs (comma-separated) and a remote kill switch.
+  // EXTENSION_DISABLED_HOSTS takes "gmail", "outlook" (Outlook web) and "outlook-addin" (Outlook for Windows / Mac)
   EXTENSION_IDS: z.string().optional(),
   EXTENSION_MIN_VERSION: z.string().optional(),
   EXTENSION_DISABLED_HOSTS: z.string().optional(),

@@ -157,6 +157,20 @@ model ExtensionToken {
   @@map("extension_tokens")
 }
 
+// Pairs the Outlook add-in, which never sees the browser session: the add-in polls
+// with a secret it keeps, the seller types the short code in the app. Lives 10 minutes.
+model ExtensionPairing {
+  id              String   @id @default(cuid())
+  pollHash        String   @unique
+  userCode        String   @unique
+  // The new token, encrypted, until the add-in picks it up (then the row is deleted)
+  tokenCiphertext String?
+  expiresAt       DateTime
+  createdAt       DateTime @default(now())
+
+  @@map("extension_pairings")
+}
+
 // =============================================================================
 // Enums
 // =============================================================================
@@ -463,7 +477,7 @@ model Link {
   snoozedUntil      DateTime?
 
   brainDirtyAt DateTime? // something happened since the last deal analysis
-  source       String? // where the link was created: null = dashboard, "extension_gmail", "extension_outlook"
+  source       String? // where the link was created: null = dashboard, "extension_gmail", "extension_outlook", "outlook_addin"
   // Inserted in an email from the extension, not sent yet: hidden from the seller, archived after 7 days
   draftAt      DateTime?
 

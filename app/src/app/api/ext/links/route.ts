@@ -11,7 +11,8 @@ const schema = z.object({
   recipient: z
     .object({ email: z.string().max(254), displayName: z.string().max(200).nullish() })
     .nullish(),
-  source: z.enum(["gmail", "outlook"]),
+  // outlook_addin: the Office add-in (Outlook for Windows / Mac)
+  source: z.enum(["gmail", "outlook", "outlook_addin"]),
 });
 
 // One link per email: the first "To" recipient becomes the prospect
@@ -27,7 +28,7 @@ export const POST = withExtensionAuth(async (request, { user, organization }) =>
     prospect: recipient ? prospectFromRecipient(recipient) : null,
     requireEmail: true,
     draft: true,
-    source: source === "gmail" ? "extension_gmail" : "extension_outlook",
+    source: source === "gmail" ? "extension_gmail" : source === "outlook" ? "extension_outlook" : "outlook_addin",
   });
   if (!link) return extError(404, "not_found", "Document introuvable.");
 
