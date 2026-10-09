@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 import { isEmailConfigured, sendEmail } from "@/lib/email";
 import { renderEmail, type EmailBlock } from "@/lib/email-layout";
 
-import { postSignedWebhook, postSlackMessage } from "../channels/webhooks";
+import { escapeSlackText, postSignedWebhook, postSlackMessage } from "../channels/webhooks";
 import { isUniqueViolation } from "../followups/queue";
 
 export type AlertPayload = {
@@ -24,6 +24,8 @@ export type AlertPayload = {
   readerOrigin?: string;
   readerDomain?: string;
   decisionMakers?: string[];
+  /** PROSPECT_QUESTION: what the assistant could not answer. */
+  question?: string;
 };
 
 const READER_ALERTS = new Set<SellerAlertType>(["COMMITTEE_LIVE", "DECISION_MAKER_DETECTED", "NEW_READER"]);
@@ -93,6 +95,30 @@ export function alertMessage(type: SellerAlertType, link: LinkForAlert, payload:
         line: `${who} demande un ajustement sur ${doc}${payload.message ? ` : « ${payload.message.slice(0, 200)} »` : ""}`,
         blocks,
         url: linkUrl,
+      };
+    }
+    case "PROSPECT_QUESTION": {
+      const blocks: EmailBlock[] = [
+        {
+          kind: "text",
+          text: `${who} a posé une question sur ${doc}. L'assistant n'a pas pu répondre et lui a dit que vous reviendriez vers lui.`,
+        },
+      ];
+      if (payload.question) blocks.push({ kind: "quote", text: payload.question });
+      if (payload.prospectEmail) {
+        blocks.push({
+          kind: "button",
+          label: "Lui répondre",
+          href: `mailto:${payload.prospectEmail}?subject=${encodeURIComponent(`Re: ${link.document.name}`)}`,
+        });
+      }
+      const url = `${linkUrl}#questions`;
+      blocks.push({ kind: "text", text: `Le deal et la conversation : ${url}` });
+      return {
+        subject: `${who} a une question sur votre proposition`,
+        line: `${who} a une question sur ${doc}${payload.question ? ` : « ${payload.question.slice(0, 200)} »` : ""}`,
+        blocks,
+        url,
       };
     }
     case "DRAFT_READY": {
@@ -215,13 +241,25 @@ export async function createAndDeliverAlert(input: AlertDelivery) {
             subject: message.subject,
             html,
             text,
-            replyTo: input.type === "CHANGE_REQUESTED" ? (input.payload.prospectEmail ?? undefined) : undefined,
+            replyTo:
+              input.type === "CHANGE_REQUESTED" || input.type === "PROSPECT_QUESTION"
+                ? (input.payload.prospectEmail ?? undefined)
+                : undefined,
           });
         }
       } else if (channel === "SLACK") {
         if (!settings?.slackWebhookUrl) throw new Error("webhook Slack non configuré");
-        const icon = input.priority === "ACTION" ? "✅" : input.type === "DRAFT_READY" ? "✍️" : READER_ALERTS.has(input.type) ? "👥" : "🔥";
-        await postSlackMessage(decryptSecret(settings.slackWebhookUrl), `${icon} ${message.line}\n${message.url}`);
+        const icon =
+          input.type === "PROSPECT_QUESTION"
+            ? "❓"
+            : input.priority === "ACTION"
+              ? "✅"
+              : input.type === "DRAFT_READY"
+                ? "✍️"
+                : READER_ALERTS.has(input.type)
+                  ? "👥"
+                  : "🔥";
+        await postSlackMessage(decryptSecret(settings.slackWebhookUrl), `${icon} ${escapeSlackText(message.line)}\n${message.url}`);
       } else if (channel === "WEBHOOK") {
         if (!settings?.outboundWebhookUrl || !settings.webhookSecret) throw new Error("webhook non configuré");
         const prospect = link.prospects[0];

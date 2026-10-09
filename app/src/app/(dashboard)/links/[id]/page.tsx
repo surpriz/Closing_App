@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 
 import { ActivityTimeline, type TimelineItem } from "@/components/dashboard/activity-timeline";
 import { ArchiveLinkButton } from "@/components/dashboard/archive-link-button";
+import { ChatTranscript, type TranscriptConversation } from "@/components/dashboard/chat-transcript";
 import { CopyButton } from "@/components/dashboard/copy-button";
 import { DealContextForm } from "@/components/dashboard/deal-context-form";
 import { DealInsightPanel } from "@/components/dashboard/deal-insight-panel";
@@ -90,7 +91,7 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
   const score = await freshEngagementScore(link.id, link.engagementScore);
   catchUpInBackground({ organizationId: organization.id, linkId: link.id, documentId: link.document.id });
 
-  const [analytics, settings, origin, followups, alerts, actions, live, sellerActivities, insight, readerMap] = await Promise.all([
+  const [analytics, settings, origin, followups, alerts, actions, live, sellerActivities, insight, readerMap, chatRows] = await Promise.all([
     getLinkAnalytics(link.id),
     getWorkspaceSettings(organization.id),
     getAppOrigin(),
@@ -100,8 +101,12 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
       take: 30,
       include: { prospect: { select: { name: true, email: true } } },
     }),
-    // Prospect actions have their own timeline entries
-    prisma.sellerAlert.findMany({ where: { linkId: link.id, type: { notIn: ["PROSPECT_VALIDATED", "CHANGE_REQUESTED"] } }, orderBy: { createdAt: "desc" }, take: 20 }),
+    // Prospect actions and forwarded questions have their own timeline entries
+    prisma.sellerAlert.findMany({
+      where: { linkId: link.id, type: { notIn: ["PROSPECT_VALIDATED", "CHANGE_REQUESTED", "PROSPECT_QUESTION"] } },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+    }),
     prisma.prospectAction.findMany({
       where: { linkId: link.id },
       orderBy: { createdAt: "desc" },
@@ -112,6 +117,21 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
     prisma.sellerActivity.findMany({ where: { linkId: link.id }, orderBy: { occurredAt: "desc" }, take: 20 }),
     getLatestInsight(link.id),
     getReaderMap(link.id),
+    // The seller testing their own link is left out
+    prisma.chatMessage.findMany({
+      where: { linkId: link.id, view: { fromSeller: false } },
+      orderBy: { createdAt: "desc" },
+      take: 200,
+      select: {
+        id: true,
+        role: true,
+        content: true,
+        escalated: true,
+        flags: true,
+        createdAt: true,
+        view: { select: { visitorId: true, email: true, prospect: { select: { name: true, email: true } } } },
+      },
+    }),
   ]);
   const insightRecipient = insight?.recommendedAction.prospectId
     ? link.prospects.find((p) => p.id === insight.recommendedAction.prospectId)
@@ -135,6 +155,19 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
   });
 
   const reasons = Array.isArray(score?.reasons) ? (score.reasons as unknown as EngagementReason[]) : [];
+
+  const conversations = new Map<string, TranscriptConversation>();
+  for (const row of [...chatRows].reverse()) {
+    const conversation = conversations.get(row.view.visitorId) ?? {
+      visitorId: row.view.visitorId,
+      reader: row.view.prospect?.name ?? row.view.prospect?.email ?? row.view.email ?? "Lecteur anonyme",
+      messages: [],
+    };
+    conversation.messages.push(row);
+    conversations.set(row.view.visitorId, conversation);
+  }
+  // Latest conversation first
+  const transcript = [...conversations.values()].reverse();
 
   const readerLabels = labelReaders(analytics.recentViews);
   const timeline: TimelineItem[] = [
@@ -162,6 +195,15 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
       }`,
       detail: action.message ? `« ${action.message} »` : null,
     })),
+    ...chatRows
+      .filter((row) => row.escalated)
+      .map((row) => ({
+        id: `question-${row.id}`,
+        at: row.createdAt,
+        kind: "question" as const,
+        title: `${row.view.prospect?.name ?? row.view.prospect?.email ?? row.view.email ?? "Le prospect"} a une question pour vous`,
+        detail: `« ${row.content} »`,
+      })),
     ...followups
       .filter((f) => f.sentAt && f.status === "SENT")
       .map((f) => ({
@@ -239,10 +281,11 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
                 linkId={link.id}
                 initial={{
                   // Not updatedAt: it moves on every tracking flush and the page refreshes itself
-                  version: [link.name, link.requireEmail, link.ctaEnabled, link.followupsEnabled].join("|"),
+                  version: [link.name, link.requireEmail, link.ctaEnabled, link.chatEnabled, link.followupsEnabled].join("|"),
                   name: link.name ?? "",
                   requireEmail: link.requireEmail,
                   ctaEnabled: link.ctaEnabled,
+                  chatEnabled: link.chatEnabled,
                   followupsEnabled: link.followupsEnabled,
                 }}
               />
@@ -385,6 +428,15 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
                 />
               </Surface>
             </section>
+
+            {transcript.length > 0 && (
+              <section id="questions" className="scroll-mt-20">
+                <SectionTitle hint="posées à l'assistant du document">Questions du prospect</SectionTitle>
+                <Surface>
+                  <ChatTranscript conversations={transcript} />
+                </Surface>
+              </section>
+            )}
 
             {testToolsEnabled() && <LinkTestTools linkId={link.id} />}
 

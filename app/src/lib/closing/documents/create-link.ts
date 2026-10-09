@@ -17,15 +17,21 @@ export async function createDocumentLink(input: {
   // Inserted in an email that is not sent yet: confirmed by confirmLinkSent
   draft?: boolean;
 }) {
-  const document = await prisma.document.findFirst({
-    where: {
-      id: input.documentId,
-      organizationId: input.organizationId,
-      archivedAt: null,
-      status: { not: "FAILED" },
-    },
-    select: { id: true, name: true, docType: true, displayTitle: true },
-  });
+  const [document, settings] = await Promise.all([
+    prisma.document.findFirst({
+      where: {
+        id: input.documentId,
+        organizationId: input.organizationId,
+        archivedAt: null,
+        status: { not: "FAILED" },
+      },
+      select: { id: true, name: true, docType: true, displayTitle: true },
+    }),
+    prisma.workspaceSettings.findUnique({
+      where: { organizationId: input.organizationId },
+      select: { chatEnabledByDefault: true },
+    }),
+  ]);
   if (!document) return null;
 
   const { prospect } = input;
@@ -39,6 +45,7 @@ export async function createDocumentLink(input: {
       createdById: input.userId,
       name: input.name || prospect?.company || prospect?.email || (input.draft ? title : null),
       requireEmail: input.requireEmail,
+      chatEnabled: settings?.chatEnabledByDefault ?? true,
       sentAt: input.draft ? null : now,
       draftAt: input.draft ? now : null,
       source: input.source ?? null,

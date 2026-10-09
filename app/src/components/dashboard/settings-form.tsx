@@ -24,6 +24,7 @@ type Props = {
     senderName: string;
     senderSignature: string;
     autonomy: "COPILOT" | "AUTOPILOT";
+    chatEnabledByDefault: boolean;
     offerDescription: string;
     targetCustomer: string;
     valueProps: string;
@@ -194,6 +195,22 @@ export function SettingsForm({ initial, notifications, providers, canEditWorkspa
                 </span>
               </label>
             </div>
+          </Row>
+          <Row
+            hint={
+              providers.ai
+                ? "Il répond au prospect à partir du document seulement, jamais d'un prix ou d'une condition inventés. Ce qu'il ne sait pas, il vous le transmet aussitôt. Réglable lien par lien."
+                : "Aucune IA n'est configurée : l'assistant reste masqué pour l'instant."
+            }
+          >
+            <label className="flex cursor-pointer items-center gap-2.5">
+              <Checkbox
+                name="chatEnabledByDefault"
+                defaultChecked={initial.chatEnabledByDefault}
+                onCheckedChange={markDirty}
+              />
+              <span>Assistant qui répond aux questions sur les nouveaux liens</span>
+            </label>
           </Row>
         </Section>
 

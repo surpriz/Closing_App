@@ -262,6 +262,7 @@ enum SellerAlertType {
   COMMITTEE_LIVE // several people of the prospect side read at the same time
   NEW_READER // someone other than the recipient opened the proposal
   DECISION_MAKER_DETECTED // a finance or executive contact reads the proposal
+  PROSPECT_QUESTION // the prospect asked the assistant something it could not answer
 }
 
 // Role of a prospect contact in the buying committee, set by the seller.
@@ -322,7 +323,7 @@ model WorkspaceSettings {
   multiViewerThreshold      Int               @default(2) // alert when live unique viewers > threshold
   committeeThreshold        Int               @default(3) // committee alert when live distinct people >= threshold
   reopenAfterInactivityDays Int               @default(3)
-  chatEnabledByDefault      Boolean           @default(false)
+  chatEnabledByDefault      Boolean           @default(true)
 
   alertChannels      SellerAlertChannel[] @default([EMAIL])
   alertEmail         String?
@@ -436,7 +437,7 @@ model Link {
   expiresAt     DateTime?
 
   dealStatus  DealStatus @default(OPEN)
-  chatEnabled Boolean    @default(false)
+  chatEnabled Boolean    @default(true)
   ctaEnabled  Boolean    @default(true)
 
   followupsEnabled       Boolean           @default(true)
@@ -813,10 +814,12 @@ model ChatMessage {
   model     String?
   tokensIn  Int?
   tokensOut Int?
+  escalated Boolean  @default(false) // USER row: the assistant forwarded the question to the seller
+  flags     String[] @default([]) // ASSISTANT row: guard codes, the seller should check the answer
 
   createdAt DateTime @default(now())
 
   @@index([viewId, createdAt])
-  @@index([linkId])
+  @@index([linkId, createdAt])
   @@map("chat_messages")
 }

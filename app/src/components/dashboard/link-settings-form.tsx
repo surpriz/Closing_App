@@ -26,6 +26,7 @@ type Props = {
     name: string;
     requireEmail: boolean;
     ctaEnabled: boolean;
+    chatEnabled: boolean;
     followupsEnabled: boolean;
   };
 };
@@ -53,6 +54,12 @@ function LinkSettingsForm({ linkId, initial }: Props) {
         <div className="space-y-2">
           <FormCheckbox name="requireEmail" label="Demander l'email avant lecture" defaultChecked={initial.requireEmail} />
           <FormCheckbox name="ctaEnabled" label="Afficher les boutons « Valider » et « Demander un ajustement »" defaultChecked={initial.ctaEnabled} />
+          <FormCheckbox
+            name="chatEnabled"
+            label="Assistant qui répond aux questions du prospect"
+            hint="Il répond uniquement à partir du document et vous transmet ce qu'il ne sait pas."
+            defaultChecked={initial.chatEnabled}
+          />
           <FormCheckbox
             name="followupsEnabled"
             label="Pilote automatique sur ce deal"

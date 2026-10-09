@@ -14,7 +14,8 @@ export type DigestData = {
   /** "hier", "vendredi"… how the period is named in the email. */
   sinceLabel: string;
   todo: { label: string; documentName: string; why: string; url: string }[];
-  actions: { label: string; kind: "validated" | "change"; message: string | null; url: string }[];
+  /** Prospect answers, and questions the assistant passed on to the seller. */
+  actions: { label: string; kind: "validated" | "change" | "question"; message: string | null; url: string }[];
   counts: { readers: number; followupsSent: number; followupsFailed: number; unsubscribed: number };
   /** Autopilot: follow-ups that went out without the seller reading them. */
   autoSent: { label: string; subject: string | null; url: string }[];
@@ -54,7 +55,12 @@ export function buildDigest(data: DigestData) {
     blocks.push({
       kind: "list",
       items: data.actions.map((a) => ({
-        text: a.kind === "validated" ? `${a.label} a validé` : `${a.label} demande un ajustement`,
+        text:
+          a.kind === "validated"
+            ? `${a.label} a validé`
+            : a.kind === "change"
+              ? `${a.label} demande un ajustement`
+              : `${a.label} a posé une question`,
         detail: a.message ? `« ${a.message.length > 180 ? `${a.message.slice(0, 177)}…` : a.message} »` : undefined,
         href: a.url,
       })),

@@ -15,6 +15,11 @@ export function isSafeOutboundUrl(value: string) {
   }
 }
 
+/** Slack reads <!channel>, <@user> and <url|label> in plain text: prospect words must stay words. */
+export function escapeSlackText(text: string) {
+  return text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+}
+
 export async function postSlackMessage(webhookUrl: string, text: string) {
   const response = await fetch(webhookUrl, {
     method: "POST",

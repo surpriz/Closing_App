@@ -81,6 +81,7 @@ export default async function SettingsPage() {
               senderName: settings.senderName ?? "",
               senderSignature: settings.senderSignature ?? "",
               autonomy: settings.autonomy,
+              chatEnabledByDefault: settings.chatEnabledByDefault,
               offerDescription: settings.offerDescription ?? "",
               targetCustomer: settings.targetCustomer ?? "",
               valueProps: settings.valueProps ?? "",

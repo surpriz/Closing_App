@@ -40,6 +40,24 @@ export type ViewerLabels = {
   changeTitle: string;
   notFoundTitle: string;
   notFoundText: string;
+  /** Assistant on the document. {sender} is replaced by the sender's name. */
+  chatLauncher: string;
+  chatTitle: string;
+  chatIntro: string;
+  chatPlaceholder: string;
+  chatClose: string;
+  chatThinking: string;
+  chatDisclaimer: string;
+  chatForwarded: string;
+  chatError: string;
+  chatLimit: string;
+  chatSenderFallback: string;
+  chatSuggestScope: string;
+  chatSuggestPricing: string;
+  chatSuggestTiming: string;
+  chatSuggestTerms: string;
+  chatSuggestSummary: string;
+  chatSuggestNext: string;
 };
 
 const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
@@ -79,6 +97,23 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     changeTitle: "What would you like to change?",
     notFoundTitle: "This link is no longer available",
     notFoundText: "It may have expired or been withdrawn. Ask the sender for a new link.",
+    chatLauncher: "Ask a question",
+    chatTitle: "Questions about this proposal",
+    chatIntro: "Hi! I can answer your questions about this document while {sender} is away.",
+    chatPlaceholder: "Ask about the scope, prices, conditions…",
+    chatClose: "Close",
+    chatThinking: "Writing…",
+    chatDisclaimer: "Automatic answers based on this document only. {sender} can read this conversation.",
+    chatForwarded: "Question passed on to {sender}",
+    chatError: "The assistant is unavailable, please try again in a moment.",
+    chatLimit: "You've reached the question limit for now. {sender} will be happy to answer directly.",
+    chatSenderFallback: "the sender",
+    chatSuggestScope: "What exactly is included?",
+    chatSuggestPricing: "How does payment work?",
+    chatSuggestTiming: "What is the timeline?",
+    chatSuggestTerms: "What are the conditions?",
+    chatSuggestSummary: "Can you sum up this proposal?",
+    chatSuggestNext: "What are the next steps?",
   },
   fr: {
     loading: "Chargement du document…",
@@ -116,6 +151,23 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     changeTitle: "Que souhaitez-vous ajuster ?",
     notFoundTitle: "Ce lien n'est plus disponible",
     notFoundText: "Il a peut-être expiré ou été retiré. Demandez un nouveau lien à l'expéditeur.",
+    chatLauncher: "Poser une question",
+    chatTitle: "Une question sur cette proposition ?",
+    chatIntro: "Bonjour ! Je peux répondre à vos questions sur ce document en l'absence de {sender}.",
+    chatPlaceholder: "Périmètre, prix, conditions…",
+    chatClose: "Fermer",
+    chatThinking: "Rédaction…",
+    chatDisclaimer: "Réponses automatiques basées uniquement sur ce document. {sender} peut lire cette conversation.",
+    chatForwarded: "Question transmise à {sender}",
+    chatError: "L'assistant est indisponible, réessayez dans un instant.",
+    chatLimit: "Vous avez atteint la limite de questions pour le moment. {sender} vous répondra volontiers directement.",
+    chatSenderFallback: "l'expéditeur",
+    chatSuggestScope: "Qu'est-ce qui est inclus exactement ?",
+    chatSuggestPricing: "Comment se passe le paiement ?",
+    chatSuggestTiming: "Quel est le calendrier ?",
+    chatSuggestTerms: "Quelles sont les conditions ?",
+    chatSuggestSummary: "Pouvez-vous résumer cette proposition ?",
+    chatSuggestNext: "Quelles sont les prochaines étapes ?",
   },
   es: {
     loading: "Cargando el documento…",
@@ -153,6 +205,23 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     changeTitle: "¿Qué te gustaría ajustar?",
     notFoundTitle: "Este enlace ya no está disponible",
     notFoundText: "Puede haber caducado o haber sido retirado. Pide un nuevo enlace al remitente.",
+    chatLauncher: "Hacer una pregunta",
+    chatTitle: "¿Preguntas sobre esta propuesta?",
+    chatIntro: "¡Hola! Puedo responder a sus preguntas sobre este documento mientras {sender} no está disponible.",
+    chatPlaceholder: "Alcance, precios, condiciones…",
+    chatClose: "Cerrar",
+    chatThinking: "Escribiendo…",
+    chatDisclaimer: "Respuestas automáticas basadas solo en este documento. {sender} puede leer esta conversación.",
+    chatForwarded: "Pregunta enviada a {sender}",
+    chatError: "El asistente no está disponible, inténtelo de nuevo en un momento.",
+    chatLimit: "Ha alcanzado el límite de preguntas por ahora. {sender} le responderá con gusto directamente.",
+    chatSenderFallback: "el remitente",
+    chatSuggestScope: "¿Qué incluye exactamente?",
+    chatSuggestPricing: "¿Cómo funciona el pago?",
+    chatSuggestTiming: "¿Cuál es el calendario?",
+    chatSuggestTerms: "¿Cuáles son las condiciones?",
+    chatSuggestSummary: "¿Puede resumir esta propuesta?",
+    chatSuggestNext: "¿Cuáles son los próximos pasos?",
   },
   de: {
     loading: "Dokument wird geladen…",
@@ -190,6 +259,23 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     changeTitle: "Was möchten Sie anpassen?",
     notFoundTitle: "Dieser Link ist nicht mehr verfügbar",
     notFoundText: "Er ist möglicherweise abgelaufen oder wurde zurückgezogen. Bitten Sie den Absender um einen neuen Link.",
+    chatLauncher: "Frage stellen",
+    chatTitle: "Fragen zu diesem Angebot?",
+    chatIntro: "Hallo! Ich beantworte Ihre Fragen zu diesem Dokument, während {sender} nicht erreichbar ist.",
+    chatPlaceholder: "Umfang, Preise, Konditionen…",
+    chatClose: "Schließen",
+    chatThinking: "Schreibt…",
+    chatDisclaimer: "Automatische Antworten, nur auf Grundlage dieses Dokuments. {sender} kann diese Unterhaltung lesen.",
+    chatForwarded: "Frage an {sender} weitergeleitet",
+    chatError: "Der Assistent ist nicht verfügbar, bitte versuchen Sie es gleich noch einmal.",
+    chatLimit: "Sie haben das Fragelimit vorerst erreicht. {sender} antwortet Ihnen gern direkt.",
+    chatSenderFallback: "der Absender",
+    chatSuggestScope: "Was genau ist enthalten?",
+    chatSuggestPricing: "Wie läuft die Zahlung ab?",
+    chatSuggestTiming: "Wie ist der Zeitplan?",
+    chatSuggestTerms: "Was sind die Konditionen?",
+    chatSuggestSummary: "Können Sie dieses Angebot zusammenfassen?",
+    chatSuggestNext: "Was sind die nächsten Schritte?",
   },
 };
 

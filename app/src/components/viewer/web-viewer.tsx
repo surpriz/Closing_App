@@ -4,8 +4,10 @@ import { ExternalLink } from "lucide-react";
 
 import { buttonVariants } from "@/components/ui/button";
 import type { DealStatus } from "@/generated/prisma/enums";
+import type { SupportedLocale } from "@/lib/closing/constants";
 import type { ViewerLabels } from "@/lib/closing/i18n/viewer";
 
+import { ChatWidget, type ChatWidgetData } from "./chat-widget";
 import { CtaBar } from "./cta-bar";
 import { PrivacyNotice } from "./privacy-notice";
 import { usePageTracking } from "./use-page-tracking";
@@ -21,10 +23,24 @@ type Props = {
   labels: ViewerLabels;
   ctaEnabled: boolean;
   dealStatus: DealStatus;
+  locale: SupportedLocale;
+  /** Null when the assistant is off for this link. */
+  chat: ChatWidgetData | null;
 };
 
 // URL documents (Notion, Loom, Figma...) are tracked as a single page
-export function WebViewer({ slug, documentName, senderName, externalUrl, embedUrl, labels, ctaEnabled, dealStatus }: Props) {
+export function WebViewer({
+  slug,
+  documentName,
+  senderName,
+  externalUrl,
+  embedUrl,
+  labels,
+  ctaEnabled,
+  dealStatus,
+  locale,
+  chat,
+}: Props) {
   const { getViewId } = usePageTracking(slug, 1, { embedded: true, countTime: !!embedUrl });
 
   return (
@@ -50,7 +66,7 @@ export function WebViewer({ slug, documentName, senderName, externalUrl, embedUr
         }
       />
 
-      <main className={`flex min-h-0 flex-1 flex-col gap-2 px-2 pt-2 sm:px-4 ${ctaEnabled ? "pb-36 sm:pb-24" : "pb-2"}`}>
+      <main className={`flex min-h-0 flex-1 flex-col gap-2 px-2 pt-2 sm:px-4 ${ctaEnabled ? "pb-36 sm:pb-24" : chat ? "pb-20" : "pb-2"}`}>
         {embedUrl ? (
           <iframe
             src={embedUrl}
@@ -88,6 +104,18 @@ export function WebViewer({ slug, documentName, senderName, externalUrl, embedUr
           initialStatus={dealStatus}
           getViewId={getViewId}
           documentName={documentName}
+        />
+      )}
+
+      {chat && (
+        <ChatWidget
+          {...chat}
+          slug={slug}
+          labels={labels}
+          locale={locale}
+          senderName={senderName}
+          getViewId={getViewId}
+          ctaVisible={ctaEnabled}
         />
       )}
     </div>

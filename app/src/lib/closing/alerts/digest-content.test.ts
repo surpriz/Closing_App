@@ -36,6 +36,15 @@ describe("buildDigest", () => {
     expect(digest.html).toContain("Remise &lt;10%&gt; ?");
   });
 
+  it("lists the questions passed on by the assistant with the answers", () => {
+    const digest = buildDigest({
+      ...empty,
+      actions: [{ label: "Acme", kind: "question", message: "Une remise est-elle possible ?", url: "https://x/l#questions" }],
+    })!;
+    expect(digest.text).toContain("Acme a posé une question");
+    expect(digest.text).toContain("« Une remise est-elle possible ? »");
+  });
+
   it("lists the counts of the period and the drafts waiting", () => {
     const digest = buildDigest({
       ...empty,

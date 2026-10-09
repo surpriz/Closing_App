@@ -30,6 +30,8 @@ const serverEnvSchema = z.object({
   // Deal analyses per workspace per day, and AI spend per day across all workspaces
   AI_BRAIN_DAILY_LIMIT: z.coerce.number().int().min(0).default(200),
   AI_DAILY_BUDGET_USD: z.coerce.number().min(0).default(20),
+  AI_CHAT_DAILY_LIMIT: z.coerce.number().int().min(0).default(300),
+  AI_CHAT_DAILY_BUDGET_USD: z.coerce.number().min(0).default(10),
 
   TWILIO_ACCOUNT_SID: z.string().optional(),
   TWILIO_AUTH_TOKEN: z.string().optional(),

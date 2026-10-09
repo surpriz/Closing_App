@@ -4,8 +4,10 @@ import type { PDFDocumentLoadingTask, PDFDocumentProxy, RenderTask } from "pdfjs
 import { useEffect, useRef, useState } from "react";
 
 import type { DealStatus } from "@/generated/prisma/enums";
+import type { SupportedLocale } from "@/lib/closing/constants";
 import type { ViewerLabels } from "@/lib/closing/i18n/viewer";
 
+import { ChatWidget, type ChatWidgetData } from "./chat-widget";
 import { CtaBar } from "./cta-bar";
 import { PrivacyNotice } from "./privacy-notice";
 import { usePageTracking } from "./use-page-tracking";
@@ -21,9 +23,12 @@ type Props = {
   labels: ViewerLabels;
   ctaEnabled: boolean;
   dealStatus: DealStatus;
+  locale: SupportedLocale;
+  /** Null when the assistant is off for this link. */
+  chat: ChatWidgetData | null;
 };
 
-export function PdfViewer({ slug, fileUrl, documentName, senderName, labels, ctaEnabled, dealStatus }: Props) {
+export function PdfViewer({ slug, fileUrl, documentName, senderName, labels, ctaEnabled, dealStatus, locale, chat }: Props) {
   const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null);
   const [sizes, setSizes] = useState<PageSize[]>([]);
   const [failed, setFailed] = useState(false);
@@ -116,6 +121,18 @@ export function PdfViewer({ slug, fileUrl, documentName, senderName, labels, cta
           getViewId={getViewId}
           documentName={documentName}
           atEnd={sizes.length > 0 && currentPage >= sizes.length}
+        />
+      )}
+
+      {chat && (
+        <ChatWidget
+          {...chat}
+          slug={slug}
+          labels={labels}
+          locale={locale}
+          senderName={senderName}
+          getViewId={getViewId}
+          ctaVisible={ctaEnabled && !!pdf}
         />
       )}
     </div>

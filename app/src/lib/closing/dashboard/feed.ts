@@ -86,6 +86,7 @@ function describeAlert(type: SellerAlertType, payload: unknown) {
   if (type === "CALL_MOMENT") return reason ? `est lu en ce moment (${reason.toLowerCase()})` : "est lu en ce moment";
   if (type === "PROSPECT_VALIDATED") return "a été validé";
   if (type === "CHANGE_REQUESTED") return "fait l'objet d'une demande d'ajustement";
+  if (type === "PROSPECT_QUESTION") return "a une question en attente de votre réponse";
   if (type === "MULTI_VIEWER") {
     return liveViewers ? `est lu par ${liveViewers} personnes en même temps` : "est lu à plusieurs";
   }

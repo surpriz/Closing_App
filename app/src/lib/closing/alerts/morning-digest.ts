@@ -98,12 +98,19 @@ async function loadDigestData(
   const appUrl = getPublicAppUrl();
   const mine = { organizationId, ...sellerLinks(scope) };
 
-  const [deals, actions, readers, followupsSent, followupsFailed, unsubscribed, autoSent, drafts] = await Promise.all([
+  const linkLabel = { select: { name: true, slug: true, prospects: { orderBy: { createdAt: "asc" }, take: 1, select: { name: true, email: true, company: true } } } } as const;
+  const [deals, actions, questions, readers, followupsSent, followupsFailed, unsubscribed, autoSent, drafts] = await Promise.all([
     getOpenDeals(organizationId, { owner: scope }),
     prisma.prospectAction.findMany({
       where: { createdAt: { gte: since }, link: mine },
       orderBy: { createdAt: "asc" },
-      select: { type: true, message: true, linkId: true, link: { select: { name: true, slug: true, prospects: { orderBy: { createdAt: "asc" }, take: 1, select: { name: true, email: true, company: true } } } } },
+      select: { type: true, message: true, linkId: true, createdAt: true, link: linkLabel },
+    }),
+    // Questions the assistant could not answer and promised the seller would
+    prisma.chatMessage.findMany({
+      where: { role: "USER", escalated: true, createdAt: { gte: since }, link: mine, view: { fromSeller: false } },
+      orderBy: { createdAt: "asc" },
+      select: { content: true, linkId: true, createdAt: true, link: linkLabel },
     }),
     prisma.documentView.groupBy({ by: ["linkId"], where: { isBot: false, startedAt: { gte: since }, link: mine } }),
     prisma.followup.count({ where: { status: { in: ["SENT", "DELIVERED"] }, sentAt: { gte: since }, link: mine } }),
@@ -136,12 +143,24 @@ async function loadDigestData(
     appUrl,
     sinceLabel: sinceLabel(since, now, timezone),
     todo,
-    actions: actions.map((a) => ({
-      label: prospectLabel(a.link),
-      kind: a.type === "VALIDATE_SIGN" ? "validated" : "change",
-      message: a.message,
-      url: `${appUrl}/links/${a.linkId}`,
-    })),
+    actions: [
+      ...actions.map((a) => ({
+        at: a.createdAt,
+        label: prospectLabel(a.link),
+        kind: a.type === "VALIDATE_SIGN" ? ("validated" as const) : ("change" as const),
+        message: a.message,
+        url: `${appUrl}/links/${a.linkId}`,
+      })),
+      ...questions.map((q) => ({
+        at: q.createdAt,
+        label: prospectLabel(q.link),
+        kind: "question" as const,
+        message: q.content,
+        url: `${appUrl}/links/${q.linkId}#questions`,
+      })),
+    ]
+      .sort((a, b) => a.at.getTime() - b.at.getTime())
+      .map((action) => ({ label: action.label, kind: action.kind, message: action.message, url: action.url })),
     counts: { readers: readers.length, followupsSent, followupsFailed, unsubscribed },
     autoSent: autoSent.map((f) => ({
       label: f.prospect.company ?? f.prospect.name ?? f.prospect.email,

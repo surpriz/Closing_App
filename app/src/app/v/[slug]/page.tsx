@@ -1,14 +1,19 @@
 import { Loader2 } from "lucide-react";
 import type { Metadata } from "next";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { notFound } from "next/navigation";
 
 import { AutoRefresh } from "@/components/dashboard/auto-refresh";
+import type { ChatWidgetData } from "@/components/viewer/chat-widget";
 import { EmailGate } from "@/components/viewer/email-gate";
 import { PdfViewer } from "@/components/viewer/pdf-viewer";
 import { WebViewer } from "@/components/viewer/web-viewer";
-import { getViewerLabels, pickLocale } from "@/lib/closing/i18n/viewer";
+import { getLanguageModel } from "@/lib/closing/ai/provider";
+import { suggestQuestions, toUIMessages } from "@/lib/closing/chat/messages";
+import { loadChatSetup } from "@/lib/closing/chat/queries";
+import { getViewerLabels, pickLocale, type ViewerLabels } from "@/lib/closing/i18n/viewer";
 import { getLinkForViewer, getViewerAccess } from "@/lib/closing/links";
+import { VISITOR_COOKIE } from "@/lib/closing/tracking/visitor";
 import { prisma } from "@/lib/db";
 import { isWorkspaceMember } from "@/lib/session";
 
@@ -75,6 +80,8 @@ export default async function ViewerPage({ params }: PageProps<"/v/[slug]">) {
     );
   }
 
+  const chat = await loadChatWidget(link, labels);
+
   const sellerNotice = (await isWorkspaceMember(link.organizationId)) && (
     <p
       role="status"
@@ -98,6 +105,8 @@ export default async function ViewerPage({ params }: PageProps<"/v/[slug]">) {
           labels={labels}
           ctaEnabled={link.ctaEnabled}
           dealStatus={link.dealStatus}
+          locale={locale}
+          chat={chat}
         />
       </>
     );
@@ -114,7 +123,21 @@ export default async function ViewerPage({ params }: PageProps<"/v/[slug]">) {
         labels={labels}
         ctaEnabled={link.ctaEnabled}
         dealStatus={link.dealStatus}
+        locale={locale}
+        chat={chat}
       />
     </>
   );
+}
+
+// Shown only when on for the link, an AI is configured and the document has something to answer from
+async function loadChatWidget(
+  link: { id: string; chatEnabled: boolean; document: { id: string } },
+  labels: ViewerLabels,
+): Promise<ChatWidgetData | null> {
+  if (!link.chatEnabled || !getLanguageModel("chat")) return null;
+  const visitorId = (await cookies()).get(VISITOR_COOKIE)?.value;
+  const setup = await loadChatSetup({ id: link.id, documentId: link.document.id }, visitorId);
+  if (!setup.hasKnowledge) return null;
+  return { initialMessages: toUIMessages(setup.history), suggestions: suggestQuestions(setup.tags, labels) };
 }

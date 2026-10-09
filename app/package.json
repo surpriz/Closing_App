@@ -19,6 +19,7 @@
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.53",
     "@ai-sdk/openai": "^4.0.66",
+    "@ai-sdk/react": "4.0.102",
     "@aws-sdk/client-sesv2": "^3.1135.0",
     "@base-ui/react": "^1.8.0",
     "@neondatabase/serverless": "^1.1.0",

@@ -31,6 +31,12 @@ describe("decideChannels", () => {
     expect(channels).toEqual(["EXTENSION", "SLACK", "WEBHOOK"]);
   });
 
+  it("tells the seller at once about a question the assistant could not answer", () => {
+    expect(
+      decideChannels({ ...base, type: "PROSPECT_QUESTION", now: NIGHT, workspaceChannels: ["SLACK"] }).channels,
+    ).toEqual(["EMAIL", "EXTENSION", "SLACK"]);
+  });
+
   it("sends call moments to the extension only by default", () => {
     expect(decideChannels({ ...base, type: "CALL_MOMENT" })).toEqual({ channels: ["EXTENSION"], reason: "ok" });
   });

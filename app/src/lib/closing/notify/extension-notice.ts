@@ -8,9 +8,14 @@ export function extensionNotice(
   type: SellerAlertType,
   who: string,
   documentName: string,
-  payload: { reason?: string; message?: string | null; liveViewers?: number; inactiveDays?: number },
+  payload: { reason?: string; message?: string | null; question?: string; liveViewers?: number; inactiveDays?: number },
 ) {
   switch (type) {
+    case "PROSPECT_QUESTION":
+      return {
+        title: `${who} a une question`,
+        body: payload.question ? `« ${truncate(payload.question, 110)} »` : `Sur « ${documentName} ».`,
+      };
     case "PROSPECT_VALIDATED":
       return { title: `${who} a validé`, body: `« ${documentName} » est validé. Revenez vers ce prospect rapidement.` };
     case "CHANGE_REQUESTED":

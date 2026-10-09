@@ -40,9 +40,9 @@ const TRACKING_HINTS: RegExp[] = [
   // de
   words(/\b(ich habe gesehen|mir ist aufgefallen)\b/),
   words(/\b(Sie haben|du hast)\b.{0,30}\b(geöffnet|gelesen|angesehen|angeschaut)\b/),
-  // any language: pointing at a page number gives the reading away
-  words(/\b(page|p\.|página|seite)\s*\d+/),
 ];
+// Any language: in a follow-up, pointing at a page number gives the reading away
+const PAGE_NUMBER_HINT = words(/\b(page|p\.|página|seite)\s*\d+/);
 
 const MONTHS =
   "janvier|février|fevrier|mars|avril|mai|juin|juillet|août|aout|septembre|octobre|novembre|décembre|decembre|january|february|march|april|may|june|july|august|september|october|november|december";
@@ -78,17 +78,58 @@ function numbersIn(text: string) {
   return values;
 }
 
+/**
+ * The first phrase hinting that reading is tracked. Page numbers count unless
+ * allowed: the prospect chat answers about a page the prospect is looking at.
+ */
+export function findTrackingHint(prose: string, opts: { allowPageNumbers?: boolean } = {}) {
+  const patterns = opts.allowPageNumbers ? TRACKING_HINTS : [...TRACKING_HINTS, PAGE_NUMBER_HINT];
+  for (const pattern of patterns) {
+    const match = prose.match(pattern);
+    if (match) return match[0];
+  }
+  return null;
+}
+
+/** Amounts in the prose that the source never states. */
+export function findInventedFigures(prose: string, sourceText: string) {
+  const known = numbersIn(sourceText);
+  const invented: string[] = [];
+  for (const match of prose.matchAll(AMOUNT_PATTERN)) {
+    const digits = match[0].match(/\d[\d\s  .,]*\d|\d/u)?.[0];
+    const value = digits ? parseNumber(digits) : null;
+    const isK = /k€/iu.test(match[0]);
+    if (value === null) continue;
+    if (!known.has(value) && !(isK && known.has(value * 1000))) invented.push(match[0].trim());
+  }
+  return invented;
+}
+
+/** Dates ("12 mars") in the prose that the source never states. */
+export function findInventedDates(prose: string, sourceText: string) {
+  const sourceLower = sourceText.toLowerCase();
+  const invented: string[] = [];
+  for (const match of prose.matchAll(DATE_PATTERN)) {
+    if (!sourceLower.includes(match[0].toLowerCase().replace(/(\d)(er|st|nd|rd|th)/, "$1"))) invented.push(match[0]);
+  }
+  return invented;
+}
+
+export function hasPlaceholder(text: string) {
+  return PLACEHOLDER.test(text);
+}
+
 export function lintFollowup(draft: { subject: string | null; body: string }, ctx: GuardContext): GuardIssue[] {
   const issues: GuardIssue[] = [];
   const full = `${draft.subject ?? ""}\n${draft.body}`;
   // The URL itself contains digits and "page"-like words: judge the prose without it
   const prose = full.split(ctx.proposalUrl).join(" ");
 
-  const hint = TRACKING_HINTS.find((pattern) => pattern.test(prose));
+  const hint = findTrackingHint(prose);
   if (hint) {
     issues.push({
       code: "tracking_hint",
-      message: `Le message laisse deviner que la lecture est suivie (« ${prose.match(hint)![0]} »).`,
+      message: `Le message laisse deviner que la lecture est suivie (« ${hint} »).`,
     });
   }
 
@@ -100,25 +141,14 @@ export function lintFollowup(draft: { subject: string | null; body: string }, ct
     });
   }
 
-  const known = numbersIn(ctx.sourceText);
-  for (const match of prose.matchAll(AMOUNT_PATTERN)) {
-    const digits = match[0].match(/\d[\d\s  .,]*\d|\d/u)?.[0];
-    const value = digits ? parseNumber(digits) : null;
-    const isK = /k€/iu.test(match[0]);
-    if (value === null) continue;
-    if (!known.has(value) && !(isK && known.has(value * 1000))) {
-      issues.push({ code: "invented_figure", message: `Le montant « ${match[0].trim()} » n'apparaît pas dans la proposition.` });
-    }
+  for (const figure of findInventedFigures(prose, ctx.sourceText)) {
+    issues.push({ code: "invented_figure", message: `Le montant « ${figure} » n'apparaît pas dans la proposition.` });
+  }
+  for (const date of findInventedDates(prose, ctx.sourceText)) {
+    issues.push({ code: "invented_date", message: `La date « ${date} » n'apparaît pas dans la proposition.` });
   }
 
-  const sourceLower = ctx.sourceText.toLowerCase();
-  for (const match of prose.matchAll(DATE_PATTERN)) {
-    if (!sourceLower.includes(match[0].toLowerCase().replace(/(\d)(er|st|nd|rd|th)/, "$1"))) {
-      issues.push({ code: "invented_date", message: `La date « ${match[0]} » n'apparaît pas dans la proposition.` });
-    }
-  }
-
-  if (PLACEHOLDER.test(full)) {
+  if (hasPlaceholder(full)) {
     issues.push({ code: "placeholder", message: "Le message contient un texte à compléter." });
   }
   if (ctx.channel === "EMAIL" && EMOJI.test(full)) {

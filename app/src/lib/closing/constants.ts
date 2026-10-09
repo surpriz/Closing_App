@@ -12,6 +12,7 @@ export const WORKSPACE_DEFAULTS = {
 
 // The viewer flushes tracking every ~10s. A view is "live" if it pinged
 // within this window, which also tolerates short tab switches.
+export const HOUR_MS = 60 * 60 * 1000;
 export const DAY_MS = 24 * 60 * 60 * 1000;
 
 export const TRACKING_FLUSH_INTERVAL_MS = 10_000;

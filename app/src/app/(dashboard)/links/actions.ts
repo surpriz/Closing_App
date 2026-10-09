@@ -79,6 +79,7 @@ const linkSettingsSchema = z.object({
   name: z.string().trim().max(120).transform((v) => v || null),
   requireEmail: checkbox,
   ctaEnabled: checkbox,
+  chatEnabled: checkbox,
   followupsEnabled: checkbox,
 });
 
@@ -93,6 +94,7 @@ export async function saveLinkSettings(
     name: String(formData.get("name") ?? ""),
     requireEmail: formData.get("requireEmail") ?? undefined,
     ctaEnabled: formData.get("ctaEnabled") ?? undefined,
+    chatEnabled: formData.get("chatEnabled") ?? undefined,
     followupsEnabled: formData.get("followupsEnabled") ?? undefined,
   });
   if (!parsed.success) {
