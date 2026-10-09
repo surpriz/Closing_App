@@ -417,7 +417,7 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
           </section>
 
           <section>
-            <SectionTitle hint="vous seul le voyez">Le deal</SectionTitle>
+            <SectionTitle hint="votre équipe le voit, pas le prospect">Le deal</SectionTitle>
             <Surface>
               <div className="divide-y divide-border">
                 <DealContextForm

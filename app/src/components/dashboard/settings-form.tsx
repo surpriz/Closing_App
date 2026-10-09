@@ -42,7 +42,11 @@ type Props = {
     extensionConnected: boolean;
   };
   providers: { email: boolean; ai: string | null };
+  /** Owners and admins set the workspace; everyone sets their own notifications. */
+  canEditWorkspace: boolean;
 };
+
+const LOCKED_NOTE = "Réglé par un administrateur de l'espace.";
 
 const DIGEST_HOURS = [6, 7, 8, 9, 10];
 
@@ -50,11 +54,14 @@ function Section({
   title,
   description,
   id,
+  locked = false,
   children,
 }: {
   title: string;
   description: React.ReactNode;
   id: string;
+  /** Workspace-wide settings a plain member sees but cannot change. */
+  locked?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -62,8 +69,14 @@ function Section({
       <div className="space-y-1">
         <h2 className="text-heading">{title}</h2>
         <p className="text-body text-muted-foreground">{description}</p>
+        {locked && <p className="text-sm text-muted-foreground">{LOCKED_NOTE}</p>}
       </div>
-      <div className="divide-y divide-border rounded-xl bg-card shadow-xs ring-1 ring-border">{children}</div>
+      <fieldset
+        disabled={locked}
+        className="min-w-0 divide-y divide-border rounded-xl bg-card shadow-xs ring-1 ring-border disabled:opacity-60"
+      >
+        {children}
+      </fieldset>
     </section>
   );
 }
@@ -111,7 +124,8 @@ function ChannelBox({
   );
 }
 
-export function SettingsForm({ initial, notifications, providers }: Props) {
+export function SettingsForm({ initial, notifications, providers, canEditWorkspace }: Props) {
+  const locked = !canEditWorkspace;
   const [state, formAction, pending] = useActionState<SettingsState, FormData>(saveWorkspaceSettings, null);
   // Tied to the saved version: a successful save changes it, which clears the flag.
   const [dirtyVersion, setDirtyVersion] = useState<string | null>(null);
@@ -136,6 +150,7 @@ export function SettingsForm({ initial, notifications, providers }: Props) {
       <div key={initial.version} className="space-y-12">
         <Section
           id="pilote"
+          locked={locked}
           title="Pilote automatique"
           description={
             providers.ai
@@ -184,6 +199,7 @@ export function SettingsForm({ initial, notifications, providers }: Props) {
 
         <Section
           id="offre"
+          locked={locked}
           title="Votre offre"
           description={
             initial.offerInferredFrom
@@ -246,6 +262,7 @@ export function SettingsForm({ initial, notifications, providers }: Props) {
 
         <Section
           id="messages"
+          locked={locked}
           title="Vos messages"
           description="Les relances sont écrites en votre nom : comment vous signez, et sur quel ton."
         >
@@ -335,77 +352,80 @@ export function SettingsForm({ initial, notifications, providers }: Props) {
               </span>
             </label>
           </Row>
-          <Row>
-            <span className="mb-1 block">Pour toute l&apos;équipe, prévenir aussi sur</span>
-            <div className="flex flex-wrap gap-x-6 gap-y-2">
-              <ChannelBox
-                name="alertChannels"
-                value="SLACK"
-                label="Slack"
-                defaultChecked={initial.alertChannels.includes("SLACK")}
-                onChange={markDirty}
-              />
-              <ChannelBox
-                name="alertChannels"
-                value="WEBHOOK"
-                label="Outil externe"
-                defaultChecked={initial.alertChannels.includes("WEBHOOK")}
-                onChange={markDirty}
+          {/* Team-wide channels, in the middle of the seller's own notifications */}
+          <fieldset disabled={locked} className="min-w-0 divide-y divide-border disabled:opacity-60">
+            <Row hint={locked ? LOCKED_NOTE : undefined}>
+              <span className="mb-1 block">Pour toute l&apos;équipe, prévenir aussi sur</span>
+              <div className="flex flex-wrap gap-x-6 gap-y-2">
+                <ChannelBox
+                  name="alertChannels"
+                  value="SLACK"
+                  label="Slack"
+                  defaultChecked={initial.alertChannels.includes("SLACK")}
+                  onChange={markDirty}
+                />
+                <ChannelBox
+                  name="alertChannels"
+                  value="WEBHOOK"
+                  label="Outil externe"
+                  defaultChecked={initial.alertChannels.includes("WEBHOOK")}
+                  onChange={markDirty}
+                />
+              </div>
+            </Row>
+            <div className="space-y-1.5 px-5 py-4">
+              <Label htmlFor="alertEmail">Mettre en copie des emails d&apos;alerte</Label>
+              <Input
+                id="alertEmail"
+                name="alertEmail"
+                type="email"
+                defaultValue={initial.alertEmail}
+                placeholder="Facultatif, ex. direction commerciale"
               />
             </div>
-          </Row>
-          <div className="space-y-1.5 px-5 py-4">
-            <Label htmlFor="alertEmail">Mettre en copie des emails d&apos;alerte</Label>
-            <Input
-              id="alertEmail"
-              name="alertEmail"
-              type="email"
-              defaultValue={initial.alertEmail}
-              placeholder="Facultatif, ex. direction commerciale"
-            />
-          </div>
-          <details className="group px-5 py-4">
-            <summary className="flex cursor-pointer list-none items-center gap-1.5 text-body font-medium outline-none focus-visible:underline [&::-webkit-details-marker]:hidden">
-              <ChevronRight className="size-4 transition-transform group-open:rotate-90" />
-              Brancher Slack ou un outil externe
-            </summary>
-            <div className="mt-4 space-y-5">
-              <div className="space-y-1.5">
-                <Label htmlFor="slackWebhookUrl">Adresse du webhook Slack</Label>
-                <Input
-                  id="slackWebhookUrl"
-                  name="slackWebhookUrl"
-                  type="url"
-                  placeholder={
-                    initial.slackConfigured
-                      ? "Déjà branché, laissez vide pour le garder"
-                      : "https://hooks.slack.com/services/…"
-                  }
-                />
-                {initial.slackConfigured && (
-                  <label className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Checkbox name="removeSlack" onCheckedChange={markDirty} /> Débrancher Slack
-                  </label>
-                )}
+            <details className="group px-5 py-4">
+              <summary className="flex cursor-pointer list-none items-center gap-1.5 text-body font-medium outline-none focus-visible:underline [&::-webkit-details-marker]:hidden">
+                <ChevronRight className="size-4 transition-transform group-open:rotate-90" />
+                Brancher Slack ou un outil externe
+              </summary>
+              <div className="mt-4 space-y-5">
+                <div className="space-y-1.5">
+                  <Label htmlFor="slackWebhookUrl">Adresse du webhook Slack</Label>
+                  <Input
+                    id="slackWebhookUrl"
+                    name="slackWebhookUrl"
+                    type="url"
+                    placeholder={
+                      initial.slackConfigured
+                        ? "Déjà branché, laissez vide pour le garder"
+                        : "https://hooks.slack.com/services/…"
+                    }
+                  />
+                  {initial.slackConfigured && (
+                    <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Checkbox name="removeSlack" onCheckedChange={markDirty} /> Débrancher Slack
+                    </label>
+                  )}
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="outboundWebhookUrl">Webhook (CRM, Zapier, Make…)</Label>
+                  <Input
+                    id="outboundWebhookUrl"
+                    name="outboundWebhookUrl"
+                    type="url"
+                    defaultValue={initial.outboundWebhookUrl}
+                    placeholder="https://…"
+                  />
+                  {initial.webhookSecret && (
+                    <p className="text-sm text-muted-foreground">
+                      Chaque envoi est signé (HMAC SHA-256, en-tête <code>X-Closing-Signature</code>) avec le secret{" "}
+                      <code className="break-all text-foreground">{initial.webhookSecret}</code>
+                    </p>
+                  )}
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="outboundWebhookUrl">Webhook (CRM, Zapier, Make…)</Label>
-                <Input
-                  id="outboundWebhookUrl"
-                  name="outboundWebhookUrl"
-                  type="url"
-                  defaultValue={initial.outboundWebhookUrl}
-                  placeholder="https://…"
-                />
-                {initial.webhookSecret && (
-                  <p className="text-sm text-muted-foreground">
-                    Chaque envoi est signé (HMAC SHA-256, en-tête <code>X-Closing-Signature</code>) avec le secret{" "}
-                    <code className="break-all text-foreground">{initial.webhookSecret}</code>
-                  </p>
-                )}
-              </div>
-            </div>
-          </details>
+            </details>
+          </fieldset>
         </Section>
       </div>
 

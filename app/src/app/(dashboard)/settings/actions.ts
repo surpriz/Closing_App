@@ -10,7 +10,8 @@ import { upsertSellerPrefs } from "@/lib/closing/notify/preferences";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
 import { encryptSecret } from "@/lib/crypto";
 import { prisma } from "@/lib/db";
-import { requireWorkspace } from "@/lib/session";
+import { isManagerRole } from "@/lib/roles";
+import { requireManager, requireWorkspace } from "@/lib/session";
 
 export type SettingsState = { ok?: boolean; error?: string } | null;
 
@@ -73,9 +74,27 @@ function isValidTimezone(timeZone: string) {
 }
 
 export async function saveWorkspaceSettings(_prev: SettingsState, formData: FormData): Promise<SettingsState> {
-  const { user, organization } = await requireWorkspace();
-  const current = await getWorkspaceSettings(organization.id);
+  const { user, organization, role } = await requireWorkspace();
 
+  const prefs = prefsSchema.safeParse({
+    emailActions: formData.get("emailActions") === "on",
+    emailCallMoments: formData.get("emailCallMoments") === "on",
+    extensionCallMoments: formData.get("extensionCallMoments") === "on",
+    morningDigest: formData.get("morningDigest") === "on",
+    digestHour: String(formData.get("digestHour") ?? "8"),
+    timezone: String(formData.get("timezone") ?? ""),
+  });
+  if (!prefs.success) return { error: "Réglages de notification invalides." };
+
+  // A plain member only owns their notifications. Their workspace fields are
+  // disabled, so not even sent: parsing them would wipe the saved values.
+  if (!isManagerRole(role)) {
+    await upsertSellerPrefs(user.id, organization.id, prefs.data);
+    revalidatePath("/settings");
+    return { ok: true };
+  }
+
+  const current = await getWorkspaceSettings(organization.id);
   const parsed = settingsSchema.safeParse({
     alertChannels: formData.getAll("alertChannels"),
     alertEmail: String(formData.get("alertEmail") ?? "").trim(),
@@ -95,15 +114,6 @@ export async function saveWorkspaceSettings(_prev: SettingsState, formData: Form
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Paramètres invalides." };
   }
-  const prefs = prefsSchema.safeParse({
-    emailActions: formData.get("emailActions") === "on",
-    emailCallMoments: formData.get("emailCallMoments") === "on",
-    extensionCallMoments: formData.get("extensionCallMoments") === "on",
-    morningDigest: formData.get("morningDigest") === "on",
-    digestHour: String(formData.get("digestHour") ?? "8"),
-    timezone: String(formData.get("timezone") ?? ""),
-  });
-  if (!prefs.success) return { error: "Réglages de notification invalides." };
 
   const { slackWebhookUrl, removeSlack, ...values } = parsed.data;
 
@@ -137,9 +147,9 @@ async function backToApproval(organizationId: string) {
   });
 }
 
-/** The dashboard's "pause" switch: stop sending alone right now, keep everything as drafts. */
+/** The dashboard's "pause" switch: stop sending alone right now, keep everything as drafts. Workspace-wide, so managers only. */
 export async function pauseAutopilot() {
-  const { organization } = await requireWorkspace();
+  const { organization } = await requireManager();
   await prisma.workspaceSettings.update({ where: { organizationId: organization.id }, data: { autonomy: "COPILOT" } });
   await backToApproval(organization.id);
   revalidatePath("/", "layout");

@@ -3,12 +3,14 @@ import type { Metadata } from "next";
 import { ExtensionTokens } from "@/components/dashboard/extension-tokens";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { SettingsForm } from "@/components/dashboard/settings-form";
+import { TeamSettings } from "@/components/dashboard/team-settings";
 import { getLanguageModel } from "@/lib/closing/ai/provider";
 import { getSellerPrefs } from "@/lib/closing/notify/preferences";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
 import { decryptSecret } from "@/lib/crypto";
 import { prisma } from "@/lib/db";
 import { isEmailConfigured } from "@/lib/email";
+import { isManagerRole, isOwnerRole } from "@/lib/roles";
 import { requireWorkspace } from "@/lib/session";
 
 function safeDecrypt(value: string | null) {
@@ -28,11 +30,13 @@ const SECTIONS = [
   { id: "messages", label: "Vos messages" },
   { id: "alertes", label: "Être prévenu" },
   { id: "extension", label: "Extension Chrome" },
+  { id: "equipe", label: "Équipe", managerOnly: true },
 ];
 
 export default async function SettingsPage() {
-  const { user, organization } = await requireWorkspace();
-  const [settings, tokens, prefs] = await Promise.all([
+  const { user, organization, role } = await requireWorkspace();
+  const isManager = isManagerRole(role);
+  const [settings, tokens, prefs, team] = await Promise.all([
     getWorkspaceSettings(organization.id),
     prisma.extensionToken.findMany({
       where: { userId: user.id, organizationId: organization.id, revokedAt: null },
@@ -40,6 +44,7 @@ export default async function SettingsPage() {
       select: { id: true, label: true, hint: true, createdAt: true, lastUsedAt: true },
     }),
     getSellerPrefs(user.id, organization.id),
+    isManager ? getTeam(organization.id) : null,
   ]);
   const llm = getLanguageModel("followup");
 
@@ -50,7 +55,7 @@ export default async function SettingsPage() {
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-[11rem_minmax(0,1fr)]">
         <nav aria-label="Sections des réglages" className="hidden lg:block">
           <ul className="sticky top-24 space-y-0.5 text-sm">
-            {SECTIONS.map((section) => (
+            {SECTIONS.filter((section) => isManager || !section.managerOnly).map((section) => (
               <li key={section.id}>
                 <a
                   href={`#${section.id}`}
@@ -69,8 +74,9 @@ export default async function SettingsPage() {
               alertChannels: settings.alertChannels,
               alertEmail: settings.alertEmail ?? "",
               slackConfigured: !!settings.slackWebhookUrl,
-              outboundWebhookUrl: settings.outboundWebhookUrl ?? "",
-              webhookSecret: safeDecrypt(settings.webhookSecret),
+              // Integration secrets stay with the people who can change them
+              outboundWebhookUrl: isManager ? (settings.outboundWebhookUrl ?? "") : "",
+              webhookSecret: isManager ? safeDecrypt(settings.webhookSecret) : null,
               aiTone: settings.aiTone ?? "",
               senderName: settings.senderName ?? "",
               senderSignature: settings.senderSignature ?? "",
@@ -94,6 +100,7 @@ export default async function SettingsPage() {
               email: isEmailConfigured(),
               ai: llm ? `${llm.provider} · ${llm.modelId}` : null,
             }}
+            canEditWorkspace={isManager}
           />
           <ExtensionTokens
             tokens={tokens.map((token) => ({
@@ -102,8 +109,38 @@ export default async function SettingsPage() {
               lastUsedAt: token.lastUsedAt?.toISOString() ?? null,
             }))}
           />
+          {team && (
+            <TeamSettings
+              viewer={{ userId: user.id, isOwner: isOwnerRole(role) }}
+              members={team.members}
+              invitations={team.invitations}
+            />
+          )}
         </div>
       </div>
     </div>
   );
+}
+
+async function getTeam(organizationId: string) {
+  const [members, invitations] = await Promise.all([
+    prisma.member.findMany({
+      where: { organizationId },
+      orderBy: { createdAt: "asc" },
+      select: { id: true, userId: true, role: true, user: { select: { name: true, email: true } } },
+    }),
+    prisma.invitation.findMany({
+      where: { organizationId, status: "pending", expiresAt: { gt: new Date() } },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, email: true, role: true, expiresAt: true },
+    }),
+  ]);
+  return {
+    members: members.map(({ user, ...member }) => ({ ...member, name: user.name || user.email, email: user.email })),
+    invitations: invitations.map((invitation) => ({
+      ...invitation,
+      role: invitation.role ?? "member",
+      expiresAt: invitation.expiresAt.toISOString(),
+    })),
+  };
 }

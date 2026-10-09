@@ -1,6 +1,7 @@
 import { getPublicAppUrl } from "@/lib/app-origin";
 import { prisma } from "@/lib/db";
 import { isEmailConfigured, sendEmail } from "@/lib/email";
+import { isOwnerRole } from "@/lib/roles";
 
 import { DAY_MS } from "../constants";
 import { dealAction } from "../dashboard/deal-action";
@@ -65,7 +66,7 @@ export async function sendMorningDigests(now = new Date()) {
       const since = new Date(Math.max(row?.lastDigestAt?.getTime() ?? now.getTime() - DAY_MS, now.getTime() - MAX_LOOKBACK_MS));
       const data = await loadDigestData(
         member.organizationId,
-        { userId: member.userId, isOwner: member.role === "owner" },
+        { userId: member.userId, isOwner: isOwnerRole(member.role) },
         member.organization.settings?.autonomy === "AUTOPILOT",
         since,
         now,

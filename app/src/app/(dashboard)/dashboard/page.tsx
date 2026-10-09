@@ -30,6 +30,7 @@ import {
   getFunnelFacts,
   getOpenDeals,
   getUpcomingFollowups,
+  sellerLinks,
   type OpenDeal,
 } from "@/lib/closing/dashboard/queries";
 import { catchUpInBackground } from "@/lib/closing/catch-up";
@@ -37,6 +38,7 @@ import { getWorkspaceLiveState } from "@/lib/closing/live";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
 import { prisma } from "@/lib/db";
 import { formatInTimeZone, formatRelative } from "@/lib/format";
+import { isManagerRole } from "@/lib/roles";
 import { requireWorkspace } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Aujourd'hui" };
@@ -45,8 +47,10 @@ const TODO_LIMIT = 15;
 const FEED_LIMIT = 12;
 
 export default async function DashboardPage(props: PageProps<"/dashboard">) {
-  const { organization } = await requireWorkspace();
+  // A seller's day is their own deals; the team view is /equipe
+  const { organization, role, scope } = await requireWorkspace();
   const organizationId = organization.id;
+  const mine = { organizationId, ...sellerLinks(scope) };
   const now = new Date();
   const period = parsePeriod((await props.searchParams).p);
   catchUpInBackground({ organizationId });
@@ -74,27 +78,27 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
       orderBy: { createdAt: "desc" },
       select: { id: true, name: true },
     }),
-    getOpenDeals(organizationId),
-    getFunnelFacts(organizationId, since),
-    getFeedSource(organizationId, since),
-    getUpcomingFollowups(organizationId),
-    getDraftsToReview(organizationId),
-    getFreshValidations(organizationId, now),
-    getWorkspaceLiveState(organizationId, now),
+    getOpenDeals(organizationId, { owner: scope }),
+    getFunnelFacts(organizationId, since, scope),
+    getFeedSource(organizationId, since, scope),
+    getUpcomingFollowups(organizationId, scope),
+    getDraftsToReview(organizationId, scope),
+    getFreshValidations(organizationId, now, scope),
+    getWorkspaceLiveState(organizationId, now, scope),
     getAppOrigin(),
     getWorkspaceSettings(organizationId),
     prisma.followup.count({
       where: {
-        link: { organizationId },
+        link: mine,
         status: { in: ["SENT", "DELIVERED"] },
         sentVia: "PLATFORM",
         approvedAt: null,
         sentAt: { gte: new Date(now.getTime() - 24 * 60 * 60 * 1000) },
       },
     }),
-    prisma.link.count({ where: { organizationId, archivedAt: null, draftAt: null } }),
+    prisma.link.count({ where: { ...mine, archivedAt: null, draftAt: null } }),
     // Bots and the seller's own reads are flagged isBot
-    prisma.documentView.findFirst({ where: { link: { organizationId }, isBot: false }, select: { id: true } }),
+    prisma.documentView.findFirst({ where: { link: mine, isBot: false }, select: { id: true } }),
   ]);
   const uploadPrefix = documentUploadPrefix(organizationId);
 
@@ -160,7 +164,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
           </div>
         </div>
         <LiveStrip key={live.stamp} initial={live} />
-        {settings.autonomy === "AUTOPILOT" && <AutopilotBanner sentToday={sentAlone} />}
+        {settings.autonomy === "AUTOPILOT" && <AutopilotBanner sentToday={sentAlone} canPause={isManagerRole(role)} />}
         {showFirstSteps && (
           <FirstSteps
             hasDocument

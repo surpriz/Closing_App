@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { pauseAutopilot } from "@/app/(dashboard)/settings/actions";
 import { Button } from "@/components/ui/button";
 
-export function AutopilotBanner({ sentToday }: { sentToday: number }) {
+export function AutopilotBanner({ sentToday, canPause }: { sentToday: number; canPause: boolean }) {
   const [pending, startTransition] = useTransition();
 
   return (
@@ -20,19 +20,21 @@ export function AutopilotBanner({ sentToday }: { sentToday: number }) {
             : `${sentToday} relance${sentToday > 1 ? "s sont parties" : " est partie"} seule${sentToday > 1 ? "s" : ""} depuis 24 h.`}
         </span>
       </p>
-      <Button
-        size="sm"
-        variant="outline"
-        disabled={pending}
-        onClick={() =>
-          startTransition(async () => {
-            await pauseAutopilot();
-            toast.success("Tout passe à nouveau par vous");
-          })
-        }
-      >
-        <Pause /> Tout valider moi-même
-      </Button>
+      {canPause && (
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={pending}
+          onClick={() =>
+            startTransition(async () => {
+              await pauseAutopilot();
+              toast.success("Tout passe à nouveau par vous");
+            })
+          }
+        >
+          <Pause /> Tout valider moi-même
+        </Button>
+      )}
     </div>
   );
 }

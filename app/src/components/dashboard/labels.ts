@@ -9,6 +9,7 @@ import type {
   SellerAlertChannel,
   SellerAlertType,
 } from "@/generated/prisma/enums";
+import type { HealthSignal } from "@/lib/closing/dashboard/team";
 
 export const DEAL_STATUS_LABELS: Record<DealStatus, string> = {
   OPEN: "En cours",
@@ -152,3 +153,45 @@ export const FOLLOWUP_GOAL_LABELS: Record<string, string> = {
   involve_decision_maker: "Impliquer le décideur",
   reactivate: "Relancer la discussion",
 };
+
+export const ROLE_LABELS = {
+  owner: "Propriétaire",
+  admin: "Admin",
+  member: "Membre",
+} as const;
+
+const dayFormat = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" });
+
+/** Why a deal sits in its column on the team page. */
+export function describeHealthSignal(signal: HealthSignal) {
+  switch (signal.code) {
+    case "reading_now":
+      return "Lit en ce moment";
+    case "change_requested":
+      return "Ajustement demandé";
+    case "tier_hot":
+      return "Score chaud";
+    case "ai_priority":
+      return "Prioritaire selon l'analyse";
+    case "pricing_focus":
+      return "Longue lecture des tarifs";
+    case "cooling":
+      return "Intérêt en baisse";
+    case "quiet":
+      return `Plus lu depuis ${signal.days} j`;
+    case "unopened":
+      return `Pas ouvert depuis ${signal.days} j`;
+    case "ai_likely_lost":
+      return "Probablement perdu selon l'analyse";
+    case "ai_stalled":
+      return "Au point mort selon l'analyse";
+    case "ai_close_lost":
+      return "L'analyse conseille de le classer";
+    case "never_opened":
+      return `Jamais ouvert en ${signal.days} j`;
+    case "silent":
+      return `Plus lu depuis ${signal.days} j`;
+    case "deadline_passed":
+      return `Échéance passée (${dayFormat.format(signal.date)})`;
+  }
+}

@@ -83,11 +83,12 @@ export type WorkspaceLiveState = {
 export async function getWorkspaceLiveState(
   organizationId: string,
   now = new Date(),
-  /** Only this seller's links (the extension). */
+  /** Only this seller's links: their dashboard and their extension. */
   owner?: SellerScope,
 ): Promise<WorkspaceLiveState> {
   const since = new Date(now.getTime() - LIVE_READING_WINDOW_MS);
-  const ofWorkspace = { link: { organizationId } };
+  // A teammate's activity must not refresh this seller's page
+  const ofWorkspace = { link: { organizationId, ...(owner && sellerLinks(owner)) } };
   const [recent, sessions, followup, alert, action] = await Promise.all([
     prisma.documentView.findMany({
       where: {

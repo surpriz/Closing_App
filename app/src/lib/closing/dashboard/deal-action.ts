@@ -39,12 +39,14 @@ export function dealAction(deal: OpenDeal, now: Date, readingNow: boolean) {
 }
 
 // An analysis older than the last reading no longer describes the deal
-function currentInsight(deal: OpenDeal) {
+export function currentInsight(deal: Pick<OpenDeal, "insight" | "lastActivityAt">) {
   const current = deal.insight && (!deal.lastActivityAt || deal.insight.createdAt >= deal.lastActivityAt);
   const action = deal.insight?.recommendedAction as { type: string; timing: string } | undefined;
   return {
     insightHeadline: current ? deal.insight!.headline : null,
     aiPriority: current ? deal.insight!.priority : null,
+    stage: current ? deal.insight!.stage : null,
+    momentum: current ? deal.insight!.momentum : null,
     advice: current && action ? { type: action.type, timing: action.timing, priority: deal.insight!.priority } : null,
   };
 }
