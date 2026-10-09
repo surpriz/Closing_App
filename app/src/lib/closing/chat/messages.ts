@@ -2,7 +2,7 @@ import type { ModelMessage, UIMessage } from "ai";
 
 import type { PageTag } from "@/generated/prisma/enums";
 
-import type { ViewerLabels } from "../i18n/viewer";
+import type { ChatKindLabels } from "../i18n/viewer";
 
 /** Chat messages between the database, the model and the widget. Pure. */
 
@@ -32,17 +32,17 @@ export function toModelMessages(rows: StoredChatMessage[]): ModelMessage[] {
     .map((row) => ({ role: row.role === "USER" ? "user" : "assistant", content: row.content }));
 }
 
-/** Three questions the document can answer, worded for the reader. */
-export function suggestQuestions(tags: Iterable<PageTag>, labels: ViewerLabels): string[] {
+/** Three questions the document can answer, worded for the reader and the kind of document. */
+export function suggestQuestions(tags: Iterable<PageTag>, labels: ChatKindLabels): string[] {
   const present = new Set(tags);
   const byTag: [PageTag, string][] = [
-    ["SCOPE", labels.chatSuggestScope],
-    ["PRICING", labels.chatSuggestPricing],
-    ["TIMELINE", labels.chatSuggestTiming],
-    ["TERMS", labels.chatSuggestTerms],
+    ["SCOPE", labels.scope],
+    ["PRICING", labels.pricing],
+    ["TIMELINE", labels.timing],
+    ["TERMS", labels.terms],
   ];
   const picked = byTag.filter(([tag]) => present.has(tag)).map(([, question]) => question);
-  for (const fallback of [labels.chatSuggestSummary, labels.chatSuggestNext]) {
+  for (const fallback of [labels.summary, labels.next]) {
     if (!picked.includes(fallback)) picked.push(fallback);
   }
   return picked.slice(0, 3);

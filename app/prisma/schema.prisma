@@ -362,6 +362,8 @@ model WorkspaceSettings {
   valueProps        String?
   commonObjections  String?
   avgSalesCycleDays Int?
+  // What the prospect assistant should know on every document (FAQ, terms, support…). Prospects can be told all of it.
+  assistantKnowledge String?
   // Name of the document the offer was guessed from, until the seller saves the settings
   offerInferredFrom String?
 
@@ -395,8 +397,12 @@ model Document {
   aiAttempts        Int       @default(0)
   // URL documents have no text: the seller says what the page is about
   sellerDescription String?
+  // Written for the prospect assistant: details the document leaves out. Prospects can be told all of it.
+  assistantNotes    String?
   // What kind of document this is (QUOTE, RESUME…, see documents/doc-types.ts) and what it is for, guessed by the AI
   docType           String?
+  // MANUAL once the seller corrected the type: a new AI reading keeps it
+  docTypeSource     PageTagSource @default(AUTO)
   docPurpose        String?
   // Short human title written by the AI ("Devis rénovation cuisine"), shown to prospects instead of the file name
   displayTitle      String?

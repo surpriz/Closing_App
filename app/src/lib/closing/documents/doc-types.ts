@@ -11,6 +11,7 @@ export const DOC_TYPES = [
   "QUOTE",
   "PROPOSAL",
   "PRESENTATION",
+  "TECHNICAL",
   "RESUME",
   "INVOICE",
   "CONTRACT",
@@ -24,6 +25,7 @@ export const DOC_TYPE_LABELS: Record<DocType, string> = {
   QUOTE: "Devis",
   PROPOSAL: "Proposition commerciale",
   PRESENTATION: "Présentation",
+  TECHNICAL: "Document technique",
   RESUME: "CV / profil",
   INVOICE: "Facture",
   CONTRACT: "Contrat",
@@ -51,6 +53,12 @@ const OVERRIDES: Partial<Record<DocType, Partial<Record<TaggedTag, { label: stri
     SCOPE: { label: "Compétences", meaning: "skills, technologies, certifications" },
     TEAM: { label: "Profil", meaning: "who the person is: summary, contact, education" },
     CASE_STUDY: { label: "Expériences", meaning: "past jobs, missions and their results" },
+  },
+  TECHNICAL: {
+    PRICING: { label: "Coûts", meaning: "costs, effort or budget estimates" },
+    TERMS: { label: "Hypothèses", meaning: "assumptions, prerequisites, constraints, risks" },
+    TIMELINE: { label: "Plan d'action", meaning: "roadmap, priorities, phases, next steps" },
+    SCOPE: { label: "Constats", meaning: "findings, recommendations, what is covered" },
   },
   INVOICE: {
     PRICING: { label: "Montants", meaning: "invoice lines, totals, taxes" },
@@ -91,5 +99,7 @@ export const DOC_TYPE_GUIDANCE: Partial<Record<DocType, string>> = {
     "The document is a contract: reading clauses repeatedly often means legal review or negotiation of specific terms.",
   CASE_STUDY:
     "The document is a case study used to build trust: deep reading of results means the reader is checking credibility before engaging.",
+  TECHNICAL:
+    "The document is a technical document (audit, specification, study): the reader is checking the expertise and the plan. Rereading the findings or the action plan means they are weighing the work; time on costs means they are budgeting it. The usual next step is a call to go through the recommendations.",
   BROCHURE: "The document is a brochure: early-stage discovery, a call or meeting is the natural next step.",
 };

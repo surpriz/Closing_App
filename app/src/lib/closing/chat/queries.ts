@@ -4,6 +4,7 @@ import { HOUR_MS } from "../constants";
 
 import { CHAT_HISTORY_MAX } from "./constants";
 import type { ChatKnowledge } from "./context";
+import { chatKind } from "./kind";
 import type { StoredChatMessage } from "./messages";
 
 /** What the assistant may know. Selects only the fields ChatKnowledge allows, plus the name it speaks for. */
@@ -21,6 +22,7 @@ export async function loadChatKnowledge(link: {
         docType: true,
         docPurpose: true,
         sellerDescription: true,
+        assistantNotes: true,
         pages: {
           orderBy: { pageNumber: "asc" },
           select: { pageNumber: true, text: true, summary: true, keyFacts: true, tags: true },
@@ -29,7 +31,7 @@ export async function loadChatKnowledge(link: {
     }),
     prisma.workspaceSettings.findUnique({
       where: { organizationId: link.organizationId },
-      select: { senderName: true, offerDescription: true, valueProps: true },
+      select: { senderName: true, offerDescription: true, valueProps: true, assistantKnowledge: true },
     }),
   ]);
   if (!document) return null;
@@ -41,11 +43,13 @@ export async function loadChatKnowledge(link: {
       docType: document.docType,
       docPurpose: document.docPurpose,
       sellerDescription: document.sellerDescription,
+      assistantNotes: document.assistantNotes,
     },
     pages: document.pages,
     workspace: {
       offerDescription: settings?.offerDescription ?? null,
       valueProps: settings?.valueProps ?? null,
+      assistantKnowledge: settings?.assistantKnowledge ?? null,
     },
   };
   return { knowledge, senderName: settings?.senderName?.trim() || null };
@@ -100,7 +104,9 @@ export async function loadChatSetup(link: { id: string; documentId: string }, vi
     prisma.document.findUnique({
       where: { id: link.documentId },
       select: {
+        docType: true,
         sellerDescription: true,
+        assistantNotes: true,
         pages: {
           where: { OR: [{ text: { not: null } }, { summary: { not: null } }] },
           select: { tags: true },
@@ -109,6 +115,13 @@ export async function loadChatSetup(link: { id: string; documentId: string }, vi
     }),
     loadChatHistory(link.id, visitorId),
   ]);
-  const hasKnowledge = !!document && (document.pages.length > 0 || !!document.sellerDescription?.trim());
-  return { hasKnowledge, tags: document?.pages.flatMap((page) => page.tags) ?? [], history };
+  const hasKnowledge =
+    !!document &&
+    (document.pages.length > 0 || !!document.sellerDescription?.trim() || !!document.assistantNotes?.trim());
+  return {
+    hasKnowledge,
+    kind: chatKind(document?.docType),
+    tags: document?.pages.flatMap((page) => page.tags) ?? [],
+    history,
+  };
 }

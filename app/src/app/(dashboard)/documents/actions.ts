@@ -7,6 +7,7 @@ import { z } from "zod";
 import { getAppOrigin } from "@/lib/app-origin";
 import { createFileDocument } from "@/lib/closing/documents/create-document";
 import { createDocumentLink } from "@/lib/closing/documents/create-link";
+import { DOC_TYPES } from "@/lib/closing/documents/doc-types";
 import { inspectWebLink } from "@/lib/closing/documents/inspect-web-link";
 import { PAGE_TAGS } from "@/lib/closing/documents/page-reading";
 import { readDocumentPages } from "@/lib/closing/documents/read-pages";
@@ -169,6 +170,37 @@ export async function saveSellerDescription(documentId: string, description: str
   const parsed = sellerDescriptionSchema.safeParse(description);
   if (!parsed.success) return { error: "Description trop longue." };
   await prisma.document.update({ where: { id: document.id }, data: { sellerDescription: parsed.data } });
+  revalidatePath(`/documents/${document.id}`);
+  return { ok: true };
+}
+
+const docTypeSchema = z.enum(DOC_TYPES);
+
+// The AI guessed wrong: the seller's type sticks, even through a new reading
+export async function setDocumentType(documentId: string, docType: string) {
+  const document = await requireOwnedDocument(documentId);
+  const parsed = docTypeSchema.safeParse(docType);
+  if (!parsed.success) return { error: "Type de document inconnu." };
+  await prisma.document.update({
+    where: { id: document.id },
+    data: { docType: parsed.data, docTypeSource: "MANUAL" },
+  });
+  revalidatePath(`/documents/${document.id}`);
+  return { ok: true };
+}
+
+const assistantNotesSchema = z
+  .string()
+  .trim()
+  .max(4000)
+  .transform((v) => v || null);
+
+// Details the document leaves out, for the prospect assistant
+export async function saveAssistantNotes(documentId: string, notes: string) {
+  const document = await requireOwnedDocument(documentId);
+  const parsed = assistantNotesSchema.safeParse(notes);
+  if (!parsed.success) return { error: "Texte trop long (4 000 caractères au plus)." };
+  await prisma.document.update({ where: { id: document.id }, data: { assistantNotes: parsed.data } });
   revalidatePath(`/documents/${document.id}`);
   return { ok: true };
 }

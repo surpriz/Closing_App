@@ -27,17 +27,17 @@ describe("toModelMessages", () => {
 });
 
 describe("suggestQuestions", () => {
-  const labels = getViewerLabels("fr");
+  const { offer, technical } = getViewerLabels("fr").chatKinds;
 
   it("asks about what the document covers", () => {
-    expect(suggestQuestions(["PRICING", "SCOPE", "TERMS"], labels)).toEqual([
-      labels.chatSuggestScope,
-      labels.chatSuggestPricing,
-      labels.chatSuggestTerms,
-    ]);
+    expect(suggestQuestions(["PRICING", "SCOPE", "TERMS"], offer)).toEqual([offer.scope, offer.pricing, offer.terms]);
+  });
+
+  it("words the questions for the kind of document", () => {
+    expect(suggestQuestions(["SCOPE"], technical)[0]).toBe("Quels sont les principaux constats ?");
   });
 
   it("falls back to generic questions", () => {
-    expect(suggestQuestions([], labels)).toEqual([labels.chatSuggestSummary, labels.chatSuggestNext]);
+    expect(suggestQuestions([], offer)).toEqual([offer.summary, offer.next]);
   });
 });

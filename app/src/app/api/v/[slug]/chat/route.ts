@@ -120,6 +120,7 @@ export async function POST(request: NextRequest, ctx: RouteContext<"/api/v/[slug
       sender: loaded.senderName ?? labels.chatSenderFallback,
       locale,
       requestChangeLabel: link.ctaEnabled ? labels.requestChange : null,
+      docType: loaded.knowledge.document.docType,
       contextText: context.text,
     }),
     messages: [...toModelMessages(history), { role: "user", content: text }],

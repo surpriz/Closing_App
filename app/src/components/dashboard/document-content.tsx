@@ -1,16 +1,23 @@
 "use client";
 
 import { RefreshCw } from "lucide-react";
-import { useState, useTransition } from "react";
+import { useOptimistic, useState, useTransition } from "react";
 import { toast } from "sonner";
 
-import { rereadDocument, saveSellerDescription, setPageTags } from "@/app/(dashboard)/documents/actions";
+import {
+  rereadDocument,
+  saveAssistantNotes,
+  saveSellerDescription,
+  setDocumentType,
+  setPageTags,
+} from "@/app/(dashboard)/documents/actions";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { PageTag, PageTagSource } from "@/generated/prisma/enums";
 import { cn } from "@/lib/utils";
 
-import { DOC_TYPE_LABELS, tagLabels, type DocType } from "@/lib/closing/documents/doc-types";
+import { DOC_TYPE_LABELS, DOC_TYPES, tagLabels, type DocType } from "@/lib/closing/documents/doc-types";
 
 const EDITABLE_TAGS: PageTag[] = ["PRICING", "TERMS", "TIMELINE", "SCOPE", "TEAM", "CASE_STUDY"];
 
@@ -46,12 +53,7 @@ export function DocumentPages({
 
   return (
     <div className="space-y-4">
-      {docType && (
-        <p className="text-body">
-          <span className="font-medium">{DOC_TYPE_LABELS[docType as DocType] ?? "Document"}</span>
-          {docPurpose && <span className="text-muted-foreground"> : {docPurpose}</span>}
-        </p>
-      )}
+      {docPurpose && <p className="text-body text-muted-foreground">{docPurpose}</p>}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="max-w-2xl text-body text-muted-foreground">
           {aiRead
@@ -183,6 +185,94 @@ export function SellerDescriptionForm({ documentId, initial }: { documentId: str
         placeholder="Présentation de l'offre Growth : audit, refonte, 3 mois d'accompagnement. 14 500 € HT, paiement en 3 fois possible."
       />
       <Button type="submit" size="sm" variant="outline" disabled={pending || value === initial}>
+        {pending ? "Enregistrement…" : "Enregistrer"}
+      </Button>
+    </form>
+  );
+}
+
+const TYPE_ITEMS = DOC_TYPES.map((value) => ({ value, label: DOC_TYPE_LABELS[value] }));
+
+/** The AI guesses the type; the seller corrects it. It changes the tag names and how the assistant talks. */
+export function DocumentTypeSelect({
+  documentId,
+  docType,
+  setBySeller,
+}: {
+  documentId: string;
+  docType: string | null;
+  setBySeller: boolean;
+}) {
+  const [optimistic, setOptimistic] = useOptimistic(docType);
+  const [pending, startTransition] = useTransition();
+
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+      <Select
+        items={TYPE_ITEMS}
+        value={optimistic ?? null}
+        disabled={pending}
+        onValueChange={(value) => {
+          if (!value) return;
+          startTransition(async () => {
+            setOptimistic(value);
+            const result = await setDocumentType(documentId, value);
+            if (result.error) toast.error(result.error);
+            else toast.success(`Type « ${DOC_TYPE_LABELS[value as DocType]} » enregistré`);
+          });
+        }}
+      >
+        <SelectTrigger aria-label="Type de document" className="h-9 min-w-52 bg-card">
+          <SelectValue placeholder="Type non détecté" />
+        </SelectTrigger>
+        <SelectContent>
+          {TYPE_ITEMS.map((item) => (
+            <SelectItem key={item.value} value={item.value}>
+              {item.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <span className="text-sm text-muted-foreground">{setBySeller ? "choisi par vous" : "deviné par l'IA"}</span>
+    </div>
+  );
+}
+
+/** What the document leaves out, for the assistant that answers prospects. */
+export function AssistantNotesForm({ documentId, initial }: { documentId: string; initial: string }) {
+  const [value, setValue] = useState(initial);
+  const [saved, setSaved] = useState(initial);
+  const [pending, startTransition] = useTransition();
+
+  return (
+    <form
+      className="max-w-2xl space-y-3"
+      onSubmit={(e) => {
+        e.preventDefault();
+        startTransition(async () => {
+          const result = await saveAssistantNotes(documentId, value);
+          if (result.error) toast.error(result.error);
+          else {
+            setSaved(value);
+            toast.success("Infos enregistrées");
+          }
+        });
+      }}
+    >
+      <p className="text-body text-muted-foreground">
+        Ce que le document ne dit pas et que l&apos;assistant peut répondre au prospect : précisions techniques,
+        hypothèses, ce qui est hors périmètre, options. S&apos;ajoute à ce que vous avez écrit dans les réglages.
+        Rien de confidentiel : le prospect peut tout obtenir en posant la question.
+      </p>
+      <Textarea
+        aria-label="Infos pour l'assistant"
+        rows={5}
+        maxLength={4000}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder="Le site WordPress n'est pas couvert par l'audit. Les estimations sont en jours-homme, à 650 € HT le jour. Démarrage possible sous 2 semaines."
+      />
+      <Button type="submit" size="sm" variant="outline" disabled={pending || value === saved}>
         {pending ? "Enregistrement…" : "Enregistrer"}
       </Button>
     </form>

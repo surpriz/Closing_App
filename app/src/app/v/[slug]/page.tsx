@@ -139,5 +139,9 @@ async function loadChatWidget(
   const visitorId = (await cookies()).get(VISITOR_COOKIE)?.value;
   const setup = await loadChatSetup({ id: link.id, documentId: link.document.id }, visitorId);
   if (!setup.hasKnowledge) return null;
-  return { initialMessages: toUIMessages(setup.history), suggestions: suggestQuestions(setup.tags, labels) };
+  return {
+    kind: setup.kind,
+    initialMessages: toUIMessages(setup.history),
+    suggestions: suggestQuestions(setup.tags, labels.chatKinds[setup.kind]),
+  };
 }

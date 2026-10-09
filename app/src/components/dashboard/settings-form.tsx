@@ -25,6 +25,7 @@ type Props = {
     senderSignature: string;
     autonomy: "COPILOT" | "AUTOPILOT";
     chatEnabledByDefault: boolean;
+    assistantKnowledge: string;
     offerDescription: string;
     targetCustomer: string;
     valueProps: string;
@@ -196,22 +197,6 @@ export function SettingsForm({ initial, notifications, providers, canEditWorkspa
               </label>
             </div>
           </Row>
-          <Row
-            hint={
-              providers.ai
-                ? "Il répond au prospect à partir du document seulement, jamais d'un prix ou d'une condition inventés. Ce qu'il ne sait pas, il vous le transmet aussitôt. Réglable lien par lien."
-                : "Aucune IA n'est configurée : l'assistant reste masqué pour l'instant."
-            }
-          >
-            <label className="flex cursor-pointer items-center gap-2.5">
-              <Checkbox
-                name="chatEnabledByDefault"
-                defaultChecked={initial.chatEnabledByDefault}
-                onCheckedChange={markDirty}
-              />
-              <span>Assistant qui répond aux questions sur les nouveaux liens</span>
-            </label>
-          </Row>
         </Section>
 
         <Section
@@ -275,6 +260,45 @@ export function SettingsForm({ initial, notifications, providers, canEditWorkspa
             />
             jours
           </Row>
+        </Section>
+
+        <Section
+          id="assistant"
+          locked={locked}
+          title="Assistant prospect"
+          description={
+            providers.ai
+              ? "Sur vos documents, il répond aux questions du prospect quand vous n'êtes pas là. Il s'appuie sur le document et sur ce que vous écrivez ici, jamais sur un prix ou une condition inventés. Ce qu'il ne sait pas, il vous le transmet aussitôt."
+              : "Aucune IA n'est configurée : l'assistant reste masqué pour l'instant."
+          }
+        >
+          <Row hint="Réglable ensuite lien par lien.">
+            <label className="flex cursor-pointer items-center gap-2.5">
+              <Checkbox
+                name="chatEnabledByDefault"
+                defaultChecked={initial.chatEnabledByDefault}
+                onCheckedChange={markDirty}
+              />
+              <span>Activer l&apos;assistant sur les nouveaux liens</span>
+            </label>
+          </Row>
+          <div className="space-y-1.5 px-5 py-4">
+            <Label htmlFor="assistantKnowledge">Ce que l&apos;assistant doit savoir</Label>
+            <Textarea
+              id="assistantKnowledge"
+              name="assistantKnowledge"
+              rows={6}
+              maxLength={4000}
+              defaultValue={initial.assistantKnowledge}
+              placeholder={
+                "Paiement : 30 % à la commande, le solde à la livraison.\nGarantie : 12 mois, support par email sous 24 h ouvrées.\nNos outils : Shopify, Klaviyo. Pas de développement mobile natif."
+              }
+            />
+            <p className="text-sm text-muted-foreground">
+              Valable pour tous vos documents : modalités, garanties, SAV, questions fréquentes, précisions
+              techniques. Le prospect peut tout obtenir en posant la question : rien de confidentiel ici.
+            </p>
+          </div>
         </Section>
 
         <Section

@@ -3,13 +3,13 @@ import { describe, expect, it } from "vitest";
 import { buildChatContext, hasChatKnowledge, type ChatKnowledge } from "./context";
 
 const base: ChatKnowledge = {
-  document: { title: "Devis cuisine", kind: "FILE", docType: "QUOTE", docPurpose: null, sellerDescription: null },
+  document: { title: "Devis cuisine", kind: "FILE", docType: "QUOTE", docPurpose: null, sellerDescription: null, assistantNotes: null },
   pages: [
     { pageNumber: 1, text: "Présentation de l'entreprise. ".repeat(40), summary: "Qui nous sommes", keyFacts: [], tags: ["TEAM"] },
     { pageNumber: 2, text: "Total 12 000 € HT. Acompte 30 %.", summary: "Les prix", keyFacts: ["Total 12 000 € HT"], tags: ["PRICING"] },
     { pageNumber: 3, text: "Paiement à 30 jours.", summary: "Conditions", keyFacts: [], tags: ["TERMS"] },
   ],
-  workspace: { offerDescription: "Cuisines sur mesure", valueProps: null },
+  workspace: { offerDescription: "Cuisines sur mesure", valueProps: null, assistantKnowledge: null },
 };
 
 describe("buildChatContext", () => {
@@ -46,6 +46,24 @@ describe("buildChatContext", () => {
     };
     expect(hasChatKnowledge(url)).toBe(true);
     expect(buildChatContext(url).text).toContain("Notre offre SaaS");
+  });
+
+  it("always keeps what the seller wrote for the assistant, even when the budget is tight", () => {
+    const { text, sourceText } = buildChatContext(
+      {
+        ...base,
+        document: { ...base.document, assistantNotes: "Hors périmètre : le site WordPress." },
+        workspace: { ...base.workspace, assistantKnowledge: "Paiement à 30 jours, SAV par email." },
+      },
+      600,
+    );
+    expect(text).toContain("<seller_notes_on_this_document>\nHors périmètre : le site WordPress.");
+    expect(text).toContain("<seller_knowledge>\nPaiement à 30 jours, SAV par email.");
+    expect(sourceText).toContain("Paiement à 30 jours");
+  });
+
+  it("can answer from the seller's notes alone", () => {
+    expect(hasChatKnowledge({ ...base, pages: [], document: { ...base.document, assistantNotes: "Audit de 8 repos." } })).toBe(true);
   });
 
   it("has nothing to answer from without text, summary or description", () => {

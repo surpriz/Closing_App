@@ -4,6 +4,21 @@ import {
   type SupportedLocale,
 } from "@/lib/closing/constants";
 
+import type { ChatKind } from "../chat/kind";
+
+export type ChatKindLabels = {
+  title: string;
+  placeholder: string;
+  /** Suggested when the document has pages with that tag. */
+  scope: string;
+  pricing: string;
+  timing: string;
+  terms: string;
+  /** Always offered last. */
+  summary: string;
+  next: string;
+};
+
 export type ViewerLabels = {
   loading: string;
   loadError: string;
@@ -42,9 +57,7 @@ export type ViewerLabels = {
   notFoundText: string;
   /** Assistant on the document. {sender} is replaced by the sender's name. */
   chatLauncher: string;
-  chatTitle: string;
   chatIntro: string;
-  chatPlaceholder: string;
   chatClose: string;
   chatThinking: string;
   chatDisclaimer: string;
@@ -52,12 +65,8 @@ export type ViewerLabels = {
   chatError: string;
   chatLimit: string;
   chatSenderFallback: string;
-  chatSuggestScope: string;
-  chatSuggestPricing: string;
-  chatSuggestTiming: string;
-  chatSuggestTerms: string;
-  chatSuggestSummary: string;
-  chatSuggestNext: string;
+  /** Title, placeholder and suggested questions, by family of document (chat/kind.ts). */
+  chatKinds: Record<ChatKind, ChatKindLabels>;
 };
 
 const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
@@ -98,9 +107,7 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     notFoundTitle: "This link is no longer available",
     notFoundText: "It may have expired or been withdrawn. Ask the sender for a new link.",
     chatLauncher: "Ask a question",
-    chatTitle: "Questions about this proposal",
     chatIntro: "Hi! I can answer your questions about this document while {sender} is away.",
-    chatPlaceholder: "Ask about the scope, prices, conditions…",
     chatClose: "Close",
     chatThinking: "Writing…",
     chatDisclaimer: "Automatic answers based on this document only. {sender} can read this conversation.",
@@ -108,12 +115,48 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     chatError: "The assistant is unavailable, please try again in a moment.",
     chatLimit: "You've reached the question limit for now. {sender} will be happy to answer directly.",
     chatSenderFallback: "the sender",
-    chatSuggestScope: "What exactly is included?",
-    chatSuggestPricing: "How does payment work?",
-    chatSuggestTiming: "What is the timeline?",
-    chatSuggestTerms: "What are the conditions?",
-    chatSuggestSummary: "Can you sum up this proposal?",
-    chatSuggestNext: "What are the next steps?",
+    chatKinds: {
+      offer: {
+        title: "Questions about this proposal?",
+        placeholder: "Scope, prices, conditions…",
+        scope: "What exactly is included?",
+        pricing: "How does payment work?",
+        timing: "What is the timeline?",
+        terms: "What are the conditions?",
+        summary: "Can you sum up this proposal?",
+        next: "What are the next steps?",
+      },
+      technical: {
+        title: "Questions about this document?",
+        placeholder: "Findings, recommendations, costs…",
+        scope: "What are the main findings?",
+        pricing: "What would it cost?",
+        timing: "Where should we start?",
+        terms: "What are the risks or prerequisites?",
+        summary: "Can you sum up this document?",
+        next: "What are the next steps?",
+      },
+      profile: {
+        title: "Questions about this profile?",
+        placeholder: "Skills, availability, rate…",
+        scope: "What are the key skills?",
+        pricing: "What is the rate?",
+        timing: "When is the availability?",
+        terms: "What are the working conditions?",
+        summary: "Can you sum up this profile?",
+        next: "How can we set up a call?",
+      },
+      document: {
+        title: "Questions about this document?",
+        placeholder: "Ask anything about the document…",
+        scope: "What does this document cover?",
+        pricing: "What are the prices?",
+        timing: "What is the timeline?",
+        terms: "What are the conditions?",
+        summary: "Can you sum up this document?",
+        next: "What are the next steps?",
+      },
+    },
   },
   fr: {
     loading: "Chargement du document…",
@@ -152,9 +195,7 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     notFoundTitle: "Ce lien n'est plus disponible",
     notFoundText: "Il a peut-être expiré ou été retiré. Demandez un nouveau lien à l'expéditeur.",
     chatLauncher: "Poser une question",
-    chatTitle: "Une question sur cette proposition ?",
     chatIntro: "Bonjour ! Je peux répondre à vos questions sur ce document en l'absence de {sender}.",
-    chatPlaceholder: "Périmètre, prix, conditions…",
     chatClose: "Fermer",
     chatThinking: "Rédaction…",
     chatDisclaimer: "Réponses automatiques basées uniquement sur ce document. {sender} peut lire cette conversation.",
@@ -162,12 +203,48 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     chatError: "L'assistant est indisponible, réessayez dans un instant.",
     chatLimit: "Vous avez atteint la limite de questions pour le moment. {sender} vous répondra volontiers directement.",
     chatSenderFallback: "l'expéditeur",
-    chatSuggestScope: "Qu'est-ce qui est inclus exactement ?",
-    chatSuggestPricing: "Comment se passe le paiement ?",
-    chatSuggestTiming: "Quel est le calendrier ?",
-    chatSuggestTerms: "Quelles sont les conditions ?",
-    chatSuggestSummary: "Pouvez-vous résumer cette proposition ?",
-    chatSuggestNext: "Quelles sont les prochaines étapes ?",
+    chatKinds: {
+      offer: {
+        title: "Une question sur cette proposition ?",
+        placeholder: "Périmètre, prix, conditions…",
+        scope: "Qu'est-ce qui est inclus exactement ?",
+        pricing: "Comment se passe le paiement ?",
+        timing: "Quel est le calendrier ?",
+        terms: "Quelles sont les conditions ?",
+        summary: "Pouvez-vous résumer cette proposition ?",
+        next: "Quelles sont les prochaines étapes ?",
+      },
+      technical: {
+        title: "Une question sur ce document ?",
+        placeholder: "Constats, recommandations, coûts…",
+        scope: "Quels sont les principaux constats ?",
+        pricing: "Combien ça coûterait ?",
+        timing: "Par quoi commencer ?",
+        terms: "Quels sont les risques ou prérequis ?",
+        summary: "Pouvez-vous résumer ce document ?",
+        next: "Quelles sont les prochaines étapes ?",
+      },
+      profile: {
+        title: "Une question sur ce profil ?",
+        placeholder: "Compétences, disponibilité, tarif…",
+        scope: "Quelles sont les compétences clés ?",
+        pricing: "Quel est le tarif ?",
+        timing: "Quelle est la disponibilité ?",
+        terms: "Quelles sont les conditions de travail ?",
+        summary: "Pouvez-vous résumer ce profil ?",
+        next: "Comment organiser un échange ?",
+      },
+      document: {
+        title: "Une question sur ce document ?",
+        placeholder: "Votre question sur le document…",
+        scope: "Que couvre ce document ?",
+        pricing: "Quels sont les tarifs ?",
+        timing: "Quel est le calendrier ?",
+        terms: "Quelles sont les conditions ?",
+        summary: "Pouvez-vous résumer ce document ?",
+        next: "Quelles sont les prochaines étapes ?",
+      },
+    },
   },
   es: {
     loading: "Cargando el documento…",
@@ -206,9 +283,7 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     notFoundTitle: "Este enlace ya no está disponible",
     notFoundText: "Puede haber caducado o haber sido retirado. Pide un nuevo enlace al remitente.",
     chatLauncher: "Hacer una pregunta",
-    chatTitle: "¿Preguntas sobre esta propuesta?",
     chatIntro: "¡Hola! Puedo responder a sus preguntas sobre este documento mientras {sender} no está disponible.",
-    chatPlaceholder: "Alcance, precios, condiciones…",
     chatClose: "Cerrar",
     chatThinking: "Escribiendo…",
     chatDisclaimer: "Respuestas automáticas basadas solo en este documento. {sender} puede leer esta conversación.",
@@ -216,12 +291,48 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     chatError: "El asistente no está disponible, inténtelo de nuevo en un momento.",
     chatLimit: "Ha alcanzado el límite de preguntas por ahora. {sender} le responderá con gusto directamente.",
     chatSenderFallback: "el remitente",
-    chatSuggestScope: "¿Qué incluye exactamente?",
-    chatSuggestPricing: "¿Cómo funciona el pago?",
-    chatSuggestTiming: "¿Cuál es el calendario?",
-    chatSuggestTerms: "¿Cuáles son las condiciones?",
-    chatSuggestSummary: "¿Puede resumir esta propuesta?",
-    chatSuggestNext: "¿Cuáles son los próximos pasos?",
+    chatKinds: {
+      offer: {
+        title: "¿Preguntas sobre esta propuesta?",
+        placeholder: "Alcance, precios, condiciones…",
+        scope: "¿Qué incluye exactamente?",
+        pricing: "¿Cómo funciona el pago?",
+        timing: "¿Cuál es el calendario?",
+        terms: "¿Cuáles son las condiciones?",
+        summary: "¿Puede resumir esta propuesta?",
+        next: "¿Cuáles son los próximos pasos?",
+      },
+      technical: {
+        title: "¿Preguntas sobre este documento?",
+        placeholder: "Conclusiones, recomendaciones, costes…",
+        scope: "¿Cuáles son las principales conclusiones?",
+        pricing: "¿Cuánto costaría?",
+        timing: "¿Por dónde empezar?",
+        terms: "¿Cuáles son los riesgos o requisitos previos?",
+        summary: "¿Puede resumir este documento?",
+        next: "¿Cuáles son los próximos pasos?",
+      },
+      profile: {
+        title: "¿Preguntas sobre este perfil?",
+        placeholder: "Competencias, disponibilidad, tarifa…",
+        scope: "¿Cuáles son las competencias clave?",
+        pricing: "¿Cuál es la tarifa?",
+        timing: "¿Cuál es la disponibilidad?",
+        terms: "¿Cuáles son las condiciones de trabajo?",
+        summary: "¿Puede resumir este perfil?",
+        next: "¿Cómo organizamos una llamada?",
+      },
+      document: {
+        title: "¿Preguntas sobre este documento?",
+        placeholder: "Su pregunta sobre el documento…",
+        scope: "¿Qué cubre este documento?",
+        pricing: "¿Cuáles son los precios?",
+        timing: "¿Cuál es el calendario?",
+        terms: "¿Cuáles son las condiciones?",
+        summary: "¿Puede resumir este documento?",
+        next: "¿Cuáles son los próximos pasos?",
+      },
+    },
   },
   de: {
     loading: "Dokument wird geladen…",
@@ -260,9 +371,7 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     notFoundTitle: "Dieser Link ist nicht mehr verfügbar",
     notFoundText: "Er ist möglicherweise abgelaufen oder wurde zurückgezogen. Bitten Sie den Absender um einen neuen Link.",
     chatLauncher: "Frage stellen",
-    chatTitle: "Fragen zu diesem Angebot?",
     chatIntro: "Hallo! Ich beantworte Ihre Fragen zu diesem Dokument, während {sender} nicht erreichbar ist.",
-    chatPlaceholder: "Umfang, Preise, Konditionen…",
     chatClose: "Schließen",
     chatThinking: "Schreibt…",
     chatDisclaimer: "Automatische Antworten, nur auf Grundlage dieses Dokuments. {sender} kann diese Unterhaltung lesen.",
@@ -270,12 +379,48 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     chatError: "Der Assistent ist nicht verfügbar, bitte versuchen Sie es gleich noch einmal.",
     chatLimit: "Sie haben das Fragelimit vorerst erreicht. {sender} antwortet Ihnen gern direkt.",
     chatSenderFallback: "der Absender",
-    chatSuggestScope: "Was genau ist enthalten?",
-    chatSuggestPricing: "Wie läuft die Zahlung ab?",
-    chatSuggestTiming: "Wie ist der Zeitplan?",
-    chatSuggestTerms: "Was sind die Konditionen?",
-    chatSuggestSummary: "Können Sie dieses Angebot zusammenfassen?",
-    chatSuggestNext: "Was sind die nächsten Schritte?",
+    chatKinds: {
+      offer: {
+        title: "Fragen zu diesem Angebot?",
+        placeholder: "Umfang, Preise, Konditionen…",
+        scope: "Was genau ist enthalten?",
+        pricing: "Wie läuft die Zahlung ab?",
+        timing: "Wie ist der Zeitplan?",
+        terms: "Was sind die Konditionen?",
+        summary: "Können Sie dieses Angebot zusammenfassen?",
+        next: "Was sind die nächsten Schritte?",
+      },
+      technical: {
+        title: "Fragen zu diesem Dokument?",
+        placeholder: "Ergebnisse, Empfehlungen, Kosten…",
+        scope: "Was sind die wichtigsten Ergebnisse?",
+        pricing: "Was würde das kosten?",
+        timing: "Womit sollten wir anfangen?",
+        terms: "Welche Risiken oder Voraussetzungen gibt es?",
+        summary: "Können Sie dieses Dokument zusammenfassen?",
+        next: "Was sind die nächsten Schritte?",
+      },
+      profile: {
+        title: "Fragen zu diesem Profil?",
+        placeholder: "Kompetenzen, Verfügbarkeit, Tagessatz…",
+        scope: "Was sind die wichtigsten Kompetenzen?",
+        pricing: "Wie hoch ist der Tagessatz?",
+        timing: "Wann besteht Verfügbarkeit?",
+        terms: "Was sind die Arbeitsbedingungen?",
+        summary: "Können Sie dieses Profil zusammenfassen?",
+        next: "Wie können wir ein Gespräch vereinbaren?",
+      },
+      document: {
+        title: "Fragen zu diesem Dokument?",
+        placeholder: "Ihre Frage zum Dokument…",
+        scope: "Was behandelt dieses Dokument?",
+        pricing: "Was sind die Preise?",
+        timing: "Wie ist der Zeitplan?",
+        terms: "Was sind die Konditionen?",
+        summary: "Können Sie dieses Dokument zusammenfassen?",
+        next: "Was sind die nächsten Schritte?",
+      },
+    },
   },
 };
 

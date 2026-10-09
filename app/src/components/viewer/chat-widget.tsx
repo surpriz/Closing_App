@@ -8,6 +8,7 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react"
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { CHAT_MESSAGE_MAX } from "@/lib/closing/chat/constants";
+import type { ChatKind } from "@/lib/closing/chat/kind";
 import type { ChatUIMessage } from "@/lib/closing/chat/messages";
 import { CHAT_QUOTA_ERRORS } from "@/lib/closing/chat/quota";
 import type { SupportedLocale } from "@/lib/closing/constants";
@@ -15,6 +16,8 @@ import type { ViewerLabels } from "@/lib/closing/i18n/viewer";
 import { cn } from "@/lib/utils";
 
 export type ChatWidgetData = {
+  /** Family of the document: sets the title and the placeholder. */
+  kind: ChatKind;
   initialMessages: ChatUIMessage[];
   suggestions: string[];
 };
@@ -52,7 +55,18 @@ function wasForwarded(message: ChatUIMessage) {
   );
 }
 
-export function ChatWidget({ slug, labels, locale, senderName, getViewId, ctaVisible, initialMessages, suggestions }: Props) {
+export function ChatWidget({
+  slug,
+  labels,
+  locale,
+  senderName,
+  getViewId,
+  ctaVisible,
+  kind,
+  initialMessages,
+  suggestions,
+}: Props) {
+  const kindLabels = labels.chatKinds[kind];
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const listRef = useRef<HTMLDivElement>(null);
@@ -145,7 +159,7 @@ export function ChatWidget({ slug, labels, locale, senderName, getViewId, ctaVis
   return (
     <section
       role="dialog"
-      aria-label={labels.chatTitle}
+      aria-label={kindLabels.title}
       onKeyDown={(event) => event.key === "Escape" && setOpen(false)}
       className="fixed inset-0 z-50 flex animate-rise flex-col bg-card sm:inset-auto sm:right-4 sm:bottom-4 sm:z-40 sm:h-[min(620px,calc(100dvh-2rem))] sm:w-[380px] sm:rounded-2xl sm:shadow-xl sm:ring-1 sm:ring-border"
     >
@@ -154,7 +168,7 @@ export function ChatWidget({ slug, labels, locale, senderName, getViewId, ctaVis
           <MessageCircleQuestion className="size-5" aria-hidden />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold">{labels.chatTitle}</p>
+          <p className="truncate text-sm font-semibold">{kindLabels.title}</p>
           {senderName && <p className="truncate text-small text-muted-foreground">{senderName}</p>}
         </div>
         <Button variant="ghost" size="icon" onClick={() => setOpen(false)} aria-label={labels.chatClose}>
@@ -230,8 +244,8 @@ export function ChatWidget({ slug, labels, locale, senderName, getViewId, ctaVis
             rows={1}
             value={input}
             maxLength={CHAT_MESSAGE_MAX}
-            placeholder={labels.chatPlaceholder}
-            aria-label={labels.chatPlaceholder}
+            placeholder={kindLabels.placeholder}
+            aria-label={kindLabels.placeholder}
             onChange={(event) => setInput(event.target.value)}
             onKeyDown={onKeyDown}
             className="max-h-32 min-h-10 resize-none"

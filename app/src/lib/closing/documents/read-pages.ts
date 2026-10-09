@@ -93,6 +93,8 @@ export async function readDocumentPages(documentId: string): Promise<ReadPagesOu
       status: true,
       organizationId: true,
       aiAttempts: true,
+      docType: true,
+      docTypeSource: true,
       pages: {
         select: { id: true, pageNumber: true, text: true, tags: true, tagSource: true },
         orderBy: { pageNumber: "asc" },
@@ -115,13 +117,19 @@ export async function readDocumentPages(documentId: string): Promise<ReadPagesOu
   }
 
   const classified = await classifyDocument(llm, document, withText.map((page) => page.text).join("\n"));
+  // A type the seller corrected stays: the AI only refreshes the purpose and the title
+  const keepType = document.docTypeSource === "MANUAL";
   if (classified) {
     await prisma.document.update({
       where: { id: document.id },
-      data: { docType: classified.docType, docPurpose: classified.purpose, displayTitle: classified.title },
+      data: {
+        ...(keepType ? {} : { docType: classified.docType }),
+        docPurpose: classified.purpose,
+        displayTitle: classified.title,
+      },
     });
   }
-  const systemPrompt = pageReadingSystemPrompt(classified?.docType);
+  const systemPrompt = pageReadingSystemPrompt(keepType ? document.docType : classified?.docType);
 
   const chunks = chunkPages(withText);
   const readings: PageReading[] = [];

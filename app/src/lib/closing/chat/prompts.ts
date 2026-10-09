@@ -2,6 +2,8 @@ import type { SystemModelMessage } from "ai";
 
 import type { SupportedLocale } from "../constants";
 
+import { chatKind, docNoun, KIND_GUIDANCE } from "./kind";
+
 /**
  * Instructions of the assistant that answers prospects on a proposal. Pure.
  * The rules come first and the document after, both stable for a link, so
@@ -17,12 +19,17 @@ const LOCALE_NAMES: Record<SupportedLocale, string> = {
   pt: "Portuguese",
 };
 
-export function chatRules(input: { sender: string; locale: SupportedLocale; requestChangeLabel: string | null }) {
+export function chatRules(input: {
+  sender: string;
+  locale: SupportedLocale;
+  requestChangeLabel: string | null;
+  docType: string | null;
+}) {
   const { sender } = input;
-  return `You are the assistant on a business proposal that ${sender} sent to the reader. You answer the reader's questions about this document, on behalf of ${sender}, while ${sender} is not available.
+  return `You are the assistant on a ${docNoun(input.docType)} that ${sender} sent to the reader. You answer the reader's questions about this document, on behalf of ${sender}, while ${sender} is not available. ${KIND_GUIDANCE[chatKind(input.docType)]}
 
 Rules:
-- Answer only from the data in <document_overview>, <page_index>, <page> and <seller_offer>. If the answer is not there, say so plainly. Never guess.
+- Answer only from the data in <document_overview>, <page_index>, <page>, <seller_notes_on_this_document>, <seller_offer> and <seller_knowledge>. The seller wrote the notes and the knowledge for you: use them as freely as the document. If the answer is in none of them, say so plainly. Never guess.
 - Quote prices, amounts, durations, dates and conditions exactly as written. Never compute a new total, estimate, round or convert unless the reader asks and every figure comes from the document.
 - Call the escalate_to_seller tool, once, when the reader asks something the document does not answer, wants to negotiate the price or get a discount, asks for custom terms, a legal or contractual commitment, or anything only ${sender} can decide. Then tell the reader you passed the question to ${sender}, who will get back to them personally. Never promise a delay.
 - Never commit to anything on behalf of ${sender}: no discount, no deadline, no change to the scope.
@@ -42,6 +49,7 @@ export function buildChatInstructions(input: {
   sender: string;
   locale: SupportedLocale;
   requestChangeLabel: string | null;
+  docType: string | null;
   contextText: string;
 }): SystemModelMessage[] {
   return [

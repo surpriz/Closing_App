@@ -8,6 +8,7 @@ import { CHAT_CONTEXT_CHARS, CHAT_PAGE_TEXT_MAX } from "./constants";
  * What the prospect assistant may know, turned into the model context. Pure.
  * The type is the allow-list: private seller fields (deal notes, objection
  * playbook) have no slot here, so they cannot reach a prospect by mistake.
+ * The assistant notes are written by the seller for prospects to be told.
  */
 
 export type ChatKnowledge = {
@@ -18,6 +19,8 @@ export type ChatKnowledge = {
     docPurpose: string | null;
     /** URL documents have no text: what the seller says the page is about. */
     sellerDescription: string | null;
+    /** What the seller added for the assistant on this document. */
+    assistantNotes: string | null;
   };
   pages: {
     pageNumber: number;
@@ -29,6 +32,8 @@ export type ChatKnowledge = {
   workspace: {
     offerDescription: string | null;
     valueProps: string | null;
+    /** What the seller wants the assistant to know on every document. */
+    assistantKnowledge: string | null;
   };
 };
 
@@ -44,7 +49,11 @@ const INDEX_LINE_MAX = 400;
 
 /** The assistant has something to answer from. */
 export function hasChatKnowledge(k: ChatKnowledge) {
-  return !!k.document.sellerDescription?.trim() || k.pages.some((p) => p.text?.trim() || p.summary?.trim());
+  return (
+    !!k.document.sellerDescription?.trim() ||
+    !!k.document.assistantNotes?.trim() ||
+    k.pages.some((p) => p.text?.trim() || p.summary?.trim())
+  );
 }
 
 function pageRank(tags: PageTag[]) {
@@ -95,7 +104,17 @@ export function buildChatContext(k: ChatKnowledge, budget = CHAT_CONTEXT_CHARS):
   if (k.workspace.offerDescription) sources.push(k.workspace.offerDescription);
   if (k.workspace.valueProps) sources.push(k.workspace.valueProps);
 
-  let used = sections.join("\n\n").length + (offerSection?.length ?? 0);
+  // Written by the seller for this purpose: always kept, before any page text
+  const notes = k.document.assistantNotes?.trim();
+  if (notes) {
+    sections.push(`<seller_notes_on_this_document>\n${notes}\n</seller_notes_on_this_document>`);
+    sources.push(notes);
+  }
+  const knowledge = k.workspace.assistantKnowledge?.trim();
+  const knowledgeSection = knowledge ? `<seller_knowledge>\n${knowledge}\n</seller_knowledge>` : null;
+  if (knowledge) sources.push(knowledge);
+
+  let used = sections.join("\n\n").length + (offerSection?.length ?? 0) + (knowledgeSection?.length ?? 0);
   const ranked = k.pages
     .filter((page) => page.text?.trim())
     .sort((a, b) => pageRank(a.tags) - pageRank(b.tags) || a.pageNumber - b.pageNumber);
@@ -115,5 +134,6 @@ export function buildChatContext(k: ChatKnowledge, budget = CHAT_CONTEXT_CHARS):
   }
 
   if (offerSection) sections.push(offerSection);
+  if (knowledgeSection) sections.push(knowledgeSection);
   return { text: sections.join("\n\n"), sourceText: sources.join("\n") };
 }

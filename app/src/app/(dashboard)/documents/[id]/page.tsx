@@ -20,7 +20,12 @@ import {
 } from "@/components/dashboard/labels";
 import { LinkFollowupsToggle } from "@/components/dashboard/link-followups-toggle";
 import { PageHeader, SectionTitle, StatLine, Surface } from "@/components/dashboard/page-header";
-import { DocumentPages, SellerDescriptionForm } from "@/components/dashboard/document-content";
+import {
+  AssistantNotesForm,
+  DocumentPages,
+  DocumentTypeSelect,
+  SellerDescriptionForm,
+} from "@/components/dashboard/document-content";
 import { PageTimeChart, type PageTimeDatum } from "@/components/dashboard/page-time-chart";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getAppOrigin } from "@/lib/app-origin";
@@ -300,6 +305,18 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
         </TabsContent>
 
         <TabsContent value="content" className="space-y-10">
+          <section>
+            <SectionTitle hint="décide du vocabulaire des étiquettes et de l'assistant">Type de document</SectionTitle>
+            <DocumentTypeSelect
+              documentId={document.id}
+              docType={document.docType}
+              setBySeller={document.docTypeSource === "MANUAL"}
+            />
+          </section>
+          <section>
+            <SectionTitle hint="pour répondre aux questions du prospect">Infos pour l&apos;assistant</SectionTitle>
+            <AssistantNotesForm documentId={document.id} initial={document.assistantNotes ?? ""} />
+          </section>
           <section>
             <SectionTitle hint="page par page, ce que Clozer a compris">Contenu</SectionTitle>
               {isWeb ? (
