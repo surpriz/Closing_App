@@ -6,6 +6,7 @@ import { upsertSellerPrefs } from "@/lib/closing/notify/preferences";
 import { prisma } from "@/lib/db";
 import { withExtensionAuth } from "@/lib/extension-auth";
 import { extensionRemoteConfig } from "@/lib/extension-config";
+import { isOwnerRole } from "@/lib/roles";
 
 /** A first poll, or one after a long sleep, only replays this much. */
 const MAX_REPLAY_MS = 10 * 60 * 1000;
@@ -36,7 +37,7 @@ export const GET = withExtensionAuth(async (request, { user, organization }) => 
       select: { extensionSeenAt: true },
     }),
   ]);
-  const owner = { userId: user.id, isOwner: member?.role === "owner" };
+  const owner = { userId: user.id, isOwner: isOwnerRole(member?.role ?? "") };
 
   const [live, alerts] = await Promise.all([
     getWorkspaceLiveState(organization.id, now, owner),

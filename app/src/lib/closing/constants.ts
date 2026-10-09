@@ -39,6 +39,24 @@ export const ENGAGEMENT_TIER_THRESHOLDS = {
   WARM: 35,
 } as const;
 
+/**
+ * Hot, at risk or dead on the team page. In days, except the AI priority
+ * (1 to 5) from which a deal counts as hot.
+ */
+export const TEAM_HEALTH = {
+  /** Sent, never opened since: nobody is coming. */
+  neverOpenedDeadDays: 14,
+  /** Opened once, then no reading since. */
+  silentDeadDays: 21,
+  /** Opened, then quiet this long: slipping. */
+  quietRiskDays: 7,
+  /** Sent, still not opened. */
+  unopenedRiskDays: 5,
+  /** A long pricing read stays a hot sign this long. */
+  pricingHotDays: 7,
+  aiHotPriority: 4,
+} as const;
+
 export const SUPPORTED_LOCALES = ["en", "fr", "es", "de", "it", "pt"] as const;
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 export const DEFAULT_LOCALE: SupportedLocale = "en";

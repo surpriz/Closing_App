@@ -7,8 +7,8 @@ import type { FunnelLinkFacts } from "./funnel";
 import { firstProspect, linkLabelSelect, prospectLabel } from "./labels";
 
 /**
- * Every read of the "Aujourd'hui" page. Scoped to the workspace, bots left
- * out. Turning rows into figures and sentences is left to the pure modules
+ * Every read of the "Aujourd'hui" page. Scoped to the workspace, or to one
+ * seller's deals when `owner` is given, bots left out. Turning rows into figures and sentences is left to the pure modules
  * next to this file.
  */
 
@@ -32,7 +32,7 @@ export function sellerLinks(scope: SellerScope) {
 }
 
 /** Deals still in play, with what the "À traiter" list and the temperature bar need. */
-export async function getOpenDeals(organizationId: string, scope: { owner?: SellerScope } = {}) {
+export async function getOpenDeals(organizationId: string, scope: { owner?: SellerScope; take?: number } = {}) {
   const deals = await prisma.link.findMany({
     where: {
       organizationId,
@@ -42,12 +42,16 @@ export async function getOpenDeals(organizationId: string, scope: { owner?: Sell
       ...(scope.owner && sellerLinks(scope.owner)),
     },
     orderBy: { createdAt: "desc" },
-    take: DEALS_TAKE,
+    take: scope.take ?? DEALS_TAKE,
     select: {
       id: true,
       name: true,
       slug: true,
       dealStatus: true,
+      createdById: true,
+      dealAmountCents: true,
+      dealCurrency: true,
+      decisionDeadline: true,
       sentAt: true,
       createdAt: true,
       lastActivityAt: true,
@@ -74,35 +78,54 @@ export async function getOpenDeals(organizationId: string, scope: { owner?: Sell
         where: { model: { not: null } },
         orderBy: { createdAt: "desc" },
         take: 1,
-        select: { headline: true, priority: true, recommendedAction: true, createdAt: true },
+        select: {
+          headline: true,
+          priority: true,
+          stage: true,
+          momentum: true,
+          recommendedAction: true,
+          createdAt: true,
+        },
       },
     },
   });
 
-  return deals.map(({ views: [lastView], sellerActivities: [lastContact], _count, insights: [insight], ...deal }) => ({
-    ...deal,
-    insight: insight ?? null,
-    draftCount: _count.followups,
-    lastSellerContactAt: lastContact?.occurredAt ?? null,
-    dealStatus: deal.dealStatus as "OPEN" | "CHANGE_REQUESTED",
-    opened: lastView !== undefined,
-    // Only flushes with reading time set lastActivityAt: a prospect who
-    // closed the tab right away still opened the link.
-    lastActivityAt: deal.lastActivityAt ?? lastView?.lastSeenAt ?? null,
-    pricingFocus: hasReason(deal.engagementScore?.reasons, "pricing_focus"),
-  }));
+  return deals.map(({ views, sellerActivities, _count, insights, ...deal }) => {
+    // .at() keeps "maybe none" in the types, unlike destructuring
+    const lastView = views.at(0);
+    return {
+      ...deal,
+      insight: insights.at(0) ?? null,
+      draftCount: _count.followups,
+      lastSellerContactAt: sellerActivities.at(0)?.occurredAt ?? null,
+      dealStatus: deal.dealStatus as "OPEN" | "CHANGE_REQUESTED",
+      opened: lastView !== undefined,
+      // Only flushes with reading time set lastActivityAt: a prospect who
+      // closed the tab right away still opened the link.
+      lastActivityAt: deal.lastActivityAt ?? lastView?.lastSeenAt ?? null,
+      pricingFocus: hasReason(deal.engagementScore?.reasons, "pricing_focus"),
+    };
+  });
 }
 
 export type OpenDeal = Awaited<ReturnType<typeof getOpenDeals>>[number];
 
 /** Links sent since `since` (all links when null), and how far each one went. */
-export async function getFunnelFacts(organizationId: string, since: Date | null): Promise<FunnelLinkFacts[]> {
+export async function getFunnelFacts(
+  organizationId: string,
+  since: Date | null,
+  owner?: SellerScope,
+): Promise<FunnelLinkFacts[]> {
   const links = await prisma.link.findMany({
     where: {
       organizationId,
       archivedAt: null,
       draftAt: null,
-      ...(since && { OR: [{ sentAt: { gte: since } }, { sentAt: null, createdAt: { gte: since } }] }),
+      // Both are ORs: spread side by side, one would replace the other
+      AND: [
+        since ? { OR: [{ sentAt: { gte: since } }, { sentAt: null, createdAt: { gte: since } }] } : {},
+        owner ? sellerLinks(owner) : {},
+      ],
     },
     orderBy: { createdAt: "desc" },
     take: COHORT_TAKE,
@@ -138,8 +161,12 @@ export async function getFunnelFacts(organizationId: string, since: Date | null)
   });
 }
 
-export async function getFeedSource(organizationId: string, since: Date | null): Promise<FeedSource> {
-  const ofWorkspace = { link: { organizationId, archivedAt: null } };
+export async function getFeedSource(
+  organizationId: string,
+  since: Date | null,
+  owner?: SellerScope,
+): Promise<FeedSource> {
+  const ofWorkspace = { link: { organizationId, archivedAt: null, ...(owner && sellerLinks(owner)) } };
   const linkWithDocument = { select: { ...linkLabelSelect, document: { select: { name: true } } } } as const;
 
   const [views, actions, alerts, followups] = await Promise.all([
@@ -260,9 +287,12 @@ async function getPricingTimeByView(views: { id: string; documentId: string }[])
   return result;
 }
 
-export function getUpcomingFollowups(organizationId: string) {
+export function getUpcomingFollowups(organizationId: string, owner?: SellerScope) {
   return prisma.followup.findMany({
-    where: { link: { organizationId, archivedAt: null }, status: { in: ["GENERATED", "SCHEDULED"] } },
+    where: {
+      link: { organizationId, archivedAt: null, ...(owner && sellerLinks(owner)) },
+      status: { in: ["GENERATED", "SCHEDULED"] },
+    },
     orderBy: { scheduledFor: "asc" },
     take: 4,
     select: {
@@ -277,10 +307,10 @@ export function getUpcomingFollowups(organizationId: string) {
 }
 
 /** Validations of the last 24 hours, for the headline, whatever the period. */
-export async function getFreshValidations(organizationId: string, now: Date) {
+export async function getFreshValidations(organizationId: string, now: Date, owner?: SellerScope) {
   const actions = await prisma.prospectAction.findMany({
     where: {
-      link: { organizationId },
+      link: { organizationId, ...(owner && sellerLinks(owner)) },
       type: "VALIDATE_SIGN",
       createdAt: { gte: new Date(now.getTime() - DAY_MS) },
     },
@@ -294,9 +324,9 @@ export async function getFreshValidations(organizationId: string, now: Date) {
 }
 
 /** Follow-ups written and waiting for the seller's go, oldest slot first. */
-export function getDraftsToReview(organizationId: string) {
+export function getDraftsToReview(organizationId: string, owner?: SellerScope) {
   return prisma.followup.findMany({
-    where: { link: { organizationId, archivedAt: null }, status: "DRAFT" },
+    where: { link: { organizationId, archivedAt: null, ...(owner && sellerLinks(owner)) }, status: "DRAFT" },
     orderBy: { scheduledFor: "asc" },
     take: 6,
     select: {

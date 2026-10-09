@@ -5,7 +5,9 @@ import { CommandMenu, type CommandEntry } from "@/components/dashboard/command-m
 import { DashboardNav, MobileNav } from "@/components/dashboard/dashboard-nav";
 import { UserMenu } from "@/components/dashboard/user-menu";
 import { linkLabelSelect, prospectLabel } from "@/lib/closing/dashboard/labels";
+import { sellerLinks } from "@/lib/closing/dashboard/queries";
 import { prisma } from "@/lib/db";
+import { isManagerRole } from "@/lib/roles";
 import { requireWorkspace } from "@/lib/session";
 
 export default async function DashboardLayout({
@@ -13,11 +15,18 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, organization } = await requireWorkspace();
+  const { user, organization, role, scope } = await requireWorkspace();
+  const isManager = isManagerRole(role);
 
   const [links, documents] = await Promise.all([
     prisma.link.findMany({
-      where: { organizationId: organization.id, archivedAt: null, draftAt: null },
+      where: {
+        organizationId: organization.id,
+        archivedAt: null,
+        draftAt: null,
+        // Managers search the whole team's deals
+        ...(!isManager && sellerLinks(scope)),
+      },
       orderBy: { updatedAt: "desc" },
       take: 300,
       select: { ...linkLabelSelect, document: { select: { name: true } } },
@@ -55,7 +64,7 @@ export default async function DashboardLayout({
           >
             <Logo />
           </Link>
-          <DashboardNav />
+          <DashboardNav isManager={isManager} />
           <div className="ml-auto flex items-center gap-2">
             <CommandMenu entries={entries} />
             <UserMenu name={user.name} email={user.email} workspace={organization.name} />
@@ -65,7 +74,7 @@ export default async function DashboardLayout({
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-8 pb-28 sm:px-6 sm:pt-10 sm:pb-16">
         {children}
       </main>
-      <MobileNav />
+      <MobileNav isManager={isManager} />
     </div>
   );
 }

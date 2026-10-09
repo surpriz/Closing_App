@@ -1,13 +1,24 @@
 "use client";
 
-import { Brain, FileText, Settings2, Sun } from "lucide-react";
+import { Brain, FileText, Settings2, Sun, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 
-const ITEMS = [
+type Item = {
+  href: string;
+  label: string;
+  short?: string;
+  icon: typeof Sun;
+  match: string[];
+  /** Owners and admins only. */
+  managerOnly?: boolean;
+};
+
+const ITEMS: Item[] = [
   { href: "/dashboard", label: "Aujourd'hui", icon: Sun, match: ["/dashboard", "/links"] },
+  { href: "/equipe", label: "Équipe", icon: Users, match: ["/equipe"], managerOnly: true },
   { href: "/documents", label: "Documents", icon: FileText, match: ["/documents"] },
   {
     href: "/comment-ca-marche",
@@ -19,18 +30,20 @@ const ITEMS = [
   { href: "/settings", label: "Réglages", icon: Settings2, match: ["/settings"] },
 ];
 
+const itemsFor = (isManager: boolean) => ITEMS.filter((item) => isManager || !item.managerOnly);
+
 function useActive() {
   const pathname = usePathname();
   return (match: string[]) => match.some((prefix) => pathname.startsWith(prefix));
 }
 
 /** Pill tabs in the header, from the `sm` breakpoint up. */
-export function DashboardNav() {
+export function DashboardNav({ isManager }: { isManager: boolean }) {
   const isActive = useActive();
 
   return (
     <nav aria-label="Navigation principale" className="hidden items-center gap-0.5 sm:flex">
-      {ITEMS.map((item) => {
+      {itemsFor(isManager).map((item) => {
         const active = isActive(item.match);
         return (
           <Link
@@ -53,16 +66,17 @@ export function DashboardNav() {
 }
 
 /** Fixed tab bar at the bottom of the screen on phones. */
-export function MobileNav() {
+export function MobileNav({ isManager }: { isManager: boolean }) {
   const isActive = useActive();
+  const items = itemsFor(isManager);
 
   return (
     <nav
       aria-label="Navigation principale"
       className="fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur sm:hidden"
     >
-      <div className="grid grid-cols-4">
-        {ITEMS.map((item) => {
+      <div className={cn("grid", items.length === 5 ? "grid-cols-5" : "grid-cols-4")}>
+        {items.map((item) => {
           const active = isActive(item.match);
           const Icon = item.icon;
           return (
@@ -77,7 +91,7 @@ export function MobileNav() {
             >
               {active && <span aria-hidden className="absolute inset-x-6 top-0 h-0.5 rounded-full bg-foreground" />}
               <Icon className="size-5" strokeWidth={active ? 2.2 : 1.8} aria-hidden />
-              {"short" in item ? item.short : item.label}
+              {item.short ?? item.label}
             </Link>
           );
         })}
