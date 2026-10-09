@@ -11,6 +11,10 @@ export const alias = {
 };
 
 // Absolute, so both builds land in the same place whatever their root
+// One tsconfig for everything, including the files imported from ../extension: theirs
+// extends .wxt/tsconfig.json, which only exists once the extension is installed
+export const tsconfig = fileURLToPath(new URL("./tsconfig.json", import.meta.url));
+
 export function outDir() {
   return resolve(process.env.OUTLOOK_OUT_DIR ?? fileURLToPath(new URL("./dist", import.meta.url)));
 }
@@ -21,6 +25,7 @@ export default defineConfig(({ mode }) => {
   const origin = new URL(env.VITE_APP_ORIGIN).origin;
   return {
     root: "src",
+    tsconfig,
     base: "/outlook/",
     publicDir: fileURLToPath(new URL("./public", import.meta.url)),
     envDir: process.cwd(),
