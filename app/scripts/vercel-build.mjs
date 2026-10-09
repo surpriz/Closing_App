@@ -18,8 +18,9 @@ if (isProduction || isStaging) {
 
 // The Outlook add-in (../outlook) is served by the app under /outlook, same origin as /api/ext.
 // Needs "Include files outside the root directory" on the Vercel project (on by default).
+// Vercel builds with NODE_ENV=production, which makes npm skip devDependencies: vite is one.
 run(
-  `npm ci --prefix ../outlook && npm run ${isProduction ? "build" : "build:staging"} --prefix ../outlook`,
+  `npm ci --include=dev --prefix ../outlook && npm run ${isProduction ? "build" : "build:staging"} --prefix ../outlook`,
   { env: { ...process.env, OUTLOOK_OUT_DIR: new URL("../public/outlook", import.meta.url).pathname } },
 );
 
