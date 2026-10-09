@@ -41,6 +41,13 @@ describe("decideChannels", () => {
     expect(decideChannels({ ...base, type: "CALL_MOMENT", prefs, extensionActive: true }).channels).toEqual(["EXTENSION"]);
   });
 
+  it("treats reader alerts like call moments: live, quiet at night", () => {
+    for (const type of ["COMMITTEE_LIVE", "NEW_READER", "DECISION_MAKER_DETECTED"] as const) {
+      expect(decideChannels({ ...base, type })).toEqual({ channels: ["EXTENSION"], reason: "ok" });
+      expect(decideChannels({ ...base, type, now: NIGHT }).reason).toBe("quiet_hours");
+    }
+  });
+
   it("keeps call moments and drafts quiet at night and on weekends", () => {
     expect(decideChannels({ ...base, type: "CALL_MOMENT", now: NIGHT }).reason).toBe("quiet_hours");
     expect(decideChannels({ ...base, type: "MULTI_VIEWER", now: SATURDAY }).channels).toEqual([]);

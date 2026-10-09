@@ -72,6 +72,19 @@ describe("buildFeed", () => {
   });
 });
 
+describe("reader alerts in the feed", () => {
+  const alert = (type: "COMMITTEE_LIVE" | "DECISION_MAKER_DETECTED" | "NEW_READER", payload: object) =>
+    buildFeed({ views: [], actions: [], alerts: [{ id: "a", createdAt: at(1), linkId: "l1", linkLabel: "Acme", type, payload }], followups: [] }, 1)[0]
+      .what;
+
+  it("describes committees, decision makers and forwards", () => {
+    expect(alert("COMMITTEE_LIVE", { liveViewers: 4 })).toBe("est lu par 4 personnes en même temps (comité)");
+    expect(alert("DECISION_MAKER_DETECTED", {})).toBe("est lu par un décideur");
+    expect(alert("NEW_READER", { readerOrigin: "forwarded_internal" })).toBe("a été repartagé en interne");
+    expect(alert("NEW_READER", { readerOrigin: "anonymous" })).toBe("a un nouveau lecteur");
+  });
+});
+
 describe("readerLabel", () => {
   it("does not repeat the company", () => {
     expect(readerLabel("Acme", "Acme")).toBe("Acme");

@@ -11,6 +11,9 @@ const HOUR_MS = 60 * 60 * 1000;
  * Single entry point for telling a seller something: finds who the link
  * belongs to, applies their preferences and the anti-noise rules, then stores
  * and delivers the alert. Returns false when it was a duplicate.
+ *
+ * `silent` stores the alert without pushing it anywhere: it shows in the
+ * timeline and uses up its dedupe key.
  */
 export async function notifySeller(input: {
   linkId: string;
@@ -18,6 +21,7 @@ export async function notifySeller(input: {
   dedupeKey: string;
   payload: AlertPayload;
   now?: Date;
+  silent?: boolean;
 }) {
   const now = input.now ?? new Date();
   const link = await prisma.link.findUnique({
@@ -35,13 +39,15 @@ export async function notifySeller(input: {
   const priority = ALERT_PRIORITY[input.type];
 
   const recentCallAlerts =
-    recipient && priority === "CALL"
+    recipient && priority === "CALL" && !input.silent
       ? await prisma.sellerAlert.count({
           where: { userId: recipient.id, priority: "CALL", createdAt: { gte: new Date(now.getTime() - HOUR_MS) }, NOT: { channels: { isEmpty: true } } },
         })
       : 0;
 
-  const decision = prefs
+  const decision = input.silent
+    ? { channels: [], reason: "muted" as const }
+    : prefs
     ? decideChannels({
         type: input.type,
         prefs,

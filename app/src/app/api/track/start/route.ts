@@ -18,6 +18,7 @@ import {
   VISITOR_COOKIE,
   VISITOR_COOKIE_MAX_AGE,
 } from "@/lib/closing/tracking/visitor";
+import { evaluateReaders } from "@/lib/closing/triggers/committee";
 import { evaluateHotLead } from "@/lib/closing/triggers/hot-lead";
 import { prisma } from "@/lib/db";
 import { isWorkspaceMember } from "@/lib/session";
@@ -132,7 +133,9 @@ export async function POST(request: NextRequest) {
     await confirmDraftOnOpen(link.id, now);
     inBackground("view-started", async () => {
       await cancelOpenFollowups(link.id, "Le prospect a ouvert la proposition", ["ANTI_GHOSTING"]);
-      await evaluateHotLead(viewId, !!recentView);
+      // A new reader, a decision maker or a committee says more than a plain call moment
+      const readerAlert = await evaluateReaders(viewId, now);
+      if (!readerAlert) await evaluateHotLead(viewId, !!recentView, now);
       await refreshEngagementScore(link.id);
     });
   }

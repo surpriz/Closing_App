@@ -77,10 +77,11 @@ function describeRead(view: FeedSource["views"][number]) {
 }
 
 function describeAlert(type: SellerAlertType, payload: unknown) {
-  const { liveViewers, inactiveDays, reason } = (payload ?? {}) as {
+  const { liveViewers, inactiveDays, reason, readerOrigin } = (payload ?? {}) as {
     liveViewers?: number;
     inactiveDays?: number;
     reason?: string;
+    readerOrigin?: string;
   };
   if (type === "CALL_MOMENT") return reason ? `est lu en ce moment (${reason.toLowerCase()})` : "est lu en ce moment";
   if (type === "PROSPECT_VALIDATED") return "a été validé";
@@ -89,6 +90,9 @@ function describeAlert(type: SellerAlertType, payload: unknown) {
     return liveViewers ? `est lu par ${liveViewers} personnes en même temps` : "est lu à plusieurs";
   }
   if (type === "DRAFT_READY") return "a une relance prête à valider";
+  if (type === "COMMITTEE_LIVE") return `est lu par ${liveViewers ?? "plusieurs"} personnes en même temps (comité)`;
+  if (type === "DECISION_MAKER_DETECTED") return "est lu par un décideur";
+  if (type === "NEW_READER") return readerOrigin === "forwarded_internal" ? "a été repartagé en interne" : "a un nouveau lecteur";
   return inactiveDays ? `a été rouvert après ${inactiveDays} jours de silence` : "a été rouvert après un silence";
 }
 

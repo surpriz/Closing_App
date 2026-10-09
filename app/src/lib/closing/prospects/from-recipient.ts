@@ -36,6 +36,13 @@ function organizationLabel(domain: string) {
   return labels[index] ?? null;
 }
 
+/** gmail.com, orange.fr…: the address belongs to a person, not to a company. */
+export function isPersonalEmail(email: string) {
+  const domain = email.split("@")[1]?.toLowerCase();
+  const label = domain ? organizationLabel(domain) : null;
+  return !label || FREE_MAIL.has(label);
+}
+
 export function companyFromEmail(email: string) {
   const domain = email.split("@")[1]?.toLowerCase();
   if (!domain) return null;

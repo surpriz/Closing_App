@@ -19,7 +19,14 @@ export type AlertPayload = {
   prospectName?: string | null;
   prospectEmail?: string | null;
   viewId?: string;
+  /** Reader alerts (committee/signals.ts) */
+  readerName?: string;
+  readerOrigin?: string;
+  readerDomain?: string;
+  decisionMakers?: string[];
 };
+
+const READER_ALERTS = new Set<SellerAlertType>(["COMMITTEE_LIVE", "DECISION_MAKER_DETECTED", "NEW_READER"]);
 
 export type AlertDelivery = {
   linkId: string;
@@ -96,6 +103,31 @@ export function alertMessage(type: SellerAlertType, link: LinkForAlert, payload:
         blocks: [
           { kind: "text", text: `Une relance pour ${who} (${doc}) est prête. Relisez-la et validez-la : rien ne part sans vous.` },
           { kind: "button", label: "Relire la relance", href: url },
+        ],
+        url,
+      };
+    }
+    case "COMMITTEE_LIVE":
+    case "DECISION_MAKER_DETECTED":
+    case "NEW_READER": {
+      const url = `${linkUrl}#qui-lit`;
+      const reason = payload.reason ?? "Quelqu'un de nouveau lit votre proposition";
+      const subject =
+        type === "COMMITTEE_LIVE"
+          ? `${who} : ${payload.liveViewers ?? "plusieurs"} personnes lisent votre proposition`
+          : type === "DECISION_MAKER_DETECTED"
+            ? `Un décideur de ${who} lit votre proposition`
+            : payload.readerOrigin === "forwarded_internal"
+              ? `${who} a repartagé votre proposition`
+              : "Nouveau lecteur sur votre proposition";
+      const hint = type === "COMMITTEE_LIVE" ? "Le comité regarde, c'est le moment d'appeler." : "C'est le moment de reprendre contact.";
+      return {
+        subject,
+        line: `${who} · ${doc} : ${reason}. ${hint}`,
+        blocks: [
+          { kind: "text", text: `${reason} (${doc}).` },
+          { kind: "text", text: hint },
+          { kind: "button", label: "Voir qui lit", href: url },
         ],
         url,
       };
@@ -188,7 +220,7 @@ export async function createAndDeliverAlert(input: AlertDelivery) {
         }
       } else if (channel === "SLACK") {
         if (!settings?.slackWebhookUrl) throw new Error("webhook Slack non configuré");
-        const icon = input.priority === "ACTION" ? "✅" : input.type === "DRAFT_READY" ? "✍️" : "🔥";
+        const icon = input.priority === "ACTION" ? "✅" : input.type === "DRAFT_READY" ? "✍️" : READER_ALERTS.has(input.type) ? "👥" : "🔥";
         await postSlackMessage(decryptSecret(settings.slackWebhookUrl), `${icon} ${message.line}\n${message.url}`);
       } else if (channel === "WEBHOOK") {
         if (!settings?.outboundWebhookUrl || !settings.webhookSecret) throw new Error("webhook non configuré");

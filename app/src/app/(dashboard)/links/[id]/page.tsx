@@ -26,12 +26,14 @@ import { LiveActivity } from "@/components/dashboard/live-activity";
 import { SectionTitle, StatLine, Surface } from "@/components/dashboard/page-header";
 import { PageTimeChart, type PageTimeDatum } from "@/components/dashboard/page-time-chart";
 import { ProspectForm } from "@/components/dashboard/prospect-form";
+import { ReadersMap } from "@/components/dashboard/readers-map";
 import { SellerActivityForm, SnoozeControl } from "@/components/dashboard/seller-activity-form";
 import { ScoreGuide, TemperatureGauge } from "@/components/dashboard/temperature";
 import { getAppOrigin } from "@/lib/app-origin";
 import { getLanguageModel } from "@/lib/closing/ai/provider";
 import { getLinkAnalytics } from "@/lib/closing/analytics";
 import { getLatestInsight } from "@/lib/closing/brain/latest";
+import { getReaderMap } from "@/lib/closing/committee/queries";
 import { labelReaders } from "@/lib/closing/dashboard/readers";
 import { catchUpInBackground } from "@/lib/closing/catch-up";
 import { freshEngagementScore } from "@/lib/closing/engagement/refresh-score";
@@ -78,7 +80,7 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
   const score = await freshEngagementScore(link.id, link.engagementScore);
   catchUpInBackground({ organizationId: organization.id, linkId: link.id, documentId: link.document.id });
 
-  const [analytics, settings, origin, followups, alerts, actions, live, sellerActivities, insight] = await Promise.all([
+  const [analytics, settings, origin, followups, alerts, actions, live, sellerActivities, insight, readerMap] = await Promise.all([
     getLinkAnalytics(link.id),
     getWorkspaceSettings(organization.id),
     getAppOrigin(),
@@ -99,6 +101,7 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
     getLinkLiveState(link.id),
     prisma.sellerActivity.findMany({ where: { linkId: link.id }, orderBy: { occurredAt: "desc" }, take: 20 }),
     getLatestInsight(link.id),
+    getReaderMap(link.id),
   ]);
   const insightRecipient = insight?.recommendedAction.prospectId
     ? link.prospects.find((p) => p.id === insight.recommendedAction.prospectId)
@@ -371,6 +374,11 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
         </div>
 
         <aside className="space-y-10">
+          <section id="qui-lit" className="scroll-mt-20">
+            <SectionTitle hint="qui a ouvert la proposition">Qui lit</SectionTitle>
+            <ReadersMap linkId={link.id} map={readerMap} now={now} />
+          </section>
+
           <section>
             <SectionTitle hint="reçoivent les relances">Contacts</SectionTitle>
           <Surface>

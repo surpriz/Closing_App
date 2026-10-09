@@ -20,6 +20,12 @@ export function extensionNotice(
       };
     case "DRAFT_READY":
       return { title: "Relance à valider", body: `Une relance pour ${who} attend votre accord.` };
+    case "COMMITTEE_LIVE":
+      return { title: `Comité en lecture chez ${who}`, body: `${truncate(payload.reason ?? "Plusieurs personnes lisent", 90)}. C'est le moment d'appeler.` };
+    case "DECISION_MAKER_DETECTED":
+      return { title: `Décideur en lecture : ${who}`, body: `${truncate(payload.reason ?? "Un décideur lit votre proposition", 110)}.` };
+    case "NEW_READER":
+      return { title: `Nouveau lecteur chez ${who}`, body: `${truncate(payload.reason ?? "Quelqu'un de nouveau lit votre proposition", 110)}.` };
     default: {
       const reason =
         payload.reason ??

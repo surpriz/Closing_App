@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { DEAL_STATUS_LABELS } from "@/components/dashboard/labels";
-import type { DealStatus } from "@/generated/prisma/enums";
+import type { DealStatus, ProspectRole } from "@/generated/prisma/enums";
 import { inBackground } from "@/lib/closing/background";
 import { actOnInsight } from "@/lib/closing/brain/act";
 import { analyzeDeal } from "@/lib/closing/brain/analyze-deal";
@@ -47,6 +47,19 @@ export async function updateDealStatus(linkId: string, status: DealStatus) {
     await cancelOpenFollowups(link.id, `Statut passé à « ${DEAL_STATUS_LABELS[dealStatus]} »`);
   }
   await refreshEngagementScore(link.id);
+  revalidateLink(link);
+}
+
+const prospectRoleSchema = z.enum(["DECISION_MAKER", "FINANCE", "TECHNICAL", "CHAMPION", "INFLUENCER", "OTHER"]).nullable();
+
+/** The seller's word on who a contact is; null goes back to the guess from the email. */
+export async function setProspectRole(linkId: string, prospectId: string, role: ProspectRole | null) {
+  const link = await requireOwnedLink(linkId);
+  const parsed = prospectRoleSchema.parse(role);
+  const prospect = await prisma.prospect.findFirst({ where: { id: prospectId, linkId: link.id }, select: { id: true } });
+  if (!prospect) throw new Error("Contact introuvable");
+
+  await prisma.prospect.update({ where: { id: prospect.id }, data: { role: parsed } });
   revalidateLink(link);
 }
 

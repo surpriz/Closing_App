@@ -10,6 +10,7 @@ import { refreshEngagementScore } from "@/lib/closing/engagement/refresh-score";
 import { cancelOpenFollowups } from "@/lib/closing/followups/queue";
 import { getLinkForViewer, getViewerAccess } from "@/lib/closing/links";
 import { notifySeller } from "@/lib/closing/notify/notify";
+import { companyFromEmail } from "@/lib/closing/prospects/from-recipient";
 import {
   EMAIL_COOKIE_MAX_AGE,
   VISITOR_COOKIE,
@@ -41,7 +42,8 @@ export async function unlockWithEmail(
   const { email, name } = parsed.data;
   await prisma.prospect.upsert({
     where: { linkId_email: { linkId: link.id, email } },
-    create: { linkId: link.id, email, name },
+    // Someone the seller did not add: the proposal was passed on
+    create: { linkId: link.id, email, name, origin: "EMAIL_GATE", company: companyFromEmail(email) },
     update: name ? { name } : {},
   });
 

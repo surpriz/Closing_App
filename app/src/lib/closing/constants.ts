@@ -6,6 +6,7 @@ export const WORKSPACE_DEFAULTS = {
   businessHourEnd: 18,
   businessDays: [1, 2, 3, 4, 5],
   multiViewerThreshold: 2,
+  committeeThreshold: 3,
   reopenAfterInactivityDays: 3,
 } as const;
 

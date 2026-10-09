@@ -5,6 +5,7 @@ import { detectCallMoment, type CallMomentFacts } from "./call-moment";
 const quiet: CallMomentFacts = {
   liveReaders: 1,
   multiViewerThreshold: 2,
+  committeeThreshold: 3,
   firstOpen: false,
   inactiveDays: 0,
   reopenAfterDays: 3,
@@ -36,7 +37,12 @@ describe("detectCallMoment", () => {
   });
 
   it("puts several readers first", () => {
-    expect(detectCallMoment({ ...quiet, liveReaders: 3, firstOpen: true })?.reason).toBe("multi_viewer");
+    expect(detectCallMoment({ ...quiet, liveReaders: 3, committeeThreshold: 5, firstOpen: true })?.reason).toBe("multi_viewer");
+  });
+
+  it("leaves a committee to the committee alert", () => {
+    expect(detectCallMoment({ ...quiet, liveReaders: 3, firstOpen: true })?.reason).toBe("first_open");
+    expect(detectCallMoment({ ...quiet, liveReaders: 4 })).toBeNull();
   });
 
   it("flags a deal the analysis rates urgent", () => {

@@ -5,6 +5,7 @@ import type {
   FollowupStatus,
   FollowupTrigger,
   PageTag,
+  ProspectRole,
   SellerActivityType,
   SellerAlertChannel,
   SellerAlertType,
@@ -80,7 +81,26 @@ export const ALERT_TYPE_LABELS: Record<SellerAlertType, string> = {
   PROSPECT_VALIDATED: "Proposition validée",
   CHANGE_REQUESTED: "Ajustement demandé",
   CALL_MOMENT: "Moment d'appeler",
+  COMMITTEE_LIVE: "Comité en lecture",
+  NEW_READER: "Nouveau lecteur",
+  DECISION_MAKER_DETECTED: "Décideur en lecture",
 };
+
+export const ROLE_LABELS: Record<ProspectRole, string> = {
+  DECISION_MAKER: "Décideur",
+  FINANCE: "Finance / achats",
+  TECHNICAL: "Technique",
+  CHAMPION: "Champion",
+  INFLUENCER: "Influenceur",
+  OTHER: "Autre",
+};
+
+export const READER_ORIGIN_LABELS = {
+  initial: "Destinataire",
+  forwarded_internal: "Repartagé en interne",
+  external: "Lecteur externe",
+  anonymous: "Non identifié",
+} as const;
 
 export const SCORE_REASON_LABELS: Record<string, string> = {
   deal_validated: "Proposition validée",

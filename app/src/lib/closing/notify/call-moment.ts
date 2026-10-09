@@ -8,6 +8,8 @@ export type CallMomentFacts = {
   /** Distinct people reading the link right now. */
   liveReaders: number;
   multiViewerThreshold: number;
+  /** From this many readers it is a committee, raised by triggers/committee.ts instead. */
+  committeeThreshold: number;
   /** First real reading of the link. */
   firstOpen: boolean;
   /** Days since the previous reading, null when unknown or first one. */
@@ -25,7 +27,7 @@ export type CallMomentReason = "multi_viewer" | "reopened" | "pricing" | "first_
 export type CallMoment = { reason: CallMomentReason; detail: string };
 
 export function detectCallMoment(facts: CallMomentFacts): CallMoment | null {
-  if (facts.liveReaders > facts.multiViewerThreshold) {
+  if (facts.liveReaders > facts.multiViewerThreshold && facts.liveReaders < facts.committeeThreshold) {
     return { reason: "multi_viewer", detail: `${facts.liveReaders} personnes lisent en même temps` };
   }
   if (facts.inactiveDays !== null && facts.inactiveDays >= facts.reopenAfterDays) {

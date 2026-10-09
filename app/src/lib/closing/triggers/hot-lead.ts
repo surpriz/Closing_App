@@ -85,6 +85,7 @@ export async function evaluateHotLead(viewId: string, resumed: boolean, now = ne
     {
       liveReaders: liveReaders.length,
       multiViewerThreshold: settings.multiViewerThreshold,
+      committeeThreshold: settings.committeeThreshold,
       firstOpen: !resumed && !previousView,
       inactiveDays: previousView ? Math.floor((now.getTime() - previousView.lastSeenAt.getTime()) / DAY_MS) : null,
       reopenAfterDays: settings.reopenAfterInactivityDays,
@@ -141,6 +142,7 @@ export async function evaluatePricingCallMoment(viewId: string, now = new Date()
     {
       liveReaders: 1,
       multiViewerThreshold: settings.multiViewerThreshold,
+      committeeThreshold: settings.committeeThreshold,
       firstOpen: false,
       inactiveDays: null,
       reopenAfterDays: settings.reopenAfterInactivityDays,

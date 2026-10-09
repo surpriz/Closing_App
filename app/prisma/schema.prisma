@@ -259,6 +259,25 @@ enum SellerAlertType {
   PROSPECT_VALIDATED // the prospect clicked "Valider & signer"
   CHANGE_REQUESTED // the prospect asked for an adjustment
   CALL_MOMENT // the prospect is reading right now and it is worth a call
+  COMMITTEE_LIVE // several people of the prospect side read at the same time
+  NEW_READER // someone other than the recipient opened the proposal
+  DECISION_MAKER_DETECTED // a finance or executive contact reads the proposal
+}
+
+// Role of a prospect contact in the buying committee, set by the seller.
+// Null on Prospect.role means "guess it from the email" (committee/roles.ts).
+enum ProspectRole {
+  DECISION_MAKER
+  FINANCE
+  TECHNICAL
+  CHAMPION
+  INFLUENCER
+  OTHER
+}
+
+enum ProspectOrigin {
+  SELLER // added by the seller (dashboard or extension): the original recipient
+  EMAIL_GATE // typed an email to open the link, the proposal was passed on
 }
 
 enum SellerAlertChannel {
@@ -301,6 +320,7 @@ model WorkspaceSettings {
   businessHourEnd           Int               @default(18) // prospect local hour, exclusive
   businessDays              Int[]             @default([1, 2, 3, 4, 5]) // ISO weekday, 1 = Monday
   multiViewerThreshold      Int               @default(2) // alert when live unique viewers > threshold
+  committeeThreshold        Int               @default(3) // committee alert when live distinct people >= threshold
   reopenAfterInactivityDays Int               @default(3)
   chatEnabledByDefault      Boolean           @default(false)
 
@@ -477,6 +497,8 @@ model Prospect {
   phoneE164       String?
   whatsappOptInAt DateTime? // WhatsApp requires explicit opt-in
   unsubscribedAt  DateTime?
+  role            ProspectRole? // set by the seller, wins over the guess from the email
+  origin          ProspectOrigin @default(SELLER)
 
   // detected on first view (x-vercel-ip-timezone, accept-language), editable by seller
   locale      String?
