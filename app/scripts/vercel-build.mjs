@@ -5,7 +5,7 @@
 // A failed migration fails the deploy, and the previous version stays live.
 import { execSync } from "node:child_process";
 
-const run = (command) => execSync(command, { stdio: "inherit" });
+const run = (command, options = {}) => execSync(command, { stdio: "inherit", ...options });
 
 const isProduction = process.env.VERCEL_ENV === "production";
 const isStaging = process.env.VERCEL_GIT_COMMIT_REF === "staging";
@@ -15,5 +15,12 @@ if (isProduction || isStaging) {
 } else {
   console.log(`[build] skipping migrations (branch ${process.env.VERCEL_GIT_COMMIT_REF ?? "unset"})`);
 }
+
+// The Outlook add-in (../outlook) is served by the app under /outlook, same origin as /api/ext.
+// Needs "Include files outside the root directory" on the Vercel project (on by default).
+run(
+  `npm ci --prefix ../outlook && npm run ${isProduction ? "build" : "build:staging"} --prefix ../outlook`,
+  { env: { ...process.env, OUTLOOK_OUT_DIR: new URL("../public/outlook", import.meta.url).pathname } },
+);
 
 run("npx next build");

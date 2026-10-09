@@ -1,7 +1,8 @@
 import { browser } from "wxt/browser";
 
-// How the link looks in the email: a framed card, or a plain line of text
-export type LinkStyle = "card" | "text";
+import type { LinkStyle } from "./link-html";
+
+export type { LinkStyle };
 
 const KEY = "linkStyle";
 

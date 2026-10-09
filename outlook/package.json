@@ -1,0 +1,26 @@
+{
+  "name": "clozer-outlook",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "OUTLOOK_OUT_DIR=../app/public/outlook npm run build:dev",
+    "build": "vite build --mode production && vite build --mode production -c vite.commands.config.ts",
+    "build:staging": "vite build --mode staging && vite build --mode staging -c vite.commands.config.ts",
+    "build:dev": "vite build --mode development && vite build --mode development -c vite.commands.config.ts",
+    "validate": "office-addin-manifest validate dist/manifest.xml",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/office-js": "^1.0.611",
+    "happy-dom": "^20.14.5",
+    "office-addin-manifest": "^3.0.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.2",
+    "vitest": "^5.0.3"
+  },
+  "dependencies": {
+    "@vercel/blob": "^2.8.0"
+  }
+}

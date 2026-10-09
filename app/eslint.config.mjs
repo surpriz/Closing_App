@@ -15,6 +15,8 @@ const eslintConfig = defineConfig([
     // Generated or copied on install
     "src/generated/**",
     "public/pdf.worker.min.mjs",
+    // Outlook add-in bundle, built from ../outlook
+    "public/outlook/**",
     ".vercel/**",
   ]),
 ]);

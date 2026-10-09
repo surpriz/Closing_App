@@ -1,4 +1,6 @@
-import type { LinkStyle } from "./preferences";
+// How the link looks in the email: a framed card, or a plain line of text.
+// Lives here, not in preferences.ts, so the Outlook add-in can import this file without WXT.
+export type LinkStyle = "card" | "text";
 
 function escapeHtml(value: string) {
   return value.replace(/[&<>"']/g, (char) => `&#${char.charCodeAt(0)};`);

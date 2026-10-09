@@ -16,3 +16,9 @@
 /public/pdf.worker.min.mjs
 .env*
 !.env.example
+
+# Outlook add-in, built from ../outlook at deploy time
+/public/outlook
+
+# next dev --experimental-https (local key and cert)
+/certificates
