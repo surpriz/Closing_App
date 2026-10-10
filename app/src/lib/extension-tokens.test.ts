@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { generateExtensionToken, hashExtensionToken, parseBearer, tokenHint } from "./extension-tokens";
+import {
+  connectedClients,
+  generateExtensionToken,
+  hashExtensionToken,
+  OUTLOOK_TOKEN_LABEL,
+  parseBearer,
+  tokenHint,
+} from "./extension-tokens";
 
 describe("extension tokens", () => {
   it("generates distinct prefixed tokens", () => {
@@ -30,5 +37,13 @@ describe("extension tokens", () => {
     expect(parseBearer("Bearer nope")).toBeNull();
     expect(parseBearer(generateExtensionToken())).toBeNull();
     expect(parseBearer(`Basic ${generateExtensionToken()}`)).toBeNull();
+  });
+});
+
+describe("connectedClients", () => {
+  it("tells the Outlook add-in apart from browsers", () => {
+    expect(connectedClients([])).toEqual({ chrome: false, outlook: false });
+    expect(connectedClients([{ label: OUTLOOK_TOKEN_LABEL }])).toEqual({ chrome: false, outlook: true });
+    expect(connectedClients([{ label: "Chrome · macOS" }, { label: null }])).toEqual({ chrome: true, outlook: false });
   });
 });

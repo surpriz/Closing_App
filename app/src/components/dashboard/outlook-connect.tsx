@@ -8,7 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export function OutlookConnect({ account }: { account: { email: string; workspace: string } }) {
+export function OutlookConnect({
+  account,
+  doneHint,
+}: {
+  account: { email: string; workspace: string };
+  /** Replaces the "back to Outlook, close this tab" line once connected. */
+  doneHint?: React.ReactNode;
+}) {
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -31,8 +38,8 @@ export function OutlookConnect({ account }: { account: { email: string; workspac
           Outlook connecté
         </p>
         <p className="text-body text-muted-foreground">
-          Revenez dans Outlook. Joignez un PDF à un email : Clozer vous proposera de le remplacer par un lien. Vous pouvez
-          fermer cet onglet.
+          {doneHint ??
+            "Revenez dans Outlook. Joignez un PDF à un email : Clozer vous proposera de le remplacer par un lien. Vous pouvez fermer cet onglet."}
         </p>
       </div>
     );

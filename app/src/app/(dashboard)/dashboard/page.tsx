@@ -1,6 +1,7 @@
 import { PenLine, Send } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { AutopilotBanner } from "@/components/dashboard/autopilot-banner";
 import { NewLinkDialog } from "@/components/dashboard/create-link-form";
@@ -35,6 +36,7 @@ import {
 } from "@/lib/closing/dashboard/queries";
 import { catchUpInBackground } from "@/lib/closing/catch-up";
 import { getWorkspaceLiveState } from "@/lib/closing/live";
+import { getSellerPrefs } from "@/lib/closing/notify/preferences";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
 import { prisma } from "@/lib/db";
 import { formatInTimeZone, formatRelative } from "@/lib/format";
@@ -48,8 +50,11 @@ const FEED_LIMIT = 12;
 
 export default async function DashboardPage(props: PageProps<"/dashboard">) {
   // A seller's day is their own deals; the team view is /equipe
-  const { organization, role, scope } = await requireWorkspace();
+  const { user, organization, role, scope } = await requireWorkspace();
   const organizationId = organization.id;
+  // New sellers, and teammates joining a workspace, start with the welcome tour
+  const { onboardingCompletedAt } = await getSellerPrefs(user.id, organizationId);
+  if (!onboardingCompletedAt) redirect("/bienvenue");
   const mine = { organizationId, ...sellerLinks(scope) };
   const now = new Date();
   const period = parsePeriod((await props.searchParams).p);

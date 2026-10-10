@@ -10,6 +10,7 @@ import { upsertSellerPrefs } from "@/lib/closing/notify/preferences";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
 import { encryptSecret } from "@/lib/crypto";
 import { prisma } from "@/lib/db";
+import { OFFER_DESCRIPTION_MAX } from "@/lib/onboarding";
 import { isManagerRole } from "@/lib/roles";
 import { requireManager, requireWorkspace } from "@/lib/session";
 
@@ -41,7 +42,7 @@ const settingsSchema = z.object({
   autonomy: z.enum(["COPILOT", "AUTOPILOT"]),
   chatEnabledByDefault: z.boolean(),
   assistantKnowledge: optionalText(4000),
-  offerDescription: optionalText(1500),
+  offerDescription: optionalText(OFFER_DESCRIPTION_MAX),
   targetCustomer: optionalText(500),
   valueProps: optionalText(1500),
   commonObjections: optionalText(1500),

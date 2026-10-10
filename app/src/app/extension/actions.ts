@@ -10,7 +10,7 @@ import { encryptSecret } from "@/lib/crypto";
 import { prisma } from "@/lib/db";
 import { isEmailConfigured, sendEmail } from "@/lib/email";
 import { normalizeUserCode, outlookConnectedEmail } from "@/lib/extension-pairing";
-import { generateExtensionToken, hashExtensionToken, tokenHint } from "@/lib/extension-tokens";
+import { generateExtensionToken, hashExtensionToken, OUTLOOK_TOKEN_LABEL, tokenHint } from "@/lib/extension-tokens";
 import { requireWorkspace } from "@/lib/session";
 
 function browserLabel(userAgent: string) {
@@ -56,7 +56,7 @@ export async function claimOutlookPairing(input: string): Promise<{ ok: true } |
     return { ok: false, message: "Code inconnu ou expiré. Vérifiez le code affiché dans Outlook." };
   }
 
-  const { id, token } = await createToken(user.id, organization.id, "Outlook · complément");
+  const { id, token } = await createToken(user.id, organization.id, OUTLOOK_TOKEN_LABEL);
   const { count } = await prisma.extensionPairing.updateMany({
     where: { id: pairing.id, tokenCiphertext: null },
     data: { tokenCiphertext: encryptSecret(token) },
@@ -71,6 +71,7 @@ export async function claimOutlookPairing(input: string): Promise<{ ok: true } |
     inBackground("outlook-connected-email", () => sendEmail({ to: user.email, ...email }));
   }
   revalidatePath("/settings");
+  revalidatePath("/bienvenue");
   return { ok: true };
 }
 

@@ -34,7 +34,7 @@ export function FirstSteps({
     {
       title: "Envoyez-le",
       description:
-        "Collez-le dans votre email à la place de la pièce jointe. Pour tester, ouvrez-le dans une fenêtre privée : vos propres lectures ne comptent pas.",
+        "Collez-le dans votre email à la place de la pièce jointe, ou laissez l'extension Chrome ou le complément Outlook le faire pour vous. Pour tester, ouvrez-le dans une fenêtre privée : vos propres lectures ne comptent pas.",
       done: hasRead,
     },
   ];

@@ -721,6 +721,9 @@ model NotificationPreference {
   digestClaimedAt DateTime? // lock while a digest is being built and sent
   extensionSeenAt DateTime? // last extension poll: is it running?
 
+  onboardingCompletedAt DateTime? // null = the welcome tour opens on the next visit to /dashboard
+  mailClient            String? // gmail | outlook_web | outlook_desktop | other, picked during onboarding
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

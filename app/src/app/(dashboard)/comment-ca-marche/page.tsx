@@ -14,6 +14,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { PageHeader, SectionTitle, Surface } from "@/components/dashboard/page-header";
+import { buttonVariants } from "@/components/ui/button";
 
 export const metadata: Metadata = { title: "Comment ça marche" };
 
@@ -130,6 +131,11 @@ export default function HowItWorksPage() {
       <PageHeader
         title="Comment Clozer pense"
         description="Ce qui se passe derrière chaque lien que vous envoyez, et pourquoi vous n'avez presque rien à faire."
+        action={
+          <Link href="/bienvenue" className={buttonVariants({ variant: "outline" })}>
+            Revoir la prise en main
+          </Link>
+        }
       />
 
       <section>

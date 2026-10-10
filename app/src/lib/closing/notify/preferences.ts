@@ -3,14 +3,18 @@ import { prisma } from "@/lib/db";
 import { defaultTimezone } from "../settings";
 import { DEFAULT_PREFS, type SellerPrefs } from "./policy";
 
-export type StoredPrefs = SellerPrefs & { extensionSeenAt: Date | null };
+export type StoredPrefs = SellerPrefs & {
+  extensionSeenAt: Date | null;
+  onboardingCompletedAt: Date | null;
+  mailClient: string | null;
+};
 
 /** A seller's notification settings in one workspace. No row = defaults. */
 export async function getSellerPrefs(userId: string, organizationId: string): Promise<StoredPrefs> {
   const row = await prisma.notificationPreference.findUnique({
     where: { userId_organizationId: { userId, organizationId } },
   });
-  if (!row) return { ...DEFAULT_PREFS, extensionSeenAt: null };
+  if (!row) return { ...DEFAULT_PREFS, extensionSeenAt: null, onboardingCompletedAt: null, mailClient: null };
   return {
     emailActions: row.emailActions,
     emailCallMoments: row.emailCallMoments,
@@ -19,6 +23,8 @@ export async function getSellerPrefs(userId: string, organizationId: string): Pr
     digestHour: row.digestHour,
     timezone: row.timezone,
     extensionSeenAt: row.extensionSeenAt,
+    onboardingCompletedAt: row.onboardingCompletedAt,
+    mailClient: row.mailClient,
   };
 }
 
@@ -29,7 +35,7 @@ export function sellerTimezone(prefs: Pick<SellerPrefs, "timezone">) {
 export function upsertSellerPrefs(
   userId: string,
   organizationId: string,
-  data: Partial<SellerPrefs> & { extensionSeenAt?: Date },
+  data: Partial<SellerPrefs> & { extensionSeenAt?: Date; onboardingCompletedAt?: Date; mailClient?: string },
 ) {
   return prisma.notificationPreference.upsert({
     where: { userId_organizationId: { userId, organizationId } },

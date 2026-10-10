@@ -1,6 +1,6 @@
 "use client";
 
-import { Brain, CornerDownLeft, FileText, Search, Settings2, Sun, User } from "lucide-react";
+import { Brain, Compass, CornerDownLeft, FileText, Search, Settings2, Sun, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
@@ -22,6 +22,7 @@ const PAGES: Item[] = [
   { kind: "page", href: "/documents", label: "Documents" },
   { kind: "page", href: "/comment-ca-marche", label: "Comment ça marche" },
   { kind: "page", href: "/settings", label: "Réglages" },
+  { kind: "page", href: "/bienvenue", label: "Prise en main" },
 ];
 
 const PAGE_ICONS: Record<string, typeof Sun> = {
@@ -29,6 +30,7 @@ const PAGE_ICONS: Record<string, typeof Sun> = {
   "/documents": FileText,
   "/comment-ca-marche": Brain,
   "/settings": Settings2,
+  "/bienvenue": Compass,
 };
 
 const GROUPS = [

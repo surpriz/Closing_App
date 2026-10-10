@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 
 import { revokeExtensionToken } from "@/app/extension/actions";
+import { OutlookManifestLink } from "@/components/dashboard/outlook-manifest-link";
 import { Button } from "@/components/ui/button";
 
 export type ExtensionTokenRow = {
@@ -40,9 +41,7 @@ export function ExtensionTokens({ tokens }: { tokens: ExtensionTokenRow[] }) {
         </p>
         <p className="text-body text-muted-foreground">
           Outlook installé sur Windows ou Mac : ajoutez le complément avec{" "}
-          <a className="underline" href="/outlook/manifest.xml" download="clozer-outlook.xml">
-            son fichier manifeste
-          </a>{" "}
+          <OutlookManifestLink className="underline">son fichier manifeste</OutlookManifestLink>{" "}
           (Outlook › Compléments › Mes compléments › Ajouter à partir d&apos;un fichier), puis cliquez sur « Clozer » dans un
           nouvel email. Votre service informatique peut aussi le déployer pour toute l&apos;équipe depuis le centre
           d&apos;administration Microsoft 365, avec le même fichier.

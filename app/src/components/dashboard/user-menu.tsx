@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut } from "lucide-react";
+import { Compass, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 
@@ -51,6 +51,11 @@ export function UserMenu({
           <p className="truncate text-sm font-medium">{workspace}</p>
           <p className="truncate text-xs text-muted-foreground">{email}</p>
         </div>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => router.push("/bienvenue")}>
+          <Compass />
+          Revoir la prise en main
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <ThemeMenuItems />
         <DropdownMenuSeparator />

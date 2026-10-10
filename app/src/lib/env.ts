@@ -46,6 +46,8 @@ const serverEnvSchema = z.object({
   EXTENSION_MIN_VERSION: z.string().optional(),
   EXTENSION_DISABLED_HOSTS: z.string().optional(),
   EXTENSION_NOTIFICATIONS_DISABLED: z.enum(["true", "false"]).optional(),
+  // Chrome Web Store page, linked from the welcome tour. Unset until the extension is published
+  EXTENSION_STORE_URL: z.preprocess((value) => value || undefined, z.url().optional()),
   // Time travel and manual engine runs; ignored in production
   ENABLE_TEST_TOOLS: z.enum(["true", "false"]).optional(),
 });
