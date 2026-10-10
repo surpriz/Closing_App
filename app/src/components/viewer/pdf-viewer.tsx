@@ -7,12 +7,14 @@ import type { DealStatus } from "@/generated/prisma/enums";
 import type { SupportedLocale } from "@/lib/closing/constants";
 import type { ViewerLabels } from "@/lib/closing/i18n/viewer";
 
+import { CapsuleBubble, type ViewerCapsule } from "./capsule-bubble";
 import { ChatWidget, type ChatWidgetData } from "./chat-widget";
 import { CtaBar } from "./cta-bar";
 import { ExpiryBanner, ExpiryChip } from "./expiry-countdown";
 import { PrivacyNotice } from "./privacy-notice";
 import { usePageTracking } from "./use-page-tracking";
 import { ViewerHeader } from "./viewer-header";
+import { VoiceCommentButton } from "./voice-comment-button";
 
 export type PageSize = { width: number; height: number };
 
@@ -29,6 +31,10 @@ type Props = {
   chat: ChatWidgetData | null;
   /** Quotes with a deadline: the countdown sits on these pages, or in the header when there are none. */
   countdown?: { pricingPages: number[] } | null;
+  /** Seller clips, at most one per page. */
+  capsules: ViewerCapsule[];
+  /** The prospect may record a voice comment on a page. */
+  voiceComments: boolean;
 };
 
 export function PdfViewer({
@@ -42,11 +48,15 @@ export function PdfViewer({
   locale,
   chat,
   countdown,
+  capsules,
+  voiceComments,
 }: Props) {
   const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null);
   const [sizes, setSizes] = useState<PageSize[]>([]);
   const [failed, setFailed] = useState(false);
   const { currentPage, registerPage, getViewId } = usePageTracking(slug, sizes.length);
+  // An open voice comment stays on its page while the reader scrolls
+  const [voicePage, setVoicePage] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -125,6 +135,20 @@ export function PdfViewer({
               size={size}
               registerPage={registerPage}
               overlay={countdown?.pricingPages.includes(index + 1) ? <ExpiryBanner labels={labels} /> : undefined}
+              corner={
+                voiceComments &&
+                index + 1 === (voicePage ?? currentPage) && (
+                  <VoiceCommentButton
+                    open={voicePage === index + 1}
+                    onOpenChange={(open) => setVoicePage(open ? index + 1 : null)}
+                    slug={slug}
+                    pageNumber={index + 1}
+                    labels={labels}
+                    senderName={senderName}
+                    getViewId={getViewId}
+                  />
+                )
+              }
             />
           ))}
         {/* Also shown here because the email gate is optional per link */}
@@ -139,6 +163,17 @@ export function PdfViewer({
           getViewId={getViewId}
           documentName={documentName}
           atEnd={sizes.length > 0 && currentPage >= sizes.length}
+        />
+      )}
+
+      {pdf && (
+        <CapsuleBubble
+          capsule={capsules.find((c) => c.pageNumber === currentPage) ?? null}
+          slug={slug}
+          labels={labels}
+          senderName={senderName}
+          getViewId={getViewId}
+          ctaVisible={ctaEnabled}
         />
       )}
 
@@ -164,10 +199,12 @@ type PdfPageProps = {
   registerPage?: (pageNumber: number, element: HTMLElement | null) => void;
   /** Drawn over the top of the page (the countdown on a pricing page). */
   overlay?: React.ReactNode;
+  /** Drawn in the bottom right corner of the page (the voice comment button). */
+  corner?: React.ReactNode;
 };
 
 // Also used by the seller's preview, which passes no registerPage (no tracking)
-export function PdfPage({ pdf, pageNumber, size, registerPage, overlay }: PdfPageProps) {
+export function PdfPage({ pdf, pageNumber, size, registerPage, overlay, corner }: PdfPageProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [nearViewport, setNearViewport] = useState(false);
@@ -239,6 +276,7 @@ export function PdfPage({ pdf, pageNumber, size, registerPage, overlay }: PdfPag
     >
       <canvas ref={canvasRef} className="absolute inset-0 size-full" />
       {overlay && <div className="absolute inset-x-2 top-2 z-[1] sm:top-3">{overlay}</div>}
+      {corner}
     </div>
   );
 }

@@ -4,6 +4,8 @@ import { createOpenAI } from "@ai-sdk/openai";
 import type { AiProvider } from "../types";
 
 export type AiPurpose = "followup" | "chat" | "classify" | "analyze";
+/** Purposes recorded in ai_usage: the language model ones, plus speech to text. */
+export type AiUsagePurpose = AiPurpose | "transcribe";
 
 const DEFAULT_MODELS: Record<AiProvider, Record<AiPurpose, string>> = {
   openai: { followup: "gpt-4o", chat: "gpt-4o-mini", classify: "gpt-4o-mini", analyze: "gpt-4o" },
@@ -44,4 +46,12 @@ export function getLanguageModel(purpose: AiPurpose) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return null;
   return { provider, modelId, model: createOpenAI({ apiKey })(modelId) };
+}
+
+/** Voice comments are transcribed by OpenAI whatever AI_PROVIDER says: Anthropic has no speech to text. */
+export function getTranscriptionModel() {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return null;
+  const modelId = process.env.AI_MODEL_TRANSCRIBE || "gpt-4o-mini-transcribe";
+  return { provider: "openai" as const, modelId, model: createOpenAI({ apiKey }).transcription(modelId) };
 }

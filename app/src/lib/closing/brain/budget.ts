@@ -10,8 +10,8 @@ function startOfUtcDay(now: Date) {
 /**
  * Two ceilings on AI spend: analyses per workspace per day, and dollars per
  * day across all workspaces. Over either, the rule-based advice takes over.
- * The prospect assistant has its own budget (canChat): prospects chatting
- * must never starve the analyses.
+ * The prospect assistant has its own budget (canChat), and voice comments are
+ * transcribed whatever this says: prospects must never starve the analyses.
  */
 export async function canAnalyze(organizationId: string, now = new Date()) {
   const { AI_BRAIN_DAILY_LIMIT, AI_DAILY_BUDGET_USD } = getEnv();
@@ -19,7 +19,7 @@ export async function canAnalyze(organizationId: string, now = new Date()) {
 
   const [analyses, spend] = await Promise.all([
     prisma.dealInsight.count({ where: { organizationId, createdAt: { gte: since }, model: { not: null } } }),
-    prisma.aiUsage.aggregate({ where: { createdAt: { gte: since }, purpose: { not: "chat" } }, _sum: { costMicroUsd: true } }),
+    prisma.aiUsage.aggregate({ where: { createdAt: { gte: since }, purpose: { notIn: ["chat", "transcribe"] } }, _sum: { costMicroUsd: true } }),
   ]);
   if (analyses >= AI_BRAIN_DAILY_LIMIT) return false;
   return (spend._sum.costMicroUsd ?? 0) < AI_DAILY_BUDGET_USD * 1_000_000;

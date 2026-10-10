@@ -2,7 +2,7 @@ import type { LanguageModelUsage } from "ai";
 
 import { prisma } from "@/lib/db";
 
-import type { AiPurpose } from "./provider";
+import type { AiUsagePurpose } from "./provider";
 
 /**
  * One row per LLM call in `ai_usage`: cost per workspace, quotas later.
@@ -28,15 +28,29 @@ export function estimateCostMicroUsd(modelId: string, usage: LanguageModelUsage 
   return Math.round(fresh * price.input + cached * price.cacheRead + (usage.outputTokens ?? 0) * price.output);
 }
 
+/** Speech to text is billed by the minute, in USD. */
+const TRANSCRIPTION_PRICES: { match: RegExp; perMinute: number }[] = [
+  { match: /^gpt-4o-mini-transcribe/, perMinute: 0.003 },
+  { match: /^gpt-4o-transcribe/, perMinute: 0.006 },
+  { match: /^whisper-1/, perMinute: 0.006 },
+];
+
+export function estimateTranscriptionCostMicroUsd(modelId: string, seconds: number) {
+  const perMinute = TRANSCRIPTION_PRICES.find((p) => p.match.test(modelId))?.perMinute ?? 0;
+  return Math.round((Math.max(0, seconds) / 60) * perMinute * 1_000_000);
+}
+
 export async function recordAiUsage(input: {
   organizationId: string;
   linkId?: string | null;
-  purpose: AiPurpose;
+  purpose: AiUsagePurpose;
   provider: string;
   modelId: string;
   usage?: LanguageModelUsage;
   latencyMs: number;
   ok: boolean;
+  /** For calls not billed by the token (transcription). */
+  costMicroUsd?: number;
 }) {
   try {
     await prisma.aiUsage.create({
@@ -49,7 +63,7 @@ export async function recordAiUsage(input: {
         tokensIn: input.usage?.inputTokens ?? 0,
         tokensOut: input.usage?.outputTokens ?? 0,
         cachedTokens: input.usage?.inputTokenDetails?.cacheReadTokens ?? 0,
-        costMicroUsd: estimateCostMicroUsd(input.modelId, input.usage),
+        costMicroUsd: input.costMicroUsd ?? estimateCostMicroUsd(input.modelId, input.usage),
         latencyMs: input.latencyMs,
         ok: input.ok,
       },

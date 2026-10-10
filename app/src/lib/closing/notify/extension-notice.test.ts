@@ -10,6 +10,14 @@ describe("extensionNotice", () => {
     });
   });
 
+  it("quotes a voice comment, or points to its page while it is transcribed", () => {
+    expect(extensionNotice("VOICE_COMMENT", "Acme", "Devis", { transcript: "Et la phase 2 ?" })).toEqual({
+      title: "Acme a laissé un vocal",
+      body: "« Et la phase 2 ? »",
+    });
+    expect(extensionNotice("VOICE_COMMENT", "Acme", "Devis", { pageNumber: 4 }).body).toBe("Page 4 de « Devis ».");
+  });
+
   it("names the document when the question is missing", () => {
     expect(extensionNotice("PROSPECT_QUESTION", "Acme", "Devis", {}).body).toBe("Sur « Devis ».");
   });

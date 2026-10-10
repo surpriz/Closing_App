@@ -83,6 +83,7 @@ export const ALERT_TYPE_LABELS: Record<SellerAlertType, string> = {
   PROSPECT_VALIDATED: "Proposition validée",
   CHANGE_REQUESTED: "Ajustement demandé",
   PROSPECT_QUESTION: "Question du prospect",
+  VOICE_COMMENT: "Commentaire vocal",
   CALL_MOMENT: "Moment d'appeler",
   COMMITTEE_LIVE: "Comité en lecture",
   NEW_READER: "Nouveau lecteur",

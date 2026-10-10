@@ -4,6 +4,7 @@ import { cookies, headers } from "next/headers";
 import { notFound } from "next/navigation";
 
 import { AutoRefresh } from "@/components/dashboard/auto-refresh";
+import type { ViewerCapsule } from "@/components/viewer/capsule-bubble";
 import type { ChatWidgetData } from "@/components/viewer/chat-widget";
 import { EmailGate } from "@/components/viewer/email-gate";
 import { ExpiryGate } from "@/components/viewer/expiry-gate";
@@ -11,6 +12,7 @@ import { LinkExpired } from "@/components/viewer/link-expired";
 import { PdfViewer } from "@/components/viewer/pdf-viewer";
 import { WebViewer } from "@/components/viewer/web-viewer";
 import { getLanguageModel } from "@/lib/closing/ai/provider";
+import { capsulesVisibleOnLink, resolveCapsules } from "@/lib/closing/capsules/resolve";
 import { suggestQuestions, toUIMessages } from "@/lib/closing/chat/messages";
 import { loadChatSetup } from "@/lib/closing/chat/queries";
 import { extensionRequestKey, showsCountdown } from "@/lib/closing/expiry";
@@ -162,6 +164,7 @@ export default async function ViewerPage({ params }: PageProps<"/v/[slug]">) {
           })
         ).map((page) => page.pageNumber)
       : null;
+  const capsules = await loadCapsules(slug, link);
 
   return (
     <>
@@ -178,6 +181,8 @@ export default async function ViewerPage({ params }: PageProps<"/v/[slug]">) {
           locale={locale}
           chat={chat}
           countdown={pricingPages && { pricingPages }}
+          capsules={capsules}
+          voiceComments={link.voiceCommentsEnabled}
         />,
       )}
     </>
@@ -207,6 +212,21 @@ async function alreadyRequestedExtension(link: ViewerLink, email: string | null)
     select: { id: true },
   });
   return !!alert;
+}
+
+/** The seller's clip for each page: this link's own, or the document's. */
+async function loadCapsules(slug: string, link: { id: string; documentId: string }): Promise<ViewerCapsule[]> {
+  const rows = await prisma.pageCapsule.findMany({
+    where: capsulesVisibleOnLink(link),
+    select: { id: true, pageNumber: true, linkId: true, kind: true, hookText: true },
+  });
+  return [...resolveCapsules(rows, link.id).values()].map((row) => ({
+    id: row.id,
+    pageNumber: row.pageNumber,
+    kind: row.kind,
+    hookText: row.hookText,
+    src: `/api/v/${slug}/capsules/${row.id}/media`,
+  }));
 }
 
 // Shown only when on for the link, an AI is configured and the document has something to answer from

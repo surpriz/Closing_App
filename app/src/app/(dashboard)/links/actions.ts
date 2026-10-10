@@ -85,6 +85,7 @@ const linkSettingsSchema = z.object({
   requireEmail: checkbox,
   ctaEnabled: checkbox,
   chatEnabled: checkbox,
+  voiceCommentsEnabled: checkbox,
   followupsEnabled: checkbox,
 });
 
@@ -134,6 +135,7 @@ export async function saveLinkSettings(
     requireEmail: formData.get("requireEmail") ?? undefined,
     ctaEnabled: formData.get("ctaEnabled") ?? undefined,
     chatEnabled: formData.get("chatEnabled") ?? undefined,
+    voiceCommentsEnabled: formData.get("voiceCommentsEnabled") ?? undefined,
     followupsEnabled: formData.get("followupsEnabled") ?? undefined,
   });
   if (!parsed.success) {

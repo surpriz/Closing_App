@@ -12,7 +12,7 @@ import type { ChatKind } from "@/lib/closing/chat/kind";
 import type { ChatUIMessage } from "@/lib/closing/chat/messages";
 import { CHAT_QUOTA_ERRORS } from "@/lib/closing/chat/quota";
 import type { SupportedLocale } from "@/lib/closing/constants";
-import type { ViewerLabels } from "@/lib/closing/i18n/viewer";
+import { fillLabel, type ViewerLabels } from "@/lib/closing/i18n/viewer";
 import { cn } from "@/lib/utils";
 
 export type ChatWidgetData = {
@@ -92,7 +92,7 @@ export function ChatWidget({
   });
 
   const sender = senderName ?? labels.chatSenderFallback;
-  const withSender = (text: string) => text.replaceAll("{sender}", sender);
+  const withSender = (text: string) => fillLabel(text, { sender });
   const busy = status === "submitted" || status === "streaming";
   const last = messages[messages.length - 1];
   const waiting = busy && (last?.role === "user" || (last && !textOf(last)));

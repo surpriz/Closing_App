@@ -27,6 +27,7 @@ type Props = {
     requireEmail: boolean;
     ctaEnabled: boolean;
     chatEnabled: boolean;
+    voiceCommentsEnabled: boolean;
     followupsEnabled: boolean;
   };
 };
@@ -59,6 +60,12 @@ function LinkSettingsForm({ linkId, initial }: Props) {
             label="Assistant qui répond aux questions du prospect"
             hint="Il répond uniquement à partir du document et vous transmet ce qu'il ne sait pas."
             defaultChecked={initial.chatEnabled}
+          />
+          <FormCheckbox
+            name="voiceCommentsEnabled"
+            label="Commentaires vocaux du prospect"
+            hint="Sur les PDF : il enregistre jusqu'à 60 secondes sur une page, vous recevez l'audio et sa transcription."
+            defaultChecked={initial.voiceCommentsEnabled}
           />
           <FormCheckbox
             name="followupsEnabled"

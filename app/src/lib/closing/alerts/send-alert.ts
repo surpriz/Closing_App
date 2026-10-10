@@ -29,9 +29,14 @@ export type AlertPayload = {
   question?: string;
   /** Expiry alerts: the link's deadline, ISO. */
   expiresAt?: string;
+  /** VOICE_COMMENT: the page it was left on, and what was said when the transcription worked. */
+  pageNumber?: number;
+  transcript?: string | null;
 };
 
 const READER_ALERTS = new Set<SellerAlertType>(["COMMITTEE_LIVE", "DECISION_MAKER_DETECTED", "NEW_READER"]);
+/** Alerts the seller answers straight to the prospect: the email replies to them. */
+const REPLY_ALERTS = new Set<SellerAlertType>(["CHANGE_REQUESTED", "PROSPECT_QUESTION", "LINK_EXTENSION_REQUESTED", "VOICE_COMMENT"]);
 
 export type AlertDelivery = {
   linkId: string;
@@ -67,6 +72,15 @@ type AlertMessage = {
 export function alertWho(link: LinkForAlert, payload: AlertPayload) {
   const prospect = link.prospects[0];
   return prospect?.company ?? payload.prospectName ?? prospect?.name ?? link.name ?? payload.prospectEmail ?? prospect?.email ?? "Un prospect";
+}
+
+function replyButton(link: LinkForAlert, payload: AlertPayload): EmailBlock | null {
+  if (!payload.prospectEmail) return null;
+  return {
+    kind: "button",
+    label: "Lui répondre",
+    href: `mailto:${payload.prospectEmail}?subject=${encodeURIComponent(`Re: ${link.document.name}`)}`,
+  };
 }
 
 export function alertMessage(
@@ -120,13 +134,8 @@ export function alertMessage(
     case "CHANGE_REQUESTED": {
       const blocks: EmailBlock[] = [{ kind: "text", text: `${who} demande un ajustement sur ${doc}.` }];
       if (payload.message) blocks.push({ kind: "quote", text: payload.message });
-      if (payload.prospectEmail) {
-        blocks.push({
-          kind: "button",
-          label: "Lui répondre",
-          href: `mailto:${payload.prospectEmail}?subject=${encodeURIComponent(`Re: ${link.document.name}`)}`,
-        });
-      }
+      const reply = replyButton(link, payload);
+      if (reply) blocks.push(reply);
       blocks.push({ kind: "text", text: `Le deal : ${linkUrl}` });
       return {
         subject: `${who} demande un ajustement`,
@@ -143,18 +152,32 @@ export function alertMessage(
         },
       ];
       if (payload.question) blocks.push({ kind: "quote", text: payload.question });
-      if (payload.prospectEmail) {
-        blocks.push({
-          kind: "button",
-          label: "Lui répondre",
-          href: `mailto:${payload.prospectEmail}?subject=${encodeURIComponent(`Re: ${link.document.name}`)}`,
-        });
-      }
+      const reply = replyButton(link, payload);
+      if (reply) blocks.push(reply);
       const url = `${linkUrl}#questions`;
       blocks.push({ kind: "text", text: `Le deal et la conversation : ${url}` });
       return {
         subject: `${who} a une question sur votre proposition`,
         line: `${who} a une question sur ${doc}${payload.question ? ` : « ${payload.question.slice(0, 200)} »` : ""}`,
+        blocks,
+        url,
+      };
+    }
+    case "VOICE_COMMENT": {
+      const page = payload.pageNumber ? `la page ${payload.pageNumber} de ` : "";
+      const blocks: EmailBlock[] = [{ kind: "text", text: `${who} a enregistré un commentaire vocal sur ${page}${doc}.` }];
+      blocks.push(
+        payload.transcript
+          ? { kind: "quote", text: payload.transcript }
+          : { kind: "text", text: "Pas de transcription cette fois, écoutez-le sur la page du deal." },
+      );
+      const reply = replyButton(link, payload);
+      if (reply) blocks.push(reply);
+      const url = `${linkUrl}#vocaux`;
+      blocks.push({ kind: "text", text: `L'écouter : ${url}` });
+      return {
+        subject: `${who} vous a laissé un message vocal`,
+        line: `${who} a laissé un vocal sur ${page}${doc}${payload.transcript ? ` : « ${payload.transcript.slice(0, 200)} »` : ""}`,
         blocks,
         url,
       };
@@ -279,12 +302,7 @@ export async function createAndDeliverAlert(input: AlertDelivery) {
             subject: message.subject,
             html,
             text,
-            replyTo:
-              input.type === "CHANGE_REQUESTED" ||
-              input.type === "PROSPECT_QUESTION" ||
-              input.type === "LINK_EXTENSION_REQUESTED"
-                ? (input.payload.prospectEmail ?? undefined)
-                : undefined,
+            replyTo: REPLY_ALERTS.has(input.type) ? (input.payload.prospectEmail ?? undefined) : undefined,
           });
         }
       } else if (channel === "SLACK") {
@@ -292,15 +310,17 @@ export async function createAndDeliverAlert(input: AlertDelivery) {
         const icon =
           input.type === "PROSPECT_QUESTION"
             ? "❓"
-            : input.type === "LINK_EXTENSION_REQUESTED" || input.type === "LINK_EXPIRING"
-              ? "⏳"
-              : input.priority === "ACTION"
-              ? "✅"
-              : input.type === "DRAFT_READY"
-                ? "✍️"
-                : READER_ALERTS.has(input.type)
-                  ? "👥"
-                  : "🔥";
+            : input.type === "VOICE_COMMENT"
+              ? "🎙️"
+              : input.type === "LINK_EXTENSION_REQUESTED" || input.type === "LINK_EXPIRING"
+                ? "⏳"
+                : input.priority === "ACTION"
+                  ? "✅"
+                  : input.type === "DRAFT_READY"
+                    ? "✍️"
+                    : READER_ALERTS.has(input.type)
+                      ? "👥"
+                      : "🔥";
         await postSlackMessage(decryptSecret(settings.slackWebhookUrl), `${icon} ${escapeSlackText(message.line)}\n${message.url}`);
       } else if (channel === "WEBHOOK") {
         if (!settings?.outboundWebhookUrl || !settings.webhookSecret) throw new Error("webhook non configuré");

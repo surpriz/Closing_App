@@ -14,6 +14,8 @@ export function extensionNotice(
     reason?: string;
     message?: string | null;
     question?: string;
+    transcript?: string | null;
+    pageNumber?: number;
     liveViewers?: number;
     inactiveDays?: number;
     expiresAt?: string;
@@ -31,6 +33,13 @@ export function extensionNotice(
       return {
         title: `${who} a une question`,
         body: payload.question ? `« ${truncate(payload.question, 110)} »` : `Sur « ${documentName} ».`,
+      };
+    case "VOICE_COMMENT":
+      return {
+        title: `${who} a laissé un vocal`,
+        body: payload.transcript
+          ? `« ${truncate(payload.transcript, 110)} »`
+          : `Page ${payload.pageNumber ?? "?"} de « ${documentName} ».`,
       };
     case "PROSPECT_VALIDATED":
       return { title: `${who} a validé`, body: `« ${documentName} » est validé. Revenez vers ce prospect rapidement.` };

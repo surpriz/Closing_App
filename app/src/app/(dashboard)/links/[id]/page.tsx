@@ -23,6 +23,7 @@ import {
   TIER_LABELS,
 } from "@/components/dashboard/labels";
 import { ExpiryControl } from "@/components/dashboard/expiry-control";
+import { LinkCapsules, type LinkCapsuleRow } from "@/components/dashboard/link-capsules";
 import { LinkSettingsDialog } from "@/components/dashboard/link-settings-form";
 import { LinkTestTools } from "@/components/dashboard/link-test-tools";
 import { LiveActivity } from "@/components/dashboard/live-activity";
@@ -32,7 +33,9 @@ import { ProspectForm } from "@/components/dashboard/prospect-form";
 import { ReadersMap } from "@/components/dashboard/readers-map";
 import { SellerActivityForm, SnoozeControl } from "@/components/dashboard/seller-activity-form";
 import { ScoreGuide, TemperatureGauge } from "@/components/dashboard/temperature";
+import { VoiceComments, type VoiceCommentItem } from "@/components/dashboard/voice-comments";
 import { getAppOrigin } from "@/lib/app-origin";
+import { capsuleUploadPrefix } from "@/lib/blob";
 import { getLanguageModel } from "@/lib/closing/ai/provider";
 import { getLinkAnalytics } from "@/lib/closing/analytics";
 import { getLatestInsight } from "@/lib/closing/brain/latest";
@@ -40,6 +43,7 @@ import { getReaderMap } from "@/lib/closing/committee/queries";
 import { canEditDeal } from "@/lib/closing/dashboard/queries";
 import { labelReaders } from "@/lib/closing/dashboard/readers";
 import { catchUpInBackground } from "@/lib/closing/catch-up";
+import { capsulesVisibleOnLink, resolveCapsules } from "@/lib/closing/capsules/resolve";
 import { freshEngagementScore } from "@/lib/closing/engagement/refresh-score";
 import { getLinkLiveState } from "@/lib/closing/live";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
@@ -92,7 +96,7 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
   const score = await freshEngagementScore(link.id, link.engagementScore);
   catchUpInBackground({ organizationId: organization.id, linkId: link.id, documentId: link.document.id });
 
-  const [analytics, settings, origin, followups, alerts, actions, live, sellerActivities, insight, readerMap, chatRows] = await Promise.all([
+  const [analytics, settings, origin, followups, alerts, actions, live, sellerActivities, insight, readerMap, chatRows, capsuleRows, capsulePlays, voiceRows] = await Promise.all([
     getLinkAnalytics(link.id),
     getWorkspaceSettings(organization.id),
     getAppOrigin(),
@@ -104,7 +108,7 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
     }),
     // Prospect actions and forwarded questions have their own timeline entries
     prisma.sellerAlert.findMany({
-      where: { linkId: link.id, type: { notIn: ["PROSPECT_VALIDATED", "CHANGE_REQUESTED", "PROSPECT_QUESTION", "LINK_EXTENSION_REQUESTED"] } },
+      where: { linkId: link.id, type: { notIn: ["PROSPECT_VALIDATED", "CHANGE_REQUESTED", "PROSPECT_QUESTION", "LINK_EXTENSION_REQUESTED", "VOICE_COMMENT"] } },
       orderBy: { createdAt: "desc" },
       take: 20,
     }),
@@ -131,6 +135,39 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
         flags: true,
         createdAt: true,
         view: { select: { visitorId: true, email: true, prospect: { select: { name: true, email: true } } } },
+      },
+    }),
+    // The document's capsules and this link's own, with the plays of this link only
+    prisma.pageCapsule.findMany({
+      where: capsulesVisibleOnLink(link),
+      select: {
+        id: true,
+        pageNumber: true,
+        linkId: true,
+        kind: true,
+        hookText: true,
+        durationMs: true,
+        _count: { select: { plays: { where: { linkId: link.id } } } },
+      },
+    }),
+    prisma.capsulePlay.findMany({
+      where: { linkId: link.id },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+      select: { id: true, pageNumber: true, createdAt: true, view: { select: { email: true, prospect: { select: { name: true, email: true } } } } },
+    }),
+    prisma.voiceComment.findMany({
+      where: { linkId: link.id, view: { fromSeller: false } },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      select: {
+        id: true,
+        pageNumber: true,
+        status: true,
+        transcript: true,
+        durationMs: true,
+        createdAt: true,
+        view: { select: { email: true, prospect: { select: { name: true, email: true } } } },
       },
     }),
   ]);
@@ -170,6 +207,19 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
   // Latest conversation first
   const transcript = [...conversations.values()].reverse();
 
+  const readerName = (view: { email: string | null; prospect: { name: string | null; email: string } | null }) =>
+    view.prospect?.name ?? view.prospect?.email ?? view.email ?? "Le prospect";
+  const voiceComments: VoiceCommentItem[] = voiceRows.map((row) => ({ ...row, reader: readerName(row.view) }));
+  const linkCapsules: LinkCapsuleRow[] = [...resolveCapsules(capsuleRows, link.id).values()].map((row) => ({
+    id: row.id,
+    pageNumber: row.pageNumber,
+    kind: row.kind,
+    hookText: row.hookText,
+    durationMs: row.durationMs,
+    plays: row._count.plays,
+    forLink: row.linkId === link.id,
+  }));
+
   const readerLabels = labelReaders(analytics.recentViews);
   const timeline: TimelineItem[] = [
     { id: `created-${link.id}`, at: link.createdAt, kind: "created" as const, title: "Lien créé" },
@@ -206,9 +256,22 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
         id: `question-${row.id}`,
         at: row.createdAt,
         kind: "question" as const,
-        title: `${row.view.prospect?.name ?? row.view.prospect?.email ?? row.view.email ?? "Le prospect"} a une question pour vous`,
+        title: `${readerName(row.view)} a une question pour vous`,
         detail: `« ${row.content} »`,
       })),
+    ...voiceComments.map((comment) => ({
+      id: `voice-${comment.id}`,
+      at: comment.createdAt,
+      kind: "voice" as const,
+      title: `${comment.reader} a laissé un vocal page ${comment.pageNumber}`,
+      detail: comment.transcript ? `« ${comment.transcript} »` : null,
+    })),
+    ...capsulePlays.map((play) => ({
+      id: `capsule-${play.id}`,
+      at: play.createdAt,
+      kind: "capsule" as const,
+      title: `${readerName(play.view)} a regardé votre capsule page ${play.pageNumber}`,
+    })),
     ...followups
       .filter((f) => f.sentAt && f.status === "SENT")
       .map((f) => ({
@@ -286,11 +349,12 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
                 linkId={link.id}
                 initial={{
                   // Not updatedAt: it moves on every tracking flush and the page refreshes itself
-                  version: [link.name, link.requireEmail, link.ctaEnabled, link.chatEnabled, link.followupsEnabled].join("|"),
+                  version: [link.name, link.requireEmail, link.ctaEnabled, link.chatEnabled, link.voiceCommentsEnabled, link.followupsEnabled].join("|"),
                   name: link.name ?? "",
                   requireEmail: link.requireEmail,
                   ctaEnabled: link.ctaEnabled,
                   chatEnabled: link.chatEnabled,
+                  voiceCommentsEnabled: link.voiceCommentsEnabled,
                   followupsEnabled: link.followupsEnabled,
                 }}
               />
@@ -448,6 +512,31 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
                 <SectionTitle hint="posées à l'assistant du document">Questions du prospect</SectionTitle>
                 <Surface>
                   <ChatTranscript conversations={transcript} />
+                </Surface>
+              </section>
+            )}
+
+            {voiceComments.length > 0 && (
+              <section id="vocaux" className="scroll-mt-20">
+                <SectionTitle hint="laissés sur les pages du document">Commentaires vocaux</SectionTitle>
+                <Surface>
+                  <VoiceComments comments={voiceComments} />
+                </Surface>
+              </section>
+            )}
+
+            {link.document.kind !== "URL" && (canEdit || linkCapsules.length > 0) && (
+              <section id="capsules" className="scroll-mt-20">
+                <SectionTitle hint="vos explications en vidéo, page par page">Capsules</SectionTitle>
+                <Surface className="px-4 py-3">
+                  <LinkCapsules
+                    documentId={link.document.id}
+                    linkId={link.id}
+                    pages={link.document.pages}
+                    capsules={linkCapsules}
+                    canEdit={canEdit}
+                    uploadPrefix={capsuleUploadPrefix(organization.id)}
+                  />
                 </Surface>
               </section>
             )}

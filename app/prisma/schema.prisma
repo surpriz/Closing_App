@@ -280,6 +280,7 @@ enum SellerAlertType {
   PROSPECT_QUESTION // the prospect asked the assistant something it could not answer
   LINK_EXTENSION_REQUESTED // the link expired and the prospect asked for more time
   LINK_EXPIRING // the link expires within 24h
+  VOICE_COMMENT // the prospect left a voice comment on a page
 }
 
 // Role of a prospect contact in the buying committee, set by the seller.
@@ -361,15 +362,15 @@ model WorkspaceSettings {
   lastDigestAt              DateTime? // unused: the morning digest is per seller (notification_preferences)
 
   // What the seller sells, fed to the AI
-  offerDescription  String?
-  targetCustomer    String?
-  valueProps        String?
-  commonObjections  String?
-  avgSalesCycleDays Int?
+  offerDescription   String?
+  targetCustomer     String?
+  valueProps         String?
+  commonObjections   String?
+  avgSalesCycleDays  Int?
   // What the prospect assistant should know on every document (FAQ, terms, support…). Prospects can be told all of it.
   assistantKnowledge String?
   // Name of the document the offer was guessed from, until the seller saves the settings
-  offerInferredFrom String?
+  offerInferredFrom  String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -398,7 +399,7 @@ model Document {
 
   // AI reading of the pages (summaries, tags, key facts). Retried by the engine until it works, 3 tries max.
   aiProcessedAt     DateTime?
-  aiAttempts        Int       @default(0)
+  aiAttempts        Int           @default(0)
   // URL documents have no text: the seller says what the page is about
   sellerDescription String?
   // Written for the prospect assistant: details the document leaves out. Prospects can be told all of it.
@@ -413,8 +414,9 @@ model Document {
   // sha256 of the PDF bytes, so the same file sent twice is stored and read once
   contentSha256     String?
 
-  pages DocumentPage[]
-  links Link[]
+  pages    DocumentPage[]
+  links    Link[]
+  capsules PageCapsule[]
 
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
@@ -460,9 +462,11 @@ model Link {
   allowDownload Boolean   @default(false)
   expiresAt     DateTime? // after it the viewer locks and the prospect can ask for more time
 
-  dealStatus  DealStatus @default(OPEN)
-  chatEnabled Boolean    @default(true)
-  ctaEnabled  Boolean    @default(true)
+  dealStatus           DealStatus @default(OPEN)
+  chatEnabled          Boolean    @default(true)
+  ctaEnabled           Boolean    @default(true)
+  // the prospect can record a voice comment on a page (PDF only)
+  voiceCommentsEnabled Boolean    @default(true)
 
   followupsEnabled       Boolean           @default(true)
   channels               FollowupChannel[] // empty = workspace defaults
@@ -501,6 +505,9 @@ model Link {
   chatMessages     ChatMessage[]
   sellerActivities SellerActivity[]
   insights         DealInsight[]
+  capsules         PageCapsule[]
+  capsulePlays     CapsulePlay[]
+  voiceComments    VoiceComment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -533,9 +540,10 @@ model Prospect {
   firstSeenAt DateTime?
   lastSeenAt  DateTime?
 
-  views     DocumentView[]
-  followups Followup[]
-  actions   ProspectAction[]
+  views         DocumentView[]
+  followups     Followup[]
+  actions       ProspectAction[]
+  voiceComments VoiceComment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -585,9 +593,11 @@ model DocumentView {
   currentPage     Int? // page on screen at the last flush, for the live indicator
   leftAt          DateTime? // tab hidden or closed; cleared by the next flush with reading time
 
-  pageViews    PageView[]
-  actions      ProspectAction[]
-  chatMessages ChatMessage[]
+  pageViews     PageView[]
+  actions       ProspectAction[]
+  chatMessages  ChatMessage[]
+  capsulePlays  CapsulePlay[]
+  voiceComments VoiceComment[]
 
   @@index([linkId, lastSeenAt(sort: Desc)])
   @@index([linkId, visitorId])
@@ -850,4 +860,93 @@ model ChatMessage {
   @@index([viewId, createdAt])
   @@index([linkId, createdAt])
   @@map("chat_messages")
+}
+
+// =============================================================================
+// Page capsules and voice comments
+// =============================================================================
+
+enum CapsuleKind {
+  VIDEO
+  AUDIO
+}
+
+enum VoiceCommentStatus {
+  PENDING
+  TRANSCRIBED
+  FAILED
+}
+
+// A short clip the seller recorded for one page. linkId null = shown on every
+// link of the document, otherwise it replaces that default for one link.
+model PageCapsule {
+  id         String   @id @default(cuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  linkId     String?
+  link       Link?    @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  // "doc" or the link id: Postgres treats NULLs as distinct, a unique on linkId would allow two defaults
+  scopeKey   String
+
+  pageNumber   Int // 1-based
+  kind         CapsuleKind
+  blobPathname String
+  contentType  String // without codecs
+  sizeBytes    Int
+  durationMs   Int
+  hookText     String? // "Sur cette partie, laisse-moi t'expliquer…"
+  createdById  String?
+
+  plays CapsulePlay[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([documentId, pageNumber, scopeKey])
+  @@index([linkId])
+  @@map("page_capsules")
+}
+
+// The prospect opened a capsule. One row per capsule and reading session.
+model CapsulePlay {
+  id        String       @id @default(cuid())
+  capsuleId String
+  capsule   PageCapsule  @relation(fields: [capsuleId], references: [id], onDelete: Cascade)
+  linkId    String
+  link      Link         @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  viewId    String
+  view      DocumentView @relation(fields: [viewId], references: [id], onDelete: Cascade)
+
+  pageNumber Int
+
+  createdAt DateTime @default(now())
+
+  @@unique([capsuleId, viewId])
+  @@index([linkId, createdAt(sort: Desc)])
+  @@map("capsule_plays")
+}
+
+model VoiceComment {
+  id         String       @id @default(cuid())
+  linkId     String
+  link       Link         @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  viewId     String
+  view       DocumentView @relation(fields: [viewId], references: [id], onDelete: Cascade)
+  prospectId String?
+  prospect   Prospect?    @relation(fields: [prospectId], references: [id], onDelete: SetNull)
+
+  pageNumber   Int
+  blobPathname String
+  contentType  String
+  sizeBytes    Int
+  durationMs   Int // measured by the browser, replaced by the transcription's when known
+  status       VoiceCommentStatus @default(PENDING)
+  transcript   String?
+  language     String?
+
+  createdAt DateTime @default(now())
+
+  @@index([linkId, createdAt(sort: Desc)])
+  @@index([viewId, createdAt])
+  @@map("voice_comments")
 }

@@ -29,6 +29,7 @@ import {
 import { PageTimeChart, type PageTimeDatum } from "@/components/dashboard/page-time-chart";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getAppOrigin } from "@/lib/app-origin";
+import { capsuleUploadPrefix } from "@/lib/blob";
 import { getDocumentAnalytics } from "@/lib/closing/analytics";
 import { getLanguageModel } from "@/lib/closing/ai/provider";
 import { catchUpInBackground } from "@/lib/closing/catch-up";
@@ -60,6 +61,11 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
       pages: {
         select: { pageNumber: true, tags: true, tagSource: true, summary: true, keyFacts: true },
         orderBy: { pageNumber: "asc" },
+      },
+      // The document's own capsules; the ones recorded for one link live on its page
+      capsules: {
+        where: { linkId: null },
+        select: { id: true, pageNumber: true, kind: true, hookText: true, durationMs: true, _count: { select: { plays: true } } },
       },
       links: {
         where: { archivedAt: null, draftAt: null },
@@ -330,7 +336,16 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
               ) : (
                 <DocumentPages
                   documentId={document.id}
-                  pages={document.pages}
+                  pages={document.pages.map((page) => {
+                    const capsule = document.capsules.find((c) => c.pageNumber === page.pageNumber);
+                    return {
+                      ...page,
+                      capsule: capsule
+                        ? { id: capsule.id, kind: capsule.kind, hookText: capsule.hookText, durationMs: capsule.durationMs, plays: capsule._count.plays }
+                        : null,
+                    };
+                  })}
+                  capsuleUploadPrefix={capsuleUploadPrefix(organization.id)}
                   aiRead={document.aiProcessedAt !== null}
                   aiGaveUp={document.aiAttempts >= 3}
                   docType={document.docType}

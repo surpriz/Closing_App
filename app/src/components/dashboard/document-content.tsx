@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { PageCapsuleControl, type CapsuleSummary } from "@/components/dashboard/page-capsule";
 import type { PageTag, PageTagSource } from "@/generated/prisma/enums";
 import { cn } from "@/lib/utils";
 
@@ -27,6 +28,7 @@ export type ContentPage = {
   keyFacts: string[];
   tags: PageTag[];
   tagSource: PageTagSource;
+  capsule: CapsuleSummary | null;
 };
 
 /** What Clozer understood of each page, with tags the seller can correct. */
@@ -38,9 +40,11 @@ export function DocumentPages({
   aiGaveUp,
   docType,
   docPurpose,
+  capsuleUploadPrefix,
 }: {
   documentId: string;
   pages: ContentPage[];
+  capsuleUploadPrefix: string;
   docType: string | null;
   docPurpose: string | null;
   aiRead: boolean;
@@ -89,6 +93,7 @@ export function DocumentPages({
             documentId={documentId}
             page={page}
             labels={labels}
+            capsuleUploadPrefix={capsuleUploadPrefix}
           />
         ))}
       </ul>
@@ -100,10 +105,12 @@ function PageRow({
   documentId,
   page,
   labels,
+  capsuleUploadPrefix,
 }: {
   documentId: string;
   page: ContentPage;
   labels: Record<PageTag, string>;
+  capsuleUploadPrefix: string;
 }) {
   const [tags, setTags] = useState(page.tags);
   const [pending, startTransition] = useTransition();
@@ -151,6 +158,10 @@ function PageRow({
           })}
           {page.tagSource === "MANUAL" && <span className="text-xs text-muted-foreground">corrigé par vous</span>}
         </div>
+        <PageCapsuleControl
+          target={{ documentId, linkId: null, pageNumber: page.pageNumber, uploadPrefix: capsuleUploadPrefix }}
+          capsule={page.capsule}
+        />
       </div>
     </li>
   );

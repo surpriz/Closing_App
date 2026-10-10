@@ -1,5 +1,4 @@
 import { isStepCount, streamText, tool, toUIMessageStream, createUIMessageStreamResponse } from "ai";
-import { cookies } from "next/headers";
 import { after, type NextRequest } from "next/server";
 import { z } from "zod";
 
@@ -15,12 +14,12 @@ import { toModelMessages } from "@/lib/closing/chat/messages";
 import { buildChatInstructions } from "@/lib/closing/chat/prompts";
 import { countRecentQuestions, loadChatHistory, loadChatKnowledge } from "@/lib/closing/chat/queries";
 import { decideChatQuota } from "@/lib/closing/chat/quota";
-import { SUPPORTED_LOCALES, VIEW_SESSION_WINDOW_MS, type SupportedLocale } from "@/lib/closing/constants";
+import { SUPPORTED_LOCALES, type SupportedLocale } from "@/lib/closing/constants";
 import { getViewerLabels } from "@/lib/closing/i18n/viewer";
 import { getLinkForViewer, getViewerAccess } from "@/lib/closing/links";
 import { defaultTimezone } from "@/lib/closing/settings";
 import { getRequestContext } from "@/lib/closing/tracking/request-context";
-import { VISITOR_COOKIE } from "@/lib/closing/tracking/visitor";
+import { isCrawlerView, resolveViewerView } from "@/lib/closing/tracking/viewer-view";
 import { prisma } from "@/lib/db";
 
 export const maxDuration = 60;
@@ -50,25 +49,12 @@ export async function POST(request: NextRequest, ctx: RouteContext<"/api/v/[slug
   const access = await getViewerAccess(link);
   if (!access.allowed) return Response.json({ error: "email_required" }, { status: 403 });
 
-  const visitorId = (await cookies()).get(VISITOR_COOKIE)?.value;
-  if (!visitorId) return Response.json({ error: "no_visitor" }, { status: 403 });
-
-  // The tracked view can still be starting when the first question leaves: fall back to the latest one
+  // The tracked view can still be starting when the first question leaves: falls back to the latest one
   const now = new Date();
-  const view =
-    (viewId &&
-      (await prisma.documentView.findFirst({
-        where: { id: viewId, linkId: link.id, visitorId },
-        select: { id: true, isBot: true, fromSeller: true },
-      }))) ||
-    (await prisma.documentView.findFirst({
-      where: { linkId: link.id, visitorId, lastSeenAt: { gte: new Date(now.getTime() - VIEW_SESSION_WINDOW_MS) } },
-      orderBy: { lastSeenAt: "desc" },
-      select: { id: true, isBot: true, fromSeller: true },
-    }));
+  const view = await resolveViewerView(link.id, viewId, now);
   if (!view) return Response.json({ error: "no_view" }, { status: 409 });
-  // Seller views are flagged isBot too: the seller may test the assistant, crawlers may not
-  if (view.isBot && !view.fromSeller) return Response.json({ error: "forbidden" }, { status: 403 });
+  if (isCrawlerView(view)) return Response.json({ error: "forbidden" }, { status: 403 });
+  const { visitorId } = view;
 
   const llm = getLanguageModel("chat");
   if (!llm) return Response.json({ error: "unavailable" }, { status: 503 });

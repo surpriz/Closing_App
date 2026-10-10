@@ -46,6 +46,10 @@ describe("decideChannels", () => {
     ).toEqual(["EMAIL", "EXTENSION", "SLACK"]);
   });
 
+  it("passes a voice comment on at once, even at night", () => {
+    expect(decideChannels({ ...base, type: "VOICE_COMMENT", now: NIGHT }).channels).toEqual(["EMAIL", "EXTENSION"]);
+  });
+
   it("sends call moments to the extension only by default", () => {
     expect(decideChannels({ ...base, type: "CALL_MOMENT" })).toEqual({ channels: ["EXTENSION"], reason: "ok" });
   });

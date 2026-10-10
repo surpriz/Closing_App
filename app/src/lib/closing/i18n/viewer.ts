@@ -78,6 +78,25 @@ export type ViewerLabels = {
   chatError: string;
   chatLimit: string;
   chatSenderFallback: string;
+  /** Seller capsule bubble on a page. {sender} as above. */
+  capsuleFrom: string;
+  capsuleOpen: string;
+  capsuleClose: string;
+  capsuleDismiss: string;
+  /** Voice comment on a page. {page} is the page number. */
+  voiceButton: string;
+  voiceTitle: string;
+  voiceHint: string;
+  voiceStart: string;
+  voiceStop: string;
+  voiceRetry: string;
+  voiceSend: string;
+  voiceSending: string;
+  voiceSent: string;
+  voiceError: string;
+  voiceLimit: string;
+  voiceMicDenied: string;
+  voiceUnsupported: string;
   /** Title, placeholder and suggested questions, by family of document (chat/kind.ts). */
   chatKinds: Record<ChatKind, ChatKindLabels>;
 };
@@ -138,6 +157,23 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     chatError: "The assistant is unavailable, please try again in a moment.",
     chatLimit: "You've reached the question limit for now. {sender} will be happy to answer directly.",
     chatSenderFallback: "the sender",
+    capsuleFrom: "A word from {sender}",
+    capsuleOpen: "Play the message",
+    capsuleClose: "Close",
+    capsuleDismiss: "Hide",
+    voiceButton: "Leave a voice note",
+    voiceTitle: "Voice note on page {page}",
+    voiceHint: "Up to 60 seconds. {sender} gets it straight away.",
+    voiceStart: "Record",
+    voiceStop: "Stop",
+    voiceRetry: "Start over",
+    voiceSend: "Send",
+    voiceSending: "Sending…",
+    voiceSent: "Sent to {sender}",
+    voiceError: "The voice note could not be sent, please try again.",
+    voiceLimit: "You've sent several voice notes already. {sender} will get back to you.",
+    voiceMicDenied: "Microphone access is blocked. Allow it in your browser and try again.",
+    voiceUnsupported: "This browser can't record audio.",
     chatKinds: {
       offer: {
         title: "Questions about this proposal?",
@@ -236,6 +272,23 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     chatError: "L'assistant est indisponible, réessayez dans un instant.",
     chatLimit: "Vous avez atteint la limite de questions pour le moment. {sender} vous répondra volontiers directement.",
     chatSenderFallback: "l'expéditeur",
+    capsuleFrom: "Un mot de {sender}",
+    capsuleOpen: "Écouter le message",
+    capsuleClose: "Fermer",
+    capsuleDismiss: "Masquer",
+    voiceButton: "Laisser un vocal",
+    voiceTitle: "Vocal sur la page {page}",
+    voiceHint: "Jusqu'à 60 secondes. {sender} le reçoit tout de suite.",
+    voiceStart: "Enregistrer",
+    voiceStop: "Arrêter",
+    voiceRetry: "Recommencer",
+    voiceSend: "Envoyer",
+    voiceSending: "Envoi…",
+    voiceSent: "Envoyé à {sender}",
+    voiceError: "Le vocal n'a pas pu partir, réessayez.",
+    voiceLimit: "Vous avez déjà envoyé plusieurs vocaux. {sender} va revenir vers vous.",
+    voiceMicDenied: "L'accès au micro est bloqué. Autorisez-le dans votre navigateur puis réessayez.",
+    voiceUnsupported: "Ce navigateur ne permet pas d'enregistrer.",
     chatKinds: {
       offer: {
         title: "Une question sur cette proposition ?",
@@ -334,6 +387,23 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     chatError: "El asistente no está disponible, inténtelo de nuevo en un momento.",
     chatLimit: "Ha alcanzado el límite de preguntas por ahora. {sender} le responderá con gusto directamente.",
     chatSenderFallback: "el remitente",
+    capsuleFrom: "Un mensaje de {sender}",
+    capsuleOpen: "Reproducir el mensaje",
+    capsuleClose: "Cerrar",
+    capsuleDismiss: "Ocultar",
+    voiceButton: "Dejar una nota de voz",
+    voiceTitle: "Nota de voz en la página {page}",
+    voiceHint: "Hasta 60 segundos. {sender} la recibe al momento.",
+    voiceStart: "Grabar",
+    voiceStop: "Detener",
+    voiceRetry: "Volver a empezar",
+    voiceSend: "Enviar",
+    voiceSending: "Enviando…",
+    voiceSent: "Enviada a {sender}",
+    voiceError: "No se pudo enviar la nota de voz, inténtelo de nuevo.",
+    voiceLimit: "Ya ha enviado varias notas de voz. {sender} le responderá.",
+    voiceMicDenied: "El acceso al micrófono está bloqueado. Permítalo en su navegador y vuelva a intentarlo.",
+    voiceUnsupported: "Este navegador no puede grabar audio.",
     chatKinds: {
       offer: {
         title: "¿Preguntas sobre esta propuesta?",
@@ -432,6 +502,23 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     chatError: "Der Assistent ist nicht verfügbar, bitte versuchen Sie es gleich noch einmal.",
     chatLimit: "Sie haben das Fragelimit vorerst erreicht. {sender} antwortet Ihnen gern direkt.",
     chatSenderFallback: "der Absender",
+    capsuleFrom: "Eine Nachricht von {sender}",
+    capsuleOpen: "Nachricht abspielen",
+    capsuleClose: "Schließen",
+    capsuleDismiss: "Ausblenden",
+    voiceButton: "Sprachnachricht hinterlassen",
+    voiceTitle: "Sprachnachricht zu Seite {page}",
+    voiceHint: "Bis zu 60 Sekunden. {sender} erhält sie sofort.",
+    voiceStart: "Aufnehmen",
+    voiceStop: "Stopp",
+    voiceRetry: "Neu beginnen",
+    voiceSend: "Senden",
+    voiceSending: "Wird gesendet…",
+    voiceSent: "An {sender} gesendet",
+    voiceError: "Die Sprachnachricht konnte nicht gesendet werden. Bitte erneut versuchen.",
+    voiceLimit: "Sie haben bereits mehrere Sprachnachrichten gesendet. {sender} meldet sich bei Ihnen.",
+    voiceMicDenied: "Der Mikrofonzugriff ist blockiert. Erlauben Sie ihn im Browser und versuchen Sie es erneut.",
+    voiceUnsupported: "Dieser Browser kann kein Audio aufnehmen.",
     chatKinds: {
       offer: {
         title: "Fragen zu diesem Angebot?",
@@ -500,4 +587,12 @@ export function pickLocale(acceptLanguage: string | null): SupportedLocale {
 
 export function getViewerLabels(locale: SupportedLocale): ViewerLabels {
   return LABELS[locale as keyof typeof LABELS] ?? LABELS.en;
+}
+
+/** Fills the {sender} and {page} placeholders of a label. */
+export function fillLabel(text: string, values: { sender?: string; page?: number }) {
+  let filled = text;
+  if (values.sender !== undefined) filled = filled.replaceAll("{sender}", values.sender);
+  if (values.page !== undefined) filled = filled.replaceAll("{page}", String(values.page));
+  return filled;
 }

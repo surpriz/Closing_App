@@ -6,8 +6,8 @@ import { getLocalParts } from "../scheduling/business-hours";
  * Which channels an alert goes to, for one seller. Pure.
  *
  * - ACTION (the prospect validated, asked for a change, asked the assistant
- *   a question it could not answer or asked for more time on an expired
- *   link): always, day or night.
+ *   a question it could not answer, asked for more time on an expired
+ *   link or left a voice comment): always, day or night.
  * - CALL (reading right now): the extension first; email only when asked for
  *   and the extension is not running. Never outside working hours, at most a
  *   few per hour.
@@ -21,6 +21,7 @@ export const ALERT_PRIORITY: Record<SellerAlertType, AlertPriority> = {
   CHANGE_REQUESTED: "ACTION",
   PROSPECT_QUESTION: "ACTION",
   LINK_EXTENSION_REQUESTED: "ACTION",
+  VOICE_COMMENT: "ACTION",
   CALL_MOMENT: "CALL",
   MULTI_VIEWER: "CALL",
   REOPENED_AFTER_INACTIVITY: "CALL",

@@ -27,6 +27,7 @@ const serverEnvSchema = z.object({
   AI_MODEL_CHAT: z.string().optional(),
   AI_MODEL_CLASSIFY: z.string().optional(),
   AI_MODEL_ANALYZE: z.string().optional(),
+  AI_MODEL_TRANSCRIBE: z.string().optional(),
   // Deal analyses per workspace per day, and AI spend per day across all workspaces
   AI_BRAIN_DAILY_LIMIT: z.coerce.number().int().min(0).default(200),
   AI_DAILY_BUDGET_USD: z.coerce.number().min(0).default(20),
