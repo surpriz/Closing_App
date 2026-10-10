@@ -9,12 +9,14 @@ import { prospectLabel } from "../dashboard/labels";
 import { describeNextAction, isUrgent } from "../dashboard/next-action";
 import { getOpenDeals, sellerLinks, type SellerScope } from "../dashboard/queries";
 import { compareDeals } from "../dashboard/rank";
+import { formatDeadline } from "../expiry";
 import { DEFAULT_PREFS } from "../notify/policy";
 import { sellerTimezone } from "../notify/preferences";
 import { buildDigest, DIGEST_TODO_MAX, isDigestDue, MAX_LOOKBACK_MS, sinceLabel, type DigestData } from "./digest-content";
 
 /** A digest still not sent this long after being claimed is tried again. */
 const CLAIM_TIMEOUT_MS = 30 * 60 * 1000;
+const EXPIRING_SOON_MS = 36 * 60 * 60 * 1000;
 
 /**
  * Once a working day, at the hour each seller chose (their time zone): the
@@ -99,7 +101,7 @@ async function loadDigestData(
   const mine = { organizationId, ...sellerLinks(scope) };
 
   const linkLabel = { select: { name: true, slug: true, prospects: { orderBy: { createdAt: "asc" }, take: 1, select: { name: true, email: true, company: true } } } } as const;
-  const [deals, actions, questions, readers, followupsSent, followupsFailed, unsubscribed, autoSent, drafts] = await Promise.all([
+  const [deals, actions, questions, readers, followupsSent, followupsFailed, unsubscribed, autoSent, drafts, expiring] = await Promise.all([
     getOpenDeals(organizationId, { owner: scope }),
     prisma.prospectAction.findMany({
       where: { createdAt: { gte: since }, link: mine },
@@ -124,6 +126,18 @@ async function loadDigestData(
         })
       : [],
     prisma.followup.count({ where: { status: "DRAFT", link: { ...mine, archivedAt: null } } }),
+    // Also catches the J-1 alerts held back overnight or over the weekend
+    prisma.link.findMany({
+      where: {
+        ...mine,
+        archivedAt: null,
+        draftAt: null,
+        dealStatus: { in: ["OPEN", "CHANGE_REQUESTED"] },
+        expiresAt: { gt: now, lte: new Date(now.getTime() + EXPIRING_SOON_MS) },
+      },
+      orderBy: { expiresAt: "asc" },
+      select: { id: true, expiresAt: true, document: { select: { name: true } }, ...linkLabel.select },
+    }),
   ]);
 
   const todo = deals
@@ -147,7 +161,7 @@ async function loadDigestData(
       ...actions.map((a) => ({
         at: a.createdAt,
         label: prospectLabel(a.link),
-        kind: a.type === "VALIDATE_SIGN" ? ("validated" as const) : ("change" as const),
+        kind: ({ VALIDATE_SIGN: "validated", REQUEST_CHANGE: "change", REQUEST_EXTENSION: "extension" } as const)[a.type],
         message: a.message,
         url: `${appUrl}/links/${a.linkId}`,
       })),
@@ -168,5 +182,11 @@ async function loadDigestData(
       url: `${appUrl}/links/${f.linkId}`,
     })),
     drafts,
+    expiring: expiring.map((link) => ({
+      label: prospectLabel(link),
+      documentName: link.document.name,
+      when: formatDeadline(link.expiresAt!, "fr-FR", timezone),
+      url: `${appUrl}/links/${link.id}#expiration`,
+    })),
   };
 }

@@ -32,7 +32,7 @@ Rules:
 - Sound like a busy human, not a marketing email. Plain text, no emojis in emails, no bullet lists.
 - Never mention or hint that you know how the prospect read the document: no reading time, no page names, no "I noticed you looked at". The prospect must not feel watched.
 - Never invent prices, discounts, deadlines, features or facts that are not in the context.
-- No pressure tactics, no fake urgency.
+- No pressure tactics, no fake urgency. A real deadline given as "Link expires" may be stated exactly as given, never moved or embellished.
 - EMAIL: subject of 3 to 8 words; body of 50 to 120 words with a greeting, one or two short paragraphs, and at the end the sender signature, or the sender name when there is no signature.
 - WHATSAPP: subject must be null; 1 to 3 short sentences, 60 words maximum.
 - Include the document URL exactly once, unchanged.
@@ -47,6 +47,8 @@ const GOALS: Record<FollowupDraftInput["trigger"], string> = {
     "The prospect has not opened the document yet. Send a gentle reminder that brings a small piece of value (for example offering a quick walkthrough). Mention the offer validity only if it appears in the document.",
   MANUAL: "Send a short, friendly follow-up about the document and offer to answer questions.",
   AI_DECISION: "Send a short, friendly follow-up about the document and offer to answer questions.",
+  EXPIRY_REMINDER:
+    "The sender set an expiry date on the document link: after it the prospect can no longer open it without asking. Remind them of the exact date and time given, and make it easy to act before then (ask a question, validate, or ask for more time). Honest urgency from this real date only: no invented consequences, discounts or new deadlines.",
 };
 
 const BRIEF_GOALS: Record<string, string> = {
@@ -79,6 +81,7 @@ export function buildFollowupPrompt(input: FollowupPromptInput) {
     input.documentPurpose ? `What the document is for: ${input.documentPurpose}` : "",
     `Document URL: ${input.proposalUrl}`,
     input.daysSinceSent !== null ? `Days since the document was sent: ${input.daysSinceSent}` : "",
+    input.deadlineLabel ? `Link expires: ${input.deadlineLabel}` : "",
     `Sender name: ${input.senderName ?? "unknown"}`,
     input.aiTone ? `Tone requested by the sender: ${input.aiTone}` : "",
     block("sender_signature", input.senderSignature),

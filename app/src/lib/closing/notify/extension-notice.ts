@@ -1,5 +1,7 @@
 import type { SellerAlertType } from "@/generated/prisma/enums";
 
+import { formatDeadline } from "../expiry";
+
 /**
  * Text of a Chrome notification, short enough for the system popup
  * (title ~40 chars, body ~120). Pure.
@@ -8,9 +10,23 @@ export function extensionNotice(
   type: SellerAlertType,
   who: string,
   documentName: string,
-  payload: { reason?: string; message?: string | null; question?: string; liveViewers?: number; inactiveDays?: number },
+  payload: {
+    reason?: string;
+    message?: string | null;
+    question?: string;
+    liveViewers?: number;
+    inactiveDays?: number;
+    expiresAt?: string;
+  },
+  timezone = "Europe/Paris",
 ) {
   switch (type) {
+    case "LINK_EXTENSION_REQUESTED":
+      return { title: `${who} demande plus de temps`, body: `« ${documentName} » a expiré. Prolongez-le en un clic.` };
+    case "LINK_EXPIRING": {
+      const when = payload.expiresAt ? `le ${formatDeadline(new Date(payload.expiresAt), "fr-FR", timezone)}` : "demain";
+      return { title: `Expire bientôt : ${who}`, body: `« ${documentName} » expire ${when}. Prolongez ou relancez.` };
+    }
     case "PROSPECT_QUESTION":
       return {
         title: `${who} a une question`,

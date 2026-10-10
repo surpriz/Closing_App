@@ -17,6 +17,15 @@ const base = {
 };
 
 describe("decideChannels", () => {
+  it("tells the seller about an extension request at once, even at night", () => {
+    expect(decideChannels({ ...base, type: "LINK_EXTENSION_REQUESTED", now: NIGHT }).channels).toEqual(["EMAIL", "EXTENSION"]);
+  });
+
+  it("keeps the coming expiry for working hours", () => {
+    expect(decideChannels({ ...base, type: "LINK_EXPIRING", now: NIGHT })).toEqual({ channels: [], reason: "quiet_hours" });
+    expect(decideChannels({ ...base, type: "LINK_EXPIRING" }).channels).toEqual(["EMAIL"]);
+  });
+
   it("emails the seller when the prospect validates, even at night", () => {
     expect(decideChannels({ ...base, type: "PROSPECT_VALIDATED", now: NIGHT }).channels).toEqual(["EMAIL", "EXTENSION"]);
   });

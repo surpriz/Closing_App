@@ -45,6 +45,24 @@ describe("buildDigest", () => {
     expect(digest.text).toContain("« Une remise est-elle possible ? »");
   });
 
+  it("lists extension requests with the answers", () => {
+    const digest = buildDigest({
+      ...empty,
+      actions: [{ label: "Acme", kind: "extension", message: null, url: "https://x/l" }],
+    })!;
+    expect(digest.text).toContain("Acme demande une prolongation");
+  });
+
+  it("warns about links about to lock", () => {
+    const digest = buildDigest({
+      ...empty,
+      expiring: [{ label: "Acme", documentName: "Devis", when: "jeudi 15 octobre à 23:59", url: "https://x/l#expiration" }],
+    })!;
+    expect(digest.subject).toBe("1 lien expire bientôt");
+    expect(digest.text).toContain("EXPIRENT BIENTÔT");
+    expect(digest.text).toContain("Se verrouille le jeudi 15 octobre à 23:59");
+  });
+
   it("lists the counts of the period and the drafts waiting", () => {
     const digest = buildDigest({
       ...empty,

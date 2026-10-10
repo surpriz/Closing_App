@@ -9,6 +9,7 @@ import type { ViewerLabels } from "@/lib/closing/i18n/viewer";
 
 import { ChatWidget, type ChatWidgetData } from "./chat-widget";
 import { CtaBar } from "./cta-bar";
+import { ExpiryChip } from "./expiry-countdown";
 import { PrivacyNotice } from "./privacy-notice";
 import { usePageTracking } from "./use-page-tracking";
 import { ViewerHeader } from "./viewer-header";
@@ -26,6 +27,8 @@ type Props = {
   locale: SupportedLocale;
   /** Null when the assistant is off for this link. */
   chat: ChatWidgetData | null;
+  /** Quotes with a deadline: no pages here, the countdown goes in the header. */
+  countdown?: boolean;
 };
 
 // URL documents (Notion, Loom, Figma...) are tracked as a single page
@@ -40,6 +43,7 @@ export function WebViewer({
   dealStatus,
   locale,
   chat,
+  countdown,
 }: Props) {
   const { getViewId } = usePageTracking(slug, 1, { embedded: true, countTime: !!embedUrl });
 
@@ -51,18 +55,21 @@ export function WebViewer({
         senderName={senderName}
         labels={labels}
         aside={
-          embedUrl && (
-            <a
-              href={externalUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={labels.openExternal}
-              className={buttonVariants({ variant: "ghost", size: "sm" })}
-            >
-              <ExternalLink />
-              <span className="hidden sm:inline">{labels.openExternal}</span>
-            </a>
-          )
+          <>
+            {countdown && <ExpiryChip labels={labels} />}
+            {embedUrl && (
+              <a
+                href={externalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={labels.openExternal}
+                className={buttonVariants({ variant: "ghost", size: "sm" })}
+              >
+                <ExternalLink />
+                <span className="hidden sm:inline">{labels.openExternal}</span>
+              </a>
+            )}
+          </>
         }
       />
 

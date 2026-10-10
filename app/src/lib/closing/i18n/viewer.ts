@@ -55,6 +55,19 @@ export type ViewerLabels = {
   changeTitle: string;
   notFoundTitle: string;
   notFoundText: string;
+  /** Link expiry. {time} is the countdown, {sender} the sender's name. */
+  expiryCountdown: string;
+  expiryChip: string;
+  countdownUnits: { d: string; h: string; min: string; s: string };
+  expiredTitle: string;
+  expiredText: string;
+  /** Quotes and proposals: the price was guaranteed until then. */
+  expiredTextQuote: string;
+  requestExtension: string;
+  extensionRequested: string;
+  extensionEmailOptional: string;
+  /** Shown to the seller looking at their own expired link. */
+  extensionSellerPreview: string;
   /** Assistant on the document. {sender} is replaced by the sender's name. */
   chatLauncher: string;
   chatIntro: string;
@@ -106,6 +119,16 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     changeTitle: "What would you like to change?",
     notFoundTitle: "This link is no longer available",
     notFoundText: "It may have expired or been withdrawn. Ask the sender for a new link.",
+    expiryCountdown: "This pricing is guaranteed for another {time}",
+    expiryChip: "Offer valid for {time}",
+    countdownUnits: { d: "d", h: "h", min: "min", s: "s" },
+    expiredTitle: "This proposal has expired",
+    expiredText: "The link is no longer active. {sender} can reopen it for you.",
+    expiredTextQuote: "The pricing in this proposal is no longer guaranteed. {sender} can extend it for you.",
+    requestExtension: "Request an extension",
+    extensionRequested: "Request sent. {sender} has been notified, and you'll get an email as soon as the link is active again.",
+    extensionEmailOptional: "Email (optional, to be notified)",
+    extensionSellerPreview: "This is what your prospect sees. Your own request isn't sent.",
     chatLauncher: "Ask a question",
     chatIntro: "Hi! I can answer your questions about this document while {sender} is away.",
     chatClose: "Close",
@@ -194,6 +217,16 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     changeTitle: "Que souhaitez-vous ajuster ?",
     notFoundTitle: "Ce lien n'est plus disponible",
     notFoundText: "Il a peut-être expiré ou été retiré. Demandez un nouveau lien à l'expéditeur.",
+    expiryCountdown: "Cette proposition tarifaire est garantie pour encore {time}",
+    expiryChip: "Offre valable encore {time}",
+    countdownUnits: { d: "j", h: "h", min: "min", s: "s" },
+    expiredTitle: "Cette proposition a expiré",
+    expiredText: "Le lien n'est plus actif. {sender} peut le réactiver pour vous.",
+    expiredTextQuote: "Les conditions tarifaires de cette proposition ne sont plus garanties. {sender} peut la prolonger pour vous.",
+    requestExtension: "Demander une prolongation",
+    extensionRequested: "Demande envoyée. {sender} est prévenu et vous recevrez un email dès que le lien sera réactivé.",
+    extensionEmailOptional: "Email (facultatif, pour être prévenu)",
+    extensionSellerPreview: "C'est ce que voit votre prospect. Votre propre demande n'est pas envoyée.",
     chatLauncher: "Poser une question",
     chatIntro: "Bonjour ! Je peux répondre à vos questions sur ce document en l'absence de {sender}.",
     chatClose: "Fermer",
@@ -282,6 +315,16 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     changeTitle: "¿Qué te gustaría ajustar?",
     notFoundTitle: "Este enlace ya no está disponible",
     notFoundText: "Puede haber caducado o haber sido retirado. Pide un nuevo enlace al remitente.",
+    expiryCountdown: "Esta propuesta de precio está garantizada durante {time} más",
+    expiryChip: "Oferta válida {time} más",
+    countdownUnits: { d: "d", h: "h", min: "min", s: "s" },
+    expiredTitle: "Esta propuesta ha caducado",
+    expiredText: "El enlace ya no está activo. {sender} puede reactivarlo para ti.",
+    expiredTextQuote: "Las condiciones de precio de esta propuesta ya no están garantizadas. {sender} puede prolongarla para ti.",
+    requestExtension: "Solicitar una prórroga",
+    extensionRequested: "Solicitud enviada. {sender} ha sido avisado y recibirás un email en cuanto el enlace vuelva a estar activo.",
+    extensionEmailOptional: "Email (opcional, para recibir el aviso)",
+    extensionSellerPreview: "Esto es lo que ve tu cliente. Tu propia solicitud no se envía.",
     chatLauncher: "Hacer una pregunta",
     chatIntro: "¡Hola! Puedo responder a sus preguntas sobre este documento mientras {sender} no está disponible.",
     chatClose: "Cerrar",
@@ -370,6 +413,16 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     changeTitle: "Was möchten Sie anpassen?",
     notFoundTitle: "Dieser Link ist nicht mehr verfügbar",
     notFoundText: "Er ist möglicherweise abgelaufen oder wurde zurückgezogen. Bitten Sie den Absender um einen neuen Link.",
+    expiryCountdown: "Dieses Preisangebot ist noch {time} garantiert",
+    expiryChip: "Angebot noch {time} gültig",
+    countdownUnits: { d: "T", h: "Std", min: "Min", s: "s" },
+    expiredTitle: "Dieses Angebot ist abgelaufen",
+    expiredText: "Der Link ist nicht mehr aktiv. {sender} kann ihn für Sie wieder freischalten.",
+    expiredTextQuote: "Die Preiskonditionen dieses Angebots sind nicht mehr garantiert. {sender} kann es für Sie verlängern.",
+    requestExtension: "Verlängerung anfragen",
+    extensionRequested: "Anfrage gesendet. {sender} wurde benachrichtigt, und Sie erhalten eine E-Mail, sobald der Link wieder aktiv ist.",
+    extensionEmailOptional: "E-Mail (optional, um benachrichtigt zu werden)",
+    extensionSellerPreview: "So sieht es Ihr Interessent. Ihre eigene Anfrage wird nicht gesendet.",
     chatLauncher: "Frage stellen",
     chatIntro: "Hallo! Ich beantworte Ihre Fragen zu diesem Dokument, während {sender} nicht erreichbar ist.",
     chatClose: "Schließen",

@@ -29,7 +29,13 @@ export async function actOnInsight(insightId: string, { force = false, now = new
     include: {
       prospects: { orderBy: { createdAt: "asc" } },
       followups: {
-        where: { OR: [{ status: { in: ["SENT", "DELIVERED"] } }, { status: { in: ["GENERATED", "SCHEDULED"] } }] },
+        where: {
+          OR: [
+            { status: { in: ["SENT", "DELIVERED"] } },
+            { status: { in: ["GENERATED", "SCHEDULED"] } },
+            { trigger: "EXPIRY_REMINDER", status: { in: ["PENDING", "DRAFT"] } },
+          ],
+        },
         select: { prospectId: true, status: true, sentAt: true, trigger: true },
       },
       sellerActivities: {
@@ -58,6 +64,7 @@ export async function actOnInsight(insightId: string, { force = false, now = new
       archived: link.archivedAt !== null,
       snoozedUntil: link.snoozedUntil,
       decisionDeadline: link.decisionDeadline,
+      expiresAt: link.expiresAt,
       channels: resolved.channels,
       lastReadingAt: link.lastActivityAt,
     },
@@ -74,6 +81,7 @@ export async function actOnInsight(insightId: string, { force = false, now = new
         .map((f) => f.sentAt!),
       lastSellerContactAt: force ? null : (link.sellerActivities[0]?.occurredAt ?? null),
       approvedPending: link.followups.some((f) => f.status === "GENERATED" || f.status === "SCHEDULED"),
+      expiryReminderOpen: link.followups.some((f) => f.trigger === "EXPIRY_REMINDER" && !f.sentAt),
     },
     settings: {
       maxFollowupsPer30Days: workspace.maxFollowupsPer30Days,

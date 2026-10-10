@@ -24,6 +24,8 @@ export type FollowupPolicyInput = {
     archived: boolean;
     snoozedUntil: Date | null;
     decisionDeadline: Date | null;
+    /** After it the link no longer opens: nothing may land later. */
+    expiresAt?: Date | null;
     /** Channels allowed on this link (link override or workspace default). */
     channels: ("EMAIL" | "WHATSAPP")[];
     lastReadingAt: Date | null;
@@ -39,6 +41,8 @@ export type FollowupPolicyInput = {
     lastSellerContactAt: Date | null;
     /** A follow-up the seller approved is already waiting to go out. */
     approvedPending: boolean;
+    /** The deadline reminder already covers the next message. */
+    expiryReminderOpen?: boolean;
   };
   settings: {
     maxFollowupsPer30Days: number;
@@ -62,6 +66,8 @@ export function decideFollowup(input: FollowupPolicyInput): FollowupDecision {
   if (!prospect) reasons.push("Aucun contact à qui écrire.");
   else if (prospect.unsubscribed) reasons.push("Le contact s'est désinscrit.");
   if (history.approvedPending) reasons.push("Une relance validée attend déjà son envoi.");
+  if (deal.expiresAt && deal.expiresAt <= now) reasons.push("Le lien a expiré : prolongez-le avant de relancer.");
+  if (history.expiryReminderOpen) reasons.push("Un rappel d'échéance est déjà prévu.");
 
   const sentLast30 = history.sentAt.filter((at) => now.getTime() - at.getTime() < 30 * DAY_MS).length;
   if (sentLast30 >= settings.maxFollowupsPer30Days) {
@@ -103,14 +109,16 @@ export function decideFollowup(input: FollowupPolicyInput): FollowupDecision {
       target = slot(new Date(now.getTime() + 7 * DAY_MS), "asap");
       break;
     case "before_deadline": {
-      const before = deal.decisionDeadline
-        ? new Date(deal.decisionDeadline.getTime() - DAYS_BEFORE_DEADLINE * DAY_MS)
-        : now;
+      const deadline = deal.decisionDeadline ?? deal.expiresAt ?? null;
+      const before = deadline ? new Date(deadline.getTime() - DAYS_BEFORE_DEADLINE * DAY_MS) : now;
       target = slot(before > now ? before : now, "asap");
       break;
     }
   }
   const scheduledFor = target < earliest ? slot(earliest, "asap") : target;
+  if (deal.expiresAt && scheduledFor >= deal.expiresAt) {
+    return { allowed: false, reasons: ["L'envoi tomberait après l'expiration du lien."] };
+  }
 
   return { allowed: true, scheduledFor, channel };
 }

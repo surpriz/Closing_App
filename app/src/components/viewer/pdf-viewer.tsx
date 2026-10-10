@@ -9,6 +9,7 @@ import type { ViewerLabels } from "@/lib/closing/i18n/viewer";
 
 import { ChatWidget, type ChatWidgetData } from "./chat-widget";
 import { CtaBar } from "./cta-bar";
+import { ExpiryBanner, ExpiryChip } from "./expiry-countdown";
 import { PrivacyNotice } from "./privacy-notice";
 import { usePageTracking } from "./use-page-tracking";
 import { ViewerHeader } from "./viewer-header";
@@ -26,9 +27,22 @@ type Props = {
   locale: SupportedLocale;
   /** Null when the assistant is off for this link. */
   chat: ChatWidgetData | null;
+  /** Quotes with a deadline: the countdown sits on these pages, or in the header when there are none. */
+  countdown?: { pricingPages: number[] } | null;
 };
 
-export function PdfViewer({ slug, fileUrl, documentName, senderName, labels, ctaEnabled, dealStatus, locale, chat }: Props) {
+export function PdfViewer({
+  slug,
+  fileUrl,
+  documentName,
+  senderName,
+  labels,
+  ctaEnabled,
+  dealStatus,
+  locale,
+  chat,
+  countdown,
+}: Props) {
   const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null);
   const [sizes, setSizes] = useState<PageSize[]>([]);
   const [failed, setFailed] = useState(false);
@@ -75,15 +89,18 @@ export function PdfViewer({ slug, fileUrl, documentName, senderName, labels, cta
         labels={labels}
         progress={sizes.length > 0 ? currentPage / sizes.length : undefined}
         aside={
-          sizes.length > 0 && (
-            <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 font-mono text-xs text-muted-foreground tabular-nums">
-              {currentPage} / {sizes.length}
-              <span className="sr-only">
-                {" "}
-                {labels.page} {currentPage} {labels.of} {sizes.length}
+          <>
+            {countdown && countdown.pricingPages.length === 0 && <ExpiryChip labels={labels} />}
+            {sizes.length > 0 && (
+              <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 font-mono text-xs text-muted-foreground tabular-nums">
+                {currentPage} / {sizes.length}
+                <span className="sr-only">
+                  {" "}
+                  {labels.page} {currentPage} {labels.of} {sizes.length}
+                </span>
               </span>
-            </span>
-          )
+            )}
+          </>
         }
       />
 
@@ -107,6 +124,7 @@ export function PdfViewer({ slug, fileUrl, documentName, senderName, labels, cta
               pageNumber={index + 1}
               size={size}
               registerPage={registerPage}
+              overlay={countdown?.pricingPages.includes(index + 1) ? <ExpiryBanner labels={labels} /> : undefined}
             />
           ))}
         {/* Also shown here because the email gate is optional per link */}
@@ -144,10 +162,12 @@ type PdfPageProps = {
   pageNumber: number;
   size: PageSize;
   registerPage?: (pageNumber: number, element: HTMLElement | null) => void;
+  /** Drawn over the top of the page (the countdown on a pricing page). */
+  overlay?: React.ReactNode;
 };
 
 // Also used by the seller's preview, which passes no registerPage (no tracking)
-export function PdfPage({ pdf, pageNumber, size, registerPage }: PdfPageProps) {
+export function PdfPage({ pdf, pageNumber, size, registerPage, overlay }: PdfPageProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [nearViewport, setNearViewport] = useState(false);
@@ -218,6 +238,7 @@ export function PdfPage({ pdf, pageNumber, size, registerPage }: PdfPageProps) {
       onContextMenu={(event) => event.preventDefault()}
     >
       <canvas ref={canvasRef} className="absolute inset-0 size-full" />
+      {overlay && <div className="absolute inset-x-2 top-2 z-[1] sm:top-3">{overlay}</div>}
     </div>
   );
 }

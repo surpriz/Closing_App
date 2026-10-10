@@ -18,6 +18,7 @@ import { decideChatQuota } from "@/lib/closing/chat/quota";
 import { SUPPORTED_LOCALES, VIEW_SESSION_WINDOW_MS, type SupportedLocale } from "@/lib/closing/constants";
 import { getViewerLabels } from "@/lib/closing/i18n/viewer";
 import { getLinkForViewer, getViewerAccess } from "@/lib/closing/links";
+import { defaultTimezone } from "@/lib/closing/settings";
 import { getRequestContext } from "@/lib/closing/tracking/request-context";
 import { VISITOR_COOKIE } from "@/lib/closing/tracking/visitor";
 import { prisma } from "@/lib/db";
@@ -121,6 +122,8 @@ export async function POST(request: NextRequest, ctx: RouteContext<"/api/v/[slug
       locale,
       requestChangeLabel: link.ctaEnabled ? labels.requestChange : null,
       docType: loaded.knowledge.document.docType,
+      expiresAt: link.expiresAt,
+      timezone: defaultTimezone(),
       contextText: context.text,
     }),
     messages: [...toModelMessages(history), { role: "user", content: text }],

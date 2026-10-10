@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-import type { PageTag } from "@/generated/prisma/enums";
+import type { PageTag, ProspectActionType } from "@/generated/prisma/enums";
 
 import { DAY_MS } from "../constants";
 import { tagLabels } from "../documents/doc-types";
@@ -43,6 +43,8 @@ export type DealFactsInput = {
     dealAmountCents: number | null;
     dealCurrency: string | null;
     decisionDeadline: Date | null;
+    /** Set by the seller: after it the link no longer opens. */
+    expiresAt?: Date | null;
   };
   document: {
     name: string;
@@ -67,7 +69,7 @@ export type DealFactsInput = {
     pages: { pageNumber: number; totalDurationMs: number }[];
   }[];
   actions: {
-    type: "VALIDATE_SIGN" | "REQUEST_CHANGE";
+    type: ProspectActionType;
     message: string | null;
     createdAt: Date;
     prospectId: string | null;
@@ -291,7 +293,12 @@ export function buildDealStory(input: DealFactsInput): DealStory {
   for (const action of input.actions) {
     const reader = [...readers.values()].find((r) => r.prospectId && r.prospectId === action.prospectId);
     const who = reader ? `Lecteur ${reader.label}` : "Le prospect";
-    const what = action.type === "VALIDATE_SIGN" ? "a cliqué « Valider la proposition »" : "a demandé un ajustement";
+    const what =
+      action.type === "VALIDATE_SIGN"
+        ? "a cliqué « Valider la proposition »"
+        : action.type === "REQUEST_EXTENSION"
+          ? "a demandé à rouvrir la proposition expirée"
+          : "a demandé un ajustement";
     const message = action.message
       ? ` : <untrusted_prospect_message>${action.message.slice(0, 600)}</untrusted_prospect_message>`
       : "";
@@ -420,6 +427,19 @@ export function buildDealStory(input: DealFactsInput): DealStory {
     });
   }
 
+  const expiryDaysLeft = deal.expiresAt ? Math.ceil((deal.expiresAt.getTime() - now.getTime()) / DAY_MS) : null;
+  if (expiryDaysLeft !== null) {
+    summary.push({
+      kind: "DEADLINE",
+      at: null,
+      text:
+        expiryDaysLeft > 0
+          ? `Le lien expire dans ${expiryDaysLeft} j (fixé par le vendeur ; accès coupé ensuite)`
+          : `Lien expiré depuis ${-expiryDaysLeft} j : le prospect ne peut plus l'ouvrir sans demander`,
+      hashed: false,
+    });
+  }
+
   if (input.score && opened) {
     const tier = { HOT: "chaud", WARM: "tiède", COLD: "froid" }[input.score.tier];
     summary.push({ kind: "SCORE", at: null, text: `Score d'engagement mesuré : ${input.score.score}/100 (${tier})`, hashed: false });
@@ -442,6 +462,7 @@ export function buildDealStory(input: DealFactsInput): DealStory {
       currency: deal.dealCurrency,
       quiet: quietBucket(quietDays),
       deadline: deadlineBucket(daysLeft),
+      expiry: deadlineBucket(expiryDaysLeft),
     }),
   );
 

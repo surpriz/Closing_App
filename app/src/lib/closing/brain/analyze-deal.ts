@@ -8,6 +8,7 @@ import { prisma } from "@/lib/db";
 import { getLanguageModel } from "../ai/provider";
 import { recordAiUsage } from "../ai/usage";
 import { DAY_MS } from "../constants";
+import { isLinkExpired, notExpired } from "../expiry";
 import { actOnInsight } from "./act";
 import { canAnalyze } from "./budget";
 import { buildDealStory, type DealStory } from "./facts";
@@ -43,7 +44,9 @@ export async function analyzeDeal(
   { force = false, now = new Date() }: { force?: boolean; now?: Date } = {},
 ): Promise<AnalyzeOutcome> {
   const loaded = await loadDealForAnalysis(linkId, now);
-  if (!loaded || loaded.link.archivedAt || !ANALYZED_STATUSES.includes(loaded.link.dealStatus)) {
+  // An expired link waits for the seller: only their explicit "Réanalyser" reads it
+  const expired = !!loaded && isLinkExpired(loaded.link, now) && trigger !== "MANUAL";
+  if (!loaded || loaded.link.archivedAt || !ANALYZED_STATUSES.includes(loaded.link.dealStatus) || expired) {
     if (loaded) await clearDirty(linkId);
     return "skipped";
   }
@@ -249,6 +252,8 @@ export async function analyzePendingDeals(now = new Date(), scope: PendingScope 
     dealStatus: { in: ["OPEN" as const, "CHANGE_REQUESTED" as const] },
     ...(scope.organizationId && { organizationId: scope.organizationId }),
     ...(scope.linkId && { id: scope.linkId }),
+    // `dirty` below has its own OR: the expiry filter stays inside AND
+    AND: [notExpired(now)],
   };
   const readingDone = new Date(now.getTime() - READING_DONE_MS);
 

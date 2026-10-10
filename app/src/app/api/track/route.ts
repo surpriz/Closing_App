@@ -19,6 +19,8 @@ import { prisma } from "@/lib/db";
 // The deal analysis runs after the response when a reader leaves
 export const maxDuration = 120;
 
+const EXPIRED_FLUSH_GRACE_MS = 60_000;
+
 const batchSchema = z.object({
   viewId: z.string().min(1).max(64),
   events: z
@@ -55,7 +57,7 @@ export async function POST(request: Request) {
       visitorId: true,
       prospectId: true,
       isBot: true,
-      link: { select: { document: { select: { numPages: true } } } },
+      link: { select: { expiresAt: true, document: { select: { numPages: true } } } },
     },
   });
 
@@ -63,6 +65,10 @@ export async function POST(request: Request) {
   const visitorId = (await cookies()).get(VISITOR_COOKIE)?.value;
   if (!view || !visitorId || view.visitorId !== visitorId) {
     return new Response(null, { status: 403 });
+  }
+  // A tab left open past the deadline stops counting; the flush right after zero still lands
+  if (view.link.expiresAt && view.link.expiresAt.getTime() < Date.now() - EXPIRED_FLUSH_GRACE_MS) {
+    return new Response(null, { status: 410 });
   }
 
   const numPages = view.link.document.numPages ?? Number.MAX_SAFE_INTEGER;

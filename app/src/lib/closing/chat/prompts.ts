@@ -1,6 +1,7 @@
 import type { SystemModelMessage } from "ai";
 
 import type { SupportedLocale } from "../constants";
+import { formatDeadline } from "../expiry";
 
 import { chatKind, docNoun, KIND_GUIDANCE } from "./kind";
 
@@ -24,8 +25,14 @@ export function chatRules(input: {
   locale: SupportedLocale;
   requestChangeLabel: string | null;
   docType: string | null;
+  /** The link's deadline. A fixed date, never "N hours left": the rules stay cacheable. */
+  expiresAt?: Date | null;
+  timezone?: string;
 }) {
   const { sender } = input;
+  const deadline = input.expiresAt
+    ? formatDeadline(input.expiresAt, "en-GB", input.timezone ?? "Europe/Paris", { showZone: true })
+    : null;
   return `You are the assistant on a ${docNoun(input.docType)} that ${sender} sent to the reader. You answer the reader's questions about this document, on behalf of ${sender}, while ${sender} is not available. ${KIND_GUIDANCE[chatKind(input.docType)]}
 
 Rules:
@@ -37,6 +44,10 @@ Rules:
 - You may point to a page ("see page 4") when it helps the reader find the detail.${
     input.requestChangeLabel
       ? `\n- When the reader wants to change something in the proposal, you may also point them to the "${input.requestChangeLabel}" button at the bottom of the page.`
+      : ""
+  }${
+    deadline
+      ? `\n- ${sender} made this document available until ${deadline}; after that the link locks. You may tell the reader this date. Never move it or promise more time: if they need longer, call escalate_to_seller.`
       : ""
   }
 - Reply in the language of the reader's last message. If unclear, use ${LOCALE_NAMES[input.locale]}.
@@ -50,6 +61,8 @@ export function buildChatInstructions(input: {
   locale: SupportedLocale;
   requestChangeLabel: string | null;
   docType: string | null;
+  expiresAt?: Date | null;
+  timezone?: string;
   contextText: string;
 }): SystemModelMessage[] {
   return [

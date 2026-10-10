@@ -5,8 +5,9 @@ import { getLocalParts } from "../scheduling/business-hours";
 /**
  * Which channels an alert goes to, for one seller. Pure.
  *
- * - ACTION (the prospect validated, asked for a change or asked the assistant
- *   a question it could not answer): always, day or night.
+ * - ACTION (the prospect validated, asked for a change, asked the assistant
+ *   a question it could not answer or asked for more time on an expired
+ *   link): always, day or night.
  * - CALL (reading right now): the extension first; email only when asked for
  *   and the extension is not running. Never outside working hours, at most a
  *   few per hour.
@@ -19,6 +20,7 @@ export const ALERT_PRIORITY: Record<SellerAlertType, AlertPriority> = {
   PROSPECT_VALIDATED: "ACTION",
   CHANGE_REQUESTED: "ACTION",
   PROSPECT_QUESTION: "ACTION",
+  LINK_EXTENSION_REQUESTED: "ACTION",
   CALL_MOMENT: "CALL",
   MULTI_VIEWER: "CALL",
   REOPENED_AFTER_INACTIVITY: "CALL",
@@ -26,6 +28,7 @@ export const ALERT_PRIORITY: Record<SellerAlertType, AlertPriority> = {
   NEW_READER: "CALL",
   DECISION_MAKER_DETECTED: "CALL",
   DRAFT_READY: "INFO",
+  LINK_EXPIRING: "INFO",
 };
 
 export type SellerPrefs = {
@@ -104,7 +107,7 @@ export function decideChannels(input: {
     return { channels, reason: channels.length ? "ok" : "muted" };
   }
 
-  // INFO: a draft waits. Same switch as the prospect actions, it needs the seller.
+  // INFO: a draft waits, a link expires soon. Same switch as the prospect actions, it needs the seller.
   const channels: SellerAlertChannel[] = input.prefs.emailActions ? ["EMAIL", ...team] : [...team];
   return { channels, reason: channels.length ? "ok" : "muted" };
 }

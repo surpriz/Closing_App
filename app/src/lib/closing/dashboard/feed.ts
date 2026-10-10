@@ -6,7 +6,7 @@ import { formatDuration } from "@/lib/format";
  * follow-ups, newest first. Inputs are plain facts so this stays pure.
  */
 
-export type FeedKind = "read" | "validated" | "change" | "alert" | "followup";
+export type FeedKind = "read" | "validated" | "change" | "extension" | "alert" | "followup";
 
 export type FeedItem = {
   id: string;
@@ -76,6 +76,18 @@ function describeRead(view: FeedSource["views"][number]) {
   return `a lu ${view.documentName} pendant ${formatDuration(view.totalDurationMs)}${pricing}`;
 }
 
+const ACTION_KIND = {
+  VALIDATE_SIGN: "validated",
+  REQUEST_CHANGE: "change",
+  REQUEST_EXTENSION: "extension",
+} as const satisfies Record<ProspectActionType, FeedKind>;
+
+function describeAction(type: ProspectActionType, documentName: string) {
+  if (type === "VALIDATE_SIGN") return `a validé ${documentName}`;
+  if (type === "REQUEST_EXTENSION") return `demande une prolongation de ${documentName}`;
+  return `demande un ajustement sur ${documentName}`;
+}
+
 function describeAlert(type: SellerAlertType, payload: unknown) {
   const { liveViewers, inactiveDays, reason, readerOrigin } = (payload ?? {}) as {
     liveViewers?: number;
@@ -91,6 +103,8 @@ function describeAlert(type: SellerAlertType, payload: unknown) {
     return liveViewers ? `est lu par ${liveViewers} personnes en même temps` : "est lu à plusieurs";
   }
   if (type === "DRAFT_READY") return "a une relance prête à valider";
+  if (type === "LINK_EXTENSION_REQUESTED") return "a expiré : le prospect demande une prolongation";
+  if (type === "LINK_EXPIRING") return "expire dans moins de 24 h";
   if (type === "COMMITTEE_LIVE") return `est lu par ${liveViewers ?? "plusieurs"} personnes en même temps (comité)`;
   if (type === "DECISION_MAKER_DETECTED") return "est lu par un décideur";
   if (type === "NEW_READER") return readerOrigin === "forwarded_internal" ? "a été repartagé en interne" : "a un nouveau lecteur";
@@ -110,13 +124,10 @@ export function buildFeed(source: FeedSource, limit: number): FeedItem[] {
     ...source.actions.map((action) => ({
       id: `action-${action.id}`,
       at: action.createdAt,
-      kind: action.type === "VALIDATE_SIGN" ? ("validated" as const) : ("change" as const),
+      kind: ACTION_KIND[action.type],
       linkId: action.linkId,
       who: action.who,
-      what:
-        action.type === "VALIDATE_SIGN"
-          ? `a validé ${action.documentName}`
-          : `demande un ajustement sur ${action.documentName}`,
+      what: describeAction(action.type, action.documentName),
       quote: action.message,
     })),
     ...source.alerts.map((alert) => ({
@@ -134,7 +145,11 @@ export function buildFeed(source: FeedSource, limit: number): FeedItem[] {
       linkId: followup.linkId,
       who: followup.who,
       what: `a reçu une relance ${CHANNEL[followup.channel]}${
-        followup.trigger === "ANTI_GHOSTING" ? " (lien pas encore ouvert)" : ""
+        followup.trigger === "ANTI_GHOSTING"
+          ? " (lien pas encore ouvert)"
+          : followup.trigger === "EXPIRY_REMINDER"
+            ? " (rappel d'échéance)"
+            : ""
       }`,
     })),
   ];

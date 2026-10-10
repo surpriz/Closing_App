@@ -72,6 +72,7 @@ export async function loadDealForAnalysis(linkId: string, now: Date) {
       dealAmountCents: link.dealAmountCents,
       dealCurrency: link.dealCurrency,
       decisionDeadline: link.decisionDeadline,
+      expiresAt: link.expiresAt,
     },
     document: {
       name: link.document.name,
@@ -125,6 +126,7 @@ export async function loadDealForAnalysis(linkId: string, now: Date) {
       organizationId: link.organizationId,
       dealStatus: link.dealStatus,
       archivedAt: link.archivedAt,
+      expiresAt: link.expiresAt,
       // Context the seller can change: a change means a fresh analysis
       contextKey: JSON.stringify([
         link.decisionMakerName,

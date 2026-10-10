@@ -8,6 +8,7 @@ import type { FollowupPromptInput } from "../ai/prompts";
 import { notifyDraftReady } from "../alerts/draft-ready";
 import { autopilotEligible } from "../brain/policy";
 import { DAY_MS } from "../constants";
+import { deadlineSourceText, formatDeadline, isLinkExpired } from "../expiry";
 import { guardSourceText, pickRelevantSections } from "./writer-context";
 
 export function isUniqueViolation(error: unknown) {
@@ -92,7 +93,21 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
   const context = (followup.context ?? {}) as { brief?: FollowupPromptInput["brief"] };
   const brief = followup.trigger === "AI_DECISION" ? (context.brief ?? null) : null;
   const now = new Date();
-  const sourceText = guardSourceText({
+  // The link no longer opens: a message pointing to it would be off-key, and the writer call wasted
+  if (isLinkExpired(link, now)) {
+    await prisma.followup.updateMany({
+      where: { id: followupId, status: "PENDING" },
+      data: { status: "CANCELLED", cancelledAt: now, error: "Lien expiré" },
+    });
+    return;
+  }
+  const deadlineLabel =
+    link.expiresAt && followup.trigger === "EXPIRY_REMINDER"
+      ? formatDeadline(link.expiresAt, followup.locale, followup.timezone, { showZone: !prospect.timezone })
+      : null;
+  // First, so the guard's 6000-character window always holds the real date
+  const deadlineSource = link.expiresAt ? `${deadlineSourceText(link.expiresAt, followup.timezone)}\n` : "";
+  const sourceText = deadlineSource + guardSourceText({
     pages,
     sellerDescription: link.document.sellerDescription,
     senderSignature: settings?.senderSignature ?? null,
@@ -112,6 +127,7 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
       senderName: settings?.senderName ?? link.createdBy?.name ?? null,
       senderSignature: settings?.senderSignature ?? null,
       daysSinceSent: link.sentAt ? Math.floor((now.getTime() - link.sentAt.getTime()) / DAY_MS) : null,
+      deadlineLabel,
       aiTone: settings?.aiTone ?? null,
       // Web links have no text: the seller's description stands in for the first page
       documentIntro: (pages[0]?.text ?? link.document.sellerDescription)?.slice(0, 600) ?? null,
@@ -185,6 +201,14 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
   if (saved.count > 0 && !sendsAlone && !instruction) {
     await notifyDraftReady(link.id, link.organizationId, now);
   }
+}
+
+/** Every follow-up still waiting on a link that has expired: it would point to a locked page. */
+export function cancelExpiredFollowups(now = new Date()) {
+  return prisma.followup.updateMany({
+    where: { status: { in: [...OPEN_FOLLOWUP_STATUSES] }, link: { expiresAt: { lte: now } } },
+    data: { status: "CANCELLED", cancelledAt: now, error: "Lien expiré" },
+  });
 }
 
 export function cancelOpenFollowups(linkId: string, reason: string, triggers?: FollowupTrigger[]) {

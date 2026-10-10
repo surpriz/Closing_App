@@ -5,9 +5,11 @@ import { analyzePendingDeals } from "./brain/analyze-deal";
 import { archiveStaleDrafts } from "./documents/create-link";
 import { readPendingDocuments } from "./documents/read-pages";
 import { refreshEngagementScore } from "./engagement/refresh-score";
+import { notExpired } from "./expiry";
 import { dispatchDueFollowups } from "./followups/dispatch";
-import { generateFollowupMessage } from "./followups/queue";
+import { cancelExpiredFollowups, generateFollowupMessage } from "./followups/queue";
 import { scanAntiGhosting } from "./triggers/anti-ghosting";
+import { scanExpiringLinks, scanExpiryReminders } from "./triggers/expiry";
 
 const STALE_PENDING_MS = 5 * 60 * 1000;
 const HOUR_MS = 60 * 60 * 1000;
@@ -22,6 +24,7 @@ export async function refreshStaleScores(now = new Date()) {
       link: {
         archivedAt: null,
         dealStatus: { in: ["OPEN", "CHANGE_REQUESTED"] },
+        AND: [notExpired(now)],
         views: { some: { isBot: false, lastSeenAt: { gte: new Date(now.getTime() - SCORE_DECAY_WINDOW_MS) } } },
       },
     },
@@ -38,7 +41,11 @@ export async function refreshStaleScores(now = new Date()) {
 // One pass of the background engine. Called every few minutes by Trigger.dev
 // (or any cron) through /api/cron/closing.
 export async function runClosingTick(now = new Date()) {
+  // First, so nothing below writes or sends for a link that no longer opens
+  const { count: expiredCancelled } = await cancelExpiredFollowups(now);
   const antiGhostingQueued = await scanAntiGhosting(now);
+  const expiryReminders = await scanExpiryReminders(now);
+  const expiringAlerts = await scanExpiringLinks(now);
 
   // Messages whose generation crashed or timed out after being queued
   const stale = await prisma.followup.findMany({
@@ -57,5 +64,17 @@ export async function runClosingTick(now = new Date()) {
   const dealsAnalyzed = await analyzePendingDeals(now, { includeQuiet: true });
   const digests = await sendMorningDigests(now);
   const draftsArchived = await archiveStaleDrafts(now);
-  return { antiGhostingQueued, regenerated: stale.length, dispatched, rescored, documentsRead, dealsAnalyzed, digests, draftsArchived };
+  return {
+    expiredCancelled,
+    antiGhostingQueued,
+    expiryReminders,
+    expiringAlerts,
+    regenerated: stale.length,
+    dispatched,
+    rescored,
+    documentsRead,
+    dealsAnalyzed,
+    digests,
+    draftsArchived,
+  };
 }

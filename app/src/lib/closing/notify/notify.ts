@@ -22,6 +22,8 @@ export async function notifySeller(input: {
   payload: AlertPayload;
   now?: Date;
   silent?: boolean;
+  /** Out of working hours, store nothing: the caller asks again on its next pass. */
+  deferOutsideWorkingHours?: boolean;
 }) {
   const now = input.now ?? new Date();
   const link = await prisma.link.findUnique({
@@ -58,6 +60,7 @@ export async function notifySeller(input: {
         recentCallAlerts,
       })
     : { channels: [], reason: "muted" as const };
+  if (input.deferOutsideWorkingHours && decision.reason === "quiet_hours") return false;
 
   // Stored even with no channel: it still shows in the dashboard feed
   return createAndDeliverAlert({
@@ -70,5 +73,6 @@ export async function notifySeller(input: {
     userId: recipient?.id ?? null,
     recipientEmail: recipient?.email ?? null,
     copyTo: priority === "INFO" ? null : (link.organization.settings?.alertEmail ?? null),
+    timezone: prefs ? sellerTimezone(prefs) : undefined,
   });
 }

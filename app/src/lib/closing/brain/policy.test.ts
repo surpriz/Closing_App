@@ -47,10 +47,23 @@ describe("decideFollowup", () => {
     ["no contact", { prospect: null }, "Aucun contact à qui écrire."],
     ["approved one waiting", { history: history({ approvedPending: true }) }, "Une relance validée attend déjà son envoi."],
     ["seller talked yesterday", { history: history({ lastSellerContactAt: new Date(now.getTime() - DAY) }) }, "Vous avez échangé avec lui il y a moins de 48 h."],
+    ["link expired", { deal: deal({ expiresAt: new Date(now.getTime() - HOUR) }) }, "Le lien a expiré : prolongez-le avant de relancer."],
+    ["deadline reminder planned", { history: history({ expiryReminderOpen: true }) }, "Un rappel d'échéance est déjà prévu."],
   ] as const)("blocks: %s", (_label, overrides, reason) => {
     const decision = decideFollowup(base(overrides as Partial<FollowupPolicyInput>));
     expect(decision.allowed).toBe(false);
     if (!decision.allowed) expect(decision.reasons).toContain(reason);
+  });
+
+  it("never schedules a message after the link expires", () => {
+    // Last one two days ago: the next may only leave tomorrow, the link locks tonight
+    const decision = decideFollowup(
+      base({
+        deal: deal({ expiresAt: new Date(now.getTime() + 10 * HOUR) }),
+        history: history({ sentAt: [new Date(now.getTime() - 2 * DAY)] }),
+      }),
+    );
+    expect(decision).toEqual({ allowed: false, reasons: ["L'envoi tomberait après l'expiration du lien."] });
   });
 
   it("stops at the monthly maximum", () => {

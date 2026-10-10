@@ -12,6 +12,7 @@ import { inspectWebLink } from "@/lib/closing/documents/inspect-web-link";
 import { PAGE_TAGS } from "@/lib/closing/documents/page-reading";
 import { readDocumentPages } from "@/lib/closing/documents/read-pages";
 import { parseWebUrl } from "@/lib/closing/documents/web-link";
+import { expiryError } from "@/lib/closing/expiry";
 import { cancelOpenFollowups } from "@/lib/closing/followups/queue";
 import { prisma } from "@/lib/db";
 import { requireManager, requireWorkspace } from "@/lib/session";
@@ -72,6 +73,8 @@ const createLinkSchema = z.object({
   prospectName: z.string().trim().max(120).optional(),
   prospectCompany: z.string().trim().max(120).optional(),
   requireEmail: z.enum(["true", "false"]),
+  // ISO, computed in the seller's browser time zone; "" = no deadline
+  expiresAt: z.union([z.literal(""), z.iso.datetime()]),
 });
 
 export async function createLink(
@@ -87,10 +90,17 @@ export async function createLink(
     prospectName: formData.get("prospectName") ?? undefined,
     prospectCompany: formData.get("prospectCompany") ?? undefined,
     requireEmail: formData.get("requireEmail") ?? "true",
+    expiresAt: String(formData.get("expiresAt") ?? ""),
   });
-  if (!parsed.success) return { error: "Vérifiez l'email du prospect." };
+  if (!parsed.success) {
+    const badDate = parsed.error.issues.some((issue) => issue.path[0] === "expiresAt");
+    return { error: badDate ? "Date d'expiration invalide." : "Vérifiez l'email du prospect." };
+  }
 
   const { name, prospectEmail, prospectName, prospectCompany, requireEmail } = parsed.data;
+  const expiresAt = parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null;
+  const expiryProblem = expiresAt && expiryError(expiresAt, new Date());
+  if (expiryProblem) return { error: expiryProblem };
 
   const link = await createDocumentLink({
     organizationId: organization.id,
@@ -101,6 +111,7 @@ export async function createLink(
       ? { email: prospectEmail, name: prospectName, company: prospectCompany }
       : null,
     requireEmail: requireEmail === "true",
+    expiresAt,
   });
   if (!link) return { error: "Document introuvable." };
 

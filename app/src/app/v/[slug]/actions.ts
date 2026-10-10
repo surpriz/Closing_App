@@ -1,22 +1,22 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { inBackground } from "@/lib/closing/background";
-import { analyzeDeal } from "@/lib/closing/brain/analyze-deal";
+import { analyzeDeal, markDealDirty } from "@/lib/closing/brain/analyze-deal";
+import { HOUR_MS } from "@/lib/closing/constants";
 import { refreshEngagementScore } from "@/lib/closing/engagement/refresh-score";
+import { extensionRequestKey } from "@/lib/closing/expiry";
 import { cancelOpenFollowups } from "@/lib/closing/followups/queue";
-import { getLinkForViewer, getViewerAccess } from "@/lib/closing/links";
+import { pickLocale } from "@/lib/closing/i18n/viewer";
+import { getLinkForViewer, getViewerAccess, identifyProspect, resolveViewerLink } from "@/lib/closing/links";
 import { notifySeller } from "@/lib/closing/notify/notify";
-import { companyFromEmail } from "@/lib/closing/prospects/from-recipient";
-import {
-  EMAIL_COOKIE_MAX_AGE,
-  VISITOR_COOKIE,
-  emailCookieName,
-} from "@/lib/closing/tracking/visitor";
+import { getRequestContext } from "@/lib/closing/tracking/request-context";
+import { VISITOR_COOKIE } from "@/lib/closing/tracking/visitor";
 import { prisma } from "@/lib/db";
+import { isWorkspaceMember } from "@/lib/session";
 
 export type UnlockState = { error?: "invalid_email" | "not_found" } | null;
 
@@ -30,8 +30,11 @@ export async function unlockWithEmail(
   _prev: UnlockState,
   formData: FormData,
 ): Promise<UnlockState> {
-  const link = await getLinkForViewer(slug);
-  if (!link) return { error: "not_found" };
+  const resolved = await resolveViewerLink(slug);
+  if (!resolved) return { error: "not_found" };
+  // Expired while the gate was open: the page now shows the locked screen
+  if (resolved.expired) redirect(`/v/${slug}`);
+  const { link } = resolved;
 
   const parsed = unlockSchema.safeParse({
     email: String(formData.get("email") ?? "").trim().toLowerCase(),
@@ -40,22 +43,108 @@ export async function unlockWithEmail(
   if (!parsed.success) return { error: "invalid_email" };
 
   const { email, name } = parsed.data;
-  await prisma.prospect.upsert({
-    where: { linkId_email: { linkId: link.id, email } },
-    // Someone the seller did not add: the proposal was passed on
-    create: { linkId: link.id, email, name, origin: "EMAIL_GATE", company: companyFromEmail(email) },
-    update: name ? { name } : {},
-  });
-
-  (await cookies()).set(emailCookieName(link.id), email, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    maxAge: EMAIL_COOKIE_MAX_AGE,
-    path: "/",
-  });
-
+  await identifyProspect(link, email, name);
   redirect(`/v/${slug}`);
+}
+
+export type ExtensionState = {
+  ok?: true;
+  error?: "invalid_email" | "not_found" | "seller_preview";
+} | null;
+
+/** Pushed alerts per link per hour; beyond that they are only stored. */
+const EXTENSION_ALERTS_PER_LINK_HOUR = 3;
+/** Requests recorded per link per hour; beyond that the form says "sent" and does nothing. */
+const EXTENSION_REQUESTS_PER_LINK_HOUR = 20;
+
+/**
+ * "Demander une prolongation" on an expired link: the only viewer action that
+ * accepts one. Once per person per expiry date; the seller extends from the
+ * dashboard and whoever asked gets an email when the link opens again.
+ */
+export async function requestLinkExtension(
+  slug: string,
+  _prev: ExtensionState,
+  formData: FormData,
+): Promise<ExtensionState> {
+  const resolved = await resolveViewerLink(slug);
+  if (!resolved) return { error: "not_found" };
+  if (!resolved.expired) redirect(`/v/${slug}`);
+  const { link } = resolved;
+  const expiresAt = link.expiresAt!;
+
+  // The seller checking what the prospect sees: no alert to themselves
+  if (await isWorkspaceMember(link.organizationId)) return { error: "seller_preview" };
+
+  // A real buying team asks a handful of times: beyond that it is someone filling the form, store nothing
+  const hourAgo = new Date(Date.now() - HOUR_MS);
+  const recentRequests = await prisma.prospectAction.count({
+    where: { linkId: link.id, type: "REQUEST_EXTENSION", createdAt: { gte: hourAgo } },
+  });
+  if (recentRequests >= EXTENSION_REQUESTS_PER_LINK_HOUR) return { ok: true };
+
+  const access = await getViewerAccess(link);
+  let email = access.email;
+  const typed = String(formData.get("email") ?? "").trim().toLowerCase();
+  if (!email && (typed || link.requireEmail)) {
+    const parsed = unlockSchema.safeParse({ email: typed });
+    if (!parsed.success) return { error: "invalid_email" };
+    email = parsed.data.email;
+    await identifyProspect(link, email);
+  }
+
+  const requestHeaders = await headers();
+  const prospect = email
+    ? await prisma.prospect.findUnique({
+        where: { linkId_email: { linkId: link.id, email } },
+        select: { id: true, name: true, email: true, locale: true },
+      })
+    : null;
+  // The reactivation email is written in the language they read in
+  if (prospect && !prospect.locale) {
+    await prisma.prospect.update({
+      where: { id: prospect.id },
+      data: { locale: pickLocale(requestHeaders.get("accept-language")) },
+    });
+  }
+
+  // One request per person and deadline: known by email, else by browser, else by network
+  const who =
+    prospect?.id ??
+    (await cookies()).get(VISITOR_COOKIE)?.value ??
+    getRequestContext(requestHeaders).ipHash ??
+    "anonymous";
+  const dedupeKey = extensionRequestKey(link.id, expiresAt, who);
+  const already = await prisma.sellerAlert.findUnique({ where: { dedupeKey }, select: { id: true } });
+  if (already) return { ok: true };
+
+  await prisma.prospectAction.create({
+    data: { linkId: link.id, prospectId: prospect?.id, type: "REQUEST_EXTENSION" },
+  });
+
+  const recent = await prisma.sellerAlert.count({
+    where: {
+      linkId: link.id,
+      type: "LINK_EXTENSION_REQUESTED",
+      createdAt: { gte: hourAgo },
+    },
+  });
+  inBackground("extension-request", async () => {
+    await notifySeller({
+      linkId: link.id,
+      type: "LINK_EXTENSION_REQUESTED",
+      dedupeKey,
+      payload: {
+        prospectName: prospect?.name ?? null,
+        prospectEmail: prospect?.email ?? null,
+        expiresAt: expiresAt.toISOString(),
+      },
+      silent: recent >= EXTENSION_ALERTS_PER_LINK_HOUR,
+    });
+    await markDealDirty(link.id);
+  });
+
+  return { ok: true };
 }
 
 const actionSchema = z.object({

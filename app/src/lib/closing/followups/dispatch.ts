@@ -1,11 +1,11 @@
 import type { FollowupStatus } from "@/generated/prisma/enums";
 import { getPublicAppUrl } from "@/lib/app-origin";
 import { prisma } from "@/lib/db";
-import { isEmailConfigured, sendEmail, textToHtml } from "@/lib/email";
+import { isEmailConfigured } from "@/lib/email";
 
 import { isWhatsAppConfigured, sendWhatsApp } from "../channels/whatsapp";
-import { unsubscribeOneClickUrl, unsubscribePageUrl } from "../unsubscribe";
-import { unsubscribeFooter } from "../unsubscribe/copy";
+import { isLinkExpired, REMINDER_MIN_SEND_LEAD_MS } from "../expiry";
+import { sendProspectEmail } from "../prospect-email";
 
 type Outcome = "sent" | "failed" | "cancelled" | "skipped" | "ignored";
 
@@ -55,12 +55,31 @@ export async function sendFollowup(
     await finish(followup.id, "CANCELLED", "Deal mis en pause par le vendeur");
     return "cancelled";
   }
+  const now = new Date();
+  // Even a message the seller approved: the link it carries no longer opens
+  if (isLinkExpired(link, now)) {
+    await finish(followup.id, "CANCELLED", "Lien expiré");
+    return "cancelled";
+  }
   if (prospect.unsubscribedAt) {
     await finish(followup.id, "SKIPPED", "Prospect désinscrit");
     return "skipped";
   }
   // A message the seller approved stands: they saw the situation when they did
   const sellerApproved = !!followup.approvedAt || !!approvedById;
+  if (followup.trigger === "EXPIRY_REMINDER") {
+    // The body quotes the date it was written for
+    const writtenFor = (followup.context as { expiresAt?: string } | null)?.expiresAt;
+    if (writtenFor !== link.expiresAt?.toISOString()) {
+      await finish(followup.id, "CANCELLED", "Échéance modifiée");
+      return "cancelled";
+    }
+    const left = (link.expiresAt?.getTime() ?? Infinity) - now.getTime();
+    if (!sellerApproved && left < REMINDER_MIN_SEND_LEAD_MS) {
+      await finish(followup.id, "CANCELLED", "Trop proche de l'échéance");
+      return "cancelled";
+    }
+  }
   if (followup.trigger === "ANTI_GHOSTING" && !sellerApproved) {
     const openedSince = await prisma.documentView.count({
       where: { linkId: link.id, isBot: false, startedAt: { gte: followup.createdAt } },
@@ -91,7 +110,6 @@ export async function sendFollowup(
   }
 
   // Claim it so two concurrent ticks can't send the same message twice
-  const now = new Date();
   const claimed = await prisma.followup.updateMany({
     where: { id: followup.id, status: { in: statuses } },
     data: {
@@ -109,21 +127,12 @@ export async function sendFollowup(
 
     if (followup.channel === "EMAIL") {
       if (!isEmailConfigured()) throw new Error("Aucun service d'email configuré");
-      // Added at send time only: the seller previews the message without it
-      const footer = unsubscribeFooter(unsubscribePageUrl(prospect.id), followup.locale);
-      const result = await sendEmail({
-        to: prospect.email,
-        from: process.env.FOLLOWUP_EMAIL_FROM ?? process.env.AUTH_EMAIL_FROM,
-        // replies go to the seller who created the link
-        replyTo: link.createdBy?.email ?? process.env.FOLLOWUP_EMAIL_REPLY_TO ?? undefined,
+      const result = await sendProspectEmail({
+        prospect,
+        locale: followup.locale,
         subject: followup.subject ?? "Suite à notre proposition",
-        text: followup.body + footer.text,
-        html: textToHtml(followup.body) + footer.html,
-        // One-click unsubscribe, required by Gmail and Yahoo (RFC 8058)
-        headers: {
-          "List-Unsubscribe": `<${unsubscribeOneClickUrl(prospect.id)}>`,
-          "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
-        },
+        body: followup.body,
+        replyTo: link.createdBy?.email,
       });
       providerMessageId = result.id;
     } else {

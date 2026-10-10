@@ -7,6 +7,7 @@ import { editableLinks } from "@/lib/closing/dashboard/queries";
 import { refreshEngagementScore } from "@/lib/closing/engagement/refresh-score";
 import { shiftLinkBack } from "@/lib/closing/testing/time-travel";
 import { runClosingTick } from "@/lib/closing/engine";
+import { isLinkExpired } from "@/lib/closing/expiry";
 import { sendFollowup } from "@/lib/closing/followups/dispatch";
 import { cancelOpenFollowups, OPEN_FOLLOWUP_STATUSES } from "@/lib/closing/followups/queue";
 import {
@@ -35,7 +36,7 @@ async function requireOwnedFollowup(followupId: string) {
   const { organization, user } = workspace;
   const followup = await prisma.followup.findFirst({
     where: { id: followupId, link: { organizationId: organization.id, ...editableLinks(workspace) } },
-    select: { id: true, link: { select: { id: true, documentId: true } } },
+    select: { id: true, link: { select: { id: true, documentId: true, expiresAt: true } } },
   });
   if (!followup) throw new Error("Relance introuvable");
   return { ...followup, userId: user.id };
@@ -94,8 +95,11 @@ export async function saveFollowupDraft(followupId: string, draft: { subject: st
   return ok ? { ok: true } : { error: "Cette relance ne peut plus être modifiée." };
 }
 
+const EXPIRED_LINK_ERROR = "Le lien a expiré : prolongez-le avant de relancer.";
+
 export async function approveFollowup(followupId: string) {
   const followup = await requireOwnedFollowup(followupId);
+  if (isLinkExpired(followup.link, new Date())) return { error: EXPIRED_LINK_ERROR };
   const ok = await approve(followup.id, followup.userId);
   revalidateFollowup(followup);
   return ok ? { ok: true } : { error: "Cette relance n'est plus à valider." };
@@ -103,6 +107,7 @@ export async function approveFollowup(followupId: string) {
 
 export async function markFollowupSentByMe(followupId: string) {
   const followup = await requireOwnedFollowup(followupId);
+  if (isLinkExpired(followup.link, new Date())) return { error: EXPIRED_LINK_ERROR };
   const ok = await markFollowupSentManually(followup.id, followup.userId);
   revalidateFollowup(followup);
   return ok ? { ok: true } : { error: "Cette relance est déjà partie ou annulée." };

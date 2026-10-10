@@ -220,6 +220,7 @@ enum FollowupTrigger {
   ANTI_GHOSTING // no view after N days
   MANUAL // queued by the seller
   AI_DECISION // decided by the deal analysis
+  EXPIRY_REMINDER // the link expires soon (quotes and proposals)
 }
 
 enum FollowupStatus {
@@ -277,6 +278,8 @@ enum SellerAlertType {
   NEW_READER // someone other than the recipient opened the proposal
   DECISION_MAKER_DETECTED // a finance or executive contact reads the proposal
   PROSPECT_QUESTION // the prospect asked the assistant something it could not answer
+  LINK_EXTENSION_REQUESTED // the link expired and the prospect asked for more time
+  LINK_EXPIRING // the link expires within 24h
 }
 
 // Role of a prospect contact in the buying committee, set by the seller.
@@ -312,6 +315,7 @@ enum AlertPriority {
 enum ProspectActionType {
   VALIDATE_SIGN
   REQUEST_CHANGE
+  REQUEST_EXTENSION // the link expired, the prospect asked for more time
 }
 
 enum ChatRole {
@@ -454,7 +458,7 @@ model Link {
   name          String?
   requireEmail  Boolean   @default(true)
   allowDownload Boolean   @default(false)
-  expiresAt     DateTime?
+  expiresAt     DateTime? // after it the viewer locks and the prospect can ask for more time
 
   dealStatus  DealStatus @default(OPEN)
   chatEnabled Boolean    @default(true)
@@ -504,6 +508,7 @@ model Link {
   @@index([organizationId, createdAt(sort: Desc)])
   @@index([documentId])
   @@index([dealStatus, followupsEnabled])
+  @@index([expiresAt])
   @@map("links")
 }
 

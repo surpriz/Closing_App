@@ -1,11 +1,11 @@
-import { BellRing, CheckCircle2, Eye, Link2, MessageCircleQuestion, MessageSquare, Phone, Send } from "lucide-react";
+import { BellRing, CheckCircle2, Eye, Hourglass, Link2, MessageCircleQuestion, MessageSquare, Phone, Send } from "lucide-react";
 
 import { formatDate, formatRelative } from "@/lib/format";
 
 export type TimelineItem = {
   id: string;
   at: Date;
-  kind: "created" | "view" | "validated" | "change" | "question" | "followup" | "alert" | "seller";
+  kind: "created" | "view" | "validated" | "change" | "extension" | "question" | "followup" | "alert" | "seller";
   title: string;
   detail?: string | null;
 };
@@ -15,6 +15,7 @@ const ICONS: Record<TimelineItem["kind"], React.ReactNode> = {
   view: <Eye className="size-3.5" />,
   validated: <CheckCircle2 className="size-3.5" />,
   change: <MessageSquare className="size-3.5" />,
+  extension: <Hourglass className="size-3.5" />,
   question: <MessageCircleQuestion className="size-3.5" />,
   followup: <Send className="size-3.5" />,
   alert: <BellRing className="size-3.5 text-heat-hot" />,

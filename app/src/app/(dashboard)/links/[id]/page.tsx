@@ -1,4 +1,4 @@
-import { ArrowLeft, ChevronRight, Plus } from "lucide-react";
+import { ArrowLeft, ChevronRight, Hourglass, Plus } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -22,6 +22,7 @@ import {
   SELLER_ACTIVITY_LABELS,
   TIER_LABELS,
 } from "@/components/dashboard/labels";
+import { ExpiryControl } from "@/components/dashboard/expiry-control";
 import { LinkSettingsDialog } from "@/components/dashboard/link-settings-form";
 import { LinkTestTools } from "@/components/dashboard/link-test-tools";
 import { LiveActivity } from "@/components/dashboard/live-activity";
@@ -103,7 +104,7 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
     }),
     // Prospect actions and forwarded questions have their own timeline entries
     prisma.sellerAlert.findMany({
-      where: { linkId: link.id, type: { notIn: ["PROSPECT_VALIDATED", "CHANGE_REQUESTED", "PROSPECT_QUESTION"] } },
+      where: { linkId: link.id, type: { notIn: ["PROSPECT_VALIDATED", "CHANGE_REQUESTED", "PROSPECT_QUESTION", "LINK_EXTENSION_REQUESTED"] } },
       orderBy: { createdAt: "desc" },
       take: 20,
     }),
@@ -189,9 +190,13 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
     ...actions.map((action) => ({
       id: `action-${action.id}`,
       at: action.createdAt,
-      kind: action.type === "VALIDATE_SIGN" ? ("validated" as const) : ("change" as const),
+      kind: ({ VALIDATE_SIGN: "validated", REQUEST_CHANGE: "change", REQUEST_EXTENSION: "extension" } as const)[action.type],
       title: `${action.prospect?.name ?? action.prospect?.email ?? "Le prospect"} ${
-        action.type === "VALIDATE_SIGN" ? "a validé la proposition" : "demande un ajustement"
+        action.type === "VALIDATE_SIGN"
+          ? "a validé la proposition"
+          : action.type === "REQUEST_EXTENSION"
+            ? "demande une prolongation"
+            : "demande un ajustement"
       }`,
       detail: action.message ? `« ${action.message} »` : null,
     })),
@@ -300,6 +305,15 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
             Deal de {seller?.name || seller?.email || "un autre commercial"}. Vous pouvez le consulter, seuls son
             commercial et les admins peuvent le modifier.
           </p>
+        )}
+        {link.expiresAt && link.expiresAt <= now && (
+          <a
+            href="#expiration"
+            className="flex items-center gap-2 rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive hover:underline"
+          >
+            <Hourglass className="size-4 shrink-0" aria-hidden />
+            Ce lien a expiré : le prospect ne peut plus l&apos;ouvrir. Prolongez-le pour le réactiver.
+          </a>
         )}
       </div>
 
@@ -449,6 +463,22 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
           </div>
 
           <aside className="space-y-10">
+            <section id="expiration" className="scroll-mt-20">
+              <SectionTitle hint="le lien se verrouille ensuite">Expiration</SectionTitle>
+              <Surface>
+                <ExpiryControl
+                  linkId={link.id}
+                  expiresAt={link.expiresAt?.toISOString() ?? null}
+                  requests={
+                    link.expiresAt
+                      ? actions.filter((a) => a.type === "REQUEST_EXTENSION" && a.createdAt >= link.expiresAt!).length
+                      : 0
+                  }
+                  canEdit={canEdit}
+                />
+              </Surface>
+            </section>
+
             <section id="qui-lit" className="scroll-mt-20">
               <SectionTitle hint="qui a ouvert la proposition">Qui lit</SectionTitle>
               <ReadersMap linkId={link.id} map={readerMap} now={now} />

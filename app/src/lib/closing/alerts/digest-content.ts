@@ -15,11 +15,13 @@ export type DigestData = {
   sinceLabel: string;
   todo: { label: string; documentName: string; why: string; url: string }[];
   /** Prospect answers, and questions the assistant passed on to the seller. */
-  actions: { label: string; kind: "validated" | "change" | "question"; message: string | null; url: string }[];
+  actions: { label: string; kind: "validated" | "change" | "extension" | "question"; message: string | null; url: string }[];
   counts: { readers: number; followupsSent: number; followupsFailed: number; unsubscribed: number };
   /** Autopilot: follow-ups that went out without the seller reading them. */
   autoSent: { label: string; subject: string | null; url: string }[];
   drafts: number;
+  /** Links locking within a day and a half. */
+  expiring?: { label: string; documentName: string; when: string; url: string }[];
 };
 
 /** Beyond this, the list stops being a to-do list. */
@@ -32,13 +34,15 @@ function plural(n: number, one: string, many: string) {
 export function digestSubject(data: DigestData) {
   if (data.todo.length) return `Ce matin : ${plural(data.todo.length, "prospect", "prospects")} à recontacter`;
   if (data.actions.length) return `${plural(data.actions.length, "réponse", "réponses")} de prospects depuis ${data.sinceLabel}`;
+  if (data.expiring?.length) return `${plural(data.expiring.length, "lien expire", "liens expirent")} bientôt`;
   if (data.autoSent.length) return `Clozer a relancé ${plural(data.autoSent.length, "prospect", "prospects")} pour vous`;
   return `${plural(data.drafts, "relance attend", "relances attendent")} votre accord`;
 }
 
 export function buildDigest(data: DigestData) {
   const todo = data.todo.slice(0, DIGEST_TODO_MAX);
-  if (!todo.length && !data.actions.length && !data.autoSent.length && !data.drafts) return null;
+  const expiring = data.expiring ?? [];
+  if (!todo.length && !data.actions.length && !expiring.length && !data.autoSent.length && !data.drafts) return null;
 
   const blocks: EmailBlock[] = [];
 
@@ -60,9 +64,23 @@ export function buildDigest(data: DigestData) {
             ? `${a.label} a validé`
             : a.kind === "change"
               ? `${a.label} demande un ajustement`
-              : `${a.label} a posé une question`,
+              : a.kind === "extension"
+                ? `${a.label} demande une prolongation`
+                : `${a.label} a posé une question`,
         detail: a.message ? `« ${a.message.length > 180 ? `${a.message.slice(0, 177)}…` : a.message} »` : undefined,
         href: a.url,
+      })),
+    });
+  }
+
+  if (expiring.length) {
+    blocks.push({ kind: "heading", text: "Expirent bientôt" });
+    blocks.push({
+      kind: "list",
+      items: expiring.map((row) => ({
+        text: `${row.label} · ${row.documentName}`,
+        detail: `Se verrouille le ${row.when}. Prolongez ou relancez d'ici là.`,
+        href: row.url,
       })),
     });
   }

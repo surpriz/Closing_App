@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 
 import { DAY_MS } from "../constants";
+import { notExpired } from "../expiry";
 import { generateFollowupMessage, queueFollowup } from "../followups/queue";
 import { nextBusinessSlot } from "../scheduling/business-hours";
 import { defaultTimezone, resolveFollowupSettings } from "../settings";
@@ -16,7 +17,7 @@ export async function scanAntiGhosting(now = new Date()) {
       followupsEnabled: true,
       dealStatus: "OPEN",
       archivedAt: null,
-      OR: [{ snoozedUntil: null }, { snoozedUntil: { lte: now } }],
+      AND: [{ OR: [{ snoozedUntil: null }, { snoozedUntil: { lte: now } }] }, notExpired(now)],
       sentAt: { lte: new Date(now.getTime() - DAY_MS) },
       views: { none: { isBot: false } },
       prospects: { some: { unsubscribedAt: null } },

@@ -13,6 +13,8 @@ export async function createDocumentLink(input: {
   name?: string | null;
   prospect?: { email: string; name?: string | null; company?: string | null } | null;
   requireEmail: boolean;
+  /** After it the viewer locks and the prospect can ask for more time. */
+  expiresAt?: Date | null;
   source?: LinkSource;
   // Inserted in an email that is not sent yet: confirmed by confirmLinkSent
   draft?: boolean;
@@ -45,6 +47,7 @@ export async function createDocumentLink(input: {
       createdById: input.userId,
       name: input.name || prospect?.company || prospect?.email || (input.draft ? title : null),
       requireEmail: input.requireEmail,
+      expiresAt: input.expiresAt ?? null,
       chatEnabled: settings?.chatEnabledByDefault ?? true,
       sentAt: input.draft ? null : now,
       draftAt: input.draft ? now : null,

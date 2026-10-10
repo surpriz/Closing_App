@@ -16,12 +16,14 @@ const SECTIONS_BY_GOAL: Record<string, PageTag[]> = {
   gentle_reminder: ["SCOPE", "TIMELINE"],
   involve_decision_maker: ["SCOPE", "PRICING"],
   reactivate: ["SCOPE", "TIMELINE"],
+  expiry_reminder: ["PRICING", "TERMS", "TIMELINE"],
 };
 const TRIGGER_GOAL: Record<string, string> = {
   HOT_PRICING: "clarify_pricing",
   ANTI_GHOSTING: "gentle_reminder",
   MANUAL: "gentle_reminder",
   AI_DECISION: "gentle_reminder",
+  EXPIRY_REMINDER: "expiry_reminder",
 };
 const MAX_SECTIONS = 6;
 

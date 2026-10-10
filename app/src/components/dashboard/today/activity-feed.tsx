@@ -1,4 +1,4 @@
-import { BellRing, Check, Eye, MessageSquare, Send } from "lucide-react";
+import { BellRing, Check, Eye, Hourglass, MessageSquare, Send } from "lucide-react";
 import Link from "next/link";
 
 import type { FeedItem, FeedKind } from "@/lib/closing/dashboard/feed";
@@ -8,12 +8,13 @@ const ICONS: Record<FeedKind, React.ReactNode> = {
   read: <Eye />,
   validated: <Check />,
   change: <MessageSquare />,
+  extension: <Hourglass />,
   alert: <BellRing className="text-heat-hot" />,
   followup: <Send />,
 };
 
 /** Answers from prospects stand out; readings and follow-ups stay quiet. */
-const STRONG: FeedKind[] = ["validated", "change"];
+const STRONG: FeedKind[] = ["validated", "change", "extension"];
 
 export function ActivityFeed({ items, now }: { items: FeedItem[]; now: Date }) {
   return (

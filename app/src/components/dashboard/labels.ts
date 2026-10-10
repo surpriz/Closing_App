@@ -53,6 +53,7 @@ export const FOLLOWUP_TRIGGER_LABELS: Record<FollowupTrigger, string> = {
   ANTI_GHOSTING: "Lien pas encore ouvert",
   MANUAL: "Relance manuelle",
   AI_DECISION: "Conseillée par l'analyse",
+  EXPIRY_REMINDER: "Rappel avant expiration",
 };
 
 export const SELLER_ACTIVITY_LABELS: Record<SellerActivityType, string> = {
@@ -86,6 +87,8 @@ export const ALERT_TYPE_LABELS: Record<SellerAlertType, string> = {
   COMMITTEE_LIVE: "Comité en lecture",
   NEW_READER: "Nouveau lecteur",
   DECISION_MAKER_DETECTED: "Décideur en lecture",
+  LINK_EXTENSION_REQUESTED: "Demande de prolongation",
+  LINK_EXPIRING: "Lien bientôt expiré",
 };
 
 export const PROSPECT_ROLE_LABELS: Record<ProspectRole, string> = {

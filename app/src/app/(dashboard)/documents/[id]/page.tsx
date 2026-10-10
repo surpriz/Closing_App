@@ -254,7 +254,9 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
                   const state =
                     link.dealStatus !== "OPEN"
                       ? DEAL_STATUS_LABELS[link.dealStatus]
-                      : score
+                      : link.expiresAt && link.expiresAt <= now
+                        ? "Expiré"
+                        : score
                         ? TIER_LABELS[score.tier]
                         : "Pas encore ouvert";
                   return (

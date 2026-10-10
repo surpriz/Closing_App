@@ -46,4 +46,19 @@ describe("buildChatInstructions", () => {
     });
     expect(noCta.content).not.toContain("button");
   });
+
+  it("states a link deadline as a fixed date and never extends it", () => {
+    expect(rules.content).not.toContain("link locks");
+    const [expiring] = buildChatInstructions({
+      sender: "Jérôme",
+      locale: "fr",
+      requestChangeLabel: null,
+      docType: "QUOTE",
+      expiresAt: new Date("2026-10-15T16:00:00Z"),
+      timezone: "Europe/Paris",
+      contextText: "",
+    });
+    expect(expiring.content).toContain("Thursday 15 October");
+    expect(expiring.content).toContain("Never move it or promise more time");
+  });
 });

@@ -11,18 +11,23 @@ import { actOnInsight } from "@/lib/closing/brain/act";
 import { analyzeDeal } from "@/lib/closing/brain/analyze-deal";
 import { refreshEngagementScore } from "@/lib/closing/engagement/refresh-score";
 import { editableLinks } from "@/lib/closing/dashboard/queries";
+import { EXTENSION_DAYS, expiryError, extendExpiry, reactivates } from "@/lib/closing/expiry";
 import { cancelOpenFollowups, isUniqueViolation } from "@/lib/closing/followups/queue";
+import { notifyReactivated } from "@/lib/closing/reactivation";
+import { onLinkExpiryChanged } from "@/lib/closing/triggers/expiry";
 import { prisma } from "@/lib/db";
 import { requireWorkspace } from "@/lib/session";
 
 export type LinkFormState = { ok?: boolean; error?: string } | null;
+/** `told`: prospects emailed because the link opened again. */
+export type ExpiryChangeResult = { ok: true; told: number } | { error: string };
 
 // A teammate's deal can be opened, not changed: it reads as not found here
 async function requireOwnedLink(linkId: string) {
   const workspace = await requireWorkspace();
   const link = await prisma.link.findFirst({
     where: { id: linkId, organizationId: workspace.organization.id, ...editableLinks(workspace) },
-    select: { id: true, documentId: true },
+    select: { id: true, documentId: true, expiresAt: true },
   });
   if (!link) throw new Error("Lien introuvable");
   return link;
@@ -82,6 +87,40 @@ const linkSettingsSchema = z.object({
   chatEnabled: checkbox,
   followupsEnabled: checkbox,
 });
+
+/**
+ * The single place a deadline changes: stale reminders go, the analysis looks
+ * again, and whoever asked for more time hears the link opens again.
+ * Returns how many prospects were told.
+ */
+async function applyExpiryChange(link: { id: string; expiresAt: Date | null }, next: Date | null, now: Date) {
+  if (link.expiresAt?.getTime() === next?.getTime()) return 0;
+  await prisma.link.update({ where: { id: link.id }, data: { expiresAt: next } });
+  await onLinkExpiryChanged(link.id, now);
+  return reactivates(link.expiresAt, next, now) ? notifyReactivated(link.id, link.expiresAt!) : 0;
+}
+
+/** An ISO date computed in the seller's browser time zone, or null to remove the deadline. */
+export async function setLinkExpiry(linkId: string, expiresAt: string | null): Promise<ExpiryChangeResult> {
+  const link = await requireOwnedLink(linkId);
+  const now = new Date();
+  const date = expiresAt ? new Date(expiresAt) : null;
+  const error = date && expiryError(date, now);
+  if (error) return { error };
+  const told = await applyExpiryChange(link, date, now);
+  revalidateLink(link);
+  return { ok: true, told };
+}
+
+/** "+3 j", "+7 j", "+14 j": from the current deadline, or from now once it has passed. */
+export async function extendLink(linkId: string, days: number): Promise<ExpiryChangeResult> {
+  const link = await requireOwnedLink(linkId);
+  if (!(EXTENSION_DAYS as readonly number[]).includes(days)) return { error: "Durée invalide." };
+  const now = new Date();
+  const told = await applyExpiryChange(link, extendExpiry(link.expiresAt, now, days), now);
+  revalidateLink(link);
+  return { ok: true, told };
+}
 
 export async function saveLinkSettings(
   linkId: string,

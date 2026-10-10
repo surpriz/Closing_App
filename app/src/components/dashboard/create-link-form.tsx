@@ -18,6 +18,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 
+import { ExpiryPicker } from "./expiry-control";
+
 function CreateLinkForm({ documentId, onCreated }: { documentId: string; onCreated: () => void }) {
   const [state, formAction, pending] = useActionState<CreateLinkState, FormData>(
     createLink.bind(null, documentId),
@@ -64,6 +66,7 @@ function CreateLinkForm({ documentId, onCreated }: { documentId: string; onCreat
         <Switch checked={requireEmail} onCheckedChange={(checked) => setRequireEmail(checked)} />
         <input type="hidden" name="requireEmail" value={requireEmail ? "true" : "false"} />
       </label>
+      <ExpiryPicker />
       <Button type="submit" size="lg" className="w-full" disabled={pending}>
         {pending ? "Création…" : "Créer le lien"}
       </Button>

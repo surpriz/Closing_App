@@ -6,6 +6,7 @@ import { isEmailConfigured, sendEmail } from "@/lib/email";
 import { renderEmail, type EmailBlock } from "@/lib/email-layout";
 
 import { escapeSlackText, postSignedWebhook, postSlackMessage } from "../channels/webhooks";
+import { formatDeadline } from "../expiry";
 import { isUniqueViolation } from "../followups/queue";
 
 export type AlertPayload = {
@@ -26,6 +27,8 @@ export type AlertPayload = {
   decisionMakers?: string[];
   /** PROSPECT_QUESTION: what the assistant could not answer. */
   question?: string;
+  /** Expiry alerts: the link's deadline, ISO. */
+  expiresAt?: string;
 };
 
 const READER_ALERTS = new Set<SellerAlertType>(["COMMITTEE_LIVE", "DECISION_MAKER_DETECTED", "NEW_READER"]);
@@ -42,6 +45,8 @@ export type AlertDelivery = {
   recipientEmail: string | null;
   /** WorkspaceSettings.alertEmail, copied on emails when it differs. */
   copyTo: string | null;
+  /** Seller time zone, for dates written in the message. */
+  timezone?: string;
 };
 
 type LinkForAlert = {
@@ -64,13 +69,46 @@ export function alertWho(link: LinkForAlert, payload: AlertPayload) {
   return prospect?.company ?? payload.prospectName ?? prospect?.name ?? link.name ?? payload.prospectEmail ?? prospect?.email ?? "Un prospect";
 }
 
-export function alertMessage(type: SellerAlertType, link: LinkForAlert, payload: AlertPayload): AlertMessage {
+export function alertMessage(
+  type: SellerAlertType,
+  link: LinkForAlert,
+  payload: AlertPayload,
+  timezone = "Europe/Paris",
+): AlertMessage {
   const appUrl = getPublicAppUrl();
   const who = alertWho(link, payload);
   const doc = `« ${link.document.name} »`;
   const linkUrl = `${appUrl}/links/${link.id}`;
+  const deadline = payload.expiresAt ? formatDeadline(new Date(payload.expiresAt), "fr-FR", timezone) : null;
 
   switch (type) {
+    case "LINK_EXTENSION_REQUESTED": {
+      const url = `${linkUrl}#expiration`;
+      const blocks: EmailBlock[] = [
+        { kind: "text", text: `Le lien vers ${doc} a expiré. ${who} demande à pouvoir le rouvrir.` },
+        { kind: "button", label: "Prolonger le lien", href: url },
+      ];
+      if (payload.prospectEmail) blocks.push({ kind: "text", text: `Son email : ${payload.prospectEmail}` });
+      return {
+        subject: `${who} demande une prolongation`,
+        line: `${who} demande une prolongation de ${doc}, qui a expiré`,
+        blocks,
+        url,
+      };
+    }
+    case "LINK_EXPIRING": {
+      const url = `${linkUrl}#expiration`;
+      const when = deadline ? `le ${deadline}` : "dans moins de 24 h";
+      return {
+        subject: `Le lien de ${who} expire demain`,
+        line: `${doc} (${who}) expire ${when}`,
+        blocks: [
+          { kind: "text", text: `${doc} ne sera plus accessible à ${who} après ${deadline ? `le ${deadline}` : "demain"}. Prolongez-le ou relancez d'ici là.` },
+          { kind: "button", label: "Voir le deal", href: url },
+        ],
+        url,
+      };
+    }
     case "PROSPECT_VALIDATED": {
       const blocks: EmailBlock[] = [
         { kind: "text", text: `${who} vient de cliquer sur « Valider & signer » sur ${doc}. La page lui a annoncé un retour rapide de votre part.` },
@@ -217,7 +255,7 @@ export async function createAndDeliverAlert(input: AlertDelivery) {
     throw error;
   }
 
-  const message = alertMessage(input.type, link, input.payload);
+  const message = alertMessage(input.type, link, input.payload, input.timezone);
   const pushed = input.channels.filter((c) => c !== "EXTENSION");
   const errors: string[] = [];
 
@@ -242,7 +280,9 @@ export async function createAndDeliverAlert(input: AlertDelivery) {
             html,
             text,
             replyTo:
-              input.type === "CHANGE_REQUESTED" || input.type === "PROSPECT_QUESTION"
+              input.type === "CHANGE_REQUESTED" ||
+              input.type === "PROSPECT_QUESTION" ||
+              input.type === "LINK_EXTENSION_REQUESTED"
                 ? (input.payload.prospectEmail ?? undefined)
                 : undefined,
           });
@@ -252,7 +292,9 @@ export async function createAndDeliverAlert(input: AlertDelivery) {
         const icon =
           input.type === "PROSPECT_QUESTION"
             ? "❓"
-            : input.priority === "ACTION"
+            : input.type === "LINK_EXTENSION_REQUESTED" || input.type === "LINK_EXPIRING"
+              ? "⏳"
+              : input.priority === "ACTION"
               ? "✅"
               : input.type === "DRAFT_READY"
                 ? "✍️"

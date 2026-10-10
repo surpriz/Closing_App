@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { ViewerLabels } from "@/lib/closing/i18n/viewer";
 
+import { GateBackdrop } from "./gate-backdrop";
 import { PrivacyNotice } from "./privacy-notice";
 
 type Props = {
@@ -24,19 +25,7 @@ export function EmailGate({ action, documentName, senderName, labels }: Props) {
 
   return (
     <main className="relative flex flex-1 items-center justify-center overflow-hidden px-4 py-16">
-      {/* A blank sheet behind the form: the document is right there, one step away */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 flex justify-center pt-10">
-        <div className="aspect-[1/1.414] w-[min(42rem,92vw)] rounded-md bg-card opacity-70 shadow-lg ring-1 ring-border blur-[2px]">
-          <div className="space-y-3 p-12">
-            <div className="h-5 w-1/2 rounded bg-muted" />
-            <div className="h-3 w-5/6 rounded bg-muted" />
-            <div className="h-3 w-4/6 rounded bg-muted" />
-            <div className="h-3 w-3/4 rounded bg-muted" />
-            <div className="mt-8 h-32 rounded bg-muted/70" />
-          </div>
-        </div>
-      </div>
-      <div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background/40 via-background/70 to-background" />
+      <GateBackdrop />
 
       <div className="relative w-full max-w-sm animate-rise rounded-2xl bg-card p-6 shadow-lg ring-1 ring-border sm:p-7">
         <span className="mb-5 flex size-10 items-center justify-center rounded-xl bg-muted text-muted-foreground ring-1 ring-border">
