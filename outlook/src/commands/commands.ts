@@ -108,10 +108,10 @@ async function onMessageSend(event: LaunchEvent) {
         officeCall<Office.EmailAddressDetails[]>((callback) => compose.to.getAsync(callback)).catch(() => []),
       ]);
       const sent = body === null ? links : linksInBody(links, body);
-      const recipient = firstRecipient(to);
+      const payload = { recipient: firstRecipient(to) };
       await Promise.race([
         Promise.allSettled(
-          sent.map((link) => api(`/api/ext/links/${encodeURIComponent(link.id)}/sent`, { body: { recipient }, keepalive: true })),
+          sent.map((link) => api(`/api/ext/links/${encodeURIComponent(link.id)}/sent`, { body: payload, keepalive: true })),
         ),
         new Promise((resolve) => setTimeout(resolve, SEND_TIMEOUT_MS)),
       ]);

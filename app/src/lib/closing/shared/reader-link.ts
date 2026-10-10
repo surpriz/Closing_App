@@ -6,8 +6,12 @@ import { companyFromEmail } from "../prospects/from-recipient";
 /**
  * A reader gave their email on a shared link: their own link, a deal like any
  * other (score, alerts, accept, follow-ups). It starts from the shared link's
- * settings and is reused when they come back. Their follow-ups always wait
- * for the seller: the address was typed, not given by the seller.
+ * settings. Their follow-ups always wait for the seller: the address was
+ * typed, not given by the seller.
+ *
+ * An existing link is reused only from a browser that already read it: typing
+ * someone else's address must not open their link (a message recorded for
+ * them, their signature). Elsewhere the reader gets a new link.
  */
 export async function readerLinkFor(
   parent: {
@@ -22,12 +26,21 @@ export async function readerLinkFor(
     expiresAt: Date | null;
   },
   email: string,
+  visitorId: string | null | undefined,
   name?: string | null,
 ) {
-  const existing = await prisma.link.findFirst({
-    where: { parentLinkId: parent.id, archivedAt: null, prospects: { some: { email } } },
-    select: { id: true, slug: true },
-  });
+  const existing = visitorId
+    ? await prisma.link.findFirst({
+        where: {
+          parentLinkId: parent.id,
+          archivedAt: null,
+          prospects: { some: { email } },
+          views: { some: { visitorId } },
+        },
+        orderBy: { createdAt: "desc" },
+        select: { id: true, slug: true },
+      })
+    : null;
   if (existing) return existing;
 
   const company = companyFromEmail(email);

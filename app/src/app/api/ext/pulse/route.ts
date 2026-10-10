@@ -56,7 +56,7 @@ export const GET = withExtensionAuth(async (request, { user, organization }) => 
         priority: true,
         payload: true,
         createdAt: true,
-        link: { select: { id: true, name: true, slug: true, prospects: { orderBy: { createdAt: "asc" }, take: 1, select: { name: true, email: true, company: true } }, document: { select: { name: true } } } },
+        link: { select: { id: true, name: true, slug: true, dealStatus: true, prospects: { orderBy: { createdAt: "asc" }, take: 1, select: { name: true, email: true, company: true } }, document: { select: { name: true } } } },
       },
     }),
   ]);
@@ -83,6 +83,8 @@ export const GET = withExtensionAuth(async (request, { user, organization }) => 
       linkId: alert.link.id,
       url: `${appUrl}/links/${alert.link.id}`,
       createdAt: alert.createdAt.toISOString(),
+      // Signed and not closed yet: the extension offers "Marquer gagné" right on the alert
+      canMarkWon: alert.type === "PROSPECT_VALIDATED" && alert.link.dealStatus === "VALIDATED",
       ...extensionNotice(alert.type, prospectLabel(alert.link), alert.link.document.name, (alert.payload ?? {}) as object),
     })),
     next: (alerts.at(-1)?.createdAt ?? since).toISOString(),

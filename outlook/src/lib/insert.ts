@@ -1,6 +1,6 @@
 import type { DocumentSummary } from "./api";
 import { base64ToBytes, firstRecipient, type AttachmentInfo } from "./compose";
-import { createLink, ensureDocument, linkContent, waitForTitle } from "./documents";
+import { createLink, ensureDocument, linkContent } from "./documents";
 import { ClozerError } from "./errors";
 import { rememberLink } from "./links-store";
 import { officeCall } from "./office";
@@ -27,9 +27,7 @@ export async function replaceAttachment(compose: Office.MessageCompose, attachme
 
 // Link for this email (first "To" recipient = prospect), inserted where the seller was typing
 export async function insertDocument(compose: Office.MessageCompose, document: DocumentSummary, step: Step, attachmentId?: string) {
-  step("Lecture du document…");
-  document = await waitForTitle(document);
-
+  // No wait for the AI title: the link reads like the file name, and the seller sends right away
   step("Création du lien…");
   const to = await officeCall<Office.EmailAddressDetails[]>((callback) => compose.to.getAsync(callback)).catch(() => []);
   const recipient = firstRecipient(to);
@@ -49,7 +47,13 @@ export async function insertDocument(compose: Office.MessageCompose, document: D
       throw new ClozerError("insert", `Le lien n'a pas pu être inséré. Copiez-le : ${link.url}`);
     });
   }
-  await rememberLink(compose, { id: link.id, url: link.url });
+  await rememberLink(compose, {
+    id: link.id,
+    url: link.url,
+    title: link.title,
+    summary: link.summary,
+    manageUrl: link.manageUrl,
+  });
 
   let attachmentLeft = false;
   if (attachmentId) {
@@ -65,8 +69,8 @@ export async function insertDocument(compose: Office.MessageCompose, document: D
 export function insertedNote(result: { recipient: { email: string; displayName: string | null } | null; attachmentLeft: boolean }) {
   return [
     result.recipient
-      ? `Prospect : ${result.recipient.displayName ?? result.recipient.email}. Le suivi démarre à l'envoi.`
-      : "Le suivi démarre à l'envoi, avec le destinataire de l'email.",
+      ? `Pour ${result.recipient.displayName ?? result.recipient.email}, suivi dès l'envoi.`
+      : "Suivi dès l'envoi, avec les destinataires de l'email.",
     result.attachmentLeft ? "Pensez à retirer la pièce jointe." : null,
   ]
     .filter(Boolean)

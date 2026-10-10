@@ -59,7 +59,7 @@ export async function unlockWithEmail(
   // The seller trying their shared link stays on it: no reader link for themselves
   if (link.shared && !(await isWorkspaceMember(link.organizationId))) {
     // Each reader of a shared link gets their own link, followed like any deal
-    const reader = await readerLinkFor(link, email, name);
+    const reader = await readerLinkFor(link, email, (await cookies()).get(VISITOR_COOKIE)?.value, name);
     await identifyProspect(reader, email, name);
     redirect(`/v/${reader.slug}`);
   }

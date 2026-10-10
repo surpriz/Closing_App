@@ -19,6 +19,8 @@ export type PulseAlert = {
   title: string;
   body: string;
   createdAt: string;
+  /** "Marie a validé" and the deal is not closed yet: one click marks it won. */
+  canMarkWon?: boolean;
 };
 
 export type Pulse = { enabled: boolean; readers: PulseReader[]; alerts: PulseAlert[]; next: string };

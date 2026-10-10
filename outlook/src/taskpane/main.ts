@@ -3,11 +3,12 @@ import { alertsToShow, readerLine, rememberSeen, type Pulse, type PulseAlert, ty
 import { h } from "@extui/dom";
 
 import { api, type Account, type DocumentSummary } from "../lib/api";
-import { isPdfAttachment, parseContext, type AttachmentInfo } from "../lib/compose";
+import { isPdfAttachment, parseContext, type AttachmentInfo, type InsertedLink } from "../lib/compose";
 import { APP_ORIGIN, KILL_SWITCH_HOST } from "../lib/config";
 import { ensureDocument, searchDocuments } from "../lib/documents";
 import { ClozerError } from "../lib/errors";
 import { insertDocument, insertedNote, NOTICE_KEY, replaceAttachment } from "../lib/insert";
+import { readLinks } from "../lib/links-store";
 import { composeItem, mailbox, officeCall, openInBrowser, supports } from "../lib/office";
 import { CONNECT_URL, startPairing, waitForPairing, type Pairing } from "../lib/pairing";
 import { getAskFirst, getLinkStyle, getToken, setAskFirst, setLinkStyle, setToken } from "../lib/settings";
@@ -24,6 +25,7 @@ const state = {
   status: null as Status | null,
   busy: false,
   attachments: [] as AttachmentInfo[],
+  links: [] as InsertedLink[],
   query: "",
   documents: null as DocumentSummary[] | null,
   readers: [] as PulseReader[],
@@ -82,6 +84,7 @@ function mainView(): (Node | null)[] {
   const compose = composeItem();
   return [
     statusView(),
+    compose ? linksView() : null,
     compose ? attachmentsView(compose) : null,
     compose ? documentsView(compose) : null,
     compose ? linkStyleView() : null,
@@ -90,6 +93,32 @@ function mainView(): (Node | null)[] {
     readersView(),
     footer(),
   ];
+}
+
+// The links already in this email: what the prospect will meet, and one click to add a welcome video
+function linksView() {
+  if (!state.links.length) return null;
+  return h(
+    "fieldset",
+    {},
+    h("legend", {}, "Dans cet email"),
+    ...state.links.map((link) =>
+      h(
+        "div",
+        { class: "alert" },
+        h("strong", {}, link.title ?? "Lien Clozer"),
+        link.summary?.length ? h("span", { class: "small" }, link.summary.join(" · ")) : null,
+        // Only our own pages open from the pane
+        link.manageUrl?.startsWith(`${APP_ORIGIN}/`)
+          ? h(
+              "div",
+              { class: "row" },
+              h("button", { onclick: () => openInBrowser(link.manageUrl!) }, "Mot d'accueil, réglages…"),
+            )
+          : null,
+      ),
+    ),
+  );
 }
 
 function attachmentsView(compose: Office.MessageCompose) {
@@ -220,6 +249,7 @@ function alertsView() {
         h(
           "div",
           { class: "row" },
+          alert.canMarkWon ? h("button", { class: "primary", onclick: () => void markWon(alert) }, "Marquer gagné") : null,
           h("button", { onclick: () => openInBrowser(alert.url) }, "Ouvrir"),
           h("button", { class: "link", onclick: () => dismissAlert(alert.id) }, "OK"),
         ),
@@ -377,6 +407,7 @@ async function search(query: string) {
 
 async function refreshAttachments() {
   const compose = composeItem();
+  state.links = compose ? await readLinks(compose).catch(() => []) : [];
   if (!compose || !supports("1.8")) {
     state.attachments = [];
     return;
@@ -414,6 +445,17 @@ function writeSeen(seen: string[]) {
     localStorage.setItem(SEEN_KEY, JSON.stringify(seen));
   } catch {
     // private mode: alerts may show again, nothing worse
+  }
+}
+
+// "Marie a validé": the sale recorded from Outlook, follow-ups stop
+async function markWon(alert: PulseAlert) {
+  try {
+    await api(`/api/ext/links/${encodeURIComponent(alert.linkId)}/won`, { method: "POST" });
+    dismissAlert(alert.id);
+    setStatus({ kind: "done", title: "Deal gagné", detail: "Bravo. Les relances sont arrêtées." });
+  } catch {
+    openInBrowser(alert.url);
   }
 }
 

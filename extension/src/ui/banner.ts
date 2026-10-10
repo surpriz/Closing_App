@@ -7,6 +7,7 @@ export type BannerHandlers = {
   open: (alert: MailAlert) => void;
   later: (alert: MailAlert) => void;
   close: (alert: MailAlert) => void;
+  won: (alert: MailAlert) => void;
 };
 
 let stack: HTMLElement | null = null;
@@ -29,7 +30,14 @@ export function renderBanners(alerts: MailAlert[], handlers: BannerHandlers) {
         h(
           "div",
           { class: "row" },
-          h("button", { class: "primary", type: "button", onclick: () => handlers.open(alert) }, action ? "Voir le deal" : "Voir la lecture"),
+          alert.canMarkWon
+            ? h("button", { class: "primary", type: "button", onclick: () => handlers.won(alert) }, "Marquer gagné")
+            : null,
+          h(
+            "button",
+            { class: alert.canMarkWon ? "ghost" : "primary", type: "button", onclick: () => handlers.open(alert) },
+            action ? "Voir le deal" : "Voir la lecture",
+          ),
           action ? null : h("button", { class: "ghost", type: "button", onclick: () => handlers.later(alert) }, "Plus tard"),
         ),
       );

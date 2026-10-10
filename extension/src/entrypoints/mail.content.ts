@@ -22,12 +22,13 @@ import {
   UPLOAD_PORT,
   type Account,
   type CaptureMessage,
+  type CreatedLink,
   type DocumentSummary,
   type UploadIn,
   type UploadOut,
 } from "@/lib/messages";
 import { hasPdfMagic, looksLikePdf } from "@/lib/pdf";
-import { getLinkStyle } from "@/lib/preferences";
+import { getAskFirst, getLinkStyle } from "@/lib/preferences";
 import { bannersToShow, MAIL_ALERTS_KEY, MAIL_DISMISSED_KEY, type MailAlert } from "@/lib/pulse";
 import { sha256Hex } from "@/lib/sha256";
 import { isOlder } from "@/lib/version";
@@ -40,17 +41,16 @@ type Compose = {
   widget: ComposeWidget;
   saved: Range | null;
   // documentId → link already created for this email, so a retry reuses it
-  links: Map<string, { id: string; url: string; title: string }>;
+  links: Map<string, CreatedLink>;
   busy: boolean;
+  // An attach is being handled: a second event for it must not start another
+  offering: boolean;
   sending: boolean;
 };
 
 const POLL_MS = 3000;
 const POLL_TRIES = 20;
 const UPLOAD_TIMEOUT_MS = 3 * 60_000;
-// A fresh PDF gets its readable title from the AI a few seconds after upload
-const TITLE_WAIT_MS = 15_000;
-const TITLE_POLL_MS = 1000;
 // Lets the mail app show its attachment chip before the offer appears next to it
 const OFFER_DELAY_MS = 300;
 // After Send, the mail app closes the compose within a few seconds when the email really left
@@ -140,6 +140,10 @@ export default defineContentScript({
       },
       later: (alert: MailAlert) => void ask({ type: "dismissBanner", alertId: alert.id, snoozeLinkId: alert.linkId }),
       close: (alert: MailAlert) => void ask({ type: "dismissBanner", alertId: alert.id }),
+      won: (alert: MailAlert) =>
+        void ask({ type: "markWon", linkId: alert.linkId })
+          .then(() => ask({ type: "dismissBanner", alertId: alert.id }))
+          .catch(() => ask({ type: "openUrl", url: alert.url })),
     };
     void showBanners();
     // Call moments go stale after a few minutes even without a new alert
@@ -214,7 +218,7 @@ export default defineContentScript({
 
       let link = compose.links.get(document.id);
       if (!link) {
-        link = await ask<{ id: string; url: string; title: string }>({ type: "link", documentId: document.id, recipient, source: host });
+        link = await ask<CreatedLink>({ type: "link", documentId: document.id, recipient, source: host });
         compose.links.set(document.id, link);
       }
       const style = await getLinkStyle();
@@ -232,29 +236,24 @@ export default defineContentScript({
         attachmentLeft = !remover || !!findAttachmentRemover(compose.root, compose.body, attachmentName);
       }
 
+      // What the prospect will meet, and one click to change it or add a welcome video
       const notes = [
+        link.summary?.length ? `${link.summary.join(" · ")}.` : null,
         recipient
-          ? `Prospect : ${recipient.displayName ?? recipient.email}. Le suivi démarre à l'envoi.`
-          : "Le suivi démarre à l'envoi, avec le destinataire de l'email.",
+          ? `Pour ${recipient.displayName ?? recipient.email}, suivi dès l'envoi.`
+          : "Suivi dès l'envoi, avec les destinataires de l'email.",
         attachmentLeft ? "Pensez à retirer la pièce jointe." : null,
       ].filter(Boolean);
-      compose.widget.message("Lien inséré", notes.join(" "), [{ label: "OK", run: () => compose.widget.hide() }]);
-      if (!attachmentLeft) compose.widget.hideAfter(6000);
+      const manageUrl = link.manageUrl;
+      compose.widget.message("Lien inséré", notes.join(" "), [
+        ...(manageUrl
+          ? [{ label: "Mot d'accueil, réglages…", run: () => void ask({ type: "openUrl", url: manageUrl }) }]
+          : []),
+        { label: "OK", primary: true, run: () => compose.widget.hide() },
+      ]);
+      if (!attachmentLeft) compose.widget.hideAfter(8000);
 
       void watchProcessing(compose, document);
-    }
-
-    // So the link reads "Devis rénovation cuisine" rather than the file name. Gives up after a few seconds.
-    async function waitForTitle(compose: Compose, document: DocumentSummary) {
-      const deadline = Date.now() + TITLE_WAIT_MS;
-      while (Date.now() < deadline && ctx.isValid) {
-        compose.widget.progress("Lecture du document…", 75 + Math.round((10 * (TITLE_WAIT_MS - (deadline - Date.now()))) / TITLE_WAIT_MS));
-        await sleep(TITLE_POLL_MS);
-        const latest = await ask<DocumentSummary>({ type: "document", id: document.id }).catch(() => null);
-        if (latest) document = latest;
-        if (document.titled || document.status === "FAILED") break;
-      }
-      return document;
     }
 
     async function replaceFile(compose: Compose, file: File, isAttachment: boolean) {
@@ -267,15 +266,26 @@ export default defineContentScript({
 
       const sha256 = await sha256Hex(buffer);
       const existing = await ask<DocumentSummary | null>({ type: "lookup", sha256 });
-      let document =
-        existing ?? (await uploadPdf(file.name, bytes, sha256, (percent) => compose.widget.progress("Envoi du PDF…", Math.min(percent, 70))));
-      if (!existing) document = await waitForTitle(compose, document);
+      // No wait for the AI title: the link reads like the file name, and the seller sends right away
+      const document =
+        existing ?? (await uploadPdf(file.name, bytes, sha256, (percent) => compose.widget.progress("Envoi du PDF…", Math.min(percent, 80))));
 
       await insertDocument(compose, document, isAttachment ? file.name : undefined);
     }
 
-    function offer(compose: Compose, file: File) {
-      if (compose.busy) return;
+    async function offer(compose: Compose, files: File[]) {
+      // Claimed before any await: a drop and a paperclip pick can both arrive for the same files
+      if (compose.busy || compose.offering) return;
+      compose.offering = true;
+      try {
+        await offerFiles(compose, files);
+      } finally {
+        compose.offering = false;
+      }
+    }
+
+    async function offerFiles(compose: Compose, files: File[]) {
+      const [file] = files;
       if (!account) {
         compose.widget.message(`Envoyer « ${file.name} » en lien ?`, "Connectez Clozer pour remplacer la pièce jointe par un lien.", [
           connectAction(compose),
@@ -283,15 +293,21 @@ export default defineContentScript({
         ]);
         return;
       }
-      compose.widget.message(`Remplacer « ${file.name} » par un lien Clozer ?`, null, [
-        { label: "Remplacer", primary: true, run: () => void run(compose, () => replaceFile(compose, file, true)) },
+      const replaceAll = async () => {
+        for (const pdf of files) await run(compose, () => replaceFile(compose, pdf, true));
+      };
+      // Zero click by default: the PDF becomes a link as soon as it is attached
+      if (!(await getAskFirst())) return void replaceAll();
+      const label = files.length > 1 ? `ces ${files.length} PDF` : `« ${file.name} »`;
+      compose.widget.message(`Remplacer ${label} par un lien Clozer ?`, null, [
+        { label: "Remplacer", primary: true, run: () => void replaceAll() },
         ignoreAction(compose),
       ]);
     }
 
-    function offerFirstPdf(files: Iterable<File> | null | undefined, compose: Compose | null) {
-      const pdf = Array.from(files ?? []).find(looksLikePdf);
-      if (pdf && compose) setTimeout(() => offer(compose, pdf), OFFER_DELAY_MS);
+    function offerPdfs(files: Iterable<File> | null | undefined, compose: Compose | null) {
+      const pdfs = Array.from(files ?? []).filter(looksLikePdf);
+      if (pdfs.length && compose) setTimeout(() => void offer(compose, pdfs), OFFER_DELAY_MS);
     }
 
     function openPicker(compose: Compose) {
@@ -322,6 +338,7 @@ export default defineContentScript({
           saved: null,
           links: new Map(),
           busy: false,
+          offering: false,
           sending: false,
         };
         composes.set(body, compose);
@@ -395,17 +412,17 @@ export default defineContentScript({
     );
 
     // Dropped or pasted into a compose: the event target tells which one
-    ctx.addEventListener(window, "drop", (event) => offerFirstPdf(event.dataTransfer?.files, composeOf(event.target) ?? lastCompose), {
+    ctx.addEventListener(window, "drop", (event) => offerPdfs(event.dataTransfer?.files, composeOf(event.target) ?? lastCompose), {
       capture: true,
     });
-    ctx.addEventListener(window, "paste", (event) => offerFirstPdf(event.clipboardData?.files, composeOf(event.target) ?? lastCompose), {
+    ctx.addEventListener(window, "paste", (event) => offerPdfs(event.clipboardData?.files, composeOf(event.target) ?? lastCompose), {
       capture: true,
     });
 
     // Picked through the paperclip: reported by the MAIN-world capture script
     ctx.addEventListener(window, "message", (event: MessageEvent<CaptureMessage>) => {
       if (event.source !== window || event.data?.source !== CAPTURE_SOURCE || event.data.nonce !== nonce) return;
-      offerFirstPdf(event.data.files, lastCompose ?? (composes.size === 1 ? [...composes.values()][0] : null));
+      offerPdfs(event.data.files, lastCompose ?? (composes.size === 1 ? [...composes.values()][0] : null));
     });
   },
 });

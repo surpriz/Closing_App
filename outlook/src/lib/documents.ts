@@ -10,11 +10,6 @@ import { APP_ORIGIN, MAX_UPLOAD_BYTES } from "./config";
 import { ClozerError } from "./errors";
 import { getToken } from "./settings";
 
-const TITLE_WAIT_MS = 15_000;
-const TITLE_POLL_MS = 1_500;
-
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
 // Same PDF already in Clozer → reuse it. Otherwise straight to Blob storage, then registered.
 export async function ensureDocument(bytes: Uint8Array, name: string, onProgress: (percent: number) => void) {
   if (bytes.length > MAX_UPLOAD_BYTES) throw new ClozerError("too_large", "Ce PDF dépasse 25 Mo.");
@@ -38,19 +33,6 @@ export async function ensureDocument(bytes: Uint8Array, name: string, onProgress
     onUploadProgress: ({ percentage }) => onProgress(Math.round(percentage)),
   });
   return (await api<{ document: DocumentSummary }>("/api/ext/documents", { body: { pathname: blob.pathname, name, sha256 } })).document;
-}
-
-// So the link reads "Devis rénovation cuisine" rather than the file name. Gives up after a few seconds.
-export async function waitForTitle(document: DocumentSummary) {
-  const deadline = Date.now() + TITLE_WAIT_MS;
-  while (!document.titled && document.status !== "FAILED" && Date.now() < deadline) {
-    await sleep(TITLE_POLL_MS);
-    const latest = await api<{ document: DocumentSummary }>(`/api/ext/documents/${encodeURIComponent(document.id)}`)
-      .then((data) => data.document)
-      .catch(() => null);
-    if (latest) document = latest;
-  }
-  return document;
 }
 
 export async function createLink(documentId: string, recipient: Recipient | null) {

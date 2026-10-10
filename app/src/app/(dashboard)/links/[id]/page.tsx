@@ -48,6 +48,7 @@ import { linkTitle } from "@/lib/closing/documents/link-title";
 import { showsCountdown } from "@/lib/closing/expiry";
 import { getSellerPrefs } from "@/lib/closing/notify/preferences";
 import { firstNameOf, guessMailClient } from "@/lib/closing/share/compose";
+import { settingsSummary } from "@/lib/closing/share/summary";
 import { getLatestInsight } from "@/lib/closing/brain/latest";
 import { getReaderMap } from "@/lib/closing/committee/queries";
 import { canEditDeal } from "@/lib/closing/dashboard/queries";
@@ -785,37 +786,6 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
       </fieldset>
     </div>
   );
-}
-
-/** The share screen's one-line recap: what the prospect will meet. */
-function settingsSummary(
-  link: {
-    shared: boolean;
-    requireEmail: boolean;
-    expiresAt: Date | null;
-    ctaEnabled: boolean;
-    chatEnabled: boolean;
-    followupsEnabled: boolean;
-  },
-  now: Date,
-) {
-  const days = link.expiresAt ? Math.max(0, Math.ceil((link.expiresAt.getTime() - now.getTime()) / 86_400_000)) : null;
-  if (link.shared) {
-    return [
-      "Un lien par lecteur",
-      days === null ? "Sans expiration" : `Expire dans ${days} j`,
-      link.ctaEnabled ? "Validation en ligne" : null,
-      link.chatEnabled ? "Assistant IA" : null,
-      link.followupsEnabled ? "Relances à valider" : "Sans relance",
-    ].filter((item): item is string => !!item);
-  }
-  return [
-    link.requireEmail ? "Email demandé" : "Ouverture libre",
-    days === null ? "Sans expiration" : `Expire dans ${days} j`,
-    link.ctaEnabled ? "Validation en ligne" : null,
-    link.chatEnabled ? "Assistant IA" : null,
-    link.followupsEnabled ? "Relances auto" : "Sans relance",
-  ].filter((item): item is string => !!item);
 }
 
 /** Readers of a shared link, most recently active first: each one's own link and where it stands. */

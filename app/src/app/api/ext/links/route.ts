@@ -4,6 +4,7 @@ import { z } from "zod";
 import { getPublicAppUrl } from "@/lib/app-origin";
 import { createDocumentLink } from "@/lib/closing/documents/create-link";
 import { prospectFromRecipient } from "@/lib/closing/prospects/from-recipient";
+import { settingsSummary } from "@/lib/closing/share/summary";
 import { extError, withExtensionAuth } from "@/lib/extension-auth";
 
 const schema = z.object({
@@ -32,8 +33,19 @@ export const POST = withExtensionAuth(async (request, { user, organization }) =>
   if (!link) return extError(404, "not_found", "Document introuvable.");
 
   revalidatePath(`/documents/${documentId}`);
+  const appUrl = getPublicAppUrl();
   return Response.json(
-    { link: { id: link.id, name: link.name, title: link.title, url: `${getPublicAppUrl()}/v/${link.slug}` } },
+    {
+      link: {
+        id: link.id,
+        name: link.name,
+        title: link.title,
+        url: `${appUrl}/v/${link.slug}`,
+        // What the prospect will meet, and where to change it or add a welcome message
+        summary: settingsSummary(link, new Date()),
+        manageUrl: `${appUrl}/links/${link.id}?new=1`,
+      },
+    },
     { status: 201 },
   );
 });

@@ -4,13 +4,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
-import { DEAL_STATUS_LABELS } from "@/components/dashboard/labels";
 import type { DealStatus, ProspectRole } from "@/generated/prisma/enums";
 import { inBackground } from "@/lib/closing/background";
 import { actOnInsight } from "@/lib/closing/brain/act";
 import { analyzeDeal } from "@/lib/closing/brain/analyze-deal";
-import { refreshEngagementScore } from "@/lib/closing/engagement/refresh-score";
 import { editableLinks } from "@/lib/closing/dashboard/queries";
+import { applyDealStatus } from "@/lib/closing/deals/status";
 import { confirmLinkSent } from "@/lib/closing/documents/create-link";
 import { linkDefaultsFor, SHARED_LINK_SETTINGS } from "@/lib/closing/documents/smart-defaults";
 import { getSellerPrefs, sellerTimezone } from "@/lib/closing/notify/preferences";
@@ -50,17 +49,7 @@ const dealStatusSchema = z.enum(["OPEN", "VALIDATED", "CHANGE_REQUESTED", "WON",
 
 export async function updateDealStatus(linkId: string, status: DealStatus) {
   const link = await requireOwnedLink(linkId);
-  const dealStatus = dealStatusSchema.parse(status);
-
-  await prisma.link.update({
-    where: { id: link.id },
-    data: { dealStatus, closedAt: dealStatus === "OPEN" ? null : new Date() },
-  });
-  // Automated follow-ups only make sense while the deal is still open
-  if (dealStatus !== "OPEN") {
-    await cancelOpenFollowups(link.id, `Statut passé à « ${DEAL_STATUS_LABELS[dealStatus]} »`);
-  }
-  await refreshEngagementScore(link.id);
+  await applyDealStatus(link.id, dealStatusSchema.parse(status));
   revalidateLink(link);
 }
 
@@ -79,8 +68,11 @@ export async function setProspectRole(linkId: string, prospectId: string, role: 
 
 export async function archiveLink(linkId: string) {
   const link = await requireOwnedLink(linkId);
-  await prisma.link.update({ where: { id: link.id }, data: { archivedAt: new Date() } });
-  await cancelOpenFollowups(link.id, "Lien archivé");
+  const now = new Date();
+  // A shared link's readers lose access with it
+  const readers = await prisma.link.findMany({ where: { parentLinkId: link.id, archivedAt: null }, select: { id: true } });
+  await prisma.link.updateMany({ where: { id: { in: [link.id, ...readers.map((r) => r.id)] } }, data: { archivedAt: now } });
+  for (const id of [link.id, ...readers.map((r) => r.id)]) await cancelOpenFollowups(id, "Lien archivé");
   revalidateLink(link);
   redirect(`/documents/${link.documentId}`);
 }
@@ -97,6 +89,15 @@ async function applyExpiryChange(link: { id: string; expiresAt: Date | null }, n
   // The seller chose: the document type no longer moves it
   await prisma.link.update({ where: { id: link.id }, data: { expiresAt: next, autoSettings: false } });
   await onLinkExpiryChanged(link.id, now);
+  // A shared link's readers keep its deadline, unless the seller gave one of them their own
+  const readers = await prisma.link.findMany({
+    where: { parentLinkId: link.id, archivedAt: null, expiresAt: link.expiresAt },
+    select: { id: true },
+  });
+  if (readers.length > 0) {
+    await prisma.link.updateMany({ where: { id: { in: readers.map((r) => r.id) } }, data: { expiresAt: next } });
+    for (const reader of readers) await onLinkExpiryChanged(reader.id, now);
+  }
   return reactivates(link.expiresAt, next, now) ? notifyReactivated(link.id, link.expiresAt!) : 0;
 }
 

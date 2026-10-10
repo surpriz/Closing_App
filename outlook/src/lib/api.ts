@@ -46,4 +46,5 @@ export type Account = {
 
 export type DocumentSummary = { id: string; name: string; status?: string; titled?: boolean };
 
-export type LinkCreated = { id: string; name: string | null; title: string; url: string };
+/** summary: what the prospect will meet; manageUrl: the share screen, for the welcome video and the settings. */
+export type LinkCreated = { id: string; name: string | null; title: string; url: string; summary?: string[]; manageUrl?: string };

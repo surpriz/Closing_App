@@ -9,6 +9,7 @@ import {
   ClozerError,
   UPLOAD_PORT,
   type Account,
+  type CreatedLink,
   type DocumentSummary,
   type Request,
   type Response,
@@ -86,12 +87,14 @@ async function handle(request: Request): Promise<unknown> {
       return (await api<{ document: DocumentSummary }>(`/api/ext/documents/${encodeURIComponent(request.id)}`)).document;
     case "link":
       return (
-        await api<{ link: { id: string; name: string | null; title: string; url: string } }>("/api/ext/links", {
+        await api<{ link: CreatedLink }>("/api/ext/links", {
           body: { documentId: request.documentId, recipient: request.recipient, source: request.source },
         })
       ).link;
     case "sent":
       return api(`/api/ext/links/${encodeURIComponent(request.linkId)}/sent`, { body: { recipient: request.recipient } });
+    case "markWon":
+      return api(`/api/ext/links/${encodeURIComponent(request.linkId)}/won`, { method: "POST" });
   }
 }
 

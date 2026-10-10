@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { composeRoot, findAttachmentRemover, firstRecipient, insertionAnchor, isSendControl, press, sameFileName } from "./mail";
+import { allRecipients, composeRoot, findAttachmentRemover, firstRecipient, insertionAnchor, isSendControl, press, sameFileName } from "./mail";
 
 // Simplified from Gmail and Outlook web compose markup. The real markup must be
 // checked by hand after any breakage: see extension/README.md.
@@ -50,6 +50,15 @@ describe("gmail adapter", () => {
     const root = composeRoot("gmail", body);
     expect(root.id).toBe("root");
     expect(firstRecipient("gmail", root, body)).toEqual({ email: "marie@acme-group.fr", displayName: "Marie Dupont" });
+  });
+
+  it("lists every recipient of the email, in order", () => {
+    const body = document.getElementById("body")!;
+    const root = composeRoot("gmail", body);
+    expect(allRecipients("gmail", root, body)).toEqual([
+      { email: "marie@acme-group.fr", displayName: "Marie Dupont" },
+      { email: "paul@acme-group.fr", displayName: "Paul" },
+    ]);
   });
 
   it("inserts above the signature", () => {

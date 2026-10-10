@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { addLink, base64ToBytes, firstRecipient, isPdfAttachment, linksInBody, parseContext, parseLinks } from "./compose";
+import { addLink, allRecipients, base64ToBytes, firstRecipient, isPdfAttachment, linksInBody, parseContext, parseLinks } from "./compose";
 
 describe("isPdfAttachment", () => {
   it("takes a PDF file attached from disk", () => {
@@ -67,5 +67,19 @@ describe("parseContext", () => {
     expect(parseContext('{"attachmentId":"AAMk="}')).toEqual({ attachmentId: "AAMk=" });
     expect(parseContext("")).toEqual({});
     expect(parseContext("nope")).toEqual({});
+  });
+});
+
+describe("allRecipients", () => {
+  it("keeps To then Cc, each address once", () => {
+    expect(
+      allRecipients(
+        [{ emailAddress: "marie@acme.fr", displayName: "Marie Dupont" }, { emailAddress: "" }],
+        [{ emailAddress: "paul@acme.fr", displayName: "Paul" }, { emailAddress: "Marie@acme.fr" }],
+      ),
+    ).toEqual([
+      { email: "marie@acme.fr", displayName: "Marie Dupont" },
+      { email: "paul@acme.fr", displayName: "Paul" },
+    ]);
   });
 });

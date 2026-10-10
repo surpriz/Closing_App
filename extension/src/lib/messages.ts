@@ -7,6 +7,9 @@ export type MailHost = "gmail" | "outlook";
 // titled: the AI has given the document a readable title (or never will)
 export type DocumentSummary = { id: string; name: string; status: string; titled?: boolean };
 
+/** POST /api/ext/links: the link, what the prospect will meet, and where to change it. */
+export type CreatedLink = { id: string; url: string; title: string; summary?: string[]; manageUrl?: string };
+
 export type Account = {
   user: { name: string; email: string };
   organization: { id: string; name: string };
@@ -28,6 +31,8 @@ export type Request =
   | { type: "link"; documentId: string; recipient: Recipient | null; source: MailHost }
   // The email holding this link was sent: the draft becomes a deal
   | { type: "sent"; linkId: string; recipient: Recipient | null }
+  // "Marquer gagné" on a "validé" banner
+  | { type: "markWon"; linkId: string }
   // Popup: who is reading now, and the "notify me" switch
   | { type: "readers" }
   | { type: "callMoments"; enabled?: boolean }

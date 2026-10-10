@@ -2,7 +2,7 @@ import { browser } from "wxt/browser";
 
 import { API_ORIGIN } from "@/lib/config";
 import { ask, type Account } from "@/lib/messages";
-import { getLinkStyle, setLinkStyle, type LinkStyle } from "@/lib/preferences";
+import { getAskFirst, getLinkStyle, setAskFirst, setLinkStyle, type LinkStyle } from "@/lib/preferences";
 import { readerLine, type PulseReader } from "@/lib/pulse";
 import { h } from "@/ui/dom";
 
@@ -36,6 +36,32 @@ async function linkStyleField() {
           onchange: () => void setLinkStyle(style.value),
         }),
         h("span", {}, h("strong", {}, style.label), h("span", { class: "muted" }, style.hint)),
+      ),
+    ),
+  );
+}
+
+// Zero click by default; some sellers want the question back
+async function askFirstField() {
+  const current = await getAskFirst();
+  return h(
+    "fieldset",
+    {},
+    h("legend", {}, "Quand je joins un PDF"),
+    ...[
+      { value: false, label: "Le remplacer tout de suite", hint: "Par un lien suivi, sans clic." },
+      { value: true, label: "Me demander d'abord", hint: "Un bouton « Remplacer » apparaît." },
+    ].map((choice) =>
+      h(
+        "label",
+        { class: "choice" },
+        h("input", {
+          type: "radio",
+          name: "askFirst",
+          checked: choice.value === current,
+          onchange: () => void setAskFirst(choice.value),
+        }),
+        h("span", {}, h("strong", {}, choice.label), h("span", { class: "muted" }, choice.hint)),
       ),
     ),
   );
@@ -96,7 +122,7 @@ async function show() {
 
   if (!account) {
     render(
-      h("p", {}, "Joignez un PDF dans Gmail ou Outlook : Clozer le remplace par un lien en un clic."),
+      h("p", {}, "Joignez un PDF dans Gmail ou Outlook : Clozer le remplace par un lien suivi, tout seul."),
       error ? h("p", { class: "error" }, error) : null,
       h(
         "div",
@@ -113,6 +139,7 @@ async function show() {
     h("p", { class: "muted" }, `Espace ${account.organization.name}`),
     notifications ? await readingNow() : null,
     notifications ? await callMomentsField() : null,
+    await askFirstField(),
     await linkStyleField(),
     h(
       "div",

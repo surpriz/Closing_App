@@ -75,7 +75,17 @@ export async function createDocumentLink(input: {
           }
         : undefined,
     },
-    select: { id: true, slug: true, name: true },
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      shared: true,
+      requireEmail: true,
+      expiresAt: true,
+      ctaEnabled: true,
+      chatEnabled: true,
+      followupsEnabled: true,
+    },
   });
   return { ...link, title };
 }
@@ -147,7 +157,14 @@ export async function followDocumentType(documentId: string, now = new Date()) {
       },
     });
     if (updated.count === 0) continue;
-    if (link.expiresAt?.getTime() !== expiresAt?.getTime()) await onLinkExpiryChanged(link.id, now);
+    if (link.expiresAt?.getTime() !== expiresAt?.getTime()) {
+      await onLinkExpiryChanged(link.id, now);
+      // A shared link's readers keep its deadline, unless the seller gave one of them their own
+      await prisma.link.updateMany({
+        where: { parentLinkId: link.id, archivedAt: null, expiresAt: link.expiresAt },
+        data: { expiresAt },
+      });
+    }
     changed += 1;
   }
   return changed;

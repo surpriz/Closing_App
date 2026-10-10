@@ -14,12 +14,20 @@ export function isPdfAttachment(attachment: AttachmentInfo | null | undefined) {
   return looksLikePdf({ name: attachment.name ?? "", type: attachment.contentType ?? "" });
 }
 
-export function firstRecipient(to: { emailAddress?: string; displayName?: string }[] | null | undefined): Recipient | null {
-  for (const entry of to ?? []) {
+type Addressee = { emailAddress?: string; displayName?: string };
+
+export function firstRecipient(to: Addressee[] | null | undefined): Recipient | null {
+  return allRecipients(to)[0] ?? null;
+}
+
+// Everyone the email goes to, To first then Cc, each once: all of them follow the deal
+export function allRecipients(...lists: (Addressee[] | null | undefined)[]): Recipient[] {
+  const found: Recipient[] = [];
+  for (const entry of lists.flatMap((list) => list ?? [])) {
     const recipient = toRecipient(entry.emailAddress ?? null, entry.displayName ?? null);
-    if (recipient) return recipient;
+    if (recipient && !found.some((r) => r.email === recipient.email)) found.push(recipient);
   }
-  return null;
+  return found;
 }
 
 export function base64ToBytes(base64: string) {
@@ -29,15 +37,22 @@ export function base64ToBytes(base64: string) {
   return bytes;
 }
 
-// Links inserted in this email, kept on the compose session for the send handler
-export type InsertedLink = { id: string; url: string };
+// Links inserted in this email, kept on the compose session for the send handler and the pane
+export type InsertedLink = { id: string; url: string; title?: string; summary?: string[]; manageUrl?: string };
 
 export function parseLinks(value: string | null | undefined): InsertedLink[] {
   try {
     const parsed = JSON.parse(value ?? "[]") as unknown;
-    return Array.isArray(parsed)
-      ? parsed.filter((link): link is InsertedLink => typeof link?.id === "string" && typeof link?.url === "string")
-      : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((link): link is InsertedLink => typeof link?.id === "string" && typeof link?.url === "string")
+      .map((link) => ({
+        id: link.id,
+        url: link.url,
+        title: typeof link.title === "string" ? link.title : undefined,
+        summary: Array.isArray(link.summary) ? link.summary.filter((item) => typeof item === "string") : undefined,
+        manageUrl: typeof link.manageUrl === "string" ? link.manageUrl : undefined,
+      }));
   } catch {
     return [];
   }

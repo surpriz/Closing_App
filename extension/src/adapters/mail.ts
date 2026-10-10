@@ -58,6 +58,12 @@ export function composeRoot(host: MailHost, body: HTMLElement) {
 
 // First address in the compose header, which is the first "To" recipient
 export function firstRecipient(host: MailHost, root: HTMLElement, body: HTMLElement): Recipient | null {
+  return allRecipients(host, root, body)[0] ?? null;
+}
+
+// Every address in the compose header, in order (To, then Cc), each once
+export function allRecipients(host: MailHost, root: HTMLElement, body: HTMLElement): Recipient[] {
+  const found: Recipient[] = [];
   const candidates = root.querySelectorAll<HTMLElement>(CONFIG[host].recipients);
   for (const el of Array.from(candidates)) {
     // Only the header: addresses typed in the message, or shown after it, don't count
@@ -71,9 +77,10 @@ export function firstRecipient(host: MailHost, root: HTMLElement, body: HTMLElem
       extractEmail((el as HTMLInputElement).value);
     if (!email) continue;
     const label = el.getAttribute("data-name") ?? el.getAttribute("name") ?? el.textContent;
-    return toRecipient(email, label && label.length < 200 ? label : null);
+    const recipient = toRecipient(email, label && label.length < 200 ? label : null);
+    if (recipient && !found.some((r) => r.email === recipient.email)) found.push(recipient);
   }
-  return null;
+  return found;
 }
 
 export function insertionAnchor(host: MailHost, body: HTMLElement) {
