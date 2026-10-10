@@ -29,7 +29,9 @@ import {
 import { PageTimeChart, type PageTimeDatum } from "@/components/dashboard/page-time-chart";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getAppOrigin } from "@/lib/app-origin";
+import { WelcomeMessage } from "@/components/dashboard/welcome-message";
 import { capsuleUploadPrefix } from "@/lib/blob";
+import { WELCOME_PAGE } from "@/lib/closing/capsules/resolve";
 import { getDocumentAnalytics } from "@/lib/closing/analytics";
 import { getLanguageModel } from "@/lib/closing/ai/provider";
 import { catchUpInBackground } from "@/lib/closing/catch-up";
@@ -147,6 +149,7 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
   const readerLabels = labelReaders(analytics.recentViews);
   const anonymousReaders = [...readerLabels.values()].some((label) => !label.identified);
   const ready = document.status === "READY";
+  const welcome = document.capsules.find((capsule) => capsule.pageNumber === WELCOME_PAGE);
   const isWeb = document.kind === "URL";
   const webHost = document.externalUrl ? new URL(document.externalUrl).hostname.replace(/^www\./, "") : null;
   const pendingFollowups = followups.filter((f) => ["PENDING", "DRAFT", "GENERATED", "SCHEDULED"].includes(f.status)).length;
@@ -257,8 +260,9 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
                   const prospect = link.prospects[0];
                   const url = `${origin}/v/${link.slug}`;
                   const score = link.engagementScore;
-                  const state =
-                    link.dealStatus !== "OPEN"
+                  const state = link.shared
+                    ? "Lien partagé"
+                    : link.dealStatus !== "OPEN"
                       ? DEAL_STATUS_LABELS[link.dealStatus]
                       : link.expiresAt && link.expiresAt <= now
                         ? "Expiré"
@@ -298,10 +302,12 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
                         </span>
                       </div>
                       <div className="relative z-10 flex items-center gap-3 pl-2">
-                        <label className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <span className="hidden md:inline">Relances</span>
-                          <LinkFollowupsToggle linkId={link.id} enabled={link.followupsEnabled} />
-                        </label>
+                        {!link.shared && (
+                          <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <span className="hidden md:inline">Relances</span>
+                            <LinkFollowupsToggle linkId={link.id} enabled={link.followupsEnabled} />
+                          </label>
+                        )}
                         <CopyButton value={url} />
                       </div>
                     </li>
@@ -313,6 +319,16 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
         </TabsContent>
 
         <TabsContent value="content" className="space-y-10">
+          <section>
+            <SectionTitle hint="vu par le prospect dès l'ouverture, sur tous les liens">Mot d&apos;accueil</SectionTitle>
+            <WelcomeMessage
+              documentId={document.id}
+              linkId={null}
+              documentWelcome={welcome ? { id: welcome.id, kind: welcome.kind, hookText: welcome.hookText, durationMs: welcome.durationMs, plays: welcome._count.plays } : null}
+              linkWelcome={null}
+              uploadPrefix={capsuleUploadPrefix(organization.id)}
+            />
+          </section>
           <section>
             <SectionTitle hint="décide du vocabulaire des étiquettes et de l'assistant">Type de document</SectionTitle>
             <DocumentTypeSelect

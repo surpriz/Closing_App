@@ -501,6 +501,9 @@ model Link {
   draftAt      DateTime?
   // Settings still come from the defaults: they follow the document type once the AI has read it
   autoSettings Boolean   @default(false)
+  // One link for many readers (a deck posted or forwarded): each reader gives their email and
+  // becomes a lead the seller can turn into a personal link. Never a deal of its own.
+  shared       Boolean   @default(false)
 
   prospects        Prospect[]
   views            DocumentView[]

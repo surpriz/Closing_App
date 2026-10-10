@@ -27,6 +27,8 @@ import { ExpiryControl } from "@/components/dashboard/expiry-control";
 import { LinkCapsules, type LinkCapsuleRow } from "@/components/dashboard/link-capsules";
 import { LinkSettingsDialog } from "@/components/dashboard/link-settings-form";
 import { ShareReady } from "@/components/dashboard/share-ready";
+import { SharedReaders, type SharedReader } from "@/components/dashboard/shared-readers";
+import { WelcomeMessage } from "@/components/dashboard/welcome-message";
 import { LinkTestTools } from "@/components/dashboard/link-test-tools";
 import { LiveActivity } from "@/components/dashboard/live-activity";
 import { MarkWonButton } from "@/components/dashboard/mark-won-button";
@@ -51,7 +53,7 @@ import { getReaderMap } from "@/lib/closing/committee/queries";
 import { canEditDeal } from "@/lib/closing/dashboard/queries";
 import { labelReaders } from "@/lib/closing/dashboard/readers";
 import { catchUpInBackground } from "@/lib/closing/catch-up";
-import { capsulesVisibleOnLink, resolveCapsules } from "@/lib/closing/capsules/resolve";
+import { capsulesVisibleOnLink, resolveCapsules, WELCOME_PAGE } from "@/lib/closing/capsules/resolve";
 import { freshEngagementScore } from "@/lib/closing/engagement/refresh-score";
 import { getLinkLiveState } from "@/lib/closing/live";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
@@ -214,6 +216,7 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
       ? actions.filter((a) => a.type === "REQUEST_EXTENSION" && a.createdAt >= link.expiresAt!).length
       : 0,
     isPdf: link.document.kind !== "URL",
+    shared: link.shared,
     canSaveDefaults: isManagerRole(workspace.role),
   };
 
@@ -248,7 +251,33 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
   const readerName = (view: { email: string | null; prospect: { name: string | null; email: string } | null }) =>
     view.prospect?.name ?? view.prospect?.email ?? view.email ?? "Le prospect";
   const voiceComments: VoiceCommentItem[] = voiceRows.map((row) => ({ ...row, reader: readerName(row.view) }));
-  const linkCapsules: LinkCapsuleRow[] = [...resolveCapsules(capsuleRows, link.id).values()].map((row) => ({
+  const capsuleSummary = (row: (typeof capsuleRows)[number]) => ({
+    id: row.id,
+    kind: row.kind,
+    hookText: row.hookText,
+    durationMs: row.durationMs,
+    plays: row._count.plays,
+  });
+  const welcomeRows = capsuleRows.filter((row) => row.pageNumber === WELCOME_PAGE);
+  const documentWelcomeRow = welcomeRows.find((row) => row.linkId === null);
+  const linkWelcomeRow = welcomeRows.find((row) => row.linkId === link.id);
+  const welcome = canEdit ? (
+    <WelcomeMessage
+      documentId={link.document.id}
+      // A shared link speaks to everyone: the document's message is the one
+      linkId={link.shared ? null : link.id}
+      documentWelcome={documentWelcomeRow ? capsuleSummary(documentWelcomeRow) : null}
+      linkWelcome={linkWelcomeRow ? capsuleSummary(linkWelcomeRow) : null}
+      uploadPrefix={capsuleUploadPrefix(organization.id)}
+    />
+  ) : null;
+  // Recorded before the welcome message: still played on their page, no longer created
+  const linkCapsules: LinkCapsuleRow[] = [
+    ...resolveCapsules(
+      capsuleRows.filter((row) => row.pageNumber !== WELCOME_PAGE),
+      link.id,
+    ).values(),
+  ].map((row) => ({
     id: row.id,
     pageNumber: row.pageNumber,
     kind: row.kind,
@@ -315,7 +344,10 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
       id: `capsule-${play.id}`,
       at: play.createdAt,
       kind: "capsule" as const,
-      title: `${readerName(play.view)} a regardé votre capsule page ${play.pageNumber}`,
+      title:
+        play.pageNumber === WELCOME_PAGE
+          ? `${readerName(play.view)} a regardé votre mot d'accueil`
+          : `${readerName(play.view)} a regardé votre capsule page ${play.pageNumber}`,
     })),
     ...followups
       .filter((f) => f.sentAt && f.status === "SENT")
@@ -357,6 +389,7 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
 
   const now = new Date();
   const signature = actions.find((action) => action.type === "VALIDATE_SIGN");
+  const sharedReaders: SharedReader[] = link.shared ? await loadSharedReaders(link, now) : [];
   const contactLine = [mainProspect?.company ? mainProspect.name : null, mainProspect?.email]
     .filter(Boolean)
     .join(", ");
@@ -376,6 +409,8 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
           signature={settings.senderSignature}
           processing={reading}
           summary={settingsSummary(link, now)}
+          shared={link.shared}
+          welcome={welcome}
           notice={
             link.autoSettings && link.expiresAt && showsCountdown(link.document.docType)
               ? `Reconnu comme « ${DOC_TYPE_LABELS[link.document.docType as DocType]} » : le prospect a jusqu'au ${formatDate(link.expiresAt)} et voit le décompte.`
@@ -412,7 +447,7 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
           </div>
           {canEdit ? (
             <div className="flex flex-wrap items-center gap-2">
-              <DealStatusSelect linkId={link.id} status={link.dealStatus} />
+              {!link.shared && <DealStatusSelect linkId={link.id} status={link.dealStatus} />}
               <LinkSettingsDialog name={link.name ?? ""} {...settingsPanel} />
               <ArchiveLinkButton linkId={link.id} />
             </div>
@@ -592,9 +627,16 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
               </section>
             )}
 
-            {link.document.kind !== "URL" && (canEdit || linkCapsules.length > 0) && (
+            {!sharing && welcome && (
+              <section id="mot-accueil" className="scroll-mt-20">
+                <SectionTitle hint="le prospect le voit dès l'ouverture">Mot d&apos;accueil</SectionTitle>
+                <Surface className="px-4 py-3">{welcome}</Surface>
+              </section>
+            )}
+
+            {linkCapsules.length > 0 && (
               <section id="capsules" className="scroll-mt-20">
-                <SectionTitle hint="vos explications en vidéo, page par page">Capsules</SectionTitle>
+                <SectionTitle hint="enregistrées avant le mot d'accueil">Capsules par page</SectionTitle>
                 <Surface className="px-4 py-3">
                   <LinkCapsules
                     documentId={link.document.id}
@@ -640,6 +682,14 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
               <ReadersMap linkId={link.id} map={readerMap} now={now} />
             </section>
 
+            {link.shared ? (
+              <section id="lecteurs" className="scroll-mt-20">
+                <SectionTitle hint="chacun a donné son email">Lecteurs</SectionTitle>
+                <Surface>
+                  <SharedReaders linkId={link.id} readers={sharedReaders} canEdit={canEdit} />
+                </Surface>
+              </section>
+            ) : (
             <section>
               <SectionTitle hint="reçoivent les relances">Contacts</SectionTitle>
             <Surface>
@@ -684,6 +734,7 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
               </div>
             </Surface>
             </section>
+            )}
 
             <section>
               <SectionTitle hint="votre équipe le voit, pas le prospect">Le deal</SectionTitle>
@@ -732,10 +783,25 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
 
 /** The share screen's one-line recap: what the prospect will meet. */
 function settingsSummary(
-  link: { requireEmail: boolean; expiresAt: Date | null; ctaEnabled: boolean; chatEnabled: boolean; followupsEnabled: boolean },
+  link: {
+    shared: boolean;
+    requireEmail: boolean;
+    expiresAt: Date | null;
+    ctaEnabled: boolean;
+    chatEnabled: boolean;
+    followupsEnabled: boolean;
+  },
   now: Date,
 ) {
   const days = link.expiresAt ? Math.max(0, Math.ceil((link.expiresAt.getTime() - now.getTime()) / 86_400_000)) : null;
+  if (link.shared) {
+    return [
+      "Lien partagé",
+      "Chaque lecteur donne son email",
+      days === null ? "Sans expiration" : `Expire dans ${days} j`,
+      link.chatEnabled ? "Assistant IA" : null,
+    ].filter((item): item is string => !!item);
+  }
   return [
     link.requireEmail ? "Email demandé" : "Ouverture libre",
     days === null ? "Sans expiration" : `Expire dans ${days} j`,
@@ -743,4 +809,35 @@ function settingsSummary(
     link.chatEnabled ? "Assistant IA" : null,
     link.followupsEnabled ? "Relances auto" : "Sans relance",
   ].filter((item): item is string => !!item);
+}
+
+/** Readers of a shared link, most recent first, with the personal link made for each one if any. */
+async function loadSharedReaders(
+  link: { id: string; documentId: string; prospects: { id: string; email: string; name: string | null; company: string | null; lastSeenAt: Date | null; createdAt: Date }[] },
+  now: Date,
+): Promise<SharedReader[]> {
+  const readers = [...link.prospects].sort(
+    (a, b) => (b.lastSeenAt ?? b.createdAt).getTime() - (a.lastSeenAt ?? a.createdAt).getTime(),
+  );
+  const personal = await prisma.link.findMany({
+    where: {
+      documentId: link.documentId,
+      shared: false,
+      archivedAt: null,
+      prospects: { some: { email: { in: readers.map((r) => r.email) } } },
+    },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, prospects: { select: { email: true } } },
+  });
+  const linkByEmail = new Map<string, string>();
+  for (const row of personal) for (const p of row.prospects) if (!linkByEmail.has(p.email)) linkByEmail.set(p.email, row.id);
+
+  return readers.map((reader) => ({
+    id: reader.id,
+    email: reader.email,
+    name: reader.name,
+    company: reader.company,
+    seen: reader.lastSeenAt ? `lu ${formatRelative(reader.lastSeenAt, now)}` : null,
+    personalLinkId: linkByEmail.get(reader.email) ?? null,
+  }));
 }

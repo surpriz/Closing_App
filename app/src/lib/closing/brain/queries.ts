@@ -127,6 +127,7 @@ export async function loadDealForAnalysis(linkId: string, now: Date) {
       dealStatus: link.dealStatus,
       archivedAt: link.archivedAt,
       expiresAt: link.expiresAt,
+      shared: link.shared,
       // Context the seller can change: a change means a fresh analysis
       contextKey: JSON.stringify([
         link.decisionMakerName,

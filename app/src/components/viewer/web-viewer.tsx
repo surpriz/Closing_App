@@ -8,6 +8,7 @@ import type { SupportedLocale } from "@/lib/closing/constants";
 import type { ViewerLabels } from "@/lib/closing/i18n/viewer";
 
 import { ChatWidget, type ChatWidgetData } from "./chat-widget";
+import { CapsuleBubble, type ViewerCapsule } from "./capsule-bubble";
 import { CtaBar } from "./cta-bar";
 import { ExpiryChip } from "./expiry-countdown";
 import { PrivacyNotice } from "./privacy-notice";
@@ -31,6 +32,8 @@ type Props = {
   chat: ChatWidgetData | null;
   /** Quotes with a deadline: no pages here, the countdown goes in the header. */
   countdown?: boolean;
+  /** The seller's welcome message, if any: a web page has no pages to hang clips on. */
+  welcome: ViewerCapsule | null;
 };
 
 // URL documents (Notion, Loom, Figma...) are tracked as a single page
@@ -47,6 +50,7 @@ export function WebViewer({
   locale,
   chat,
   countdown,
+  welcome,
 }: Props) {
   const { getViewId } = usePageTracking(slug, 1, { embedded: true, countTime: !!embedUrl });
 
@@ -117,6 +121,15 @@ export function WebViewer({
           signerName={signerName}
         />
       )}
+
+      <CapsuleBubble
+        capsule={welcome}
+        slug={slug}
+        labels={labels}
+        senderName={senderName}
+        getViewId={getViewId}
+        ctaVisible={ctaEnabled}
+      />
 
       {chat && (
         <ChatWidget

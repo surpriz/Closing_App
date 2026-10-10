@@ -11,7 +11,10 @@ import { actOnInsight } from "@/lib/closing/brain/act";
 import { analyzeDeal } from "@/lib/closing/brain/analyze-deal";
 import { refreshEngagementScore } from "@/lib/closing/engagement/refresh-score";
 import { editableLinks } from "@/lib/closing/dashboard/queries";
-import { confirmLinkSent } from "@/lib/closing/documents/create-link";
+import { confirmLinkSent, createDocumentLink } from "@/lib/closing/documents/create-link";
+import { linkDefaultsFor, SHARED_LINK_SETTINGS } from "@/lib/closing/documents/smart-defaults";
+import { getSellerPrefs, sellerTimezone } from "@/lib/closing/notify/preferences";
+import { getWorkspaceSettings } from "@/lib/closing/settings";
 import { EXTENSION_DAYS, expiryError, extendExpiry, reactivates } from "@/lib/closing/expiry";
 import { cancelOpenFollowups, isUniqueViolation } from "@/lib/closing/followups/queue";
 import { prospectFromRecipient } from "@/lib/closing/prospects/from-recipient";
@@ -31,7 +34,7 @@ async function requireOwnedLink(linkId: string) {
   const workspace = await requireWorkspace();
   const link = await prisma.link.findFirst({
     where: { id: linkId, organizationId: workspace.organization.id, ...editableLinks(workspace) },
-    select: { id: true, documentId: true, expiresAt: true },
+    select: { id: true, documentId: true, expiresAt: true, shared: true, organizationId: true },
   });
   if (!link) throw new Error("Lien introuvable");
   return link;
@@ -126,6 +129,11 @@ export type LinkSwitch = (typeof LINK_SWITCHES)[number];
 export async function setLinkSwitch(linkId: string, key: LinkSwitch, value: boolean) {
   const link = await requireOwnedLink(linkId);
   const field = z.enum(LINK_SWITCHES).parse(key);
+  // A shared link without the email gate would be anonymous reads, the very thing it is for; its
+  // readers never asked to be followed up nor have anything to accept
+  if (link.shared && (field === "requireEmail" ? !value : (field === "ctaEnabled" || field === "followupsEnabled") && value)) {
+    return { error: "Pas sur un lien partagé : créez un lien perso pour ce lecteur." };
+  }
   await prisma.link.update({
     where: { id: link.id },
     // Per-link rule overrides belong to the rule engine the analysis replaced: back to the defaults
@@ -155,6 +163,74 @@ export async function renameLink(linkId: string, name: string) {
   return { ok: true };
 }
 
+/**
+ * "Une personne" / "Plusieurs personnes" on the share screen. Back to personal,
+ * the link takes the usual settings of its document type again.
+ */
+export async function setLinkShared(linkId: string, shared: boolean) {
+  const link = await requireOwnedLink(linkId);
+  if (link.shared === shared) return { ok: true };
+  if (shared) {
+    // Only a fresh link: one already read or answered is a deal under way
+    const [named, read, current] = await Promise.all([
+      prisma.prospect.count({ where: { linkId: link.id, origin: "SELLER" } }),
+      prisma.documentView.count({ where: { linkId: link.id, isBot: false } }),
+      prisma.link.findUniqueOrThrow({ where: { id: link.id }, select: { dealStatus: true } }),
+    ]);
+    if (named > 0 || read > 0 || current.dealStatus !== "OPEN") {
+      return { error: "Ce lien est déjà pour un contact : créez un nouveau lien pour le partager." };
+    }
+  }
+
+  const { user } = await requireWorkspace();
+  const [document, settings, prefs] = await Promise.all([
+    prisma.document.findUniqueOrThrow({ where: { id: link.documentId }, select: { docType: true } }),
+    getWorkspaceSettings(link.organizationId),
+    getSellerPrefs(user.id, link.organizationId),
+  ]);
+  const personal = linkDefaultsFor(document.docType, settings, new Date(), sellerTimezone(prefs), { allowShared: false });
+  await prisma.link.update({
+    where: { id: link.id },
+    data: shared
+      ? { ...SHARED_LINK_SETTINGS, autoSettings: false }
+      : {
+          shared: false,
+          requireEmail: personal.requireEmail,
+          ctaEnabled: personal.ctaEnabled,
+          followupsEnabled: personal.followupsEnabled,
+          autoSettings: false,
+        },
+  });
+  if (shared) await cancelOpenFollowups(link.id, "Lien partagé : pas de relance automatique");
+  revalidateLink(link);
+  return { ok: true };
+}
+
+/**
+ * A reader of a shared link looks interested: their own personal link, with
+ * them as the contact, ready on the share screen. The shared link stays as is.
+ */
+export async function promoteReader(linkId: string, prospectId: string): Promise<{ linkId: string } | { error: string }> {
+  const link = await requireOwnedLink(linkId);
+  const { user } = await requireWorkspace();
+  const reader = await prisma.prospect.findFirst({
+    where: { id: prospectId, linkId: link.id },
+    select: { email: true, name: true, company: true },
+  });
+  if (!reader) return { error: "Lecteur introuvable." };
+
+  const created = await createDocumentLink({
+    organizationId: link.organizationId,
+    userId: user.id,
+    documentId: link.documentId,
+    prospect: reader,
+    draft: true,
+  });
+  if (!created) return { error: "Document introuvable." };
+  revalidateLink(link);
+  return { linkId: created.id };
+}
+
 /** "Copier" or "Envoyer par email" on the share screen: the draft becomes a deal. */
 export async function markLinkSent(linkId: string) {
   const { organization } = await requireWorkspace();
@@ -166,6 +242,8 @@ export async function markLinkSent(linkId: string) {
 /** The "Pour qui ?" field: an address adds the contact, a name only labels the link. */
 export async function setLinkRecipient(linkId: string, raw: string): Promise<LinkFormState> {
   const link = await requireOwnedLink(linkId);
+  // Its readers come through the gate: a named contact would be greeted to every one of them
+  if (link.shared) return { error: "Un lien partagé n'a pas de destinataire : passez-le en « Une personne »." };
   const { email, label } = parseShareRecipient(raw);
   if (!email && !label) return { error: "Indiquez un email ou un nom." };
 
@@ -191,6 +269,8 @@ export async function saveAsWorkspaceDefaults(linkId: string) {
   const link = await requireOwnedLink(linkId);
   const { organization, role } = await requireWorkspace();
   if (!isManagerRole(role)) return { error: "Seuls les admins changent les réglages par défaut." };
+  // A shared link's settings are forced, not chosen: they would turn follow-ups off for every new link
+  if (link.shared) return { error: "Un lien partagé a ses propres réglages." };
 
   const current = await prisma.link.findUniqueOrThrow({
     where: { id: link.id },

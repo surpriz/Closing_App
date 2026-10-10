@@ -17,9 +17,14 @@ const MAX_NEW_READER_PUSHES_PER_DAY = 3;
 export async function evaluateReaders(viewId: string, now = new Date()) {
   const view = await prisma.documentView.findUnique({
     where: { id: viewId },
-    select: { linkId: true, isBot: true, link: { select: { organizationId: true, dealStatus: true, archivedAt: true } } },
+    select: {
+      linkId: true,
+      isBot: true,
+      link: { select: { organizationId: true, dealStatus: true, archivedAt: true, shared: true } },
+    },
   });
-  if (!view || view.isBot || view.link.archivedAt) return false;
+  // Many readers is the point of a shared link, not a committee
+  if (!view || view.isBot || view.link.archivedAt || view.link.shared) return false;
   if (view.link.dealStatus === "WON" || view.link.dealStatus === "LOST") return false;
 
   const [settings, map] = await Promise.all([getWorkspaceSettings(view.link.organizationId), getReaderMap(view.linkId, now)]);

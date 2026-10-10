@@ -5,9 +5,9 @@ import { z } from "zod";
 
 import { capsuleUploadPrefix, deletePrivateBlob, headPrivateBlob } from "@/lib/blob";
 import { inBackground } from "@/lib/closing/background";
-import { capsuleScopeKey } from "@/lib/closing/capsules/resolve";
+import { capsuleScopeKey, WELCOME_PAGE } from "@/lib/closing/capsules/resolve";
 import { editableLinks } from "@/lib/closing/dashboard/queries";
-import { CAPSULE_HOOK_MAX } from "@/lib/closing/media/limits";
+import { CAPSULE_HOOK_MAX, CAPSULE_MAX_MS } from "@/lib/closing/media/limits";
 import { baseMime } from "@/lib/closing/media/mime";
 import { validateMedia, type MediaError } from "@/lib/closing/media/validate";
 import { prisma } from "@/lib/db";
@@ -19,7 +19,7 @@ const MEDIA_ERRORS: Record<MediaError, string> = {
   type: "Ce format n'est pas pris en charge.",
   too_large: "L'enregistrement est trop lourd.",
   empty: "L'enregistrement est vide.",
-  too_long: "L'enregistrement dépasse 30 secondes.",
+  too_long: `L'enregistrement dépasse ${CAPSULE_MAX_MS / 1000} secondes.`,
 };
 
 const hookSchema = z
@@ -57,7 +57,8 @@ function revalidateCapsule(documentId: string, linkId: string | null) {
 const saveSchema = z.object({
   documentId: z.string().min(1).max(64),
   linkId: z.string().min(1).max(64).nullable(),
-  pageNumber: z.number().int().min(1),
+  // WELCOME_PAGE (0) for the whole document
+  pageNumber: z.number().int().min(0),
   kind: z.enum(["VIDEO", "AUDIO"]),
   pathname: z.string().min(1).max(512),
   durationMs: z.number().int().min(1),
@@ -74,7 +75,8 @@ export async function saveCapsule(input: z.input<typeof saveSchema>): Promise<Ca
   if (!pathname.startsWith(capsuleUploadPrefix(workspace.organization.id))) return { error: "Enregistrement invalide." };
   const discard = () => inBackground("capsule-discard", () => deletePrivateBlob(pathname));
 
-  if (document.kind !== "FILE" || pageNumber > (document.numPages ?? 0)) {
+  // The welcome message fits any document, a web link included; a page needs a PDF that has it
+  if (pageNumber !== WELCOME_PAGE && (document.kind !== "FILE" || pageNumber > (document.numPages ?? 0))) {
     discard();
     return { error: "Cette page n'existe pas." };
   }

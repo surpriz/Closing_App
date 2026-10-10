@@ -1,14 +1,14 @@
-/** Longest clip, cut by the recorder and checked again by the server. */
-export const CAPSULE_MAX_MS = 30_000;
+/** Longest clip, cut by the recorder and checked again by the server: time to introduce a whole document. */
+export const CAPSULE_MAX_MS = 90_000;
 export const VOICE_COMMENT_MAX_MS = 60_000;
 
-/** Recorder bitrates: ~4 MB for a 30 s video, ~0.5 MB for a 60 s voice comment. */
+/** Recorder bitrates: ~11 MB for a 90 s video, ~0.5 MB for a 60 s voice comment. */
 export const VIDEO_BITS_PER_SECOND = 1_000_000;
 export const AUDIO_BITS_PER_SECOND = 64_000;
 
 /** Upload ceilings, with room above the bitrates (browsers overshoot). */
-export const CAPSULE_VIDEO_MAX_BYTES = 12 * 1024 * 1024;
-export const CAPSULE_AUDIO_MAX_BYTES = 2 * 1024 * 1024;
+export const CAPSULE_VIDEO_MAX_BYTES = 32 * 1024 * 1024;
+export const CAPSULE_AUDIO_MAX_BYTES = 4 * 1024 * 1024;
 export const VOICE_COMMENT_MAX_BYTES = 1.5 * 1024 * 1024;
 
 /** "Sur cette partie, laisse-moi t'expliquer…" shown next to the bubble. */

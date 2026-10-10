@@ -27,11 +27,17 @@ export function PageCapsuleControl({
   target,
   capsule,
   inherited,
+  addLabel,
+  legacy,
 }: {
   target: CapsuleTarget;
   capsule: CapsuleSummary | null;
   /** Link page: the document's capsule shows here until the seller records one for this link. */
   inherited?: boolean;
+  /** Button when there is nothing to show yet, or a version for one link. */
+  addLabel?: string;
+  /** A page capsule from before the welcome message: it can go, not be re-recorded. */
+  legacy?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -44,7 +50,7 @@ export function PageCapsuleControl({
     return (
       <>
         <Button size="xs" variant="outline" onClick={() => setOpen(true)}>
-          <Video /> {inherited ? "Capsule pour ce prospect" : "Ajouter une capsule"}
+          <Video /> {addLabel ?? (inherited ? "Capsule pour ce prospect" : "Ajouter une capsule")}
         </Button>
         {dialog}
       </>
@@ -56,7 +62,7 @@ export function PageCapsuleControl({
       const result = await deleteCapsule(capsule.id);
       if ("error" in result) toast.error(result.error);
       else {
-        toast.success(target.linkId ? "Capsule retirée, celle du document reprend." : "Capsule supprimée");
+        toast.success(target.linkId ? "Version perso retirée, celle du document reprend." : "Supprimé");
         router.refresh();
       }
     });
@@ -72,9 +78,11 @@ export function PageCapsuleControl({
         </p>
       </div>
       <div className="flex gap-1">
-        <Button size="xs" variant="ghost" onClick={() => setOpen(true)}>
-          <Pencil /> Remplacer
-        </Button>
+        {!legacy && (
+          <Button size="xs" variant="ghost" onClick={() => setOpen(true)}>
+            <Pencil /> Remplacer
+          </Button>
+        )}
         <Button size="xs" variant="ghost" disabled={pending} onClick={remove} aria-label="Supprimer la capsule">
           <Trash2 />
         </Button>

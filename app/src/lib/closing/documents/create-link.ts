@@ -42,7 +42,10 @@ export async function createDocumentLink(input: {
   const { prospect } = input;
   const title = linkTitle({ ...document, company: prospect?.company });
   const now = new Date();
-  const defaults = linkDefaultsFor(document.docType, settings, now, timeZone);
+  // Sent to someone (a contact, an email from the extension): never a shared link
+  const defaults = linkDefaultsFor(document.docType, settings, now, timeZone, {
+    allowShared: !prospect && !input.source,
+  });
   const autoSettings = input.requireEmail === undefined && input.expiresAt === undefined;
   const link = await prisma.link.create({
     data: {
@@ -57,6 +60,7 @@ export async function createDocumentLink(input: {
       voiceCommentsEnabled: defaults.voiceCommentsEnabled,
       followupsEnabled: defaults.followupsEnabled,
       ctaEnabled: defaults.ctaEnabled,
+      shared: defaults.shared,
       autoSettings,
       sentAt: input.draft ? null : now,
       draftAt: input.draft ? now : null,
@@ -76,12 +80,13 @@ export async function createDocumentLink(input: {
   return { ...link, title };
 }
 
-async function defaultExpiry(docType: string | null, organizationId: string, userId: string | null, now: Date) {
+/** The defaults of a personal link of this type, as of `now`. */
+async function linkDefaultsAt(docType: string | null, organizationId: string, userId: string | null, now: Date) {
   const [settings, timeZone] = await Promise.all([
     getWorkspaceSettings(organizationId),
     userId ? sellerTimeZone(userId, organizationId) : defaultTimezone(),
   ]);
-  return linkDefaultsFor(docType, settings, now, timeZone).expiresAt;
+  return linkDefaultsFor(docType, settings, now, timeZone, { allowShared: false });
 }
 
 async function sellerTimeZone(userId: string, organizationId: string) {
@@ -102,7 +107,15 @@ export async function followDocumentType(documentId: string, now = new Date()) {
       links: {
         // Never read: a prospect who opened it must not see the terms move
         where: { autoSettings: true, archivedAt: null, lastActivityAt: null, views: { none: { isBot: false } } },
-        select: { id: true, createdById: true, expiresAt: true, ctaEnabled: true },
+        select: {
+          id: true,
+          createdById: true,
+          source: true,
+          expiresAt: true,
+          ctaEnabled: true,
+          shared: true,
+          _count: { select: { prospects: { where: { origin: "SELLER" } } } },
+        },
       },
     },
   });
@@ -114,13 +127,24 @@ export async function followDocumentType(documentId: string, now = new Date()) {
     const timeZone = link.createdById
       ? await sellerTimeZone(link.createdById, document.organizationId)
       : defaultTimezone();
-    const { expiresAt, ctaEnabled } = linkDefaultsFor(document.docType, settings, now, timeZone);
-    if (link.expiresAt?.getTime() === expiresAt?.getTime() && link.ctaEnabled === ctaEnabled) continue;
+    const defaults = linkDefaultsFor(document.docType, settings, now, timeZone, {
+      allowShared: !link.source && link._count.prospects === 0,
+    });
+    const { expiresAt, ctaEnabled, shared } = defaults;
+    const same =
+      link.expiresAt?.getTime() === expiresAt?.getTime() && link.ctaEnabled === ctaEnabled && link.shared === shared;
+    if (same) continue;
 
     // Only if the seller has not touched them in the meantime
+    // Only if nothing changed in the meantime: the seller's own settings, a contact, the mode
     const updated = await prisma.link.updateMany({
-      where: { id: link.id, autoSettings: true },
-      data: { expiresAt, ctaEnabled },
+      where: { id: link.id, autoSettings: true, shared: link.shared, prospects: { none: { origin: "SELLER" } } },
+      data: {
+        expiresAt,
+        ctaEnabled,
+        shared,
+        ...(shared !== link.shared && { requireEmail: defaults.requireEmail, followupsEnabled: defaults.followupsEnabled }),
+      },
     });
     if (updated.count === 0) continue;
     if (link.expiresAt?.getTime() !== expiresAt?.getTime()) await onLinkExpiryChanged(link.id, now);
@@ -145,6 +169,7 @@ export async function confirmLinkSent(input: {
       draftAt: true,
       name: true,
       autoSettings: true,
+      shared: true,
       createdById: true,
       document: { select: { docType: true } },
       prospects: { select: { id: true }, take: 1 },
@@ -156,16 +181,26 @@ export async function confirmLinkSent(input: {
   const { prospect } = input;
   const addProspect = prospect && link.prospects.length === 0;
   const sentAt = input.sentAt ?? new Date();
-  // A default deadline runs from the send, not from the day the file was dropped
-  const expiresAt = link.autoSettings
-    ? await defaultExpiry(link.document.docType, input.organizationId, link.createdById, sentAt)
-    : undefined;
+  // Sent to someone in particular: a shared draft becomes their personal link
+  const personal = addProspect && link.shared;
+  const defaults =
+    link.autoSettings || personal
+      ? await linkDefaultsAt(link.document.docType, input.organizationId, link.createdById, sentAt)
+      : null;
   return prisma.link.update({
     where: { id: link.id },
     data: {
       draftAt: null,
       sentAt,
-      ...(expiresAt !== undefined && { expiresAt }),
+      // A default deadline runs from the send, not from the day the file was dropped
+      ...(defaults && link.autoSettings && { expiresAt: defaults.expiresAt }),
+      ...(defaults &&
+        personal && {
+          shared: false,
+          requireEmail: defaults.requireEmail,
+          ctaEnabled: defaults.ctaEnabled,
+          followupsEnabled: defaults.followupsEnabled,
+        }),
       // The draft was named after the document; the recipient is a better deal name
       ...(addProspect && { name: prospect.company || prospect.name || prospect.email }),
       ...(addProspect && {

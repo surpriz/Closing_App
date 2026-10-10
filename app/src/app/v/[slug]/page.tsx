@@ -12,7 +12,7 @@ import { LinkExpired } from "@/components/viewer/link-expired";
 import { PdfViewer } from "@/components/viewer/pdf-viewer";
 import { WebViewer } from "@/components/viewer/web-viewer";
 import { getLanguageModel } from "@/lib/closing/ai/provider";
-import { capsulesVisibleOnLink, resolveCapsules } from "@/lib/closing/capsules/resolve";
+import { capsulesVisibleOnLink, resolveCapsules, WELCOME_PAGE } from "@/lib/closing/capsules/resolve";
 import { suggestQuestions, toUIMessages } from "@/lib/closing/chat/messages";
 import { loadChatSetup } from "@/lib/closing/chat/queries";
 import { extensionRequestKey, showsCountdown } from "@/lib/closing/expiry";
@@ -154,6 +154,8 @@ export default async function ViewerPage({ params, searchParams }: PageProps<"/v
       viewer
     );
 
+  const capsules = await loadCapsules(slug, link);
+
   if (link.document.kind === "URL" && link.document.externalUrl) {
     return (
       <>
@@ -172,6 +174,7 @@ export default async function ViewerPage({ params, searchParams }: PageProps<"/v
             locale={locale}
             chat={chat}
             countdown={!!link.expiresAt && countdown}
+            welcome={capsules.find((capsule) => capsule.pageNumber === WELCOME_PAGE) ?? null}
           />,
         )}
       </>
@@ -187,7 +190,6 @@ export default async function ViewerPage({ params, searchParams }: PageProps<"/v
           })
         ).map((page) => page.pageNumber)
       : null;
-  const capsules = await loadCapsules(slug, link);
 
   return (
     <>
@@ -239,7 +241,10 @@ async function alreadyRequestedExtension(link: ViewerLink, email: string | null)
 }
 
 /** The seller's clip for each page: this link's own, or the document's. */
-async function loadCapsules(slug: string, link: { id: string; documentId: string }): Promise<ViewerCapsule[]> {
+async function loadCapsules(
+  slug: string,
+  link: { id: string; documentId: string; shared: boolean },
+): Promise<ViewerCapsule[]> {
   const rows = await prisma.pageCapsule.findMany({
     where: capsulesVisibleOnLink(link),
     select: { id: true, pageNumber: true, linkId: true, kind: true, hookText: true },

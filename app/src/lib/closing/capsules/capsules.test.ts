@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { addDismissed, parseDismissed } from "./dismissal";
-import { resolveCapsules } from "./resolve";
+import { capsulesVisibleOnLink, resolveCapsules } from "./resolve";
 
 describe("resolveCapsules", () => {
   const rows = [
@@ -37,5 +37,18 @@ describe("dismissed capsules", () => {
   it("adds each id once", () => {
     expect(addDismissed(["a"], "a")).toEqual(["a"]);
     expect(addDismissed(["a"], "b")).toEqual(["a", "b"]);
+  });
+});
+
+describe("capsulesVisibleOnLink", () => {
+  it("shows a personal link its own clips and the document's", () => {
+    expect(capsulesVisibleOnLink({ id: "l1", documentId: "d1" })).toEqual({
+      documentId: "d1",
+      OR: [{ linkId: null }, { linkId: "l1" }],
+    });
+  });
+
+  it("shows a shared link the document's clips only", () => {
+    expect(capsulesVisibleOnLink({ id: "l1", documentId: "d1", shared: true })).toEqual({ documentId: "d1", linkId: null });
   });
 });

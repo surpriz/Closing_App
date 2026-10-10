@@ -48,9 +48,15 @@ async function signal(linkId: string, viewId: string, facts: CallMomentFacts, no
 export async function evaluateHotLead(viewId: string, resumed: boolean, now = new Date()) {
   const view = await prisma.documentView.findUnique({
     where: { id: viewId },
-    select: { id: true, linkId: true, isBot: true, link: { select: { organizationId: true, dealStatus: true, archivedAt: true } } },
+    select: {
+      id: true,
+      linkId: true,
+      isBot: true,
+      link: { select: { organizationId: true, dealStatus: true, archivedAt: true, shared: true } },
+    },
   });
-  if (!view || view.isBot || view.link.archivedAt) return;
+  // A shared link is read by many by design: its readers show on its page, not as calls to make
+  if (!view || view.isBot || view.link.archivedAt || view.link.shared) return;
   if (view.link.dealStatus === "WON" || view.link.dealStatus === "LOST") return;
   if (await alreadySignaled(view.linkId, now)) return;
 
@@ -115,13 +121,14 @@ export async function evaluatePricingCallMoment(viewId: string, now = new Date()
           organizationId: true,
           dealStatus: true,
           archivedAt: true,
+          shared: true,
           hotPricingThresholdSec: true,
           document: { select: { pages: { where: { tags: { has: "PRICING" } }, select: { pageNumber: true } } } },
         },
       },
     },
   });
-  if (!view || view.isBot || view.leftAt || view.link.archivedAt) return;
+  if (!view || view.isBot || view.leftAt || view.link.archivedAt || view.link.shared) return;
   if (view.link.dealStatus !== "OPEN" && view.link.dealStatus !== "CHANGE_REQUESTED") return;
   const pricingPages = view.link.document.pages.map((p) => p.pageNumber);
   if (pricingPages.length === 0) return;

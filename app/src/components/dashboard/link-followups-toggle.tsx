@@ -19,7 +19,8 @@ export function LinkFollowupsToggle({ linkId, enabled }: { linkId: string; enabl
         startTransition(async () => {
           setOptimistic(checked);
           try {
-            await toggleLinkFollowups(linkId, checked);
+            const result = await toggleLinkFollowups(linkId, checked);
+            if (result?.error) return void toast.error(result.error);
             toast.success(checked ? "Relances activées" : "Relances désactivées, relances en attente annulées");
           } catch {
             toast.error("Modification impossible");

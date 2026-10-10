@@ -58,6 +58,8 @@ export async function getOpenDeals(
       organizationId,
       archivedAt: null,
       draftAt: null,
+      // A shared link is a source of leads, not a deal
+      shared: false,
       dealStatus: { in: scope.withValidated ? ["OPEN", "CHANGE_REQUESTED", "VALIDATED"] : ["OPEN", "CHANGE_REQUESTED"] },
       ...(scope.owner && sellerLinks(scope.owner)),
     },

@@ -18,10 +18,19 @@ describe("linkDefaultsFor", () => {
     expect(defaults.expiresAt?.toISOString()).toBe("2026-10-25T22:59:00.000Z");
   });
 
-  it("keeps a brochure open-ended and without the button", () => {
-    const defaults = linkDefaultsFor("BROCHURE", workspace, now, "Europe/Paris");
-    expect(defaults.ctaEnabled).toBe(false);
+  it("shares a brochure: one link, every reader identified, nothing to accept", () => {
+    const defaults = linkDefaultsFor("BROCHURE", { ...workspace, requireEmailByDefault: false }, now, "Europe/Paris");
+    expect(defaults).toMatchObject({ shared: true, requireEmail: true, ctaEnabled: false, followupsEnabled: false });
     expect(defaults.expiresAt).toBeNull();
+  });
+
+  it("keeps a brochure personal once it is for someone", () => {
+    const defaults = linkDefaultsFor("BROCHURE", workspace, now, "Europe/Paris", { allowShared: false });
+    expect(defaults).toMatchObject({ shared: false, ctaEnabled: false, followupsEnabled: true });
+  });
+
+  it("keeps a quote personal", () => {
+    expect(linkDefaultsFor("QUOTE", workspace, now, "Europe/Paris").shared).toBe(false);
   });
 
   it("lets a contract be validated without a countdown", () => {
@@ -33,6 +42,7 @@ describe("linkDefaultsFor", () => {
   it("stays on the workspace values while the type is unknown", () => {
     const defaults = linkDefaultsFor(null, workspace, now, "Europe/Paris");
     expect(defaults).toEqual({
+      shared: false,
       requireEmail: true,
       chatEnabled: true,
       voiceCommentsEnabled: false,

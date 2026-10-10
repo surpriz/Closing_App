@@ -12,11 +12,12 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import type { CapsuleKind } from "@/generated/prisma/enums";
+import { WELCOME_PAGE } from "@/lib/closing/capsules/resolve";
 import { CAPSULE_HOOK_MAX, CAPSULE_MAX_MS } from "@/lib/closing/media/limits";
 import { baseMime, extensionFor } from "@/lib/closing/media/mime";
 import { cn } from "@/lib/utils";
 
-/** Where a capsule goes: a page of a document, for every link (linkId null) or one. */
+/** Where a capsule goes: the document (WELCOME_PAGE) or one of its pages, for every link (linkId null) or one. */
 export type CapsuleTarget = {
   documentId: string;
   linkId: string | null;
@@ -47,11 +48,23 @@ export function CapsuleRecorderDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Capsule de la page {target.pageNumber}</DialogTitle>
-          <DialogDescription>
-            {CAPSULE_MAX_MS / 1000} secondes pour expliquer cette page de vive voix. Le prospect la voit apparaître dans une
-            bulle quand il arrive ici.
-          </DialogDescription>
+          {target.pageNumber === WELCOME_PAGE ? (
+            <>
+              <DialogTitle>{target.linkId ? "Mot d'accueil pour ce prospect" : "Mot d'accueil"}</DialogTitle>
+              <DialogDescription>
+                Jusqu&apos;à {CAPSULE_MAX_MS / 1000} secondes pour présenter le document de vive voix. Le prospect voit
+                votre bulle dès l&apos;ouverture, sur toutes les pages.
+              </DialogDescription>
+            </>
+          ) : (
+            <>
+              <DialogTitle>Capsule de la page {target.pageNumber}</DialogTitle>
+              <DialogDescription>
+                {CAPSULE_MAX_MS / 1000} secondes pour expliquer cette page de vive voix. Le prospect la voit apparaître
+                dans une bulle quand il arrive ici.
+              </DialogDescription>
+            </>
+          )}
         </DialogHeader>
         {/* Mounted only while open: closing the dialog frees the camera */}
         {open && (
@@ -84,7 +97,7 @@ function Recorder({ target, initialHook, onDone }: { target: CapsuleTarget; init
     setProgress(0);
     try {
       const contentType = baseMime(recording.mimeType);
-      const name = `${documentId}-p${pageNumber}.${extensionFor(contentType)}`;
+      const name = `${documentId}-${pageNumber === WELCOME_PAGE ? "welcome" : `p${pageNumber}`}.${extensionFor(contentType)}`;
       const blob = await upload(`${uploadPrefix}${name}`, recording.blob, {
         access: "private",
         handleUploadUrl: "/api/upload",
@@ -105,7 +118,7 @@ function Recorder({ target, initialHook, onDone }: { target: CapsuleTarget; init
         setProgress(null);
         return;
       }
-      toast.success("Capsule enregistrée");
+      toast.success(pageNumber === WELCOME_PAGE ? "Mot d'accueil enregistré" : "Capsule enregistrée");
       router.refresh();
       onDone();
     } catch (error) {
@@ -163,7 +176,11 @@ function Recorder({ target, initialHook, onDone }: { target: CapsuleTarget; init
           value={hook}
           maxLength={CAPSULE_HOOK_MAX}
           onChange={(event) => setHook(event.target.value)}
-          placeholder="Sur cette partie, laisse-moi t'expliquer pourquoi…"
+          placeholder={
+            pageNumber === WELCOME_PAGE
+              ? "En 1 minute, je vous présente cette proposition"
+              : "Sur cette partie, laisse-moi t'expliquer pourquoi…"
+          }
         />
       </label>
 
@@ -178,7 +195,7 @@ function Recorder({ target, initialHook, onDone }: { target: CapsuleTarget; init
               <RotateCcw /> Recommencer
             </Button>
             <Button disabled={progress !== null} onClick={save}>
-              {progress === null ? "Enregistrer la capsule" : `Envoi… ${Math.round(progress)} %`}
+              {progress === null ? "Enregistrer" : `Envoi… ${Math.round(progress)} %`}
             </Button>
           </>
         ) : (

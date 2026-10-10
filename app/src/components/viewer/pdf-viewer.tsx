@@ -7,6 +7,8 @@ import type { DealStatus } from "@/generated/prisma/enums";
 import type { SupportedLocale } from "@/lib/closing/constants";
 import type { ViewerLabels } from "@/lib/closing/i18n/viewer";
 
+import { WELCOME_PAGE } from "@/lib/closing/capsules/resolve";
+
 import { CapsuleBubble, type ViewerCapsule } from "./capsule-bubble";
 import { ChatWidget, type ChatWidgetData } from "./chat-widget";
 import { CtaBar } from "./cta-bar";
@@ -173,7 +175,12 @@ export function PdfViewer({
 
       {pdf && (
         <CapsuleBubble
-          capsule={capsules.find((c) => c.pageNumber === currentPage) ?? null}
+          // A page's own clip on its page, the welcome message everywhere else
+          capsule={
+            capsules.find((c) => c.pageNumber === currentPage) ??
+            capsules.find((c) => c.pageNumber === WELCOME_PAGE) ??
+            null
+          }
           slug={slug}
           labels={labels}
           senderName={senderName}

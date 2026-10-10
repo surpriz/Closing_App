@@ -11,22 +11,43 @@ import { ExpiryControl } from "./expiry-control";
 
 export type LinkSwitches = Record<LinkSwitch, boolean>;
 
-const GROUPS: { title: string; items: { key: LinkSwitch; label: string; hint?: string; pdfOnly?: boolean }[] }[] = [
+type Item = { key: LinkSwitch; label: string; hint?: string; pdfOnly?: boolean; personalOnly?: boolean };
+
+const GROUPS: { title: string; items: Item[] }[] = [
   {
     title: "Accès",
-    items: [{ key: "requireEmail", label: "Demander son email avant de lire", hint: "Vous savez qui lit, même si le lien circule." }],
+    items: [
+      {
+        key: "requireEmail",
+        label: "Demander son email avant de lire",
+        hint: "Vous savez qui lit, même si le lien circule.",
+        personalOnly: true,
+      },
+    ],
   },
   {
     title: "Ce que le prospect peut faire",
     items: [
-      { key: "ctaEnabled", label: "Valider ou demander un ajustement", hint: "Deux boutons en bas du document." },
+      {
+        key: "ctaEnabled",
+        label: "Valider ou demander un ajustement",
+        hint: "Deux boutons en bas du document.",
+        personalOnly: true,
+      },
       { key: "chatEnabled", label: "Poser ses questions à l'assistant", hint: "Il répond à partir du document et vous transmet le reste." },
       { key: "voiceCommentsEnabled", label: "Laisser un vocal sur une page", hint: "Vous recevez l'audio et sa transcription.", pdfOnly: true },
     ],
   },
   {
     title: "Suivi",
-    items: [{ key: "followupsEnabled", label: "Relances préparées par Clozer", hint: "Coupé : le deal reste suivi, sans relance." }],
+    items: [
+      {
+        key: "followupsEnabled",
+        label: "Relances préparées par Clozer",
+        hint: "Coupé : le deal reste suivi, sans relance.",
+        personalOnly: true,
+      },
+    ],
   },
 ];
 
@@ -37,6 +58,7 @@ export function LinkSettingsPanel({
   expiresAt,
   requests,
   isPdf,
+  shared,
   canSaveDefaults,
 }: {
   linkId: string;
@@ -44,6 +66,8 @@ export function LinkSettingsPanel({
   expiresAt: string | null;
   requests: number;
   isPdf: boolean;
+  /** Shared link: the email is always asked, nothing to accept, no follow-ups. */
+  shared: boolean;
   canSaveDefaults: boolean;
 }) {
   const [values, setValues] = useState(initial);
@@ -53,7 +77,8 @@ export function LinkSettingsPanel({
     setValues((current) => ({ ...current, [key]: value }));
     startTransition(async () => {
       try {
-        await setLinkSwitch(linkId, key, value);
+        const result = await setLinkSwitch(linkId, key, value);
+        if ("error" in result) throw new Error(result.error);
       } catch {
         setValues((current) => ({ ...current, [key]: !value }));
         toast.error("Réglage non enregistré, réessayez.");
@@ -76,7 +101,7 @@ export function LinkSettingsPanel({
           <h3 className="text-sm font-medium text-muted-foreground">{group.title}</h3>
           <div className="divide-y divide-border rounded-xl bg-card ring-1 ring-border">
             {group.items
-              .filter((item) => isPdf || !item.pdfOnly)
+              .filter((item) => (isPdf || !item.pdfOnly) && !(shared && item.personalOnly))
               .map((item) => (
                 <label key={item.key} className="flex cursor-pointer items-start justify-between gap-4 px-4 py-3">
                   <span className="text-sm">
@@ -92,7 +117,12 @@ export function LinkSettingsPanel({
           </div>
         </section>
       ))}
-      {canSaveDefaults && (
+      {shared && (
+        <p className="text-sm text-muted-foreground">
+          Lien partagé : chaque lecteur donne son email, sans bouton de validation ni relance automatique.
+        </p>
+      )}
+      {canSaveDefaults && !shared && (
         <Button type="button" variant="ghost" size="sm" disabled={pending} onClick={keepAsDefaults}>
           Garder ces réglages pour mes prochains liens
         </Button>

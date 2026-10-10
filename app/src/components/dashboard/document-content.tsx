@@ -158,10 +158,14 @@ function PageRow({
           })}
           {page.tagSource === "MANUAL" && <span className="text-xs text-muted-foreground">corrigé par vous</span>}
         </div>
-        <PageCapsuleControl
-          target={{ documentId, linkId: null, pageNumber: page.pageNumber, uploadPrefix: capsuleUploadPrefix }}
-          capsule={page.capsule}
-        />
+        {/* Recorded before the welcome message: kept on its page, no new ones */}
+        {page.capsule && (
+          <PageCapsuleControl
+            target={{ documentId, linkId: null, pageNumber: page.pageNumber, uploadPrefix: capsuleUploadPrefix }}
+            capsule={page.capsule}
+            legacy
+          />
+        )}
       </div>
     </li>
   );

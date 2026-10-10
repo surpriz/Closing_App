@@ -1,7 +1,7 @@
 "use client";
 
 import { Play, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { Button } from "@/components/ui/button";
 import type { CapsuleKind } from "@/generated/prisma/enums";
@@ -40,8 +40,11 @@ function readDismissed(slug: string) {
  * The seller's clip for the page the prospect reached: a round muted teaser
  * bottom left, opened with sound on a tap. Once closed, it stays closed.
  */
+const noSubscribe = () => () => {};
+
 export function CapsuleBubble({ capsule, slug, labels, senderName, getViewId, ctaVisible }: Props) {
-  // Rendered once the PDF has loaded, so always in the browser
+  // Closed clips live in localStorage: render nothing on the server (the web viewer is server-rendered)
+  const inBrowser = useSyncExternalStore(noSubscribe, () => true, () => false);
   const [dismissed, setDismissed] = useState(() => readDismissed(slug));
   const [open, setOpen] = useState<ViewerCapsule | null>(null);
   const playerRef = useRef<HTMLVideoElement & HTMLAudioElement>(null);
@@ -125,7 +128,7 @@ export function CapsuleBubble({ capsule, slug, labels, senderName, getViewId, ct
     );
   }
 
-  if (!capsule || dismissed.includes(capsule.id)) return null;
+  if (!inBrowser || !capsule || dismissed.includes(capsule.id)) return null;
 
   return (
     <div

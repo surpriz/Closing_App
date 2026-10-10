@@ -1,11 +1,11 @@
 "use client";
 
-import { Check, ChevronDown, Copy, Eye, Mail, Sparkles } from "lucide-react";
+import { Check, ChevronDown, Copy, Eye, Mail, Sparkles, User, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition, type ComponentProps, type FormEvent } from "react";
+import { useState, useTransition, type ComponentProps, type FormEvent, type ReactNode } from "react";
 import { toast } from "sonner";
 
-import { markLinkSent, setLinkRecipient } from "@/app/(dashboard)/links/actions";
+import { markLinkSent, setLinkRecipient, setLinkShared } from "@/app/(dashboard)/links/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { composeUrl, shareDraft } from "@/lib/closing/share/compose";
@@ -28,6 +28,8 @@ export function ShareReady({
   processing,
   summary,
   notice,
+  shared,
+  welcome,
   settings,
 }: {
   linkId: string;
@@ -44,6 +46,10 @@ export function ShareReady({
   summary: string[];
   /** What the defaults chose on their own, said once. */
   notice: string | null;
+  /** One link for many readers, each identified by their email. */
+  shared: boolean;
+  /** The seller's video or voice message, optional. */
+  welcome: ReactNode;
   settings: ComponentProps<typeof LinkSettingsPanel>;
 }) {
   const router = useRouter();
@@ -81,6 +87,15 @@ export function ShareReady({
     confirmSent();
   }
 
+  function switchMode(next: boolean) {
+    if (next === shared) return;
+    startTransition(async () => {
+      const result = await setLinkShared(linkId, next);
+      if ("error" in result) return void toast.error(result.error);
+      router.refresh();
+    });
+  }
+
   function saveRecipient(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!who.trim()) return;
@@ -94,15 +109,45 @@ export function ShareReady({
 
   return (
     <section className="space-y-5 rounded-2xl bg-card p-5 ring-1 ring-border sm:p-6">
-      <div className="space-y-1">
-        <h2 className="text-lg font-medium tracking-[-0.01em]">
-          {sent ? "C'est parti. Vous serez prévenu dès qu'il l'ouvre." : "Votre lien est prêt"}
-        </h2>
-        {!sent && (
-          <p className="text-sm text-muted-foreground">
-            Envoyez-le comme vous voulez : vous saurez qui le lit, quelles pages, et quand relancer.
-          </p>
-        )}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="space-y-1">
+          <h2 className="text-lg font-medium tracking-[-0.01em]">
+            {sent
+              ? shared
+                ? "C'est en ligne. Chaque nouveau lecteur apparaît ici."
+                : "C'est parti. Vous serez prévenu dès qu'il l'ouvre."
+              : "Votre lien est prêt"}
+          </h2>
+          {!sent && (
+            <p className="max-w-xl text-sm text-muted-foreground">
+              {shared
+                ? "Postez-le, mettez-le en signature ou transférez-le : chaque lecteur donne son email, et vous créez un lien perso pour les plus intéressés."
+                : "Envoyez-le comme vous voulez : vous saurez qui le lit, quelles pages, et quand relancer."}
+            </p>
+          )}
+        </div>
+        <div className="flex gap-1 rounded-lg bg-muted p-1" role="radiogroup" aria-label="Pour qui est ce lien">
+          {[
+            { value: false, label: "Une personne", icon: User },
+            { value: true, label: "Plusieurs personnes", icon: Users },
+          ].map(({ value, label, icon: Icon }) => (
+            <button
+              key={label}
+              type="button"
+              role="radio"
+              aria-checked={shared === value}
+              disabled={pending}
+              onClick={() => switchMode(value)}
+              className={cn(
+                "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm transition-colors disabled:opacity-60",
+                shared === value ? "bg-card shadow-xs" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <Icon className="size-4" aria-hidden />
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex flex-col gap-2 sm:flex-row">
@@ -124,7 +169,7 @@ export function ShareReady({
         </Button>
       </div>
 
-      {recipient ? (
+      {shared ? null : recipient ? (
         <p className="text-sm text-muted-foreground">
           Pour <span className="text-foreground">{recipient.email}</span>
         </p>
@@ -156,6 +201,16 @@ export function ShareReady({
           {notice}
         </p>
       )}
+
+      <div className="space-y-2 border-t border-border pt-4">
+        <p className="text-sm font-medium">
+          Mot d&apos;accueil <span className="font-normal text-muted-foreground">(facultatif)</span>
+        </p>
+        <p className="text-sm text-muted-foreground">
+          Une vidéo ou un vocal pour présenter le document : le prospect voit votre bulle dès l&apos;ouverture.
+        </p>
+        {welcome}
+      </div>
 
       <div className="space-y-4">
         <button

@@ -46,7 +46,13 @@ export async function analyzeDeal(
   const loaded = await loadDealForAnalysis(linkId, now);
   // An expired link waits for the seller: only their explicit "Réanalyser" reads it
   const expired = !!loaded && isLinkExpired(loaded.link, now) && trigger !== "MANUAL";
-  if (!loaded || loaded.link.archivedAt || !ANALYZED_STATUSES.includes(loaded.link.dealStatus) || expired) {
+  if (
+    !loaded ||
+    loaded.link.archivedAt ||
+    loaded.link.shared ||
+    !ANALYZED_STATUSES.includes(loaded.link.dealStatus) ||
+    expired
+  ) {
     if (loaded) await clearDirty(linkId);
     return "skipped";
   }
@@ -249,6 +255,8 @@ export async function analyzePendingDeals(now = new Date(), scope: PendingScope 
   const max = scope.max ?? ENGINE_MAX_ANALYSES;
   const base = {
     archivedAt: null,
+    // A shared link is a source of leads, not a deal: nothing to analyse
+    shared: false,
     dealStatus: { in: ["OPEN" as const, "CHANGE_REQUESTED" as const] },
     ...(scope.organizationId && { organizationId: scope.organizationId }),
     ...(scope.linkId && { id: scope.linkId }),
