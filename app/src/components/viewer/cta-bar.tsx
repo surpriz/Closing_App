@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { DealStatus } from "@/generated/prisma/enums";
+import { SIGNER_NAME } from "@/lib/closing/i18n/signed-email";
 import type { ViewerLabels } from "@/lib/closing/i18n/viewer";
 import { cn } from "@/lib/utils";
 
@@ -167,7 +168,7 @@ export function CtaBar({
                     autoFocus
                     className="h-11"
                     value={name}
-                    maxLength={120}
+                    maxLength={80}
                     onChange={(e) => setName(e.target.value)}
                   />
                 </div>
@@ -182,7 +183,7 @@ export function CtaBar({
                 <Button
                   variant="success"
                   onClick={() => submit("VALIDATE_SIGN")}
-                  disabled={pending || !agreed || name.trim().length < 2}
+                  disabled={pending || !agreed || !SIGNER_NAME.test(name.trim())}
                 >
                   <Check data-icon="inline-start" />
                   {labels.confirmAction}

@@ -13,7 +13,7 @@ import { cancelOpenFollowups } from "@/lib/closing/followups/queue";
 import { pickLocale } from "@/lib/closing/i18n/viewer";
 import { getPublicAppUrl } from "@/lib/app-origin";
 import { formatDeadline } from "@/lib/closing/expiry";
-import { signedEmail } from "@/lib/closing/i18n/signed-email";
+import { SIGNER_NAME, signedEmail } from "@/lib/closing/i18n/signed-email";
 import {
   getLinkForViewer,
   getViewerAccess,
@@ -180,8 +180,13 @@ const actionSchema = z.object({
   viewId: z.string().max(64).nullable(),
   type: z.enum(["VALIDATE_SIGN", "REQUEST_CHANGE"]),
   message: z.string().trim().max(2000).optional(),
-  // Signing: a name typed by hand and the box ticked, nothing implied
-  signerName: z.string().trim().min(2).max(120).optional(),
+  // Signing: a name typed by hand and the box ticked, nothing implied. It ends up in an
+  // email to the recipient: a name only, never a link or an address someone slips in.
+  signerName: z
+    .string()
+    .trim()
+    .regex(SIGNER_NAME)
+    .optional(),
   agreed: z.boolean().optional(),
 });
 

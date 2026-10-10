@@ -4,6 +4,9 @@
  * prospect email.
  */
 
+/** Letters, spaces, apostrophes and hyphens: no dot, so "evil.com" can't become a link in the email. */
+export const SIGNER_NAME = /^[\p{L}\p{M}][\p{L}\p{M}' -]{1,79}$/u;
+
 type Input = { documentName: string; signerName: string; signedAt: string; senderName: string | null; url: string };
 
 const COPY: Record<"en" | "fr" | "es" | "de", (input: Input) => { subject: string; body: string }> = {
