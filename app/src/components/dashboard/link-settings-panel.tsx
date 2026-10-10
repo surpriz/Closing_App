@@ -28,12 +28,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
   {
     title: "Ce que le prospect peut faire",
     items: [
-      {
-        key: "ctaEnabled",
-        label: "Valider ou demander un ajustement",
-        hint: "Deux boutons en bas du document.",
-        personalOnly: true,
-      },
+      { key: "ctaEnabled", label: "Valider ou demander un ajustement", hint: "Deux boutons en bas du document." },
       { key: "chatEnabled", label: "Poser ses questions à l'assistant", hint: "Il répond à partir du document et vous transmet le reste." },
       { key: "voiceCommentsEnabled", label: "Laisser un vocal sur une page", hint: "Vous recevez l'audio et sa transcription.", pdfOnly: true },
     ],
@@ -41,12 +36,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
   {
     title: "Suivi",
     items: [
-      {
-        key: "followupsEnabled",
-        label: "Relances préparées par Clozer",
-        hint: "Coupé : le deal reste suivi, sans relance.",
-        personalOnly: true,
-      },
+      { key: "followupsEnabled", label: "Relances préparées par Clozer", hint: "Coupé : le deal reste suivi, sans relance." },
     ],
   },
 ];
@@ -119,7 +109,8 @@ export function LinkSettingsPanel({
       ))}
       {shared && (
         <p className="text-sm text-muted-foreground">
-          Lien partagé : chaque lecteur donne son email, sans bouton de validation ni relance automatique.
+          Chaque lecteur donne son email et reçoit son propre lien, avec ces réglages. Ses relances attendent
+          toujours votre feu vert : son adresse a été tapée, pas donnée par vous.
         </p>
       )}
       {canSaveDefaults && !shared && (

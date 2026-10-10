@@ -1,7 +1,7 @@
 import { Loader2 } from "lucide-react";
 import type { Metadata } from "next";
 import { cookies, headers } from "next/headers";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { AutoRefresh } from "@/components/dashboard/auto-refresh";
 import type { ViewerCapsule } from "@/components/viewer/capsule-bubble";
@@ -82,6 +82,9 @@ export default async function ViewerPage({ params, searchParams }: PageProps<"/v
       </>
     );
   }
+
+  // A shared link is a door: once the reader is known, they read on their own link
+  if (link.shared && access.email && !isSeller) redirect(`/api/v/${slug}/reader`);
 
   if (!access.allowed) {
     const recipient = plainGate ? null : await knownRecipient(link.id);

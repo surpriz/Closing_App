@@ -504,6 +504,10 @@ model Link {
   // One link for many readers (a deck posted or forwarded): each reader gives their email and
   // becomes a lead the seller can turn into a personal link. Never a deal of its own.
   shared       Boolean   @default(false)
+  // A reader of a shared link gets their own link at the gate: a deal like any other
+  parentLinkId String?
+  parentLink   Link?     @relation("SharedReaders", fields: [parentLinkId], references: [id], onDelete: SetNull)
+  readerLinks  Link[]    @relation("SharedReaders")
 
   prospects        Prospect[]
   views            DocumentView[]
@@ -526,6 +530,7 @@ model Link {
   @@index([documentId])
   @@index([dealStatus, followupsEnabled])
   @@index([expiresAt])
+  @@index([parentLinkId])
   @@map("links")
 }
 

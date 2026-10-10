@@ -11,7 +11,7 @@ import { actOnInsight } from "@/lib/closing/brain/act";
 import { analyzeDeal } from "@/lib/closing/brain/analyze-deal";
 import { refreshEngagementScore } from "@/lib/closing/engagement/refresh-score";
 import { editableLinks } from "@/lib/closing/dashboard/queries";
-import { confirmLinkSent, createDocumentLink } from "@/lib/closing/documents/create-link";
+import { confirmLinkSent } from "@/lib/closing/documents/create-link";
 import { linkDefaultsFor, SHARED_LINK_SETTINGS } from "@/lib/closing/documents/smart-defaults";
 import { getSellerPrefs, sellerTimezone } from "@/lib/closing/notify/preferences";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
@@ -129,11 +129,8 @@ export type LinkSwitch = (typeof LINK_SWITCHES)[number];
 export async function setLinkSwitch(linkId: string, key: LinkSwitch, value: boolean) {
   const link = await requireOwnedLink(linkId);
   const field = z.enum(LINK_SWITCHES).parse(key);
-  // A shared link without the email gate would be anonymous reads, the very thing it is for; its
-  // readers never asked to be followed up nor have anything to accept
-  if (link.shared && (field === "requireEmail" ? !value : (field === "ctaEnabled" || field === "followupsEnabled") && value)) {
-    return { error: "Pas sur un lien partagé : créez un lien perso pour ce lecteur." };
-  }
+  // The email is how each reader of a shared link gets their own link
+  if (link.shared && field === "requireEmail" && !value) return { error: "Un lien partagé demande toujours l'email." };
   await prisma.link.update({
     where: { id: link.id },
     // Per-link rule overrides belong to the rule engine the analysis replaced: back to the defaults
@@ -191,6 +188,7 @@ export async function setLinkShared(linkId: string, shared: boolean) {
   const personal = linkDefaultsFor(document.docType, settings, new Date(), sellerTimezone(prefs), { allowShared: false });
   await prisma.link.update({
     where: { id: link.id },
+    // The other settings stay: on a shared link they are what every reader's link starts from
     data: shared
       ? { ...SHARED_LINK_SETTINGS, autoSettings: false }
       : {
@@ -201,34 +199,8 @@ export async function setLinkShared(linkId: string, shared: boolean) {
           autoSettings: false,
         },
   });
-  if (shared) await cancelOpenFollowups(link.id, "Lien partagé : pas de relance automatique");
   revalidateLink(link);
   return { ok: true };
-}
-
-/**
- * A reader of a shared link looks interested: their own personal link, with
- * them as the contact, ready on the share screen. The shared link stays as is.
- */
-export async function promoteReader(linkId: string, prospectId: string): Promise<{ linkId: string } | { error: string }> {
-  const link = await requireOwnedLink(linkId);
-  const { user } = await requireWorkspace();
-  const reader = await prisma.prospect.findFirst({
-    where: { id: prospectId, linkId: link.id },
-    select: { email: true, name: true, company: true },
-  });
-  if (!reader) return { error: "Lecteur introuvable." };
-
-  const created = await createDocumentLink({
-    organizationId: link.organizationId,
-    userId: user.id,
-    documentId: link.documentId,
-    prospect: reader,
-    draft: true,
-  });
-  if (!created) return { error: "Document introuvable." };
-  revalidateLink(link);
-  return { linkId: created.id };
 }
 
 /** "Copier" or "Envoyer par email" on the share screen: the draft becomes a deal. */
@@ -269,8 +241,8 @@ export async function saveAsWorkspaceDefaults(linkId: string) {
   const link = await requireOwnedLink(linkId);
   const { organization, role } = await requireWorkspace();
   if (!isManagerRole(role)) return { error: "Seuls les admins changent les réglages par défaut." };
-  // A shared link's settings are forced, not chosen: they would turn follow-ups off for every new link
-  if (link.shared) return { error: "Un lien partagé a ses propres réglages." };
+  // The forced email gate would become everyone's default
+  if (link.shared) return { error: "Faites-le depuis un lien « Une personne »." };
 
   const current = await prisma.link.findUniqueOrThrow({
     where: { id: link.id },

@@ -18,9 +18,9 @@ describe("linkDefaultsFor", () => {
     expect(defaults.expiresAt?.toISOString()).toBe("2026-10-25T22:59:00.000Z");
   });
 
-  it("shares a brochure: one link, every reader identified, nothing to accept", () => {
+  it("shares a brochure: one link, every reader identified", () => {
     const defaults = linkDefaultsFor("BROCHURE", { ...workspace, requireEmailByDefault: false }, now, "Europe/Paris");
-    expect(defaults).toMatchObject({ shared: true, requireEmail: true, ctaEnabled: false, followupsEnabled: false });
+    expect(defaults).toMatchObject({ shared: true, requireEmail: true, ctaEnabled: false, followupsEnabled: true });
     expect(defaults.expiresAt).toBeNull();
   });
 

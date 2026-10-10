@@ -58,8 +58,18 @@ export async function getOpenDeals(
       organizationId,
       archivedAt: null,
       draftAt: null,
-      // A shared link is a source of leads, not a deal
+      // A shared link is a source of leads, not a deal; its readers count once they show interest
       shared: false,
+      // In AND: the seller scope below brings its own OR
+      AND: [
+        {
+          OR: [
+            { parentLinkId: null },
+            { dealStatus: { not: "OPEN" } },
+            { engagementScore: { tier: { in: ["HOT", "WARM"] } } },
+          ],
+        },
+      ],
       dealStatus: { in: scope.withValidated ? ["OPEN", "CHANGE_REQUESTED", "VALIDATED"] : ["OPEN", "CHANGE_REQUESTED"] },
       ...(scope.owner && sellerLinks(scope.owner)),
     },

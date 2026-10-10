@@ -29,14 +29,15 @@ export type LinkDefaults = {
 /** Documents a prospect can say yes to. */
 const AGREEABLE_DOC_TYPES = ["QUOTE", "PROPOSAL", "CONTRACT"];
 
-/** Documents made to circulate: one shared link, each reader a lead. */
+/** Documents made to circulate: one shared link, each reader their own deal. */
 const SHARED_DOC_TYPES = ["PRESENTATION", "BROCHURE", "CASE_STUDY"];
 
 /**
- * A shared link always asks for the email (the readers are the point), has
- * nothing to accept and no follow-ups: its readers never asked to hear from us.
+ * A shared link always asks for the email: that is how each reader gets
+ * their own link. Its other settings are the template every reader's link
+ * starts from.
  */
-export const SHARED_LINK_SETTINGS = { shared: true, requireEmail: true, ctaEnabled: false, followupsEnabled: false } as const;
+export const SHARED_LINK_SETTINGS = { shared: true, requireEmail: true } as const;
 
 export function linkDefaultsFor(
   docType: string | null | undefined,

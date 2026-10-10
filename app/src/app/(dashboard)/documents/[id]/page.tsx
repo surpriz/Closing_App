@@ -302,12 +302,10 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
                         </span>
                       </div>
                       <div className="relative z-10 flex items-center gap-3 pl-2">
-                        {!link.shared && (
-                          <label className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <span className="hidden md:inline">Relances</span>
-                            <LinkFollowupsToggle linkId={link.id} enabled={link.followupsEnabled} />
-                          </label>
-                        )}
+                        <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <span className="hidden md:inline">Relances</span>
+                          <LinkFollowupsToggle linkId={link.id} enabled={link.followupsEnabled} />
+                        </label>
                         <CopyButton value={url} />
                       </div>
                     </li>

@@ -22,6 +22,7 @@ import {
   resolveViewerLink,
 } from "@/lib/closing/links";
 import { sendProspectEmail } from "@/lib/closing/prospect-email";
+import { readerLinkFor } from "@/lib/closing/shared/reader-link";
 import { defaultTimezone } from "@/lib/closing/settings";
 import { notifySeller } from "@/lib/closing/notify/notify";
 import { getRequestContext } from "@/lib/closing/tracking/request-context";
@@ -55,6 +56,13 @@ export async function unlockWithEmail(
   if (!parsed.success) return { error: "invalid_email" };
 
   const { email, name } = parsed.data;
+  // The seller trying their shared link stays on it: no reader link for themselves
+  if (link.shared && !(await isWorkspaceMember(link.organizationId))) {
+    // Each reader of a shared link gets their own link, followed like any deal
+    const reader = await readerLinkFor(link, email, name);
+    await identifyProspect(reader, email, name);
+    redirect(`/v/${reader.slug}`);
+  }
   await identifyProspect(link, email, name);
   redirect(`/v/${slug}`);
 }

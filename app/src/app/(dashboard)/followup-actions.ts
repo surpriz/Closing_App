@@ -54,11 +54,6 @@ function assertTestTools() {
 
 export async function toggleLinkFollowups(linkId: string, enabled: boolean) {
   const link = await requireOwnedLink(linkId);
-  // A shared link's readers never asked to hear from us
-  if (enabled) {
-    const { shared } = await prisma.link.findUniqueOrThrow({ where: { id: link.id }, select: { shared: true } });
-    if (shared) return { error: "Pas de relance sur un lien partagé." };
-  }
   await prisma.link.update({ where: { id: link.id }, data: { followupsEnabled: enabled } });
   if (!enabled) await cancelOpenFollowups(link.id, "Relances désactivées sur ce lien");
   revalidatePath(`/documents/${link.documentId}`);

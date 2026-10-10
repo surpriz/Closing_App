@@ -52,7 +52,7 @@ export async function evaluateHotLead(viewId: string, resumed: boolean, now = ne
       id: true,
       linkId: true,
       isBot: true,
-      link: { select: { organizationId: true, dealStatus: true, archivedAt: true, shared: true } },
+      link: { select: { organizationId: true, dealStatus: true, archivedAt: true, shared: true, parentLinkId: true } },
     },
   });
   // A shared link is read by many by design: its readers show on its page, not as calls to make
@@ -92,7 +92,8 @@ export async function evaluateHotLead(viewId: string, resumed: boolean, now = ne
       liveReaders: liveReaders.length,
       multiViewerThreshold: settings.multiViewerThreshold,
       committeeThreshold: settings.committeeThreshold,
-      firstOpen: !resumed && !previousView,
+      // Every reader of a shared link opens it for the first time: only what follows says something
+      firstOpen: !resumed && !previousView && !view.link.parentLinkId,
       inactiveDays: previousView ? Math.floor((now.getTime() - previousView.lastSeenAt.getTime()) / DAY_MS) : null,
       reopenAfterDays: settings.reopenAfterInactivityDays,
       pricingSeconds: null,

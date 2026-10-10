@@ -98,6 +98,7 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
       },
       prospects: { orderBy: { createdAt: "asc" } },
       engagementScore: true,
+      parentLink: { select: { id: true, name: true } },
     },
   });
   if (!link) notFound();
@@ -389,7 +390,7 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
 
   const now = new Date();
   const signature = actions.find((action) => action.type === "VALIDATE_SIGN");
-  const sharedReaders: SharedReader[] = link.shared ? await loadSharedReaders(link, now) : [];
+  const sharedReaders: SharedReader[] = link.shared ? await loadSharedReaders(link.id, now) : [];
   const contactLine = [mainProspect?.company ? mainProspect.name : null, mainProspect?.email]
     .filter(Boolean)
     .join(", ");
@@ -432,6 +433,11 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
             <h1 className="text-title [font-stretch:92%]">{title}</h1>
             <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-body text-muted-foreground">
               {contactLine && <span>{contactLine}</span>}
+              {link.parentLink && (
+                <Link href={`/links/${link.parentLink.id}`} className="hover:text-foreground hover:underline">
+                  via le lien partagé{link.parentLink.name ? ` « ${link.parentLink.name} »` : ""}
+                </Link>
+              )}
               <span className="inline-flex items-center gap-0.5 rounded-md bg-muted py-0.5 pr-0.5 pl-2 font-mono text-small ring-1 ring-border">
                 <a
                   href={url}
@@ -684,9 +690,9 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
 
             {link.shared ? (
               <section id="lecteurs" className="scroll-mt-20">
-                <SectionTitle hint="chacun a donné son email">Lecteurs</SectionTitle>
+                <SectionTitle hint="chacun a son lien et son suivi">Lecteurs</SectionTitle>
                 <Surface>
-                  <SharedReaders linkId={link.id} readers={sharedReaders} canEdit={canEdit} />
+                  <SharedReaders readers={sharedReaders} />
                 </Surface>
               </section>
             ) : (
@@ -796,10 +802,11 @@ function settingsSummary(
   const days = link.expiresAt ? Math.max(0, Math.ceil((link.expiresAt.getTime() - now.getTime()) / 86_400_000)) : null;
   if (link.shared) {
     return [
-      "Lien partagé",
-      "Chaque lecteur donne son email",
+      "Un lien par lecteur",
       days === null ? "Sans expiration" : `Expire dans ${days} j`,
+      link.ctaEnabled ? "Validation en ligne" : null,
       link.chatEnabled ? "Assistant IA" : null,
+      link.followupsEnabled ? "Relances à valider" : "Sans relance",
     ].filter((item): item is string => !!item);
   }
   return [
@@ -811,33 +818,35 @@ function settingsSummary(
   ].filter((item): item is string => !!item);
 }
 
-/** Readers of a shared link, most recent first, with the personal link made for each one if any. */
-async function loadSharedReaders(
-  link: { id: string; documentId: string; prospects: { id: string; email: string; name: string | null; company: string | null; lastSeenAt: Date | null; createdAt: Date }[] },
-  now: Date,
-): Promise<SharedReader[]> {
-  const readers = [...link.prospects].sort(
-    (a, b) => (b.lastSeenAt ?? b.createdAt).getTime() - (a.lastSeenAt ?? a.createdAt).getTime(),
-  );
-  const personal = await prisma.link.findMany({
-    where: {
-      documentId: link.documentId,
-      shared: false,
-      archivedAt: null,
-      prospects: { some: { email: { in: readers.map((r) => r.email) } } },
+/** Readers of a shared link, most recently active first: each one's own link and where it stands. */
+async function loadSharedReaders(linkId: string, now: Date): Promise<SharedReader[]> {
+  const links = await prisma.link.findMany({
+    where: { parentLinkId: linkId, archivedAt: null },
+    orderBy: [{ lastActivityAt: { sort: "desc", nulls: "last" } }, { createdAt: "desc" }],
+    take: 200,
+    select: {
+      id: true,
+      dealStatus: true,
+      lastActivityAt: true,
+      createdAt: true,
+      engagementScore: { select: { tier: true } },
+      prospects: { select: { email: true, name: true, company: true }, orderBy: { createdAt: "asc" }, take: 1 },
     },
-    orderBy: { createdAt: "desc" },
-    select: { id: true, prospects: { select: { email: true } } },
   });
-  const linkByEmail = new Map<string, string>();
-  for (const row of personal) for (const p of row.prospects) if (!linkByEmail.has(p.email)) linkByEmail.set(p.email, row.id);
-
-  return readers.map((reader) => ({
-    id: reader.id,
-    email: reader.email,
-    name: reader.name,
-    company: reader.company,
-    seen: reader.lastSeenAt ? `lu ${formatRelative(reader.lastSeenAt, now)}` : null,
-    personalLinkId: linkByEmail.get(reader.email) ?? null,
-  }));
+  return links.map((reader) => {
+    const prospect = reader.prospects[0];
+    return {
+      linkId: reader.id,
+      label: prospect?.name ?? prospect?.email ?? "Lecteur",
+      detail: [prospect?.name ? prospect.email : null, prospect?.company, `lu ${formatRelative(reader.lastActivityAt ?? reader.createdAt, now)}`]
+        .filter(Boolean)
+        .join(" · "),
+      state:
+        reader.dealStatus !== "OPEN"
+          ? DEAL_STATUS_LABELS[reader.dealStatus]
+          : reader.engagementScore
+            ? TIER_LABELS[reader.engagementScore.tier]
+            : "Ouvert",
+    };
+  });
 }

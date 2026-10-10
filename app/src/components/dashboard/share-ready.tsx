@@ -121,7 +121,7 @@ export function ShareReady({
           {!sent && (
             <p className="max-w-xl text-sm text-muted-foreground">
               {shared
-                ? "Postez-le, mettez-le en signature ou transférez-le : chaque lecteur donne son email, et vous créez un lien perso pour les plus intéressés."
+                ? "Postez-le, mettez-le en signature ou transférez-le : chaque lecteur donne son email et reçoit son propre lien, suivi comme un deal."
                 : "Envoyez-le comme vous voulez : vous saurez qui le lit, quelles pages, et quand relancer."}
             </p>
           )}
