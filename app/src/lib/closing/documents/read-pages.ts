@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 
 import { getLanguageModel } from "../ai/provider";
 import { recordAiUsage } from "../ai/usage";
+import { followDocumentType } from "./create-link";
 import { DOC_TYPES } from "./doc-types";
 import { cleanDisplayTitle } from "./link-title";
 import { inferOfferFromDocument } from "./infer-offer";
@@ -128,6 +129,7 @@ export async function readDocumentPages(documentId: string): Promise<ReadPagesOu
         displayTitle: classified.title,
       },
     });
+    if (!keepType) await followDocumentType(document.id);
   }
   const systemPrompt = pageReadingSystemPrompt(keepType ? document.docType : classified?.docType);
 

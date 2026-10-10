@@ -26,7 +26,6 @@ export const POST = withExtensionAuth(async (request, { user, organization }) =>
     userId: user.id,
     documentId,
     prospect: recipient ? prospectFromRecipient(recipient) : null,
-    requireEmail: true,
     draft: true,
     source: source === "gmail" ? "extension_gmail" : source === "outlook" ? "extension_outlook" : "outlook_addin",
   });

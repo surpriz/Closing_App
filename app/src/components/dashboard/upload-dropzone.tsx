@@ -29,6 +29,16 @@ function safeFileName(name: string) {
     .slice(-120);
 }
 
+/** Lets the server spot a file it already has. Only a hint: it hashes the stored file again. */
+async function sha256Hex(file: File) {
+  try {
+    const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
+    return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+  } catch {
+    return undefined;
+  }
+}
+
 // A dragged link comes as text/uri-list (from the address bar) or plain text
 function droppedUrl(data: DataTransfer | null) {
   const text = data?.getData("text/uri-list") || data?.getData("text/plain") || "";
@@ -73,10 +83,14 @@ function useAddSource(uploadPrefix: string, onDone?: () => void) {
         onUploadProgress: ({ percentage }) => setProgress(percentage),
       });
 
-      const { id } = await createDocument({ pathname: blob.pathname, name: file.name });
-      toast.success("Document ajouté, analyse en cours.");
+      const { linkId, reused } = await createDocument({
+        pathname: blob.pathname,
+        name: file.name,
+        sha256: await sha256Hex(file),
+      });
+      if (reused) toast.success("Vous aviez déjà ce document : voici un nouveau lien.");
       onDone?.();
-      router.push(`/documents/${id}`);
+      router.push(`/links/${linkId}?new=1`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "L'import a échoué.");
       setProgress(null);
@@ -96,9 +110,8 @@ function useAddSource(uploadPrefix: string, onDone?: () => void) {
         toast.error(result.error);
         return false;
       }
-      toast.success("Lien ajouté.");
       onDone?.();
-      router.push(`/documents/${result.id}`);
+      router.push(`/links/${result.linkId}?new=1`);
       return true;
     } catch {
       toast.error("L'ajout du lien a échoué.");

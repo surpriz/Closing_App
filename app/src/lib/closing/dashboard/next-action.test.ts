@@ -30,6 +30,13 @@ const base: NextActionInput = {
 };
 
 describe("computeNextAction", () => {
+  it("asks to confirm the sale once the prospect signed, even while they read", () => {
+    const action = computeNextAction({ ...base, dealStatus: "VALIDATED", readingNow: true });
+    expect(action).toEqual({ kind: "close_won" });
+    expect(isUrgent(action)).toBe(true);
+    expect(withAiAdvice(action, { type: "wait", timing: "now", priority: 1 }, { action: {}, timing: {} })).toEqual(action);
+  });
+
   it("puts a live reader before anything else", () => {
     expect(computeNextAction({ ...base, readingNow: true, dealStatus: "CHANGE_REQUESTED" })).toEqual({
       kind: "call_now",

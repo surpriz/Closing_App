@@ -22,19 +22,19 @@ export function FirstSteps({
 }) {
   const steps: Step[] = [
     {
-      title: "Ajoutez un document",
-      description: "Un devis ou une présentation en PDF, ou un lien Notion, Loom, Figma…",
+      title: "Déposez un document",
+      description: "Un devis ou une présentation en PDF, ou un lien Notion, Loom, Figma… Le lien à envoyer est prêt aussitôt.",
       done: hasDocument,
     },
     {
-      title: "Créez un lien par prospect",
-      description: "Vous saurez exactement qui lit, et quand le relancer.",
+      title: "Envoyez le lien",
+      description: "Copiez-le dans votre email à la place de la pièce jointe. Un lien par prospect : vous saurez qui lit.",
       done: hasLink,
     },
     {
-      title: "Envoyez-le",
+      title: "Le prospect l'ouvre",
       description:
-        "Collez-le dans votre email à la place de la pièce jointe, ou laissez l'extension Chrome ou le complément Outlook le faire pour vous. Pour tester, ouvrez-le dans une fenêtre privée : vos propres lectures ne comptent pas.",
+        "Vous êtes prévenu, et vous voyez ici les pages lues et quand relancer. Pour tester, ouvrez-le dans une fenêtre privée : vos propres lectures ne comptent pas.",
       done: hasRead,
     },
   ];

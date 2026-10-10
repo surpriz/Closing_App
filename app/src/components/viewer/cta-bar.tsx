@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, MessageSquareText } from "lucide-react";
+import { Check, Download, MessageSquareText } from "lucide-react";
 import { useState, useTransition } from "react";
 
 import { submitProspectAction } from "@/app/v/[slug]/actions";
@@ -14,6 +14,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { DealStatus } from "@/generated/prisma/enums";
 import type { ViewerLabels } from "@/lib/closing/i18n/viewer";
@@ -27,12 +30,28 @@ type Props = {
   documentName: string;
   /** The reader reached the end: the bar asks for an answer. */
   atEnd?: boolean;
+  /** Offered in the name field when signing. */
+  signerName: string | null;
+  /** PDF only: once signed, the prospect keeps a copy. */
+  downloadUrl?: string;
 };
 
-export function CtaBar({ slug, labels, initialStatus, getViewId, documentName, atEnd = false }: Props) {
+export function CtaBar({
+  slug,
+  labels,
+  initialStatus,
+  getViewId,
+  documentName,
+  atEnd = false,
+  signerName,
+  downloadUrl,
+}: Props) {
   const [status, setStatus] = useState<DealStatus>(initialStatus);
   const [dialog, setDialog] = useState<"validate" | "change" | null>(null);
   const [message, setMessage] = useState("");
+  const [name, setName] = useState(signerName ?? "");
+  const [agreed, setAgreed] = useState(false);
+  const [receipt, setReceipt] = useState(false);
   const [error, setError] = useState(false);
   const [pending, startTransition] = useTransition();
 
@@ -44,11 +63,13 @@ export function CtaBar({ slug, labels, initialStatus, getViewId, documentName, a
         viewId: getViewId(),
         type,
         message: type === "REQUEST_CHANGE" ? message : undefined,
+        ...(type === "VALIDATE_SIGN" && { signerName: name, agreed }),
       });
       if (!result.ok) {
         setError(true);
         return;
       }
+      setReceipt(!!result.receipt);
       setStatus(type === "VALIDATE_SIGN" ? "VALIDATED" : "CHANGE_REQUESTED");
       setDialog(null);
       setMessage("");
@@ -71,10 +92,25 @@ export function CtaBar({ slug, labels, initialStatus, getViewId, documentName, a
               <span className="flex size-9 shrink-0 animate-pop items-center justify-center rounded-full bg-success text-success-foreground">
                 <Check className="size-5" strokeWidth={2.5} aria-hidden />
               </span>
-              <div className="min-w-0" role="status">
+              <div className="min-w-0 flex-1" role="status">
                 <p className="text-sm font-semibold">{labels.validated}</p>
-                <p className="text-small text-muted-foreground">{labels.validatedNext}</p>
+                <p className="text-small text-muted-foreground">
+                  {receipt ? labels.signedReceipt : labels.validatedNext}
+                </p>
               </div>
+              {downloadUrl && (
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="h-11 w-11 shrink-0 px-0 sm:w-auto sm:px-4"
+                  aria-label={labels.download}
+                  render={<a href={downloadUrl} />}
+                  nativeButton={false}
+                >
+                  <Download />
+                  <span className="hidden sm:inline">{labels.download}</span>
+                </Button>
+              )}
             </div>
           ) : (
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -122,10 +158,32 @@ export function CtaBar({ slug, labels, initialStatus, getViewId, documentName, a
                   {labels.confirmValidate}
                 </DialogDescription>
               </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="signer-name">{labels.signName}</Label>
+                  <Input
+                    id="signer-name"
+                    autoComplete="name"
+                    autoFocus
+                    className="h-11"
+                    value={name}
+                    maxLength={120}
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                </div>
+                <label className="flex cursor-pointer items-start gap-2.5 text-sm">
+                  <Checkbox className="mt-0.5" checked={agreed} onCheckedChange={(checked) => setAgreed(checked === true)} />
+                  <span>{labels.signAgree}</span>
+                </label>
+              </div>
               {error && <p className="text-sm text-destructive">{labels.actionError}</p>}
               <DialogFooter>
                 <DialogClose render={<Button variant="ghost" disabled={pending} />}>{labels.cancel}</DialogClose>
-                <Button variant="success" onClick={() => submit("VALIDATE_SIGN")} disabled={pending}>
+                <Button
+                  variant="success"
+                  onClick={() => submit("VALIDATE_SIGN")}
+                  disabled={pending || !agreed || name.trim().length < 2}
+                >
                   <Check data-icon="inline-start" />
                   {labels.confirmAction}
                 </Button>

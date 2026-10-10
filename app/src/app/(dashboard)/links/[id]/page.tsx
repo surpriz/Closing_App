@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { AutoRefresh } from "@/components/dashboard/auto-refresh";
 import { ActivityTimeline, type TimelineItem } from "@/components/dashboard/activity-timeline";
 import { ArchiveLinkButton } from "@/components/dashboard/archive-link-button";
 import { ChatTranscript, type TranscriptConversation } from "@/components/dashboard/chat-transcript";
@@ -25,8 +26,10 @@ import {
 import { ExpiryControl } from "@/components/dashboard/expiry-control";
 import { LinkCapsules, type LinkCapsuleRow } from "@/components/dashboard/link-capsules";
 import { LinkSettingsDialog } from "@/components/dashboard/link-settings-form";
+import { ShareReady } from "@/components/dashboard/share-ready";
 import { LinkTestTools } from "@/components/dashboard/link-test-tools";
 import { LiveActivity } from "@/components/dashboard/live-activity";
+import { MarkWonButton } from "@/components/dashboard/mark-won-button";
 import { SectionTitle, StatLine, Surface } from "@/components/dashboard/page-header";
 import { PageTimeChart, type PageTimeDatum } from "@/components/dashboard/page-time-chart";
 import { ProspectForm } from "@/components/dashboard/prospect-form";
@@ -38,6 +41,11 @@ import { getAppOrigin } from "@/lib/app-origin";
 import { capsuleUploadPrefix } from "@/lib/blob";
 import { getLanguageModel } from "@/lib/closing/ai/provider";
 import { getLinkAnalytics } from "@/lib/closing/analytics";
+import { DOC_TYPE_LABELS, type DocType } from "@/lib/closing/documents/doc-types";
+import { linkTitle } from "@/lib/closing/documents/link-title";
+import { showsCountdown } from "@/lib/closing/expiry";
+import { getSellerPrefs } from "@/lib/closing/notify/preferences";
+import { firstNameOf, guessMailClient } from "@/lib/closing/share/compose";
 import { getLatestInsight } from "@/lib/closing/brain/latest";
 import { getReaderMap } from "@/lib/closing/committee/queries";
 import { canEditDeal } from "@/lib/closing/dashboard/queries";
@@ -49,7 +57,8 @@ import { getLinkLiveState } from "@/lib/closing/live";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
 import type { EngagementReason } from "@/lib/closing/types";
 import { prisma } from "@/lib/db";
-import { formatDuration, formatRelative } from "@/lib/format";
+import { formatDate, formatDuration, formatRelative } from "@/lib/format";
+import { isManagerRole } from "@/lib/roles";
 import { requireWorkspace } from "@/lib/session";
 import { testToolsEnabled } from "@/lib/test-tools";
 import { cn } from "@/lib/utils";
@@ -64,8 +73,9 @@ export async function generateMetadata({ params }: PageProps<"/links/[id]">): Pr
   return { title: link?.prospects[0]?.company ?? link?.name ?? "Prospect" };
 }
 
-export default async function LinkDetailPage({ params }: PageProps<"/links/[id]">) {
+export default async function LinkDetailPage({ params, searchParams }: PageProps<"/links/[id]">) {
   const { id } = await params;
+  const justCreated = (await searchParams).new === "1";
   const workspace = await requireWorkspace();
   const { organization } = workspace;
 
@@ -77,6 +87,10 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
           id: true,
           name: true,
           kind: true,
+          status: true,
+          docType: true,
+          displayTitle: true,
+          aiProcessedAt: true,
           pages: { select: { pageNumber: true, tags: true, summary: true }, orderBy: { pageNumber: "asc" } },
         },
       },
@@ -179,6 +193,30 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
   const title = mainProspect?.company ?? link.name ?? mainProspect?.email ?? link.slug;
   const url = `${origin}/v/${link.slug}`;
 
+  // Just dropped, or not sent yet: the share screen leads the page
+  const sharing = canEdit && (justCreated || !!link.draftAt);
+  // The AI has not said what the document is yet: the settings may still follow it (a few seconds)
+  const reading =
+    link.document.status === "PROCESSING" ||
+    (link.autoSettings && !link.document.aiProcessedAt && new Date().getTime() - link.createdAt.getTime() < 2 * 60_000);
+  const sellerPrefs = sharing ? await getSellerPrefs(workspace.user.id, organization.id) : null;
+  const settingsPanel = {
+    linkId: link.id,
+    initial: {
+      requireEmail: link.requireEmail,
+      ctaEnabled: link.ctaEnabled,
+      chatEnabled: link.chatEnabled,
+      voiceCommentsEnabled: link.voiceCommentsEnabled,
+      followupsEnabled: link.followupsEnabled,
+    },
+    expiresAt: link.expiresAt?.toISOString() ?? null,
+    requests: link.expiresAt
+      ? actions.filter((a) => a.type === "REQUEST_EXTENSION" && a.createdAt >= link.expiresAt!).length
+      : 0,
+    isPdf: link.document.kind !== "URL",
+    canSaveDefaults: isManagerRole(workspace.role),
+  };
+
   const statsByPage = new Map(analytics.pages.map((p) => [p.pageNumber, p]));
   const chartData: PageTimeDatum[] = link.document.pages.map((page) => {
     const stat = statsByPage.get(page.pageNumber);
@@ -241,14 +279,21 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
       id: `action-${action.id}`,
       at: action.createdAt,
       kind: ({ VALIDATE_SIGN: "validated", REQUEST_CHANGE: "change", REQUEST_EXTENSION: "extension" } as const)[action.type],
-      title: `${action.prospect?.name ?? action.prospect?.email ?? "Le prospect"} ${
+      title: `${action.signerName ?? action.prospect?.name ?? action.prospect?.email ?? "Le prospect"} ${
         action.type === "VALIDATE_SIGN"
-          ? "a validé la proposition"
+          ? action.signerName
+            ? "a signé « Bon pour accord »"
+            : "a validé la proposition"
           : action.type === "REQUEST_EXTENSION"
             ? "demande une prolongation"
             : "demande un ajustement"
       }`,
-      detail: action.message ? `« ${action.message} »` : null,
+      detail: action.message
+        ? `« ${action.message} »`
+        : action.signerName && action.prospect?.email
+          ? // The gate takes the reader's word: nothing proves they own that mailbox
+            `Nom saisi par le signataire, lien ouvert avec l'email ${action.prospect.email} (non vérifié)`
+          : null,
     })),
     ...chatRows
       .filter((row) => row.escalated)
@@ -311,12 +356,35 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
   const followupItems: FollowupItem[] = followups.map((f) => toFollowupItem(f, link.name ?? link.slug));
 
   const now = new Date();
+  const signature = actions.find((action) => action.type === "VALIDATE_SIGN");
   const contactLine = [mainProspect?.company ? mainProspect.name : null, mainProspect?.email]
     .filter(Boolean)
     .join(", ");
 
   return (
     <div className="space-y-10">
+      {sharing && (
+        <ShareReady
+          // Remount when the server state moves: sent, contact added, settings tuned by the AI
+          key={[!!link.draftAt, link.prospects.length, link.expiresAt?.getTime(), link.ctaEnabled].join("|")}
+          linkId={link.id}
+          url={url}
+          title={linkTitle({ ...link.document, company: mainProspect?.company })}
+          sent={!link.draftAt}
+          recipient={mainProspect ? { email: mainProspect.email, firstName: firstNameOf(mainProspect.name) } : null}
+          mailClient={sellerPrefs?.mailClient ?? guessMailClient(workspace.user.email)}
+          signature={settings.senderSignature}
+          processing={reading}
+          summary={settingsSummary(link, now)}
+          notice={
+            link.autoSettings && link.expiresAt && showsCountdown(link.document.docType)
+              ? `Reconnu comme « ${DOC_TYPE_LABELS[link.document.docType as DocType]} » : le prospect a jusqu'au ${formatDate(link.expiresAt)} et voit le décompte.`
+              : null
+          }
+          settings={settingsPanel}
+        />
+      )}
+      {sharing && reading && <AutoRefresh intervalMs={3000} />}
       <div className="space-y-4">
         <Link
           href={`/documents/${link.document.id}`}
@@ -345,19 +413,7 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
           {canEdit ? (
             <div className="flex flex-wrap items-center gap-2">
               <DealStatusSelect linkId={link.id} status={link.dealStatus} />
-              <LinkSettingsDialog
-                linkId={link.id}
-                initial={{
-                  // Not updatedAt: it moves on every tracking flush and the page refreshes itself
-                  version: [link.name, link.requireEmail, link.ctaEnabled, link.chatEnabled, link.voiceCommentsEnabled, link.followupsEnabled].join("|"),
-                  name: link.name ?? "",
-                  requireEmail: link.requireEmail,
-                  ctaEnabled: link.ctaEnabled,
-                  chatEnabled: link.chatEnabled,
-                  voiceCommentsEnabled: link.voiceCommentsEnabled,
-                  followupsEnabled: link.followupsEnabled,
-                }}
-              />
+              <LinkSettingsDialog name={link.name ?? ""} {...settingsPanel} />
               <ArchiveLinkButton linkId={link.id} />
             </div>
           ) : (
@@ -369,6 +425,17 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
             Deal de {seller?.name || seller?.email || "un autre commercial"}. Vous pouvez le consulter, seuls son
             commercial et les admins peuvent le modifier.
           </p>
+        )}
+        {canEdit && link.dealStatus === "VALIDATED" && signature && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-success/10 px-4 py-3 text-sm">
+            <span>
+              <span className="font-medium">
+                {signature.signerName ?? signature.prospect?.name ?? signature.prospect?.email ?? "Le prospect"}
+              </span>{" "}
+              a validé {formatRelative(signature.createdAt, now)}. Confirmez la vente pour arrêter les relances.
+            </span>
+            <MarkWonButton linkId={link.id} />
+          </div>
         )}
         {link.expiresAt && link.expiresAt <= now && (
           <a
@@ -661,4 +728,19 @@ export default async function LinkDetailPage({ params }: PageProps<"/links/[id]"
       </fieldset>
     </div>
   );
+}
+
+/** The share screen's one-line recap: what the prospect will meet. */
+function settingsSummary(
+  link: { requireEmail: boolean; expiresAt: Date | null; ctaEnabled: boolean; chatEnabled: boolean; followupsEnabled: boolean },
+  now: Date,
+) {
+  const days = link.expiresAt ? Math.max(0, Math.ceil((link.expiresAt.getTime() - now.getTime()) / 86_400_000)) : null;
+  return [
+    link.requireEmail ? "Email demandé" : "Ouverture libre",
+    days === null ? "Sans expiration" : `Expire dans ${days} j`,
+    link.ctaEnabled ? "Validation en ligne" : null,
+    link.chatEnabled ? "Assistant IA" : null,
+    link.followupsEnabled ? "Relances auto" : "Sans relance",
+  ].filter((item): item is string => !!item);
 }

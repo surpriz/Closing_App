@@ -25,6 +25,10 @@ type Props = {
     senderSignature: string;
     autonomy: "COPILOT" | "AUTOPILOT";
     chatEnabledByDefault: boolean;
+    requireEmailByDefault: boolean;
+    voiceCommentsByDefault: boolean;
+    followupsByDefault: boolean;
+    quoteExpiryDays: number | null;
     assistantKnowledge: string;
     offerDescription: string;
     targetCustomer: string;
@@ -51,6 +55,8 @@ type Props = {
 const LOCKED_NOTE = "Réglé par un administrateur de l'espace.";
 
 const DIGEST_HOURS = [6, 7, 8, 9, 10];
+
+const QUOTE_EXPIRY_CHOICES = [7, 15, 30];
 
 function Section({
   title,
@@ -259,6 +265,49 @@ export function SettingsForm({ initial, notifications, providers, canEditWorkspa
               defaultValue={initial.avgSalesCycleDays}
             />
             jours
+          </Row>
+        </Section>
+
+        <Section
+          id="liens"
+          locked={locked}
+          title="Vos liens"
+          description="Ce que chaque nouveau lien propose d'office. Clozer l'ajuste au document (le décompte ne va que sur les devis et propositions), et tout reste modifiable lien par lien."
+        >
+          <Row>
+            <label className="flex cursor-pointer items-center gap-2.5">
+              <Checkbox name="requireEmailByDefault" defaultChecked={initial.requireEmailByDefault} onCheckedChange={markDirty} />
+              <span>Demander son email au lecteur avant d&apos;ouvrir</span>
+            </label>
+          </Row>
+          <Row hint="Passé cette date, le prospect voit le document verrouillé et peut vous demander une prolongation.">
+            <span>
+              Un devis ou une proposition expire après
+              <select
+                name="quoteExpiryDays"
+                defaultValue={initial.quoteExpiryDays?.toString() ?? ""}
+                className="mx-1.5 h-8 rounded-md border border-input bg-transparent px-2 tabular-nums"
+              >
+                {QUOTE_EXPIRY_CHOICES.map((days) => (
+                  <option key={days} value={days}>
+                    {days} jours
+                  </option>
+                ))}
+                <option value="">jamais</option>
+              </select>
+            </span>
+          </Row>
+          <Row>
+            <label className="flex cursor-pointer items-center gap-2.5">
+              <Checkbox name="voiceCommentsByDefault" defaultChecked={initial.voiceCommentsByDefault} onCheckedChange={markDirty} />
+              <span>Laisser le prospect enregistrer un vocal sur une page</span>
+            </label>
+          </Row>
+          <Row>
+            <label className="flex cursor-pointer items-center gap-2.5">
+              <Checkbox name="followupsByDefault" defaultChecked={initial.followupsByDefault} onCheckedChange={markDirty} />
+              <span>Préparer les relances</span>
+            </label>
           </Row>
         </Section>
 

@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 
 import { AutoRefresh } from "@/components/dashboard/auto-refresh";
 import { CopyButton } from "@/components/dashboard/copy-button";
-import { NewLinkDialog } from "@/components/dashboard/create-link-form";
+import { NewLinkButton } from "@/components/dashboard/create-link-form";
 import { DeleteDocumentButton } from "@/components/dashboard/delete-document-button";
 import { DocumentPreview } from "@/components/dashboard/document-preview";
 import { EmptyState } from "@/components/dashboard/empty-state";
@@ -197,7 +197,7 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
           }
           action={
             <div className="flex items-center gap-2">
-              <NewLinkDialog documentId={document.id} disabled={!ready} />
+              <NewLinkButton documentId={document.id} />
               {/* Deleting takes every seller's links down with it */}
               {isManagerRole(role) && (
                 <DeleteDocumentButton documentId={document.id} linkCount={document.links.length} />
@@ -248,7 +248,7 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
                   ? "Envoyez-le à la place du lien d'origine. Vous verrez qui l'ouvre, combien de temps il y passe, et Clozer relancera pour vous."
                   : "Envoyez-le à la place du PDF. Vous verrez qui l'ouvre, combien de temps il lit, et Clozer relancera pour vous."
               }
-              action={<NewLinkDialog documentId={document.id} disabled={!ready} variant="outline" />}
+              action={<NewLinkButton documentId={document.id} variant="outline" />}
             />
           ) : (
             <Surface>

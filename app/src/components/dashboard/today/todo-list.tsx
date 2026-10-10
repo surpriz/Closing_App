@@ -2,16 +2,17 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 import type { EngagementTier } from "@/generated/prisma/enums";
-import { describeNextAction, isUrgent, type NextAction } from "@/lib/closing/dashboard/next-action";
+import { describeNextAction, isUrgent, type NextAction, type OpenDealStatus } from "@/lib/closing/dashboard/next-action";
 import { formatRelative } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 import { CopyButton } from "../copy-button";
+import { MarkWonButton } from "../mark-won-button";
 import { HeatBar, LiveDot } from "../heat";
 
 export type TodoRow = {
   id: string;
-  dealStatus: "OPEN" | "CHANGE_REQUESTED";
+  dealStatus: OpenDealStatus;
   /** At least one reading session, bots aside. */
   opened: boolean;
   label: string;
@@ -70,7 +71,13 @@ export function TodoList({ rows, now }: { rows: TodoRow[]; now: Date }) {
                     aria-hidden
                     className={cn(
                       "size-1.5 rounded-full",
-                      row.tier ? TIER_DOT[row.tier] : row.dealStatus === "CHANGE_REQUESTED" ? "bg-brand" : "bg-foreground/20",
+                      row.dealStatus === "VALIDATED"
+                        ? "bg-success"
+                        : row.tier
+                          ? TIER_DOT[row.tier]
+                          : row.dealStatus === "CHANGE_REQUESTED"
+                            ? "bg-brand"
+                            : "bg-foreground/20",
                     )}
                   />
                   <span className={cn(row.tier || row.dealStatus !== "OPEN" ? "font-medium text-foreground" : "")}>
@@ -101,7 +108,7 @@ export function TodoList({ rows, now }: { rows: TodoRow[]; now: Date }) {
               )}
             </div>
             <div className="relative z-10 flex items-start pt-0.5">
-              <CopyButton value={row.url} />
+              {row.action.kind === "close_won" ? <MarkWonButton linkId={row.id} /> : <CopyButton value={row.url} />}
             </div>
           </li>
         );

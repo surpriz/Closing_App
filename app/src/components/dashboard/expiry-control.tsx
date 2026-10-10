@@ -58,29 +58,6 @@ function ChoiceChips({ choice, pick, withNone }: { choice: Choice; pick: (next: 
   );
 }
 
-/** In the "new link" form: posts `expiresAt` as an ISO date, "" for none. */
-export function ExpiryPicker() {
-  const { choice, expiresAt, pick, pickDate } = useExpiryChoice();
-
-  return (
-    <fieldset className="space-y-2">
-      <legend className="text-sm font-medium">
-        Date d&apos;expiration <span className="font-normal text-muted-foreground">(facultatif)</span>
-      </legend>
-      <ChoiceChips choice={choice} pick={pick} withNone />
-      {choice === "date" && (
-        <Input type="date" aria-label="Date d'expiration" required onChange={(e) => pickDate(e.target.value)} />
-      )}
-      <input type="hidden" name="expiresAt" value={expiresAt?.toISOString() ?? ""} />
-      <p className="text-sm text-muted-foreground">
-        {expiresAt
-          ? `Le lien se verrouille le ${formatDate(expiresAt)}. Sur un devis, le prospect voit le décompte.`
-          : "Passé cette date, le prospect devra vous demander une prolongation."}
-      </p>
-    </fieldset>
-  );
-}
-
 /** On the deal page: where the deadline stands, and one click to move it. */
 export function ExpiryControl({
   linkId,

@@ -6,13 +6,12 @@ import { z } from "zod";
 
 import { getAppOrigin } from "@/lib/app-origin";
 import { createFileDocument } from "@/lib/closing/documents/create-document";
-import { createDocumentLink } from "@/lib/closing/documents/create-link";
+import { createDocumentLink, followDocumentType } from "@/lib/closing/documents/create-link";
 import { DOC_TYPES } from "@/lib/closing/documents/doc-types";
 import { inspectWebLink } from "@/lib/closing/documents/inspect-web-link";
 import { PAGE_TAGS } from "@/lib/closing/documents/page-reading";
 import { readDocumentPages } from "@/lib/closing/documents/read-pages";
 import { parseWebUrl } from "@/lib/closing/documents/web-link";
-import { expiryError } from "@/lib/closing/expiry";
 import { cancelOpenFollowups } from "@/lib/closing/followups/queue";
 import { prisma } from "@/lib/db";
 import { requireManager, requireWorkspace } from "@/lib/session";
@@ -20,25 +19,39 @@ import { requireManager, requireWorkspace } from "@/lib/session";
 const createDocumentSchema = z.object({
   pathname: z.string().min(1).max(512),
   name: z.string().min(1).max(200),
+  sha256: z.string().optional(),
 });
 
-// Called by the browser once the PDF is in Blob storage
-export async function createDocument(input: { pathname: string; name: string }) {
-  const { user, organization } = await requireWorkspace();
-  const { pathname, name } = createDocumentSchema.parse(input);
+/**
+ * Dropping a document gives a link ready to send, without waiting for the
+ * reading: the viewer copes with a document still processing. The link stays
+ * a draft (out of the deals) until the seller copies or sends it.
+ */
+async function draftLinkFor(documentId: string, workspace: { userId: string; organizationId: string }) {
+  const link = await createDocumentLink({ ...workspace, documentId, draft: true });
+  if (!link) throw new Error("Document introuvable");
+  return link.id;
+}
 
-  const { document } = await createFileDocument({
+// Called by the browser once the PDF is in Blob storage. Same file as before: the existing document gets a new link.
+export async function createDocument(input: { pathname: string; name: string; sha256?: string }) {
+  const { user, organization } = await requireWorkspace();
+  const { pathname, name, sha256 } = createDocumentSchema.parse(input);
+
+  const { document, reused } = await createFileDocument({
     organizationId: organization.id,
     userId: user.id,
     pathname,
     name,
+    sha256,
   });
+  const linkId = await draftLinkFor(document.id, { userId: user.id, organizationId: organization.id });
 
   revalidatePath("/documents");
-  return { id: document.id };
+  return { id: document.id, linkId, reused };
 }
 
-export type CreateWebDocumentResult = { id: string } | { error: string };
+export type CreateWebDocumentResult = { id: string; linkId: string } | { error: string };
 
 // A pasted URL (Notion, Loom, Figma...). Nothing to extract: ready at once.
 export async function createWebDocument(input: { url: string }): Promise<CreateWebDocumentResult> {
@@ -60,63 +73,17 @@ export async function createWebDocument(input: { url: string }): Promise<CreateW
     },
     select: { id: true },
   });
+  const linkId = await draftLinkFor(document.id, { userId: user.id, organizationId: organization.id });
 
   revalidatePath("/documents");
-  return { id: document.id };
+  return { id: document.id, linkId };
 }
 
-export type CreateLinkState = { error?: string; url?: string } | null;
-
-const createLinkSchema = z.object({
-  name: z.string().trim().max(120).optional(),
-  prospectEmail: z.union([z.literal(""), z.email().max(254)]),
-  prospectName: z.string().trim().max(120).optional(),
-  prospectCompany: z.string().trim().max(120).optional(),
-  requireEmail: z.enum(["true", "false"]),
-  // ISO, computed in the seller's browser time zone; "" = no deadline
-  expiresAt: z.union([z.literal(""), z.iso.datetime()]),
-});
-
-export async function createLink(
-  documentId: string,
-  _prev: CreateLinkState,
-  formData: FormData,
-): Promise<CreateLinkState> {
+/** "Nouveau lien" on a document: a fresh draft, set up on the share screen. */
+export async function createQuickLink(documentId: string): Promise<{ linkId: string } | { error: string }> {
   const { user, organization } = await requireWorkspace();
-
-  const parsed = createLinkSchema.safeParse({
-    name: formData.get("name") ?? undefined,
-    prospectEmail: String(formData.get("prospectEmail") ?? "").trim().toLowerCase(),
-    prospectName: formData.get("prospectName") ?? undefined,
-    prospectCompany: formData.get("prospectCompany") ?? undefined,
-    requireEmail: formData.get("requireEmail") ?? "true",
-    expiresAt: String(formData.get("expiresAt") ?? ""),
-  });
-  if (!parsed.success) {
-    const badDate = parsed.error.issues.some((issue) => issue.path[0] === "expiresAt");
-    return { error: badDate ? "Date d'expiration invalide." : "Vérifiez l'email du prospect." };
-  }
-
-  const { name, prospectEmail, prospectName, prospectCompany, requireEmail } = parsed.data;
-  const expiresAt = parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null;
-  const expiryProblem = expiresAt && expiryError(expiresAt, new Date());
-  if (expiryProblem) return { error: expiryProblem };
-
-  const link = await createDocumentLink({
-    organizationId: organization.id,
-    userId: user.id,
-    documentId,
-    name,
-    prospect: prospectEmail
-      ? { email: prospectEmail, name: prospectName, company: prospectCompany }
-      : null,
-    requireEmail: requireEmail === "true",
-    expiresAt,
-  });
-  if (!link) return { error: "Document introuvable." };
-
-  revalidatePath(`/documents/${documentId}`);
-  return { url: `/v/${link.slug}` };
+  const link = await createDocumentLink({ userId: user.id, organizationId: organization.id, documentId, draft: true });
+  return link ? { linkId: link.id } : { error: "Document introuvable." };
 }
 
 // Soft delete: the document and its links disappear from the app and stop opening
@@ -196,6 +163,7 @@ export async function setDocumentType(documentId: string, docType: string) {
     where: { id: document.id },
     data: { docType: parsed.data, docTypeSource: "MANUAL" },
   });
+  await followDocumentType(document.id);
   revalidatePath(`/documents/${document.id}`);
   return { ok: true };
 }

@@ -23,6 +23,8 @@ type Props = {
   embedUrl: string | null;
   labels: ViewerLabels;
   ctaEnabled: boolean;
+  /** The reader's name when known, offered when they sign. */
+  signerName: string | null;
   dealStatus: DealStatus;
   locale: SupportedLocale;
   /** Null when the assistant is off for this link. */
@@ -40,6 +42,7 @@ export function WebViewer({
   embedUrl,
   labels,
   ctaEnabled,
+  signerName,
   dealStatus,
   locale,
   chat,
@@ -111,6 +114,7 @@ export function WebViewer({
           initialStatus={dealStatus}
           getViewId={getViewId}
           documentName={documentName}
+          signerName={signerName}
         />
       )}
 

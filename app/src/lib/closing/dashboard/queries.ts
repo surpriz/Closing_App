@@ -6,6 +6,7 @@ import { hasReason } from "../engagement/reasons";
 import type { FeedSource } from "./feed";
 import type { FunnelLinkFacts } from "./funnel";
 import { firstProspect, linkLabelSelect, prospectLabel } from "./labels";
+import type { OpenDealStatus } from "./next-action";
 
 /**
  * Every read of the "Aujourd'hui" page. Scoped to the workspace, or to one
@@ -48,13 +49,16 @@ export function canEditDeal(createdById: string | null, editor: DealEditor) {
 }
 
 /** Deals still in play, with what the "À traiter" list and the temperature bar need. */
-export async function getOpenDeals(organizationId: string, scope: { owner?: SellerScope; take?: number } = {}) {
+export async function getOpenDeals(
+  organizationId: string,
+  scope: { owner?: SellerScope; take?: number; withValidated?: boolean } = {},
+) {
   const deals = await prisma.link.findMany({
     where: {
       organizationId,
       archivedAt: null,
       draftAt: null,
-      dealStatus: { in: ["OPEN", "CHANGE_REQUESTED"] },
+      dealStatus: { in: scope.withValidated ? ["OPEN", "CHANGE_REQUESTED", "VALIDATED"] : ["OPEN", "CHANGE_REQUESTED"] },
       ...(scope.owner && sellerLinks(scope.owner)),
     },
     orderBy: { createdAt: "desc" },
@@ -114,7 +118,7 @@ export async function getOpenDeals(organizationId: string, scope: { owner?: Sell
       insight: insights.at(0) ?? null,
       draftCount: _count.followups,
       lastSellerContactAt: sellerActivities.at(0)?.occurredAt ?? null,
-      dealStatus: deal.dealStatus as "OPEN" | "CHANGE_REQUESTED",
+      dealStatus: deal.dealStatus as OpenDealStatus,
       opened: lastView !== undefined,
       // Only flushes with reading time set lastActivityAt: a prospect who
       // closed the tab right away still opened the link.

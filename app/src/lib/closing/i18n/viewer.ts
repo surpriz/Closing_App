@@ -52,6 +52,15 @@ export type ViewerLabels = {
   confirmTitle: string;
   confirmAction: string;
   validatedNext: string;
+  /** The gate knows who the link was sent to. {name}, {email} (masked). */
+  greeting: string;
+  sentTo: string;
+  notMe: string;
+  /** "Valider & signer": a typed name and an explicit agreement. */
+  signName: string;
+  signAgree: string;
+  signedReceipt: string;
+  download: string;
   changeTitle: string;
   notFoundTitle: string;
   notFoundText: string;
@@ -135,6 +144,13 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     confirmTitle: "Accept this proposal",
     confirmAction: "Yes, I accept",
     validatedNext: "The sender has been notified and will be in touch shortly.",
+    greeting: "Hello {name}",
+    sentTo: "Sent to {email}",
+    notMe: "Not me",
+    signName: "Your full name",
+    signAgree: "I agree to this document",
+    signedReceipt: "A confirmation has been sent to your email.",
+    download: "Download the document",
     changeTitle: "What would you like to change?",
     notFoundTitle: "This link is no longer available",
     notFoundText: "It may have expired or been withdrawn. Ask the sender for a new link.",
@@ -250,6 +266,13 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     confirmTitle: "Valider cette proposition",
     confirmAction: "Oui, je valide",
     validatedNext: "L'expéditeur est prévenu et revient vers vous rapidement.",
+    greeting: "Bonjour {name}",
+    sentTo: "Envoyé à {email}",
+    notMe: "Ce n'est pas moi",
+    signName: "Votre nom et prénom",
+    signAgree: "Bon pour accord sur ce document",
+    signedReceipt: "Un récapitulatif vous a été envoyé par email.",
+    download: "Télécharger le document",
     changeTitle: "Que souhaitez-vous ajuster ?",
     notFoundTitle: "Ce lien n'est plus disponible",
     notFoundText: "Il a peut-être expiré ou été retiré. Demandez un nouveau lien à l'expéditeur.",
@@ -365,6 +388,13 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     confirmTitle: "Aceptar esta propuesta",
     confirmAction: "Sí, acepto",
     validatedNext: "El remitente ha sido avisado y te contactará en breve.",
+    greeting: "Hola {name}",
+    sentTo: "Enviado a {email}",
+    notMe: "No soy yo",
+    signName: "Tu nombre completo",
+    signAgree: "Conforme con este documento",
+    signedReceipt: "Te hemos enviado un resumen por email.",
+    download: "Descargar el documento",
     changeTitle: "¿Qué te gustaría ajustar?",
     notFoundTitle: "Este enlace ya no está disponible",
     notFoundText: "Puede haber caducado o haber sido retirado. Pide un nuevo enlace al remitente.",
@@ -480,6 +510,13 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     confirmTitle: "Dieses Angebot annehmen",
     confirmAction: "Ja, ich nehme an",
     validatedNext: "Der Absender wurde benachrichtigt und meldet sich in Kürze.",
+    greeting: "Hallo {name}",
+    sentTo: "Gesendet an {email}",
+    notMe: "Das bin ich nicht",
+    signName: "Ihr vollständiger Name",
+    signAgree: "Ich stimme diesem Dokument zu",
+    signedReceipt: "Eine Bestätigung wurde Ihnen per E-Mail gesendet.",
+    download: "Dokument herunterladen",
     changeTitle: "Was möchten Sie anpassen?",
     notFoundTitle: "Dieser Link ist nicht mehr verfügbar",
     notFoundText: "Er ist möglicherweise abgelaufen oder wurde zurückgezogen. Bitten Sie den Absender um einen neuen Link.",

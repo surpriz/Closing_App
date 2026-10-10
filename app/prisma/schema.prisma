@@ -343,6 +343,11 @@ model WorkspaceSettings {
   committeeThreshold        Int               @default(3) // committee alert when live distinct people >= threshold
   reopenAfterInactivityDays Int               @default(3)
   chatEnabledByDefault      Boolean           @default(true)
+  // New links start from these; the document type adjusts them (see smart-defaults.ts)
+  requireEmailByDefault  Boolean @default(true)
+  voiceCommentsByDefault Boolean @default(true)
+  followupsByDefault     Boolean @default(true)
+  quoteExpiryDays        Int?    @default(15) // quotes and proposals lock after N days; null = never
 
   alertChannels      SellerAlertChannel[] @default([EMAIL])
   alertEmail         String?
@@ -494,6 +499,8 @@ model Link {
   source       String? // where the link was created: null = dashboard, "extension_gmail", "extension_outlook", "outlook_addin"
   // Inserted in an email from the extension, not sent yet: hidden from the seller, archived after 7 days
   draftAt      DateTime?
+  // Settings still come from the defaults: they follow the document type once the AI has read it
+  autoSettings Boolean   @default(false)
 
   prospects        Prospect[]
   views            DocumentView[]
@@ -833,6 +840,12 @@ model ProspectAction {
 
   type    ProspectActionType
   message String?
+
+  // "Valider & signer": what the signer typed and agreed to, kept as evidence
+  signerName     String?
+  signerIpHash   String? // hashed like every IP we keep
+  signerAgent    String?
+  documentSha256 String? // the version they had in front of them
 
   createdAt DateTime @default(now())
 

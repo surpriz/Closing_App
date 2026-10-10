@@ -27,6 +27,7 @@ export const metadata: Metadata = { title: "Réglages" };
 const SECTIONS = [
   { id: "pilote", label: "Pilote automatique" },
   { id: "offre", label: "Votre offre" },
+  { id: "liens", label: "Vos liens" },
   { id: "assistant", label: "Assistant prospect" },
   { id: "messages", label: "Vos messages" },
   { id: "alertes", label: "Être prévenu" },
@@ -83,6 +84,10 @@ export default async function SettingsPage() {
               senderSignature: settings.senderSignature ?? "",
               autonomy: settings.autonomy,
               chatEnabledByDefault: settings.chatEnabledByDefault,
+              requireEmailByDefault: settings.requireEmailByDefault,
+              voiceCommentsByDefault: settings.voiceCommentsByDefault,
+              followupsByDefault: settings.followupsByDefault,
+              quoteExpiryDays: settings.quoteExpiryDays,
               assistantKnowledge: settings.assistantKnowledge ?? "",
               offerDescription: settings.offerDescription ?? "",
               targetCustomer: settings.targetCustomer ?? "",

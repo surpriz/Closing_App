@@ -1,7 +1,11 @@
 import { prisma } from "@/lib/db";
 import { randomSlug } from "@/lib/ids";
 
+import { getSellerPrefs, sellerTimezone } from "../notify/preferences";
+import { defaultTimezone, getWorkspaceSettings } from "../settings";
+import { onLinkExpiryChanged } from "../triggers/expiry";
 import { linkTitle } from "./link-title";
+import { linkDefaultsFor } from "./smart-defaults";
 
 export type LinkSource = "extension_gmail" | "extension_outlook" | "outlook_addin";
 
@@ -12,14 +16,15 @@ export async function createDocumentLink(input: {
   documentId: string;
   name?: string | null;
   prospect?: { email: string; name?: string | null; company?: string | null } | null;
-  requireEmail: boolean;
-  /** After it the viewer locks and the prospect can ask for more time. */
+  /** Left out: the workspace defaults, adjusted to the document type (and again once the AI knows it). */
+  requireEmail?: boolean;
+  /** After it the viewer locks and the prospect can ask for more time. Left out: from the defaults. */
   expiresAt?: Date | null;
   source?: LinkSource;
   // Inserted in an email that is not sent yet: confirmed by confirmLinkSent
   draft?: boolean;
 }) {
-  const [document, settings] = await Promise.all([
+  const [document, settings, timeZone] = await Promise.all([
     prisma.document.findFirst({
       where: {
         id: input.documentId,
@@ -29,16 +34,16 @@ export async function createDocumentLink(input: {
       },
       select: { id: true, name: true, docType: true, displayTitle: true },
     }),
-    prisma.workspaceSettings.findUnique({
-      where: { organizationId: input.organizationId },
-      select: { chatEnabledByDefault: true },
-    }),
+    getWorkspaceSettings(input.organizationId),
+    sellerTimeZone(input.userId, input.organizationId),
   ]);
   if (!document) return null;
 
   const { prospect } = input;
   const title = linkTitle({ ...document, company: prospect?.company });
   const now = new Date();
+  const defaults = linkDefaultsFor(document.docType, settings, now, timeZone);
+  const autoSettings = input.requireEmail === undefined && input.expiresAt === undefined;
   const link = await prisma.link.create({
     data: {
       slug: randomSlug(12),
@@ -46,9 +51,13 @@ export async function createDocumentLink(input: {
       organizationId: input.organizationId,
       createdById: input.userId,
       name: input.name || prospect?.company || prospect?.email || (input.draft ? title : null),
-      requireEmail: input.requireEmail,
-      expiresAt: input.expiresAt ?? null,
-      chatEnabled: settings?.chatEnabledByDefault ?? true,
+      requireEmail: input.requireEmail ?? defaults.requireEmail,
+      expiresAt: input.expiresAt === undefined ? defaults.expiresAt : input.expiresAt,
+      chatEnabled: defaults.chatEnabled,
+      voiceCommentsEnabled: defaults.voiceCommentsEnabled,
+      followupsEnabled: defaults.followupsEnabled,
+      ctaEnabled: defaults.ctaEnabled,
+      autoSettings,
       sentAt: input.draft ? null : now,
       draftAt: input.draft ? now : null,
       source: input.source ?? null,
@@ -67,6 +76,59 @@ export async function createDocumentLink(input: {
   return { ...link, title };
 }
 
+async function defaultExpiry(docType: string | null, organizationId: string, userId: string | null, now: Date) {
+  const [settings, timeZone] = await Promise.all([
+    getWorkspaceSettings(organizationId),
+    userId ? sellerTimeZone(userId, organizationId) : defaultTimezone(),
+  ]);
+  return linkDefaultsFor(docType, settings, now, timeZone).expiresAt;
+}
+
+async function sellerTimeZone(userId: string, organizationId: string) {
+  return sellerTimezone(await getSellerPrefs(userId, organizationId));
+}
+
+/**
+ * The AI has just told what the document is: links still on their defaults
+ * and not opened yet follow the type (a quote gets its deadline, a brochure
+ * loses the "Valider" button). Returns how many links changed.
+ */
+export async function followDocumentType(documentId: string, now = new Date()) {
+  const document = await prisma.document.findUnique({
+    where: { id: documentId },
+    select: {
+      docType: true,
+      organizationId: true,
+      links: {
+        // Never read: a prospect who opened it must not see the terms move
+        where: { autoSettings: true, archivedAt: null, lastActivityAt: null, views: { none: { isBot: false } } },
+        select: { id: true, createdById: true, expiresAt: true, ctaEnabled: true },
+      },
+    },
+  });
+  if (!document?.docType || document.links.length === 0) return 0;
+
+  const settings = await getWorkspaceSettings(document.organizationId);
+  let changed = 0;
+  for (const link of document.links) {
+    const timeZone = link.createdById
+      ? await sellerTimeZone(link.createdById, document.organizationId)
+      : defaultTimezone();
+    const { expiresAt, ctaEnabled } = linkDefaultsFor(document.docType, settings, now, timeZone);
+    if (link.expiresAt?.getTime() === expiresAt?.getTime() && link.ctaEnabled === ctaEnabled) continue;
+
+    // Only if the seller has not touched them in the meantime
+    const updated = await prisma.link.updateMany({
+      where: { id: link.id, autoSettings: true },
+      data: { expiresAt, ctaEnabled },
+    });
+    if (updated.count === 0) continue;
+    if (link.expiresAt?.getTime() !== expiresAt?.getTime()) await onLinkExpiryChanged(link.id, now);
+    changed += 1;
+  }
+  return changed;
+}
+
 const DRAFT_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 // The seller pressed Send: the deal starts now, with the recipients as they were at that moment
@@ -78,18 +140,32 @@ export async function confirmLinkSent(input: {
 }) {
   const link = await prisma.link.findFirst({
     where: { id: input.linkId, organizationId: input.organizationId, archivedAt: null },
-    select: { id: true, draftAt: true, name: true, prospects: { select: { id: true }, take: 1 } },
+    select: {
+      id: true,
+      draftAt: true,
+      name: true,
+      autoSettings: true,
+      createdById: true,
+      document: { select: { docType: true } },
+      prospects: { select: { id: true }, take: 1 },
+    },
   });
   if (!link) return null;
   if (!link.draftAt) return link;
 
   const { prospect } = input;
   const addProspect = prospect && link.prospects.length === 0;
+  const sentAt = input.sentAt ?? new Date();
+  // A default deadline runs from the send, not from the day the file was dropped
+  const expiresAt = link.autoSettings
+    ? await defaultExpiry(link.document.docType, input.organizationId, link.createdById, sentAt)
+    : undefined;
   return prisma.link.update({
     where: { id: link.id },
     data: {
       draftAt: null,
-      sentAt: input.sentAt ?? new Date(),
+      sentAt,
+      ...(expiresAt !== undefined && { expiresAt }),
       // The draft was named after the document; the recipient is a better deal name
       ...(addProspect && { name: prospect.company || prospect.name || prospect.email }),
       ...(addProspect && {

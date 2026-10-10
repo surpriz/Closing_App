@@ -11,11 +11,23 @@ import { refreshEngagementScore } from "@/lib/closing/engagement/refresh-score";
 import { extensionRequestKey } from "@/lib/closing/expiry";
 import { cancelOpenFollowups } from "@/lib/closing/followups/queue";
 import { pickLocale } from "@/lib/closing/i18n/viewer";
-import { getLinkForViewer, getViewerAccess, identifyProspect, resolveViewerLink } from "@/lib/closing/links";
+import { getPublicAppUrl } from "@/lib/app-origin";
+import { formatDeadline } from "@/lib/closing/expiry";
+import { signedEmail } from "@/lib/closing/i18n/signed-email";
+import {
+  getLinkForViewer,
+  getViewerAccess,
+  identifyProspect,
+  knownRecipient,
+  resolveViewerLink,
+} from "@/lib/closing/links";
+import { sendProspectEmail } from "@/lib/closing/prospect-email";
+import { defaultTimezone } from "@/lib/closing/settings";
 import { notifySeller } from "@/lib/closing/notify/notify";
 import { getRequestContext } from "@/lib/closing/tracking/request-context";
 import { VISITOR_COOKIE } from "@/lib/closing/tracking/visitor";
 import { prisma } from "@/lib/db";
+import { isEmailConfigured } from "@/lib/email";
 import { isWorkspaceMember } from "@/lib/session";
 
 export type UnlockState = { error?: "invalid_email" | "not_found" } | null;
@@ -44,6 +56,22 @@ export async function unlockWithEmail(
 
   const { email, name } = parsed.data;
   await identifyProspect(link, email, name);
+  redirect(`/v/${slug}`);
+}
+
+/**
+ * "Voir le document" on the greeting: the reader says they are the person the
+ * seller sent it to. Their word only, like an email typed in the gate; the
+ * signature receipt going to that address is what flags a wrong claim.
+ */
+export async function unlockAsKnown(slug: string): Promise<UnlockState> {
+  const resolved = await resolveViewerLink(slug);
+  if (!resolved) return { error: "not_found" };
+  if (resolved.expired) redirect(`/v/${slug}`);
+  const recipient = await knownRecipient(resolved.link.id);
+  // The contact changed since the page loaded: back to the plain gate
+  if (!recipient) redirect(`/v/${slug}?email=1`);
+  await identifyProspect(resolved.link, recipient.email);
   redirect(`/v/${slug}`);
 }
 
@@ -152,15 +180,20 @@ const actionSchema = z.object({
   viewId: z.string().max(64).nullable(),
   type: z.enum(["VALIDATE_SIGN", "REQUEST_CHANGE"]),
   message: z.string().trim().max(2000).optional(),
+  // Signing: a name typed by hand and the box ticked, nothing implied
+  signerName: z.string().trim().min(2).max(120).optional(),
+  agreed: z.boolean().optional(),
 });
 
 export async function submitProspectAction(input: z.input<typeof actionSchema>) {
   const parsed = actionSchema.safeParse(input);
   if (!parsed.success) return { ok: false };
-  const { slug, viewId, type, message } = parsed.data;
+  const { slug, viewId, type, message, signerName, agreed } = parsed.data;
+  if (type === "VALIDATE_SIGN" && (!signerName || agreed !== true)) return { ok: false };
 
   const link = await getLinkForViewer(slug);
-  if (!link) return { ok: false };
+  // The seller (or the document type) turned the buttons off: nothing to accept
+  if (!link || !link.ctaEnabled) return { ok: false };
 
   const access = await getViewerAccess(link);
   if (!access.allowed) return { ok: false };
@@ -177,9 +210,10 @@ export async function submitProspectAction(input: z.input<typeof actionSchema>) 
   const prospect = access.email
     ? await prisma.prospect.findUnique({
         where: { linkId_email: { linkId: link.id, email: access.email } },
-        select: { id: true, name: true, email: true },
+        select: { id: true, name: true, email: true, origin: true, locale: true, timezone: true },
       })
     : null;
+  const context = getRequestContext(await headers());
 
   const closed = link.dealStatus === "WON" || link.dealStatus === "LOST";
 
@@ -191,8 +225,15 @@ export async function submitProspectAction(input: z.input<typeof actionSchema>) 
         prospectId: prospect?.id,
         type,
         message: message || null,
+        ...(type === "VALIDATE_SIGN" && {
+          signerName,
+          signerIpHash: context.ipHash,
+          signerAgent: context.userAgent?.slice(0, 500) ?? null,
+          // Before READY the hash is the browser's hint, not ours
+          documentSha256: link.document.status === "READY" ? link.document.contentSha256 : null,
+        }),
       },
-      select: { id: true },
+      select: { id: true, createdAt: true },
     }),
     ...(closed
       ? []
@@ -211,7 +252,11 @@ export async function submitProspectAction(input: z.input<typeof actionSchema>) 
       linkId: link.id,
       type: type === "VALIDATE_SIGN" ? "PROSPECT_VALIDATED" : "CHANGE_REQUESTED",
       dedupeKey: `prospect_action:${action.id}`,
-      payload: { message: message || null, prospectName: prospect?.name ?? null, prospectEmail: prospect?.email ?? access.email ?? null },
+      payload: {
+        message: message || null,
+        prospectName: signerName ?? prospect?.name ?? null,
+        prospectEmail: prospect?.email ?? access.email ?? null,
+      },
     }),
   );
 
@@ -224,5 +269,44 @@ export async function submitProspectAction(input: z.input<typeof actionSchema>) 
     if (type === "REQUEST_CHANGE") await analyzeDeal(link.id, "PROSPECT_ACTION");
   });
 
-  return { ok: true };
+  // A receipt only to someone the seller sent the link to: a typed email proves nothing
+  const receipt = type === "VALIDATE_SIGN" && prospect?.origin === "SELLER" && isEmailConfigured();
+  if (receipt && prospect && signerName) {
+    inBackground("signed-receipt", () =>
+      sendSignedReceipt({ link, prospect, signerName, signedAt: action.createdAt }),
+    );
+  }
+
+  return { ok: true, receipt };
+}
+
+async function sendSignedReceipt(input: {
+  link: { id: string; slug: string; document: { name: string } };
+  prospect: { id: string; email: string; locale: string | null; timezone: string | null };
+  signerName: string;
+  signedAt: Date;
+}) {
+  const { link, prospect } = input;
+  const owner = await prisma.link.findUnique({
+    where: { id: link.id },
+    select: {
+      createdBy: { select: { email: true, name: true } },
+      organization: { select: { settings: { select: { senderName: true } } } },
+    },
+  });
+  const locale = prospect.locale ?? "fr";
+  await sendProspectEmail({
+    prospect,
+    locale,
+    replyTo: owner?.createdBy?.email,
+    ...signedEmail(locale, {
+      documentName: link.document.name,
+      signerName: input.signerName,
+      signedAt: formatDeadline(input.signedAt, locale, prospect.timezone ?? defaultTimezone(), {
+        showZone: !prospect.timezone,
+      }),
+      senderName: owner?.organization.settings?.senderName?.trim() || owner?.createdBy?.name || null,
+      url: `${getPublicAppUrl()}/v/${link.slug}`,
+    }),
+  });
 }

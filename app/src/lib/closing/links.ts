@@ -23,6 +23,7 @@ async function findViewerLink(slug: string) {
           embedUrl: true,
           numPages: true,
           blobPathname: true,
+          contentSha256: true,
           archivedAt: true,
         },
       },
@@ -70,4 +71,18 @@ export async function identifyProspect(link: { id: string }, email: string, name
     maxAge: EMAIL_COOKIE_MAX_AGE,
     path: "/",
   });
+}
+
+/**
+ * The one person the seller sent this link to, when there is exactly one:
+ * the gate can greet them and open in a click. Several contacts, or none,
+ * and the reader types their email as before.
+ */
+export async function knownRecipient(linkId: string) {
+  const prospects = await prisma.prospect.findMany({
+    where: { linkId, origin: "SELLER", unsubscribedAt: null },
+    select: { email: true, name: true },
+    take: 2,
+  });
+  return prospects.length === 1 ? prospects[0] : null;
 }

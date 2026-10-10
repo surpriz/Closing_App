@@ -1,10 +1,9 @@
 import { PenLine, Send } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
 import { AutopilotBanner } from "@/components/dashboard/autopilot-banner";
-import { NewLinkDialog } from "@/components/dashboard/create-link-form";
+import { NewLinkButton } from "@/components/dashboard/create-link-form";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { FirstSteps } from "@/components/dashboard/first-steps";
 import { CHANNEL_LABELS, DEAL_STATUS_LABELS, TIER_LABELS } from "@/components/dashboard/labels";
@@ -52,9 +51,8 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
   // A seller's day is their own deals; the team view is /equipe
   const { user, organization, role, scope } = await requireWorkspace();
   const organizationId = organization.id;
-  // New sellers, and teammates joining a workspace, start with the welcome tour
-  const { onboardingCompletedAt } = await getSellerPrefs(user.id, organizationId);
-  if (!onboardingCompletedAt) redirect("/bienvenue");
+  // No forced tour: the first screen is the drop zone. Setting up the mailbox stays one click away.
+  const { mailClient } = await getSellerPrefs(user.id, organizationId);
   const mine = { organizationId, ...sellerLinks(scope) };
   const now = new Date();
   const period = parsePeriod((await props.searchParams).p);
@@ -83,7 +81,8 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
       orderBy: { createdAt: "desc" },
       select: { id: true, name: true },
     }),
-    getOpenDeals(organizationId, { owner: scope }),
+    // A signed deal stays here until the seller marks it won
+    getOpenDeals(organizationId, { owner: scope, withValidated: true }),
     getFunnelFacts(organizationId, since, scope),
     getFeedSource(organizationId, since, scope),
     getUpcomingFollowups(organizationId, scope),
@@ -113,7 +112,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
         <div className="space-y-3">
           <h1 className="max-w-2xl text-display [font-stretch:88%]">Bienvenue sur Clozer.</h1>
           <p className="max-w-xl text-body text-muted-foreground">
-            Trois étapes, et vous verrez ici qui lit vos propositions et qui relancer.
+            Déposez un devis ou une proposition : le lien à envoyer est prêt dans la seconde.
           </p>
         </div>
         <FirstSteps
@@ -122,6 +121,15 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
           hasRead={false}
           action={<UploadDropzone uploadPrefix={uploadPrefix} />}
         />
+        {!mailClient && (
+          <p className="text-sm text-muted-foreground">
+            Vous envoyez depuis Gmail ou Outlook ?{" "}
+            <Link href="/bienvenue" className="text-foreground underline underline-offset-4">
+              Clozer peut créer le lien directement dans vos emails
+            </Link>
+            .
+          </p>
+        )}
       </div>
     );
   }
@@ -177,7 +185,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
             hasRead={!!firstRead}
             action={
               linkCount === 0 &&
-              latestReadyDocument && <NewLinkDialog documentId={latestReadyDocument.id} disabled={false} />
+              latestReadyDocument && <NewLinkButton documentId={latestReadyDocument.id} />
             }
           />
         )}
@@ -197,7 +205,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
                 }
                 action={
                   latestReadyDocument && (
-                    <NewLinkDialog documentId={latestReadyDocument.id} disabled={false} variant="outline" />
+                    <NewLinkButton documentId={latestReadyDocument.id} variant="outline" />
                   )
                 }
               />

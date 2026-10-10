@@ -9,9 +9,12 @@ import { DAY_MS } from "../constants";
 
 type Tier = "HOT" | "WARM" | "COLD";
 
+/** Deals still to act on. VALIDATED stays until the seller confirms the sale. */
+export type OpenDealStatus = "OPEN" | "CHANGE_REQUESTED" | "VALIDATED";
+
 export type NextActionInput = {
   now: Date;
-  dealStatus: "OPEN" | "CHANGE_REQUESTED";
+  dealStatus: OpenDealStatus;
   readingNow: boolean;
   /** At least one non-bot reading session. */
   opened: boolean;
@@ -30,6 +33,8 @@ export type NextActionInput = {
 };
 
 export type NextAction =
+  /** The prospect signed: one click to record the sale. */
+  | { kind: "close_won" }
   | { kind: "call_now" }
   | { kind: "reply" }
   | { kind: "review_draft" }
@@ -44,6 +49,7 @@ export type NextAction =
 
 /** Most urgent first. */
 const URGENCY: NextAction["kind"][] = [
+  "close_won",
   "call_now",
   "reply",
   "review_draft",
@@ -63,7 +69,7 @@ export function isUrgent(action: NextAction) {
 }
 
 /** Rule outcomes that describe a fact of the moment: they stay, whatever the analysis says. */
-const FACTUAL: NextAction["kind"][] = ["call_now", "reply", "review_draft", "in_touch", "snoozed"];
+const FACTUAL: NextAction["kind"][] = ["close_won", "call_now", "reply", "review_draft", "in_touch", "snoozed"];
 
 /**
  * The analysis has the last word on what to do, except for facts of the
@@ -99,6 +105,7 @@ function daysSince(date: Date, now: Date) {
 
 export function computeNextAction(input: NextActionInput): NextAction {
   const { now } = input;
+  if (input.dealStatus === "VALIDATED") return { kind: "close_won" };
   if (input.readingNow) return { kind: "call_now" };
   if (input.dealStatus === "CHANGE_REQUESTED") return { kind: "reply" };
   if (input.draftToReview) return { kind: "review_draft" };
@@ -130,6 +137,8 @@ export function computeNextAction(input: NextActionInput): NextAction {
 
 export function describeNextAction(action: NextAction, now: Date): string {
   switch (action.kind) {
+    case "close_won":
+      return "Validé par le prospect : confirmez la vente.";
     case "call_now":
       return "Lecture en cours : appelez maintenant.";
     case "reply":

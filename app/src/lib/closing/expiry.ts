@@ -66,7 +66,11 @@ export function endOfLocalDay(isoDate: string, timeZone: string) {
 /** "48h" is exact; day presets end that evening, local time. */
 export function expiryFromPreset(preset: ExpiryPreset, now: Date, timeZone: string) {
   if (preset === "48h") return new Date(now.getTime() + 48 * HOUR_MS);
-  const days = Number.parseInt(preset, 10);
+  return expiryInDays(Number.parseInt(preset, 10), now, timeZone);
+}
+
+/** 23:59 local time, N days from now. */
+export function expiryInDays(days: number, now: Date, timeZone: string) {
   const local = getLocalParts(new Date(now.getTime() + days * DAY_MS), timeZone);
   return zonedTimeToUtc(local.year, local.month, local.day, 23, 59, timeZone);
 }

@@ -1,109 +1,42 @@
 "use client";
 
 import { Plus } from "lucide-react";
-import { useActionState, useEffect, useEffectEvent, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useTransition } from "react";
 import { toast } from "sonner";
 
-import { createLink, type CreateLinkState } from "@/app/(dashboard)/documents/actions";
+import { createQuickLink } from "@/app/(dashboard)/documents/actions";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 
-import { ExpiryPicker } from "./expiry-control";
-
-function CreateLinkForm({ documentId, onCreated }: { documentId: string; onCreated: () => void }) {
-  const [state, formAction, pending] = useActionState<CreateLinkState, FormData>(
-    createLink.bind(null, documentId),
-    null,
-  );
-  const [requireEmail, setRequireEmail] = useState(true);
-  const created = useEffectEvent(onCreated);
-
-  useEffect(() => {
-    if (state?.error) toast.error(state.error);
-    if (state?.url) {
-      const fullUrl = `${window.location.origin}${state.url}`;
-      navigator.clipboard?.writeText(fullUrl).catch(() => {});
-      toast.success("Lien créé et copié. Collez-le dans votre email au prospect.");
-      created();
-    }
-  }, [state]);
-
-  return (
-    <form action={formAction} className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <Label htmlFor="prospectCompany">Entreprise</Label>
-          <Input id="prospectCompany" name="prospectCompany" placeholder="Acme SAS" autoFocus />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="prospectName">Contact</Label>
-          <Input id="prospectName" name="prospectName" placeholder="Marie Martin" />
-        </div>
-      </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="prospectEmail">Email du contact</Label>
-        <Input id="prospectEmail" name="prospectEmail" type="email" placeholder="marie@acme.com" />
-        <p className="text-sm text-muted-foreground">Pour les relances. Sans email, pas de relance automatique.</p>
-      </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="name">
-          Nom du lien <span className="font-normal text-muted-foreground">(facultatif)</span>
-        </Label>
-        <Input id="name" name="name" placeholder="Acme, version 2" />
-      </div>
-      <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg bg-muted px-3 py-2.5 text-sm">
-        Demander son email au lecteur avant d&apos;ouvrir le document
-        <Switch checked={requireEmail} onCheckedChange={(checked) => setRequireEmail(checked)} />
-        <input type="hidden" name="requireEmail" value={requireEmail ? "true" : "false"} />
-      </label>
-      <ExpiryPicker />
-      <Button type="submit" size="lg" className="w-full" disabled={pending}>
-        {pending ? "Création…" : "Créer le lien"}
-      </Button>
-    </form>
-  );
-}
-
-export function NewLinkDialog({
+/**
+ * One click: a new link with the usual settings, then the share screen where
+ * the seller says who it is for. No form to fill first.
+ */
+export function NewLinkButton({
   documentId,
-  disabled,
   variant = "default",
 }: {
   documentId: string;
-  disabled: boolean;
   variant?: "default" | "outline";
 }) {
-  const [open, setOpen] = useState(false);
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger
-        disabled={disabled}
-        render={<Button size="lg" variant={variant} />}
-        title={disabled ? "Disponible une fois l'analyse du document terminée" : undefined}
-      >
-        <Plus />
-        Nouveau lien prospect
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="text-lg">Nouveau lien prospect</DialogTitle>
-          <DialogDescription>
-            Un lien par prospect : vous saurez exactement qui lit, et quand le relancer.
-          </DialogDescription>
-        </DialogHeader>
-        <CreateLinkForm documentId={documentId} onCreated={() => setOpen(false)} />
-      </DialogContent>
-    </Dialog>
+    <Button
+      size="lg"
+      variant={variant}
+      disabled={pending}
+      onClick={() =>
+        startTransition(async () => {
+          const result = await createQuickLink(documentId);
+          if ("error" in result) toast.error(result.error);
+          else router.push(`/links/${result.linkId}?new=1`);
+        })
+      }
+    >
+      <Plus />
+      {pending ? "Création…" : "Nouveau lien prospect"}
+    </Button>
   );
 }

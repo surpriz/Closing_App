@@ -1,0 +1,48 @@
+import { describe, expect, it } from "vitest";
+
+import { linkDefaultsFor, type WorkspaceLinkDefaults } from "./smart-defaults";
+
+const workspace: WorkspaceLinkDefaults = {
+  requireEmailByDefault: true,
+  chatEnabledByDefault: true,
+  voiceCommentsByDefault: false,
+  followupsByDefault: true,
+  quoteExpiryDays: 15,
+};
+const now = new Date("2026-10-10T10:00:00Z");
+
+describe("linkDefaultsFor", () => {
+  it("gives a quote a deadline at 23:59 local time and the Valider button", () => {
+    const defaults = linkDefaultsFor("QUOTE", workspace, now, "Europe/Paris");
+    expect(defaults.ctaEnabled).toBe(true);
+    expect(defaults.expiresAt?.toISOString()).toBe("2026-10-25T22:59:00.000Z");
+  });
+
+  it("keeps a brochure open-ended and without the button", () => {
+    const defaults = linkDefaultsFor("BROCHURE", workspace, now, "Europe/Paris");
+    expect(defaults.ctaEnabled).toBe(false);
+    expect(defaults.expiresAt).toBeNull();
+  });
+
+  it("lets a contract be validated without a countdown", () => {
+    const defaults = linkDefaultsFor("CONTRACT", workspace, now, "Europe/Paris");
+    expect(defaults.ctaEnabled).toBe(true);
+    expect(defaults.expiresAt).toBeNull();
+  });
+
+  it("stays on the workspace values while the type is unknown", () => {
+    const defaults = linkDefaultsFor(null, workspace, now, "Europe/Paris");
+    expect(defaults).toEqual({
+      requireEmail: true,
+      chatEnabled: true,
+      voiceCommentsEnabled: false,
+      followupsEnabled: true,
+      ctaEnabled: true,
+      expiresAt: null,
+    });
+  });
+
+  it("sets no deadline when the workspace turned it off", () => {
+    expect(linkDefaultsFor("QUOTE", { ...workspace, quoteExpiryDays: null }, now, "Europe/Paris").expiresAt).toBeNull();
+  });
+});

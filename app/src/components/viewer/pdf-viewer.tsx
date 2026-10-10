@@ -25,6 +25,8 @@ type Props = {
   senderName: string | null;
   labels: ViewerLabels;
   ctaEnabled: boolean;
+  /** The reader's name when known, offered when they sign. */
+  signerName: string | null;
   dealStatus: DealStatus;
   locale: SupportedLocale;
   /** Null when the assistant is off for this link. */
@@ -44,6 +46,7 @@ export function PdfViewer({
   senderName,
   labels,
   ctaEnabled,
+  signerName,
   dealStatus,
   locale,
   chat,
@@ -162,6 +165,8 @@ export function PdfViewer({
           initialStatus={dealStatus}
           getViewId={getViewId}
           documentName={documentName}
+          signerName={signerName}
+          downloadUrl={`${fileUrl}?download=1`}
           atEnd={sizes.length > 0 && currentPage >= sizes.length}
         />
       )}

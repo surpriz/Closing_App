@@ -41,6 +41,13 @@ const settingsSchema = z.object({
   senderSignature: optionalText(500),
   autonomy: z.enum(["COPILOT", "AUTOPILOT"]),
   chatEnabledByDefault: z.boolean(),
+  requireEmailByDefault: z.boolean(),
+  voiceCommentsByDefault: z.boolean(),
+  followupsByDefault: z.boolean(),
+  quoteExpiryDays: z
+    .string()
+    .transform((v) => (v === "" ? null : Number(v)))
+    .pipe(z.number().int().min(1).max(365).nullable()),
   assistantKnowledge: optionalText(4000),
   offerDescription: optionalText(OFFER_DESCRIPTION_MAX),
   targetCustomer: optionalText(500),
@@ -109,6 +116,10 @@ export async function saveWorkspaceSettings(_prev: SettingsState, formData: Form
     senderSignature: String(formData.get("senderSignature") ?? ""),
     autonomy: String(formData.get("autonomy") ?? "COPILOT"),
     chatEnabledByDefault: formData.get("chatEnabledByDefault") === "on",
+    requireEmailByDefault: formData.get("requireEmailByDefault") === "on",
+    voiceCommentsByDefault: formData.get("voiceCommentsByDefault") === "on",
+    followupsByDefault: formData.get("followupsByDefault") === "on",
+    quoteExpiryDays: String(formData.get("quoteExpiryDays") ?? ""),
     assistantKnowledge: String(formData.get("assistantKnowledge") ?? ""),
     offerDescription: String(formData.get("offerDescription") ?? ""),
     targetCustomer: String(formData.get("targetCustomer") ?? ""),

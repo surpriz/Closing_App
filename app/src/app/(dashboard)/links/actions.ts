@@ -11,11 +11,15 @@ import { actOnInsight } from "@/lib/closing/brain/act";
 import { analyzeDeal } from "@/lib/closing/brain/analyze-deal";
 import { refreshEngagementScore } from "@/lib/closing/engagement/refresh-score";
 import { editableLinks } from "@/lib/closing/dashboard/queries";
+import { confirmLinkSent } from "@/lib/closing/documents/create-link";
 import { EXTENSION_DAYS, expiryError, extendExpiry, reactivates } from "@/lib/closing/expiry";
 import { cancelOpenFollowups, isUniqueViolation } from "@/lib/closing/followups/queue";
+import { prospectFromRecipient } from "@/lib/closing/prospects/from-recipient";
 import { notifyReactivated } from "@/lib/closing/reactivation";
+import { parseShareRecipient } from "@/lib/closing/share/compose";
 import { onLinkExpiryChanged } from "@/lib/closing/triggers/expiry";
 import { prisma } from "@/lib/db";
+import { isManagerRole } from "@/lib/roles";
 import { requireWorkspace } from "@/lib/session";
 
 export type LinkFormState = { ok?: boolean; error?: string } | null;
@@ -80,15 +84,6 @@ export async function archiveLink(linkId: string) {
 
 const checkbox = z.literal("on").optional().transform((v) => v === "on");
 
-const linkSettingsSchema = z.object({
-  name: z.string().trim().max(120).transform((v) => v || null),
-  requireEmail: checkbox,
-  ctaEnabled: checkbox,
-  chatEnabled: checkbox,
-  voiceCommentsEnabled: checkbox,
-  followupsEnabled: checkbox,
-});
-
 /**
  * The single place a deadline changes: stale reminders go, the analysis looks
  * again, and whoever asked for more time hears the link opens again.
@@ -96,7 +91,8 @@ const linkSettingsSchema = z.object({
  */
 async function applyExpiryChange(link: { id: string; expiresAt: Date | null }, next: Date | null, now: Date) {
   if (link.expiresAt?.getTime() === next?.getTime()) return 0;
-  await prisma.link.update({ where: { id: link.id }, data: { expiresAt: next } });
+  // The seller chose: the document type no longer moves it
+  await prisma.link.update({ where: { id: link.id }, data: { expiresAt: next, autoSettings: false } });
   await onLinkExpiryChanged(link.id, now);
   return reactivates(link.expiresAt, next, now) ? notifyReactivated(link.id, link.expiresAt!) : 0;
 }
@@ -123,30 +119,19 @@ export async function extendLink(linkId: string, days: number): Promise<ExpiryCh
   return { ok: true, told };
 }
 
-export async function saveLinkSettings(
-  linkId: string,
-  _prev: LinkFormState,
-  formData: FormData,
-): Promise<LinkFormState> {
+const LINK_SWITCHES = ["requireEmail", "ctaEnabled", "chatEnabled", "voiceCommentsEnabled", "followupsEnabled"] as const;
+export type LinkSwitch = (typeof LINK_SWITCHES)[number];
+
+/** One switch of the settings panel, saved as soon as it flips. */
+export async function setLinkSwitch(linkId: string, key: LinkSwitch, value: boolean) {
   const link = await requireOwnedLink(linkId);
-
-  const parsed = linkSettingsSchema.safeParse({
-    name: String(formData.get("name") ?? ""),
-    requireEmail: formData.get("requireEmail") ?? undefined,
-    ctaEnabled: formData.get("ctaEnabled") ?? undefined,
-    chatEnabled: formData.get("chatEnabled") ?? undefined,
-    voiceCommentsEnabled: formData.get("voiceCommentsEnabled") ?? undefined,
-    followupsEnabled: formData.get("followupsEnabled") ?? undefined,
-  });
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Réglages invalides." };
-  }
-
+  const field = z.enum(LINK_SWITCHES).parse(key);
   await prisma.link.update({
     where: { id: link.id },
     // Per-link rule overrides belong to the rule engine the analysis replaced: back to the defaults
     data: {
-      ...parsed.data,
+      [field]: value === true,
+      autoSettings: false,
       channels: [],
       hotPricingThresholdSec: null,
       inactivityDays: [],
@@ -154,11 +139,80 @@ export async function saveLinkSettings(
       businessHourEnd: null,
     },
   });
-  if (!parsed.data.followupsEnabled) {
+  if (field === "followupsEnabled" && !value) {
     await cancelOpenFollowups(link.id, "Relances désactivées sur ce lien");
   }
-
   revalidateLink(link);
+  return { ok: true };
+}
+
+export async function renameLink(linkId: string, name: string) {
+  const link = await requireOwnedLink(linkId);
+  const parsed = z.string().trim().max(120).safeParse(name);
+  if (!parsed.success) return { error: "Nom trop long." };
+  await prisma.link.update({ where: { id: link.id }, data: { name: parsed.data || null } });
+  revalidateLink(link);
+  return { ok: true };
+}
+
+/** "Copier" or "Envoyer par email" on the share screen: the draft becomes a deal. */
+export async function markLinkSent(linkId: string) {
+  const { organization } = await requireWorkspace();
+  const link = await requireOwnedLink(linkId);
+  await confirmLinkSent({ organizationId: organization.id, linkId: link.id });
+  revalidateLink(link);
+}
+
+/** The "Pour qui ?" field: an address adds the contact, a name only labels the link. */
+export async function setLinkRecipient(linkId: string, raw: string): Promise<LinkFormState> {
+  const link = await requireOwnedLink(linkId);
+  const { email, label } = parseShareRecipient(raw);
+  if (!email && !label) return { error: "Indiquez un email ou un nom." };
+
+  const prospect = email ? prospectFromRecipient({ email, displayName: label }) : null;
+  if (email && !prospect) return { error: "Cet email n'est pas valide." };
+  if (prospect) {
+    await prisma.prospect.upsert({
+      where: { linkId_email: { linkId: link.id, email: prospect.email } },
+      create: { linkId: link.id, ...prospect },
+      update: {},
+    });
+  }
+  await prisma.link.update({
+    where: { id: link.id },
+    data: { name: prospect ? prospect.company || prospect.name || prospect.email : label },
+  });
+  revalidateLink(link);
+  return { ok: true };
+}
+
+/** "Garder ces réglages pour mes prochains liens". Managers only: they are the workspace's. */
+export async function saveAsWorkspaceDefaults(linkId: string) {
+  const link = await requireOwnedLink(linkId);
+  const { organization, role } = await requireWorkspace();
+  if (!isManagerRole(role)) return { error: "Seuls les admins changent les réglages par défaut." };
+
+  const current = await prisma.link.findUniqueOrThrow({
+    where: { id: link.id },
+    select: { requireEmail: true, chatEnabled: true, voiceCommentsEnabled: true, followupsEnabled: true },
+  });
+  await prisma.workspaceSettings.upsert({
+    where: { organizationId: organization.id },
+    create: {
+      organizationId: organization.id,
+      requireEmailByDefault: current.requireEmail,
+      chatEnabledByDefault: current.chatEnabled,
+      voiceCommentsByDefault: current.voiceCommentsEnabled,
+      followupsByDefault: current.followupsEnabled,
+    },
+    update: {
+      requireEmailByDefault: current.requireEmail,
+      chatEnabledByDefault: current.chatEnabled,
+      voiceCommentsByDefault: current.voiceCommentsEnabled,
+      followupsByDefault: current.followupsEnabled,
+    },
+  });
+  revalidatePath("/settings");
   return { ok: true };
 }
 

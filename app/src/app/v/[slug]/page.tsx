@@ -17,12 +17,14 @@ import { suggestQuestions, toUIMessages } from "@/lib/closing/chat/messages";
 import { loadChatSetup } from "@/lib/closing/chat/queries";
 import { extensionRequestKey, showsCountdown } from "@/lib/closing/expiry";
 import { getViewerLabels, pickLocale, type ViewerLabels } from "@/lib/closing/i18n/viewer";
-import { getViewerAccess, resolveViewerLink, type ViewerLink } from "@/lib/closing/links";
+import { getViewerAccess, knownRecipient, resolveViewerLink, type ViewerLink } from "@/lib/closing/links";
+import { maskEmail } from "@/lib/closing/prospects/mask-email";
+import { firstNameOf } from "@/lib/closing/share/compose";
 import { VISITOR_COOKIE } from "@/lib/closing/tracking/visitor";
 import { prisma } from "@/lib/db";
 import { isWorkspaceMember } from "@/lib/session";
 
-import { requestLinkExtension, unlockWithEmail } from "./actions";
+import { requestLinkExtension, unlockAsKnown, unlockWithEmail } from "./actions";
 
 export async function generateMetadata({
   params,
@@ -36,8 +38,10 @@ export async function generateMetadata({
   };
 }
 
-export default async function ViewerPage({ params }: PageProps<"/v/[slug]">) {
+export default async function ViewerPage({ params, searchParams }: PageProps<"/v/[slug]">) {
   const { slug } = await params;
+  // "Ce n'est pas moi" after a contact change: the plain gate
+  const plainGate = (await searchParams).email === "1";
   const resolved = await resolveViewerLink(slug);
   if (!resolved) notFound();
   const { link, expired } = resolved;
@@ -80,9 +84,17 @@ export default async function ViewerPage({ params }: PageProps<"/v/[slug]">) {
   }
 
   if (!access.allowed) {
+    const recipient = plainGate ? null : await knownRecipient(link.id);
     return (
       <EmailGate
         action={unlockWithEmail.bind(null, slug)}
+        known={
+          recipient && {
+            firstName: firstNameOf(recipient.name),
+            maskedEmail: maskEmail(recipient.email),
+            unlock: unlockAsKnown.bind(null, slug),
+          }
+        }
         documentName={link.document.name}
         senderName={senderName}
         labels={labels}
@@ -114,6 +126,16 @@ export default async function ViewerPage({ params }: PageProps<"/v/[slug]">) {
   }
 
   const chat = await loadChatWidget(link, labels);
+  // "Valider & signer" starts from the name we already know
+  const signerName =
+    link.ctaEnabled && access.email
+      ? ((
+          await prisma.prospect.findUnique({
+            where: { linkId_email: { linkId: link.id, email: access.email } },
+            select: { name: true },
+          })
+        )?.name ?? null)
+      : null;
 
   const sellerNotice = isSeller && (
     <SellerNotice>
@@ -145,6 +167,7 @@ export default async function ViewerPage({ params }: PageProps<"/v/[slug]">) {
             embedUrl={link.document.embedUrl}
             labels={labels}
             ctaEnabled={link.ctaEnabled}
+            signerName={signerName}
             dealStatus={link.dealStatus}
             locale={locale}
             chat={chat}
@@ -177,6 +200,7 @@ export default async function ViewerPage({ params }: PageProps<"/v/[slug]">) {
           senderName={senderName}
           labels={labels}
           ctaEnabled={link.ctaEnabled}
+          signerName={signerName}
           dealStatus={link.dealStatus}
           locale={locale}
           chat={chat}
