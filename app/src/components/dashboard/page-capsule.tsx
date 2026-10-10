@@ -1,8 +1,8 @@
 "use client";
 
-import { Pencil, Trash2, Video } from "lucide-react";
+import { Pencil, Play, Trash2, Video } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { deleteCapsule } from "@/app/(dashboard)/documents/capsule-actions";
@@ -87,14 +87,44 @@ export function PageCapsuleControl({
 function CapsulePreview({ capsule }: { capsule: CapsuleSummary }) {
   const src = `/api/capsules/${capsule.id}/media`;
   if (capsule.kind === "AUDIO") return <audio controls preload="none" src={src} className="h-8 w-56 max-w-full" />;
-  return (
-    <video
-      controls
-      playsInline
-      preload="metadata"
-      src={src}
-      className="size-20 shrink-0 rounded-full bg-black object-cover"
-    />
-  );
+  return <VideoThumb src={src} />;
 }
 
+/**
+ * Native controls do not fit in a 80px circle, and Chrome recordings carry no
+ * duration: show the first frame and play on click instead.
+ */
+function VideoThumb({ src }: { src: string }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  const [playing, setPlaying] = useState(false);
+  const toggle = () => {
+    const video = ref.current;
+    if (!video) return;
+    if (video.paused) void video.play();
+    else video.pause();
+  };
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      aria-label={playing ? "Mettre en pause" : "Lire la capsule"}
+      className="relative size-20 shrink-0 overflow-hidden rounded-full bg-black"
+    >
+      <video
+        ref={ref}
+        playsInline
+        preload="metadata"
+        src={`${src}#t=0.1`}
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+        onEnded={() => setPlaying(false)}
+        className="size-full object-cover"
+      />
+      {!playing && (
+        <span className="absolute inset-0 flex items-center justify-center bg-black/30 text-white">
+          <Play className="size-6 fill-current" aria-hidden />
+        </span>
+      )}
+    </button>
+  );
+}
