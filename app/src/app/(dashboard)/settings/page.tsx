@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { ExtensionTokens } from "@/components/dashboard/extension-tokens";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrivacySettings } from "@/components/dashboard/privacy-settings";
 import { SettingsForm } from "@/components/dashboard/settings-form";
 import { TeamSettings } from "@/components/dashboard/team-settings";
 import { getLanguageModel } from "@/lib/closing/ai/provider";
@@ -34,6 +35,7 @@ const SECTIONS = [
   { id: "alertes", label: "Être prévenu" },
   { id: "extension", label: "Chrome et Outlook" },
   { id: "equipe", label: "Équipe", managerOnly: true },
+  { id: "donnees", label: "Données" },
 ];
 
 export default async function SettingsPage() {
@@ -126,6 +128,7 @@ export default async function SettingsPage() {
               invitations={team.invitations}
             />
           )}
+          <PrivacySettings workspaceName={organization.name} isManager={isManager} isOwner={isOwnerRole(role)} />
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { del, get, head, put } from "@vercel/blob";
+import { del, get, head, list, put } from "@vercel/blob";
 
 // Always pass the token explicitly: when BLOB_STORE_ID is set the SDK switches
 // to OIDC auth, which is disabled for local development.
@@ -14,6 +14,10 @@ export function documentUploadPrefix(organizationId: string) {
 
 export function capsuleUploadPrefix(organizationId: string) {
   return `orgs/${organizationId}/capsules/`;
+}
+
+export function organizationPrefix(organizationId: string) {
+  return `orgs/${organizationId}/`;
 }
 
 export function voiceCommentPrefix(organizationId: string, linkId: string) {
@@ -35,6 +39,17 @@ export function headPrivateBlob(pathname: string) {
 
 export function deletePrivateBlob(pathname: string | string[]) {
   return del(pathname, { token: blobToken() });
+}
+
+export async function listPrivateBlobPaths(prefix: string) {
+  const paths: string[] = [];
+  let cursor: string | undefined;
+  do {
+    const page = await list({ prefix, cursor, token: blobToken() });
+    paths.push(...page.blobs.map((blob) => blob.pathname));
+    cursor = page.hasMore ? page.cursor : undefined;
+  } while (cursor);
+  return paths;
 }
 
 export async function streamPrivateBlob(pathname: string) {
