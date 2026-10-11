@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { prisma } from "@/lib/db";
 
-import { getLanguageModel } from "../ai/provider";
+import { getLanguageModel, THINKING_ROOM_TOKENS } from "../ai/provider";
 import { recordAiUsage } from "../ai/usage";
 import { followDocumentType } from "./create-link";
 import { DOC_TYPES } from "./doc-types";
@@ -51,7 +51,7 @@ async function classifyDocument(llm: Llm, document: { name: string; organization
       system: DOC_CLASSIFY_SYSTEM_PROMPT,
       prompt: `Document title: ${document.name}\n<document>\n${text.slice(0, CLASSIFY_CHARS)}\n</document>`,
       output: Output.object({ schema: classifySchema }),
-      maxOutputTokens: 200,
+      maxOutputTokens: THINKING_ROOM_TOKENS + 200,
       abortSignal: AbortSignal.timeout(CALL_TIMEOUT_MS),
     });
     await recordAiUsage({
@@ -147,7 +147,7 @@ export async function readDocumentPages(documentId: string): Promise<ReadPagesOu
             system: systemPrompt,
             prompt: buildPageReadingPrompt(document.name, chunk),
             output: Output.object({ schema: readingSchema }),
-            maxOutputTokens: 300 * chunk.length,
+            maxOutputTokens: THINKING_ROOM_TOKENS + 300 * chunk.length,
             abortSignal: AbortSignal.timeout(CALL_TIMEOUT_MS),
           });
           await recordAiUsage({

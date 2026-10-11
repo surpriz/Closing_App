@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { prisma } from "@/lib/db";
 
-import { getLanguageModel } from "../ai/provider";
+import { getLanguageModel, THINKING_ROOM_TOKENS } from "../ai/provider";
 import { recordAiUsage } from "../ai/usage";
 
 /**
@@ -57,7 +57,7 @@ export async function inferOfferFromDocument(documentId: string) {
       system: SYSTEM,
       prompt: `Document title: ${document.name}\n<document>\n${content}\n</document>`,
       output: Output.object({ schema: offerSchema }),
-      maxOutputTokens: 400,
+      maxOutputTokens: THINKING_ROOM_TOKENS + 400,
       abortSignal: AbortSignal.timeout(30_000),
     });
     await recordAiUsage({

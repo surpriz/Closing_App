@@ -12,7 +12,7 @@ const DEFAULT_MODELS: Record<AiProvider, Record<AiPurpose, string>> = {
   anthropic: {
     followup: "claude-sonnet-5-5",
     chat: "claude-sonnet-5-5",
-    classify: "claude-haiku-4-5-20251001",
+    classify: "claude-haiku-5-5",
     analyze: "claude-sonnet-5-5",
   },
 };
@@ -33,6 +33,13 @@ const MODEL_ENV: Record<AiPurpose, string | undefined> = {
 };
 
 // Null when the selected provider has no API key: callers fall back to templates
+/**
+ * Haiku 5.5 and Sonnet 5.5 think before answering, on by default, and the
+ * thinking counts against maxOutputTokens: short answers still need this room
+ * or the structured output gets cut off.
+ */
+export const THINKING_ROOM_TOKENS = 4000;
+
 export function getLanguageModel(purpose: AiPurpose) {
   const provider: AiProvider = process.env.AI_PROVIDER === "anthropic" ? "anthropic" : "openai";
   const modelId = MODEL_ENV[purpose] || DEFAULT_MODELS[provider][purpose];

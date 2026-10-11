@@ -1,7 +1,7 @@
 import { generateText, Output } from "ai";
 import { z } from "zod";
 
-import { getLanguageModel } from "./provider";
+import { getLanguageModel, THINKING_ROOM_TOKENS } from "./provider";
 import { recordAiUsage } from "./usage";
 
 /**
@@ -46,7 +46,7 @@ export async function reviewFollowupWithLlm(
         `<source_material>\n${sourceText.slice(0, SOURCE_CHARS)}\n</source_material>`,
       ].join("\n\n"),
       output: Output.object({ schema: verdictSchema }),
-      maxOutputTokens: 300,
+      maxOutputTokens: THINKING_ROOM_TOKENS + 300,
       abortSignal: AbortSignal.timeout(30_000),
     });
     await recordAiUsage({

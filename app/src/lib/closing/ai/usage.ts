@@ -13,6 +13,8 @@ type Price = { input: number; output: number; cacheRead: number };
 
 const PRICES: { match: RegExp; price: Price }[] = [
   { match: /^claude-sonnet-5/, price: { input: 2, output: 10, cacheRead: 0.2 } },
+  // Up to 100K input tokens, far above what we send
+  { match: /^claude-haiku-5-5/, price: { input: 0.1, output: 0.5, cacheRead: 0.01 } },
   { match: /^claude-haiku-4-5/, price: { input: 1, output: 5, cacheRead: 0.1 } },
   { match: /^claude-opus-5-5/, price: { input: 4, output: 20, cacheRead: 0.2 } },
   { match: /^gpt-4o-mini/, price: { input: 0.15, output: 0.6, cacheRead: 0.075 } },
