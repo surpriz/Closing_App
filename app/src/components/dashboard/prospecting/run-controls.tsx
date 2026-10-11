@@ -1,6 +1,6 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { Scale, Search } from "lucide-react";
 import { useTransition } from "react";
 import { toast } from "sonner";
 
@@ -17,9 +17,9 @@ type Props = {
 export function RunControls({ providers, disabled }: Props) {
   const [pending, startTransition] = useTransition();
 
-  const start = (provider: string) =>
+  const start = (selected: string[]) =>
     startTransition(async () => {
-      const result = await startSearchAction(provider);
+      const result = await startSearchAction(selected);
       if ("error" in result) toast.error(result.error);
       else toast.success("Recherche lancée");
     });
@@ -35,12 +35,18 @@ export function RunControls({ providers, disabled }: Props) {
           key={provider}
           variant={index === 0 ? "default" : "outline"}
           disabled={disabled || pending}
-          onClick={() => start(provider)}
+          onClick={() => start([provider])}
         >
           <Search aria-hidden />
           Chercher avec {PROVIDER_LABELS[provider] ?? provider}
         </Button>
       ))}
+      {providers.length > 1 && (
+        <Button variant="ghost" disabled={disabled || pending} onClick={() => start(providers)}>
+          <Scale aria-hidden />
+          Comparer sur la même cible
+        </Button>
+      )}
     </div>
   );
 }

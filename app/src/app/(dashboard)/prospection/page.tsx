@@ -4,6 +4,7 @@ import { AutoRefresh } from "@/components/dashboard/auto-refresh";
 import { inBackground } from "@/lib/closing/background";
 import { PageHeader, SectionTitle, Surface } from "@/components/dashboard/page-header";
 import { PROVIDER_LABELS } from "@/components/dashboard/prospecting/labels";
+import { ProviderCompare } from "@/components/dashboard/prospecting/provider-compare";
 import { RunControls } from "@/components/dashboard/prospecting/run-controls";
 import { SuggestionsList } from "@/components/dashboard/prospecting/suggestions-list";
 import { TargetForm } from "@/components/dashboard/prospecting/target-form";
@@ -11,6 +12,7 @@ import { prisma } from "@/lib/db";
 import { formatRelative } from "@/lib/format";
 import { availableProviders } from "@/lib/prospecting/credentials";
 import { requireProspecting } from "@/lib/prospecting/flag";
+import { providerMetrics } from "@/lib/prospecting/metrics";
 import { pollPendingReveals } from "@/lib/prospecting/reveal";
 import { describeTarget, EMPTY_TARGET, targetIsSearchable } from "@/lib/prospecting/target";
 import { activeTarget, filtersOf } from "@/lib/prospecting/targets";
@@ -57,6 +59,21 @@ export default async function ProspectionPage() {
       select: { id: true, name: true },
     }),
   ]);
+
+  // Every run on the active target, rejected suggestions included: the providers are judged on all they gave
+  const compared = target
+    ? await prisma.prospectSuggestion.findMany({
+        where: { organizationId: organization.id, run: { targetProfileId: target.id } },
+        select: { id: true, provider: true, seniority: true, nafVerified: true, status: true, invalidReason: true },
+      })
+    : [];
+  const credits = compared.length
+    ? await prisma.prospectingCreditEntry.findMany({
+        where: { organizationId: organization.id, suggestionId: { in: compared.map((s) => s.id) } },
+        select: { provider: true, kind: true, credits: true },
+      })
+    : [];
+  const metrics = providerMetrics(compared, credits);
 
   const filters = target ? filtersOf(target) : { ...EMPTY_TARGET, seniorities: DEFAULT_SENIORITIES };
   const running = runs.some((run) => run.status === "RUNNING");
@@ -105,6 +122,15 @@ export default async function ProspectionPage() {
           </ul>
         )}
       </section>
+
+      {metrics.length > 0 && (
+        <section>
+          <SectionTitle hint="sur votre cible actuelle">Fournisseurs</SectionTitle>
+          <Surface>
+            <ProviderCompare metrics={metrics} />
+          </Surface>
+        </section>
+      )}
 
       <section>
         <SectionTitle hint={rows.length ? String(rows.length) : undefined}>Suggestions</SectionTitle>

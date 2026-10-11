@@ -105,11 +105,15 @@ export type ActionResult = { ok: true } | { error: string };
 
 const providerSchema = z.enum(["APOLLO", "LEMLIST", "MOCK"]);
 
-/** Starts a search on the active target; the page follows the run until it is done. */
-export async function startSearchAction(provider: string): Promise<ActionResult> {
+/**
+ * Starts a search on the active target; the page follows the run until it is done. Several
+ * providers at once share a comparisonId and run one after the other on the same target.
+ */
+export async function startSearchAction(providers: string[]): Promise<ActionResult> {
   const { organization } = await requireProspecting();
-  const name = providerSchema.parse(provider);
-  if (!availableProviders(organization.id).includes(name)) return { error: "Ce fournisseur n'est pas configuré." };
+  const names = z.array(providerSchema).min(1).max(3).parse(providers);
+  const available = availableProviders(organization.id);
+  if (names.some((name) => !available.includes(name))) return { error: "Ce fournisseur n'est pas configuré." };
 
   const target = await activeTarget(organization.id);
   if (!target || !targetIsSearchable(filtersOf(target))) {
@@ -120,8 +124,15 @@ export async function startSearchAction(provider: string): Promise<ActionResult>
   });
   if (running > 0) return { error: "Une recherche est déjà en cours." };
 
-  const run = await startRun({ organizationId: organization.id, targetProfileId: target.id, provider: name });
-  inBackground("prospecting-search", () => runSearch(run.id));
+  const comparisonId = names.length > 1 ? crypto.randomUUID() : null;
+  const runIds: string[] = [];
+  for (const provider of names) {
+    const run = await startRun({ organizationId: organization.id, targetProfileId: target.id, provider, comparisonId });
+    runIds.push(run.id);
+  }
+  inBackground("prospecting-search", async () => {
+    for (const runId of runIds) await runSearch(runId);
+  });
   revalidatePath("/prospection");
   return { ok: true };
 }
