@@ -55,6 +55,7 @@ describe("linkDefaultsFor", () => {
       voiceCommentsEnabled: false,
       followupsEnabled: true,
       ctaEnabled: true,
+      bookingEnabled: true,
       expiresAt: null,
     });
   });
