@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 import { INVALID_LABELS, PROVIDER_LABELS, STATUS_LABELS } from "./labels";
+import { OutreachDialog } from "./outreach-dialog";
 
 export type SuggestionRow = {
   id: string;
@@ -28,6 +29,7 @@ export type SuggestionRow = {
   status: string;
   invalidReason: string | null;
   email: string | null;
+  linkId: string | null;
 };
 
 function linkedinHref(row: SuggestionRow) {
@@ -37,7 +39,7 @@ function linkedinHref(row: SuggestionRow) {
   return `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(keywords)}`;
 }
 
-export function SuggestionsList({ rows }: { rows: SuggestionRow[] }) {
+export function SuggestionsList({ rows, documents }: { rows: SuggestionRow[]; documents: { id: string; name: string }[] }) {
   const [pending, startTransition] = useTransition();
 
   const run = (action: () => Promise<ActionResult>, success?: string) =>
@@ -78,6 +80,9 @@ export function SuggestionsList({ rows }: { rows: SuggestionRow[] }) {
           </div>
 
           <div className="flex shrink-0 flex-wrap gap-2">
+            {row.status === "READY" && (
+              <OutreachDialog suggestionId={row.id} documents={documents} hasLink={!!row.linkId} />
+            )}
             {row.status === "SUGGESTED" && (
               <Button size="sm" disabled={pending} onClick={() => run(() => acceptSuggestionsAction([row.id]))}>
                 <Check aria-hidden />

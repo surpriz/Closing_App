@@ -409,7 +409,17 @@ export async function saveDealContext(linkId: string, _prev: LinkFormState, form
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Contexte invalide." };
 
   const { dealAmount, ...rest } = parsed.data;
-  await prisma.link.update({ where: { id: link.id }, data: { ...rest, dealAmountCents: dealAmount } });
+  // Consent to be named in prospecting messages: dated when first given, removed at once
+  const consent = formData.get("referenceConsent") === "on";
+  const current = await prisma.link.findUnique({ where: { id: link.id }, select: { referenceConsentAt: true } });
+  await prisma.link.update({
+    where: { id: link.id },
+    data: {
+      ...rest,
+      dealAmountCents: dealAmount,
+      referenceConsentAt: consent ? (current?.referenceConsentAt ?? new Date()) : null,
+    },
+  });
   inBackground("brain", () => analyzeDeal(link.id, "SELLER_UPDATE"));
   revalidateLink(link);
   return { ok: true };

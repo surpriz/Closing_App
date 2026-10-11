@@ -3,13 +3,18 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { getPublicAppUrl } from "@/lib/app-origin";
 import { inBackground } from "@/lib/closing/background";
+import { confirmLinkSent, createDocumentLink } from "@/lib/closing/documents/create-link";
+import { unsubscribePageUrl } from "@/lib/closing/unsubscribe";
 import { prisma } from "@/lib/db";
 import { availableProviders } from "@/lib/prospecting/credentials";
 import { requireProspecting } from "@/lib/prospecting/flag";
 import { getEnv } from "@/lib/env";
 import { inferWorkspaceTarget } from "@/lib/prospecting/infer/collect";
 import { revealsStartedToday } from "@/lib/prospecting/ledger";
+import { draftOutreach } from "@/lib/prospecting/hook";
+import { outreachFooter } from "@/lib/prospecting/hook-prompt";
 import { addOptOut } from "@/lib/prospecting/opt-out";
 import { revealAllowance } from "@/lib/prospecting/quota";
 import { startReveals } from "@/lib/prospecting/reveal";
@@ -203,4 +208,93 @@ export async function acceptSuggestionsAction(suggestionIds: string[]): Promise<
   return allowed < open.length
     ? { error: `${allowed} contact${allowed > 1 ? "s" : ""} en cours de révélation, la limite du jour est atteinte pour les autres.` }
     : { ok: true };
+}
+
+export type OutreachResult =
+  | { linkId: string; url: string; email: string; subject: string; body: string; draft: boolean }
+  | { error: string };
+
+/**
+ * A tracked link for a ready contact, with a first message the seller sends from their own
+ * mailbox. The link stays a draft until the seller says it was sent (or the contact opens it),
+ * and Clozer never sends follow-ups on its own to someone who never asked to hear from us.
+ */
+export async function createOutreachLinkAction(suggestionId: string, documentId: string): Promise<OutreachResult> {
+  const { user, organization } = await requireProspecting();
+  const suggestion = await ownedSuggestion(organization.id, suggestionId);
+  if (suggestion.status !== "READY" || !suggestion.email) return { error: "Ce contact n'est pas prêt." };
+
+  let linkId = suggestion.linkId;
+  if (!linkId) {
+    const link = await createDocumentLink({
+      organizationId: organization.id,
+      userId: user.id,
+      documentId: z.string().min(1).parse(documentId),
+      prospect: {
+        email: suggestion.email,
+        name: [suggestion.firstName, suggestion.lastName].filter(Boolean).join(" ") || null,
+        company: suggestion.companyName,
+        origin: "PROSPECTING",
+      },
+      source: "prospecting",
+      draft: true,
+    });
+    if (!link) return { error: "Document introuvable." };
+    await prisma.link.update({ where: { id: link.id }, data: { followupsEnabled: false } });
+    await prisma.prospectSuggestion.update({ where: { id: suggestion.id }, data: { linkId: link.id } });
+    linkId = link.id;
+  }
+
+  const link = await prisma.link.findUniqueOrThrow({
+    where: { id: linkId },
+    select: {
+      slug: true,
+      draftAt: true,
+      document: { select: { name: true, displayTitle: true } },
+      prospects: { select: { id: true }, take: 1 },
+    },
+  });
+  const url = `${getPublicAppUrl()}/v/${link.slug}`;
+
+  let subject = suggestion.hookSubject;
+  let message = suggestion.hookBody;
+  if (!subject || !message) {
+    const draft = await draftOutreach({
+      organizationId: organization.id,
+      linkId,
+      proposalUrl: url,
+      documentTitle: link.document.displayTitle || link.document.name,
+      prospect: { firstName: suggestion.firstName, title: suggestion.title, company: suggestion.companyName },
+      prospectSiren: suggestion.companySiren,
+    });
+    subject = draft.subject;
+    message = draft.body;
+    await prisma.prospectSuggestion.update({
+      where: { id: suggestion.id },
+      data: { hookSubject: subject, hookBody: message },
+    });
+  }
+
+  const settings = await prisma.workspaceSettings.findUnique({
+    where: { organizationId: organization.id },
+    select: { senderName: true, senderSignature: true },
+  });
+  const footer = outreachFooter({
+    signature: settings?.senderSignature ?? null,
+    senderName: settings?.senderName ?? user.name,
+    unsubscribeUrl: unsubscribePageUrl(link.prospects[0].id),
+  });
+
+  revalidatePath("/prospection");
+  return { linkId, url, email: suggestion.email, subject, body: `${message}\n\n${footer}`, draft: !!link.draftAt };
+}
+
+/** The seller sent the message from their mailbox: the deal starts now. */
+export async function markOutreachSentAction(linkId: string): Promise<ActionResult> {
+  const { organization } = await requireProspecting();
+  const confirmed = await confirmLinkSent({ organizationId: organization.id, linkId });
+  if (!confirmed) return { error: "Lien introuvable." };
+  revalidatePath("/prospection");
+  revalidatePath("/dashboard");
+  return { ok: true };
 }

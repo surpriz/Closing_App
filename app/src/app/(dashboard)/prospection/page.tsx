@@ -23,7 +23,7 @@ export default async function ProspectionPage() {
   const { organization } = await requireProspecting();
   const now = new Date();
 
-  const [target, runs, suggestions] = await Promise.all([
+  const [target, runs, suggestions, documents] = await Promise.all([
     activeTarget(organization.id),
     prisma.prospectingRun.findMany({
       where: { organizationId: organization.id },
@@ -47,7 +47,14 @@ export default async function ProspectionPage() {
         status: true,
         invalidReason: true,
         email: true,
+        linkId: true,
       },
+    }),
+    prisma.document.findMany({
+      where: { organizationId: organization.id, archivedAt: null, status: "READY" },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      select: { id: true, name: true },
     }),
   ]);
 
@@ -103,7 +110,7 @@ export default async function ProspectionPage() {
         <SectionTitle hint={rows.length ? String(rows.length) : undefined}>Suggestions</SectionTitle>
         {rows.length ? (
           <Surface>
-            <SuggestionsList rows={rows} />
+            <SuggestionsList rows={rows} documents={documents} />
           </Surface>
         ) : (
           <p className="text-small text-muted-foreground">Lancez une recherche pour voir des contacts.</p>
