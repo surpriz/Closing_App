@@ -155,6 +155,27 @@ describe("buildDealStory", () => {
     expect(story.facts.find((f) => f.kind === "PROSPECT_ACTION")!.text).toContain("a demandé un devis");
   });
 
+  it("tells how much of a video was watched and what happened around it", () => {
+    const story = buildDealStory(
+      base({
+        document: { name: "Démo", kind: "URL", embeddedVideo: true, pages: [page(1)] },
+        views: [
+          view("v1", at(1), [[1, 120_000]], {
+            watchedRatio: 0.42,
+            signals: [
+              { type: "EXTERNAL_OPEN", valueMs: null },
+              { type: "EXTERNAL_RETURN", valueMs: 180_000 },
+            ],
+          }),
+        ],
+      }),
+    );
+    const session = story.facts.find((f) => f.kind === "SESSION")!.text;
+    expect(session).toContain("42 % de la vidéo vue");
+    expect(session).toContain("a ouvert le site dans un nouvel onglet (≈");
+    expect(session).not.toContain("surtout");
+  });
+
   it("says when a deal was never opened", () => {
     const story = buildDealStory(base());
     expect(story.opened).toBe(false);

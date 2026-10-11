@@ -88,4 +88,14 @@ describe("computeEngagementScore", () => {
     });
     expect(result.score).toBe(100);
   });
+
+  it("talks of watching for a video", () => {
+    const reasons = computeEngagementScore({ ...base, completionRatio: 0.95, isVideo: true }).reasons;
+    expect(reasons.map((r) => r.code)).toEqual(["watched_to_end"]);
+  });
+
+  it("counts time on a site opened in a new tab as reading", () => {
+    const reasons = computeEngagementScore({ ...base, totalDurationMs: 0, externalMs: 120_000 }).reasons;
+    expect(reasons).toEqual([{ code: "reading_time", weight: 10, detail: "120s" }]);
+  });
 });

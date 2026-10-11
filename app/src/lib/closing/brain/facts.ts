@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-import type { DocumentKind, PageTag, ProspectActionType } from "@/generated/prisma/enums";
+import type { DocumentKind, PageTag, ProspectActionType, ViewSignalType } from "@/generated/prisma/enums";
 
 import { DAY_MS } from "../constants";
 import { tagLabels } from "../documents/doc-types";
@@ -52,6 +52,8 @@ export type DealFactsInput = {
     kind: DocumentKind;
     /** VIDEO: its length, each page being a tenth of it. */
     durationMs?: number | null;
+    /** An embedded YouTube or Vimeo video: completion is the share watched. */
+    embeddedVideo?: boolean;
     /** QUOTE, RESUME…: section names follow it ("TJM" rather than "Tarifs" on a résumé). */
     docType?: string | null;
     pages: { pageNumber: number; tags: PageTag[]; summary: string | null; wordCount: number }[];
@@ -70,6 +72,10 @@ export type DealFactsInput = {
     timezone: string | null;
     maxPageReached: number;
     pages: { pageNumber: number; totalDurationMs: number }[];
+    /** Share of the video watched in this session, videos only. */
+    watchedRatio?: number | null;
+    /** What the reader did around the content (tracking/view-signals.ts). */
+    signals?: { type: ViewSignalType; valueMs: number | null }[];
   }[];
   actions: {
     type: ProspectActionType;
@@ -199,6 +205,22 @@ const SELLER_ACTIVITY_TEXT: Record<DealFactsInput["sellerActivities"][number]["t
   MANUAL_SEND: "Message envoyé par le vendeur",
 };
 
+/** What a session's signals add to its line, in the analysis' words. */
+function signalNotes(signals: { type: ViewSignalType; valueMs: number | null }[]) {
+  const notes: string[] = [];
+  if (signals.some((s) => s.type === "EXTERNAL_OPEN")) {
+    const awayMs = signals.reduce((sum, s) => sum + (s.type === "EXTERNAL_RETURN" ? (s.valueMs ?? 0) : 0), 0);
+    notes.push(
+      awayMs > 0
+        ? `a ouvert le site dans un nouvel onglet (≈${fmtDuration(awayMs)} avant de revenir)`
+        : "a ouvert le site dans un nouvel onglet",
+    );
+  }
+  if (signals.some((s) => s.type === "DOWNLOAD")) notes.push("a téléchargé le PDF");
+  if (signals.some((s) => s.type === "EXIT_PROMPT_OPENED")) notes.push("en partant, a ouvert l'assistant pour poser une question");
+  return notes;
+}
+
 export function buildDealStory(input: DealFactsInput): DealStory {
   const { now, deal, document } = input;
   const origin = deal.sentAt ?? deal.createdAt;
@@ -288,7 +310,9 @@ export function buildDealStory(input: DealFactsInput): DealStory {
         : numPages
           ? `jusqu'à la p.${view.maxPageReached}/${numPages}`
           : null,
-      notable.length ? `surtout : ${notable.join(", ")}` : null,
+      document.embeddedVideo ? `${Math.round((view.watchedRatio ?? 0) * 100)} % de la vidéo vue` : null,
+      numPages && notable.length ? `surtout : ${notable.join(", ")}` : null,
+      ...signalNotes(view.signals ?? []),
       notes.length ? notes.join(", ") : null,
     ].filter(Boolean);
 

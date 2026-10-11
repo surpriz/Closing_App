@@ -124,6 +124,8 @@ export const SCORE_REASON_LABELS: Record<string, string> = {
   pricing_interest: "Lecture des tarifs",
   read_to_end: "Lu jusqu'au bout",
   read_halfway: "Lu à moitié",
+  watched_to_end: "Vidéo vue jusqu'au bout",
+  watched_halfway: "Vidéo vue à moitié",
   change_requested: "Ajustement demandé",
   quote_requested: "A demandé un devis",
   meeting_clicked: "A ouvert votre agenda",

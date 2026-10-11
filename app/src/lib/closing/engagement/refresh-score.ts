@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 
+import { videoProvider } from "../documents/web-link";
 import { getWorkspaceSettings } from "../settings";
 import { computeEngagementScore } from "./scoring";
 
@@ -16,6 +17,8 @@ export async function refreshEngagementScore(linkId: string, now = new Date()) {
       quoteRequestedAt: true,
       document: {
         select: {
+          kind: true,
+          embedUrl: true,
           numPages: true,
           pages: { where: { tags: { has: "PRICING" } }, select: { pageNumber: true } },
         },
@@ -27,8 +30,9 @@ export async function refreshEngagementScore(linkId: string, now = new Date()) {
   const settings = await getWorkspaceSettings(link.organizationId);
   const pricingPages = link.document.pages.map((p) => p.pageNumber);
   const viewWhere = { linkId, isBot: false };
+  const isVideo = link.document.kind === "URL" && videoProvider(link.document.embedUrl) !== null;
 
-  const [totals, visitors, pricing, meetingClicks] = await Promise.all([
+  const [totals, visitors, pricing, meetingClicks, watched, external] = await Promise.all([
     prisma.documentView.aggregate({
       where: viewWhere,
       _count: { _all: true },
@@ -43,6 +47,13 @@ export async function refreshEngagementScore(linkId: string, now = new Date()) {
         })
       : null,
     prisma.prospectAction.count({ where: { linkId, type: "MEETING_CLICK" } }),
+    isVideo
+      ? prisma.pageView.aggregate({
+          where: { linkId, pageNumber: 1, view: { isBot: false } },
+          _max: { maxScrollDepth: true },
+        })
+      : null,
+    prisma.viewSignal.aggregate({ where: { linkId, type: "EXTERNAL_RETURN" }, _sum: { valueMs: true } }),
   ]);
 
   const result = computeEngagementScore({
@@ -54,9 +65,13 @@ export async function refreshEngagementScore(linkId: string, now = new Date()) {
     uniqueViewers: visitors.length,
     pricingDurationMs: pricing?._sum.totalDurationMs ?? 0,
     pricingThresholdMs: (link.hotPricingThresholdSec ?? settings.hotPricingThresholdSec) * 1000,
-    completionRatio: link.document.numPages
-      ? (totals._max.maxPageReached ?? 0) / link.document.numPages
-      : 0,
+    completionRatio: isVideo
+      ? (watched?._max.maxScrollDepth ?? 0)
+      : link.document.numPages
+        ? (totals._max.maxPageReached ?? 0) / link.document.numPages
+        : 0,
+    isVideo,
+    externalMs: external._sum.valueMs ?? 0,
     meetingClicked: meetingClicks > 0,
     meetingBooked: link.meetingBookedAt !== null,
     quoteRequested: link.quoteRequestedAt !== null,
