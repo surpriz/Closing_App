@@ -921,10 +921,12 @@ model PageCapsule {
   // "doc" or the link id: Postgres treats NULLs as distinct, a unique on linkId would allow two defaults
   scopeKey   String
 
-  pageNumber   Int // 1-based
+  pageNumber   Int // 0 = welcome message, else 1-based page
   kind         CapsuleKind
   blobPathname String
   contentType  String // without codecs
+  // First frame of a video, so the bubble shows a still instead of downloading the clip
+  posterPathname String?
   sizeBytes    Int
   durationMs   Int
   hookText     String? // "Sur cette partie, laisse-moi t'expliquer…"

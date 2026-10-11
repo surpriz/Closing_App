@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 
-import { mediaResponse } from "@/lib/closing/media/serve";
+import { capsuleMediaResponse } from "@/lib/closing/media/serve";
 import { prisma } from "@/lib/db";
 import { getWorkspace } from "@/lib/session";
 
@@ -13,9 +13,9 @@ export async function GET(request: NextRequest, ctx: RouteContext<"/api/capsules
 
   const capsule = await prisma.pageCapsule.findFirst({
     where: { id, document: { organizationId: workspace.organization.id } },
-    select: { blobPathname: true, contentType: true },
+    select: { blobPathname: true, contentType: true, posterPathname: true },
   });
   if (!capsule) return new Response("Not found", { status: 404 });
 
-  return mediaResponse(request, { pathname: capsule.blobPathname, contentType: capsule.contentType });
+  return capsuleMediaResponse(request, capsule);
 }

@@ -2,14 +2,17 @@
 export const CAPSULE_MAX_MS = 90_000;
 export const VOICE_COMMENT_MAX_MS = 60_000;
 
-/** Recorder bitrates: ~11 MB for a 90 s video, ~0.5 MB for a 60 s voice comment. */
-export const VIDEO_BITS_PER_SECOND = 1_000_000;
+/** Recorder bitrates: ~7 MB for a 90 s video (plenty for a 340px player), ~0.5 MB for a 60 s voice comment. */
+export const VIDEO_BITS_PER_SECOND = 600_000;
 export const AUDIO_BITS_PER_SECOND = 64_000;
 
 /** Upload ceilings, with room above the bitrates (browsers overshoot). */
 export const CAPSULE_VIDEO_MAX_BYTES = 32 * 1024 * 1024;
 export const CAPSULE_AUDIO_MAX_BYTES = 4 * 1024 * 1024;
 export const VOICE_COMMENT_MAX_BYTES = 1.5 * 1024 * 1024;
+/** Still frame shown in the bubble instead of playing the video: a small JPEG. */
+export const CAPSULE_POSTER_TYPE = "image/jpeg";
+export const CAPSULE_POSTER_MAX_BYTES = 512 * 1024;
 
 /** "Sur cette partie, laisse-moi t'expliquer…" shown next to the bubble. */
 export const CAPSULE_HOOK_MAX = 120;

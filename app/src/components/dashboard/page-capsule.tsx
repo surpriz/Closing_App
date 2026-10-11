@@ -123,6 +123,8 @@ function VideoThumb({ src }: { src: string }) {
         playsInline
         preload="metadata"
         src={`${src}#t=0.1`}
+        // The still when there is one, else the browser shows the first frame
+        poster={`${src}?poster`}
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
         onEnded={() => setPlaying(false)}

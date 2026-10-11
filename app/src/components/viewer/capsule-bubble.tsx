@@ -15,6 +15,8 @@ export type ViewerCapsule = {
   kind: CapsuleKind;
   hookText: string | null;
   src: string;
+  /** Still frame of a video; null for audio and clips recorded before stills. */
+  poster: string | null;
 };
 
 type Props = {
@@ -37,8 +39,9 @@ function readDismissed(slug: string) {
 }
 
 /**
- * The seller's clip for the page the prospect reached: a round muted teaser
- * bottom left, opened with sound on a tap. Once closed, it stays closed.
+ * The seller's clip for the page the prospect reached: a round still frame
+ * bottom left, the video downloaded only when tapped open. Once closed, it
+ * stays closed.
  */
 const noSubscribe = () => () => {};
 
@@ -113,6 +116,7 @@ export function CapsuleBubble({ capsule, slug, labels, senderName, getViewId, ct
           <video
             ref={playerRef}
             src={open.src}
+            poster={open.poster ?? undefined}
             controls
             playsInline
             className="aspect-square w-full rounded-xl bg-black object-cover"
@@ -138,27 +142,29 @@ export function CapsuleBubble({ capsule, slug, labels, senderName, getViewId, ct
         ctaVisible ? "bottom-[calc(7.5rem+env(safe-area-inset-bottom))] sm:bottom-24 lg:bottom-6" : "bottom-6",
       )}
     >
+      {/* A few pulses to catch the eye, then still */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute left-0 size-16 rounded-full bg-brand/40 motion-safe:animate-ping motion-safe:[animation-iteration-count:3] sm:size-20"
+      />
       <button
         type="button"
         onClick={() => expand(capsule)}
         aria-label={`${labels.capsuleOpen} · ${from}`}
         className="group relative size-16 shrink-0 overflow-hidden rounded-full bg-brand shadow-lg ring-4 ring-card outline-none focus-visible:ring-brand/40 sm:size-20"
       >
-        {capsule.kind === "VIDEO" ? (
-          <video
-            src={capsule.src}
-            muted
-            autoPlay
-            loop
-            playsInline
-            preload="metadata"
-            className="size-full object-cover"
-          />
+        {/* No autoplaying teaser: it would download the whole clip for every reader, tap or not */}
+        {capsule.kind === "VIDEO" && capsule.poster ? (
+          // eslint-disable-next-line @next/next/no-img-element -- private, auth-checked route
+          <img src={capsule.poster} alt="" className="size-full object-cover" />
+        ) : capsule.kind === "VIDEO" ? (
+          // Older clips without a still: the first frame, fetched as a small range
+          <video src={`${capsule.src}#t=0.1`} muted playsInline preload="metadata" className="size-full object-cover" />
         ) : (
           <Avatar initials={initials} playing className="size-full" />
         )}
-        <span className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/25">
-          <Play className="size-6 fill-white text-white opacity-0 transition-opacity group-hover:opacity-100" aria-hidden />
+        <span className="absolute inset-0 flex items-center justify-center bg-black/10 transition-colors group-hover:bg-black/25">
+          <Play className="size-6 fill-white text-white drop-shadow" aria-hidden />
         </span>
       </button>
       <div className="flex max-w-[min(15rem,calc(100vw-9rem))] items-start gap-1 rounded-2xl bg-card py-2 pr-1 pl-3 text-sm shadow-lg ring-1 ring-border">

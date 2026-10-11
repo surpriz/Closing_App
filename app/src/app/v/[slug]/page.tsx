@@ -260,15 +260,19 @@ async function loadCapsules(
 ): Promise<ViewerCapsule[]> {
   const rows = await prisma.pageCapsule.findMany({
     where: capsulesVisibleOnLink(link),
-    select: { id: true, pageNumber: true, linkId: true, kind: true, hookText: true },
+    select: { id: true, pageNumber: true, linkId: true, kind: true, hookText: true, posterPathname: true },
   });
-  return [...resolveCapsules(rows, link.id).values()].map((row) => ({
-    id: row.id,
-    pageNumber: row.pageNumber,
-    kind: row.kind,
-    hookText: row.hookText,
-    src: `/api/v/${slug}/capsules/${row.id}/media`,
-  }));
+  return [...resolveCapsules(rows, link.id).values()].map((row) => {
+    const src = `/api/v/${slug}/capsules/${row.id}/media`;
+    return {
+      id: row.id,
+      pageNumber: row.pageNumber,
+      kind: row.kind,
+      hookText: row.hookText,
+      src,
+      poster: row.posterPathname ? `${src}?poster` : null,
+    };
+  });
 }
 
 // Shown only when on for the link, an AI is configured and the document has something to answer from

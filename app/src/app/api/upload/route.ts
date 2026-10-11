@@ -2,7 +2,7 @@ import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 
 import { blobToken, capsuleUploadPrefix, documentUploadPrefix } from "@/lib/blob";
 import { MAX_UPLOAD_BYTES } from "@/lib/closing/constants";
-import { CAPSULE_VIDEO_MAX_BYTES } from "@/lib/closing/media/limits";
+import { CAPSULE_POSTER_TYPE, CAPSULE_VIDEO_MAX_BYTES } from "@/lib/closing/media/limits";
 import { ALLOWED_MEDIA_TYPES } from "@/lib/closing/media/mime";
 import { getWorkspace } from "@/lib/session";
 
@@ -27,10 +27,10 @@ export async function POST(request: Request) {
             addRandomSuffix: true,
           };
         }
-        // Checked again (type, size, duration) when the capsule is saved
+        // Checked again (type, size, duration) when the capsule is saved, the poster too
         if (pathname.startsWith(capsuleUploadPrefix(organizationId))) {
           return {
-            allowedContentTypes: [...ALLOWED_MEDIA_TYPES.VIDEO, ...ALLOWED_MEDIA_TYPES.AUDIO],
+            allowedContentTypes: [...ALLOWED_MEDIA_TYPES.VIDEO, ...ALLOWED_MEDIA_TYPES.AUDIO, CAPSULE_POSTER_TYPE],
             maximumSizeInBytes: CAPSULE_VIDEO_MAX_BYTES,
             addRandomSuffix: true,
           };

@@ -7,7 +7,7 @@ import { capsuleUploadPrefix, deletePrivateBlob, headPrivateBlob } from "@/lib/b
 import { inBackground } from "@/lib/closing/background";
 import { capsuleScopeKey, WELCOME_PAGE } from "@/lib/closing/capsules/resolve";
 import { editableLinks } from "@/lib/closing/dashboard/queries";
-import { CAPSULE_HOOK_MAX, CAPSULE_MAX_MS } from "@/lib/closing/media/limits";
+import { CAPSULE_HOOK_MAX, CAPSULE_MAX_MS, CAPSULE_POSTER_MAX_BYTES, CAPSULE_POSTER_TYPE } from "@/lib/closing/media/limits";
 import { baseMime } from "@/lib/closing/media/mime";
 import { validateMedia, type MediaError } from "@/lib/closing/media/validate";
 import { prisma } from "@/lib/db";
@@ -61,9 +61,21 @@ const saveSchema = z.object({
   pageNumber: z.number().int().min(0),
   kind: z.enum(["VIDEO", "AUDIO"]),
   pathname: z.string().min(1).max(512),
+  posterPathname: z.string().min(1).max(512).nullish(),
   durationMs: z.number().int().min(1),
   hookText: z.string().max(CAPSULE_HOOK_MAX * 2),
 });
+
+/** The still is a nicety: a missing or odd one is dropped, the clip saves without it. */
+async function checkedPoster(pathname: string | null | undefined, prefix: string, kind: string) {
+  if (!pathname) return null;
+  const blob = pathname.startsWith(prefix) ? await headPrivateBlob(pathname).catch(() => null) : null;
+  const ok =
+    blob && kind === "VIDEO" && baseMime(blob.contentType) === CAPSULE_POSTER_TYPE && blob.size <= CAPSULE_POSTER_MAX_BYTES;
+  if (ok) return blob.pathname;
+  if (blob) inBackground("capsule-poster-discard", () => deletePrivateBlob(pathname));
+  return null;
+}
 
 /** Registers a clip the browser just uploaded, replacing the page's previous one for the same scope. */
 export async function saveCapsule(input: z.input<typeof saveSchema>): Promise<CapsuleResult> {
@@ -72,8 +84,11 @@ export async function saveCapsule(input: z.input<typeof saveSchema>): Promise<Ca
   const { documentId, linkId, pageNumber, kind, pathname, durationMs } = parsed.data;
   const { workspace, document } = await requireCapsuleScope({ documentId, linkId });
 
-  if (!pathname.startsWith(capsuleUploadPrefix(workspace.organization.id))) return { error: "Enregistrement invalide." };
-  const discard = () => inBackground("capsule-discard", () => deletePrivateBlob(pathname));
+  const prefix = capsuleUploadPrefix(workspace.organization.id);
+  if (!pathname.startsWith(prefix)) return { error: "Enregistrement invalide." };
+  const poster = parsed.data.posterPathname;
+  const discard = () =>
+    inBackground("capsule-discard", () => deletePrivateBlob(poster?.startsWith(prefix) ? [pathname, poster] : pathname));
 
   // The welcome message fits any document, a web link included; a page needs a PDF that has it
   if (pageNumber !== WELCOME_PAGE && (document.kind !== "FILE" || pageNumber > (document.numPages ?? 0))) {
@@ -93,24 +108,25 @@ export async function saveCapsule(input: z.input<typeof saveSchema>): Promise<Ca
 
   const scopeKey = capsuleScopeKey(linkId);
   const where = { documentId_pageNumber_scopeKey: { documentId: document.id, pageNumber, scopeKey } };
-  const previous = await prisma.pageCapsule.findUnique({ where, select: { blobPathname: true } });
+  const previous = await prisma.pageCapsule.findUnique({ where, select: { id: true, blobPathname: true, posterPathname: true } });
   const data = {
     kind,
     blobPathname: blob.pathname,
+    posterPathname: await checkedPoster(poster, prefix, kind),
     contentType,
     sizeBytes: blob.size,
     durationMs,
     hookText: hookSchema.parse(parsed.data.hookText.slice(0, CAPSULE_HOOK_MAX)),
     createdById: workspace.user.id,
   };
-  await prisma.pageCapsule.upsert({
-    where,
-    create: { documentId: document.id, linkId, scopeKey, pageNumber, ...data },
-    // A new recording counts its own plays
-    update: { ...data, plays: { deleteMany: {} } },
-  });
-  if (previous && previous.blobPathname !== blob.pathname) {
-    inBackground("capsule-replace", () => deletePrivateBlob(previous.blobPathname));
+  // A new row, not an update: its own plays, and prospects who closed the old take see this one (dismissals go by id)
+  await prisma.$transaction([
+    ...(previous ? [prisma.pageCapsule.delete({ where: { id: previous.id } })] : []),
+    prisma.pageCapsule.create({ data: { documentId: document.id, linkId, scopeKey, pageNumber, ...data } }),
+  ]);
+  if (previous) {
+    const stale = [previous.blobPathname, previous.posterPathname].filter((p): p is string => !!p && p !== blob.pathname);
+    if (stale.length > 0) inBackground("capsule-replace", () => deletePrivateBlob(stale));
   }
 
   revalidateCapsule(document.id, linkId);
@@ -120,7 +136,7 @@ export async function saveCapsule(input: z.input<typeof saveSchema>): Promise<Ca
 async function requireOwnedCapsule(capsuleId: string) {
   const capsule = await prisma.pageCapsule.findUnique({
     where: { id: capsuleId },
-    select: { id: true, documentId: true, linkId: true, blobPathname: true },
+    select: { id: true, documentId: true, linkId: true, blobPathname: true, posterPathname: true },
   });
   if (!capsule) throw new Error("Capsule introuvable");
   await requireCapsuleScope({ documentId: capsule.documentId, linkId: capsule.linkId });
@@ -130,7 +146,8 @@ async function requireOwnedCapsule(capsuleId: string) {
 export async function deleteCapsule(capsuleId: string): Promise<CapsuleResult> {
   const capsule = await requireOwnedCapsule(capsuleId);
   await prisma.pageCapsule.delete({ where: { id: capsule.id } });
-  inBackground("capsule-delete", () => deletePrivateBlob(capsule.blobPathname));
+  const files = capsule.posterPathname ? [capsule.blobPathname, capsule.posterPathname] : capsule.blobPathname;
+  inBackground("capsule-delete", () => deletePrivateBlob(files));
   revalidateCapsule(capsule.documentId, capsule.linkId);
   return { ok: true };
 }
