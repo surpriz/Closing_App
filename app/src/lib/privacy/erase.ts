@@ -49,7 +49,7 @@ export async function deleteDocumentForever(documentId: string) {
     where: { id: documentId },
     select: {
       blobPathname: true,
-      capsules: { select: { blobPathname: true } },
+      capsules: { select: { blobPathname: true, posterPathname: true } },
       links: { select: { voiceComments: { select: { blobPathname: true } } } },
     },
   });
@@ -57,7 +57,7 @@ export async function deleteDocumentForever(documentId: string) {
 
   await deleteBlobs([
     document.blobPathname,
-    ...document.capsules.map((c) => c.blobPathname),
+    ...document.capsules.flatMap((c) => [c.blobPathname, c.posterPathname]),
     ...document.links.flatMap((l) => l.voiceComments.map((v) => v.blobPathname)),
   ]);
   await prisma.document.delete({ where: { id: documentId } });

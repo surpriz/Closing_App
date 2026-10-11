@@ -66,6 +66,15 @@ const saveSchema = z.object({
   hookText: z.string().max(CAPSULE_HOOK_MAX * 2),
 });
 
+async function capsulePathsInUse(paths: (string | null)[]) {
+  const list = paths.filter((p): p is string => !!p);
+  const rows = await prisma.pageCapsule.findMany({
+    where: { OR: [{ blobPathname: { in: list } }, { posterPathname: { in: list } }] },
+    select: { blobPathname: true, posterPathname: true },
+  });
+  return new Set(rows.flatMap((row) => [row.blobPathname, row.posterPathname]));
+}
+
 /** The still is a nicety: a missing or odd one is dropped, the clip saves without it. */
 async function checkedPoster(pathname: string | null | undefined, prefix: string, kind: string) {
   if (!pathname) return null;
@@ -86,9 +95,12 @@ export async function saveCapsule(input: z.input<typeof saveSchema>): Promise<Ca
 
   const prefix = capsuleUploadPrefix(workspace.organization.id);
   if (!pathname.startsWith(prefix)) return { error: "Enregistrement invalide." };
-  const poster = parsed.data.posterPathname;
-  const discard = () =>
-    inBackground("capsule-discard", () => deletePrivateBlob(poster?.startsWith(prefix) ? [pathname, poster] : pathname));
+  // Only fresh uploads: a path a saved capsule already uses is never adopted, nor deleted as a reject
+  const requested = parsed.data.posterPathname?.startsWith(prefix) ? parsed.data.posterPathname : null;
+  const taken = await capsulePathsInUse([pathname, requested]);
+  if (taken.has(pathname)) return { error: "Enregistrement invalide." };
+  const poster = requested && !taken.has(requested) ? requested : null;
+  const discard = () => inBackground("capsule-discard", () => deletePrivateBlob(poster ? [pathname, poster] : pathname));
 
   // The welcome message fits any document, a web link included; a page needs a PDF that has it
   if (pageNumber !== WELCOME_PAGE && (document.kind !== "FILE" || pageNumber > (document.numPages ?? 0))) {
