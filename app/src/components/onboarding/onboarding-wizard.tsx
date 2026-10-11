@@ -7,7 +7,14 @@ import { useEffect, useState, useTransition } from "react";
 import { completeOnboarding, saveMailClient } from "@/app/bienvenue/actions";
 import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
-import { isToolConnected, ONBOARDING_STEPS, STEP_LABELS, toolFor, type MailClient } from "@/lib/onboarding";
+import {
+  isToolConnected,
+  ONBOARDING_STEPS,
+  STEP_LABELS,
+  toolFor,
+  type MailClient,
+  type OnboardingStep,
+} from "@/lib/onboarding";
 import { cn } from "@/lib/utils";
 
 import { DailyStep } from "./daily-step";
@@ -22,6 +29,7 @@ export function OnboardingWizard({
   firstName,
   account,
   initialMailClient,
+  initialStep,
   connected,
   askOffer,
   hasDocument,
@@ -31,6 +39,7 @@ export function OnboardingWizard({
   firstName: string | null;
   account: { email: string; workspace: string };
   initialMailClient: MailClient | null;
+  initialStep: OnboardingStep;
   connected: { chrome: boolean; outlook: boolean };
   askOffer: boolean;
   hasDocument: boolean;
@@ -38,7 +47,7 @@ export function OnboardingWizard({
   chromeStoreUrl: string | null;
 }) {
   const router = useRouter();
-  const [index, setIndex] = useState(0);
+  const [index, setIndex] = useState(ONBOARDING_STEPS.indexOf(initialStep));
   const [mailClient, setMailClient] = useState(initialMailClient);
   const [leaving, startLeaving] = useTransition();
   const step = ONBOARDING_STEPS[index];
@@ -115,7 +124,7 @@ export function OnboardingWizard({
             />
           )}
           {step === "daily" && <DailyStep tool={toolFor(mailClient)} />}
-          {step === "start" && <StartStep askOffer={askOffer} hasDocument={hasDocument} uploadPrefix={uploadPrefix} />}
+          {step === "start" && <StartStep askOffer={askOffer} uploadPrefix={uploadPrefix} />}
         </div>
 
         <footer className="mt-12 flex items-center justify-between gap-4 border-t border-border pt-6">

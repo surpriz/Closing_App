@@ -37,6 +37,23 @@ export function isToolConnected(client: MailClient | null, connected: { chrome: 
   return true;
 }
 
+export type MailToolTipKind = "chrome" | "outlook_addin" | "unknown";
+
+/**
+ * The tool worth suggesting on the share screen, or null when there is none:
+ * already paired, or a mailbox Clozer can't plug into. "unknown" when the
+ * mailbox isn't known and nothing is paired yet.
+ */
+export function mailToolTip(
+  client: MailClient | null,
+  connected: { chrome: boolean; outlook: boolean },
+): MailToolTipKind | null {
+  if (!client) return connected.chrome || connected.outlook ? null : "unknown";
+  const tool = toolFor(client);
+  if (tool === "manual" || isToolConnected(client, connected)) return null;
+  return tool;
+}
+
 export const ONBOARDING_STEPS = ["principle", "mail", "install", "daily", "start"] as const;
 
 export type OnboardingStep = (typeof ONBOARDING_STEPS)[number];

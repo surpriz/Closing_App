@@ -23,6 +23,12 @@ export async function completeOnboarding() {
   revalidatePath("/dashboard");
 }
 
+// "Ne plus afficher" on the share screen tip
+export async function hideMailToolTip() {
+  const { user, organization } = await requireWorkspace();
+  await upsertSellerPrefs(user.id, organization.id, { mailToolTipHiddenAt: new Date() });
+}
+
 // Only fills an empty offer: the full form lives in the settings
 export async function saveOfferDescription(input: unknown): Promise<{ ok: boolean }> {
   const { organization, role } = await requireWorkspace();

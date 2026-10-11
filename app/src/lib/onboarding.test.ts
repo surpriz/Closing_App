@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isToolConnected, parseMailClient, toolFor } from "./onboarding";
+import { isToolConnected, mailToolTip, parseMailClient, toolFor } from "./onboarding";
 
 describe("onboarding", () => {
   it("picks the tool for each mailbox", () => {
@@ -24,5 +24,15 @@ describe("onboarding", () => {
     expect(isToolConnected("outlook_desktop", { chrome: true, outlook: false })).toBe(false);
     expect(isToolConnected("outlook_desktop", { chrome: false, outlook: true })).toBe(true);
     expect(isToolConnected("other", none)).toBe(true);
+  });
+
+  it("suggests the missing tool on the share screen", () => {
+    const none = { chrome: false, outlook: false };
+    expect(mailToolTip("gmail", none)).toBe("chrome");
+    expect(mailToolTip("outlook_desktop", none)).toBe("outlook_addin");
+    expect(mailToolTip("gmail", { chrome: true, outlook: false })).toBeNull();
+    expect(mailToolTip("other", none)).toBeNull();
+    expect(mailToolTip(null, none)).toBe("unknown");
+    expect(mailToolTip(null, { chrome: false, outlook: true })).toBeNull();
   });
 });

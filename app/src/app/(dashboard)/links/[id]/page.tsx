@@ -39,6 +39,7 @@ import { ReadersMap } from "@/components/dashboard/readers-map";
 import { SellerActivityForm, SnoozeControl } from "@/components/dashboard/seller-activity-form";
 import { ScoreGuide, TemperatureGauge } from "@/components/dashboard/temperature";
 import { VoiceComments, type VoiceCommentItem } from "@/components/dashboard/voice-comments";
+import { ShareMailToolTip } from "@/components/onboarding/share-mail-tool-tip";
 import { getAppOrigin } from "@/lib/app-origin";
 import { capsuleUploadPrefix } from "@/lib/blob";
 import { getLanguageModel } from "@/lib/closing/ai/provider";
@@ -412,27 +413,32 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
   return (
     <div className="space-y-10">
       {sharing && (
-        <ShareReady
-          // Remount when the server state moves: sent, contact added, settings tuned by the AI
-          key={[!!link.draftAt, link.prospects.length, link.expiresAt?.getTime(), link.ctaEnabled].join("|")}
-          linkId={link.id}
-          url={url}
-          title={linkTitle({ ...link.document, company: mainProspect?.company })}
-          sent={!link.draftAt}
-          recipient={mainProspect ? { email: mainProspect.email, firstName: firstNameOf(mainProspect.name) } : null}
-          mailClient={sellerPrefs?.mailClient ?? guessMailClient(workspace.user.email)}
-          signature={settings.senderSignature}
-          processing={reading}
-          summary={settingsSummary(link, now)}
-          shared={link.shared}
-          welcome={welcome}
-          notice={
-            link.autoSettings && link.expiresAt && showsCountdown(link.document.docType)
-              ? `Reconnu comme « ${DOC_TYPE_LABELS[link.document.docType as DocType]} » : le prospect a jusqu'au ${formatDate(link.expiresAt)} et voit le décompte.`
-              : null
-          }
-          settings={settingsPanel}
-        />
+        <div className="space-y-3">
+          <ShareReady
+            // Remount when the server state moves: sent, contact added, settings tuned by the AI
+            key={[!!link.draftAt, link.prospects.length, link.expiresAt?.getTime(), link.ctaEnabled].join("|")}
+            linkId={link.id}
+            url={url}
+            title={linkTitle({ ...link.document, company: mainProspect?.company })}
+            sent={!link.draftAt}
+            recipient={mainProspect ? { email: mainProspect.email, firstName: firstNameOf(mainProspect.name) } : null}
+            mailClient={sellerPrefs?.mailClient ?? guessMailClient(workspace.user.email)}
+            signature={settings.senderSignature}
+            processing={reading}
+            summary={settingsSummary(link, now)}
+            shared={link.shared}
+            welcome={welcome}
+            notice={
+              link.autoSettings && link.expiresAt && showsCountdown(link.document.docType)
+                ? `Reconnu comme « ${DOC_TYPE_LABELS[link.document.docType as DocType]} » : le prospect a jusqu'au ${formatDate(link.expiresAt)} et voit le décompte.`
+                : null
+            }
+            settings={settingsPanel}
+          />
+          {sellerPrefs && (
+            <ShareMailToolTip user={workspace.user} organizationId={organization.id} prefs={sellerPrefs} />
+          )}
+        </div>
       )}
       {sharing && reading && <AutoRefresh intervalMs={3000} />}
       <div className="space-y-4">

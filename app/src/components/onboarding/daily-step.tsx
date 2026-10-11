@@ -11,7 +11,7 @@ const SEND: Record<MailTool, string> = {
   outlook_addin:
     "Joignez votre PDF comme d'habitude. Le complément le remplace par un lien au nom du destinataire, et le deal démarre quand vous envoyez.",
   manual:
-    "Ouvrez votre document dans Clozer, créez un lien pour ce prospect et collez-le dans votre email à la place du PDF.",
+    "Déposez votre PDF dans Clozer : le lien est prêt aussitôt. Copiez-le dans votre email à la place de la pièce jointe.",
 };
 
 export function DailyStep({ tool }: { tool: MailTool }) {

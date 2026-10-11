@@ -80,7 +80,7 @@ function ChromeInstall({ mailClient, connected, chromeStoreUrl }: Props) {
               text: "Épinglez-la dans la barre du navigateur (icône puzzle), cliquez sur Clozer puis sur « Connecter ».",
             },
             {
-              text: `Ouvrez ${mailbox}, écrivez un email et joignez un PDF : Clozer vous propose de le remplacer par un lien.`,
+              text: `Ouvrez ${mailbox}, écrivez un email et joignez un PDF : Clozer le remplace aussitôt par un lien.`,
               extra: <CheckAgain />,
             },
           ]}
@@ -126,7 +126,7 @@ function OutlookInstall({ connected, account }: Props) {
               extra: (
                 <OutlookConnect
                   account={account}
-                  doneHint="Joignez un PDF à un email dans Outlook : Clozer vous proposera de le remplacer par un lien."
+                  doneHint="Joignez un PDF à un email dans Outlook : Clozer le remplace aussitôt par un lien."
                 />
               ),
             },
@@ -150,8 +150,8 @@ function ManualSend({ onChangeMailClient }: Pick<Props, "onChangeMailClient">) {
       />
       <Instructions
         items={[
-          { text: "Dans Clozer, ouvrez votre document et cliquez sur « Nouveau lien prospect »." },
-          { text: "Le lien est copié. Collez-le dans votre email, à la place du PDF." },
+          { text: "Déposez votre PDF dans Clozer : le lien à envoyer est prêt aussitôt." },
+          { text: "Copiez-le dans votre email, à la place de la pièce jointe. Ou cliquez sur « Envoyer par email »." },
           {
             text: "Pour tester, ouvrez-le dans une fenêtre privée : vos propres lectures ne comptent pas.",
           },

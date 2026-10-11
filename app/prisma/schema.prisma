@@ -761,7 +761,8 @@ model NotificationPreference {
   digestClaimedAt DateTime? // lock while a digest is being built and sent
   extensionSeenAt DateTime? // last extension poll: is it running?
 
-  onboardingCompletedAt DateTime? // null = the welcome tour opens on the next visit to /dashboard
+  onboardingCompletedAt DateTime? // finished or skipped the welcome tour (/bienvenue)
+  mailToolTipHiddenAt   DateTime? // "ne plus afficher" on the share screen tip about the extension / add-in
   mailClient            String? // gmail | outlook_web | outlook_desktop | other, picked during onboarding
   bookingUrl            String? // the seller's booking page (Calendly, Cal.com, HubSpot…), offered on their links
 

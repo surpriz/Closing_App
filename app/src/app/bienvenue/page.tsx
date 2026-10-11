@@ -15,7 +15,7 @@ export const metadata: Metadata = { title: "Prise en main" };
 
 // Opens on its own the first time a seller lands on /dashboard, and stays
 // reachable from the account menu for whoever wants the tour again
-export default async function WelcomePage() {
+export default async function WelcomePage(props: PageProps<"/bienvenue">) {
   const { user, organization, role } = await requireWorkspace("/bienvenue");
   const [prefs, tokens, documentCount, settings] = await Promise.all([
     getSellerPrefs(user.id, organization.id),
@@ -26,12 +26,16 @@ export default async function WelcomePage() {
     prisma.document.count({ where: { organizationId: organization.id, archivedAt: null } }),
     getWorkspaceSettings(organization.id),
   ]);
+  const mailClient = parseMailClient(prefs.mailClient);
+  // ?etape=outil, from the share screen tip: straight to the setup
+  const toSetup = (await props.searchParams).etape === "outil";
 
   return (
     <OnboardingWizard
       firstName={user.name?.trim().split(/\s+/)[0] ?? null}
       account={{ email: user.email, workspace: organization.name }}
-      initialMailClient={parseMailClient(prefs.mailClient)}
+      initialMailClient={mailClient}
+      initialStep={toSetup ? (mailClient ? "install" : "mail") : "principle"}
       connected={connectedClients(tokens)}
       askOffer={isManagerRole(role) && !settings.offerDescription?.trim()}
       hasDocument={documentCount > 0}

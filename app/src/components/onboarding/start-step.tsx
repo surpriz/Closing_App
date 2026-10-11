@@ -13,27 +13,15 @@ import { OFFER_DESCRIPTION_MAX } from "@/lib/onboarding";
 
 import { StepHeading } from "./parts";
 
-export function StartStep({
-  askOffer,
-  hasDocument,
-  uploadPrefix,
-}: {
-  askOffer: boolean;
-  hasDocument: boolean;
-  uploadPrefix: string;
-}) {
+export function StartStep({ askOffer, uploadPrefix }: { askOffer: boolean; uploadPrefix: string }) {
   return (
     <div className="space-y-10">
       <StepHeading
         title="C'est parti."
-        lead={
-          hasDocument
-            ? "Votre espace a déjà des documents. Créez un lien par prospect depuis l'un d'eux, ou depuis votre messagerie."
-            : "Ajoutez votre premier document : un devis, une proposition ou une présentation. Clozer le lit en quelques secondes."
-        }
+        lead="Déposez un devis, une proposition ou une présentation : le lien à envoyer est prêt aussitôt."
       />
       {askOffer && <OfferField />}
-      {!hasDocument && <UploadDropzone uploadPrefix={uploadPrefix} />}
+      <UploadDropzone uploadPrefix={uploadPrefix} />
     </div>
   );
 }

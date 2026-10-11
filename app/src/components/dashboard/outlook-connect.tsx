@@ -39,7 +39,7 @@ export function OutlookConnect({
         </p>
         <p className="text-body text-muted-foreground">
           {doneHint ??
-            "Revenez dans Outlook. Joignez un PDF à un email : Clozer vous proposera de le remplacer par un lien. Vous pouvez fermer cet onglet."}
+            "Revenez dans Outlook. Joignez un PDF à un email : Clozer le remplace aussitôt par un lien. Vous pouvez fermer cet onglet."}
         </p>
       </div>
     );

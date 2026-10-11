@@ -6,6 +6,7 @@ import { DEFAULT_PREFS, type SellerPrefs } from "./policy";
 export type StoredPrefs = SellerPrefs & {
   extensionSeenAt: Date | null;
   onboardingCompletedAt: Date | null;
+  mailToolTipHiddenAt: Date | null;
   mailClient: string | null;
   bookingUrl: string | null;
 };
@@ -15,7 +16,16 @@ export async function getSellerPrefs(userId: string, organizationId: string): Pr
   const row = await prisma.notificationPreference.findUnique({
     where: { userId_organizationId: { userId, organizationId } },
   });
-  if (!row) return { ...DEFAULT_PREFS, extensionSeenAt: null, onboardingCompletedAt: null, mailClient: null, bookingUrl: null };
+  if (!row) {
+    return {
+      ...DEFAULT_PREFS,
+      extensionSeenAt: null,
+      onboardingCompletedAt: null,
+      mailToolTipHiddenAt: null,
+      mailClient: null,
+      bookingUrl: null,
+    };
+  }
   return {
     emailActions: row.emailActions,
     emailCallMoments: row.emailCallMoments,
@@ -25,6 +35,7 @@ export async function getSellerPrefs(userId: string, organizationId: string): Pr
     timezone: row.timezone,
     extensionSeenAt: row.extensionSeenAt,
     onboardingCompletedAt: row.onboardingCompletedAt,
+    mailToolTipHiddenAt: row.mailToolTipHiddenAt,
     mailClient: row.mailClient,
     bookingUrl: row.bookingUrl,
   };
@@ -40,6 +51,7 @@ export function upsertSellerPrefs(
   data: Partial<SellerPrefs> & {
     extensionSeenAt?: Date;
     onboardingCompletedAt?: Date;
+    mailToolTipHiddenAt?: Date;
     mailClient?: string;
     bookingUrl?: string | null;
   },
