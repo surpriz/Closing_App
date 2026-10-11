@@ -5,14 +5,20 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { getAppOrigin } from "@/lib/app-origin";
+import { deletePrivateBlob, headPrivateBlob, pitchUploadPrefix } from "@/lib/blob";
+import { inBackground } from "@/lib/closing/background";
 import { createFileDocument } from "@/lib/closing/documents/create-document";
 import { createDocumentLink, followDocumentType } from "@/lib/closing/documents/create-link";
 import { DOC_TYPES } from "@/lib/closing/documents/doc-types";
 import { inspectWebLink } from "@/lib/closing/documents/inspect-web-link";
 import { PAGE_TAGS } from "@/lib/closing/documents/page-reading";
 import { readDocumentPages } from "@/lib/closing/documents/read-pages";
+import { VIDEO_SEGMENTS } from "@/lib/closing/documents/video-segments";
 import { parseWebUrl } from "@/lib/closing/documents/web-link";
 import { cancelOpenFollowups } from "@/lib/closing/followups/queue";
+import { CAPSULE_POSTER_TYPE, PITCH_MAX_MS, PITCH_POSTER_MAX_BYTES } from "@/lib/closing/media/limits";
+import { baseMime } from "@/lib/closing/media/mime";
+import { validateMedia } from "@/lib/closing/media/validate";
 import { prisma } from "@/lib/db";
 import { requireManager, requireWorkspace } from "@/lib/session";
 
@@ -74,6 +80,105 @@ export async function createWebDocument(input: { url: string }): Promise<CreateW
     select: { id: true },
   });
   const linkId = await draftLinkFor(document.id, { userId: user.id, organizationId: organization.id });
+
+  revalidatePath("/documents");
+  return { id: document.id, linkId };
+}
+
+const createVideoSchema = z.object({
+  videoPathname: z.string().min(1).max(512),
+  audioPathname: z.string().min(1).max(512).nullish(),
+  posterPathname: z.string().min(1).max(512).nullish(),
+  durationMs: z.number().int().min(1),
+  name: z.string().trim().max(200).optional(),
+});
+
+const pitchDateFormat = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long" });
+
+/** A stored file that is ours to keep: under the workspace prefix and the right kind, or null. */
+async function checkedPitchFile(
+  pathname: string | null | undefined,
+  prefix: string,
+  accepts: (blob: { contentType: string; size: number }) => boolean,
+) {
+  if (!pathname?.startsWith(prefix)) return null;
+  const blob = await headPrivateBlob(pathname).catch(() => null);
+  if (blob && accepts({ contentType: baseMime(blob.contentType), size: blob.size })) return blob;
+  if (blob) inBackground("pitch-discard", () => deletePrivateBlob(pathname));
+  return null;
+}
+
+/**
+ * A video pitch the browser just uploaded: the video is the document, tracked
+ * as VIDEO_SEGMENTS pages. It plays at once; the transcript (mic track) fills
+ * the pages in the background for the AI and the chat.
+ */
+export async function createVideoDocument(
+  input: z.input<typeof createVideoSchema>,
+): Promise<{ id: string; linkId: string } | { error: string }> {
+  const { user, organization } = await requireWorkspace();
+  const parsed = createVideoSchema.safeParse(input);
+  if (!parsed.success) return { error: "Enregistrement invalide." };
+  const { videoPathname, durationMs } = parsed.data;
+  const prefix = pitchUploadPrefix(organization.id);
+  if (!videoPathname.startsWith(prefix)) return { error: "Enregistrement invalide." };
+
+  // Fresh uploads only: a file another document uses is never taken over
+  const paths = [videoPathname, parsed.data.audioPathname, parsed.data.posterPathname].filter((p): p is string => !!p);
+  const taken = await prisma.document.count({
+    where: { OR: [{ blobPathname: { in: paths } }, { audioPathname: { in: paths } }, { posterPathname: { in: paths } }] },
+  });
+  if (taken > 0) return { error: "Enregistrement invalide." };
+
+  const video = await headPrivateBlob(videoPathname).catch(() => null);
+  if (!video) return { error: "L'envoi n'a pas abouti, réessayez." };
+  const contentType = baseMime(video.contentType);
+  const mediaError = validateMedia({ use: "pitch", kind: "VIDEO", contentType, size: video.size, durationMs });
+  if (mediaError) {
+    inBackground("pitch-discard", () => deletePrivateBlob(paths));
+    return {
+      error:
+        mediaError === "too_long"
+          ? `La vidéo dépasse ${PITCH_MAX_MS / 60_000} minutes.`
+          : mediaError === "too_large"
+            ? "La vidéo est trop lourde."
+            : "Ce format de vidéo n'est pas pris en charge.",
+    };
+  }
+
+  // The mic track and the still are extras: an odd one is dropped, the video saves without it
+  const [audio, poster] = await Promise.all([
+    checkedPitchFile(parsed.data.audioPathname, prefix, (blob) => !validateMedia({ use: "pitch", kind: "AUDIO", ...blob, durationMs })),
+    checkedPitchFile(
+      parsed.data.posterPathname,
+      prefix,
+      (blob) => blob.contentType === CAPSULE_POSTER_TYPE && blob.size <= PITCH_POSTER_MAX_BYTES,
+    ),
+  ]);
+
+  const document = await prisma.document.create({
+    data: {
+      organizationId: organization.id,
+      ownerId: user.id,
+      kind: "VIDEO",
+      name: parsed.data.name || `Pitch vidéo du ${pitchDateFormat.format(new Date())}`,
+      blobUrl: video.url,
+      blobPathname: video.pathname,
+      contentType,
+      sizeBytes: video.size,
+      audioPathname: audio?.pathname ?? null,
+      posterPathname: poster?.pathname ?? null,
+      durationMs,
+      numPages: VIDEO_SEGMENTS,
+      status: "READY",
+      pages: {
+        createMany: { data: Array.from({ length: VIDEO_SEGMENTS }, (_, i) => ({ pageNumber: i + 1, tags: [] })) },
+      },
+    },
+    select: { id: true },
+  });
+  const linkId = await draftLinkFor(document.id, { userId: user.id, organizationId: organization.id });
+  inBackground("pitch-transcribe", () => readDocumentPages(document.id));
 
   revalidatePath("/documents");
   return { id: document.id, linkId };
@@ -187,7 +292,7 @@ export async function saveAssistantNotes(documentId: string, notes: string) {
 
 export async function rereadDocument(documentId: string) {
   const document = await requireOwnedDocument(documentId);
-  if (document.kind !== "FILE") return { error: "Rien à relire pour un lien web." };
+  if (document.kind === "URL") return { error: "Rien à relire pour un lien web." };
   await prisma.document.update({ where: { id: document.id }, data: { aiProcessedAt: null, aiAttempts: 0 } });
   const outcome = await readDocumentPages(document.id);
   revalidatePath(`/documents/${document.id}`);

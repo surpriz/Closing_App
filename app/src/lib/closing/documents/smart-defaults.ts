@@ -1,3 +1,5 @@
+import type { DocumentKind } from "@/generated/prisma/enums";
+
 import { expiryInDays, showsCountdown } from "../expiry";
 
 /**
@@ -7,6 +9,8 @@ import { expiryInDays, showsCountdown } from "../expiry";
  * an invoice no "Prendre rendez-vous".
  * Before the AI has read the document the type is unknown, and the link keeps
  * the workspace values until it is.
+ * A video pitch is personal whatever its transcript sounds like: no shared
+ * link, no deadline, a "Demander un devis" button (ctaEnabled) and a meeting.
  */
 
 export type WorkspaceLinkDefaults = {
@@ -50,8 +54,20 @@ export function linkDefaultsFor(
   now: Date,
   timeZone: string,
   /** False once the link is for someone in particular: a named prospect, an email from the extension. */
-  { allowShared = true }: { allowShared?: boolean } = {},
+  { allowShared = true, kind }: { allowShared?: boolean; kind?: DocumentKind } = {},
 ): LinkDefaults {
+  if (kind === "VIDEO") {
+    return {
+      shared: false,
+      requireEmail: workspace.requireEmailByDefault,
+      chatEnabled: workspace.chatEnabledByDefault,
+      voiceCommentsEnabled: false,
+      followupsEnabled: workspace.followupsByDefault,
+      ctaEnabled: true,
+      bookingEnabled: true,
+      expiresAt: null,
+    };
+  }
   const known = !!docType;
   const deadline = known && showsCountdown(docType) && workspace.quoteExpiryDays;
   const shared = allowShared && known && SHARED_DOC_TYPES.includes(docType);

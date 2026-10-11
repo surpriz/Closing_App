@@ -10,6 +10,7 @@ export type FeedKind =
   | "read"
   | "validated"
   | "change"
+  | "quote"
   | "extension"
   | "meeting"
   | "meeting_click"
@@ -87,6 +88,7 @@ function describeRead(view: FeedSource["views"][number]) {
 export const ACTION_KIND = {
   VALIDATE_SIGN: "validated",
   REQUEST_CHANGE: "change",
+  REQUEST_QUOTE: "quote",
   REQUEST_EXTENSION: "extension",
   MEETING_BOOKED: "meeting",
   MEETING_CLICK: "meeting_click",
@@ -97,6 +99,7 @@ function describeAction(type: ProspectActionType, documentName: string) {
   if (type === "REQUEST_EXTENSION") return `demande une prolongation de ${documentName}`;
   if (type === "MEETING_BOOKED") return `a pris rendez-vous depuis ${documentName}`;
   if (type === "MEETING_CLICK") return `a ouvert votre agenda depuis ${documentName}`;
+  if (type === "REQUEST_QUOTE") return `demande un devis après ${documentName}`;
   return `demande un ajustement sur ${documentName}`;
 }
 
@@ -110,6 +113,7 @@ function describeAlert(type: SellerAlertType, payload: unknown) {
   if (type === "CALL_MOMENT") return reason ? `est lu en ce moment (${reason.toLowerCase()})` : "est lu en ce moment";
   if (type === "PROSPECT_VALIDATED") return "a été validé";
   if (type === "CHANGE_REQUESTED") return "fait l'objet d'une demande d'ajustement";
+  if (type === "QUOTE_REQUESTED") return "a débouché sur une demande de devis";
   if (type === "PROSPECT_QUESTION") return "a une question en attente de votre réponse";
   if (type === "VOICE_COMMENT") return "vous a laissé un commentaire vocal";
   if (type === "MEETING_BOOKED") return "a débouché sur un rendez-vous";

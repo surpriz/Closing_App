@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, Check, Download, MessageSquareText } from "lucide-react";
+import { CalendarDays, Check, Download, MessageSquareText, Receipt } from "lucide-react";
 import { useState, useTransition } from "react";
 
 import { recordMeetingBooked, recordMeetingClick, submitProspectAction } from "@/app/v/[slug]/actions";
@@ -40,6 +40,8 @@ type Props = {
   downloadUrl?: string;
   /** "Valider" and "Demander un ajustement" (Link.ctaEnabled). */
   answers: boolean;
+  /** Video pitch: "Demander un devis" instead (Link.ctaEnabled), nothing to sign. */
+  quote?: boolean;
   /** The seller's booking page, null when they have none or it is off on this link. */
   booking: BookingTarget | null;
 };
@@ -54,10 +56,13 @@ export function CtaBar({
   signerName,
   downloadUrl,
   answers,
+  quote = false,
   booking,
 }: Props) {
   const [status, setStatus] = useState<DealStatus>(initialStatus);
-  const [dialog, setDialog] = useState<"validate" | "change" | null>(null);
+  const [dialog, setDialog] = useState<"validate" | "change" | "quote" | null>(null);
+  // A quote asked for leaves the deal open: remembered here, not in the status
+  const [quoteSent, setQuoteSent] = useState(false);
   const [message, setMessage] = useState("");
   const [name, setName] = useState(signerName ?? "");
   const [agreed, setAgreed] = useState(false);
@@ -85,14 +90,14 @@ export function CtaBar({
     void recordMeetingBooked({ slug, viewId: getViewId(), startTime });
   }
 
-  function submit(type: "VALIDATE_SIGN" | "REQUEST_CHANGE") {
+  function submit(type: "VALIDATE_SIGN" | "REQUEST_CHANGE" | "REQUEST_QUOTE") {
     setError(false);
     startTransition(async () => {
       const result = await submitProspectAction({
         slug,
         viewId: getViewId(),
         type,
-        message: type === "REQUEST_CHANGE" ? message : undefined,
+        message: type === "VALIDATE_SIGN" ? undefined : message,
         ...(type === "VALIDATE_SIGN" && { signerName: name, agreed }),
       });
       if (!result.ok) {
@@ -100,7 +105,8 @@ export function CtaBar({
         return;
       }
       setReceipt(!!result.receipt);
-      setStatus(type === "VALIDATE_SIGN" ? "VALIDATED" : "CHANGE_REQUESTED");
+      if (type === "REQUEST_QUOTE") setQuoteSent(true);
+      else setStatus(type === "VALIDATE_SIGN" ? "VALIDATED" : "CHANGE_REQUESTED");
       setDialog(null);
       setMessage("");
     });
@@ -147,6 +153,8 @@ export function CtaBar({
               <p className="px-2 text-sm text-muted-foreground sm:mr-auto" role="status">
                 {booked ? (
                   labels.meetingBooked
+                ) : quoteSent ? (
+                  labels.quoteRequested
                 ) : status === "CHANGE_REQUESTED" ? (
                   labels.changeRequested
                 ) : (
@@ -157,7 +165,7 @@ export function CtaBar({
               </p>
               <div className="flex gap-2">
                 {booking &&
-                  (answers ? (
+                  (answers || (quote && !quoteSent) ? (
                     <Button
                       variant="outline"
                       size="lg"
@@ -176,6 +184,12 @@ export function CtaBar({
                       <span className="truncate">{labels.bookMeeting}</span>
                     </Button>
                   ))}
+                {quote && !quoteSent && (
+                  <Button size="lg" className="h-11 flex-1 sm:flex-none" onClick={() => setDialog("quote")} disabled={pending}>
+                    <Receipt data-icon="inline-start" />
+                    <span className="truncate">{labels.requestQuote}</span>
+                  </Button>
+                )}
                 {answers && (
                   <>
                     <Button
@@ -258,6 +272,28 @@ export function CtaBar({
                 >
                   <Check data-icon="inline-start" />
                   {labels.confirmAction}
+                </Button>
+              </DialogFooter>
+            </>
+          ) : dialog === "quote" ? (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-heading">{labels.quoteTitle}</DialogTitle>
+                <DialogDescription>{documentName}</DialogDescription>
+              </DialogHeader>
+              <Textarea
+                autoFocus
+                rows={4}
+                value={message}
+                placeholder={labels.quotePlaceholder}
+                aria-label={labels.quoteTitle}
+                onChange={(e) => setMessage(e.target.value)}
+              />
+              {error && <p className="text-sm text-destructive">{labels.actionError}</p>}
+              <DialogFooter>
+                <DialogClose render={<Button variant="ghost" disabled={pending} />}>{labels.cancel}</DialogClose>
+                <Button onClick={() => submit("REQUEST_QUOTE")} disabled={pending}>
+                  {labels.send}
                 </Button>
               </DialogFooter>
             </>

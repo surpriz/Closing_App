@@ -1,3 +1,4 @@
+import type { DocumentKind } from "@/generated/prisma/enums";
 import { prisma } from "@/lib/db";
 import { randomSlug } from "@/lib/ids";
 
@@ -32,7 +33,7 @@ export async function createDocumentLink(input: {
         archivedAt: null,
         status: { not: "FAILED" },
       },
-      select: { id: true, name: true, docType: true, displayTitle: true },
+      select: { id: true, name: true, kind: true, docType: true, displayTitle: true },
     }),
     getWorkspaceSettings(input.organizationId),
     sellerTimeZone(input.userId, input.organizationId),
@@ -45,6 +46,7 @@ export async function createDocumentLink(input: {
   // Sent to someone (a contact, an email from the extension): never a shared link
   const defaults = linkDefaultsFor(document.docType, settings, now, timeZone, {
     allowShared: !prospect && !input.source,
+    kind: document.kind,
   });
   const autoSettings = input.requireEmail === undefined && input.expiresAt === undefined;
   const link = await prisma.link.create({
@@ -92,12 +94,17 @@ export async function createDocumentLink(input: {
 }
 
 /** The defaults of a personal link of this type, as of `now`. */
-async function linkDefaultsAt(docType: string | null, organizationId: string, userId: string | null, now: Date) {
+async function linkDefaultsAt(
+  document: { docType: string | null; kind: DocumentKind },
+  organizationId: string,
+  userId: string | null,
+  now: Date,
+) {
   const [settings, timeZone] = await Promise.all([
     getWorkspaceSettings(organizationId),
     userId ? sellerTimeZone(userId, organizationId) : defaultTimezone(),
   ]);
-  return linkDefaultsFor(docType, settings, now, timeZone, { allowShared: false });
+  return linkDefaultsFor(document.docType, settings, now, timeZone, { allowShared: false, kind: document.kind });
 }
 
 async function sellerTimeZone(userId: string, organizationId: string) {
@@ -114,6 +121,7 @@ export async function followDocumentType(documentId: string, now = new Date()) {
     where: { id: documentId },
     select: {
       docType: true,
+      kind: true,
       organizationId: true,
       links: {
         // Never read: a prospect who opened it must not see the terms move
@@ -131,7 +139,8 @@ export async function followDocumentType(documentId: string, now = new Date()) {
       },
     },
   });
-  if (!document?.docType || document.links.length === 0) return 0;
+  // A video pitch keeps the same settings whatever its transcript sounds like
+  if (!document?.docType || document.kind === "VIDEO" || document.links.length === 0) return 0;
 
   const settings = await getWorkspaceSettings(document.organizationId);
   let changed = 0;
@@ -195,7 +204,7 @@ export async function confirmLinkSent(input: {
       autoSettings: true,
       shared: true,
       createdById: true,
-      document: { select: { docType: true } },
+      document: { select: { docType: true, kind: true } },
       prospects: { select: { id: true }, take: 1 },
     },
   });
@@ -209,7 +218,7 @@ export async function confirmLinkSent(input: {
   const personal = addProspect && link.shared;
   const defaults =
     link.autoSettings || personal
-      ? await linkDefaultsAt(link.document.docType, input.organizationId, link.createdById, sentAt)
+      ? await linkDefaultsAt(link.document, input.organizationId, link.createdById, sentAt)
       : null;
   return prisma.link.update({
     where: { id: link.id },

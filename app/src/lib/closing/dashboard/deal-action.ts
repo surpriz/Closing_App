@@ -27,6 +27,7 @@ export function dealAction(deal: OpenDeal, now: Date, readingNow: boolean) {
       snoozedUntil: deal.snoozedUntil,
       meetingBookedAt: deal.meetingBookedAt,
       meetingAt: deal.meetingAt,
+      quoteRequestedAt: deal.quoteRequestedAt,
     }),
     ai.advice,
     { action: INSIGHT_ACTION_LABELS, timing: TIMING_LABELS },

@@ -19,6 +19,7 @@ import { getLocalParts } from "../scheduling/business-hours";
 export const ALERT_PRIORITY: Record<SellerAlertType, AlertPriority> = {
   PROSPECT_VALIDATED: "ACTION",
   CHANGE_REQUESTED: "ACTION",
+  QUOTE_REQUESTED: "ACTION",
   PROSPECT_QUESTION: "ACTION",
   LINK_EXTENSION_REQUESTED: "ACTION",
   VOICE_COMMENT: "ACTION",

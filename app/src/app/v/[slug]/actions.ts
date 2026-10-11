@@ -187,7 +187,8 @@ export async function requestLinkExtension(
 const actionSchema = z.object({
   slug: z.string().min(1).max(64),
   viewId: z.string().max(64).nullable(),
-  type: z.enum(["VALIDATE_SIGN", "REQUEST_CHANGE"]),
+  // REQUEST_QUOTE: under a video pitch, which has nothing to sign
+  type: z.enum(["VALIDATE_SIGN", "REQUEST_CHANGE", "REQUEST_QUOTE"]),
   message: z.string().trim().max(2000).optional(),
   // Signing: a name typed by hand and the box ticked, nothing implied. It ends up in an
   // email to the recipient: a name only, never a link or an address someone slips in.
@@ -199,6 +200,18 @@ const actionSchema = z.object({
   agreed: z.boolean().optional(),
 });
 
+const ALERT_FOR_ACTION = {
+  VALIDATE_SIGN: "PROSPECT_VALIDATED",
+  REQUEST_CHANGE: "CHANGE_REQUESTED",
+  REQUEST_QUOTE: "QUOTE_REQUESTED",
+} as const;
+
+const FOLLOWUP_CANCEL_REASON = {
+  VALIDATE_SIGN: "Proposition validée par le prospect",
+  REQUEST_CHANGE: "Ajustement demandé par le prospect",
+  REQUEST_QUOTE: "Devis demandé par le prospect",
+} as const;
+
 export async function submitProspectAction(input: z.input<typeof actionSchema>) {
   const parsed = actionSchema.safeParse(input);
   if (!parsed.success) return { ok: false };
@@ -208,6 +221,7 @@ export async function submitProspectAction(input: z.input<typeof actionSchema>) 
   const link = await getLinkForViewer(slug);
   // The seller (or the document type) turned the buttons off: nothing to accept
   if (!link || !link.ctaEnabled) return { ok: false };
+  if ((link.document.kind === "VIDEO") !== (type === "REQUEST_QUOTE")) return { ok: false };
   // A signed quote stays readable past its deadline, but takes no new answer
   if (isLinkExpired(link, new Date())) return { ok: false };
 
@@ -251,7 +265,11 @@ export async function submitProspectAction(input: z.input<typeof actionSchema>) 
       },
       select: { id: true, createdAt: true },
     }),
-    ...(closed
+    // A quote asked for leaves the deal open (the seller's answer is still to come), and stops follow-ups for good
+    ...(type === "REQUEST_QUOTE"
+      ? [prisma.link.update({ where: { id: link.id }, data: { quoteRequestedAt: new Date() } })]
+      : []),
+    ...(closed || type === "REQUEST_QUOTE"
       ? []
       : [
           prisma.link.update({
@@ -266,7 +284,7 @@ export async function submitProspectAction(input: z.input<typeof actionSchema>) 
   inBackground("prospect-action-alert", () =>
     notifySeller({
       linkId: link.id,
-      type: type === "VALIDATE_SIGN" ? "PROSPECT_VALIDATED" : "CHANGE_REQUESTED",
+      type: ALERT_FOR_ACTION[type],
       dedupeKey: `prospect_action:${action.id}`,
       payload: {
         message: message || null,
@@ -277,12 +295,9 @@ export async function submitProspectAction(input: z.input<typeof actionSchema>) 
   );
 
   inBackground("prospect-action", async () => {
-    await cancelOpenFollowups(
-      link.id,
-      type === "VALIDATE_SIGN" ? "Proposition validée par le prospect" : "Ajustement demandé par le prospect",
-    );
+    await cancelOpenFollowups(link.id, FOLLOWUP_CANCEL_REASON[type]);
     await refreshEngagementScore(link.id);
-    if (type === "REQUEST_CHANGE") await analyzeDeal(link.id, "PROSPECT_ACTION");
+    if (type !== "VALIDATE_SIGN") await analyzeDeal(link.id, "PROSPECT_ACTION");
   });
 
   // A receipt only to someone the seller sent the link to: a typed email proves nothing

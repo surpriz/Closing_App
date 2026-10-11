@@ -2,12 +2,15 @@ import {
   CAPSULE_AUDIO_MAX_BYTES,
   CAPSULE_MAX_MS,
   CAPSULE_VIDEO_MAX_BYTES,
+  PITCH_AUDIO_MAX_BYTES,
+  PITCH_MAX_MS,
+  PITCH_VIDEO_MAX_BYTES,
   VOICE_COMMENT_MAX_BYTES,
   VOICE_COMMENT_MAX_MS,
 } from "./limits";
 import { isAllowedMedia, type MediaKind } from "./mime";
 
-export type MediaUse = "capsule" | "voice_comment";
+export type MediaUse = "capsule" | "voice_comment" | "pitch";
 export type MediaError = "type" | "too_large" | "empty" | "too_long";
 
 /** Recorders stop on a timer, give them a second of slack. */
@@ -15,6 +18,7 @@ const DURATION_SLACK_MS = 1_500;
 
 function limitsFor(use: MediaUse, kind: MediaKind) {
   if (use === "voice_comment") return { maxBytes: VOICE_COMMENT_MAX_BYTES, maxMs: VOICE_COMMENT_MAX_MS };
+  if (use === "pitch") return { maxBytes: kind === "VIDEO" ? PITCH_VIDEO_MAX_BYTES : PITCH_AUDIO_MAX_BYTES, maxMs: PITCH_MAX_MS };
   return { maxBytes: kind === "VIDEO" ? CAPSULE_VIDEO_MAX_BYTES : CAPSULE_AUDIO_MAX_BYTES, maxMs: CAPSULE_MAX_MS };
 }
 

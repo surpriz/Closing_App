@@ -102,6 +102,11 @@ export async function saveCapsule(input: z.input<typeof saveSchema>): Promise<Ca
   const poster = requested && !taken.has(requested) ? requested : null;
   const discard = () => inBackground("capsule-discard", () => deletePrivateBlob(poster ? [pathname, poster] : pathname));
 
+  // A video pitch already is the seller speaking: no bubble on top of it
+  if (document.kind === "VIDEO") {
+    discard();
+    return { error: "Un pitch vidéo n'a pas de mot d'accueil." };
+  }
   // The welcome message fits any document, a web link included; a page needs a PDF that has it
   if (pageNumber !== WELCOME_PAGE && (document.kind !== "FILE" || pageNumber > (document.numPages ?? 0))) {
     discard();

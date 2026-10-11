@@ -41,9 +41,12 @@ export function DocumentPages({
   docType,
   docPurpose,
   capsuleUploadPrefix,
+  video = false,
 }: {
   documentId: string;
   pages: ContentPage[];
+  /** A video pitch: each "page" is a tenth of its transcript. */
+  video?: boolean;
   capsuleUploadPrefix: string;
   docType: string | null;
   docPurpose: string | null;
@@ -60,13 +63,19 @@ export function DocumentPages({
       {docPurpose && <p className="text-body text-muted-foreground">{docPurpose}</p>}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="max-w-2xl text-body text-muted-foreground">
-          {aiRead
-            ? "Résumé de chaque page, lu par l'IA. Les étiquettes disent à Clozer où sont les tarifs, le planning… Corrigez-les si besoin : votre choix ne sera plus touché."
-            : aiAvailable && aiGaveUp
-              ? "L'IA n'a pas réussi à lire ce document. Réessayez avec « Relire les pages »."
-              : aiAvailable
-                ? "L'IA est en train de lire les pages (une minute environ). Rechargez la page pour voir les résumés."
-              : "Étiquettes repérées par mots-clés. Corrigez-les si besoin : votre choix ne sera plus touché."}
+          {video
+            ? aiRead
+              ? "Ce que vous dites dans chaque passage de la vidéo, lu par l'IA depuis la transcription. Les étiquettes disent à Clozer quand vous parlez tarifs, planning… Corrigez-les si besoin."
+              : aiAvailable && !aiGaveUp
+                ? "Transcription et lecture de la vidéo en cours (une minute environ). Rechargez la page pour voir chaque passage."
+                : "Pas de transcription pour cette vidéo : le suivi du visionnage marche, l'assistant n'a rien pour répondre."
+            : aiRead
+              ? "Résumé de chaque page, lu par l'IA. Les étiquettes disent à Clozer où sont les tarifs, le planning… Corrigez-les si besoin : votre choix ne sera plus touché."
+              : aiAvailable && aiGaveUp
+                ? "L'IA n'a pas réussi à lire ce document. Réessayez avec « Relire les pages »."
+                : aiAvailable
+                  ? "L'IA est en train de lire les pages (une minute environ). Rechargez la page pour voir les résumés."
+                  : "Étiquettes repérées par mots-clés. Corrigez-les si besoin : votre choix ne sera plus touché."}
         </p>
         {aiAvailable && (
           <Button
@@ -94,6 +103,7 @@ export function DocumentPages({
             page={page}
             labels={labels}
             capsuleUploadPrefix={capsuleUploadPrefix}
+            video={video}
           />
         ))}
       </ul>
@@ -106,11 +116,13 @@ function PageRow({
   page,
   labels,
   capsuleUploadPrefix,
+  video,
 }: {
   documentId: string;
   page: ContentPage;
   labels: Record<PageTag, string>;
   capsuleUploadPrefix: string;
+  video: boolean;
 }) {
   const [tags, setTags] = useState(page.tags);
   const [pending, startTransition] = useTransition();
@@ -128,8 +140,10 @@ function PageRow({
   };
 
   return (
-    <li className="grid gap-x-4 gap-y-2 px-4 py-3 sm:grid-cols-[3rem_minmax(0,1fr)]">
-      <span className="text-sm font-medium text-muted-foreground tabular-nums">p.{page.pageNumber}</span>
+    <li className={cn("grid gap-x-4 gap-y-2 px-4 py-3", video ? "sm:grid-cols-[5.5rem_minmax(0,1fr)]" : "sm:grid-cols-[3rem_minmax(0,1fr)]")}>
+      <span className="text-sm font-medium text-muted-foreground tabular-nums">
+        {video ? segmentLabel(page.pageNumber) : `p.${page.pageNumber}`}
+      </span>
       <div className="min-w-0 space-y-2">
         {page.summary && <p className="text-body">{page.summary}</p>}
         {page.keyFacts.length > 0 && (

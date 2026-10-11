@@ -135,6 +135,26 @@ describe("buildDealStory", () => {
     expect(story.facts.some((f) => f.kind === "SECTION_ATTENTION" || f.kind === "DROP_OFF")).toBe(false);
   });
 
+  it("tells a video pitch in tenths watched, not pages read", () => {
+    const tenths = Array.from({ length: 10 }, (_, i) => page(i + 1, i === 5 ? ["PRICING"] : [], 30));
+    const story = buildDealStory(
+      base({
+        document: { name: "Pitch Acme", kind: "VIDEO", durationMs: 150_000, pages: tenths },
+        // 15 s per tenth: 45 s on the pricing part is three times its length
+        views: [view("v1", at(1), [[1, 15_000], [5, 15_000], [6, 45_000]])],
+        actions: [{ type: "REQUEST_QUOTE", message: null, createdAt: at(1), prospectId: "p1" }],
+      }),
+    );
+    expect(story.facts[0].text).toContain("(vidéo de 2 min 30)");
+    const session = story.facts.find((f) => f.kind === "SESSION")!.text;
+    expect(session).toContain("de visionnage");
+    expect(session).toContain("regardée jusqu'à 60 % de la vidéo");
+    expect(session).toContain("Tarifs 50–60 % de la vidéo");
+    expect(session).toContain("≈3× la durée du passage");
+    expect(story.facts.find((f) => f.kind === "DROP_OFF")!.text).toContain("Vidéo regardée au mieux jusqu'à 60 % de la vidéo");
+    expect(story.facts.find((f) => f.kind === "PROSPECT_ACTION")!.text).toContain("a demandé un devis");
+  });
+
   it("says when a deal was never opened", () => {
     const story = buildDealStory(base());
     expect(story.opened).toBe(false);

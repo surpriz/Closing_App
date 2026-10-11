@@ -55,10 +55,17 @@ export function getLanguageModel(purpose: AiPurpose) {
   return { provider, modelId, model: createOpenAI({ apiKey })(modelId) };
 }
 
-/** Voice comments are transcribed by OpenAI whatever AI_PROVIDER says: Anthropic has no speech to text. */
-export function getTranscriptionModel() {
+/**
+ * Voice comments and video pitches are transcribed by OpenAI whatever
+ * AI_PROVIDER says: Anthropic has no speech to text. `timestamps` asks for a
+ * model that says when each sentence was spoken (whisper-1): the gpt-4o ones
+ * return the text alone.
+ */
+export function getTranscriptionModel({ timestamps = false } = {}) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return null;
-  const modelId = process.env.AI_MODEL_TRANSCRIBE || "gpt-4o-mini-transcribe";
+  const modelId = timestamps
+    ? process.env.AI_MODEL_TRANSCRIBE_TIMED || "whisper-1"
+    : process.env.AI_MODEL_TRANSCRIBE || "gpt-4o-mini-transcribe";
   return { provider: "openai" as const, modelId, model: createOpenAI({ apiKey }).transcription(modelId) };
 }

@@ -29,6 +29,14 @@ describe("linkDefaultsFor", () => {
     expect(defaults).toMatchObject({ shared: false, ctaEnabled: false, followupsEnabled: true });
   });
 
+  it("keeps a video pitch personal, without deadline, with the quote button and a meeting", () => {
+    for (const docType of [null, "PROPOSAL", "PRESENTATION", "INVOICE"]) {
+      expect(
+        linkDefaultsFor(docType, { ...workspace, voiceCommentsByDefault: true }, now, "Europe/Paris", { kind: "VIDEO" }),
+      ).toMatchObject({ shared: false, expiresAt: null, ctaEnabled: true, bookingEnabled: true, voiceCommentsEnabled: false });
+    }
+  });
+
   it("offers a meeting on everything but an invoice", () => {
     expect(linkDefaultsFor("INVOICE", workspace, now, "Europe/Paris")).toMatchObject({ ctaEnabled: false, bookingEnabled: false });
     expect(linkDefaultsFor("RESUME", workspace, now, "Europe/Paris")).toMatchObject({ ctaEnabled: false, bookingEnabled: true });

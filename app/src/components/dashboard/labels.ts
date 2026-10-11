@@ -82,6 +82,7 @@ export const ALERT_TYPE_LABELS: Record<SellerAlertType, string> = {
   DRAFT_READY: "Relance prête à valider",
   PROSPECT_VALIDATED: "Proposition validée",
   CHANGE_REQUESTED: "Ajustement demandé",
+  QUOTE_REQUESTED: "Devis demandé",
   PROSPECT_QUESTION: "Question du prospect",
   VOICE_COMMENT: "Commentaire vocal",
   CALL_MOMENT: "Moment d'appeler",
@@ -124,6 +125,7 @@ export const SCORE_REASON_LABELS: Record<string, string> = {
   read_to_end: "Lu jusqu'au bout",
   read_halfway: "Lu à moitié",
   change_requested: "Ajustement demandé",
+  quote_requested: "A demandé un devis",
   meeting_clicked: "A ouvert votre agenda",
   meeting_booked: "Rendez-vous pris",
 };

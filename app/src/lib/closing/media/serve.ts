@@ -1,7 +1,7 @@
 import { headPrivateBlob, readPrivateBlob, streamPrivateBlob, streamPrivateBlobRange } from "@/lib/blob";
 
 import { CAPSULE_POSTER_TYPE } from "./limits";
-import { parseRange } from "./range";
+import { capRange, parseRange } from "./range";
 
 const BASE_HEADERS = {
   "Accept-Ranges": "bytes",
@@ -15,6 +15,9 @@ const BASE_HEADERS = {
  */
 export const IMMUTABLE_MEDIA = "private, max-age=86400, immutable";
 
+/** A video pitch is answered in slices: never a whole 100 MB file held in memory for one range. */
+const PITCH_CHUNK_BYTES = 4 * 1024 * 1024;
+
 /**
  * Streams a private recording to an <audio>/<video> element. Safari asks for
  * byte ranges before playing anything, so ranges are answered with a 206:
@@ -23,7 +26,7 @@ export const IMMUTABLE_MEDIA = "private, max-age=86400, immutable";
  */
 export async function mediaResponse(
   request: Request,
-  input: { pathname: string; contentType: string; cacheControl?: string },
+  input: { pathname: string; contentType: string; cacheControl?: string; maxChunkBytes?: number },
 ): Promise<Response> {
   const headers = { ...BASE_HEADERS, "Cache-Control": input.cacheControl ?? "private, no-store" };
   const rangeHeader = request.headers.get("range");
@@ -37,11 +40,12 @@ export async function mediaResponse(
 
   const head = await headPrivateBlob(input.pathname).catch(() => null);
   if (!head) return new Response("Not found", { status: 404 });
-  const range = parseRange(rangeHeader, head.size);
-  if (range === "unsatisfiable") {
+  const asked = parseRange(rangeHeader, head.size);
+  if (asked === "unsatisfiable") {
     return new Response(null, { status: 416, headers: { ...headers, "Content-Range": `bytes */${head.size}` } });
   }
-  if (!range) return mediaResponse(new Request(request.url), input);
+  if (!asked) return mediaResponse(new Request(request.url), input);
+  const range = input.maxChunkBytes ? capRange(asked, input.maxChunkBytes) : asked;
 
   const partial = {
     ...headers,
@@ -69,4 +73,22 @@ export function capsuleMediaResponse(
   }
   if (!capsule.posterPathname) return new Response("Not found", { status: 404 });
   return mediaResponse(request, { pathname: capsule.posterPathname, contentType: CAPSULE_POSTER_TYPE, cacheControl: IMMUTABLE_MEDIA });
+}
+
+/** A video pitch, or its still frame with `?poster`. */
+export function pitchMediaResponse(
+  request: Request,
+  document: { blobPathname: string | null; contentType: string; posterPathname: string | null },
+) {
+  if (new URL(request.url).searchParams.has("poster")) {
+    if (!document.posterPathname) return new Response("Not found", { status: 404 });
+    return mediaResponse(request, { pathname: document.posterPathname, contentType: CAPSULE_POSTER_TYPE, cacheControl: IMMUTABLE_MEDIA });
+  }
+  if (!document.blobPathname) return new Response("Not found", { status: 404 });
+  return mediaResponse(request, {
+    pathname: document.blobPathname,
+    contentType: document.contentType,
+    cacheControl: IMMUTABLE_MEDIA,
+    maxChunkBytes: PITCH_CHUNK_BYTES,
+  });
 }

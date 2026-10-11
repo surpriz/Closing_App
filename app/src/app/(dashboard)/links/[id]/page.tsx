@@ -46,6 +46,7 @@ import { getLanguageModel } from "@/lib/closing/ai/provider";
 import { getLinkAnalytics } from "@/lib/closing/analytics";
 import { DOC_TYPE_LABELS, type DocType } from "@/lib/closing/documents/doc-types";
 import { linkTitle } from "@/lib/closing/documents/link-title";
+import { reachedLabel } from "@/lib/closing/documents/video-segments";
 import { showsCountdown } from "@/lib/closing/expiry";
 import { getSellerPrefs } from "@/lib/closing/notify/preferences";
 import { firstNameOf, guessMailClient } from "@/lib/closing/share/compose";
@@ -129,7 +130,7 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
     }),
     // Prospect actions and forwarded questions have their own timeline entries
     prisma.sellerAlert.findMany({
-      where: { linkId: link.id, type: { notIn: ["PROSPECT_VALIDATED", "CHANGE_REQUESTED", "MEETING_BOOKED", "PROSPECT_QUESTION", "LINK_EXTENSION_REQUESTED", "VOICE_COMMENT"] } },
+      where: { linkId: link.id, type: { notIn: ["PROSPECT_VALIDATED", "CHANGE_REQUESTED", "QUOTE_REQUESTED", "MEETING_BOOKED", "PROSPECT_QUESTION", "LINK_EXTENSION_REQUESTED", "VOICE_COMMENT"] } },
       orderBy: { createdAt: "desc" },
       take: 20,
     }),
@@ -223,7 +224,7 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
     requests: link.expiresAt
       ? actions.filter((a) => a.type === "REQUEST_EXTENSION" && a.createdAt >= link.expiresAt!).length
       : 0,
-    isPdf: link.document.kind !== "URL",
+    kind: link.document.kind,
     shared: link.shared,
     canSaveDefaults: isManagerRole(workspace.role),
   };
@@ -269,7 +270,9 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
   const welcomeRows = capsuleRows.filter((row) => row.pageNumber === WELCOME_PAGE);
   const documentWelcomeRow = welcomeRows.find((row) => row.linkId === null);
   const linkWelcomeRow = welcomeRows.find((row) => row.linkId === link.id);
-  const welcome = canEdit ? (
+  const isVideo = link.document.kind === "VIDEO";
+  // A video pitch is already the seller speaking: no welcome bubble on top
+  const welcome = canEdit && !isVideo ? (
     <WelcomeMessage
       documentId={link.document.id}
       // A shared link speaks to everyone: the document's message is the one
@@ -307,7 +310,11 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
       title: `Lecture par ${readerLabels.get(view.id)?.name ?? "un lecteur"}`,
       detail: [
         formatDuration(view.totalDurationMs),
-        link.document.kind === "URL" ? null : `jusqu'à la page ${view.maxPageReached}`,
+        link.document.kind === "URL"
+          ? null
+          : link.document.kind === "VIDEO"
+            ? `regardé ${reachedLabel(view.maxPageReached)}`
+            : `jusqu'à la page ${view.maxPageReached}`,
         [view.deviceType, view.browser].filter(Boolean).join(" "),
         view.timezone,
       ]
@@ -329,7 +336,9 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
               ? "a pris rendez-vous dans votre agenda"
               : action.type === "MEETING_CLICK"
                 ? "a ouvert votre agenda"
-                : "demande un ajustement"
+                : action.type === "REQUEST_QUOTE"
+                  ? "demande un devis"
+                  : "demande un ajustement"
       }`,
       detail: action.message
         ? `« ${action.message} »`
@@ -518,6 +527,7 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
             linkId={link.id}
             initial={live}
             pageCount={link.document.kind === "URL" ? null : link.document.pages.length}
+            video={link.document.kind === "VIDEO"}
           />
 
           <DealInsightPanel
@@ -607,14 +617,14 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
                   hint="pour ce prospect"
                   action={
                     <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                      <span className="size-2.5 rounded-sm bg-heat-warm" /> page de tarifs
+                      <span className="size-2.5 rounded-sm bg-heat-warm" /> {isVideo ? "passage sur les tarifs" : "page de tarifs"}
                     </span>
                   }
                 >
-                  Temps passé par page
+                  {isVideo ? "Temps passé sur chaque passage de la vidéo" : "Temps passé par page"}
                 </SectionTitle>
                 <Surface className="p-4">
-                  <PageTimeChart data={chartData} />
+                  <PageTimeChart data={chartData} video={isVideo} />
                 </Surface>
               </section>
             )}

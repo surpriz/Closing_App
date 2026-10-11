@@ -33,13 +33,16 @@ export type NextActionInput = {
   /** The prospect booked a meeting from the viewer, and its start when the widget gave it. */
   meetingBookedAt?: Date | null;
   meetingAt?: Date | null;
+  /** The prospect asked for a quote under a video pitch. */
+  quoteRequestedAt?: Date | null;
 };
 
 export type NextAction =
   /** The prospect signed: one click to record the sale. */
   | { kind: "close_won" }
   | { kind: "call_now" }
-  | { kind: "reply" }
+  /** A change request, or a quote asked for and not answered yet. */
+  | { kind: "reply"; quote?: boolean }
   | { kind: "review_draft" }
   | { kind: "call"; pricing: boolean }
   | { kind: "followup_planned"; at: Date; opened: boolean }
@@ -132,6 +135,10 @@ export function computeNextAction(input: NextActionInput): NextAction {
   if (input.dealStatus === "VALIDATED") return { kind: "close_won" };
   if (input.readingNow) return { kind: "call_now" };
   if (input.dealStatus === "CHANGE_REQUESTED") return { kind: "reply" };
+  // Answered once the seller logs a call or a message after it
+  if (input.quoteRequestedAt && !(input.lastSellerContactAt && input.lastSellerContactAt > input.quoteRequestedAt)) {
+    return { kind: "reply", quote: true };
+  }
   if (input.draftToReview) return { kind: "review_draft" };
   if (input.snoozedUntil && input.snoozedUntil > now) return { kind: "snoozed", until: input.snoozedUntil };
   if (input.meetingBookedAt && meetingStillAhead(input)) {
@@ -169,7 +176,7 @@ export function describeNextAction(action: NextAction, now: Date): string {
     case "call_now":
       return "Lecture en cours : appelez maintenant.";
     case "reply":
-      return "Demande d'ajustement en attente : répondez.";
+      return action.quote ? "Devis demandé : envoyez-le." : "Demande d'ajustement en attente : répondez.";
     case "review_draft":
       return "Relance prête : relisez-la et validez.";
     case "meeting_booked":

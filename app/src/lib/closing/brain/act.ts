@@ -64,6 +64,7 @@ export async function actOnInsight(insightId: string, { force = false, now = new
       archived: link.archivedAt !== null,
       snoozedUntil: link.snoozedUntil,
       meetingBooked: link.meetingBookedAt !== null,
+      quoteRequested: link.quoteRequestedAt !== null,
       decisionDeadline: link.decisionDeadline,
       expiresAt: link.expiresAt,
       channels: resolved.channels,

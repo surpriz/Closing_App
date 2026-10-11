@@ -17,7 +17,7 @@ export type DigestData = {
   /** Prospect answers, and questions the assistant passed on to the seller. */
   actions: {
     label: string;
-    kind: "validated" | "change" | "extension" | "meeting" | "question";
+    kind: "validated" | "change" | "quote" | "extension" | "meeting" | "question";
     message: string | null;
     url: string;
   }[];
@@ -69,11 +69,13 @@ export function buildDigest(data: DigestData) {
             ? `${a.label} a validé`
             : a.kind === "change"
               ? `${a.label} demande un ajustement`
-              : a.kind === "extension"
-                ? `${a.label} demande une prolongation`
-                : a.kind === "meeting"
-                  ? `${a.label} a pris rendez-vous`
-                  : `${a.label} a posé une question`,
+              : a.kind === "quote"
+                ? `${a.label} demande un devis`
+                : a.kind === "extension"
+                  ? `${a.label} demande une prolongation`
+                  : a.kind === "meeting"
+                    ? `${a.label} a pris rendez-vous`
+                    : `${a.label} a posé une question`,
         detail: a.message ? `« ${a.message.length > 180 ? `${a.message.slice(0, 177)}…` : a.message} »` : undefined,
         href: a.url,
       })),

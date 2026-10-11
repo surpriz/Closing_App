@@ -1,9 +1,10 @@
 import { createHash } from "node:crypto";
 
-import type { PageTag, ProspectActionType } from "@/generated/prisma/enums";
+import type { DocumentKind, PageTag, ProspectActionType } from "@/generated/prisma/enums";
 
 import { DAY_MS } from "../constants";
 import { tagLabels } from "../documents/doc-types";
+import { reachedLabel, segmentLabel } from "../documents/video-segments";
 
 /**
  * Turns everything known about a deal into numbered, dated facts the model
@@ -48,7 +49,9 @@ export type DealFactsInput = {
   };
   document: {
     name: string;
-    kind: "FILE" | "URL";
+    kind: DocumentKind;
+    /** VIDEO: its length, each page being a tenth of it. */
+    durationMs?: number | null;
     /** QUOTE, RESUME…: section names follow it ("TJM" rather than "Tarifs" on a résumé). */
     docType?: string | null;
     pages: { pageNumber: number; tags: PageTag[]; summary: string | null; wordCount: number }[];
@@ -202,7 +205,17 @@ export function buildDealStory(input: DealFactsInput): DealStory {
   const dayOf = (date: Date) => `J+${Math.max(0, Math.floor((date.getTime() - origin.getTime()) / DAY_MS))}`;
   const pageByNumber = new Map(document.pages.map((page) => [page.pageNumber, page]));
   const sectionNames = tagLabels(document.docType);
-  const numPages = document.kind === "FILE" ? document.pages.length : 0;
+  const numPages = document.kind !== "URL" ? document.pages.length : 0;
+  // A video pitch: page N is its Nth tenth, watched rather than read
+  const video = document.kind === "VIDEO";
+  const pageName = (n: number) => (video ? `${segmentLabel(n)} de la vidéo` : `p.${n}`);
+  const expectedMs = (wordCount: number) =>
+    video && document.durationMs && numPages ? document.durationMs / numPages : expectedReadMs(wordCount);
+  const sentAs = video
+    ? ` (vidéo de ${fmtDuration(document.durationMs ?? 0)})`
+    : numPages
+      ? ` (${numPages} pages)`
+      : " (page web)";
   const mainProspectId = input.prospects[0]?.id ?? null;
 
   // Readers: one per known contact, else one per browser
@@ -227,7 +240,7 @@ export function buildDealStory(input: DealFactsInput): DealStory {
   timeline.push({
     kind: "SENT",
     at: origin,
-    text: `[J+0] Proposition « ${document.name} » envoyée${numPages ? ` (${numPages} pages)` : " (page web)"}`,
+    text: `[J+0] Proposition « ${document.name} » envoyée${sentAs}`,
     hashed: true,
   });
 
@@ -262,15 +275,19 @@ export function buildDealStory(input: DealFactsInput): DealStory {
       .map((p) => {
         const page = pageByNumber.get(p.pageNumber);
         const tag = page?.tags.find((t) => t !== "OTHER");
-        const ratio = page ? p.totalDurationMs / expectedReadMs(page.wordCount) : 0;
-        const ratioText = ratio >= 1.8 ? ` (≈${Math.round(ratio)}× le temps de lecture)` : "";
-        return `${tag ? `${sectionNames[tag]} ` : ""}p.${p.pageNumber} ${fmtDuration(p.totalDurationMs)}${ratioText}`;
+        const ratio = page ? p.totalDurationMs / expectedMs(page.wordCount) : 0;
+        const ratioText = ratio >= 1.8 ? ` (≈${Math.round(ratio)}× ${video ? "la durée du passage" : "le temps de lecture"})` : "";
+        return `${tag ? `${sectionNames[tag]} ` : ""}${pageName(p.pageNumber)} ${fmtDuration(p.totalDurationMs)}${ratioText}`;
       });
 
     const parts = [
       `[${dayOf(view.startedAt)} ${FR_WEEKDAYS[local.weekday - 1]} ${local.label} heure locale, ${view.deviceType ?? "appareil inconnu"}, Lecteur ${reader.label}]`,
-      `${fmtDuration(view.totalDurationMs)} de lecture`,
-      numPages ? `jusqu'à la p.${view.maxPageReached}/${numPages}` : null,
+      `${fmtDuration(view.totalDurationMs)} ${video ? "de visionnage" : "de lecture"}`,
+      video
+        ? `regardée ${reachedLabel(view.maxPageReached, numPages)}`
+        : numPages
+          ? `jusqu'à la p.${view.maxPageReached}/${numPages}`
+          : null,
       notable.length ? `surtout : ${notable.join(", ")}` : null,
       notes.length ? notes.join(", ") : null,
     ].filter(Boolean);
@@ -302,7 +319,9 @@ export function buildDealStory(input: DealFactsInput): DealStory {
             ? "a réservé un rendez-vous dans l'agenda du vendeur"
             : action.type === "MEETING_CLICK"
               ? "a ouvert l'agenda du vendeur pour prendre rendez-vous"
-              : "a demandé un ajustement";
+              : action.type === "REQUEST_QUOTE"
+                ? "a demandé un devis après la vidéo"
+                : "a demandé un ajustement";
     const message = action.message
       ? ` : <untrusted_prospect_message>${action.message.slice(0, 600)}</untrusted_prospect_message>`
       : "";
@@ -346,7 +365,7 @@ export function buildDealStory(input: DealFactsInput): DealStory {
         const entry = byTag.get(tag) ?? { pages: [], ms: 0, expected: 0 };
         entry.pages.push(page.pageNumber);
         entry.ms += totals.get(page.pageNumber) ?? 0;
-        entry.expected += expectedReadMs(page.wordCount);
+        entry.expected += expectedMs(page.wordCount);
         byTag.set(tag, entry);
       }
     }
@@ -355,7 +374,7 @@ export function buildDealStory(input: DealFactsInput): DealStory {
       summary.push({
         kind: "SECTION_ATTENTION",
         at: null,
-        text: `${sectionNames[tag]} (${pageRanges(entry.pages)}) : ${entry.ms ? `${fmtDuration(entry.ms)} au total, ≈${ratio < 1 ? ratio.toFixed(1) : Math.round(ratio)}× le temps d'une lecture` : "jamais lu"}`,
+        text: `${sectionNames[tag]} (${video ? entry.pages.map((n) => segmentLabel(n, numPages)).join(", ") : pageRanges(entry.pages)}) : ${entry.ms ? `${fmtDuration(entry.ms)} au total, ≈${ratio < 1 ? ratio.toFixed(1) : Math.round(ratio)}× ${video ? "la durée du passage" : "le temps d'une lecture"}` : video ? "jamais regardé" : "jamais lu"}`,
         hashed: true,
       });
     }
@@ -366,7 +385,7 @@ export function buildDealStory(input: DealFactsInput): DealStory {
       summary.push({
         kind: "DROP_OFF",
         at: null,
-        text: `Personne n'est allé plus loin que la p.${furthest}/${numPages}${page?.summary ? ` (${page.summary})` : ""}`,
+        text: `${video ? `Vidéo regardée au mieux ${reachedLabel(furthest, numPages)}` : `Personne n'est allé plus loin que la p.${furthest}/${numPages}`}${page?.summary ? ` (${page.summary})` : ""}`,
         hashed: true,
       });
     }

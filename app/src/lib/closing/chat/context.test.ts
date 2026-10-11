@@ -48,6 +48,27 @@ describe("buildChatContext", () => {
     expect(buildChatContext(url).text).toContain("Notre offre SaaS");
   });
 
+  it("answers from the transcript of a video pitch, telling the model what a page is", () => {
+    const video: ChatKnowledge = {
+      ...base,
+      document: { ...base.document, kind: "VIDEO", docType: "PROPOSAL" },
+      pages: [
+        { pageNumber: 1, text: "Bonjour Claire, je vous présente notre offre.", summary: null, keyFacts: [], tags: [] },
+        { pageNumber: 2, text: null, summary: null, keyFacts: [], tags: [] },
+      ],
+    };
+    expect(hasChatKnowledge(video)).toBe(true);
+    const { text } = buildChatContext(video);
+    expect(text).toContain("video pitch");
+    expect(text).not.toContain("Pages: 2");
+    expect(text).toContain("je vous présente notre offre");
+  });
+
+  it("has nothing to answer from before the video is transcribed", () => {
+    const pages = Array.from({ length: 10 }, (_, i) => ({ pageNumber: i + 1, text: null, summary: null, keyFacts: [], tags: [] }));
+    expect(hasChatKnowledge({ ...base, document: { ...base.document, kind: "VIDEO" }, pages })).toBe(false);
+  });
+
   it("always keeps what the seller wrote for the assistant, even when the budget is tight", () => {
     const { text, sourceText } = buildChatContext(
       {

@@ -1,4 +1,4 @@
-import { BellRing, CalendarCheck, CalendarDays, CheckCircle2, Eye, Hourglass, Link2, MessageCircleQuestion, MessageSquare, Mic, Phone, PlayCircle, Send } from "lucide-react";
+import { BellRing, CalendarCheck, CalendarDays, CheckCircle2, Eye, Hourglass, Link2, MessageCircleQuestion, MessageSquare, Mic, Phone, PlayCircle, Receipt, Send } from "lucide-react";
 
 import { formatDate, formatRelative } from "@/lib/format";
 
@@ -10,6 +10,7 @@ export type TimelineItem = {
     | "view"
     | "validated"
     | "change"
+    | "quote"
     | "extension"
     | "meeting"
     | "meeting_click"
@@ -28,6 +29,7 @@ const ICONS: Record<TimelineItem["kind"], React.ReactNode> = {
   view: <Eye className="size-3.5" />,
   validated: <CheckCircle2 className="size-3.5" />,
   change: <MessageSquare className="size-3.5" />,
+  quote: <Receipt className="size-3.5" />,
   extension: <Hourglass className="size-3.5" />,
   meeting: <CalendarCheck className="size-3.5" />,
   meeting_click: <CalendarDays className="size-3.5" />,

@@ -16,7 +16,7 @@ import { TodoList, type TodoRow } from "@/components/dashboard/today/todo-list";
 import { buildTodayHeadline } from "@/components/dashboard/today-headline";
 import { UploadButton, UploadDropzone } from "@/components/dashboard/upload-dropzone";
 import { getAppOrigin } from "@/lib/app-origin";
-import { documentUploadPrefix } from "@/lib/blob";
+import { documentUploadPrefix, pitchUploadPrefix } from "@/lib/blob";
 import { dealAction } from "@/lib/closing/dashboard/deal-action";
 import { buildFeed } from "@/lib/closing/dashboard/feed";
 import { buildFunnel, buildHeatDistribution } from "@/lib/closing/dashboard/funnel";
@@ -105,6 +105,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
     prisma.documentView.findFirst({ where: { link: mine, isBot: false }, select: { id: true } }),
   ]);
   const uploadPrefix = documentUploadPrefix(organizationId);
+  const pitchPrefix = pitchUploadPrefix(organizationId);
 
   if (documentCount === 0) {
     return (
@@ -119,7 +120,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
           hasDocument={false}
           hasLink={false}
           hasRead={false}
-          action={<UploadDropzone uploadPrefix={uploadPrefix} />}
+          action={<UploadDropzone uploadPrefix={uploadPrefix} pitchUploadPrefix={pitchPrefix} />}
         />
         {!mailClient && (
           <p className="text-sm text-muted-foreground">
@@ -173,7 +174,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
             <span className="block text-muted-foreground">{hint}</span>
           </h1>
           <div className="shrink-0 sm:pt-1.5">
-            <UploadButton uploadPrefix={uploadPrefix} />
+            <UploadButton uploadPrefix={uploadPrefix} pitchUploadPrefix={pitchPrefix} />
           </div>
         </div>
         <LiveStrip key={live.stamp} initial={live} />

@@ -40,6 +40,10 @@ describe("decideChannels", () => {
     expect(channels).toEqual(["EXTENSION", "SLACK", "WEBHOOK"]);
   });
 
+  it("passes a quote request from a video pitch on at once, even at night", () => {
+    expect(decideChannels({ ...base, type: "QUOTE_REQUESTED", now: NIGHT }).channels).toEqual(["EMAIL", "EXTENSION"]);
+  });
+
   it("tells the seller at once about a question the assistant could not answer", () => {
     expect(
       decideChannels({ ...base, type: "PROSPECT_QUESTION", now: NIGHT, workspaceChannels: ["SLACK"] }).channels,

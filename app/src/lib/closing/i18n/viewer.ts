@@ -48,6 +48,7 @@ export type ViewerLabels = {
   invalidEmail: string;
   privacyNotice: string;
   privacyNoticeWeb: string;
+  privacyNoticeVideo: string;
   privacyLink: string;
   openExternal: string;
   externalTitle: string;
@@ -111,6 +112,13 @@ export type ViewerLabels = {
   voiceLimit: string;
   voiceMicDenied: string;
   voiceUnsupported: string;
+  /** Video pitch: the video is the document, "Demander un devis" under it. */
+  requestQuote: string;
+  quoteTitle: string;
+  quotePlaceholder: string;
+  quoteRequested: string;
+  videoError: string;
+  playVideo: string;
   /** Title, placeholder and suggested questions, by family of document (chat/kind.ts). */
   chatKinds: Record<ChatKind, ChatKindLabels>;
 };
@@ -145,6 +153,7 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     invalidEmail: "Please enter a valid email address.",
     privacyNotice: "The sender can see which pages of this document are viewed and for how long, along with your approximate location and device, to follow up at the right time.",
     privacyNoticeWeb: "The sender can see when this document is opened and for how long, along with your approximate location and device, to follow up at the right time.",
+    privacyNoticeVideo: "The sender can see which parts of this video are watched and for how long, along with your approximate location and device, to follow up at the right time.",
     privacyLink: "Privacy",
     openExternal: "Open in a new tab",
     externalTitle: "This document opens on its own site",
@@ -200,6 +209,12 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     voiceLimit: "You've sent several voice notes already. {sender} will get back to you.",
     voiceMicDenied: "Microphone access is blocked. Allow it in your browser and try again.",
     voiceUnsupported: "This browser can't record audio.",
+    requestQuote: "Request a quote",
+    quoteTitle: "Request a quote",
+    quotePlaceholder: "What should the quote cover? (optional)",
+    quoteRequested: "Your request has been sent. You'll get your quote soon.",
+    videoError: "This video can't play in this browser. Try another one, or contact the sender.",
+    playVideo: "Play the video",
     chatKinds: {
       offer: {
         title: "Questions about this proposal?",
@@ -272,6 +287,7 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     invalidEmail: "Adresse email invalide.",
     privacyNotice: "L'expéditeur voit quelles pages de ce document sont consultées et combien de temps, ainsi que votre localisation approximative et votre appareil, pour vous recontacter au bon moment.",
     privacyNoticeWeb: "L'expéditeur voit quand ce document est ouvert et combien de temps, ainsi que votre localisation approximative et votre appareil, pour vous recontacter au bon moment.",
+    privacyNoticeVideo: "L'expéditeur voit quels passages de cette vidéo sont regardés et combien de temps, ainsi que votre localisation approximative et votre appareil, pour vous recontacter au bon moment.",
     privacyLink: "Confidentialité",
     openExternal: "Ouvrir dans un nouvel onglet",
     externalTitle: "Ce document s'ouvre sur son propre site",
@@ -327,6 +343,12 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     voiceLimit: "Vous avez déjà envoyé plusieurs vocaux. {sender} va revenir vers vous.",
     voiceMicDenied: "L'accès au micro est bloqué. Autorisez-le dans votre navigateur puis réessayez.",
     voiceUnsupported: "Ce navigateur ne permet pas d'enregistrer.",
+    requestQuote: "Demander un devis",
+    quoteTitle: "Demander un devis",
+    quotePlaceholder: "Que doit couvrir le devis ? (facultatif)",
+    quoteRequested: "Votre demande est partie. Vous recevrez votre devis rapidement.",
+    videoError: "Cette vidéo ne peut pas être lue dans ce navigateur. Essayez-en un autre, ou contactez l'expéditeur.",
+    playVideo: "Lire la vidéo",
     chatKinds: {
       offer: {
         title: "Une question sur cette proposition ?",
@@ -399,6 +421,7 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     invalidEmail: "Introduce un email válido.",
     privacyNotice: "El remitente puede ver qué páginas de este documento se consultan y durante cuánto tiempo, junto con tu ubicación aproximada y tu dispositivo, para contactarte en el momento adecuado.",
     privacyNoticeWeb: "El remitente puede ver cuándo se abre este documento y durante cuánto tiempo, junto con tu ubicación aproximada y tu dispositivo, para contactarte en el momento adecuado.",
+    privacyNoticeVideo: "El remitente puede ver qué partes de este vídeo se ven y durante cuánto tiempo, así como tu ubicación aproximada y tu dispositivo, para hacer un seguimiento en el momento adecuado.",
     privacyLink: "Privacidad",
     openExternal: "Abrir en una pestaña nueva",
     externalTitle: "Este documento se abre en su propio sitio",
@@ -454,6 +477,12 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     voiceLimit: "Ya ha enviado varias notas de voz. {sender} le responderá.",
     voiceMicDenied: "El acceso al micrófono está bloqueado. Permítalo en su navegador y vuelva a intentarlo.",
     voiceUnsupported: "Este navegador no puede grabar audio.",
+    requestQuote: "Solicitar un presupuesto",
+    quoteTitle: "Solicitar un presupuesto",
+    quotePlaceholder: "¿Qué debe incluir el presupuesto? (opcional)",
+    quoteRequested: "Tu solicitud ha sido enviada. Recibirás tu presupuesto pronto.",
+    videoError: "Este vídeo no se puede reproducir en este navegador. Prueba con otro o contacta con el remitente.",
+    playVideo: "Reproducir el vídeo",
     chatKinds: {
       offer: {
         title: "¿Preguntas sobre esta propuesta?",
@@ -526,6 +555,7 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     invalidEmail: "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
     privacyNotice: "Der Absender sieht, welche Seiten dieses Dokuments wie lange angesehen werden, sowie Ihren ungefähren Standort und Ihr Gerät, um sich zum richtigen Zeitpunkt zu melden.",
     privacyNoticeWeb: "Der Absender sieht, wann und wie lange dieses Dokument geöffnet wird, sowie Ihren ungefähren Standort und Ihr Gerät, um sich zum richtigen Zeitpunkt zu melden.",
+    privacyNoticeVideo: "Der Absender sieht, welche Teile dieses Videos wie lange angesehen werden, sowie Ihren ungefähren Standort und Ihr Gerät, um sich zum richtigen Zeitpunkt zu melden.",
     privacyLink: "Datenschutz",
     openExternal: "In neuem Tab öffnen",
     externalTitle: "Dieses Dokument öffnet sich auf seiner eigenen Website",
@@ -581,6 +611,12 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     voiceLimit: "Sie haben bereits mehrere Sprachnachrichten gesendet. {sender} meldet sich bei Ihnen.",
     voiceMicDenied: "Der Mikrofonzugriff ist blockiert. Erlauben Sie ihn im Browser und versuchen Sie es erneut.",
     voiceUnsupported: "Dieser Browser kann kein Audio aufnehmen.",
+    requestQuote: "Angebot anfordern",
+    quoteTitle: "Angebot anfordern",
+    quotePlaceholder: "Was soll das Angebot umfassen? (optional)",
+    quoteRequested: "Ihre Anfrage wurde gesendet. Sie erhalten Ihr Angebot in Kürze.",
+    videoError: "Dieses Video kann in diesem Browser nicht abgespielt werden. Versuchen Sie einen anderen oder kontaktieren Sie den Absender.",
+    playVideo: "Video abspielen",
     chatKinds: {
       offer: {
         title: "Fragen zu diesem Angebot?",

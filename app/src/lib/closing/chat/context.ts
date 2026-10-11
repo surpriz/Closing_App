@@ -1,4 +1,4 @@
-import type { PageTag } from "@/generated/prisma/enums";
+import type { DocumentKind, PageTag } from "@/generated/prisma/enums";
 
 import { DOC_TYPE_LABELS, tagLabels, type DocType } from "../documents/doc-types";
 
@@ -14,7 +14,7 @@ import { CHAT_CONTEXT_CHARS, CHAT_PAGE_TEXT_MAX } from "./constants";
 export type ChatKnowledge = {
   document: {
     title: string;
-    kind: "FILE" | "URL";
+    kind: DocumentKind;
     docType: string | null;
     docPurpose: string | null;
     /** URL documents have no text: what the seller says the page is about. */
@@ -76,7 +76,9 @@ export function buildChatContext(k: ChatKnowledge, budget = CHAT_CONTEXT_CHARS):
     docTypeLabel && `Type: ${docTypeLabel}`,
     k.document.docPurpose && `Purpose: ${k.document.docPurpose}`,
     k.document.sellerDescription && `Seller's description: ${k.document.sellerDescription}`,
-    k.pages.length > 0 && `Pages: ${k.pages.length}`,
+    k.document.kind === "VIDEO"
+      ? `Format: a video pitch recorded by the seller. Its transcript is cut into ${k.pages.length} parts in order; "Page N" below is the Nth part of the video, not a page of a document.`
+      : k.pages.length > 0 && `Pages: ${k.pages.length}`,
   ].filter(Boolean);
   sections.push(`<document_overview>\n${overview.join("\n")}\n</document_overview>`);
   if (k.document.sellerDescription) sources.push(k.document.sellerDescription);

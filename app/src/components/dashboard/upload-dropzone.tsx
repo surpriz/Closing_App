@@ -1,12 +1,13 @@
 "use client";
 
 import { upload } from "@vercel/blob/client";
-import { FileUp, Link2, Plus } from "lucide-react";
+import { FileUp, Link2, Plus, Video } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useEffectEvent, useRef, useState, type DragEvent, type FormEvent } from "react";
 import { toast } from "sonner";
 
 import { createDocument, createWebDocument } from "@/app/(dashboard)/documents/actions";
+import { VideoPitchDialog } from "@/components/dashboard/video-pitch-recorder";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -195,8 +196,16 @@ function UrlForm({ source, autoFocus }: { source: AddSource; autoFocus?: boolean
   );
 }
 
-/** Drop area for a file (click or drop) plus a field for a web link. */
-function SourcePicker({ source, autoFocusUrl }: { source: AddSource; autoFocusUrl?: boolean }) {
+/** Drop area for a file (click or drop), a field for a web link, and a video pitch to record. */
+function SourcePicker({
+  source,
+  autoFocusUrl,
+  onRecordVideo,
+}: {
+  source: AddSource;
+  autoFocusUrl?: boolean;
+  onRecordVideo?: () => void;
+}) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const { progress, uploading, busy, handleFile, handleUrl } = source;
@@ -250,6 +259,16 @@ function SourcePicker({ source, autoFocusUrl }: { source: AddSource; autoFocusUr
         <FileInput inputRef={inputRef} onFile={(file) => void handleFile(file)} />
       </div>
       <UrlForm source={source} autoFocus={autoFocusUrl} />
+      {onRecordVideo && (
+        <div className="flex items-center gap-3 pt-1">
+          <span className="h-px flex-1 bg-border" />
+          <Button variant="destructive" size="lg" disabled={busy} onClick={onRecordVideo}>
+            <Video />
+            Enregistrer un pitch vidéo
+          </Button>
+          <span className="h-px flex-1 bg-border" />
+        </div>
+      )}
     </div>
   );
 }
@@ -281,25 +300,39 @@ function usePasteToAdd(source: AddSource, enabled = true) {
   }, []);
 }
 
+type PitchProps = {
+  /** pitchUploadPrefix of the workspace; without it, no "Enregistrer un pitch vidéo". */
+  pitchUploadPrefix?: string;
+};
+
 /** Large drop zone, used when there is no document yet. */
-export function UploadDropzone({ uploadPrefix }: { uploadPrefix: string }) {
+export function UploadDropzone({ uploadPrefix, pitchUploadPrefix }: { uploadPrefix: string } & PitchProps) {
   const source = useAddSource(uploadPrefix);
-  usePasteToAdd(source);
-  return <SourcePicker source={source} />;
+  const [recording, setRecording] = useState(false);
+  usePasteToAdd(source, !recording);
+  return (
+    <>
+      <SourcePicker source={source} onRecordVideo={pitchUploadPrefix ? () => setRecording(true) : undefined} />
+      {pitchUploadPrefix && (
+        <VideoPitchDialog open={recording} onOpenChange={setRecording} uploadPrefix={pitchUploadPrefix} />
+      )}
+    </>
+  );
 }
 
 /**
  * Header button once documents exist. The whole window still accepts a
  * dropped file or link, with a veil to show where it lands.
  */
-export function UploadButton({ uploadPrefix }: { uploadPrefix: string }) {
+export function UploadButton({ uploadPrefix, pitchUploadPrefix }: { uploadPrefix: string } & PitchProps) {
   const [open, setOpen] = useState(false);
+  const [recording, setRecording] = useState(false);
   const [dragging, setDragging] = useState(false);
   const source = useAddSource(uploadPrefix, () => setOpen(false));
   const onDroppedFile = useEffectEvent((file: File) => void source.handleFile(file));
   const onDroppedUrl = useEffectEvent((url: string) => void source.handleUrl(url));
   // The dialog has its own drop zone and field
-  usePasteToAdd(source, !open);
+  usePasteToAdd(source, !open && !recording);
 
   useEffect(() => {
     let depth = 0;
@@ -351,14 +384,28 @@ export function UploadButton({ uploadPrefix }: { uploadPrefix: string }) {
           <DialogHeader>
             <DialogTitle className="text-lg">Ajouter un document ou un lien</DialogTitle>
             <DialogDescription>
-              Un PDF (devis, présentation, proposition…) ou une page web : Notion, Loom, Figma, Webflow, Google
-              Slides…
+              Un PDF (devis, présentation, proposition…), une page web (Notion, Loom, Figma, Webflow, Google
+              Slides…), ou une vidéo que vous enregistrez ici.
             </DialogDescription>
           </DialogHeader>
-          <SourcePicker source={source} autoFocusUrl />
+          <SourcePicker
+            source={source}
+            autoFocusUrl
+            onRecordVideo={
+              pitchUploadPrefix
+                ? () => {
+                    setOpen(false);
+                    setRecording(true);
+                  }
+                : undefined
+            }
+          />
         </DialogContent>
       </Dialog>
-      {dragging && !open && (
+      {pitchUploadPrefix && (
+        <VideoPitchDialog open={recording} onOpenChange={setRecording} uploadPrefix={pitchUploadPrefix} />
+      )}
+      {dragging && !open && !recording && (
         <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-foreground/60 backdrop-blur-sm">
           <p className="rounded-full bg-card px-5 py-2.5 text-body font-medium shadow-lg">
             Déposez le fichier ou le lien pour l&apos;ajouter

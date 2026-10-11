@@ -49,6 +49,9 @@ export async function deleteDocumentForever(documentId: string) {
     where: { id: documentId },
     select: {
       blobPathname: true,
+      // Video pitch: its still and its mic track
+      posterPathname: true,
+      audioPathname: true,
       capsules: { select: { blobPathname: true, posterPathname: true } },
       links: { select: { voiceComments: { select: { blobPathname: true } } } },
     },
@@ -57,6 +60,8 @@ export async function deleteDocumentForever(documentId: string) {
 
   await deleteBlobs([
     document.blobPathname,
+    document.posterPathname,
+    document.audioPathname,
     ...document.capsules.flatMap((c) => [c.blobPathname, c.posterPathname]),
     ...document.links.flatMap((l) => l.voiceComments.map((v) => v.blobPathname)),
   ]);

@@ -2,6 +2,11 @@
  * Reads a single `Range: bytes=…` header against a file size. Pure.
  * Null means "send the whole file" (no header, or several ranges).
  */
+/** Caps a range to `maxBytes` from its start: browsers ask for the rest of the file and accept less. Pure. */
+export function capRange(range: { start: number; end: number }, maxBytes: number) {
+  return { start: range.start, end: Math.min(range.end, range.start + maxBytes - 1) };
+}
+
 export function parseRange(header: string | null, size: number): { start: number; end: number } | "unsatisfiable" | null {
   if (!header) return null;
   const match = /^bytes=(\d*)-(\d*)$/.exec(header.trim());

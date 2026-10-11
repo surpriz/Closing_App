@@ -1,4 +1,4 @@
-import { FileText, Globe } from "lucide-react";
+import { FileText, Globe, Video } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -7,9 +7,9 @@ import { HeatBar } from "@/components/dashboard/heat";
 import { TIER_LABELS } from "@/components/dashboard/labels";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { UploadButton, UploadDropzone } from "@/components/dashboard/upload-dropzone";
-import { documentUploadPrefix } from "@/lib/blob";
+import { documentUploadPrefix, pitchUploadPrefix } from "@/lib/blob";
 import { prisma } from "@/lib/db";
-import { formatRelative } from "@/lib/format";
+import { formatDuration, formatRelative } from "@/lib/format";
 import { requireWorkspace } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Documents" };
@@ -57,6 +57,7 @@ export default async function DocumentsPage() {
   }
 
   const uploadPrefix = documentUploadPrefix(organization.id);
+  const pitchPrefix = pitchUploadPrefix(organization.id);
   const now = new Date();
 
   if (documents.length === 0) {
@@ -66,7 +67,7 @@ export default async function DocumentsPage() {
           title="Documents"
           description="Ajoutez un PDF ou collez un lien (Notion, Loom, Figma…), puis créez un lien par prospect."
         />
-        <UploadDropzone uploadPrefix={uploadPrefix} />
+        <UploadDropzone uploadPrefix={uploadPrefix} pitchUploadPrefix={pitchPrefix} />
       </div>
     );
   }
@@ -76,7 +77,7 @@ export default async function DocumentsPage() {
       <PageHeader
         title="Documents"
         description="Glissez un PDF ou collez un lien n'importe où sur la page pour l'ajouter."
-        action={<UploadButton uploadPrefix={uploadPrefix} />}
+        action={<UploadButton uploadPrefix={uploadPrefix} pitchUploadPrefix={pitchPrefix} />}
       />
 
       <ul className="stagger divide-y divide-border overflow-hidden rounded-xl bg-card shadow-xs ring-1 ring-border">
@@ -94,6 +95,8 @@ export default async function DocumentsPage() {
               <span className="flex size-10 shrink-0 items-center justify-center self-center rounded-lg bg-muted text-muted-foreground ring-1 ring-border">
                 {document.kind === "URL" ? (
                   <Globe className="size-4.5" aria-hidden />
+                ) : document.kind === "VIDEO" ? (
+                  <Video className="size-4.5" aria-hidden />
                 ) : (
                   <FileText className="size-4.5" aria-hidden />
                 )}
@@ -116,9 +119,10 @@ export default async function DocumentsPage() {
                   ) : (
                     [
                       document.kind === "URL" ? `Lien web, ${hostOf(document.externalUrl) ?? "page externe"}` : null,
+                      document.kind === "VIDEO" ? `Pitch vidéo, ${formatDuration(document.durationMs ?? 0)}` : null,
                       plural(document._count.links, "prospect", "prospects"),
                       plural(reads, "lecture", "lectures"),
-                      document.numPages ? plural(document.numPages, "page", "pages") : null,
+                      document.numPages && document.kind !== "VIDEO" ? plural(document.numPages, "page", "pages") : null,
                     ]
                       .filter(Boolean)
                       .join(", ")

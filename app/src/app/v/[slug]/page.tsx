@@ -10,6 +10,7 @@ import { EmailGate } from "@/components/viewer/email-gate";
 import { ExpiryGate } from "@/components/viewer/expiry-gate";
 import { LinkExpired } from "@/components/viewer/link-expired";
 import { PdfViewer } from "@/components/viewer/pdf-viewer";
+import { VideoViewer } from "@/components/viewer/video-viewer";
 import { WebViewer } from "@/components/viewer/web-viewer";
 import { getLanguageModel } from "@/lib/closing/ai/provider";
 import { bookingUrlForLink } from "@/lib/closing/booking/link-booking";
@@ -165,6 +166,32 @@ export default async function ViewerPage({ params, searchParams }: PageProps<"/v
     ) : (
       viewer
     );
+
+  if (link.document.kind === "VIDEO") {
+    const src = `/api/v/${slug}/file`;
+    return (
+      <>
+        {sellerNotice}
+        {withExpiry(
+          <VideoViewer
+            slug={slug}
+            documentName={link.document.name}
+            senderName={senderName}
+            src={src}
+            poster={link.document.posterPathname ? `${src}?poster` : null}
+            durationMs={link.document.durationMs}
+            labels={labels}
+            quote={link.ctaEnabled}
+            booking={booking}
+            dealStatus={link.dealStatus}
+            locale={locale}
+            chat={chat}
+            countdown={!!deadline && countdown}
+          />,
+        )}
+      </>
+    );
+  }
 
   const capsules = await loadCapsules(slug, link);
 

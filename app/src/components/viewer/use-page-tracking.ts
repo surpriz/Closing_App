@@ -43,13 +43,19 @@ type TrackingOptions = {
   embedded?: boolean;
   /** False records the opening only (site shown in a new tab). */
   countTime?: boolean;
+  /**
+   * The caller says which page is on screen (setPage) and when time counts
+   * (setActive): a video pitch, whose pages are tenths of the video and whose
+   * time is time spent playing it, not scrolling.
+   */
+  manual?: boolean;
 };
 
 // Counts visible, active reading time per page and reports it every ~10s
 export function usePageTracking(
   slug: string,
   pageCount: number,
-  { embedded = false, countTime = true }: TrackingOptions = {},
+  { embedded = false, countTime = true, manual = false }: TrackingOptions = {},
 ) {
   const [currentPage, setCurrentPage] = useState(1);
   const viewIdRef = useRef<string | null>(null);
@@ -57,6 +63,7 @@ export function usePageTracking(
   const elementsRef = useRef(new Map<number, HTMLElement>());
   const pendingRef = useRef(new Map<number, Pending>());
   const lastInteractionRef = useRef(0);
+  const activeRef = useRef(false);
 
   const registerPage = useCallback((pageNumber: number, element: HTMLElement | null) => {
     if (element) elementsRef.current.set(pageNumber, element);
@@ -64,6 +71,20 @@ export function usePageTracking(
   }, []);
 
   const getViewId = useCallback(() => viewIdRef.current, []);
+
+  const setPage = useCallback(
+    (pageNumber: number) => {
+      const page = Math.min(Math.max(1, pageNumber), Math.max(1, pageCount));
+      if (page === currentPageRef.current) return;
+      currentPageRef.current = page;
+      setCurrentPage(page);
+    },
+    [pageCount],
+  );
+
+  const setActive = useCallback((active: boolean) => {
+    activeRef.current = active;
+  }, []);
 
   // `left` is sent even without reading time, so the seller stops seeing the
   // prospect as live as soon as the tab is hidden or closed
@@ -113,7 +134,7 @@ export function usePageTracking(
 
   // Current page = the page occupying the most vertical space on screen
   useEffect(() => {
-    if (!pageCount) return;
+    if (!pageCount || manual) return;
     const visibleHeights = new Map<number, number>();
 
     const observer = new IntersectionObserver(
@@ -140,7 +161,7 @@ export function usePageTracking(
 
     elementsRef.current.forEach((element) => observer.observe(element));
     return () => observer.disconnect();
-  }, [pageCount]);
+  }, [pageCount, manual]);
 
   useEffect(() => {
     if (!pageCount || !countTime) return;
@@ -150,7 +171,7 @@ export function usePageTracking(
       lastInteractionRef.current = Date.now();
     };
     const activityEvents = ["scroll", "mousemove", "keydown", "touchstart", "wheel", "click"] as const;
-    activityEvents.forEach((name) => window.addEventListener(name, markActive, { passive: true }));
+    if (!manual) activityEvents.forEach((name) => window.addEventListener(name, markActive, { passive: true }));
     // Focus moving into the iframe blurs this window
     if (embedded) window.addEventListener("blur", markActive);
 
@@ -163,14 +184,16 @@ export function usePageTracking(
 
       if (document.visibilityState !== "visible") return;
       if (embedded && !document.hasFocus()) return;
-      if (now - lastInteractionRef.current > idleTimeoutMs) return;
+      // A video counts while it plays, even with the mouse still
+      if (manual ? !activeRef.current : now - lastInteractionRef.current > idleTimeoutMs) return;
 
       const page = currentPageRef.current;
       const entry = pendingRef.current.get(page) ?? { ms: 0, depth: 0 };
       entry.ms += delta;
 
       const element = elementsRef.current.get(page);
-      if (element) {
+      if (manual) entry.depth = 1;
+      else if (element) {
         const rect = element.getBoundingClientRect();
         const seen = (window.innerHeight - rect.top) / rect.height;
         entry.depth = Math.max(entry.depth, Math.min(1, Math.max(0, seen)));
@@ -204,7 +227,7 @@ export function usePageTracking(
       window.removeEventListener("pagehide", onPageHide);
       flush(true, true);
     };
-  }, [pageCount, flush, embedded, countTime]);
+  }, [pageCount, flush, embedded, countTime, manual]);
 
-  return { currentPage, registerPage, getViewId };
+  return { currentPage, registerPage, getViewId, setPage, setActive };
 }

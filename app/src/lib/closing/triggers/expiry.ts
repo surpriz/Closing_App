@@ -30,6 +30,7 @@ export async function scanExpiryReminders(now = new Date()) {
       dealStatus: "OPEN",
       archivedAt: null,
       meetingBookedAt: null,
+      quoteRequestedAt: null,
       draftAt: null,
       sentAt: { not: null },
       expiresAt: { gt: now, lte: new Date(now.getTime() + REMINDER_DRAFT_LEAD_MS) },

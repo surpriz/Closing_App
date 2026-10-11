@@ -200,11 +200,14 @@ export async function setLinkShared(linkId: string, shared: boolean) {
 
   const { user } = await requireWorkspace();
   const [document, settings, prefs] = await Promise.all([
-    prisma.document.findUniqueOrThrow({ where: { id: link.documentId }, select: { docType: true } }),
+    prisma.document.findUniqueOrThrow({ where: { id: link.documentId }, select: { docType: true, kind: true } }),
     getWorkspaceSettings(link.organizationId),
     getSellerPrefs(user.id, link.organizationId),
   ]);
-  const personal = linkDefaultsFor(document.docType, settings, new Date(), sellerTimezone(prefs), { allowShared: false });
+  const personal = linkDefaultsFor(document.docType, settings, new Date(), sellerTimezone(prefs), {
+    allowShared: false,
+    kind: document.kind,
+  });
   await prisma.link.update({
     where: { id: link.id },
     // The other settings stay: on a shared link they are what every reader's link starts from

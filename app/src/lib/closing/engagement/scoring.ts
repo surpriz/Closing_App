@@ -16,6 +16,7 @@ export type EngagementInput = {
   completionRatio: number; // furthest page reached / page count, 0..1
   meetingClicked?: boolean; // opened the seller's booking page
   meetingBooked?: boolean; // and the widget confirmed a booking
+  quoteRequested?: boolean; // asked for a quote under a video pitch
 };
 
 export type EngagementResult = {
@@ -75,6 +76,8 @@ export function computeEngagementScore(input: EngagementInput): EngagementResult
   else if (input.completionRatio >= 0.5) add("read_halfway", 4);
 
   if (input.dealStatus === "CHANGE_REQUESTED") add("change_requested", 10);
+  // As strong as a booking: the prospect asks to go further
+  if (input.quoteRequested) add("quote_requested", 25);
 
   // A booking replaces the intent: it is the same gesture, carried through
   if (input.meetingBooked) add("meeting_booked", 25);

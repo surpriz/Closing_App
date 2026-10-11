@@ -9,15 +9,18 @@ export function PrivacyNotice({
   labels,
   className,
   web = false,
+  video = false,
 }: {
   labels: ViewerLabels;
   className?: string;
   /** URL documents are tracked as a whole, not per page. */
   web?: boolean;
+  /** Video pitches are tracked by tenths of the video. */
+  video?: boolean;
 }) {
   return (
     <p className={`text-xs leading-relaxed text-muted-foreground ${className ?? ""}`}>
-      {web ? labels.privacyNoticeWeb : labels.privacyNotice}{" "}
+      {video ? labels.privacyNoticeVideo : web ? labels.privacyNoticeWeb : labels.privacyNotice}{" "}
       <a
         href={PRIVACY_POLICY_URL}
         target="_blank"

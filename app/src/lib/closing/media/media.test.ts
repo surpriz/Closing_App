@@ -1,8 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { CAPSULE_MAX_MS, CAPSULE_VIDEO_MAX_BYTES, VOICE_COMMENT_MAX_BYTES } from "./limits";
+import {
+  CAPSULE_MAX_MS,
+  CAPSULE_VIDEO_MAX_BYTES,
+  PITCH_AUDIO_MAX_BYTES,
+  PITCH_MAX_MS,
+  PITCH_VIDEO_MAX_BYTES,
+  VOICE_COMMENT_MAX_BYTES,
+} from "./limits";
 import { baseMime, extensionFor, matchesContainer, pickMimeType, sniffContainer } from "./mime";
-import { parseRange } from "./range";
+import { capRange, parseRange } from "./range";
 import { validateMedia } from "./validate";
 
 const bytes = (...values: number[]) => new Uint8Array(values);
@@ -67,6 +74,23 @@ describe("validateMedia", () => {
     expect(validateMedia(voice)).toBeNull();
     expect(validateMedia({ ...voice, kind: "VIDEO", contentType: "video/webm" })).toBe("type");
     expect(validateMedia({ ...voice, size: VOICE_COMMENT_MAX_BYTES + 1 })).toBe("too_large");
+  });
+
+  it("gives a video pitch three minutes and room for a heavy screen recording", () => {
+    const pitch = { use: "pitch" as const, kind: "VIDEO" as const, contentType: "video/mp4", size: 60 * 1024 * 1024, durationMs: PITCH_MAX_MS };
+    expect(validateMedia(pitch)).toBeNull();
+    // The recorder's timer stops a little late
+    expect(validateMedia({ ...pitch, durationMs: PITCH_MAX_MS + 1_000 })).toBeNull();
+    expect(validateMedia({ ...pitch, durationMs: PITCH_MAX_MS + 5_000 })).toBe("too_long");
+    expect(validateMedia({ ...pitch, size: PITCH_VIDEO_MAX_BYTES + 1 })).toBe("too_large");
+    expect(validateMedia({ ...pitch, kind: "AUDIO", contentType: "audio/webm", size: PITCH_AUDIO_MAX_BYTES + 1 })).toBe("too_large");
+  });
+});
+
+describe("capRange", () => {
+  it("cuts a long range to its first bytes and leaves a short one alone", () => {
+    expect(capRange({ start: 100, end: 9_999 }, 1_000)).toEqual({ start: 100, end: 1_099 });
+    expect(capRange({ start: 0, end: 10 }, 1_000)).toEqual({ start: 0, end: 10 });
   });
 });
 

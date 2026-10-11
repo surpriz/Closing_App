@@ -13,6 +13,7 @@ export async function refreshEngagementScore(linkId: string, now = new Date()) {
       organizationId: true,
       hotPricingThresholdSec: true,
       meetingBookedAt: true,
+      quoteRequestedAt: true,
       document: {
         select: {
           numPages: true,
@@ -58,6 +59,7 @@ export async function refreshEngagementScore(linkId: string, now = new Date()) {
       : 0,
     meetingClicked: meetingClicks > 0,
     meetingBooked: link.meetingBookedAt !== null,
+    quoteRequested: link.quoteRequestedAt !== null,
   });
 
   const data = {

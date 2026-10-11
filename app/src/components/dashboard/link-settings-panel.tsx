@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import type { DocumentKind } from "@/generated/prisma/enums";
 
 import { ExpiryControl } from "./expiry-control";
 
@@ -47,6 +48,8 @@ const GROUPS: { title: string; items: Item[] }[] = [
     ],
   },
 ];
+
+const VIDEO_CTA = { label: "Demander un devis", hint: "Un bouton sous la vidéo." };
 
 /** Booking page of this link, saved on blur. Empty = the seller's own page. */
 function BookingUrlField({ linkId, url, fallback }: { linkId: string; url: string; fallback: string | null }) {
@@ -88,7 +91,7 @@ export function LinkSettingsPanel({
   initial,
   expiresAt,
   requests,
-  isPdf,
+  kind,
   shared,
   canSaveDefaults,
   booking,
@@ -97,7 +100,7 @@ export function LinkSettingsPanel({
   initial: LinkSwitches;
   expiresAt: string | null;
   requests: number;
-  isPdf: boolean;
+  kind: DocumentKind;
   /** Shared link: the email is always asked, nothing to accept, no follow-ups. */
   shared: boolean;
   canSaveDefaults: boolean;
@@ -135,7 +138,9 @@ export function LinkSettingsPanel({
           <h3 className="text-sm font-medium text-muted-foreground">{group.title}</h3>
           <div className="divide-y divide-border rounded-xl bg-card ring-1 ring-border">
             {group.items
-              .filter((item) => (isPdf || !item.pdfOnly) && !(shared && item.personalOnly))
+              .filter((item) => (kind === "FILE" || !item.pdfOnly) && !(shared && item.personalOnly))
+              // Under a video pitch, the buttons are "Demander un devis"
+              .map((item) => (kind === "VIDEO" && item.key === "ctaEnabled" ? { ...item, ...VIDEO_CTA } : item))
               .map((item) => (
                 <Fragment key={item.key}>
                   <label className="flex cursor-pointer items-start justify-between gap-4 px-4 py-3">

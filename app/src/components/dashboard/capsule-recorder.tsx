@@ -7,13 +7,14 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { saveCapsule } from "@/app/(dashboard)/documents/capsule-actions";
+import { uploadPoster } from "@/components/media/capture-frame";
 import { useMediaRecorder, type RecorderError } from "@/components/media/use-media-recorder";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import type { CapsuleKind } from "@/generated/prisma/enums";
 import { WELCOME_PAGE } from "@/lib/closing/capsules/resolve";
-import { CAPSULE_HOOK_MAX, CAPSULE_MAX_MS, CAPSULE_POSTER_TYPE } from "@/lib/closing/media/limits";
+import { CAPSULE_HOOK_MAX, CAPSULE_MAX_MS } from "@/lib/closing/media/limits";
 import { baseMime, extensionFor } from "@/lib/closing/media/mime";
 import { cn } from "@/lib/utils";
 
@@ -210,48 +211,4 @@ function Recorder({ target, initialHook, onDone }: { target: CapsuleTarget; init
       </DialogFooter>
     </div>
   );
-}
-
-/** Uploads a still of the recording for the prospect's bubble; null when the browser can't grab one. */
-async function uploadPoster(url: string, pathname: string) {
-  try {
-    const frame = await captureFrame(url);
-    if (!frame) return null;
-    const blob = await upload(pathname, frame, { access: "private", handleUploadUrl: "/api/upload", contentType: CAPSULE_POSTER_TYPE });
-    return blob.pathname;
-  } catch {
-    return null;
-  }
-}
-
-/** A square JPEG of the clip half a second in (the first frames are often black while the camera wakes up). */
-function captureFrame(url: string, size = 320): Promise<Blob | null> {
-  return new Promise((resolve) => {
-    const video = document.createElement("video");
-    video.muted = true;
-    video.playsInline = true;
-    video.preload = "auto";
-    const timer = window.setTimeout(() => done(null), 4000);
-    const done = (blob: Blob | null) => {
-      window.clearTimeout(timer);
-      video.removeAttribute("src");
-      video.load();
-      resolve(blob);
-    };
-    video.onerror = () => done(null);
-    video.onloadeddata = () => {
-      video.currentTime = 0.5;
-    };
-    video.onseeked = () => {
-      const side = Math.min(video.videoWidth, video.videoHeight);
-      if (!side) return done(null);
-      const canvas = document.createElement("canvas");
-      canvas.width = canvas.height = size;
-      const context = canvas.getContext("2d");
-      if (!context) return done(null);
-      context.drawImage(video, (video.videoWidth - side) / 2, (video.videoHeight - side) / 2, side, side, 0, 0, size, size);
-      canvas.toBlob(done, CAPSULE_POSTER_TYPE, 0.8);
-    };
-    video.src = url;
-  });
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { segmentLabel } from "@/lib/closing/documents/video-segments";
 import type { LinkLiveState } from "@/lib/closing/live";
 
 import { LiveDot } from "./heat";
@@ -19,11 +20,14 @@ export function LiveActivity({
   linkId,
   initial,
   pageCount,
+  video = false,
 }: {
   linkId: string;
   initial: LinkLiveState;
   /** Null for web documents, which have no pages. */
   pageCount: number | null;
+  /** A video pitch: its pages are tenths of the video. */
+  video?: boolean;
 }) {
   const { readers } = useLivePoll(`/api/links/${linkId}/live`, initial);
 
@@ -53,7 +57,9 @@ export function LiveActivity({
             <span className="text-muted-foreground">
               {[
                 pageCount && reader.currentPage
-                  ? `page ${reader.currentPage} sur ${pageCount}`
+                  ? video
+                    ? `vers ${segmentLabel(reader.currentPage, pageCount)} de la vidéo`
+                    : `page ${reader.currentPage} sur ${pageCount}`
                   : null,
                 reader.deviceType ? DEVICE_LABELS[reader.deviceType] : null,
               ]

@@ -60,6 +60,10 @@ export async function sendFollowup(
     await finish(followup.id, "CANCELLED", "Rendez-vous pris par le prospect");
     return "cancelled";
   }
+  if (link.quoteRequestedAt) {
+    await finish(followup.id, "CANCELLED", "Devis demandé par le prospect");
+    return "cancelled";
+  }
   const now = new Date();
   // Even a message the seller approved: the link it carries no longer opens
   if (isLinkExpired(link, now)) {

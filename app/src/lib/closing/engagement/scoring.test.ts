@@ -70,6 +70,12 @@ describe("computeEngagementScore", () => {
     expect(booked.reasons.map((r) => r.code)).toEqual(["meeting_booked"]);
   });
 
+  it("counts a quote asked for under a video pitch as much as a booking", () => {
+    const result = computeEngagementScore({ ...base, quoteRequested: true });
+    expect(result.score).toBe(25);
+    expect(result.reasons.map((r) => r.code)).toEqual(["quote_requested"]);
+  });
+
   it("keeps the score capped with a booking", () => {
     const result = computeEngagementScore({
       ...base,

@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 
 import { streamPrivateBlob } from "@/lib/blob";
 import { getLinkForViewer, getViewerAccess } from "@/lib/closing/links";
+import { pitchMediaResponse } from "@/lib/closing/media/serve";
 
 // Streams the private PDF to the viewer after checking the link and email gate.
 // ?download=1 saves it under the document's name instead (the viewer offers it once signed).
@@ -15,6 +16,8 @@ export async function GET(request: NextRequest, ctx: RouteContext<"/api/v/[slug]
 
   const access = await getViewerAccess(link);
   if (!access.allowed) return new Response("Forbidden", { status: 403 });
+  // A video pitch plays in place (byte ranges for Safari), it is never downloaded
+  if (link.document.kind === "VIDEO") return pitchMediaResponse(request, link.document);
 
   if (!link.document.blobPathname) return new Response("Not found", { status: 404 });
   const blob = await streamPrivateBlob(link.document.blobPathname);

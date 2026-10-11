@@ -44,6 +44,7 @@ describe("decideFollowup", () => {
     ["follow-ups off", { deal: deal({ followupsEnabled: false }) }, "Les relances sont coupées sur ce lien."],
     ["snoozed", { deal: deal({ snoozedUntil: new Date(now.getTime() + DAY) }) }, "Le deal est en pause."],
     ["meeting booked", { deal: deal({ meetingBooked: true }) }, "Le prospect a pris rendez-vous : plus de relance automatique."],
+    ["quote requested", { deal: deal({ quoteRequested: true }) }, "Le prospect a demandé un devis : à vous de lui répondre, plus de relance automatique."],
     ["unsubscribed", { prospect: { unsubscribed: true, canWhatsApp: false, timezone: "Europe/Paris" } }, "Le contact s'est désinscrit."],
     ["no contact", { prospect: null }, "Aucun contact à qui écrire."],
     ["approved one waiting", { history: history({ approvedPending: true }) }, "Une relance validée attend déjà son envoi."],

@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { prisma } from "@/lib/db";
 
-import { getLanguageModel, THINKING_ROOM_TOKENS } from "../ai/provider";
+import { getLanguageModel, getTranscriptionModel, THINKING_ROOM_TOKENS } from "../ai/provider";
 import { recordAiUsage } from "../ai/usage";
 import { followDocumentType } from "./create-link";
 import { DOC_TYPES } from "./doc-types";
@@ -19,6 +19,7 @@ import {
   pageReadingSystemPrompt,
   type PageReading,
 } from "./page-reading";
+import { transcribeVideoPitch } from "./video-transcript";
 
 /** After this many failed runs the engine stops retrying a document. */
 export const MAX_AI_ATTEMPTS = 3;
@@ -80,6 +81,7 @@ export type ReadPagesOutcome = "done" | "partial" | "failed" | "no_ai" | "skippe
  * Summarizes every page of a PDF, refines its tags and pulls key facts
  * (amounts, durations). Never fails the document: without AI, or when a call
  * breaks, the keyword tags from the upload stay.
+ * A video pitch is transcribed first, each tenth of the video becoming a page.
  */
 export async function readDocumentPages(documentId: string): Promise<ReadPagesOutcome> {
   const llm = getLanguageModel("classify");
@@ -96,28 +98,43 @@ export async function readDocumentPages(documentId: string): Promise<ReadPagesOu
       aiAttempts: true,
       docType: true,
       docTypeSource: true,
+      audioPathname: true,
+      durationMs: true,
       pages: {
         select: { id: true, pageNumber: true, text: true, tags: true, tagSource: true },
         orderBy: { pageNumber: "asc" },
       },
     },
   });
-  if (!document || document.kind !== "FILE" || document.status !== "READY") return "skipped";
+  if (!document || document.kind === "URL" || document.status !== "READY") return "skipped";
   if (document.aiAttempts >= MAX_AI_ATTEMPTS) return "skipped";
 
-  const withText = document.pages.filter((page) => page.text);
+  let pages = document.pages;
+  let withText = pages.filter((page) => page.text);
   // Claim this attempt: two page views must not read the same document twice
   const claimed = await prisma.document.updateMany({
     where: { id: document.id, aiAttempts: document.aiAttempts },
     data: { aiAttempts: { increment: 1 } },
   });
   if (claimed.count === 0) return "skipped";
+  // Without speech to text (or a mic track), there is nothing to read: done rather than retried forever
+  if (document.kind === "VIDEO" && withText.length === 0 && document.audioPathname && getTranscriptionModel()) {
+    if (!(await transcribeVideoPitch(document))) return "failed";
+    pages = await prisma.documentPage.findMany({
+      where: { documentId: document.id },
+      select: { id: true, pageNumber: true, text: true, tags: true, tagSource: true },
+      orderBy: { pageNumber: "asc" },
+    });
+    withText = pages.filter((page) => page.text);
+  }
   if (withText.length === 0) {
     await prisma.document.update({ where: { id: document.id }, data: { aiProcessedAt: new Date() } });
     return "done";
   }
 
-  const classified = await classifyDocument(llm, document, withText.map((page) => page.text).join("\n"));
+  // Tells the model it reads speech, cut in tenths, not a written document
+  const name = document.kind === "VIDEO" ? `${document.name} (transcript of a video pitch, one page per tenth of the video)` : document.name;
+  const classified = await classifyDocument(llm, { ...document, name }, withText.map((page) => page.text).join("\n"));
   // A type the seller corrected stays: the AI only refreshes the purpose and the title
   const keepType = document.docTypeSource === "MANUAL";
   if (classified) {
@@ -145,7 +162,7 @@ export async function readDocumentPages(documentId: string): Promise<ReadPagesOu
           const { output, usage } = await generateText({
             model: llm.model,
             system: systemPrompt,
-            prompt: buildPageReadingPrompt(document.name, chunk),
+            prompt: buildPageReadingPrompt(name, chunk),
             output: Output.object({ schema: readingSchema }),
             maxOutputTokens: THINKING_ROOM_TOKENS + 300 * chunk.length,
             abortSignal: AbortSignal.timeout(CALL_TIMEOUT_MS),
@@ -187,7 +204,7 @@ export async function readDocumentPages(documentId: string): Promise<ReadPagesOu
 
   const byPage = new Map(readings.map((reading) => [reading.pageNumber, reading]));
   await prisma.$transaction(
-    document.pages
+    pages
       .filter((page) => byPage.has(page.pageNumber))
       .map((page) => {
         const reading = byPage.get(page.pageNumber)!;
@@ -219,7 +236,7 @@ export async function readPendingDocuments(
   if (!getLanguageModel("classify")) return 0;
   const pending = await prisma.document.findMany({
     where: {
-      kind: "FILE",
+      kind: { in: ["FILE", "VIDEO"] },
       status: "READY",
       archivedAt: null,
       aiProcessedAt: null,

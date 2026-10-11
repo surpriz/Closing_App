@@ -185,6 +185,7 @@ enum DocumentStatus {
 enum DocumentKind {
   FILE // PDF stored in Blob, rendered with pdf.js
   URL // external web page (Notion, Loom, Figma...) shown in an iframe
+  VIDEO // pitch recorded by the seller in Clozer, stored in Blob, tracked as 10 slices of 10%
 }
 
 enum PageTag {
@@ -282,6 +283,7 @@ enum SellerAlertType {
   LINK_EXPIRING // the link expires within 24h
   VOICE_COMMENT // the prospect left a voice comment on a page
   MEETING_BOOKED // the prospect booked a meeting in the seller's calendar from the viewer
+  QUOTE_REQUESTED // the prospect asked for a quote under a video pitch
 }
 
 // Role of a prospect contact in the buying committee, set by the seller.
@@ -320,6 +322,7 @@ enum ProspectActionType {
   REQUEST_EXTENSION // the link expired, the prospect asked for more time
   MEETING_CLICK // opened the seller's booking page (once per view)
   MEETING_BOOKED // the booking widget reported a confirmed meeting
+  REQUEST_QUOTE // "Demander un devis" under a video pitch
 }
 
 enum ChatRole {
@@ -403,6 +406,10 @@ model Document {
   embedUrl        String? // URL documents: what the viewer frames, null when the site refuses framing
   numPages        Int?
   status          DocumentStatus @default(UPLOADED)
+  // VIDEO documents: still shown before playing, mic-only track that gets transcribed, length measured by the recorder
+  posterPathname  String?
+  audioPathname   String?
+  durationMs      Int?
   processingError String?
 
   // AI reading of the pages (summaries, tags, key facts). Retried by the engine until it works, 3 tries max.
@@ -482,6 +489,8 @@ model Link {
   // The prospect booked a meeting from the viewer: automatic follow-ups stop for good
   meetingBookedAt      DateTime?
   meetingAt            DateTime? // start of the latest booked meeting, when the widget gave it (Cal.com)
+  // The prospect asked for a quote under a video pitch: the seller answers, automatic follow-ups stop for good
+  quoteRequestedAt     DateTime?
 
   followupsEnabled       Boolean           @default(true)
   channels               FollowupChannel[] // empty = workspace defaults

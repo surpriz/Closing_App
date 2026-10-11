@@ -11,6 +11,13 @@ export type RecorderError = "denied" | "missing" | "unsupported" | "failed";
 
 export type Recording = { blob: Blob; url: string; mimeType: string; durationMs: number };
 
+/** What a refused getUserMedia / getDisplayMedia means for the seller. */
+export function recorderErrorOf(cause: unknown): RecorderError {
+  const name = cause instanceof DOMException ? cause.name : "";
+  if (name === "NotAllowedError" || name === "SecurityError") return "denied";
+  return name === "NotFoundError" ? "missing" : "failed";
+}
+
 /**
  * Records the camera and mic (or the mic only) up to maxMs, then stops by
  * itself. Releases the devices and the preview URL when done or unmounted.
@@ -75,8 +82,7 @@ export function useMediaRecorder(kind: MediaKind, maxMs: number) {
       });
     } catch (cause) {
       if (generation !== generationRef.current) return;
-      const name = cause instanceof DOMException ? cause.name : "";
-      setError(name === "NotAllowedError" || name === "SecurityError" ? "denied" : name === "NotFoundError" ? "missing" : "failed");
+      setError(recorderErrorOf(cause));
       setStatus("error");
       return;
     }

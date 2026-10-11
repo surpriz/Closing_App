@@ -166,6 +166,7 @@ async function loadDigestData(
           {
             VALIDATE_SIGN: "validated",
             REQUEST_CHANGE: "change",
+            REQUEST_QUOTE: "quote",
             REQUEST_EXTENSION: "extension",
             MEETING_BOOKED: "meeting",
             MEETING_CLICK: "meeting",

@@ -14,6 +14,22 @@ export const VOICE_COMMENT_MAX_BYTES = 1.5 * 1024 * 1024;
 export const CAPSULE_POSTER_TYPE = "image/jpeg";
 export const CAPSULE_POSTER_MAX_BYTES = 512 * 1024;
 
+/** Video pitch: the video is the document, long enough for a real pitch or a screen walkthrough. */
+export const PITCH_MAX_MS = 180_000;
+/** ~28 MB for 3 min of 720p webcam; a shared screen needs more for text to stay legible (~58 MB). */
+export const PITCH_CAMERA_VIDEO_BPS = 1_200_000;
+export const PITCH_SCREEN_VIDEO_BPS = 2_500_000;
+export const PITCH_AUDIO_IN_VIDEO_BPS = 96_000;
+/** The mic alone, recorded next to the video for the transcription: ~1 MB, far under Whisper's 25 MB. */
+export const PITCH_TRANSCRIPT_AUDIO_BPS = 48_000;
+/** Some browsers (Safari) ignore the bitrate: room above it. */
+export const PITCH_VIDEO_MAX_BYTES = 150 * 1024 * 1024;
+export const PITCH_AUDIO_MAX_BYTES = 10 * 1024 * 1024;
+/** 16:9 still, larger than the bubble's. */
+export const PITCH_POSTER_MAX_BYTES = 1024 * 1024;
+/** Above this, the browser uploads in parts. */
+export const MULTIPART_THRESHOLD_BYTES = 5 * 1024 * 1024;
+
 /** "Sur cette partie, laisse-moi t'expliquer…" shown next to the bubble. */
 export const CAPSULE_HOOK_MAX = 120;
 

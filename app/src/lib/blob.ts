@@ -16,6 +16,10 @@ export function capsuleUploadPrefix(organizationId: string) {
   return `orgs/${organizationId}/capsules/`;
 }
 
+export function pitchUploadPrefix(organizationId: string) {
+  return `orgs/${organizationId}/pitches/`;
+}
+
 export function organizationPrefix(organizationId: string) {
   return `orgs/${organizationId}/`;
 }

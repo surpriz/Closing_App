@@ -40,6 +40,7 @@ const READER_ALERTS = new Set<SellerAlertType>(["COMMITTEE_LIVE", "DECISION_MAKE
 /** Alerts the seller answers straight to the prospect: the email replies to them. */
 const REPLY_ALERTS = new Set<SellerAlertType>([
   "CHANGE_REQUESTED",
+  "QUOTE_REQUESTED",
   "PROSPECT_QUESTION",
   "LINK_EXTENSION_REQUESTED",
   "VOICE_COMMENT",
@@ -167,6 +168,21 @@ export function alertMessage(
       return {
         subject: `${who} demande un ajustement`,
         line: `${who} demande un ajustement sur ${doc}${payload.message ? ` : « ${payload.message.slice(0, 200)} »` : ""}`,
+        blocks,
+        url: linkUrl,
+      };
+    }
+    case "QUOTE_REQUESTED": {
+      const blocks: EmailBlock[] = [
+        { kind: "text", text: `${who} a regardé ${doc} et demande un devis. Les relances automatiques de ce deal sont arrêtées.` },
+      ];
+      if (payload.message) blocks.push({ kind: "quote", text: payload.message });
+      const reply = replyButton(link, payload);
+      if (reply) blocks.push(reply);
+      blocks.push({ kind: "text", text: `Le deal : ${linkUrl}` });
+      return {
+        subject: `${who} demande un devis`,
+        line: `${who} demande un devis après ${doc}${payload.message ? ` : « ${payload.message.slice(0, 200)} »` : ""}`,
         blocks,
         url: linkUrl,
       };

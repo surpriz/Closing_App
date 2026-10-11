@@ -37,6 +37,15 @@ describe("computeNextAction", () => {
     expect(withAiAdvice(action, { type: "wait", timing: "now", priority: 1 }, { action: {}, timing: {} })).toEqual(action);
   });
 
+  it("asks to send the quote a video pitch prospect asked for, until the seller logs a contact", () => {
+    const asked = { ...base, quoteRequestedAt: ago(1), tier: "HOT" as const };
+    const action = computeNextAction(asked);
+    expect(action).toEqual({ kind: "reply", quote: true });
+    expect(describeNextAction(action, now)).toBe("Devis demandé : envoyez-le.");
+    expect(isUrgent(action)).toBe(true);
+    expect(computeNextAction({ ...asked, lastSellerContactAt: ago(0.5) }).kind).not.toBe("reply");
+  });
+
   it("puts a live reader before anything else", () => {
     expect(computeNextAction({ ...base, readingNow: true, dealStatus: "CHANGE_REQUESTED" })).toEqual({
       kind: "call_now",

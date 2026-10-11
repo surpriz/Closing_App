@@ -56,6 +56,11 @@ export function extensionNotice(
         title: `${who} demande un ajustement`,
         body: payload.message ? `« ${truncate(payload.message, 110)} »` : `Sur « ${documentName} ».`,
       };
+    case "QUOTE_REQUESTED":
+      return {
+        title: `${who} demande un devis`,
+        body: payload.message ? `« ${truncate(payload.message, 110)} »` : `Après « ${documentName} ».`,
+      };
     case "DRAFT_READY":
       return { title: "Relance à valider", body: `Une relance pour ${who} attend votre accord.` };
     case "COMMITTEE_LIVE":

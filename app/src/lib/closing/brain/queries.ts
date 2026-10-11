@@ -15,6 +15,7 @@ export async function loadDealForAnalysis(linkId: string, now: Date) {
         select: {
           name: true,
           kind: true,
+          durationMs: true,
           sellerDescription: true,
           docType: true,
           docPurpose: true,
@@ -77,6 +78,7 @@ export async function loadDealForAnalysis(linkId: string, now: Date) {
     document: {
       name: link.document.name,
       kind: link.document.kind,
+      durationMs: link.document.durationMs,
       docType: link.document.docType,
       pages: link.document.pages.map((page) => ({
         pageNumber: page.pageNumber,

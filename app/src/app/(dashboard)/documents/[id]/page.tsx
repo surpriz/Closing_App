@@ -38,6 +38,7 @@ import { catchUpInBackground } from "@/lib/closing/catch-up";
 import { buildDocumentFrictions } from "@/lib/closing/dashboard/frictions";
 import { labelReaders } from "@/lib/closing/dashboard/readers";
 import { tagLabels } from "@/lib/closing/documents/doc-types";
+import { segmentLabel } from "@/lib/closing/documents/video-segments";
 import { prisma } from "@/lib/db";
 import { formatBytes, formatDate, formatDuration, formatRelative } from "@/lib/format";
 import { isManagerRole } from "@/lib/roles";
@@ -97,7 +98,7 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
       },
     }),
     prisma.sellerAlert.findMany({
-      where: { link: { documentId: document.id }, type: { notIn: ["PROSPECT_VALIDATED", "CHANGE_REQUESTED", "MEETING_BOOKED"] } },
+      where: { link: { documentId: document.id }, type: { notIn: ["PROSPECT_VALIDATED", "CHANGE_REQUESTED", "QUOTE_REQUESTED", "MEETING_BOOKED"] } },
       orderBy: { createdAt: "desc" },
       take: 10,
       include: { link: { select: { name: true, slug: true } } },
@@ -123,7 +124,7 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
   }
   const furthestByLink = new Map(furthest.map((row) => [row.linkId, row._max.maxPageReached]));
   const frictions = buildDocumentFrictions({
-    numPages: document.kind === "FILE" ? document.pages.length : 0,
+    numPages: document.kind !== "URL" ? document.pages.length : 0,
     pages: document.pages,
     deals: linkIds.map((id) => ({ furthestPage: furthestByLink.get(id) ?? null })),
     aiFrictions: [...latestFrictions.values()],
@@ -151,6 +152,8 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
   const ready = document.status === "READY";
   const welcome = document.capsules.find((capsule) => capsule.pageNumber === WELCOME_PAGE);
   const isWeb = document.kind === "URL";
+  const isVideo = document.kind === "VIDEO";
+  const pageName = (n: number) => (isVideo ? `passage ${segmentLabel(n)}` : `page ${n}`);
   const webHost = document.externalUrl ? new URL(document.externalUrl).hostname.replace(/^www\./, "") : null;
   const pendingFollowups = followups.filter((f) => ["PENDING", "DRAFT", "GENERATED", "SCHEDULED"].includes(f.status)).length;
 
@@ -186,6 +189,8 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
                 </a>
                 , ajouté le {formatDate(document.createdAt)}
               </>
+            ) : isVideo ? (
+              `Pitch vidéo de ${formatDuration(document.durationMs ?? 0)}, enregistré le ${formatDate(document.createdAt)}`
             ) : ready ? (
               [
                 document.numPages ? `${document.numPages} pages` : null,
@@ -247,7 +252,9 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
             <EmptyState
               title="Créez un lien pour chaque prospect."
               description={
-                isWeb
+                isVideo
+                  ? "Envoyez-le à la place d'un lien Loom. Vous verrez qui la regarde, jusqu'où, et Clozer relancera pour vous."
+                  : isWeb
                   ? "Envoyez-le à la place du lien d'origine. Vous verrez qui l'ouvre, combien de temps il y passe, et Clozer relancera pour vous."
                   : "Envoyez-le à la place du PDF. Vous verrez qui l'ouvre, combien de temps il lit, et Clozer relancera pour vous."
               }
@@ -317,6 +324,8 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
         </TabsContent>
 
         <TabsContent value="content" className="space-y-10">
+          {/* A video pitch already is the seller speaking */}
+          {!isVideo && (
           <section>
             <SectionTitle hint="vu par le prospect dès l'ouverture, sur tous les liens">Mot d&apos;accueil</SectionTitle>
             <WelcomeMessage
@@ -327,6 +336,7 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
               uploadPrefix={capsuleUploadPrefix(organization.id)}
             />
           </section>
+          )}
           <section>
             <SectionTitle hint="décide du vocabulaire des étiquettes et de l'assistant">Type de document</SectionTitle>
             <DocumentTypeSelect
@@ -340,7 +350,9 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
             <AssistantNotesForm documentId={document.id} initial={document.assistantNotes ?? ""} />
           </section>
           <section>
-            <SectionTitle hint="page par page, ce que Clozer a compris">Contenu</SectionTitle>
+            <SectionTitle hint={isVideo ? "passage par passage, ce que Clozer a compris" : "page par page, ce que Clozer a compris"}>
+              Contenu
+            </SectionTitle>
               {isWeb ? (
                 <SellerDescriptionForm documentId={document.id} initial={document.sellerDescription ?? ""} />
               ) : document.pages.length === 0 ? (
@@ -365,6 +377,7 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
                   docType={document.docType}
                   docPurpose={document.docPurpose}
                   aiAvailable={getLanguageModel("classify") !== null}
+                  video={isVideo}
                 />
               )}
           </section>
@@ -395,6 +408,15 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
                   </a>
                 </p>
               )
+            ) : isVideo ? (
+              <video
+                src={`/api/documents/${document.id}/file`}
+                poster={document.posterPathname ? `/api/documents/${document.id}/file?poster` : undefined}
+                controls
+                playsInline
+                preload="metadata"
+                className="aspect-video w-full rounded-xl bg-black ring-1 ring-border"
+              />
             ) : ready ? (
               <DocumentPreview fileUrl={`/api/documents/${document.id}/file`} />
             ) : (
@@ -430,15 +452,15 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
                 hint="toutes lectures confondues"
                 action={
                   <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <span className="size-2.5 rounded-sm bg-heat-warm" /> page de tarifs
+                    <span className="size-2.5 rounded-sm bg-heat-warm" /> {isVideo ? "passage sur les tarifs" : "page de tarifs"}
                   </span>
                 }
               >
-                Temps passé par page
+                {isVideo ? "Temps passé sur chaque passage de la vidéo" : "Temps passé par page"}
               </SectionTitle>
               <Surface className="p-4">
                 {chartData.length > 0 ? (
-                  <PageTimeChart data={chartData} />
+                  <PageTimeChart data={chartData} video={isVideo} />
                 ) : (
                   <p className="py-12 text-center text-sm text-muted-foreground">
                     {ready ? "Aucune page détectée." : "Analyse du document en cours…"}
@@ -449,7 +471,7 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
                 <p className="mt-3 text-sm text-muted-foreground">
                   Repéré automatiquement :{" "}
                   {taggedPages
-                    .map((page) => `page ${page.pageNumber} (${page.tags.map((t) => tagLabels(document.docType)[t].toLowerCase()).join(", ")})`)
+                    .map((page) => `${pageName(page.pageNumber)} (${page.tags.map((t) => tagLabels(document.docType)[t].toLowerCase()).join(", ")})`)
                     .join(", ")}
                 </p>
               )}

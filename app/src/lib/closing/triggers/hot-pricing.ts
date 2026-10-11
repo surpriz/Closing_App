@@ -30,7 +30,7 @@ export async function evaluateHotPricing(viewId: string, now = new Date()) {
   if (!view || view.isBot) return;
 
   const { link } = view;
-  if (!link.followupsEnabled || link.dealStatus !== "OPEN" || link.archivedAt || link.meetingBookedAt) return;
+  if (!link.followupsEnabled || link.dealStatus !== "OPEN" || link.archivedAt || link.meetingBookedAt || link.quoteRequestedAt) return;
   if (link.snoozedUntil && link.snoozedUntil > now) return;
   if (isLinkExpired(link, now)) return;
 

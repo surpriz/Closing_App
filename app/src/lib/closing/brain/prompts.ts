@@ -1,4 +1,4 @@
-import type { PageTag } from "@/generated/prisma/enums";
+import type { DocumentKind, PageTag } from "@/generated/prisma/enums";
 
 import { DOC_TYPE_GUIDANCE, DOC_TYPE_LABELS, tagLabels, type DocType } from "../documents/doc-types";
 import { type Fact, renderFacts } from "./facts";
@@ -8,6 +8,12 @@ import { type Fact, renderFacts } from "./facts";
  * The system prompt never changes (cacheable); the workspace profile comes
  * first in the user prompt so deals of one workspace share a prefix.
  */
+
+const DOCUMENT_KIND_NAMES: Record<DocumentKind, string> = {
+  FILE: "PDF",
+  URL: "web page",
+  VIDEO: "video pitch recorded by the salesperson, its outline built from the transcript, one part per tenth of the video",
+};
 
 export const ANALYZER_SYSTEM_PROMPT = `You are a senior B2B closer and sales coach. A salesperson sent a commercial document (proposal, quote, deck or web page) to a prospect through a link that records reading behaviour. You read the facts of one deal and tell the salesperson where it stands and what to do next, the way an experienced colleague would.
 
@@ -43,7 +49,7 @@ export type AnalyzerProfile = {
 
 export type AnalyzerDeal = {
   documentName: string;
-  documentKind: "FILE" | "URL";
+  documentKind: DocumentKind;
   docType: string | null;
   docPurpose: string | null;
   sellerDescription: string | null;
@@ -85,7 +91,7 @@ export function buildAnalyzerPrompt(profile: AnalyzerProfile, deal: AnalyzerDeal
       .join("\n") || "Not described yet.",
     "",
     "## This deal",
-    `Document: « ${deal.documentName} » (${deal.documentKind === "FILE" ? "PDF" : "web page"}${
+    `Document: « ${deal.documentName} » (${DOCUMENT_KIND_NAMES[deal.documentKind]}${
       docType !== "OTHER" ? `, ${DOC_TYPE_LABELS[docType]}` : ""
     })`,
     deal.docPurpose && `Purpose of the document: ${deal.docPurpose}`,
