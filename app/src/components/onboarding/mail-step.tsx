@@ -12,12 +12,20 @@ const ICONS: Record<MailClient, LucideIcon> = {
   other: MoreHorizontal,
 };
 
-export function MailStep({ value, onChange }: { value: MailClient | null; onChange: (value: MailClient) => void }) {
+export function MailStep({
+  firstName,
+  value,
+  onChange,
+}: {
+  firstName: string | null;
+  value: MailClient | null;
+  onChange: (value: MailClient) => void;
+}) {
   return (
     <div className="space-y-8">
       <StepHeading
         title="Vous écrivez vos emails depuis…"
-        lead="Clozer se branche dessus pour remplacer vos pièces jointes par des liens, sans changer vos habitudes."
+        lead={`${firstName ? `Bienvenue, ${firstName}. ` : "Bienvenue sur Clozer. "}Clozer se branche sur votre messagerie pour remplacer vos pièces jointes par des liens, sans changer vos habitudes. Vous pourrez revoir ce guide depuis votre compte.`}
       />
       <div role="radiogroup" aria-label="Votre messagerie" className="grid gap-3 sm:grid-cols-2">
         {MAIL_CLIENTS.map((client) => {

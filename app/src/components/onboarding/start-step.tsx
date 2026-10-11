@@ -1,6 +1,7 @@
 "use client";
 
-import { Check } from "lucide-react";
+import { BellRing, CalendarCheck, Check, Paperclip, PenLine, Users, Video } from "lucide-react";
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -9,17 +10,59 @@ import { UploadDropzone } from "@/components/dashboard/upload-dropzone";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { OFFER_DESCRIPTION_MAX } from "@/lib/onboarding";
+import { OFFER_DESCRIPTION_MAX, type MailTool } from "@/lib/onboarding";
 
-import { StepHeading } from "./parts";
+import { IconRow, StepHeading } from "./parts";
 
-export function StartStep({ askOffer, uploadPrefix }: { askOffer: boolean; uploadPrefix: string }) {
+const SEND: Record<MailTool, string> = {
+  chrome: "Joignez votre PDF comme d'habitude : l'extension met le lien à sa place, et le deal démarre à l'envoi.",
+  outlook_addin: "Joignez votre PDF comme d'habitude : le complément met le lien à sa place, et le deal démarre à l'envoi.",
+  manual: "Déposez votre PDF dans Clozer, le lien est prêt aussitôt. Collez-le dans votre email à la place de la pièce jointe.",
+};
+
+// Optional extras, one line each: the seller finds them on the share screen
+const EXTRAS = [
+  { icon: Video, text: "Un mot d'accueil en vidéo ou en vocal, que le prospect voit dès l'ouverture." },
+  { icon: Users, text: "Un lien pour plusieurs personnes (plaquette, post LinkedIn) : chaque lecteur devient un deal." },
+  { icon: CalendarCheck, text: "Un bouton pour que le prospect prenne rendez-vous dans votre agenda." },
+];
+
+// The upload comes last: it leaves the tour as soon as a file is dropped
+export function StartStep({ tool, askOffer, uploadPrefix }: { tool: MailTool; askOffer: boolean; uploadPrefix: string }) {
   return (
     <div className="space-y-10">
-      <StepHeading
-        title="C'est parti."
-        lead="Déposez un devis, une proposition ou une présentation : le lien à envoyer est prêt aussitôt."
-      />
+      <StepHeading title="C'est parti." lead="Au quotidien, vous vendez comme avant. Clozer fait le suivi." />
+      <ol className="space-y-6">
+        <IconRow icon={Paperclip} title="Vous envoyez votre proposition">
+          {SEND[tool]}
+        </IconRow>
+        <IconRow icon={BellRing} title="Vous êtes prévenu quand votre prospect lit">
+          {tool === "manual"
+            ? "Par email, et en direct sur votre tableau de bord."
+            : "Une alerte dans votre messagerie : c'est le bon moment pour appeler."}
+        </IconRow>
+        <IconRow icon={PenLine} title="Vous validez les relances">
+          Clozer les écrit au bon moment. Vous les retrouvez dans « Relances à valider », rien ne part sans vous.
+        </IconRow>
+      </ol>
+      <div className="space-y-3">
+        <p className="text-small font-medium">À essayer aussi, depuis l&apos;écran de partage</p>
+        <ul className="space-y-2">
+          {EXTRAS.map(({ icon: Icon, text }) => (
+            <li key={text} className="flex gap-2.5 text-small text-muted-foreground">
+              <Icon className="mt-0.5 size-4 shrink-0" aria-hidden />
+              {text}
+            </li>
+          ))}
+        </ul>
+        <p className="text-small text-muted-foreground">
+          Envie du détail ?{" "}
+          <Link href="/comment-ca-marche" className="underline underline-offset-4">
+            Comment Clozer pense
+          </Link>
+          .
+        </p>
+      </div>
       {askOffer && <OfferField />}
       <UploadDropzone uploadPrefix={uploadPrefix} />
     </div>

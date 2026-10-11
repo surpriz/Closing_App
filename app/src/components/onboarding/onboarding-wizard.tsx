@@ -17,10 +17,8 @@ import {
 } from "@/lib/onboarding";
 import { cn } from "@/lib/utils";
 
-import { DailyStep } from "./daily-step";
 import { InstallStep } from "./install-step";
 import { MailStep } from "./mail-step";
-import { PrincipleStep } from "./principle-step";
 import { StartStep } from "./start-step";
 
 const LAST = ONBOARDING_STEPS.length - 1;
@@ -62,9 +60,10 @@ export function OnboardingWizard({
     window.scrollTo({ top: 0 });
   }
 
-  function pickMailClient(value: MailClient) {
-    setMailClient(value);
-    void saveMailClient(value);
+  function next() {
+    // Saved on the way out: the preselected guess counts once confirmed
+    if (step === "mail" && mailClient) void saveMailClient(mailClient);
+    go(index + 1);
   }
 
   function leave() {
@@ -112,8 +111,7 @@ export function OnboardingWizard({
         </nav>
 
         <div key={step} className="animate-rise">
-          {step === "principle" && <PrincipleStep firstName={firstName} />}
-          {step === "mail" && <MailStep value={mailClient} onChange={pickMailClient} />}
+          {step === "mail" && <MailStep firstName={firstName} value={mailClient} onChange={setMailClient} />}
           {step === "install" && (
             <InstallStep
               mailClient={mailClient}
@@ -123,8 +121,7 @@ export function OnboardingWizard({
               onChangeMailClient={() => go(ONBOARDING_STEPS.indexOf("mail"))}
             />
           )}
-          {step === "daily" && <DailyStep tool={toolFor(mailClient)} />}
-          {step === "start" && <StartStep askOffer={askOffer} uploadPrefix={uploadPrefix} />}
+          {step === "start" && <StartStep tool={toolFor(mailClient)} askOffer={askOffer} uploadPrefix={uploadPrefix} />}
         </div>
 
         <footer className="mt-12 flex items-center justify-between gap-4 border-t border-border pt-6">
@@ -135,7 +132,7 @@ export function OnboardingWizard({
             </Button>
           )}
           {index < LAST ? (
-            <Button size="lg" className="ml-auto" disabled={step === "mail" && !mailClient} onClick={() => go(index + 1)}>
+            <Button size="lg" className="ml-auto" disabled={step === "mail" && !mailClient} onClick={next}>
               {step === "install" && !isToolConnected(mailClient, connected) ? "Plus tard, continuer" : "Continuer"}
               <ArrowRight />
             </Button>

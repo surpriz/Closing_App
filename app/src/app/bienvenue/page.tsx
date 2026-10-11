@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { OnboardingWizard } from "@/components/onboarding/onboarding-wizard";
 import { documentUploadPrefix } from "@/lib/blob";
 import { getSellerPrefs } from "@/lib/closing/notify/preferences";
+import { guessMailClient } from "@/lib/closing/share/compose";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
 import { prisma } from "@/lib/db";
 import { getEnv } from "@/lib/env";
@@ -27,15 +28,15 @@ export default async function WelcomePage(props: PageProps<"/bienvenue">) {
     getWorkspaceSettings(organization.id),
   ]);
   const mailClient = parseMailClient(prefs.mailClient);
-  // ?etape=outil, from the share screen tip: straight to the setup
-  const toSetup = (await props.searchParams).etape === "outil";
+  // ?etape=outil, from the share screen tip: straight to the setup, once the mailbox is confirmed
+  const toSetup = (await props.searchParams).etape === "outil" && mailClient;
 
   return (
     <OnboardingWizard
       firstName={user.name?.trim().split(/\s+/)[0] ?? null}
       account={{ email: user.email, workspace: organization.name }}
-      initialMailClient={mailClient}
-      initialStep={toSetup ? (mailClient ? "install" : "mail") : "principle"}
+      initialMailClient={mailClient ?? parseMailClient(guessMailClient(user.email))}
+      initialStep={toSetup ? "install" : "mail"}
       connected={connectedClients(tokens)}
       askOffer={isManagerRole(role) && !settings.offerDescription?.trim()}
       hasDocument={documentCount > 0}

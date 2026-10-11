@@ -54,14 +54,12 @@ export function mailToolTip(
   return tool;
 }
 
-export const ONBOARDING_STEPS = ["principle", "mail", "install", "daily", "start"] as const;
+export const ONBOARDING_STEPS = ["mail", "install", "start"] as const;
 
 export type OnboardingStep = (typeof ONBOARDING_STEPS)[number];
 
 export const STEP_LABELS: Record<OnboardingStep, string> = {
-  principle: "Le principe",
   mail: "Votre messagerie",
   install: "L'outil",
-  daily: "Au quotidien",
   start: "C'est parti",
 };
