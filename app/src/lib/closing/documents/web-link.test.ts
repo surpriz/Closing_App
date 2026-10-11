@@ -7,6 +7,7 @@ import {
   htmlToText,
   knownEmbedUrl,
   parseWebUrl,
+  playerSrc,
   videoProvider,
 } from "./web-link";
 
@@ -143,5 +144,16 @@ describe("videoProvider", () => {
     expect(videoProvider("https://acme.notion.site/ebd/abc")).toBeNull();
     expect(videoProvider("https://www.youtube.com/watch?v=dQw4")).toBeNull();
     expect(videoProvider("not a url")).toBeNull();
+  });
+});
+
+describe("playerSrc", () => {
+  it("turns on the YouTube JS API", () => {
+    expect(playerSrc("https://www.youtube.com/embed/dQw4")).toBe("https://www.youtube.com/embed/dQw4?enablejsapi=1");
+  });
+
+  it("leaves other players alone", () => {
+    expect(playerSrc("https://player.vimeo.com/video/12345")).toBe("https://player.vimeo.com/video/12345");
+    expect(playerSrc("https://acme.notion.site/ebd/abc")).toBe("https://acme.notion.site/ebd/abc");
   });
 });

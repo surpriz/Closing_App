@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react";
 
 import { buttonVariants } from "@/components/ui/button";
 import type { DealStatus } from "@/generated/prisma/enums";
+import { playerSrc, videoProvider } from "@/lib/closing/documents/web-link";
 import type { BookingTarget } from "@/lib/closing/booking/url";
 import type { SupportedLocale } from "@/lib/closing/constants";
 import type { ViewerLabels } from "@/lib/closing/i18n/viewer";
@@ -15,6 +16,7 @@ import { CtaBar } from "./cta-bar";
 import { ExpiryChip } from "./expiry-countdown";
 import { PrivacyNotice } from "./privacy-notice";
 import { usePageTracking } from "./use-page-tracking";
+import { useVideoProgress } from "./use-video-progress";
 import { sendSignal } from "./view-signal";
 import { ViewerHeader } from "./viewer-header";
 
@@ -57,7 +59,16 @@ export function WebViewer({
   countdown,
   welcome,
 }: Props) {
-  const { getViewId } = usePageTracking(slug, 1, { embedded: true, countTime: !!embedUrl });
+  const provider = videoProvider(embedUrl);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  // Share of the video watched, reported as the depth of the only page
+  const watchedRef = useRef(0);
+  const { getViewId, markActive } = usePageTracking(slug, 1, {
+    embedded: true,
+    countTime: !!embedUrl,
+    depthRef: provider ? watchedRef : undefined,
+  });
+  useVideoProgress(iframeRef, provider, watchedRef, markActive);
   const openExternal = useExternalVisit(getViewId);
   // The bottom bar carries the answers, the booking button, or both
   const barVisible = ctaEnabled || !!booking;
@@ -92,7 +103,8 @@ export function WebViewer({
       <main className={`flex min-h-0 flex-1 flex-col gap-2 px-2 pt-2 sm:px-4 ${barVisible ? "pb-36 sm:pb-24" : chat ? "pb-20" : "pb-2"}`}>
         {embedUrl ? (
           <iframe
-            src={embedUrl}
+            ref={iframeRef}
+            src={playerSrc(embedUrl)}
             title={documentName}
             className="mx-auto min-h-0 w-full max-w-6xl flex-1 rounded-sm bg-white shadow-md ring-1 ring-border"
             allow="autoplay; fullscreen; clipboard-write; encrypted-media; picture-in-picture"

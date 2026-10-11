@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 
 import {
   EMBED_IDLE_TIMEOUT_MS,
@@ -49,13 +49,15 @@ type TrackingOptions = {
    * time is time spent playing it, not scrolling.
    */
   manual?: boolean;
+  /** Replaces the scroll depth of page 1, e.g. the share of a video watched. */
+  depthRef?: RefObject<number>;
 };
 
 // Counts visible, active reading time per page and reports it every ~10s
 export function usePageTracking(
   slug: string,
   pageCount: number,
-  { embedded = false, countTime = true, manual = false }: TrackingOptions = {},
+  { embedded = false, countTime = true, manual = false, depthRef }: TrackingOptions = {},
 ) {
   const [currentPage, setCurrentPage] = useState(1);
   const viewIdRef = useRef<string | null>(null);
@@ -71,6 +73,9 @@ export function usePageTracking(
   }, []);
 
   const getViewId = useCallback(() => viewIdRef.current, []);
+  const markActive = useCallback(() => {
+    lastInteractionRef.current = Date.now();
+  }, []);
 
   const setPage = useCallback(
     (pageNumber: number) => {
@@ -167,9 +172,6 @@ export function usePageTracking(
     if (!pageCount || !countTime) return;
 
     const idleTimeoutMs = embedded ? EMBED_IDLE_TIMEOUT_MS : IDLE_TIMEOUT_MS;
-    const markActive = () => {
-      lastInteractionRef.current = Date.now();
-    };
     const activityEvents = ["scroll", "mousemove", "keydown", "touchstart", "wheel", "click"] as const;
     if (!manual) activityEvents.forEach((name) => window.addEventListener(name, markActive, { passive: true }));
     // Focus moving into the iframe blurs this window
@@ -193,7 +195,9 @@ export function usePageTracking(
 
       const element = elementsRef.current.get(page);
       if (manual) entry.depth = 1;
-      else if (element) {
+      else if (depthRef && page === 1) {
+        entry.depth = Math.max(entry.depth, depthRef.current);
+      } else if (element) {
         const rect = element.getBoundingClientRect();
         const seen = (window.innerHeight - rect.top) / rect.height;
         entry.depth = Math.max(entry.depth, Math.min(1, Math.max(0, seen)));
@@ -227,7 +231,7 @@ export function usePageTracking(
       window.removeEventListener("pagehide", onPageHide);
       flush(true, true);
     };
-  }, [pageCount, flush, embedded, countTime, manual]);
+  }, [pageCount, flush, embedded, countTime, manual, depthRef, markActive]);
 
-  return { currentPage, registerPage, getViewId, setPage, setActive };
+  return { currentPage, registerPage, getViewId, markActive, setPage, setActive };
 }

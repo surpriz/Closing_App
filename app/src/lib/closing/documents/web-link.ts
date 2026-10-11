@@ -78,6 +78,14 @@ export function videoProvider(embedUrl: string | null): VideoProvider | null {
   return null;
 }
 
+/** What the viewer frames: YouTube only talks to the page once its JS API is on. */
+export function playerSrc(embedUrl: string) {
+  if (videoProvider(embedUrl) !== "youtube") return embedUrl;
+  const url = new URL(embedUrl);
+  url.searchParams.set("enablejsapi", "1");
+  return url.toString();
+}
+
 /**
  * Whether response headers let another origin frame the page.
  * X-Frame-Options DENY / SAMEORIGIN, or a CSP frame-ancestors list that
