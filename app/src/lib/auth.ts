@@ -17,6 +17,8 @@ const googleEnabled =
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, { provider: "postgresql" }),
+  // Tokens written before this was on stay readable and get encrypted on the next sign-in
+  account: { encryptOAuthTokens: true },
   socialProviders: googleEnabled
     ? {
         google: {
@@ -34,7 +36,9 @@ export const auth = betterAuth({
         const url = `${getPublicAppUrl()}/invitation/${id}`;
         if (!isEmailConfigured()) {
           // Local dev: the team settings show the link to copy
-          console.info(`[auth] invitation for ${email}: ${url}`);
+          if (process.env.NODE_ENV === "development") {
+            console.info(`[auth] invitation for ${email}: ${url}`);
+          }
           return;
         }
 
