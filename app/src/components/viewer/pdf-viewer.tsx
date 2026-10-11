@@ -63,6 +63,8 @@ export function PdfViewer({
   const [sizes, setSizes] = useState<PageSize[]>([]);
   const [failed, setFailed] = useState(false);
   const { currentPage, registerPage, getViewId } = usePageTracking(slug, sizes.length);
+  // The bottom bar carries the answers, the booking button, or both
+  const barVisible = ctaEnabled || !!booking;
   // An open voice comment stays on its page while the reader scrolls
   const [voicePage, setVoicePage] = useState<number | null>(null);
 
@@ -163,7 +165,7 @@ export function PdfViewer({
         <PrivacyNotice labels={labels} className="px-2 pt-2 text-center" />
       </main>
 
-      {ctaEnabled && pdf && (
+      {barVisible && pdf && (
         <CtaBar
           slug={slug}
           labels={labels}
@@ -171,6 +173,7 @@ export function PdfViewer({
           getViewId={getViewId}
           documentName={documentName}
           signerName={signerName}
+          answers={ctaEnabled}
           booking={booking}
           downloadUrl={`${fileUrl}?download=1`}
           atEnd={sizes.length > 0 && currentPage >= sizes.length}
@@ -189,7 +192,7 @@ export function PdfViewer({
           labels={labels}
           senderName={senderName}
           getViewId={getViewId}
-          ctaVisible={ctaEnabled}
+          ctaVisible={barVisible}
         />
       )}
 
@@ -201,7 +204,7 @@ export function PdfViewer({
           locale={locale}
           senderName={senderName}
           getViewId={getViewId}
-          ctaVisible={ctaEnabled && !!pdf}
+          ctaVisible={barVisible && !!pdf}
         />
       )}
     </div>

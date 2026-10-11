@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { Fragment, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import {
@@ -34,11 +34,8 @@ const GROUPS: { title: string; items: Item[] }[] = [
   {
     title: "Ce que le prospect peut faire",
     items: [
-      {
-        key: "ctaEnabled",
-        label: "Valider, demander un ajustement ou prendre rendez-vous",
-        hint: "Des boutons en bas du document.",
-      },
+      { key: "ctaEnabled", label: "Valider ou demander un ajustement", hint: "Deux boutons en bas du document." },
+      { key: "bookingEnabled", label: "Prendre rendez-vous", hint: "Votre agenda, à côté des autres boutons." },
       { key: "chatEnabled", label: "Poser ses questions à l'assistant", hint: "Il répond à partir du document et vous transmet le reste." },
       { key: "voiceCommentsEnabled", label: "Laisser un vocal sur une page", hint: "Vous recevez l'audio et sa transcription.", pdfOnly: true },
     ],
@@ -57,7 +54,7 @@ function BookingUrlField({ linkId, url, fallback }: { linkId: string; url: strin
 
   return (
     <div className="space-y-1.5 px-4 py-3 text-sm">
-      <label htmlFor="link-booking-url">Prendre rendez-vous</label>
+      <label htmlFor="link-booking-url">Lien de l&apos;agenda</label>
       <Input
         id="link-booking-url"
         type="text"
@@ -140,17 +137,19 @@ export function LinkSettingsPanel({
             {group.items
               .filter((item) => (isPdf || !item.pdfOnly) && !(shared && item.personalOnly))
               .map((item) => (
-                <label key={item.key} className="flex cursor-pointer items-start justify-between gap-4 px-4 py-3">
-                  <span className="text-sm">
-                    {item.label}
-                    {item.hint && <span className="block text-muted-foreground">{item.hint}</span>}
-                  </span>
-                  <Switch className="mt-0.5" checked={values[item.key]} onCheckedChange={(checked) => flip(item.key, checked)} />
-                </label>
+                <Fragment key={item.key}>
+                  <label className="flex cursor-pointer items-start justify-between gap-4 px-4 py-3">
+                    <span className="text-sm">
+                      {item.label}
+                      {item.hint && <span className="block text-muted-foreground">{item.hint}</span>}
+                    </span>
+                    <Switch className="mt-0.5" checked={values[item.key]} onCheckedChange={(checked) => flip(item.key, checked)} />
+                  </label>
+                  {item.key === "bookingEnabled" && values.bookingEnabled && (
+                    <BookingUrlField linkId={linkId} url={booking.url} fallback={booking.fallback} />
+                  )}
+                </Fragment>
               ))}
-            {group.title === "Ce que le prospect peut faire" && values.ctaEnabled && (
-              <BookingUrlField linkId={linkId} url={booking.url} fallback={booking.fallback} />
-            )}
             {group.title === "Accès" && (
               <ExpiryControl linkId={linkId} expiresAt={expiresAt} requests={requests} canEdit />
             )}

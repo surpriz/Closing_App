@@ -133,19 +133,17 @@ export default async function ViewerPage({ params, searchParams }: PageProps<"/v
 
   const chat = await loadChatWidget(link, labels);
   // "Valider & signer" and the booking page start from the name we already know
-  const [signerName, bookingUrl] = link.ctaEnabled
-    ? await Promise.all([
-        access.email
-          ? prisma.prospect
-              .findUnique({
-                where: { linkId_email: { linkId: link.id, email: access.email } },
-                select: { name: true },
-              })
-              .then((prospect) => prospect?.name ?? null)
-          : null,
-        bookingUrlForLink(link),
-      ])
-    : [null, null];
+  const [signerName, bookingUrl] = await Promise.all([
+    (link.ctaEnabled || link.bookingEnabled) && access.email
+      ? prisma.prospect
+          .findUnique({
+            where: { linkId_email: { linkId: link.id, email: access.email } },
+            select: { name: true },
+          })
+          .then((prospect) => prospect?.name ?? null)
+      : null,
+    link.bookingEnabled ? bookingUrlForLink(link) : null,
+  ]);
   const booking = bookingUrl
     ? buildBookingTarget(bookingUrl, { name: signerName, email: access.email }, requestHeaders.get("host") ?? "")
     : null;

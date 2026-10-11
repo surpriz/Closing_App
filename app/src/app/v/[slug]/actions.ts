@@ -342,7 +342,7 @@ async function meetingContext(input: z.input<typeof meetingSchema>) {
   const parsed = meetingSchema.safeParse(input);
   if (!parsed.success) return null;
   const link = await getLinkForViewer(parsed.data.slug);
-  if (!link || !link.ctaEnabled) return null;
+  if (!link || !link.bookingEnabled) return null;
   // The seller trying their own link sees the widget, nothing is recorded
   if (await isWorkspaceMember(link.organizationId)) return null;
   const access = await getViewerAccess(link);

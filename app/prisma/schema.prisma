@@ -475,6 +475,8 @@ model Link {
   ctaEnabled           Boolean    @default(true)
   // the prospect can record a voice comment on a page (PDF only)
   voiceCommentsEnabled Boolean    @default(true)
+  // "Prendre rendez-vous", independent of ctaEnabled: a CV or a deck calls for a meeting, not a signature
+  bookingEnabled       Boolean    @default(true)
   // Booking page shown to the prospect; null = the link creator's (NotificationPreference.bookingUrl)
   bookingUrl           String?
   // The prospect booked a meeting from the viewer: automatic follow-ups stop for good

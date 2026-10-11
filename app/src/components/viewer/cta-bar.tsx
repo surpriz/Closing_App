@@ -38,7 +38,9 @@ type Props = {
   signerName: string | null;
   /** PDF only: once signed, the prospect keeps a copy. */
   downloadUrl?: string;
-  /** The seller's booking page, null when they have none. */
+  /** "Valider" and "Demander un ajustement" (Link.ctaEnabled). */
+  answers: boolean;
+  /** The seller's booking page, null when they have none or it is off on this link. */
   booking: BookingTarget | null;
 };
 
@@ -51,6 +53,7 @@ export function CtaBar({
   atEnd = false,
   signerName,
   downloadUrl,
+  answers,
   booking,
 }: Props) {
   const [status, setStatus] = useState<DealStatus>(initialStatus);
@@ -103,7 +106,7 @@ export function CtaBar({
     });
   }
 
-  const done = status === "VALIDATED" || status === "WON";
+  const done = answers && (status === "VALIDATED" || status === "WON");
 
   return (
     <>
@@ -153,34 +156,50 @@ export function CtaBar({
                 )}
               </p>
               <div className="flex gap-2">
-                {booking && (
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="h-11 w-11 px-0 sm:w-auto sm:px-4"
-                    aria-label={labels.bookMeeting}
-                    onClick={openBooking}
-                    disabled={pending}
-                  >
-                    <CalendarDays />
-                    <span className="hidden sm:inline">{labels.bookMeeting}</span>
-                  </Button>
+                {booking &&
+                  (answers ? (
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="h-11 w-11 px-0 sm:w-auto sm:px-4"
+                      aria-label={labels.bookMeeting}
+                      onClick={openBooking}
+                      disabled={pending}
+                    >
+                      <CalendarDays />
+                      <span className="hidden sm:inline">{labels.bookMeeting}</span>
+                    </Button>
+                  ) : (
+                    // Alone in the bar: the main action
+                    <Button size="lg" className="h-11 flex-1 sm:flex-none" onClick={openBooking}>
+                      <CalendarDays data-icon="inline-start" />
+                      <span className="truncate">{labels.bookMeeting}</span>
+                    </Button>
+                  ))}
+                {answers && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="h-11 w-11 px-0 sm:w-auto sm:px-4"
+                      aria-label={labels.requestChange}
+                      onClick={() => setDialog("change")}
+                      disabled={pending}
+                    >
+                      <MessageSquareText />
+                      <span className="hidden sm:inline">{labels.requestChange}</span>
+                    </Button>
+                    <Button
+                      size="lg"
+                      className="h-11 flex-1 sm:flex-none"
+                      onClick={() => setDialog("validate")}
+                      disabled={pending}
+                    >
+                      <Check data-icon="inline-start" />
+                      <span className="truncate">{labels.validate}</span>
+                    </Button>
+                  </>
                 )}
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="h-11 w-11 px-0 sm:w-auto sm:px-4"
-                  aria-label={labels.requestChange}
-                  onClick={() => setDialog("change")}
-                  disabled={pending}
-                >
-                  <MessageSquareText />
-                  <span className="hidden sm:inline">{labels.requestChange}</span>
-                </Button>
-                <Button size="lg" className="h-11 flex-1 sm:flex-none" onClick={() => setDialog("validate")} disabled={pending}>
-                  <Check data-icon="inline-start" />
-                  <span className="truncate">{labels.validate}</span>
-                </Button>
               </div>
             </div>
           )}

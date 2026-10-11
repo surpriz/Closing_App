@@ -124,7 +124,14 @@ export async function extendLink(linkId: string, days: number): Promise<ExpiryCh
   return { ok: true, told };
 }
 
-const LINK_SWITCHES = ["requireEmail", "ctaEnabled", "chatEnabled", "voiceCommentsEnabled", "followupsEnabled"] as const;
+const LINK_SWITCHES = [
+  "requireEmail",
+  "ctaEnabled",
+  "bookingEnabled",
+  "chatEnabled",
+  "voiceCommentsEnabled",
+  "followupsEnabled",
+] as const;
 export type LinkSwitch = (typeof LINK_SWITCHES)[number];
 
 /** One switch of the settings panel, saved as soon as it flips. */

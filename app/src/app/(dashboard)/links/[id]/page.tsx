@@ -213,6 +213,7 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
     initial: {
       requireEmail: link.requireEmail,
       ctaEnabled: link.ctaEnabled,
+      bookingEnabled: link.bookingEnabled,
       chatEnabled: link.chatEnabled,
       voiceCommentsEnabled: link.voiceCommentsEnabled,
       followupsEnabled: link.followupsEnabled,

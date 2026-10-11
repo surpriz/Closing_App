@@ -56,6 +56,8 @@ export function WebViewer({
   welcome,
 }: Props) {
   const { getViewId } = usePageTracking(slug, 1, { embedded: true, countTime: !!embedUrl });
+  // The bottom bar carries the answers, the booking button, or both
+  const barVisible = ctaEnabled || !!booking;
 
   return (
     <div className="flex h-dvh flex-col bg-muted/60">
@@ -83,7 +85,7 @@ export function WebViewer({
         }
       />
 
-      <main className={`flex min-h-0 flex-1 flex-col gap-2 px-2 pt-2 sm:px-4 ${ctaEnabled ? "pb-36 sm:pb-24" : chat ? "pb-20" : "pb-2"}`}>
+      <main className={`flex min-h-0 flex-1 flex-col gap-2 px-2 pt-2 sm:px-4 ${barVisible ? "pb-36 sm:pb-24" : chat ? "pb-20" : "pb-2"}`}>
         {embedUrl ? (
           <iframe
             src={embedUrl}
@@ -114,7 +116,7 @@ export function WebViewer({
         <PrivacyNotice labels={labels} web className="px-2 text-center" />
       </main>
 
-      {ctaEnabled && (
+      {barVisible && (
         <CtaBar
           slug={slug}
           labels={labels}
@@ -122,6 +124,7 @@ export function WebViewer({
           getViewId={getViewId}
           documentName={documentName}
           signerName={signerName}
+          answers={ctaEnabled}
           booking={booking}
         />
       )}
@@ -132,7 +135,7 @@ export function WebViewer({
         labels={labels}
         senderName={senderName}
         getViewId={getViewId}
-        ctaVisible={ctaEnabled}
+        ctaVisible={barVisible}
       />
 
       {chat && (
@@ -143,7 +146,7 @@ export function WebViewer({
           locale={locale}
           senderName={senderName}
           getViewId={getViewId}
-          ctaVisible={ctaEnabled}
+          ctaVisible={barVisible}
         />
       )}
     </div>
