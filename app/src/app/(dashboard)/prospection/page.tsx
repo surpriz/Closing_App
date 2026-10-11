@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { AutoRefresh } from "@/components/dashboard/auto-refresh";
+import { inBackground } from "@/lib/closing/background";
 import { PageHeader, SectionTitle, Surface } from "@/components/dashboard/page-header";
 import { PROVIDER_LABELS } from "@/components/dashboard/prospecting/labels";
 import { RunControls } from "@/components/dashboard/prospecting/run-controls";
@@ -10,6 +11,7 @@ import { prisma } from "@/lib/db";
 import { formatRelative } from "@/lib/format";
 import { availableProviders } from "@/lib/prospecting/credentials";
 import { requireProspecting } from "@/lib/prospecting/flag";
+import { pollPendingReveals } from "@/lib/prospecting/reveal";
 import { describeTarget, EMPTY_TARGET, targetIsSearchable } from "@/lib/prospecting/target";
 import { activeTarget, filtersOf } from "@/lib/prospecting/targets";
 
@@ -52,6 +54,8 @@ export default async function ProspectionPage() {
   const filters = target ? filtersOf(target) : { ...EMPTY_TARGET, seniorities: DEFAULT_SENIORITIES };
   const running = runs.some((run) => run.status === "RUNNING");
   const revealing = suggestions.some((s) => s.status === "REVEALING" || s.status === "ACCEPTED");
+  // The cron is not guaranteed: the page itself follows reveals in flight while it is open
+  if (revealing) inBackground("prospecting-poll", () => pollPendingReveals(now, { organizationId: organization.id }));
   const rows = suggestions.map((s) => ({
     ...s,
     // The full name stays hidden until the reveal

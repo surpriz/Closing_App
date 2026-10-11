@@ -1,10 +1,11 @@
 "use client";
 
-import { Ban, ExternalLink, X } from "lucide-react";
+import { Ban, Check, ExternalLink, X } from "lucide-react";
 import { useTransition } from "react";
 import { toast } from "sonner";
 
 import {
+  acceptSuggestionsAction,
   optOutSuggestionAction,
   rejectSuggestionAction,
   type ActionResult,
@@ -77,6 +78,12 @@ export function SuggestionsList({ rows }: { rows: SuggestionRow[] }) {
           </div>
 
           <div className="flex shrink-0 flex-wrap gap-2">
+            {row.status === "SUGGESTED" && (
+              <Button size="sm" disabled={pending} onClick={() => run(() => acceptSuggestionsAction([row.id]))}>
+                <Check aria-hidden />
+                Révéler
+              </Button>
+            )}
             {row.status === "SUGGESTED" && (
               <Button size="sm" variant="ghost" disabled={pending} onClick={() => run(() => rejectSuggestionAction(row.id))}>
                 <X aria-hidden />

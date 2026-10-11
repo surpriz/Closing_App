@@ -1,5 +1,6 @@
 import { ACTIVE_WORKSPACE } from "@/lib/closing/active-workspace";
 import { prisma } from "@/lib/db";
+import { runProspectingTick } from "@/lib/prospecting/tick";
 
 import { sendMorningDigests } from "./alerts/morning-digest";
 import { analyzePendingDeals } from "./brain/analyze-deal";
@@ -67,6 +68,11 @@ export async function runClosingTick(now = new Date()) {
   const digests = await sendMorningDigests(now);
   const draftsArchived = await archiveStaleDrafts(now);
   const purged = await purgeExpiredData(now);
+  // Prospecting POC: an outage at a provider must not stop the closing engine
+  const prospecting = await runProspectingTick(now).catch((error) => {
+    console.error("[closing:prospecting]", error);
+    return null;
+  });
   return {
     expiredCancelled,
     antiGhostingQueued,
@@ -80,5 +86,6 @@ export async function runClosingTick(now = new Date()) {
     digests,
     draftsArchived,
     purged,
+    prospecting,
   };
 }

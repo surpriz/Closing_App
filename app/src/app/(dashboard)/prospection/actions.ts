@@ -7,8 +7,12 @@ import { inBackground } from "@/lib/closing/background";
 import { prisma } from "@/lib/db";
 import { availableProviders } from "@/lib/prospecting/credentials";
 import { requireProspecting } from "@/lib/prospecting/flag";
+import { getEnv } from "@/lib/env";
 import { inferWorkspaceTarget } from "@/lib/prospecting/infer/collect";
+import { revealsStartedToday } from "@/lib/prospecting/ledger";
 import { addOptOut } from "@/lib/prospecting/opt-out";
+import { revealAllowance } from "@/lib/prospecting/quota";
+import { startReveals } from "@/lib/prospecting/reveal";
 import { runSearch, startRun } from "@/lib/prospecting/search";
 import { splitList, targetFiltersSchema, targetIsSearchable, type TargetFilters } from "@/lib/prospecting/target";
 import { activeTarget, filtersOf, saveTarget } from "@/lib/prospecting/targets";
@@ -167,4 +171,36 @@ export async function optOutSuggestionAction(suggestionId: string): Promise<Acti
   });
   revalidatePath("/prospection");
   return { ok: true };
+}
+
+/** Accepted contacts are revealed (provider credits) in the background, within the daily cap. */
+export async function acceptSuggestionsAction(suggestionIds: string[]): Promise<ActionResult> {
+  const { user, organization } = await requireProspecting();
+  const ids = z.array(z.string().min(1)).min(1).max(50).parse(suggestionIds);
+  const now = new Date();
+
+  const open = await prisma.prospectSuggestion.findMany({
+    where: { id: { in: ids }, organizationId: organization.id, status: "SUGGESTED" },
+    orderBy: { createdAt: "asc" },
+    select: { id: true },
+  });
+  if (open.length === 0) return { error: "Ces suggestions ont déjà été traitées." };
+
+  const allowed = revealAllowance({
+    revealsToday: await revealsStartedToday(organization.id, now),
+    requested: open.length,
+    dailyLimit: getEnv().PROSPECTING_DAILY_REVEAL_LIMIT,
+  });
+  if (allowed === 0) return { error: "Limite de révélations du jour atteinte. Reprenez demain." };
+
+  const accepted = open.slice(0, allowed).map((s) => s.id);
+  await prisma.prospectSuggestion.updateMany({
+    where: { id: { in: accepted }, status: "SUGGESTED" },
+    data: { status: "REVEALING", decidedAt: now, decidedById: user.id, revealStartedAt: now },
+  });
+  inBackground("prospecting-reveal", () => startReveals(accepted, now));
+  revalidatePath("/prospection");
+  return allowed < open.length
+    ? { error: `${allowed} contact${allowed > 1 ? "s" : ""} en cours de révélation, la limite du jour est atteinte pour les autres.` }
+    : { ok: true };
 }
