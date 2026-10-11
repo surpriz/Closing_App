@@ -23,6 +23,24 @@ export const SENIORITY_LABELS: Record<Seniority, string> = {
   manager: "Manager",
 };
 
+// First match wins: "Directeur général" is c_suite before being a director
+const TITLE_SENIORITY: [RegExp, Seniority][] = [
+  [/\b(fondat|founder|co-?founder)/i, "founder"],
+  [/\b(ceo|cto|cfo|coo|cmo|cio|pdg|p\.?d\.?g|president|président|directeur g[ée]n[ée]ral|directrice g[ée]n[ée]rale|dg\b|chief)/i, "c_suite"],
+  [/\b(g[ée]rant|owner|propri[ée]taire)/i, "owner"],
+  [/\b(associ[ée]|partner)/i, "partner"],
+  [/\b(vp|vice[- ]pr[ée]sident)/i, "vp"],
+  [/\b(directeur|directrice|director)/i, "director"],
+  [/\b(head|responsable)/i, "head"],
+  [/\b(manager)/i, "manager"],
+];
+
+/** Apollo's search gives no seniority, only a title: guess it for the comparison. */
+export function seniorityFromTitle(title: string | null | undefined): Seniority | null {
+  if (!title) return null;
+  return TITLE_SENIORITY.find(([pattern]) => pattern.test(title))?.[1] ?? null;
+}
+
 const words = (max: number, length = 80) =>
   z
     .array(z.string().trim().min(1).max(length))

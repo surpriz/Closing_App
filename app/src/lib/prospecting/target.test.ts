@@ -5,6 +5,7 @@ import {
   describeTarget,
   EMPTY_TARGET,
   searchKeywords,
+  seniorityFromTitle,
   splitList,
   targetFiltersSchema,
   targetIsSearchable,
@@ -87,5 +88,21 @@ describe("companyFit", () => {
     expect(companyFit({ naf: "62.01Z", region: "11", departement: "75" }, { ...target, departements: ["75"] })).toBe(
       "match",
     );
+  });
+});
+
+describe("seniorityFromTitle", () => {
+  it.each([
+    ["Directeur Général", "c_suite"],
+    ["PDG", "c_suite"],
+    ["Co-founder & CEO", "founder"],
+    ["Gérante", "owner"],
+    ["Directrice commerciale", "director"],
+    ["Head of Sales", "head"],
+    ["Responsable marketing", "head"],
+    ["Account manager", "manager"],
+    ["Développeur", null],
+  ])("%s → %s", (title, expected) => {
+    expect(seniorityFromTitle(title)).toBe(expected);
   });
 });
