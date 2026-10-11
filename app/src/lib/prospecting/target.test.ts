@@ -1,6 +1,21 @@
 import { describe, expect, it } from "vitest";
 
-import { companyFit, describeTarget, EMPTY_TARGET, searchKeywords, targetFiltersSchema, targetIsSearchable } from "./target";
+import {
+  companyFit,
+  describeTarget,
+  EMPTY_TARGET,
+  searchKeywords,
+  splitList,
+  targetFiltersSchema,
+  targetIsSearchable,
+} from "./target";
+
+describe("splitList", () => {
+  it("splits on commas, semicolons and lines", () => {
+    expect(splitList("agence web, studio ;\n conseil,, ")).toEqual(["agence web", "studio", "conseil"]);
+    expect(splitList(null)).toEqual([]);
+  });
+});
 
 describe("targetFiltersSchema", () => {
   it("normalizes codes and drops unknown values", () => {

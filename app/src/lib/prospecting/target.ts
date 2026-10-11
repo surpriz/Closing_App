@@ -61,6 +61,14 @@ export const EMPTY_TARGET: TargetFilters = {
   excludedDomains: [],
 };
 
+/** "agence web, studio\nconseil" → ["agence web", "studio", "conseil"]: lists typed in a text field. */
+export function splitList(text: string | null | undefined) {
+  return (text ?? "")
+    .split(/[,;\n]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 /** A search needs at least a sector and someone to look for. */
 export function targetIsSearchable(target: TargetFilters) {
   const sector = target.nafCodes.length > 0 || target.keywords.length > 0;
