@@ -33,7 +33,7 @@ export function headPrivateBlob(pathname: string) {
   return head(pathname, { token: blobToken() });
 }
 
-export function deletePrivateBlob(pathname: string) {
+export function deletePrivateBlob(pathname: string | string[]) {
   return del(pathname, { token: blobToken() });
 }
 

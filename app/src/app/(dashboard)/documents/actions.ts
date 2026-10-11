@@ -87,7 +87,8 @@ export async function createQuickLink(documentId: string): Promise<{ linkId: str
 }
 
 // Soft delete: the document and its links disappear from the app and stop opening
-// for prospects; pending follow-ups are cancelled. Views stay in the database.
+// for prospects; pending follow-ups are cancelled. The retention purge removes
+// it for good, files included, after ARCHIVE_GRACE_DAYS.
 // Every seller's links go with it, hence managers only.
 export async function archiveDocument(documentId: string) {
   const { organization } = await requireManager();

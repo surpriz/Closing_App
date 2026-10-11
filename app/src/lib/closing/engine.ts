@@ -8,6 +8,7 @@ import { refreshEngagementScore } from "./engagement/refresh-score";
 import { notExpired } from "./expiry";
 import { dispatchDueFollowups } from "./followups/dispatch";
 import { cancelExpiredFollowups, generateFollowupMessage } from "./followups/queue";
+import { purgeExpiredData } from "./retention/purge";
 import { scanAntiGhosting } from "./triggers/anti-ghosting";
 import { scanExpiringLinks, scanExpiryReminders } from "./triggers/expiry";
 
@@ -64,6 +65,7 @@ export async function runClosingTick(now = new Date()) {
   const dealsAnalyzed = await analyzePendingDeals(now, { includeQuiet: true });
   const digests = await sendMorningDigests(now);
   const draftsArchived = await archiveStaleDrafts(now);
+  const purged = await purgeExpiredData(now);
   return {
     expiredCancelled,
     antiGhostingQueued,
@@ -76,5 +78,6 @@ export async function runClosingTick(now = new Date()) {
     dealsAnalyzed,
     digests,
     draftsArchived,
+    purged,
   };
 }
