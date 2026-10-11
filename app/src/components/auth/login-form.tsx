@@ -7,6 +7,7 @@ import { Logo } from "@/components/brand/logo";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PRIVACY_POLICY_URL, TERMS_URL } from "@/components/viewer/privacy-notice";
 import { authClient } from "@/lib/auth-client";
 
 type Status = "idle" | "sending" | "sent" | "error";
@@ -124,6 +125,17 @@ export function LoginForm({ devMode, next }: { devMode: boolean; next: string })
             {status === "sending" ? "Envoi…" : "Recevoir le lien de connexion"}
             {status !== "sending" && <ArrowRight data-icon="inline-end" />}
           </Button>
+          <p className="text-center text-xs text-muted-foreground">
+            En continuant, vous acceptez les{" "}
+            <a href={TERMS_URL} target="_blank" rel="noreferrer" className="underline underline-offset-2">
+              conditions d&apos;utilisation
+            </a>{" "}
+            et la{" "}
+            <a href={PRIVACY_POLICY_URL} target="_blank" rel="noreferrer" className="underline underline-offset-2">
+              politique de confidentialité
+            </a>
+            .
+          </p>
         </form>
       )}
     </div>

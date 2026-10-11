@@ -2,6 +2,7 @@ import type { ViewerLabels } from "@/lib/closing/i18n/viewer";
 
 // Published on the landing site (www.clozer.club)
 export const PRIVACY_POLICY_URL = "https://www.clozer.club/confidentialite";
+export const TERMS_URL = "https://www.clozer.club/cgu";
 
 // GDPR transparency: the prospect is told what the sender sees before reading
 export function PrivacyNotice({

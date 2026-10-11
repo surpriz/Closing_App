@@ -1,6 +1,6 @@
 "use client";
 
-import { Compass, LogOut } from "lucide-react";
+import { Compass, LogOut, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 
@@ -55,6 +55,10 @@ export function UserMenu({
         <DropdownMenuItem onClick={() => router.push("/bienvenue")}>
           <Compass />
           Revoir la prise en main
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => router.push("/settings#donnees")}>
+          <ShieldCheck />
+          Données et confidentialité
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <ThemeMenuItems />
