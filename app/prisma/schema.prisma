@@ -120,6 +120,11 @@ model Organization {
   helpMessages            HelpMessage[]
   helpFeedback            HelpFeedback[]
 
+  targetProfiles      TargetProfile[]
+  prospectingRuns     ProspectingRun[]
+  prospectSuggestions ProspectSuggestion[]
+  prospectingCredits  ProspectingCreditEntry[]
+
   @@map("organizations")
 }
 
@@ -362,6 +367,7 @@ enum ProspectRole {
 enum ProspectOrigin {
   SELLER // added by the seller (dashboard or extension): the original recipient
   EMAIL_GATE // typed an email to open the link, the proposal was passed on
+  PROSPECTING // suggested by Clozer prospecting: an unsubscribe also opts out of prospecting for everyone
 }
 
 enum SellerAlertChannel {
@@ -428,10 +434,10 @@ model WorkspaceSettings {
   reopenAfterInactivityDays Int               @default(3)
   chatEnabledByDefault      Boolean           @default(true)
   // New links start from these; the document type adjusts them (see smart-defaults.ts)
-  requireEmailByDefault  Boolean @default(true)
-  voiceCommentsByDefault Boolean @default(true)
-  followupsByDefault     Boolean @default(true)
-  quoteExpiryDays        Int?    @default(15) // quotes and proposals lock after N days; null = never
+  requireEmailByDefault     Boolean           @default(true)
+  voiceCommentsByDefault    Boolean           @default(true)
+  followupsByDefault        Boolean           @default(true)
+  quoteExpiryDays           Int?              @default(15) // quotes and proposals lock after N days; null = never
 
   alertChannels      SellerAlertChannel[] @default([EMAIL])
   alertEmail         String?
@@ -584,13 +590,15 @@ model Link {
   archivedAt     DateTime?
 
   // Deal context typed by the seller. sellerNotes is private: never sent to the message writer.
-  dealAmountCents   Int?
-  dealCurrency      String?
-  decisionDeadline  DateTime?
-  decisionMakerName String?
-  decisionMakerRole String?
-  sellerNotes       String?
-  snoozedUntil      DateTime?
+  dealAmountCents    Int?
+  dealCurrency       String?
+  decisionDeadline   DateTime?
+  decisionMakerName  String?
+  decisionMakerRole  String?
+  sellerNotes        String?
+  snoozedUntil       DateTime?
+  // The customer agreed to be named as a reference in prospecting messages
+  referenceConsentAt DateTime?
 
   brainDirtyAt DateTime? // something happened since the last deal analysis
   source       String? // where the link was created: null = dashboard, "extension_gmail", "extension_outlook", "outlook_addin"
@@ -1135,4 +1143,199 @@ model VoiceComment {
   @@index([linkId, createdAt(sort: Desc)])
   @@index([viewId, createdAt])
   @@map("voice_comments")
+}
+
+// =============================================================================
+// Prospecting (POC behind PROSPECTING_ORG_IDS): B2B contacts that look like the seller's target
+// =============================================================================
+
+enum TargetOrigin {
+  MANUAL
+  INFERRED // deduced from the seller's sent quotes and presentations, then checked by the seller
+}
+
+enum ProspectingProvider {
+  APOLLO
+  LEMLIST
+  MOCK // local tests only
+}
+
+enum ProspectingRunStatus {
+  RUNNING
+  DONE
+  FAILED
+}
+
+enum SuggestionStatus {
+  SUGGESTED // masked, waiting for the seller
+  ACCEPTED // accepted, reveal not started yet
+  REVEALING // reveal asked to the provider (async for Lemlist)
+  READY // verified professional email
+  INVALID // see invalidReason: never billed
+  REJECTED // the seller said no: never suggested again in this workspace
+}
+
+enum SuggestionInvalidReason {
+  NOT_FOUND
+  UNVERIFIED
+  PERSONAL // personal mailbox: dropped, never stored
+  DUPLICATE // already a prospect of the workspace
+  OPTED_OUT
+}
+
+enum OptOutKind {
+  EMAIL
+  LINKEDIN
+  PROVIDER_ID
+}
+
+enum CreditEntryKind {
+  SEARCH
+  REVEAL // provider credits actually spent
+  DELIVERED // one READY contact: the future billing unit
+}
+
+model TargetProfile {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdById    String?
+  origin         TargetOrigin @default(MANUAL)
+  active         Boolean      @default(true)
+
+  nafCodes         String[] // NAF rev. 2 sub-classes, "62.01Z"
+  keywords         String[] // free words sent to the provider search
+  headcountCodes   String[] // INSEE tranches, "11", "12"
+  regions          String[] // INSEE region codes, "84"
+  departements     String[]
+  jobTitles        String[]
+  seniorities      String[] // owner, founder, c_suite, director…
+  excludedDomains  String[]
+  inferredEvidence Json? // what the deduction was based on, shown to the seller
+
+  runs ProspectingRun[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, active])
+  @@map("target_profiles")
+}
+
+model ProspectingRun {
+  id              String               @id @default(cuid())
+  organizationId  String
+  organization    Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  targetProfileId String
+  targetProfile   TargetProfile        @relation(fields: [targetProfileId], references: [id], onDelete: Cascade)
+  provider        ProspectingProvider
+  status          ProspectingRunStatus @default(RUNNING)
+  comparisonId    String? // two runs started together on the same target
+  filtersSnapshot Json
+  found           Int                  @default(0)
+  skipped         Int                  @default(0) // duplicates, opt-outs, off-target companies
+  created         Int                  @default(0)
+  error           String?
+  startedAt       DateTime             @default(now())
+  finishedAt      DateTime?
+
+  suggestions ProspectSuggestion[]
+
+  @@index([organizationId, startedAt(sort: Desc)])
+  @@index([comparisonId])
+  @@map("prospecting_runs")
+}
+
+model ProspectSuggestion {
+  id              String              @id @default(cuid())
+  organizationId  String
+  organization    Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  runId           String
+  run             ProspectingRun      @relation(fields: [runId], references: [id], onDelete: Cascade)
+  provider        ProspectingProvider
+  externalId      String
+  sourceFetchedAt DateTime // when the provider gave us this person
+
+  // Masked until revealed: what the seller decides on
+  firstName      String?
+  lastNameMasked String?
+  title          String?
+  seniority      String?
+  companyName    String?
+  companyDomain  String?
+  companySiren   String?
+  nafVerified    Boolean? // null = not checked, false = not found or off-target
+  linkedinUrl    String? // only as given by the provider, never scraped
+  dedupeKey      String // person key kept after the personal fields are purged
+
+  status        SuggestionStatus         @default(SUGGESTED)
+  invalidReason SuggestionInvalidReason?
+  decidedAt     DateTime?
+  decidedById   String?
+
+  // Reveal
+  lastName        String?
+  email           String?
+  emailStatus     String?
+  revealJobId     String?
+  revealAttempts  Int       @default(0)
+  revealStartedAt DateTime?
+  revealedAt      DateTime?
+
+  linkId      String?
+  hookSubject String?
+  hookBody    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, provider, externalId])
+  @@index([organizationId, status])
+  @@index([organizationId, dedupeKey])
+  @@index([status, revealStartedAt])
+  @@map("prospect_suggestions")
+}
+
+// Global, across workspaces: someone who said no is never suggested to anyone again.
+// Only a hash of the normalized value is kept.
+model ProspectingOptOut {
+  id        String     @id @default(cuid())
+  kind      OptOutKind
+  valueHash String
+  reason    String // "seller", "unsubscribe"
+  createdAt DateTime   @default(now())
+
+  @@unique([kind, valueHash])
+  @@map("prospecting_opt_outs")
+}
+
+// Append-only: provider credits spent and contacts delivered, per workspace
+model ProspectingCreditEntry {
+  id             String              @id @default(cuid())
+  organizationId String
+  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  provider       ProspectingProvider
+  kind           CreditEntryKind
+  credits        Int                 @default(0)
+  estimated      Boolean             @default(false) // computed from the provider price list, not reported by it
+  suggestionId   String?
+  createdAt      DateTime            @default(now())
+
+  @@index([organizationId, createdAt])
+  @@map("prospecting_credit_entries")
+}
+
+// Cache of the public company registry (recherche-entreprises.api.gouv.fr), shared by all workspaces
+model CompanyLookup {
+  key           String   @id // "domain:acme.fr" or "name:acme|69"
+  siren         String?
+  name          String?
+  naf           String?
+  headcountCode String?
+  departement   String?
+  region        String?
+  confidence    Float    @default(0)
+  fetchedAt     DateTime @default(now())
+
+  @@map("company_lookups")
 }

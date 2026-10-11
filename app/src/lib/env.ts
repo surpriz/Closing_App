@@ -56,6 +56,13 @@ const serverEnvSchema = z.object({
   EXTENSION_STORE_URL: z.preprocess((value) => value || undefined, z.url().optional()),
   // Time travel and manual engine runs; ignored in production
   ENABLE_TEST_TOOLS: z.enum(["true", "false"]).optional(),
+
+  // Prospecting POC: provider licences are internal-use only, so it is on for listed workspaces only
+  PROSPECTING_ORG_IDS: z.string().optional(),
+  APOLLO_API_KEY: z.string().optional(),
+  LEMLIST_API_KEY: z.string().optional(),
+  PROSPECTING_DAILY_REVEAL_LIMIT: z.coerce.number().int().min(0).default(50),
+  PROSPECTING_MOCK: z.enum(["true", "false"]).optional(),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;

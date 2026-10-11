@@ -1,6 +1,6 @@
 "use client";
 
-import { Brain, FileText, Settings2, Sun, Users } from "lucide-react";
+import { Brain, FileText, Settings2, Sun, Telescope, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -14,12 +14,15 @@ type Item = {
   match: string[];
   /** Owners and admins only. */
   managerOnly?: boolean;
+  /** Prospecting POC workspaces only, and not in the phone tab bar (5 columns at most). */
+  prospectingOnly?: boolean;
 };
 
 const ITEMS: Item[] = [
   { href: "/dashboard", label: "Aujourd'hui", icon: Sun, match: ["/dashboard", "/links"] },
   { href: "/equipe", label: "Équipe", icon: Users, match: ["/equipe"], managerOnly: true },
   { href: "/documents", label: "Documents", icon: FileText, match: ["/documents"] },
+  { href: "/prospection", label: "Prospection", icon: Telescope, match: ["/prospection"], prospectingOnly: true },
   {
     href: "/comment-ca-marche",
     label: "Comment ça marche",
@@ -30,7 +33,10 @@ const ITEMS: Item[] = [
   { href: "/settings", label: "Réglages", icon: Settings2, match: ["/settings"] },
 ];
 
-const itemsFor = (isManager: boolean) => ITEMS.filter((item) => isManager || !item.managerOnly);
+type Access = { isManager: boolean; prospecting?: boolean };
+
+const itemsFor = ({ isManager, prospecting }: Access) =>
+  ITEMS.filter((item) => (isManager || !item.managerOnly) && (prospecting || !item.prospectingOnly));
 
 function useActive() {
   const pathname = usePathname();
@@ -38,12 +44,12 @@ function useActive() {
 }
 
 /** Pill tabs in the header, from the `sm` breakpoint up. */
-export function DashboardNav({ isManager }: { isManager: boolean }) {
+export function DashboardNav(access: Access) {
   const isActive = useActive();
 
   return (
     <nav aria-label="Navigation principale" className="hidden items-center gap-0.5 sm:flex">
-      {itemsFor(isManager).map((item) => {
+      {itemsFor(access).map((item) => {
         const active = isActive(item.match);
         return (
           <Link
@@ -68,7 +74,7 @@ export function DashboardNav({ isManager }: { isManager: boolean }) {
 /** Fixed tab bar at the bottom of the screen on phones. */
 export function MobileNav({ isManager }: { isManager: boolean }) {
   const isActive = useActive();
-  const items = itemsFor(isManager);
+  const items = itemsFor({ isManager }).filter((item) => !item.prospectingOnly);
 
   return (
     <nav
