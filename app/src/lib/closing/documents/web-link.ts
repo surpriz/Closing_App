@@ -121,19 +121,32 @@ const ENTITIES: Record<string, string> = {
   hellip: "…", mdash: "—", ndash: "–", euro: "€", eacute: "é", egrave: "è", agrave: "à", ccedil: "ç",
 };
 
+// A made-up entity like &#99999999999; must not throw
+function fromCodePoint(code: number) {
+  return code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : null;
+}
+
 function decodeEntities(value: string) {
   return value
-    .replace(/&#(\d+);/g, (_, code: string) => String.fromCodePoint(Number(code)))
-    .replace(/&#x([0-9a-f]+);/gi, (_, code: string) => String.fromCodePoint(parseInt(code, 16)))
+    .replace(/&#(\d+);/g, (entity, code: string) => fromCodePoint(Number(code)) ?? entity)
+    .replace(/&#x([0-9a-f]+);/gi, (entity, code: string) => fromCodePoint(parseInt(code, 16)) ?? entity)
     .replace(/&([a-z]+|#39);/gi, (entity, name: string) => ENTITIES[name] ?? entity);
 }
 
 // og:title first (Notion, Figma put the real name there), then <title>
+/** A <meta> content, whichever order its attributes come in. Apostrophes inside "…" are kept. */
+function metaContent(html: string, attribute: "name" | "property", value: string) {
+  for (const [tag] of html.matchAll(/<meta\b[^>]*>/gi)) {
+    const key = tag.match(new RegExp(`\\b${attribute}\\s*=\\s*(["'])(.*?)\\1`, "i"))?.[2];
+    if (key?.toLowerCase() !== value) continue;
+    const content = tag.match(/\bcontent\s*=\s*(["'])(.*?)\1/i)?.[2];
+    if (content !== undefined) return content;
+  }
+  return null;
+}
+
 export function extractPageTitle(html: string): string | null {
-  const og =
-    html.match(/<meta[^>]+property=["']og:title["'][^>]*content=["']([^"']*)["']/i) ??
-    html.match(/<meta[^>]+content=["']([^"']*)["'][^>]*property=["']og:title["']/i);
-  const raw = og?.[1] ?? html.match(/<title[^>]*>([^<]*)<\/title>/i)?.[1];
+  const raw = metaContent(html, "property", "og:title") ?? html.match(/<title[^>]*>([^<]*)<\/title>/i)?.[1];
   const title = raw ? decodeEntities(raw).replace(/\s+/g, " ").trim() : "";
   return title ? title.slice(0, 200) : null;
 }
@@ -141,13 +154,39 @@ export function extractPageTitle(html: string): string | null {
 // Fallback when the page gives no title: "Offre Acme" from a Notion-style
 // slug, else "acme.com/offre"
 function metaDescription(html: string) {
-  const match =
-    html.match(/<meta[^>]+name=["']description["'][^>]*content=["']([^"']*)["']/i) ??
-    html.match(/<meta[^>]+content=["']([^"']*)["'][^>]*name=["']description["']/i);
-  return match ? decodeEntities(match[1]).trim() : "";
+  const content = metaContent(html, "name", "description");
+  return content ? decodeEntities(content).trim() : "";
 }
 
-const HIDDEN_BLOCKS = /<(script|style|noscript|svg|template|iframe|nav|footer)\b[^>]*>[\s\S]*?<\/\1>/gi;
+// Raw text blocks end at their first closing tag; nav, footer and svg can nest
+const HIDDEN_TAGS = /<(\/?)(script|style|noscript|template|iframe|svg|nav|footer)\b[^>]*>/gi;
+const NESTING = new Set(["svg", "nav", "footer"]);
+
+/** Drops what a reader does not read (code, menus, footers) in one pass, even on broken HTML. */
+function stripHiddenBlocks(html: string) {
+  let out = "";
+  let last = 0;
+  let hidden: string | null = null;
+  let depth = 0;
+  for (const match of html.matchAll(HIDDEN_TAGS)) {
+    const [tag, closing, rawName] = match;
+    const name = rawName.toLowerCase();
+    if (hidden === null) {
+      if (closing) continue;
+      out += `${html.slice(last, match.index)} `;
+      hidden = name;
+      depth = 1;
+    } else if (name === hidden && (closing || NESTING.has(name))) {
+      depth += closing ? -1 : 1;
+      if (depth === 0) {
+        hidden = null;
+        last = match.index + tag.length;
+      }
+    }
+  }
+  // An unclosed block hides the rest of the page
+  return hidden === null ? out + html.slice(last) : out;
+}
 const BLOCK_TAGS = /<\/?(p|div|section|article|main|header|h[1-6]|li|ul|ol|tr|table|br|hr|blockquote)\b[^>]*>/gi;
 
 /**
@@ -157,9 +196,9 @@ const BLOCK_TAGS = /<\/?(p|div|section|article|main|header|h[1-6]|li|ul|ol|tr|ta
 export function htmlToText(html: string, max = 20_000) {
   const body = html.match(/<body[^>]*>([\s\S]*)/i)?.[1] ?? html;
   const text = decodeEntities(
-    body
-      .replace(/<!--[\s\S]*?-->/g, " ")
-      .replace(HIDDEN_BLOCKS, " ")
+    stripHiddenBlocks(body)
+      // An unclosed comment runs to the end: one match, no backtracking over the page
+      .replace(/<!--[\s\S]*?(?:-->|$)/g, " ")
       .replace(BLOCK_TAGS, "\n")
       .replace(/<[^>]+>/g, " "),
   )

@@ -132,6 +132,32 @@ describe("htmlToText", () => {
   });
 });
 
+describe("parsing real-world HTML", () => {
+  it("keeps apostrophes in titles and descriptions", () => {
+    const html = `<meta property="og:title" content="Proposition d'accompagnement"><meta content="L'offre complète" name="description">`;
+    expect(extractPageTitle(html)).toBe("Proposition d'accompagnement");
+    expect(htmlToText(html)).toBe("L'offre complète");
+  });
+
+  it("survives impossible entities", () => {
+    expect(htmlToText("<body><p>a &#99999999999; b &#x110000;</p></body>")).toBe("a &#99999999999; b &#x110000;");
+  });
+
+  it("strips nested and unclosed hidden blocks", () => {
+    expect(htmlToText("<body><nav><nav>menu</nav>more menu</nav><p>Offre</p><script>x</script><p>Prix</p></body>")).toBe(
+      "Offre\nPrix",
+    );
+    expect(htmlToText("<body><p>Offre</p><footer>legal")).toBe("Offre");
+  });
+
+  it("stays fast on broken markup", () => {
+    const broken = `<body>${"<nav><!--".repeat(20_000)}<p>fin</p></body>`;
+    const started = performance.now();
+    htmlToText(broken);
+    expect(performance.now() - started).toBeLessThan(500);
+  });
+});
+
 describe("videoProvider", () => {
   it("recognizes the players we can follow", () => {
     expect(videoProvider("https://www.youtube.com/embed/dQw4")).toBe("youtube");

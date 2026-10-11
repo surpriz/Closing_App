@@ -301,6 +301,9 @@ export async function rereadDocument(documentId: string) {
     // The page may have changed since: fetch it again, then the AI reads it
     outcome = await processWebDocument(document.id);
     if (outcome === "no_text") return { error: "Impossible de lire le texte de cette page. Décrivez-la plutôt." };
+    if (outcome === "unreachable") {
+      return { error: "La page ne répond pas pour l'instant. Ce qui avait été lu est conservé." };
+    }
   } else {
     await prisma.document.update({ where: { id: document.id }, data: { aiProcessedAt: null, aiAttempts: 0 } });
     outcome = await readDocumentPages(document.id);

@@ -1,3 +1,4 @@
+import { resolvesToPublicAddress } from "../channels/public-address";
 import { isSafeOutboundUrl } from "../channels/webhooks";
 import { extractPageTitle, fallbackName, framingAllowed, htmlToText, knownEmbedUrl, videoProvider } from "./web-link";
 
@@ -29,11 +30,11 @@ async function readHtml(response: Response, maxBytes: number, headOnly: boolean)
   return html;
 }
 
-// Follows redirects by hand so each hop goes through the SSRF guard
+// Follows redirects by hand so each hop goes through the SSRF guard, DNS included
 async function fetchPage(url: URL) {
   let current = url;
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
-    if (!isSafeOutboundUrl(current.toString())) return null;
+    if (!isSafeOutboundUrl(current.toString()) || !(await resolvesToPublicAddress(current.hostname))) return null;
     const response = await fetch(current, {
       redirect: "manual",
       headers: {
@@ -86,7 +87,7 @@ async function videoText(url: URL, provider: string) {
   const response = await fetch(`${OEMBED[provider]}${encodeURIComponent(url.toString())}`, {
     signal: AbortSignal.timeout(8_000),
   });
-  if (!response.ok) return "";
+  if (!response.ok) return null;
   const data = (await response.json()) as { title?: string; author_name?: string; description?: string };
   return [
     data.title && `Vidéo : ${data.title}`,
@@ -100,20 +101,21 @@ async function videoText(url: URL, provider: string) {
 
 /**
  * The text of a web page for the AI reading and the prospect assistant.
- * Empty when the page cannot be read or is rendered in the browser. Never throws.
+ * Empty when the page has no readable text (rendered in the browser), null
+ * when it could not be fetched: what was read before is then kept. Never throws.
  */
-export async function readWebText(url: URL): Promise<string> {
+export async function readWebText(url: URL): Promise<string | null> {
   try {
     const provider = videoProvider(knownEmbedUrl(url));
     if (provider) return await videoText(url, provider);
     const response = await fetchPage(url);
     if (!response?.ok) {
       await response?.body?.cancel().catch(() => {});
-      return "";
+      return null;
     }
     return htmlToText(await readHtml(response, MAX_PAGE_BYTES, false));
   } catch (error) {
     console.warn(`[documents] could not read ${url.hostname}`, error);
-    return "";
+    return null;
   }
 }

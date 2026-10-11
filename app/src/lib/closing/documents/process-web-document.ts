@@ -10,7 +10,9 @@ import { readDocumentPages, type ReadPagesOutcome } from "./read-pages";
  * prospect assistant can answer from it. The page carries no tags: time spent
  * on "page 1" is time on the whole site, not on its pricing.
  */
-export async function processWebDocument(documentId: string): Promise<ReadPagesOutcome | "no_text"> {
+export async function processWebDocument(
+  documentId: string,
+): Promise<ReadPagesOutcome | "no_text" | "unreachable"> {
   const document = await prisma.document.findUnique({
     where: { id: documentId },
     select: { id: true, kind: true, externalUrl: true },
@@ -18,6 +20,8 @@ export async function processWebDocument(documentId: string): Promise<ReadPagesO
   if (document?.kind !== "URL" || !document.externalUrl) return "skipped";
 
   const text = await readWebText(new URL(document.externalUrl));
+  // A page down for a moment must not wipe what was read before
+  if (text === null) return "unreachable";
   // What a signer had in front of them, as far as we could read it
   const contentSha256 = text ? createHash("sha256").update(text).digest("hex") : null;
 
