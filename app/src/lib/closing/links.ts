@@ -39,11 +39,10 @@ export type ViewerLink = NonNullable<Awaited<ReturnType<typeof findViewerLink>>>
  */
 export async function resolveViewerLink(slug: string, now = new Date()) {
   if (!SLUG_PATTERN.test(slug)) return null;
-  const found = await findViewerLink(slug);
-  if (!found || found.archivedAt || found.document.archivedAt) return null;
-  // A signed quote stays readable: no countdown, no lock, the receipt link keeps working
-  const link = { ...found, expiresAt: viewerDeadline(found) };
-  return { link, expired: isLinkExpired(link, now) };
+  const link = await findViewerLink(slug);
+  if (!link || link.archivedAt || link.document.archivedAt) return null;
+  // A signed quote stays readable after its deadline: the receipt link keeps working
+  return { link, expired: isLinkExpired({ expiresAt: viewerDeadline(link) }, now) };
 }
 
 // Link as seen by a prospect. Null when unknown, archived or expired.

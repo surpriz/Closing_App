@@ -17,7 +17,7 @@ import { buildBookingTarget } from "@/lib/closing/booking/url";
 import { capsulesVisibleOnLink, resolveCapsules, WELCOME_PAGE } from "@/lib/closing/capsules/resolve";
 import { suggestQuestions, toUIMessages } from "@/lib/closing/chat/messages";
 import { loadChatSetup } from "@/lib/closing/chat/queries";
-import { extensionRequestKey, showsCountdown } from "@/lib/closing/expiry";
+import { extensionRequestKey, showsCountdown, viewerDeadline } from "@/lib/closing/expiry";
 import { getViewerLabels, pickLocale, type ViewerLabels } from "@/lib/closing/i18n/viewer";
 import { getViewerAccess, knownRecipient, resolveViewerLink, type ViewerLink } from "@/lib/closing/links";
 import { maskEmail } from "@/lib/closing/prospects/mask-email";
@@ -61,6 +61,7 @@ export default async function ViewerPage({ params, searchParams }: PageProps<"/v
   ]);
   const senderName = settings?.senderName?.trim() || null;
   const countdown = showsCountdown(link.document.docType);
+  const deadline = viewerDeadline(link);
 
   const locked = (
     <LinkExpired
@@ -157,8 +158,8 @@ export default async function ViewerPage({ params, searchParams }: PageProps<"/v
 
   // Ticks down in the page and swaps to the locked screen at zero
   const withExpiry = (viewer: React.ReactNode) =>
-    link.expiresAt ? (
-      <ExpiryGate expiresAt={link.expiresAt.toISOString()} serverNow={new Date().toISOString()} locked={locked}>
+    deadline ? (
+      <ExpiryGate expiresAt={deadline.toISOString()} serverNow={new Date().toISOString()} locked={locked}>
         {viewer}
       </ExpiryGate>
     ) : (
@@ -185,7 +186,7 @@ export default async function ViewerPage({ params, searchParams }: PageProps<"/v
             dealStatus={link.dealStatus}
             locale={locale}
             chat={chat}
-            countdown={!!link.expiresAt && countdown}
+            countdown={!!deadline && countdown}
             welcome={capsules.find((capsule) => capsule.pageNumber === WELCOME_PAGE) ?? null}
           />,
         )}
@@ -194,7 +195,7 @@ export default async function ViewerPage({ params, searchParams }: PageProps<"/v
   }
 
   const pricingPages =
-    link.expiresAt && countdown
+    deadline && countdown
       ? (
           await prisma.documentPage.findMany({
             where: { documentId: link.document.id, tags: { has: "PRICING" } },

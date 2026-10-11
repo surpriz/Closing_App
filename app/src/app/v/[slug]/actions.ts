@@ -9,11 +9,10 @@ import { bookingUrlForLink } from "@/lib/closing/booking/link-booking";
 import { analyzeDeal, markDealDirty } from "@/lib/closing/brain/analyze-deal";
 import { HOUR_MS } from "@/lib/closing/constants";
 import { refreshEngagementScore } from "@/lib/closing/engagement/refresh-score";
-import { extensionRequestKey } from "@/lib/closing/expiry";
+import { extensionRequestKey, formatDeadline, isLinkExpired } from "@/lib/closing/expiry";
 import { cancelOpenFollowups } from "@/lib/closing/followups/queue";
 import { pickLocale } from "@/lib/closing/i18n/viewer";
 import { getPublicAppUrl } from "@/lib/app-origin";
-import { formatDeadline } from "@/lib/closing/expiry";
 import { SIGNER_NAME, signedEmail } from "@/lib/closing/i18n/signed-email";
 import {
   getLinkForViewer,
@@ -209,6 +208,8 @@ export async function submitProspectAction(input: z.input<typeof actionSchema>) 
   const link = await getLinkForViewer(slug);
   // The seller (or the document type) turned the buttons off: nothing to accept
   if (!link || !link.ctaEnabled) return { ok: false };
+  // A signed quote stays readable past its deadline, but takes no new answer
+  if (isLinkExpired(link, new Date())) return { ok: false };
 
   const access = await getViewerAccess(link);
   if (!access.allowed) return { ok: false };

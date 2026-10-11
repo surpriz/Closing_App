@@ -15,6 +15,7 @@ import { buildChatInstructions } from "@/lib/closing/chat/prompts";
 import { countRecentQuestions, loadChatHistory, loadChatKnowledge } from "@/lib/closing/chat/queries";
 import { decideChatQuota } from "@/lib/closing/chat/quota";
 import { SUPPORTED_LOCALES, type SupportedLocale } from "@/lib/closing/constants";
+import { viewerDeadline } from "@/lib/closing/expiry";
 import { getViewerLabels } from "@/lib/closing/i18n/viewer";
 import { getLinkForViewer, getViewerAccess } from "@/lib/closing/links";
 import { defaultTimezone } from "@/lib/closing/settings";
@@ -108,7 +109,7 @@ export async function POST(request: NextRequest, ctx: RouteContext<"/api/v/[slug
       locale,
       requestChangeLabel: link.ctaEnabled ? labels.requestChange : null,
       docType: loaded.knowledge.document.docType,
-      expiresAt: link.expiresAt,
+      expiresAt: viewerDeadline(link),
       timezone: defaultTimezone(),
       contextText: context.text,
     }),
