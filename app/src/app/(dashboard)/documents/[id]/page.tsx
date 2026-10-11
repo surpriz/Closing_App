@@ -25,6 +25,7 @@ import {
   DocumentPages,
   DocumentTypeSelect,
   SellerDescriptionForm,
+  WebPageReading,
 } from "@/components/dashboard/document-content";
 import { PageTimeChart, type PageTimeDatum } from "@/components/dashboard/page-time-chart";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -354,7 +355,15 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
               Contenu
             </SectionTitle>
               {isWeb ? (
-                <SellerDescriptionForm documentId={document.id} initial={document.sellerDescription ?? ""} />
+                <div className="space-y-6">
+                  <WebPageReading
+                    documentId={document.id}
+                    docPurpose={document.docPurpose}
+                    page={document.pages[0] ?? null}
+                    aiAvailable={getLanguageModel("classify") !== null}
+                  />
+                  <SellerDescriptionForm documentId={document.id} initial={document.sellerDescription ?? ""} />
+                </div>
               ) : document.pages.length === 0 ? (
                 <p className="py-12 text-center text-sm text-muted-foreground">
                   {ready ? "Aucune page détectée." : "Analyse du document en cours…"}

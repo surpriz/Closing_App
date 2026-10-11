@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { extractPageTitle, fallbackName, framingAllowed, knownEmbedUrl, parseWebUrl } from "./web-link";
+import {
+  extractPageTitle,
+  fallbackName,
+  framingAllowed,
+  htmlToText,
+  knownEmbedUrl,
+  parseWebUrl,
+  videoProvider,
+} from "./web-link";
 
 const APP = "https://app.clozer.club";
 
@@ -96,5 +104,44 @@ describe("fallbackName", () => {
       "Offre Acme 2026",
     );
     expect(fallbackName(new URL("https://acme.com/proposition-commerciale"))).toBe("proposition commerciale");
+  });
+});
+
+describe("htmlToText", () => {
+  it("keeps the readable text, one block per line", () => {
+    const html = `<html><head><meta name="description" content="Offre Growth">
+      <style>body{color:red}</style></head>
+      <body><nav>Accueil Tarifs</nav><h1>Offre&nbsp;Growth</h1>
+      <p>Audit &amp; refonte, <b>14 500 &euro;</b> HT</p><script>track()</script>
+      <footer>Mentions légales</footer></body></html>`;
+    expect(htmlToText(html)).toBe("Offre Growth\nAudit & refonte, 14 500 € HT");
+  });
+
+  it("adds the meta description when the body does not say it", () => {
+    const html = `<meta content="Démo produit en 3 minutes" name="description"><body><div id="app"></div></body>`;
+    expect(htmlToText(html)).toBe("Démo produit en 3 minutes");
+  });
+
+  it("decodes numeric entities and leaves unknown ones", () => {
+    expect(htmlToText("<body><p>l&#x2019;offre &#233;t&eacute; &foo;</p></body>")).toBe("l’offre été &foo;");
+  });
+
+  it("caps the length", () => {
+    expect(htmlToText(`<body><p>${"a".repeat(50)}</p></body>`, 10)).toHaveLength(10);
+  });
+});
+
+describe("videoProvider", () => {
+  it("recognizes the players we can follow", () => {
+    expect(videoProvider("https://www.youtube.com/embed/dQw4")).toBe("youtube");
+    expect(videoProvider("https://player.vimeo.com/video/12345")).toBe("vimeo");
+    expect(videoProvider("https://www.loom.com/embed/abc123")).toBe("loom");
+  });
+
+  it("ignores everything else", () => {
+    expect(videoProvider(null)).toBeNull();
+    expect(videoProvider("https://acme.notion.site/ebd/abc")).toBeNull();
+    expect(videoProvider("https://www.youtube.com/watch?v=dQw4")).toBeNull();
+    expect(videoProvider("not a url")).toBeNull();
   });
 });

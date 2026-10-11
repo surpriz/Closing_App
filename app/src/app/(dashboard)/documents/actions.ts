@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
@@ -12,6 +13,7 @@ import { createDocumentLink, followDocumentType } from "@/lib/closing/documents/
 import { DOC_TYPES } from "@/lib/closing/documents/doc-types";
 import { inspectWebLink } from "@/lib/closing/documents/inspect-web-link";
 import { PAGE_TAGS } from "@/lib/closing/documents/page-reading";
+import { processWebDocument } from "@/lib/closing/documents/process-web-document";
 import { readDocumentPages } from "@/lib/closing/documents/read-pages";
 import { VIDEO_SEGMENTS } from "@/lib/closing/documents/video-segments";
 import { parseWebUrl } from "@/lib/closing/documents/web-link";
@@ -59,7 +61,7 @@ export async function createDocument(input: { pathname: string; name: string; sh
 
 export type CreateWebDocumentResult = { id: string; linkId: string } | { error: string };
 
-// A pasted URL (Notion, Loom, Figma...). Nothing to extract: ready at once.
+// A pasted URL (Notion, Loom, Figma...). Ready at once, its text is read in the background.
 export async function createWebDocument(input: { url: string }): Promise<CreateWebDocumentResult> {
   const { user, organization } = await requireWorkspace();
   const url = parseWebUrl(String(input.url ?? "").slice(0, 2048));
@@ -80,6 +82,7 @@ export async function createWebDocument(input: { url: string }): Promise<CreateW
     select: { id: true },
   });
   const linkId = await draftLinkFor(document.id, { userId: user.id, organizationId: organization.id });
+  after(() => processWebDocument(document.id));
 
   revalidatePath("/documents");
   return { id: document.id, linkId };
@@ -293,9 +296,15 @@ export async function saveAssistantNotes(documentId: string, notes: string) {
 
 export async function rereadDocument(documentId: string) {
   const document = await requireOwnedDocument(documentId);
-  if (document.kind === "URL") return { error: "Rien à relire pour un lien web." };
-  await prisma.document.update({ where: { id: document.id }, data: { aiProcessedAt: null, aiAttempts: 0 } });
-  const outcome = await readDocumentPages(document.id);
+  let outcome;
+  if (document.kind === "URL") {
+    // The page may have changed since: fetch it again, then the AI reads it
+    outcome = await processWebDocument(document.id);
+    if (outcome === "no_text") return { error: "Impossible de lire le texte de cette page. Décrivez-la plutôt." };
+  } else {
+    await prisma.document.update({ where: { id: document.id }, data: { aiProcessedAt: null, aiAttempts: 0 } });
+    outcome = await readDocumentPages(document.id);
+  }
   revalidatePath(`/documents/${document.id}`);
   if (outcome === "no_ai") return { error: "Aucune IA n'est configurée." };
   if (outcome === "failed") return { error: "La lecture a échoué, réessayez dans un moment." };
