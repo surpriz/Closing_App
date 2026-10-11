@@ -1,6 +1,7 @@
 "use client";
 
 import { ExternalLink } from "lucide-react";
+import { useEffect, useRef } from "react";
 
 import { buttonVariants } from "@/components/ui/button";
 import type { DealStatus } from "@/generated/prisma/enums";
@@ -14,6 +15,7 @@ import { CtaBar } from "./cta-bar";
 import { ExpiryChip } from "./expiry-countdown";
 import { PrivacyNotice } from "./privacy-notice";
 import { usePageTracking } from "./use-page-tracking";
+import { sendSignal } from "./view-signal";
 import { ViewerHeader } from "./viewer-header";
 
 type Props = {
@@ -56,6 +58,7 @@ export function WebViewer({
   welcome,
 }: Props) {
   const { getViewId } = usePageTracking(slug, 1, { embedded: true, countTime: !!embedUrl });
+  const openExternal = useExternalVisit(getViewId);
   // The bottom bar carries the answers, the booking button, or both
   const barVisible = ctaEnabled || !!booking;
 
@@ -74,6 +77,7 @@ export function WebViewer({
                 href={externalUrl}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={openExternal}
                 aria-label={labels.openExternal}
                 className={buttonVariants({ variant: "ghost", size: "sm" })}
               >
@@ -106,6 +110,7 @@ export function WebViewer({
               href={externalUrl}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={openExternal}
               className={buttonVariants({ size: "lg" })}
             >
               <ExternalLink />
@@ -151,4 +156,28 @@ export function WebViewer({
       )}
     </div>
   );
+}
+
+/**
+ * The site itself opens in another tab, out of sight. We record the click,
+ * then how long the reader stayed away before coming back to this tab: a
+ * rough measure of the time spent on the site.
+ */
+function useExternalVisit(getViewId: () => string | null) {
+  const leftAtRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.visibilityState !== "visible" || leftAtRef.current === null) return;
+      sendSignal(getViewId(), "EXTERNAL_RETURN", Date.now() - leftAtRef.current);
+      leftAtRef.current = null;
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, [getViewId]);
+
+  return () => {
+    sendSignal(getViewId(), "EXTERNAL_OPEN");
+    leftAtRef.current = Date.now();
+  };
 }

@@ -26,6 +26,7 @@ export async function eraseLinkTracking(linkId: string) {
     prisma.voiceComment.deleteMany({ where: { linkId } }),
     prisma.chatMessage.deleteMany({ where: { linkId } }),
     prisma.capsulePlay.deleteMany({ where: { linkId } }),
+    prisma.viewSignal.deleteMany({ where: { linkId } }),
     prisma.pageView.deleteMany({ where: { linkId } }),
     prisma.prospectAction.deleteMany({ where: { linkId, type: { notIn: [...KEPT_ACTION_TYPES] } } }),
     prisma.documentView.deleteMany({ where: { linkId } }),
