@@ -12,19 +12,19 @@ export function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
 }
 
+// Exact match on the lowercased address. Not Prisma's insensitive mode: it may run as
+// ILIKE, where "_" and "%" are wildcards, and this list feeds an erasure.
 async function findTrail(organizationId: string, email: string) {
-  const prospects = await prisma.prospect.findMany({
-    where: { email: { equals: email, mode: "insensitive" }, link: { organizationId } },
-    select: { id: true, linkId: true },
-  });
+  const prospects = await prisma.$queryRaw<{ id: string; linkId: string }[]>`
+    SELECT p."id", p."linkId" FROM "prospects" p
+    JOIN "links" l ON l."id" = p."linkId"
+    WHERE l."organizationId" = ${organizationId} AND lower(p."email") = ${email}`;
   const prospectIds = prospects.map((p) => p.id);
-  const views = await prisma.documentView.findMany({
-    where: {
-      link: { organizationId },
-      OR: [{ email: { equals: email, mode: "insensitive" } }, { prospectId: { in: prospectIds } }],
-    },
-    select: { id: true, linkId: true },
-  });
+  const views = await prisma.$queryRaw<{ id: string; linkId: string }[]>`
+    SELECT v."id", v."linkId" FROM "document_views" v
+    JOIN "links" l ON l."id" = v."linkId"
+    WHERE l."organizationId" = ${organizationId}
+      AND (lower(v."email") = ${email} OR v."prospectId" = ANY(${prospectIds}::text[]))`;
   const viewIds = views.map((v) => v.id);
   const linkIds = [...new Set([...prospects.map((p) => p.linkId), ...views.map((v) => v.linkId)])];
   return { prospectIds, viewIds, linkIds };
