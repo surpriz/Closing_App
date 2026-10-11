@@ -95,13 +95,12 @@ const createVideoSchema = z.object({
 
 const pitchDateFormat = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long" });
 
-/** A stored file that is ours to keep: under the workspace prefix and the right kind, or null. */
+/** An extra file of the pitch (already checked to be under the workspace prefix) of the right kind, or null. */
 async function checkedPitchFile(
   pathname: string | null | undefined,
-  prefix: string,
   accepts: (blob: { contentType: string; size: number }) => boolean,
 ) {
-  if (!pathname?.startsWith(prefix)) return null;
+  if (!pathname) return null;
   const blob = await headPrivateBlob(pathname).catch(() => null);
   if (blob && accepts({ contentType: baseMime(blob.contentType), size: blob.size })) return blob;
   if (blob) inBackground("pitch-discard", () => deletePrivateBlob(pathname));
@@ -121,10 +120,13 @@ export async function createVideoDocument(
   if (!parsed.success) return { error: "Enregistrement invalide." };
   const { videoPathname, durationMs } = parsed.data;
   const prefix = pitchUploadPrefix(organization.id);
-  if (!videoPathname.startsWith(prefix)) return { error: "Enregistrement invalide." };
+  // Only this workspace's own uploads, three distinct files: nothing else is ever read, kept or deleted
+  const paths = [videoPathname, parsed.data.audioPathname, parsed.data.posterPathname].filter((p): p is string => !!p);
+  if (paths.some((p) => !p.startsWith(prefix)) || new Set(paths).size !== paths.length) {
+    return { error: "Enregistrement invalide." };
+  }
 
   // Fresh uploads only: a file another document uses is never taken over
-  const paths = [videoPathname, parsed.data.audioPathname, parsed.data.posterPathname].filter((p): p is string => !!p);
   const taken = await prisma.document.count({
     where: { OR: [{ blobPathname: { in: paths } }, { audioPathname: { in: paths } }, { posterPathname: { in: paths } }] },
   });
@@ -148,10 +150,9 @@ export async function createVideoDocument(
 
   // The mic track and the still are extras: an odd one is dropped, the video saves without it
   const [audio, poster] = await Promise.all([
-    checkedPitchFile(parsed.data.audioPathname, prefix, (blob) => !validateMedia({ use: "pitch", kind: "AUDIO", ...blob, durationMs })),
+    checkedPitchFile(parsed.data.audioPathname, (blob) => !validateMedia({ use: "pitch", kind: "AUDIO", ...blob, durationMs })),
     checkedPitchFile(
       parsed.data.posterPathname,
-      prefix,
       (blob) => blob.contentType === CAPSULE_POSTER_TYPE && blob.size <= PITCH_POSTER_MAX_BYTES,
     ),
   ]);

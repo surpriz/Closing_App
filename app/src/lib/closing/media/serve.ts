@@ -58,6 +58,8 @@ export async function mediaResponse(
   if (upstream?.headers.get("content-range")) return new Response(upstream.stream, { status: 206, headers: partial });
   // The store sent the whole file (or nothing): drop it and cut the range ourselves
   void upstream?.stream.cancel();
+  // Never hold a whole video pitch in memory for one range: stream it all instead (plays, without seeking)
+  if (input.maxChunkBytes) return mediaResponse(new Request(request.url), input);
 
   const bytes = await readPrivateBlob(input.pathname);
   return new Response(bytes.slice(range.start, range.end + 1), { status: 206, headers: partial });

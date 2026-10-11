@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { PageCapsuleControl, type CapsuleSummary } from "@/components/dashboard/page-capsule";
 import type { PageTag, PageTagSource } from "@/generated/prisma/enums";
 import { cn } from "@/lib/utils";
+import { segmentLabel } from "@/lib/closing/documents/video-segments";
 
 import { DOC_TYPE_LABELS, DOC_TYPES, tagLabels, type DocType } from "@/lib/closing/documents/doc-types";
 
