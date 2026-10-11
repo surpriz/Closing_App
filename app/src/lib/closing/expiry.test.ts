@@ -13,6 +13,7 @@ import {
   isLinkExpired,
   reactivates,
   showsCountdown,
+  viewerDeadline,
 } from "./expiry";
 
 const HOUR = 60 * 60 * 1000;
@@ -37,6 +38,16 @@ describe("isLinkExpired", () => {
     expect(isLinkExpired({ expiresAt: now }, now)).toBe(true);
     expect(isLinkExpired({ expiresAt: new Date(now.getTime() + 1) }, now)).toBe(false);
     expect(isLinkExpired({ expiresAt: null }, now)).toBe(false);
+  });
+});
+
+describe("viewerDeadline", () => {
+  const expiresAt = new Date("2026-10-10T12:00:00Z");
+  it("drops the deadline once the prospect signed or the deal is won", () => {
+    expect(viewerDeadline({ expiresAt, dealStatus: "OPEN" })).toBe(expiresAt);
+    expect(viewerDeadline({ expiresAt, dealStatus: "CHANGE_REQUESTED" })).toBe(expiresAt);
+    expect(viewerDeadline({ expiresAt, dealStatus: "VALIDATED" })).toBeNull();
+    expect(viewerDeadline({ expiresAt, dealStatus: "WON" })).toBeNull();
   });
 });
 

@@ -142,7 +142,9 @@ export async function followDocumentType(documentId: string, now = new Date()) {
     const defaults = linkDefaultsFor(document.docType, settings, now, timeZone, {
       allowShared: !link.source && link._count.prospects === 0,
     });
-    const { expiresAt, ctaEnabled, bookingEnabled, shared } = defaults;
+    const { ctaEnabled, bookingEnabled, shared } = defaults;
+    // A deadline already there stays put: reading the document again must not slide or reopen it
+    const expiresAt = link.expiresAt && defaults.expiresAt ? link.expiresAt : defaults.expiresAt;
     const same =
       link.expiresAt?.getTime() === expiresAt?.getTime() &&
       link.ctaEnabled === ctaEnabled &&
@@ -150,7 +152,6 @@ export async function followDocumentType(documentId: string, now = new Date()) {
       link.shared === shared;
     if (same) continue;
 
-    // Only if the seller has not touched them in the meantime
     // Only if nothing changed in the meantime: the seller's own settings, a contact, the mode
     const updated = await prisma.link.updateMany({
       where: { id: link.id, autoSettings: true, shared: link.shared, prospects: { none: { origin: "SELLER" } } },

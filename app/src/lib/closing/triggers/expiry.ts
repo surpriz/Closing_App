@@ -112,6 +112,8 @@ export async function scanExpiringLinks(now = new Date()) {
     where: {
       archivedAt: null,
       draftAt: null,
+      // A shared link's readers carry its deadline: one alert for the shared link, not one per reader
+      parentLinkId: null,
       dealStatus: { in: ["OPEN", "CHANGE_REQUESTED"] },
       expiresAt: { gt: now, lte: new Date(now.getTime() + SELLER_ALERT_LEAD_MS) },
     },

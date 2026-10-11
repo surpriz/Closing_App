@@ -1,4 +1,5 @@
 import type { Prisma } from "@/generated/prisma/client";
+import type { DealStatus } from "@/generated/prisma/enums";
 
 import { DAY_MS, HOUR_MS } from "./constants";
 import { getLocalParts, nextBusinessSlot, zonedTimeToUtc, type BusinessHours } from "./scheduling/business-hours";
@@ -17,6 +18,11 @@ export function showsCountdown(docType: string | null | undefined) {
 
 export function isLinkExpired(link: { expiresAt: Date | null }, now: Date) {
   return !!link.expiresAt && link.expiresAt.getTime() <= now.getTime();
+}
+
+/** The deadline the prospect runs against: none once they signed or the deal is won. */
+export function viewerDeadline(link: { expiresAt: Date | null; dealStatus: DealStatus }) {
+  return link.dealStatus === "VALIDATED" || link.dealStatus === "WON" ? null : link.expiresAt;
 }
 
 /** Where-clause fragment. It holds an OR: always put it in `AND: [...]`, a spread would clobber another OR. */

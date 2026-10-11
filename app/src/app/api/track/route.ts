@@ -11,6 +11,7 @@ import {
   MAX_TRACKING_EVENTS_PER_BATCH,
 } from "@/lib/closing/constants";
 import { refreshEngagementScore } from "@/lib/closing/engagement/refresh-score";
+import { viewerDeadline } from "@/lib/closing/expiry";
 import { VISITOR_COOKIE } from "@/lib/closing/tracking/visitor";
 import { evaluatePricingCallMoment } from "@/lib/closing/triggers/hot-lead";
 import { evaluateHotPricing } from "@/lib/closing/triggers/hot-pricing";
@@ -57,7 +58,7 @@ export async function POST(request: Request) {
       visitorId: true,
       prospectId: true,
       isBot: true,
-      link: { select: { expiresAt: true, document: { select: { numPages: true } } } },
+      link: { select: { expiresAt: true, dealStatus: true, document: { select: { numPages: true } } } },
     },
   });
 
@@ -67,7 +68,8 @@ export async function POST(request: Request) {
     return new Response(null, { status: 403 });
   }
   // A tab left open past the deadline stops counting; the flush right after zero still lands
-  if (view.link.expiresAt && view.link.expiresAt.getTime() < Date.now() - EXPIRED_FLUSH_GRACE_MS) {
+  const deadline = viewerDeadline(view.link);
+  if (deadline && deadline.getTime() < Date.now() - EXPIRED_FLUSH_GRACE_MS) {
     return new Response(null, { status: 410 });
   }
 
