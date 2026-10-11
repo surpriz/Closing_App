@@ -55,6 +55,7 @@ export function OutreachDialog({ suggestionId, documents, hasLink }: Props) {
       if ("error" in outcome) toast.error(outcome.error);
       else {
         toast.success("C'est parti : le deal apparaît dans votre journée");
+        setResult((current) => current && { ...current, draft: false });
         setOpen(false);
       }
     });
@@ -62,6 +63,14 @@ export function OutreachDialog({ suggestionId, documents, hasLink }: Props) {
   const mailto = result
     ? `mailto:${result.email}?subject=${encodeURIComponent(result.subject)}&body=${encodeURIComponent(body)}`
     : "#";
+  // Some mail clients cut longer mailto links: copy and paste then
+  const mailtoFits = mailto.length <= 2000;
+
+  const copy = () =>
+    navigator.clipboard
+      .writeText(body)
+      .then(() => toast.success("Message copié"))
+      .catch(() => toast.error("Copie impossible : sélectionnez le texte à la main."));
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -112,15 +121,22 @@ export function OutreachDialog({ suggestionId, documents, hasLink }: Props) {
               <br />
               <span className="text-muted-foreground">Objet :</span> {result.subject}
             </p>
-            <Textarea value={body} onChange={(event) => setBody(event.target.value)} rows={12} />
+            <Textarea
+              aria-label="Message à envoyer"
+              value={body}
+              onChange={(event) => setBody(event.target.value)}
+              rows={12}
+            />
             <DialogFooter>
-              <Button variant="outline" onClick={() => navigator.clipboard.writeText(body).then(() => toast.success("Copié"))}>
-                Copier
+              <Button variant="outline" onClick={copy}>
+                Copier le message
               </Button>
-              <Button variant="outline" render={<a href={mailto} />} nativeButton={false}>
-                <Mail aria-hidden />
-                Ouvrir dans ma messagerie
-              </Button>
+              {mailtoFits && (
+                <Button variant="outline" render={<a href={mailto} />} nativeButton={false}>
+                  <Mail aria-hidden />
+                  Ouvrir dans ma messagerie
+                </Button>
+              )}
               {result.draft && (
                 <Button disabled={pending} onClick={() => markSent(result.linkId)}>
                   Je l&apos;ai envoyé

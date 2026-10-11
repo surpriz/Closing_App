@@ -39,8 +39,13 @@ export function apolloProvider(apiKey: string): ProspectingProvider {
       const outcomes: RevealOutcome[] = [];
       for (let i = 0; i < inputs.length; i += BULK_MAX) {
         const batch = inputs.slice(i, i + BULK_MAX);
-        const body = await call(apiKey, "/people/bulk_match", { body: apolloRevealBody(batch) });
-        outcomes.push(...apolloRevealOutcomes(batch, body));
+        try {
+          const body = await call(apiKey, "/people/bulk_match", { body: apolloRevealBody(batch) });
+          outcomes.push(...apolloRevealOutcomes(batch, body));
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Apollo error";
+          outcomes.push(...batch.map((input) => ({ state: "error" as const, externalId: input.externalId, message })));
+        }
       }
       return outcomes;
     },

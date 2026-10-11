@@ -8,22 +8,24 @@ const percent = (value: number | null) => (value === null ? "—" : `${Math.roun
 export function ProviderCompare({ metrics }: { metrics: ProviderMetrics[] }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="w-full text-sm" aria-label="Comparaison des fournisseurs sur votre cible">
         <thead className="text-left text-small text-muted-foreground">
           <tr className="border-b">
-            <th className="px-5 py-2 font-normal">Fournisseur</th>
-            <th className="px-3 py-2 font-normal">Trouvés</th>
-            <th className="px-3 py-2 font-normal">Décideurs</th>
-            <th className="px-3 py-2 font-normal">Entreprise confirmée</th>
-            <th className="px-3 py-2 font-normal">Emails valides</th>
-            <th className="px-3 py-2 font-normal">Crédits</th>
-            <th className="px-5 py-2 font-normal">Par contact livré</th>
+            <th scope="col" className="sticky left-0 bg-card px-5 py-2 font-normal">Fournisseur</th>
+            <th scope="col" className="px-3 py-2 font-normal">Proposés</th>
+            <th scope="col" className="px-3 py-2 font-normal">Décideurs</th>
+            <th scope="col" className="px-3 py-2 font-normal">Entreprise confirmée</th>
+            <th scope="col" className="px-3 py-2 font-normal">Emails valides</th>
+            <th scope="col" className="px-3 py-2 font-normal">Crédits</th>
+            <th scope="col" className="px-5 py-2 font-normal">Par contact livré</th>
           </tr>
         </thead>
         <tbody className="font-mono tabular-nums">
           {metrics.map((m) => (
             <tr key={m.provider} className="border-b last:border-0">
-              <td className="px-5 py-2 font-sans font-medium">{PROVIDER_LABELS[m.provider] ?? m.provider}</td>
+              <th scope="row" className="sticky left-0 bg-card px-5 py-2 text-left font-sans font-medium">
+                {PROVIDER_LABELS[m.provider] ?? m.provider}
+              </th>
               <td className="px-3 py-2">{m.found}</td>
               <td className="px-3 py-2">{percent(m.decisionMakerRate)}</td>
               <td className="px-3 py-2">{percent(m.verifiedCompanyRate)}</td>

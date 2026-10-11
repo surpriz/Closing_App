@@ -420,6 +420,13 @@ export async function saveDealContext(linkId: string, _prev: LinkFormState, form
       referenceConsentAt: consent ? (current?.referenceConsentAt ?? new Date()) : null,
     },
   });
+  // Prospecting messages already written may name this customer: rewrite them without it
+  if (current?.referenceConsentAt && !consent) {
+    await prisma.prospectSuggestion.updateMany({
+      where: { organizationId: link.organizationId, hookBody: { not: null } },
+      data: { hookSubject: null, hookBody: null },
+    });
+  }
   inBackground("brain", () => analyzeDeal(link.id, "SELLER_UPDATE"));
   revalidateLink(link);
   return { ok: true };

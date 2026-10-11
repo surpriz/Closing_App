@@ -60,8 +60,13 @@ export function lemlistProvider(apiKey: string): ProspectingProvider {
     async startReveal(inputs: RevealInput[]) {
       const outcomes: RevealOutcome[] = [];
       for (const input of inputs) {
-        const { body } = await call(apiKey, "POST", "/enrich", { query: lemlistEnrichParams(input) });
-        outcomes.push({ state: "pending", externalId: input.externalId, jobId: String(body.id) });
+        try {
+          const { body } = await call(apiKey, "POST", "/enrich", { query: lemlistEnrichParams(input) });
+          outcomes.push({ state: "pending", externalId: input.externalId, jobId: String(body.id) });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Lemlist error";
+          outcomes.push({ state: "error", externalId: input.externalId, message });
+        }
       }
       return outcomes;
     },

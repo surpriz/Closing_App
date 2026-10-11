@@ -76,6 +76,11 @@ describe("apollo reveal", () => {
     });
   });
 
+  it("never matches by position", () => {
+    const [outcome] = apolloRevealOutcomes(inputs.slice(0, 1), { matches: [{ id: "someone-else", email: "x@acme.fr" }] });
+    expect([outcome.email, outcome.credits]).toEqual([null, 0]);
+  });
+
   it("trusts only verified emails and charges only found people", () => {
     const outcomes = apolloRevealOutcomes(inputs, {
       matches: [

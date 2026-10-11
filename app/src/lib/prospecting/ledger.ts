@@ -15,13 +15,6 @@ export function recordCredits(entry: {
   return prisma.prospectingCreditEntry.create({ data: entry });
 }
 
-function startOfUtcDay(now: Date) {
+export function startOfUtcDay(now: Date) {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-}
-
-/** Reveals started today by the workspace, for the daily cap. */
-export function revealsStartedToday(organizationId: string, now: Date) {
-  return prisma.prospectSuggestion.count({
-    where: { organizationId, revealStartedAt: { gte: startOfUtcDay(now) } },
-  });
 }

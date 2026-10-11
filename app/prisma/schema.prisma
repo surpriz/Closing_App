@@ -1187,6 +1187,7 @@ enum OptOutKind {
   EMAIL
   LINKEDIN
   PROVIDER_ID
+  PERSON // first name + last initial + company: the same person seen through another provider
 }
 
 enum CreditEntryKind {
@@ -1266,7 +1267,7 @@ model ProspectSuggestion {
   companySiren   String?
   nafVerified    Boolean? // null = not checked, false = not found or off-target
   linkedinUrl    String? // only as given by the provider, never scraped
-  dedupeKey      String // person key kept after the personal fields are purged
+  dedupeKey      String // sha256 of the person key: all that stays once the personal fields are purged
 
   status        SuggestionStatus         @default(SUGGESTED)
   invalidReason SuggestionInvalidReason?
@@ -1290,6 +1291,7 @@ model ProspectSuggestion {
   updatedAt DateTime @updatedAt
 
   @@unique([organizationId, provider, externalId])
+  @@index([runId])
   @@index([organizationId, status])
   @@index([organizationId, dedupeKey])
   @@index([status, revealStartedAt])
@@ -1322,6 +1324,7 @@ model ProspectingCreditEntry {
   createdAt      DateTime            @default(now())
 
   @@index([organizationId, createdAt])
+  @@index([suggestionId])
   @@map("prospecting_credit_entries")
 }
 

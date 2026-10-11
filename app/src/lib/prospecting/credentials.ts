@@ -14,9 +14,11 @@ export type ProviderCredentials = {
  */
 export function resolveProviderCredentials(_organizationId: string, provider: ProviderName): ProviderCredentials | null {
   const env = getEnv();
-  if (provider === "MOCK") return env.PROSPECTING_MOCK === "true" && process.env.VERCEL_ENV !== "production"
-    ? { apiKey: "mock", source: "platform" }
-    : null;
+  if (provider === "MOCK") {
+    // Local tests only, whatever the variable says in production
+    const enabled = env.PROSPECTING_MOCK === "true" && process.env.VERCEL_ENV !== "production";
+    return enabled ? { apiKey: "mock", source: "platform" } : null;
+  }
   const apiKey = provider === "APOLLO" ? env.APOLLO_API_KEY : env.LEMLIST_API_KEY;
   return apiKey ? { apiKey, source: "platform" } : null;
 }

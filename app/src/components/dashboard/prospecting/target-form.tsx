@@ -1,14 +1,10 @@
 "use client";
 
 import { Sparkles } from "lucide-react";
-import { useActionState, useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
-import {
-  deduceTargetAction,
-  saveTargetAction,
-  type ProspectingFormState,
-} from "@/app/(dashboard)/prospection/actions";
+import { deduceTargetAction, saveTargetAction } from "@/app/(dashboard)/prospection/actions";
 import { FormCheckbox } from "@/components/dashboard/form-checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,13 +33,19 @@ export function TargetForm({ initial, origin }: Props) {
   const [evidence, setEvidence] = useState<Evidence | null>(null);
   const [version, setVersion] = useState(0);
   const [deducing, startDeduce] = useTransition();
-  const [state, formAction, saving] = useActionState<ProspectingFormState, FormData>(saveTargetAction, null);
+  const [saving, startSave] = useTransition();
 
-  useEffect(() => {
-    if (state?.error) toast.error(state.error);
-    // The page keys this form by the saved target: it remounts without the evidence
-    if (state?.ok) toast.success("Cible enregistrée");
-  }, [state]);
+  // Submitted by hand, not as a form action: React would reset the fields after an error
+  const save = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    startSave(async () => {
+      const result = await saveTargetAction(formData);
+      // On success the page keys this form by the new target: it remounts without the evidence
+      if ("error" in result) toast.error(result.error);
+      else toast.success("Cible enregistrée");
+    });
+  };
 
   const deduce = () =>
     startDeduce(async () => {
@@ -60,7 +62,7 @@ export function TargetForm({ initial, origin }: Props) {
   const confidence = confidenceWord(evidence?.averageConfidence ?? null);
 
   return (
-    <form action={formAction} className="space-y-6">
+    <form onSubmit={save} className="space-y-6">
       <input type="hidden" name="origin" value={evidence ? "INFERRED" : (origin ?? "MANUAL")} />
       <input type="hidden" name="evidence" value={evidence ? JSON.stringify(evidence) : ""} />
 

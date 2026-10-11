@@ -1,19 +1,15 @@
 "use client";
 
-import { Ban, Check, ExternalLink, X } from "lucide-react";
+import { Check, ExternalLink, X } from "lucide-react";
 import { useTransition } from "react";
 import { toast } from "sonner";
 
-import {
-  acceptSuggestionsAction,
-  optOutSuggestionAction,
-  rejectSuggestionAction,
-  type ActionResult,
-} from "@/app/(dashboard)/prospection/actions";
+import { acceptSuggestionsAction, rejectSuggestionAction, type ActionResult } from "@/app/(dashboard)/prospection/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 import { INVALID_LABELS, PROVIDER_LABELS, STATUS_LABELS } from "./labels";
+import { OptOutButton } from "./opt-out-button";
 import { OutreachDialog } from "./outreach-dialog";
 
 export type SuggestionRow = {
@@ -42,11 +38,11 @@ function linkedinHref(row: SuggestionRow) {
 export function SuggestionsList({ rows, documents }: { rows: SuggestionRow[]; documents: { id: string; name: string }[] }) {
   const [pending, startTransition] = useTransition();
 
-  const run = (action: () => Promise<ActionResult>, success?: string) =>
+  const run = (action: () => Promise<ActionResult>) =>
     startTransition(async () => {
       const result = await action();
       if ("error" in result) toast.error(result.error);
-      else if (success) toast.success(success);
+      else if (result.notice) toast.warning(result.notice);
     });
 
   return (
@@ -60,7 +56,7 @@ export function SuggestionsList({ rows, documents }: { rows: SuggestionRow[]; do
                 href={linkedinHref(row)}
                 target="_blank"
                 rel="noreferrer"
-                aria-label="Voir sur LinkedIn"
+                aria-label={row.linkedinUrl ? "Voir le profil LinkedIn" : "Chercher sur LinkedIn"}
                 className="text-muted-foreground hover:text-foreground"
               >
                 <ExternalLink className="size-3.5" aria-hidden />
@@ -95,17 +91,8 @@ export function SuggestionsList({ rows, documents }: { rows: SuggestionRow[]; do
                 Écarter
               </Button>
             )}
-            {row.status !== "REJECTED" && (
-              <Button
-                size="sm"
-                variant="ghost"
-                disabled={pending}
-                title="La personne a demandé à ne pas être contactée"
-                onClick={() => run(() => optOutSuggestionAction(row.id), "Cette personne ne sera plus jamais proposée")}
-              >
-                <Ban aria-hidden />
-                Ne plus proposer
-              </Button>
+            {row.status !== "REJECTED" && row.status !== "REVEALING" && (
+              <OptOutButton suggestionId={row.id} name={row.firstName ?? "Cette personne"} />
             )}
           </div>
         </li>

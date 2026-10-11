@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { optOutKeys } from "./opt-out-hash";
+import { optOutKeys, personHash } from "./opt-out-hash";
 
 describe("optOutKeys", () => {
   it("gives the same hash for the same person written differently", () => {
@@ -16,8 +16,10 @@ describe("optOutKeys", () => {
       linkedinUrl: "https://www.linkedin.com/in/marie/",
       provider: "APOLLO",
       externalId: "abc",
+      personHash: personHash("marie|d|acme"),
     });
-    expect(keys.map((k) => k.kind)).toEqual(["EMAIL", "LINKEDIN", "PROVIDER_ID"]);
+    expect(keys.map((k) => k.kind)).toEqual(["EMAIL", "LINKEDIN", "PROVIDER_ID", "PERSON"]);
+    expect(keys[3].valueHash).not.toContain("marie");
     expect(optOutKeys({})).toEqual([]);
   });
 });

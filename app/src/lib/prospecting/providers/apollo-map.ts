@@ -74,13 +74,14 @@ type ApolloMatch = {
 } | null;
 
 /**
- * One outcome per input, in order. Apollo charges 1 credit when it returns a person, 0 when
- * nothing is found; only "verified" is trusted, the other statuses are guesses.
+ * One outcome per input, matched by id only: a position could hand one person's email to
+ * another. Apollo charges 1 credit when it returns a person, 0 when nothing is found; only
+ * "verified" is trusted, the other statuses are guesses.
  */
 export function apolloRevealOutcomes(inputs: RevealInput[], body: { matches?: ApolloMatch[] }): RevealDone[] {
   const matches = body.matches ?? [];
-  return inputs.map((input, index) => {
-    const match = matches.find((m) => m?.id === input.externalId) ?? matches[index] ?? null;
+  return inputs.map((input) => {
+    const match = matches.find((m) => m?.id === input.externalId) ?? null;
     return {
       state: "done",
       externalId: input.externalId,

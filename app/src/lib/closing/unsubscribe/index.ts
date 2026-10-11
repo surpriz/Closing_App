@@ -73,9 +73,18 @@ export async function unsubscribeByToken(token: string) {
   if (prospect.origin === "PROSPECTING") {
     const suggestion = await prisma.prospectSuggestion.findFirst({
       where: { linkId: prospect.linkId },
-      select: { provider: true, externalId: true, linkedinUrl: true },
+      select: { provider: true, externalId: true, linkedinUrl: true, dedupeKey: true },
     });
-    await addOptOut({ email: prospect.email, ...suggestion }, "unsubscribe");
+    await addOptOut(
+      {
+        email: prospect.email,
+        linkedinUrl: suggestion?.linkedinUrl,
+        provider: suggestion?.provider,
+        externalId: suggestion?.externalId,
+        personHash: suggestion?.dedupeKey,
+      },
+      "unsubscribe",
+    );
   }
   return true;
 }

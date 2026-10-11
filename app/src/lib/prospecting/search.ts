@@ -4,19 +4,29 @@ import { prisma } from "@/lib/db";
 import { maskLastName, personKey, splitFullName } from "./dedupe";
 import { recordCredits } from "./ledger";
 import { optedOut } from "./opt-out";
+import { personHash } from "./opt-out-hash";
 import { getProvider } from "./providers";
 import type { Candidate } from "./providers/types";
 import { lookupCompanyName } from "./sirene/lookup";
-import { companyFit, seniorityFromTitle } from "./target";
+import { companyFit, seniorityFromTitle, type TargetFilters } from "./target";
 import { filtersOf } from "./targets";
 
 const MAX_PAGES = 4;
 const WANTED = 25; // new suggestions per run: enough to sort through, not a flood
 const TIME_BUDGET_MS = 50_000;
+// A run still RUNNING after this was killed with its function (timeout, deploy)
+const RUN_STALE_MS = 5 * 60 * 1000;
 
-/** People already known to the workspace, whatever their status: never suggested (again). */
-async function knownPeople(organizationId: string) {
-  const [suggestions, prospects] = await Promise.all([
+type CompanyCheck = { verdict: "match" | "off_target" | "unknown"; siren: string | null };
+
+function candidateHash(candidate: Candidate, provider: string) {
+  const key = personKey(candidate);
+  return personHash(key ?? `${provider}:${candidate.externalId}`);
+}
+
+/** People and companies already known to the workspace: never suggested (again). */
+async function knownToWorkspace(organizationId: string, filters: TargetFilters) {
+  const [suggestions, prospects, customers] = await Promise.all([
     prisma.prospectSuggestion.findMany({
       where: { organizationId },
       select: { provider: true, externalId: true, dedupeKey: true },
@@ -25,15 +35,27 @@ async function knownPeople(organizationId: string) {
       where: { link: { organizationId } },
       select: { name: true, company: true },
     }),
+    // Customers' companies, from the registry cache filled by the target deduction
+    prisma.companyLookup.findMany({
+      where: { key: { in: filters.excludedDomains.map((domain) => `domain:${domain}`) }, siren: { not: null } },
+      select: { siren: true },
+    }),
   ]);
-  const prospectKeys = prospects.map((p) => {
+  const prospectHashes = prospects.flatMap((p) => {
     const { first, last } = splitFullName(p.name);
-    return personKey({ firstName: first, lastName: last, companyName: p.company });
+    const key = personKey({ firstName: first, lastName: last, companyName: p.company });
+    return key ? [personHash(key)] : [];
   });
   return {
     ids: new Set(suggestions.map((s) => `${s.provider}:${s.externalId}`)),
-    keys: new Set([...suggestions.map((s) => s.dedupeKey), ...prospectKeys].filter(Boolean)),
+    people: new Set([...suggestions.map((s) => s.dedupeKey), ...prospectHashes]),
+    excludedSirens: new Set(customers.map((c) => c.siren!)),
   };
+}
+
+async function companyCheck(companyName: string, filters: TargetFilters, now: Date): Promise<CompanyCheck> {
+  const record = await lookupCompanyName(companyName, null, now).catch(() => null);
+  return { verdict: companyFit(record?.siren ? record : null, filters), siren: record?.siren ?? null };
 }
 
 /** One search, run in the background. Never throws: the run says DONE or FAILED. */
@@ -47,8 +69,8 @@ export async function runSearch(runId: string, now = new Date()) {
     if (!provider) throw new Error(`${run.provider} n'est pas configuré`);
 
     const filters = filtersOf(run.targetProfile);
-    const known = await knownPeople(run.organizationId);
-    const fits = new Map<string, Awaited<ReturnType<typeof companyCheck>>>();
+    const known = await knownToWorkspace(run.organizationId, filters);
+    const companies = new Map<string, CompanyCheck>();
     const started = Date.now();
 
     for (let page = 1; page <= MAX_PAGES && counts.created < WANTED; page++) {
@@ -64,13 +86,19 @@ export async function runSearch(runId: string, now = new Date()) {
       counts.found += result.candidates.length;
 
       const fresh = result.candidates.filter((candidate) => {
-        const key = dedupeKeyOf(candidate);
-        const duplicate = known.ids.has(`${run.provider}:${candidate.externalId}`) || (key && known.keys.has(key));
+        const duplicate =
+          known.ids.has(`${run.provider}:${candidate.externalId}`) ||
+          known.people.has(candidateHash(candidate, run.provider));
         const excluded = !!candidate.companyDomain && filters.excludedDomains.includes(candidate.companyDomain);
         return !duplicate && !excluded;
       });
       const blocked = await optedOut(
-        fresh.map((c) => ({ linkedinUrl: c.linkedinUrl, provider: run.provider, externalId: c.externalId })),
+        fresh.map((c) => ({
+          linkedinUrl: c.linkedinUrl,
+          provider: run.provider,
+          externalId: c.externalId,
+          personHash: candidateHash(c, run.provider),
+        })),
       );
 
       for (const [index, candidate] of fresh.entries()) {
@@ -78,13 +106,16 @@ export async function runSearch(runId: string, now = new Date()) {
         if (blocked.has(index)) continue;
 
         const companyName = candidate.companyName;
-        if (companyName && !fits.has(companyName)) fits.set(companyName, await companyCheck(companyName, filters, now));
-        const fit = companyName ? fits.get(companyName)! : { verdict: "unknown" as const, siren: null };
-        if (fit.verdict === "off_target") continue;
+        if (companyName && !companies.has(companyName)) {
+          companies.set(companyName, await companyCheck(companyName, filters, now));
+        }
+        const fit = (companyName && companies.get(companyName)) || { verdict: "unknown", siren: null };
+        // Off target, or a company the seller already works with
+        if (fit.verdict === "off_target" || (fit.siren && known.excludedSirens.has(fit.siren))) continue;
 
-        const key = dedupeKeyOf(candidate) ?? `${run.provider}:${candidate.externalId}`;
+        const dedupeKey = candidateHash(candidate, run.provider);
         known.ids.add(`${run.provider}:${candidate.externalId}`);
-        known.keys.add(key);
+        known.people.add(dedupeKey);
         await prisma.prospectSuggestion.create({
           data: {
             organizationId: run.organizationId,
@@ -101,9 +132,10 @@ export async function runSearch(runId: string, now = new Date()) {
             companyName,
             companyDomain: candidate.companyDomain,
             companySiren: fit.siren,
-            nafVerified: fit.verdict === "match" ? true : false,
+            // null: the registry could not tell, which is not the same as another sector
+            nafVerified: fit.verdict === "match" ? true : null,
             linkedinUrl: candidate.linkedinUrl,
-            dedupeKey: key,
+            dedupeKey,
           },
         });
         counts.created++;
@@ -130,13 +162,12 @@ export async function runSearch(runId: string, now = new Date()) {
   }
 }
 
-function dedupeKeyOf(candidate: Candidate) {
-  return personKey({ firstName: candidate.firstName, lastName: candidate.lastName, companyName: candidate.companyName });
-}
-
-async function companyCheck(companyName: string, filters: ReturnType<typeof filtersOf>, now: Date) {
-  const record = await lookupCompanyName(companyName, null, now).catch(() => null);
-  return { verdict: companyFit(record?.siren ? record : null, filters), siren: record?.siren ?? null };
+/** Runs whose function died before finishing: failed, so they no longer block new searches. */
+export function expireStaleRuns(now: Date, scope: { organizationId?: string } = {}) {
+  return prisma.prospectingRun.updateMany({
+    where: { ...scope, status: "RUNNING", startedAt: { lt: new Date(now.getTime() - RUN_STALE_MS) } },
+    data: { status: "FAILED", finishedAt: now, error: "Recherche interrompue" },
+  });
 }
 
 export async function startRun(input: {

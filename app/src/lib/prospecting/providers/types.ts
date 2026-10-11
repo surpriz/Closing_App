@@ -48,12 +48,18 @@ export type RevealDone = {
 
 export type RevealPending = { state: "pending"; externalId: string; jobId: string };
 
-export type RevealOutcome = RevealDone | RevealPending;
+/** The provider call failed for this person: nothing was charged, the reveal is retried. */
+export type RevealFailed = { state: "error"; externalId: string; message: string };
+
+export type RevealOutcome = RevealDone | RevealPending | RevealFailed;
 
 export interface ProspectingProvider {
   name: ProviderName;
   searchPeople(filters: TargetFilters, page: number): Promise<SearchPage>;
-  /** Sync providers answer "done", async ones "pending" with a job to poll. */
+  /**
+   * Sync providers answer "done", async ones "pending" with a job to poll. Never throws:
+   * a failed batch comes back as "error" so the outcomes already paid for are kept.
+   */
   startReveal(inputs: RevealInput[]): Promise<RevealOutcome[]>;
   pollReveal(jobId: string, input: RevealInput): Promise<RevealOutcome>;
 }
