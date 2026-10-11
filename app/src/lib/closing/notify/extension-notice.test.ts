@@ -22,6 +22,16 @@ describe("extensionNotice", () => {
     expect(extensionNotice("PROSPECT_QUESTION", "Acme", "Devis", {}).body).toBe("Sur « Devis ».");
   });
 
+  it("gives the meeting date when the widget sent it", () => {
+    expect(extensionNotice("MEETING_BOOKED", "Acme", "Devis", { meetingAt: "2026-10-20T08:00:00.000Z" })).toEqual({
+      title: "Acme a pris rendez-vous",
+      body: "Rendez-vous le mardi 20 octobre à 10:00, depuis « Devis ».",
+    });
+    expect(extensionNotice("MEETING_BOOKED", "Acme", "Devis", { meetingAt: null }).body).toBe(
+      "Depuis « Devis ». La date est dans votre agenda.",
+    );
+  });
+
   it("asks the seller to extend an expired link", () => {
     expect(extensionNotice("LINK_EXTENSION_REQUESTED", "Acme", "Devis", {})).toEqual({
       title: "Acme demande plus de temps",

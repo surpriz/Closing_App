@@ -59,4 +59,27 @@ describe("computeEngagementScore", () => {
     const result = computeEngagementScore({ ...base, dealStatus: "LOST", visitCount: 5 });
     expect(result).toMatchObject({ score: 0, tier: "COLD" });
   });
+
+  it("counts a booking click, and a confirmed booking instead", () => {
+    const clicked = computeEngagementScore({ ...base, meetingClicked: true });
+    expect(clicked.score).toBe(5);
+    expect(clicked.reasons.map((r) => r.code)).toEqual(["meeting_clicked"]);
+
+    const booked = computeEngagementScore({ ...base, meetingClicked: true, meetingBooked: true });
+    expect(booked.score).toBe(25);
+    expect(booked.reasons.map((r) => r.code)).toEqual(["meeting_booked"]);
+  });
+
+  it("keeps the score capped with a booking", () => {
+    const result = computeEngagementScore({
+      ...base,
+      lastActivityAt: new Date(now.getTime() - 60 * 60 * 1000),
+      totalDurationMs: 6 * 60 * 1000,
+      visitCount: 3,
+      uniqueViewers: 3,
+      completionRatio: 1,
+      meetingBooked: true,
+    });
+    expect(result.score).toBe(100);
+  });
 });

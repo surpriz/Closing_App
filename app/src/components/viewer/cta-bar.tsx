@@ -1,9 +1,9 @@
 "use client";
 
-import { Check, Download, MessageSquareText } from "lucide-react";
+import { CalendarDays, Check, Download, MessageSquareText } from "lucide-react";
 import { useState, useTransition } from "react";
 
-import { submitProspectAction } from "@/app/v/[slug]/actions";
+import { recordMeetingBooked, recordMeetingClick, submitProspectAction } from "@/app/v/[slug]/actions";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,9 +19,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { DealStatus } from "@/generated/prisma/enums";
+import type { BookingTarget } from "@/lib/closing/booking/url";
 import { SIGNER_NAME } from "@/lib/closing/i18n/signed-email";
 import type { ViewerLabels } from "@/lib/closing/i18n/viewer";
 import { cn } from "@/lib/utils";
+
+import { BookingDialog } from "./booking-dialog";
 
 type Props = {
   slug: string;
@@ -35,6 +38,8 @@ type Props = {
   signerName: string | null;
   /** PDF only: once signed, the prospect keeps a copy. */
   downloadUrl?: string;
+  /** The seller's booking page, null when they have none. */
+  booking: BookingTarget | null;
 };
 
 export function CtaBar({
@@ -46,6 +51,7 @@ export function CtaBar({
   atEnd = false,
   signerName,
   downloadUrl,
+  booking,
 }: Props) {
   const [status, setStatus] = useState<DealStatus>(initialStatus);
   const [dialog, setDialog] = useState<"validate" | "change" | null>(null);
@@ -55,6 +61,26 @@ export function CtaBar({
   const [receipt, setReceipt] = useState(false);
   const [error, setError] = useState(false);
   const [pending, startTransition] = useTransition();
+  // Bumped on each opening: the booking frame remounts fresh
+  const [bookingOpening, setBookingOpening] = useState(0);
+  const [bookingOpen, setBookingOpen] = useState(false);
+  const [booked, setBooked] = useState(false);
+
+  function openBooking() {
+    if (!booking) return;
+    void recordMeetingClick({ slug, viewId: getViewId() });
+    if (booking.mode === "tab") {
+      window.open(booking.src, "_blank", "noopener,noreferrer");
+      return;
+    }
+    setBookingOpening((n) => n + 1);
+    setBookingOpen(true);
+  }
+
+  function onBooked(startTime: string | null) {
+    setBooked(true);
+    void recordMeetingBooked({ slug, viewId: getViewId(), startTime });
+  }
 
   function submit(type: "VALIDATE_SIGN" | "REQUEST_CHANGE") {
     setError(false);
@@ -116,7 +142,9 @@ export function CtaBar({
           ) : (
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <p className="px-2 text-sm text-muted-foreground sm:mr-auto" role="status">
-                {status === "CHANGE_REQUESTED" ? (
+                {booked ? (
+                  labels.meetingBooked
+                ) : status === "CHANGE_REQUESTED" ? (
                   labels.changeRequested
                 ) : (
                   <span className={cn("hidden sm:inline", atEnd && "inline font-medium text-foreground")}>
@@ -125,6 +153,19 @@ export function CtaBar({
                 )}
               </p>
               <div className="flex gap-2">
+                {booking && (
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="h-11 w-11 px-0 sm:w-auto sm:px-4"
+                    aria-label={labels.bookMeeting}
+                    onClick={openBooking}
+                    disabled={pending}
+                  >
+                    <CalendarDays />
+                    <span className="hidden sm:inline">{labels.bookMeeting}</span>
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   size="lg"
@@ -146,6 +187,17 @@ export function CtaBar({
           {error && !dialog && <p className="px-2 pt-1 text-center text-sm text-destructive">{labels.actionError}</p>}
         </div>
       </div>
+
+      {booking && booking.mode === "embed" && bookingOpening > 0 && (
+        <BookingDialog
+          key={bookingOpening}
+          open={bookingOpen}
+          onOpenChange={setBookingOpen}
+          target={booking}
+          labels={labels}
+          onBooked={onBooked}
+        />
+      )}
 
       <Dialog open={dialog !== null} onOpenChange={(open) => !open && !pending && setDialog(null)}>
         <DialogContent showCloseButton={false} className="sm:max-w-md">

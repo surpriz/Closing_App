@@ -6,7 +6,15 @@ import { formatDuration } from "@/lib/format";
  * follow-ups, newest first. Inputs are plain facts so this stays pure.
  */
 
-export type FeedKind = "read" | "validated" | "change" | "extension" | "alert" | "followup";
+export type FeedKind =
+  | "read"
+  | "validated"
+  | "change"
+  | "extension"
+  | "meeting"
+  | "meeting_click"
+  | "alert"
+  | "followup";
 
 export type FeedItem = {
   id: string;
@@ -76,15 +84,19 @@ function describeRead(view: FeedSource["views"][number]) {
   return `a lu ${view.documentName} pendant ${formatDuration(view.totalDurationMs)}${pricing}`;
 }
 
-const ACTION_KIND = {
+export const ACTION_KIND = {
   VALIDATE_SIGN: "validated",
   REQUEST_CHANGE: "change",
   REQUEST_EXTENSION: "extension",
+  MEETING_BOOKED: "meeting",
+  MEETING_CLICK: "meeting_click",
 } as const satisfies Record<ProspectActionType, FeedKind>;
 
 function describeAction(type: ProspectActionType, documentName: string) {
   if (type === "VALIDATE_SIGN") return `a validé ${documentName}`;
   if (type === "REQUEST_EXTENSION") return `demande une prolongation de ${documentName}`;
+  if (type === "MEETING_BOOKED") return `a pris rendez-vous depuis ${documentName}`;
+  if (type === "MEETING_CLICK") return `a ouvert votre agenda depuis ${documentName}`;
   return `demande un ajustement sur ${documentName}`;
 }
 
@@ -100,6 +112,7 @@ function describeAlert(type: SellerAlertType, payload: unknown) {
   if (type === "CHANGE_REQUESTED") return "fait l'objet d'une demande d'ajustement";
   if (type === "PROSPECT_QUESTION") return "a une question en attente de votre réponse";
   if (type === "VOICE_COMMENT") return "vous a laissé un commentaire vocal";
+  if (type === "MEETING_BOOKED") return "a débouché sur un rendez-vous";
   if (type === "MULTI_VIEWER") {
     return liveViewers ? `est lu par ${liveViewers} personnes en même temps` : "est lu à plusieurs";
   }

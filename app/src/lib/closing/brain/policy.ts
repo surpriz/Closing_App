@@ -23,6 +23,8 @@ export type FollowupPolicyInput = {
     followupsEnabled: boolean;
     archived: boolean;
     snoozedUntil: Date | null;
+    /** The prospect booked a meeting from the viewer: written follow-ups stop for good. */
+    meetingBooked?: boolean;
     decisionDeadline: Date | null;
     /** After it the link no longer opens: nothing may land later. */
     expiresAt?: Date | null;
@@ -63,6 +65,7 @@ export function decideFollowup(input: FollowupPolicyInput): FollowupDecision {
   if (deal.archived || !["OPEN", "CHANGE_REQUESTED"].includes(deal.dealStatus)) reasons.push("Le deal n'est plus en cours.");
   if (!deal.followupsEnabled) reasons.push("Les relances sont coupées sur ce lien.");
   if (deal.snoozedUntil && deal.snoozedUntil > now) reasons.push("Le deal est en pause.");
+  if (deal.meetingBooked) reasons.push("Le prospect a pris rendez-vous : plus de relance automatique.");
   if (!prospect) reasons.push("Aucun contact à qui écrire.");
   else if (prospect.unsubscribed) reasons.push("Le contact s'est désinscrit.");
   if (history.approvedPending) reasons.push("Une relance validée attend déjà son envoi.");

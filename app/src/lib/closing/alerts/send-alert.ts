@@ -32,11 +32,19 @@ export type AlertPayload = {
   /** VOICE_COMMENT: the page it was left on, and what was said when the transcription worked. */
   pageNumber?: number;
   transcript?: string | null;
+  /** MEETING_BOOKED: start of the meeting, ISO, when the widget gave it (Cal.com). */
+  meetingAt?: string | null;
 };
 
 const READER_ALERTS = new Set<SellerAlertType>(["COMMITTEE_LIVE", "DECISION_MAKER_DETECTED", "NEW_READER"]);
 /** Alerts the seller answers straight to the prospect: the email replies to them. */
-const REPLY_ALERTS = new Set<SellerAlertType>(["CHANGE_REQUESTED", "PROSPECT_QUESTION", "LINK_EXTENSION_REQUESTED", "VOICE_COMMENT"]);
+const REPLY_ALERTS = new Set<SellerAlertType>([
+  "CHANGE_REQUESTED",
+  "PROSPECT_QUESTION",
+  "LINK_EXTENSION_REQUESTED",
+  "VOICE_COMMENT",
+  "MEETING_BOOKED",
+]);
 
 export type AlertDelivery = {
   linkId: string;
@@ -130,6 +138,25 @@ export function alertMessage(
       if (payload.message) blocks.push({ kind: "quote", text: payload.message });
       blocks.push({ kind: "button", label: "Voir le deal", href: linkUrl });
       return { subject: `${who} a validé votre proposition`, line: `${who} a validé ${doc}`, blocks, url: linkUrl };
+    }
+    case "MEETING_BOOKED": {
+      const when = payload.meetingAt ? formatDeadline(new Date(payload.meetingAt), "fr-FR", timezone) : null;
+      const blocks: EmailBlock[] = [
+        {
+          kind: "text",
+          text: `${who} vient de réserver un rendez-vous depuis ${doc}${when ? `, pour le ${when}` : ""}. Les relances automatiques de ce deal sont arrêtées.`,
+        },
+      ];
+      if (!when) blocks.push({ kind: "text", text: "La date et l'heure sont dans votre agenda." });
+      const reply = replyButton(link, payload);
+      if (reply) blocks.push(reply);
+      blocks.push({ kind: "button", label: "Voir le deal", href: linkUrl });
+      return {
+        subject: `${who} a pris rendez-vous${when ? ` le ${when}` : ""}`,
+        line: `${who} a pris rendez-vous${when ? ` pour le ${when}` : ""} depuis ${doc}`,
+        blocks,
+        url: linkUrl,
+      };
     }
     case "CHANGE_REQUESTED": {
       const blocks: EmailBlock[] = [{ kind: "text", text: `${who} demande un ajustement sur ${doc}.` }];
@@ -312,6 +339,8 @@ export async function createAndDeliverAlert(input: AlertDelivery) {
             ? "❓"
             : input.type === "VOICE_COMMENT"
               ? "🎙️"
+              : input.type === "MEETING_BOOKED"
+                ? "📅"
               : input.type === "LINK_EXTENSION_REQUESTED" || input.type === "LINK_EXPIRING"
                 ? "⏳"
                 : input.priority === "ACTION"

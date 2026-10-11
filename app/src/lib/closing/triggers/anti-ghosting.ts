@@ -17,6 +17,7 @@ export async function scanAntiGhosting(now = new Date()) {
       followupsEnabled: true,
       dealStatus: "OPEN",
       archivedAt: null,
+      meetingBookedAt: null,
       AND: [{ OR: [{ snoozedUntil: null }, { snoozedUntil: { lte: now } }] }, notExpired(now)],
       sentAt: { lte: new Date(now.getTime() - DAY_MS) },
       views: { none: { isBot: false } },

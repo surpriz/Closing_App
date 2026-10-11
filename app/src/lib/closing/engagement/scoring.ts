@@ -14,6 +14,8 @@ export type EngagementInput = {
   pricingDurationMs: number;
   pricingThresholdMs: number;
   completionRatio: number; // furthest page reached / page count, 0..1
+  meetingClicked?: boolean; // opened the seller's booking page
+  meetingBooked?: boolean; // and the widget confirmed a booking
 };
 
 export type EngagementResult = {
@@ -73,6 +75,10 @@ export function computeEngagementScore(input: EngagementInput): EngagementResult
   else if (input.completionRatio >= 0.5) add("read_halfway", 4);
 
   if (input.dealStatus === "CHANGE_REQUESTED") add("change_requested", 10);
+
+  // A booking replaces the intent: it is the same gesture, carried through
+  if (input.meetingBooked) add("meeting_booked", 25);
+  else if (input.meetingClicked) add("meeting_clicked", 5);
 
   const score = Math.min(100, reasons.reduce((sum, r) => sum + r.weight, 0));
   return { score, tier: tierFor(score), reasons };

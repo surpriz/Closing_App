@@ -81,6 +81,7 @@ export function ScoreGuide({
       : []),
     ...(hasPages ? ([["Progression", "4 si lu à moitié, 10 si lu jusqu'au bout"]] as [string, string][]) : []),
     ["Ajustement demandé", "10 points"],
+    ["Rendez-vous", "5 s'il ouvre votre agenda, 25 s'il réserve un créneau"],
   ];
 
   return (

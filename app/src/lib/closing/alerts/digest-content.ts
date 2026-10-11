@@ -15,7 +15,12 @@ export type DigestData = {
   sinceLabel: string;
   todo: { label: string; documentName: string; why: string; url: string }[];
   /** Prospect answers, and questions the assistant passed on to the seller. */
-  actions: { label: string; kind: "validated" | "change" | "extension" | "question"; message: string | null; url: string }[];
+  actions: {
+    label: string;
+    kind: "validated" | "change" | "extension" | "meeting" | "question";
+    message: string | null;
+    url: string;
+  }[];
   counts: { readers: number; followupsSent: number; followupsFailed: number; unsubscribed: number };
   /** Autopilot: follow-ups that went out without the seller reading them. */
   autoSent: { label: string; subject: string | null; url: string }[];
@@ -66,7 +71,9 @@ export function buildDigest(data: DigestData) {
               ? `${a.label} demande un ajustement`
               : a.kind === "extension"
                 ? `${a.label} demande une prolongation`
-                : `${a.label} a posé une question`,
+                : a.kind === "meeting"
+                  ? `${a.label} a pris rendez-vous`
+                  : `${a.label} a posé une question`,
         detail: a.message ? `« ${a.message.length > 180 ? `${a.message.slice(0, 177)}…` : a.message} »` : undefined,
         href: a.url,
       })),

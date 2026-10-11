@@ -298,7 +298,11 @@ export function buildDealStory(input: DealFactsInput): DealStory {
         ? "a cliqué « Valider la proposition »"
         : action.type === "REQUEST_EXTENSION"
           ? "a demandé à rouvrir la proposition expirée"
-          : "a demandé un ajustement";
+          : action.type === "MEETING_BOOKED"
+            ? "a réservé un rendez-vous dans l'agenda du vendeur"
+            : action.type === "MEETING_CLICK"
+              ? "a ouvert l'agenda du vendeur pour prendre rendez-vous"
+              : "a demandé un ajustement";
     const message = action.message
       ? ` : <untrusted_prospect_message>${action.message.slice(0, 600)}</untrusted_prospect_message>`
       : "";

@@ -4,6 +4,7 @@ import { ExternalLink } from "lucide-react";
 
 import { buttonVariants } from "@/components/ui/button";
 import type { DealStatus } from "@/generated/prisma/enums";
+import type { BookingTarget } from "@/lib/closing/booking/url";
 import type { SupportedLocale } from "@/lib/closing/constants";
 import type { ViewerLabels } from "@/lib/closing/i18n/viewer";
 
@@ -26,6 +27,7 @@ type Props = {
   ctaEnabled: boolean;
   /** The reader's name when known, offered when they sign. */
   signerName: string | null;
+  booking: BookingTarget | null;
   dealStatus: DealStatus;
   locale: SupportedLocale;
   /** Null when the assistant is off for this link. */
@@ -46,6 +48,7 @@ export function WebViewer({
   labels,
   ctaEnabled,
   signerName,
+  booking,
   dealStatus,
   locale,
   chat,
@@ -119,6 +122,7 @@ export function WebViewer({
           getViewId={getViewId}
           documentName={documentName}
           signerName={signerName}
+          booking={booking}
         />
       )}
 

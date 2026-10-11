@@ -161,6 +161,35 @@ describe("seller-side context", () => {
     expect(computeNextAction({ ...base, tier: "HOT", lastSellerContactAt: ago(3) }).kind).toBe("call");
   });
 
+  it("stops chasing once the prospect booked a meeting", () => {
+    const at = ago(1);
+    expect(computeNextAction({ ...base, lastActivityAt: ago(10), meetingBookedAt: at })).toEqual({
+      kind: "meeting_booked",
+      at,
+      meetingAt: null,
+    });
+    expect(computeNextAction({ ...base, readingNow: true, meetingBookedAt: at }).kind).toBe("call_now");
+    expect(isUrgent({ kind: "meeting_booked", at, meetingAt: null })).toBe(false);
+  });
+
+  it("lets the booking go after the meeting, or after a week without a date", () => {
+    const soon = new Date(now.getTime() + 2 * DAY);
+    expect(computeNextAction({ ...base, lastActivityAt: ago(10), meetingBookedAt: ago(20), meetingAt: soon }).kind).toBe(
+      "meeting_booked",
+    );
+    expect(computeNextAction({ ...base, lastActivityAt: ago(10), meetingBookedAt: ago(20), meetingAt: ago(2) }).kind).toBe(
+      "nudge",
+    );
+    expect(computeNextAction({ ...base, lastActivityAt: ago(10), meetingBookedAt: ago(8) }).kind).toBe("nudge");
+  });
+
+  it("says when the meeting is", () => {
+    const meetingAt = new Date("2026-12-03T09:00:00Z");
+    expect(describeNextAction({ kind: "meeting_booked", at: ago(1), meetingAt }, now)).toBe(
+      "Rendez-vous le 3 décembre : préparez l'échange.",
+    );
+  });
+
   it("stays quiet while the deal is snoozed, then resumes", () => {
     const until = new Date(now.getTime() + 2 * DAY);
     expect(computeNextAction({ ...base, lastActivityAt: ago(10), snoozedUntil: until })).toEqual({

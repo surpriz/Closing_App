@@ -30,6 +30,9 @@ export type NextActionInput = {
   /** Last call, reply or meeting the seller logged. */
   lastSellerContactAt: Date | null;
   snoozedUntil: Date | null;
+  /** The prospect booked a meeting from the viewer, and its start when the widget gave it. */
+  meetingBookedAt?: Date | null;
+  meetingAt?: Date | null;
 };
 
 export type NextAction =
@@ -43,6 +46,8 @@ export type NextAction =
   | { kind: "nudge"; days: number; opened: boolean }
   | { kind: "wait"; days: number; opened: boolean; tier: Tier | null }
   | { kind: "in_touch"; at: Date }
+  /** A meeting is in the seller's calendar: follow-ups stopped, nothing to chase. */
+  | { kind: "meeting_booked"; at: Date; meetingAt: Date | null }
   | { kind: "snoozed"; until: Date }
   /** What the deal analysis recommends, when it is current. */
   | { kind: "ai_advice"; text: string; urgent: boolean };
@@ -57,6 +62,7 @@ const URGENCY: NextAction["kind"][] = [
   "ai_advice",
   "nudge",
   "followup_planned",
+  "meeting_booked",
   "in_touch",
   "wait",
   "snoozed",
@@ -69,7 +75,15 @@ export function isUrgent(action: NextAction) {
 }
 
 /** Rule outcomes that describe a fact of the moment: they stay, whatever the analysis says. */
-const FACTUAL: NextAction["kind"][] = ["close_won", "call_now", "reply", "review_draft", "in_touch", "snoozed"];
+const FACTUAL: NextAction["kind"][] = [
+  "close_won",
+  "call_now",
+  "reply",
+  "review_draft",
+  "meeting_booked",
+  "in_touch",
+  "snoozed",
+];
 
 /**
  * The analysis has the last word on what to do, except for facts of the
@@ -98,6 +112,16 @@ const QUIET_DAYS_BEFORE_NUDGE = 3;
 const PRICING_CALL_WINDOW_MS = 3 * DAY_MS;
 /** After a call or a reply logged by the seller, the ball is in the prospect's court for a while. */
 const IN_TOUCH_WINDOW_MS = 2 * DAY_MS;
+/** A booking leads the deal until the day after the meeting, or this long when its date is unknown. */
+const MEETING_UNKNOWN_DATE_WINDOW_MS = 7 * DAY_MS;
+
+function meetingStillAhead(input: NextActionInput) {
+  if (!input.meetingBookedAt) return false;
+  const until = input.meetingAt
+    ? input.meetingAt.getTime() + DAY_MS
+    : input.meetingBookedAt.getTime() + MEETING_UNKNOWN_DATE_WINDOW_MS;
+  return input.now.getTime() < until;
+}
 
 function daysSince(date: Date, now: Date) {
   return Math.max(0, Math.floor((now.getTime() - date.getTime()) / DAY_MS));
@@ -110,6 +134,9 @@ export function computeNextAction(input: NextActionInput): NextAction {
   if (input.dealStatus === "CHANGE_REQUESTED") return { kind: "reply" };
   if (input.draftToReview) return { kind: "review_draft" };
   if (input.snoozedUntil && input.snoozedUntil > now) return { kind: "snoozed", until: input.snoozedUntil };
+  if (input.meetingBookedAt && meetingStillAhead(input)) {
+    return { kind: "meeting_booked", at: input.meetingBookedAt, meetingAt: input.meetingAt ?? null };
+  }
   if (input.lastSellerContactAt && now.getTime() - input.lastSellerContactAt.getTime() < IN_TOUCH_WINDOW_MS) {
     return { kind: "in_touch", at: input.lastSellerContactAt };
   }
@@ -145,6 +172,11 @@ export function describeNextAction(action: NextAction, now: Date): string {
       return "Demande d'ajustement en attente : répondez.";
     case "review_draft":
       return "Relance prête : relisez-la et validez.";
+    case "meeting_booked":
+      if (!action.meetingAt) return `Rendez-vous pris ${formatRelative(action.at, now)} : préparez l'échange.`;
+      return action.meetingAt > now
+        ? `Rendez-vous le ${new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long" }).format(action.meetingAt)} : préparez l'échange.`
+        : "Rendez-vous passé : notez comment il s'est passé.";
     case "in_touch":
       return `Échange noté ${formatRelative(action.at, now)}, laissez-lui le temps.`;
     case "ai_advice":

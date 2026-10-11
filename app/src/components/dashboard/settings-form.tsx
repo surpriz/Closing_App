@@ -46,6 +46,8 @@ type Props = {
     morningDigest: boolean;
     digestHour: number;
     extensionConnected: boolean;
+    /** The seller's own booking page, offered on their links. */
+    bookingUrl: string;
   };
   providers: { email: boolean; ai: string | null };
   /** Owners and admins set the workspace; everyone sets their own notifications. */
@@ -384,15 +386,39 @@ export function SettingsForm({ initial, notifications, providers, canEditWorkspa
         </Section>
 
         <Section
+          id="agenda"
+          title="Votre agenda"
+          description="Votre page de prise de rendez-vous : vos prospects réservent un créneau depuis vos liens. Ce réglage ne concerne que vous."
+        >
+          <div className="space-y-1.5 px-5 py-4">
+            <Label htmlFor="bookingUrl">Lien de prise de rendez-vous</Label>
+            <Input
+              id="bookingUrl"
+              name="bookingUrl"
+              type="text"
+              inputMode="url"
+              autoComplete="url"
+              defaultValue={notifications.bookingUrl}
+              placeholder="https://calendly.com/vous/30min"
+            />
+            <p className="text-sm text-muted-foreground">
+              Calendly et Cal.com s&apos;affichent dans la page du prospect, avec son nom et son email déjà remplis.
+              HubSpot, Google Agenda, Microsoft Bookings et les autres s&apos;ouvrent dans un nouvel onglet. Vide : pas de
+              bouton « Prendre rendez-vous ».
+            </p>
+          </div>
+        </Section>
+
+        <Section
           id="alertes"
           title="Être prévenu"
           description="Seulement quand ça vaut le coup : un prospect qui répond, un bon moment pour appeler, et un point chaque matin. Ces réglages ne concernent que vous."
         >
-          <Row hint="Validation ou demande d'ajustement : c'est rare, et le prospect attend votre retour.">
+          <Row hint="Validation, demande d'ajustement ou rendez-vous pris : c'est rare, et le prospect attend votre retour.">
             <ChannelBox
               name="emailActions"
               value="on"
-              label="Un email dès qu'un prospect valide ou demande un ajustement"
+              label="Un email dès qu'un prospect valide, demande un ajustement ou prend rendez-vous"
               defaultChecked={notifications.emailActions}
               onChange={markDirty}
             />

@@ -20,6 +20,7 @@ export async function readerLinkFor(
     organizationId: string;
     createdById: string | null;
     ctaEnabled: boolean;
+    bookingUrl: string | null;
     chatEnabled: boolean;
     voiceCommentsEnabled: boolean;
     followupsEnabled: boolean;
@@ -55,6 +56,7 @@ export async function readerLinkFor(
       // They just gave their email: the gate is behind them
       requireEmail: true,
       ctaEnabled: parent.ctaEnabled,
+      bookingUrl: parent.bookingUrl,
       chatEnabled: parent.chatEnabled,
       voiceCommentsEnabled: parent.voiceCommentsEnabled,
       followupsEnabled: parent.followupsEnabled,

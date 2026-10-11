@@ -43,6 +43,7 @@ describe("decideFollowup", () => {
     ["closed deal", { deal: deal({ dealStatus: "WON" }) }, "Le deal n'est plus en cours."],
     ["follow-ups off", { deal: deal({ followupsEnabled: false }) }, "Les relances sont coupées sur ce lien."],
     ["snoozed", { deal: deal({ snoozedUntil: new Date(now.getTime() + DAY) }) }, "Le deal est en pause."],
+    ["meeting booked", { deal: deal({ meetingBooked: true }) }, "Le prospect a pris rendez-vous : plus de relance automatique."],
     ["unsubscribed", { prospect: { unsubscribed: true, canWhatsApp: false, timezone: "Europe/Paris" } }, "Le contact s'est désinscrit."],
     ["no contact", { prospect: null }, "Aucun contact à qui écrire."],
     ["approved one waiting", { history: history({ approvedPending: true }) }, "Une relance validée attend déjà son envoi."],

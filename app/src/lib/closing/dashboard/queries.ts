@@ -89,6 +89,8 @@ export async function getOpenDeals(
       lastActivityAt: true,
       followupsEnabled: true,
       snoozedUntil: true,
+      meetingBookedAt: true,
+      meetingAt: true,
       engagementScore: { select: { score: true, tier: true, reasons: true } },
       document: { select: { name: true } },
       prospects: firstProspect,
@@ -230,7 +232,7 @@ export async function getFeedSource(
       },
     }),
     prisma.sellerAlert.findMany({
-      where: { ...ofWorkspace, type: { notIn: ["PROSPECT_VALIDATED", "CHANGE_REQUESTED", "LINK_EXTENSION_REQUESTED"] }, ...(since && { createdAt: { gte: since } }) },
+      where: { ...ofWorkspace, type: { notIn: ["PROSPECT_VALIDATED", "CHANGE_REQUESTED", "MEETING_BOOKED", "LINK_EXTENSION_REQUESTED"] }, ...(since && { createdAt: { gte: since } }) },
       orderBy: { createdAt: "desc" },
       take: FEED_TAKE,
       select: { id: true, createdAt: true, type: true, payload: true, link: { select: linkLabelSelect } },

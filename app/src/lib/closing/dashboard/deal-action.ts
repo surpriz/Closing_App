@@ -25,6 +25,8 @@ export function dealAction(deal: OpenDeal, now: Date, readingNow: boolean) {
       draftToReview: deal.draftCount > 0,
       lastSellerContactAt: deal.lastSellerContactAt,
       snoozedUntil: deal.snoozedUntil,
+      meetingBookedAt: deal.meetingBookedAt,
+      meetingAt: deal.meetingAt,
     }),
     ai.advice,
     { action: INSIGHT_ACTION_LABELS, timing: TIMING_LABELS },

@@ -5,6 +5,7 @@ import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { BOOKING_URL_ERROR, parseOptionalBookingUrl } from "@/lib/closing/booking/url";
 import { isSafeOutboundUrl } from "@/lib/closing/channels/webhooks";
 import { upsertSellerPrefs } from "@/lib/closing/notify/preferences";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
@@ -72,6 +73,12 @@ const prefsSchema = z.object({
     .max(64)
     .refine((tz) => tz === "" || isValidTimezone(tz))
     .transform((tz) => tz || undefined),
+  // Empty = no booking button on this seller's links
+  bookingUrl: z.string().transform((v, ctx) => {
+    const url = parseOptionalBookingUrl(v);
+    if (url === undefined) ctx.addIssue({ code: "custom", message: BOOKING_URL_ERROR });
+    return url ?? null;
+  }),
 });
 
 function isValidTimezone(timeZone: string) {
@@ -93,8 +100,9 @@ export async function saveWorkspaceSettings(_prev: SettingsState, formData: Form
     morningDigest: formData.get("morningDigest") === "on",
     digestHour: String(formData.get("digestHour") ?? "8"),
     timezone: String(formData.get("timezone") ?? ""),
+    bookingUrl: String(formData.get("bookingUrl") ?? ""),
   });
-  if (!prefs.success) return { error: "Réglages de notification invalides." };
+  if (!prefs.success) return { error: prefs.error.issues[0]?.message ?? "Réglages de notification invalides." };
 
   // A plain member only owns their notifications. Their workspace fields are
   // disabled, so not even sent: parsing them would wipe the saved values.

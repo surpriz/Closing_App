@@ -8,6 +8,7 @@ import type { DealStatus, ProspectRole } from "@/generated/prisma/enums";
 import { inBackground } from "@/lib/closing/background";
 import { actOnInsight } from "@/lib/closing/brain/act";
 import { analyzeDeal } from "@/lib/closing/brain/analyze-deal";
+import { BOOKING_URL_ERROR, parseOptionalBookingUrl } from "@/lib/closing/booking/url";
 import { editableLinks } from "@/lib/closing/dashboard/queries";
 import { applyDealStatus } from "@/lib/closing/deals/status";
 import { confirmLinkSent } from "@/lib/closing/documents/create-link";
@@ -150,6 +151,16 @@ export async function setLinkSwitch(linkId: string, key: LinkSwitch, value: bool
   }
   revalidateLink(link);
   return { ok: true };
+}
+
+/** "Lien de rendez-vous" of the settings panel. Empty = the seller's own page. */
+export async function setLinkBookingUrl(linkId: string, value: string) {
+  const link = await requireOwnedLink(linkId);
+  const bookingUrl = parseOptionalBookingUrl(value);
+  if (bookingUrl === undefined) return { error: BOOKING_URL_ERROR };
+  await prisma.link.update({ where: { id: link.id }, data: { bookingUrl } });
+  revalidateLink(link);
+  return { ok: true, bookingUrl };
 }
 
 export async function renameLink(linkId: string, name: string) {

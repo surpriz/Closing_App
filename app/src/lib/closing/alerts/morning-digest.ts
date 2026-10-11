@@ -104,7 +104,8 @@ async function loadDigestData(
   const [deals, actions, questions, readers, followupsSent, followupsFailed, unsubscribed, autoSent, drafts, expiring] = await Promise.all([
     getOpenDeals(organizationId, { owner: scope }),
     prisma.prospectAction.findMany({
-      where: { createdAt: { gte: since }, link: mine },
+      // A look at the calendar is not an answer; a booking is
+      where: { createdAt: { gte: since }, link: mine, type: { not: "MEETING_CLICK" } },
       orderBy: { createdAt: "asc" },
       select: { type: true, message: true, linkId: true, createdAt: true, link: linkLabel },
     }),
@@ -161,7 +162,15 @@ async function loadDigestData(
       ...actions.map((a) => ({
         at: a.createdAt,
         label: prospectLabel(a.link),
-        kind: ({ VALIDATE_SIGN: "validated", REQUEST_CHANGE: "change", REQUEST_EXTENSION: "extension" } as const)[a.type],
+        kind: (
+          {
+            VALIDATE_SIGN: "validated",
+            REQUEST_CHANGE: "change",
+            REQUEST_EXTENSION: "extension",
+            MEETING_BOOKED: "meeting",
+            MEETING_CLICK: "meeting",
+          } as const
+        )[a.type],
         message: a.message,
         url: `${appUrl}/links/${a.linkId}`,
       })),

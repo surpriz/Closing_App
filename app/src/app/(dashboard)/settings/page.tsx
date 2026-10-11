@@ -30,6 +30,7 @@ const SECTIONS = [
   { id: "liens", label: "Vos liens" },
   { id: "assistant", label: "Assistant prospect" },
   { id: "messages", label: "Vos messages" },
+  { id: "agenda", label: "Votre agenda" },
   { id: "alertes", label: "Être prévenu" },
   { id: "extension", label: "Chrome et Outlook" },
   { id: "equipe", label: "Équipe", managerOnly: true },
@@ -103,6 +104,7 @@ export default async function SettingsPage() {
               morningDigest: prefs.morningDigest,
               digestHour: prefs.digestHour,
               extensionConnected: tokens.length > 0,
+              bookingUrl: prefs.bookingUrl ?? "",
             }}
             providers={{
               email: isEmailConfigured(),

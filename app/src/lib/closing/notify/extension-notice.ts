@@ -19,6 +19,7 @@ export function extensionNotice(
     liveViewers?: number;
     inactiveDays?: number;
     expiresAt?: string;
+    meetingAt?: string | null;
   },
   timezone = "Europe/Paris",
 ) {
@@ -43,6 +44,13 @@ export function extensionNotice(
       };
     case "PROSPECT_VALIDATED":
       return { title: `${who} a validé`, body: `« ${documentName} » est validé. Revenez vers ce prospect rapidement.` };
+    case "MEETING_BOOKED": {
+      const when = payload.meetingAt ? `le ${formatDeadline(new Date(payload.meetingAt), "fr-FR", timezone)}` : null;
+      return {
+        title: `${who} a pris rendez-vous`,
+        body: when ? `Rendez-vous ${when}, depuis « ${documentName} ».` : `Depuis « ${documentName} ». La date est dans votre agenda.`,
+      };
+    }
     case "CHANGE_REQUESTED":
       return {
         title: `${who} demande un ajustement`,

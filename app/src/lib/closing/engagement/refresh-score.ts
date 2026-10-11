@@ -12,6 +12,7 @@ export async function refreshEngagementScore(linkId: string, now = new Date()) {
       dealStatus: true,
       organizationId: true,
       hotPricingThresholdSec: true,
+      meetingBookedAt: true,
       document: {
         select: {
           numPages: true,
@@ -26,7 +27,7 @@ export async function refreshEngagementScore(linkId: string, now = new Date()) {
   const pricingPages = link.document.pages.map((p) => p.pageNumber);
   const viewWhere = { linkId, isBot: false };
 
-  const [totals, visitors, pricing] = await Promise.all([
+  const [totals, visitors, pricing, meetingClicks] = await Promise.all([
     prisma.documentView.aggregate({
       where: viewWhere,
       _count: { _all: true },
@@ -40,6 +41,7 @@ export async function refreshEngagementScore(linkId: string, now = new Date()) {
           _sum: { totalDurationMs: true },
         })
       : null,
+    prisma.prospectAction.count({ where: { linkId, type: "MEETING_CLICK" } }),
   ]);
 
   const result = computeEngagementScore({
@@ -54,6 +56,8 @@ export async function refreshEngagementScore(linkId: string, now = new Date()) {
     completionRatio: link.document.numPages
       ? (totals._max.maxPageReached ?? 0) / link.document.numPages
       : 0,
+    meetingClicked: meetingClicks > 0,
+    meetingBooked: link.meetingBookedAt !== null,
   });
 
   const data = {

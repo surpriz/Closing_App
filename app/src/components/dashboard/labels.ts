@@ -90,6 +90,7 @@ export const ALERT_TYPE_LABELS: Record<SellerAlertType, string> = {
   DECISION_MAKER_DETECTED: "Décideur en lecture",
   LINK_EXTENSION_REQUESTED: "Demande de prolongation",
   LINK_EXPIRING: "Lien bientôt expiré",
+  MEETING_BOOKED: "Rendez-vous pris",
 };
 
 export const PROSPECT_ROLE_LABELS: Record<ProspectRole, string> = {
@@ -123,6 +124,8 @@ export const SCORE_REASON_LABELS: Record<string, string> = {
   read_to_end: "Lu jusqu'au bout",
   read_halfway: "Lu à moitié",
   change_requested: "Ajustement demandé",
+  meeting_clicked: "A ouvert votre agenda",
+  meeting_booked: "Rendez-vous pris",
 };
 
 export const STAGE_LABELS: Record<string, string> = {

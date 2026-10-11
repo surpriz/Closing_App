@@ -7,6 +7,7 @@ export type StoredPrefs = SellerPrefs & {
   extensionSeenAt: Date | null;
   onboardingCompletedAt: Date | null;
   mailClient: string | null;
+  bookingUrl: string | null;
 };
 
 /** A seller's notification settings in one workspace. No row = defaults. */
@@ -14,7 +15,7 @@ export async function getSellerPrefs(userId: string, organizationId: string): Pr
   const row = await prisma.notificationPreference.findUnique({
     where: { userId_organizationId: { userId, organizationId } },
   });
-  if (!row) return { ...DEFAULT_PREFS, extensionSeenAt: null, onboardingCompletedAt: null, mailClient: null };
+  if (!row) return { ...DEFAULT_PREFS, extensionSeenAt: null, onboardingCompletedAt: null, mailClient: null, bookingUrl: null };
   return {
     emailActions: row.emailActions,
     emailCallMoments: row.emailCallMoments,
@@ -25,6 +26,7 @@ export async function getSellerPrefs(userId: string, organizationId: string): Pr
     extensionSeenAt: row.extensionSeenAt,
     onboardingCompletedAt: row.onboardingCompletedAt,
     mailClient: row.mailClient,
+    bookingUrl: row.bookingUrl,
   };
 }
 
@@ -35,7 +37,12 @@ export function sellerTimezone(prefs: Pick<SellerPrefs, "timezone">) {
 export function upsertSellerPrefs(
   userId: string,
   organizationId: string,
-  data: Partial<SellerPrefs> & { extensionSeenAt?: Date; onboardingCompletedAt?: Date; mailClient?: string },
+  data: Partial<SellerPrefs> & {
+    extensionSeenAt?: Date;
+    onboardingCompletedAt?: Date;
+    mailClient?: string;
+    bookingUrl?: string | null;
+  },
 ) {
   return prisma.notificationPreference.upsert({
     where: { userId_organizationId: { userId, organizationId } },

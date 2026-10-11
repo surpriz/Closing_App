@@ -97,7 +97,7 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
       },
     }),
     prisma.sellerAlert.findMany({
-      where: { link: { documentId: document.id }, type: { notIn: ["PROSPECT_VALIDATED", "CHANGE_REQUESTED"] } },
+      where: { link: { documentId: document.id }, type: { notIn: ["PROSPECT_VALIDATED", "CHANGE_REQUESTED", "MEETING_BOOKED"] } },
       orderBy: { createdAt: "desc" },
       take: 10,
       include: { link: { select: { name: true, slug: true } } },

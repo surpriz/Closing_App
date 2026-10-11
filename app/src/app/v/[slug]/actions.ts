@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { inBackground } from "@/lib/closing/background";
+import { bookingUrlForLink } from "@/lib/closing/booking/link-booking";
 import { analyzeDeal, markDealDirty } from "@/lib/closing/brain/analyze-deal";
 import { HOUR_MS } from "@/lib/closing/constants";
 import { refreshEngagementScore } from "@/lib/closing/engagement/refresh-score";
@@ -26,6 +27,7 @@ import { readerLinkFor } from "@/lib/closing/shared/reader-link";
 import { defaultTimezone } from "@/lib/closing/settings";
 import { notifySeller } from "@/lib/closing/notify/notify";
 import { getRequestContext } from "@/lib/closing/tracking/request-context";
+import { resolveViewerView } from "@/lib/closing/tracking/viewer-view";
 import { VISITOR_COOKIE } from "@/lib/closing/tracking/visitor";
 import { prisma } from "@/lib/db";
 import { isEmailConfigured } from "@/lib/email";
@@ -321,5 +323,103 @@ async function sendSignedReceipt(input: {
       senderName: owner?.organization.settings?.senderName?.trim() || owner?.createdBy?.name || null,
       url: `${getPublicAppUrl()}/v/${link.slug}`,
     }),
+  });
+}
+
+const meetingSchema = z.object({
+  slug: z.string().min(1).max(64),
+  viewId: z.string().max(64).nullable(),
+});
+
+/** Bookings recorded per link per hour; beyond that the widget still works, nothing is stored. */
+const MEETINGS_PER_LINK_HOUR = 5;
+
+/**
+ * The reader of a link that offers a booking page, in a tracked session that
+ * is not a crawler's nor the seller's own test. Null = record nothing.
+ */
+async function meetingContext(input: z.input<typeof meetingSchema>) {
+  const parsed = meetingSchema.safeParse(input);
+  if (!parsed.success) return null;
+  const link = await getLinkForViewer(parsed.data.slug);
+  if (!link || !link.ctaEnabled) return null;
+  // The seller trying their own link sees the widget, nothing is recorded
+  if (await isWorkspaceMember(link.organizationId)) return null;
+  const access = await getViewerAccess(link);
+  if (!access.allowed || !(await bookingUrlForLink(link))) return null;
+  const view = await resolveViewerView(link.id, parsed.data.viewId);
+  if (!view || view.isBot) return null;
+  const prospect = access.email
+    ? await prisma.prospect.findUnique({
+        where: { linkId_email: { linkId: link.id, email: access.email } },
+        select: { id: true, name: true, email: true },
+      })
+    : null;
+  return { link, view, prospect, email: access.email };
+}
+
+/** "Prendre rendez-vous" clicked: an intent, counted once per reading session. */
+export async function recordMeetingClick(input: z.input<typeof meetingSchema>) {
+  const context = await meetingContext(input);
+  if (!context) return;
+  const { link, view, prospect } = context;
+  const already = await prisma.prospectAction.findFirst({
+    where: { linkId: link.id, viewId: view.id, type: "MEETING_CLICK" },
+    select: { id: true },
+  });
+  if (already) return;
+  await prisma.prospectAction.create({
+    data: { linkId: link.id, viewId: view.id, prospectId: prospect?.id, type: "MEETING_CLICK" },
+  });
+  inBackground("meeting-click", () => refreshEngagementScore(link.id));
+}
+
+/**
+ * The Calendly or Cal.com widget confirmed a booking. The browser says so,
+ * like every viewer action: worst case a forged call stops the follow-ups
+ * of a link whose reader could already validate it.
+ */
+export async function recordMeetingBooked(input: z.input<typeof meetingSchema> & { startTime: string | null }) {
+  // Cal.com gives the slot, Calendly does not (no API call here)
+  const startTime = z.iso.datetime().nullable().safeParse(input.startTime);
+  if (!startTime.success) return;
+  const context = await meetingContext(input);
+  if (!context) return;
+  const { link, view, prospect, email } = context;
+
+  const recent = await prisma.prospectAction.count({
+    where: { linkId: link.id, type: "MEETING_BOOKED", createdAt: { gte: new Date(Date.now() - HOUR_MS) } },
+  });
+  if (recent >= MEETINGS_PER_LINK_HOUR) return;
+
+  const [action] = await prisma.$transaction([
+    prisma.prospectAction.create({
+      data: { linkId: link.id, viewId: view.id, prospectId: prospect?.id, type: "MEETING_BOOKED" },
+      select: { id: true },
+    }),
+    // The latest booking wins: a second one replaces the slot
+    prisma.link.update({
+      where: { id: link.id },
+      data: { meetingBookedAt: new Date(), meetingAt: startTime.data ? new Date(startTime.data) : null },
+    }),
+  ]);
+
+  inBackground("meeting-booked-alert", () =>
+    notifySeller({
+      linkId: link.id,
+      type: "MEETING_BOOKED",
+      dedupeKey: `prospect_action:${action.id}`,
+      payload: {
+        prospectName: prospect?.name ?? null,
+        prospectEmail: prospect?.email ?? email ?? null,
+        meetingAt: startTime.data,
+      },
+    }),
+  );
+
+  inBackground("meeting-booked", async () => {
+    await cancelOpenFollowups(link.id, "Rendez-vous pris par le prospect");
+    await refreshEngagementScore(link.id);
+    await analyzeDeal(link.id, "PROSPECT_ACTION");
   });
 }

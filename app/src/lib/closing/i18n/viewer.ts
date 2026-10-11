@@ -31,6 +31,11 @@ export type ViewerLabels = {
   confirmValidate: string;
   requestChange: string;
   changeRequested: string;
+  bookMeeting: string;
+  bookingTitle: string;
+  bookingFallback: string;
+  bookingOpenTab: string;
+  meetingBooked: string;
   changePlaceholder: string;
   send: string;
   cancel: string;
@@ -123,6 +128,11 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     confirmValidate: "Confirm that you accept this proposal?",
     requestChange: "Request a change",
     changeRequested: "Your request has been sent.",
+    bookMeeting: "Book a meeting",
+    bookingTitle: "Pick a time",
+    bookingFallback: "The calendar does not show up here.",
+    bookingOpenTab: "Open it in a new tab",
+    meetingBooked: "Your meeting is booked. Talk soon!",
     changePlaceholder: "What would you like to adjust?",
     send: "Send",
     cancel: "Cancel",
@@ -245,6 +255,11 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     confirmValidate: "Confirmez-vous valider cette proposition ?",
     requestChange: "Demander un ajustement",
     changeRequested: "Votre demande a bien été envoyée.",
+    bookMeeting: "Prendre rendez-vous",
+    bookingTitle: "Choisissez un créneau",
+    bookingFallback: "L'agenda ne s'affiche pas ici.",
+    bookingOpenTab: "L'ouvrir dans un nouvel onglet",
+    meetingBooked: "Votre rendez-vous est réservé. À bientôt !",
     changePlaceholder: "Que souhaitez-vous ajuster ?",
     send: "Envoyer",
     cancel: "Annuler",
@@ -367,6 +382,11 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     confirmValidate: "¿Confirmas que aceptas esta propuesta?",
     requestChange: "Solicitar un ajuste",
     changeRequested: "Tu solicitud ha sido enviada.",
+    bookMeeting: "Reservar una reunión",
+    bookingTitle: "Elige un horario",
+    bookingFallback: "La agenda no se muestra aquí.",
+    bookingOpenTab: "Abrirla en una pestaña nueva",
+    meetingBooked: "Tu reunión está reservada. ¡Hasta pronto!",
     changePlaceholder: "¿Qué te gustaría ajustar?",
     send: "Enviar",
     cancel: "Cancelar",
@@ -489,6 +509,11 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     confirmValidate: "Bestätigen Sie, dass Sie dieses Angebot annehmen?",
     requestChange: "Änderung anfragen",
     changeRequested: "Ihre Anfrage wurde gesendet.",
+    bookMeeting: "Termin vereinbaren",
+    bookingTitle: "Wählen Sie einen Termin",
+    bookingFallback: "Der Kalender wird hier nicht angezeigt.",
+    bookingOpenTab: "In einem neuen Tab öffnen",
+    meetingBooked: "Ihr Termin ist gebucht. Bis bald!",
     changePlaceholder: "Was möchten Sie anpassen?",
     send: "Senden",
     cancel: "Abbrechen",

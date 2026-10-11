@@ -49,8 +49,10 @@ import { showsCountdown } from "@/lib/closing/expiry";
 import { getSellerPrefs } from "@/lib/closing/notify/preferences";
 import { firstNameOf, guessMailClient } from "@/lib/closing/share/compose";
 import { settingsSummary } from "@/lib/closing/share/summary";
+import { sellerBookingUrl } from "@/lib/closing/booking/link-booking";
 import { getLatestInsight } from "@/lib/closing/brain/latest";
 import { getReaderMap } from "@/lib/closing/committee/queries";
+import { ACTION_KIND } from "@/lib/closing/dashboard/feed";
 import { canEditDeal } from "@/lib/closing/dashboard/queries";
 import { labelReaders } from "@/lib/closing/dashboard/readers";
 import { catchUpInBackground } from "@/lib/closing/catch-up";
@@ -126,7 +128,7 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
     }),
     // Prospect actions and forwarded questions have their own timeline entries
     prisma.sellerAlert.findMany({
-      where: { linkId: link.id, type: { notIn: ["PROSPECT_VALIDATED", "CHANGE_REQUESTED", "PROSPECT_QUESTION", "LINK_EXTENSION_REQUESTED", "VOICE_COMMENT"] } },
+      where: { linkId: link.id, type: { notIn: ["PROSPECT_VALIDATED", "CHANGE_REQUESTED", "MEETING_BOOKED", "PROSPECT_QUESTION", "LINK_EXTENSION_REQUESTED", "VOICE_COMMENT"] } },
       orderBy: { createdAt: "desc" },
       take: 20,
     }),
@@ -204,8 +206,10 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
     link.document.status === "PROCESSING" ||
     (link.autoSettings && !link.document.aiProcessedAt && new Date().getTime() - link.createdAt.getTime() < 2 * 60_000);
   const sellerPrefs = sharing ? await getSellerPrefs(workspace.user.id, organization.id) : null;
+  const sellerBooking = canEdit ? await sellerBookingUrl(link) : null;
   const settingsPanel = {
     linkId: link.id,
+    booking: { url: link.bookingUrl ?? "", fallback: sellerBooking },
     initial: {
       requireEmail: link.requireEmail,
       ctaEnabled: link.ctaEnabled,
@@ -289,6 +293,8 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
     forLink: row.linkId === link.id,
   }));
 
+  // Only the latest booking's slot is kept (Link.meetingAt)
+  const latestBooking = actions.find((action) => action.type === "MEETING_BOOKED");
   const readerLabels = labelReaders(analytics.recentViews);
   const timeline: TimelineItem[] = [
     { id: `created-${link.id}`, at: link.createdAt, kind: "created" as const, title: "Lien créé" },
@@ -309,7 +315,7 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
     ...actions.map((action) => ({
       id: `action-${action.id}`,
       at: action.createdAt,
-      kind: ({ VALIDATE_SIGN: "validated", REQUEST_CHANGE: "change", REQUEST_EXTENSION: "extension" } as const)[action.type],
+      kind: ACTION_KIND[action.type],
       title: `${action.signerName ?? action.prospect?.name ?? action.prospect?.email ?? "Le prospect"} ${
         action.type === "VALIDATE_SIGN"
           ? action.signerName
@@ -317,10 +323,16 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
             : "a validé la proposition"
           : action.type === "REQUEST_EXTENSION"
             ? "demande une prolongation"
-            : "demande un ajustement"
+            : action.type === "MEETING_BOOKED"
+              ? "a pris rendez-vous dans votre agenda"
+              : action.type === "MEETING_CLICK"
+                ? "a ouvert votre agenda"
+                : "demande un ajustement"
       }`,
       detail: action.message
         ? `« ${action.message} »`
+        : action.id === latestBooking?.id && link.meetingAt
+          ? `Rendez-vous le ${formatDate(link.meetingAt)}`
         : action.signerName && action.prospect?.email
           ? // The gate takes the reader's word: nothing proves they own that mailbox
             `Nom saisi par le signataire, lien ouvert avec l'email ${action.prospect.email} (non vérifié)`

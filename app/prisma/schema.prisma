@@ -281,6 +281,7 @@ enum SellerAlertType {
   LINK_EXTENSION_REQUESTED // the link expired and the prospect asked for more time
   LINK_EXPIRING // the link expires within 24h
   VOICE_COMMENT // the prospect left a voice comment on a page
+  MEETING_BOOKED // the prospect booked a meeting in the seller's calendar from the viewer
 }
 
 // Role of a prospect contact in the buying committee, set by the seller.
@@ -308,7 +309,7 @@ enum SellerAlertChannel {
 
 // How hard an alert may interrupt the seller (notify/policy.ts)
 enum AlertPriority {
-  ACTION // the prospect did something: validated, asked for a change
+  ACTION // the prospect did something: validated, asked for a change, booked a meeting
   CALL // reading right now, a call would land well
   INFO // can wait for the morning digest
 }
@@ -317,6 +318,8 @@ enum ProspectActionType {
   VALIDATE_SIGN
   REQUEST_CHANGE
   REQUEST_EXTENSION // the link expired, the prospect asked for more time
+  MEETING_CLICK // opened the seller's booking page (once per view)
+  MEETING_BOOKED // the booking widget reported a confirmed meeting
 }
 
 enum ChatRole {
@@ -472,6 +475,11 @@ model Link {
   ctaEnabled           Boolean    @default(true)
   // the prospect can record a voice comment on a page (PDF only)
   voiceCommentsEnabled Boolean    @default(true)
+  // Booking page shown to the prospect; null = the link creator's (NotificationPreference.bookingUrl)
+  bookingUrl           String?
+  // The prospect booked a meeting from the viewer: automatic follow-ups stop for good
+  meetingBookedAt      DateTime?
+  meetingAt            DateTime? // start of the latest booked meeting, when the widget gave it (Cal.com)
 
   followupsEnabled       Boolean           @default(true)
   channels               FollowupChannel[] // empty = workspace defaults
@@ -753,6 +761,7 @@ model NotificationPreference {
 
   onboardingCompletedAt DateTime? // null = the welcome tour opens on the next visit to /dashboard
   mailClient            String? // gmail | outlook_web | outlook_desktop | other, picked during onboarding
+  bookingUrl            String? // the seller's booking page (Calendly, Cal.com, HubSpot…), offered on their links
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

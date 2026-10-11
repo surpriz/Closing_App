@@ -55,6 +55,11 @@ export async function sendFollowup(
     await finish(followup.id, "CANCELLED", "Deal mis en pause par le vendeur");
     return "cancelled";
   }
+  // Even an approved one: the prospect is now in the seller's calendar
+  if (link.meetingBookedAt) {
+    await finish(followup.id, "CANCELLED", "Rendez-vous pris par le prospect");
+    return "cancelled";
+  }
   const now = new Date();
   // Even a message the seller approved: the link it carries no longer opens
   if (isLinkExpired(link, now)) {

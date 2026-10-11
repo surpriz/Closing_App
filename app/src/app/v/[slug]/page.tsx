@@ -12,6 +12,8 @@ import { LinkExpired } from "@/components/viewer/link-expired";
 import { PdfViewer } from "@/components/viewer/pdf-viewer";
 import { WebViewer } from "@/components/viewer/web-viewer";
 import { getLanguageModel } from "@/lib/closing/ai/provider";
+import { bookingUrlForLink } from "@/lib/closing/booking/link-booking";
+import { buildBookingTarget } from "@/lib/closing/booking/url";
 import { capsulesVisibleOnLink, resolveCapsules, WELCOME_PAGE } from "@/lib/closing/capsules/resolve";
 import { suggestQuestions, toUIMessages } from "@/lib/closing/chat/messages";
 import { loadChatSetup } from "@/lib/closing/chat/queries";
@@ -46,7 +48,8 @@ export default async function ViewerPage({ params, searchParams }: PageProps<"/v
   if (!resolved) notFound();
   const { link, expired } = resolved;
 
-  const locale = pickLocale((await headers()).get("accept-language"));
+  const requestHeaders = await headers();
+  const locale = pickLocale(requestHeaders.get("accept-language"));
   const labels = getViewerLabels(locale);
   const [access, settings, isSeller] = await Promise.all([
     getViewerAccess(link),
@@ -129,16 +132,23 @@ export default async function ViewerPage({ params, searchParams }: PageProps<"/v
   }
 
   const chat = await loadChatWidget(link, labels);
-  // "Valider & signer" starts from the name we already know
-  const signerName =
-    link.ctaEnabled && access.email
-      ? ((
-          await prisma.prospect.findUnique({
-            where: { linkId_email: { linkId: link.id, email: access.email } },
-            select: { name: true },
-          })
-        )?.name ?? null)
-      : null;
+  // "Valider & signer" and the booking page start from the name we already know
+  const [signerName, bookingUrl] = link.ctaEnabled
+    ? await Promise.all([
+        access.email
+          ? prisma.prospect
+              .findUnique({
+                where: { linkId_email: { linkId: link.id, email: access.email } },
+                select: { name: true },
+              })
+              .then((prospect) => prospect?.name ?? null)
+          : null,
+        bookingUrlForLink(link),
+      ])
+    : [null, null];
+  const booking = bookingUrl
+    ? buildBookingTarget(bookingUrl, { name: signerName, email: access.email }, requestHeaders.get("host") ?? "")
+    : null;
 
   const sellerNotice = isSeller && (
     <SellerNotice>
@@ -173,6 +183,7 @@ export default async function ViewerPage({ params, searchParams }: PageProps<"/v
             labels={labels}
             ctaEnabled={link.ctaEnabled}
             signerName={signerName}
+            booking={booking}
             dealStatus={link.dealStatus}
             locale={locale}
             chat={chat}
@@ -206,6 +217,7 @@ export default async function ViewerPage({ params, searchParams }: PageProps<"/v
           labels={labels}
           ctaEnabled={link.ctaEnabled}
           signerName={signerName}
+          booking={booking}
           dealStatus={link.dealStatus}
           locale={locale}
           chat={chat}

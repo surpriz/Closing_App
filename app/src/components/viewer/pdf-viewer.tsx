@@ -4,6 +4,7 @@ import type { PDFDocumentLoadingTask, PDFDocumentProxy, RenderTask } from "pdfjs
 import { useEffect, useRef, useState } from "react";
 
 import type { DealStatus } from "@/generated/prisma/enums";
+import type { BookingTarget } from "@/lib/closing/booking/url";
 import type { SupportedLocale } from "@/lib/closing/constants";
 import type { ViewerLabels } from "@/lib/closing/i18n/viewer";
 
@@ -29,6 +30,7 @@ type Props = {
   ctaEnabled: boolean;
   /** The reader's name when known, offered when they sign. */
   signerName: string | null;
+  booking: BookingTarget | null;
   dealStatus: DealStatus;
   locale: SupportedLocale;
   /** Null when the assistant is off for this link. */
@@ -49,6 +51,7 @@ export function PdfViewer({
   labels,
   ctaEnabled,
   signerName,
+  booking,
   dealStatus,
   locale,
   chat,
@@ -168,6 +171,7 @@ export function PdfViewer({
           getViewId={getViewId}
           documentName={documentName}
           signerName={signerName}
+          booking={booking}
           downloadUrl={`${fileUrl}?download=1`}
           atEnd={sizes.length > 0 && currentPage >= sizes.length}
         />
