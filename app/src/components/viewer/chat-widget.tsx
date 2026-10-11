@@ -15,6 +15,9 @@ import type { SupportedLocale } from "@/lib/closing/constants";
 import { fillLabel, type ViewerLabels } from "@/lib/closing/i18n/viewer";
 import { cn } from "@/lib/utils";
 
+import { useExitIntent } from "./use-exit-intent";
+import { sendSignal } from "./view-signal";
+
 export type ChatWidgetData = {
   /** Family of the document: sets the title and the placeholder. */
   kind: ChatKind;
@@ -68,6 +71,7 @@ export function ChatWidget({
 }: Props) {
   const kindLabels = labels.chatKinds[kind];
   const [open, setOpen] = useState(false);
+  const [nudge, setNudge] = useState(false);
   const [input, setInput] = useState("");
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -90,6 +94,19 @@ export function ChatWidget({
     messages: initialMessages,
     transport,
   });
+
+  // A reader who already asked something needs no nudge
+  const asked = messages.some((message) => message.role === "user");
+  useExitIntent(!open && !asked, `clozer:exit-nudge:${slug}`, () => {
+    setNudge(true);
+    sendSignal(getViewId(), "EXIT_PROMPT_SHOWN");
+  });
+
+  function openChat() {
+    if (nudge) sendSignal(getViewId(), "EXIT_PROMPT_OPENED");
+    setNudge(false);
+    setOpen(true);
+  }
 
   const sender = senderName ?? labels.chatSenderFallback;
   const withSender = (text: string) => fillLabel(text, { sender });
@@ -139,20 +156,38 @@ export function ChatWidget({
   }
 
   if (!open) {
+    const bottom = ctaVisible
+      ? "bottom-[calc(7.5rem+env(safe-area-inset-bottom))] sm:bottom-24 lg:bottom-6"
+      : "bottom-6";
     return (
-      <Button
-        ref={launcherRef}
-        size="xl"
-        onClick={() => setOpen(true)}
-        aria-label={labels.chatLauncher}
-        className={cn(
-          "fixed right-4 z-30 size-12 rounded-full px-0 shadow-lg sm:size-auto sm:px-5",
-          ctaVisible ? "bottom-[calc(7.5rem+env(safe-area-inset-bottom))] sm:bottom-24 lg:bottom-6" : "bottom-6",
+      <>
+        {nudge && (
+          <div
+            role="status"
+            className={cn(
+              "fixed right-4 z-30 mb-16 flex animate-pop items-center gap-1 rounded-full bg-popover py-1 pr-1 pl-4 text-sm text-popover-foreground shadow-lg ring-1 ring-border",
+              bottom,
+            )}
+          >
+            <button type="button" onClick={openChat} className="font-medium hover:underline">
+              {labels.chatExitNudge}
+            </button>
+            <Button variant="ghost" size="icon-sm" onClick={() => setNudge(false)} aria-label={labels.chatClose}>
+              <X />
+            </Button>
+          </div>
         )}
-      >
-        <MessageCircleQuestion className="size-5" />
-        <span className="hidden sm:inline">{labels.chatLauncher}</span>
-      </Button>
+        <Button
+          ref={launcherRef}
+          size="xl"
+          onClick={openChat}
+          aria-label={labels.chatLauncher}
+          className={cn("fixed right-4 z-30 size-12 rounded-full px-0 shadow-lg sm:size-auto sm:px-5", bottom)}
+        >
+          <MessageCircleQuestion className="size-5" />
+          <span className="hidden sm:inline">{labels.chatLauncher}</span>
+        </Button>
+      </>
     );
   }
 
