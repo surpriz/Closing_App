@@ -60,6 +60,7 @@ export async function createDocumentLink(input: {
       voiceCommentsEnabled: defaults.voiceCommentsEnabled,
       followupsEnabled: defaults.followupsEnabled,
       ctaEnabled: defaults.ctaEnabled,
+      bookingEnabled: defaults.bookingEnabled,
       shared: defaults.shared,
       autoSettings,
       sentAt: input.draft ? null : now,
@@ -123,6 +124,7 @@ export async function followDocumentType(documentId: string, now = new Date()) {
           source: true,
           expiresAt: true,
           ctaEnabled: true,
+          bookingEnabled: true,
           shared: true,
           _count: { select: { prospects: { where: { origin: "SELLER" } } } },
         },
@@ -140,9 +142,12 @@ export async function followDocumentType(documentId: string, now = new Date()) {
     const defaults = linkDefaultsFor(document.docType, settings, now, timeZone, {
       allowShared: !link.source && link._count.prospects === 0,
     });
-    const { expiresAt, ctaEnabled, shared } = defaults;
+    const { expiresAt, ctaEnabled, bookingEnabled, shared } = defaults;
     const same =
-      link.expiresAt?.getTime() === expiresAt?.getTime() && link.ctaEnabled === ctaEnabled && link.shared === shared;
+      link.expiresAt?.getTime() === expiresAt?.getTime() &&
+      link.ctaEnabled === ctaEnabled &&
+      link.bookingEnabled === bookingEnabled &&
+      link.shared === shared;
     if (same) continue;
 
     // Only if the seller has not touched them in the meantime
@@ -152,6 +157,7 @@ export async function followDocumentType(documentId: string, now = new Date()) {
       data: {
         expiresAt,
         ctaEnabled,
+        bookingEnabled,
         shared,
         ...(shared !== link.shared && { requireEmail: defaults.requireEmail, followupsEnabled: defaults.followupsEnabled }),
       },
@@ -216,6 +222,7 @@ export async function confirmLinkSent(input: {
           shared: false,
           requireEmail: defaults.requireEmail,
           ctaEnabled: defaults.ctaEnabled,
+          bookingEnabled: defaults.bookingEnabled,
           followupsEnabled: defaults.followupsEnabled,
         }),
       // The draft was named after the document; the recipient is a better deal name

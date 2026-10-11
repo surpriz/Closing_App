@@ -3,7 +3,8 @@ import { expiryInDays, showsCountdown } from "../expiry";
 /**
  * What a new link looks like when the seller sets nothing. Pure.
  * The workspace says what it wants in general; the document type adjusts it:
- * a quote gets a deadline and the "Valider" button, a brochure gets neither.
+ * a quote gets a deadline and the "Valider" button, a brochure gets neither,
+ * an invoice no "Prendre rendez-vous".
  * Before the AI has read the document the type is unknown, and the link keeps
  * the workspace values until it is.
  */
@@ -23,11 +24,15 @@ export type LinkDefaults = {
   voiceCommentsEnabled: boolean;
   followupsEnabled: boolean;
   ctaEnabled: boolean;
+  bookingEnabled: boolean;
   expiresAt: Date | null;
 };
 
 /** Documents a prospect can say yes to. */
 const AGREEABLE_DOC_TYPES = ["QUOTE", "PROPOSAL", "CONTRACT"];
+
+/** Documents that call for no meeting: the deal is already done. */
+const NO_MEETING_DOC_TYPES = ["INVOICE"];
 
 /** Documents made to circulate: one shared link, each reader their own deal. */
 const SHARED_DOC_TYPES = ["PRESENTATION", "BROCHURE", "CASE_STUDY"];
@@ -57,6 +62,7 @@ export function linkDefaultsFor(
     voiceCommentsEnabled: workspace.voiceCommentsByDefault,
     followupsEnabled: workspace.followupsByDefault,
     ctaEnabled: !known || AGREEABLE_DOC_TYPES.includes(docType),
+    bookingEnabled: !known || !NO_MEETING_DOC_TYPES.includes(docType),
     expiresAt: deadline ? expiryInDays(deadline, now, timeZone) : null,
     ...(shared && SHARED_LINK_SETTINGS),
   };

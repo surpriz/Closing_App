@@ -29,6 +29,13 @@ describe("linkDefaultsFor", () => {
     expect(defaults).toMatchObject({ shared: false, ctaEnabled: false, followupsEnabled: true });
   });
 
+  it("offers a meeting on everything but an invoice", () => {
+    expect(linkDefaultsFor("INVOICE", workspace, now, "Europe/Paris")).toMatchObject({ ctaEnabled: false, bookingEnabled: false });
+    expect(linkDefaultsFor("RESUME", workspace, now, "Europe/Paris")).toMatchObject({ ctaEnabled: false, bookingEnabled: true });
+    expect(linkDefaultsFor("QUOTE", workspace, now, "Europe/Paris").bookingEnabled).toBe(true);
+    expect(linkDefaultsFor(null, workspace, now, "Europe/Paris").bookingEnabled).toBe(true);
+  });
+
   it("keeps a quote personal", () => {
     expect(linkDefaultsFor("QUOTE", workspace, now, "Europe/Paris").shared).toBe(false);
   });
