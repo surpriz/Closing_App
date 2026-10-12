@@ -1,5 +1,4 @@
 import { getPublicAppUrl } from "@/lib/app-origin";
-import { ACTIVE_WORKSPACE } from "@/lib/closing/active-workspace";
 import { prisma } from "@/lib/db";
 import { isEmailConfigured, sendEmail } from "@/lib/email";
 import { isOwnerRole } from "@/lib/roles";
