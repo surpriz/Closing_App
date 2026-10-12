@@ -1,4 +1,4 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ChevronRight, Phone } from "lucide-react";
 import Link from "next/link";
 
 export type SharedReader = {
@@ -8,9 +8,19 @@ export type SharedReader = {
   detail: string;
   /** "Chaud", "Validé", "Ouvert"… */
   state: string;
+  /** Stayed past the pricing threshold: the ones to call. */
+  hot: boolean;
+  /** "2 min 10 s sur le tarif", "40 s de lecture". */
+  time: string | null;
 };
 
-/** Who opened a shared link: each one has their own link, a deal like any other. */
+/** Past this many, the readers who did not stay fold away. */
+const OPEN_LIST_MAX = 8;
+
+/**
+ * Who opened a shared link: each one has their own link, a deal like any
+ * other. The few who stayed come first, to call before the rest.
+ */
 export function SharedReaders({ readers }: { readers: SharedReader[] }) {
   if (readers.length === 0) {
     return (
@@ -20,6 +30,37 @@ export function SharedReaders({ readers }: { readers: SharedReader[] }) {
     );
   }
 
+  const hot = readers.filter((reader) => reader.hot);
+  const others = readers.filter((reader) => !reader.hot);
+  const fold = hot.length > 0 && others.length > OPEN_LIST_MAX;
+
+  return (
+    <div className="divide-y divide-border">
+      {hot.length > 0 && (
+        <div>
+          <p className="flex items-center gap-1.5 px-4 pt-3 text-xs font-medium text-heat-hot">
+            <Phone className="size-3.5" aria-hidden />
+            À appeler maintenant
+          </p>
+          <ReaderList readers={hot} />
+        </div>
+      )}
+      {fold ? (
+        <details className="group">
+          <summary className="flex cursor-pointer list-none items-center gap-1.5 px-4 py-3 text-sm text-muted-foreground hover:bg-muted/40">
+            <ChevronRight className="size-4 transition-transform group-open:rotate-90" aria-hidden />
+            {others.length} autres lecteurs
+          </summary>
+          <ReaderList readers={others} />
+        </details>
+      ) : (
+        others.length > 0 && <ReaderList readers={others} />
+      )}
+    </div>
+  );
+}
+
+function ReaderList({ readers }: { readers: SharedReader[] }) {
   return (
     <ul className="divide-y divide-border">
       {readers.map((reader) => (
@@ -30,7 +71,9 @@ export function SharedReaders({ readers }: { readers: SharedReader[] }) {
           >
             <span className="min-w-0 text-sm">
               <span className="block truncate font-medium">{reader.label}</span>
-              <span className="block truncate text-muted-foreground">{reader.detail}</span>
+              <span className="block truncate text-muted-foreground">
+                {[reader.time, reader.detail].filter(Boolean).join(" · ")}
+              </span>
             </span>
             <span className="flex shrink-0 items-center gap-1.5 text-sm text-muted-foreground">
               {reader.state}

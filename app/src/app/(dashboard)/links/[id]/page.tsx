@@ -40,6 +40,7 @@ import {
 } from "@/components/dashboard/link-capsules";
 import { LinkSettingsDialog } from "@/components/dashboard/link-settings-form";
 import { ShareReady } from "@/components/dashboard/share-ready";
+import { SmartLinkTemplate } from "@/components/dashboard/smart-link-template";
 import {
   SharedReaders,
   type SharedReader,
@@ -106,6 +107,8 @@ import { hasReason } from "@/lib/closing/engagement/reasons";
 import { freshEngagementScore } from "@/lib/closing/engagement/refresh-score";
 import { getLinkLiveState } from "@/lib/closing/live";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
+import { rankSharedReaders } from "@/lib/closing/shared/hot-readers";
+import { readingByLink } from "@/lib/closing/shared/reading-time";
 import type { EngagementReason } from "@/lib/closing/types";
 import { prisma } from "@/lib/db";
 import { formatDate, formatDuration, formatRelative } from "@/lib/format";
@@ -627,7 +630,12 @@ export default async function LinkDetailPage({
   const now = new Date();
   const signature = actions.find((action) => action.type === "VALIDATE_SIGN");
   const sharedReaders: SharedReader[] = link.shared
-    ? await loadSharedReaders(link.id, now)
+    ? await loadSharedReaders(
+        link.id,
+        link.document.id,
+        link.hotPricingThresholdSec ?? settings.hotPricingThresholdSec,
+        now,
+      )
     : [];
   // What the title does not already say
   const contactLine = [
@@ -933,14 +941,26 @@ export default async function LinkDetailPage({
 
           <aside className="space-y-10">
             {link.shared ? (
-              <section id="lecteurs" className="scroll-mt-20">
-                <SectionTitle hint="chacun a son lien et son suivi">
-                  Lecteurs
-                </SectionTitle>
-                <Surface>
-                  <SharedReaders readers={sharedReaders} />
-                </Surface>
-              </section>
+              <>
+                <section id="lecteurs" className="scroll-mt-20">
+                  <SectionTitle hint="chacun a son lien et son suivi">
+                    Lecteurs
+                  </SectionTitle>
+                  <Surface>
+                    <SharedReaders readers={sharedReaders} />
+                  </Surface>
+                </section>
+                {canEdit && (
+                  <section>
+                    <SectionTitle hint="Lemlist, Instantly, Apollo…">
+                      Smart Link pour cold email
+                    </SectionTitle>
+                    <Surface>
+                      <SmartLinkTemplate url={url} />
+                    </Surface>
+                  </section>
+                )}
+              </>
             ) : (
               <section>
                 <SectionTitle hint="reçoit les relances, et qui a lu">
@@ -1020,9 +1040,14 @@ export default async function LinkDetailPage({
   );
 }
 
-/** Readers of a shared link, most recently active first: each one's own link and where it stands. */
+/**
+ * Readers of a shared link, each one's own link and where it stands: the ones
+ * who stayed past the threshold first (to call), then the latest active.
+ */
 async function loadSharedReaders(
   linkId: string,
+  documentId: string,
+  thresholdSec: number,
   now: Date,
 ): Promise<SharedReader[]> {
   const links = await prisma.link.findMany({
@@ -1045,15 +1070,36 @@ async function loadSharedReaders(
       },
     },
   });
-  return links.map((reader) => {
+  const reading = await readingByLink(
+    links.map((reader) => reader.id),
+    documentId,
+  );
+  const ranked = rankSharedReaders(
+    links.map((reader) => ({
+      ...reader,
+      linkId: reader.id,
+      readingMs: reading.get(reader.id)?.readingMs ?? 0,
+      pricingMs: reading.get(reader.id)?.pricingMs ?? 0,
+      lastActivityAt: reader.lastActivityAt ?? reader.createdAt,
+    })),
+    thresholdSec,
+  );
+  return ranked.map((reader) => {
     const prospect = reader.prospects[0];
     return {
       linkId: reader.id,
+      hot: reader.hot,
+      time:
+        reader.pricingMs >= thresholdSec * 1000
+          ? `${formatDuration(reader.pricingMs)} sur le tarif`
+          : reader.readingMs > 0
+            ? `${formatDuration(reader.readingMs)} de lecture`
+            : null,
       label: prospect?.name ?? prospect?.email ?? "Lecteur",
       detail: [
         prospect?.name ? prospect.email : null,
         prospect?.company,
-        `lu ${formatRelative(reader.lastActivityAt ?? reader.createdAt, now)}`,
+        `lu ${formatRelative(reader.lastActivityAt, now)}`,
       ]
         .filter(Boolean)
         .join(" · "),
