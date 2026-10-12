@@ -95,10 +95,10 @@ export function HeatDistributionBar({ distribution }: { distribution: HeatDistri
         ))}
       </div>
       <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm lg:block lg:space-y-1">
-        {SEGMENTS.map((segment) => {
+        {parts.map((segment) => {
           const count = distribution[segment.key];
           return (
-            <li key={segment.key} className={cn("flex items-center gap-2", count === 0 && "text-muted-foreground")}>
+            <li key={segment.key} className="flex items-center gap-2">
               <span className={cn("size-2 rounded-full", segment.className)} />
               <span className="tabular-nums">{count}</span>
               <span className="text-muted-foreground">{counted(count, segment.words)}</span>

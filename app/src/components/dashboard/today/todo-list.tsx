@@ -41,7 +41,16 @@ const TIER_DOT: Record<EngagementTier, string> = {
 };
 
 /** Open deals, most urgent first, each with the next thing to do. */
-export function TodoList({ rows, now }: { rows: TodoRow[]; now: Date }) {
+export function TodoList({
+  rows,
+  now,
+  headlineDealId = null,
+}: {
+  rows: TodoRow[];
+  now: Date;
+  /** The deal the page title already quotes: its AI line is left out here. */
+  headlineDealId?: string | null;
+}) {
   return (
     <ul className="stagger divide-y divide-border overflow-hidden rounded-xl bg-card shadow-xs ring-1 ring-border">
       {rows.map((row) => {
@@ -52,7 +61,9 @@ export function TodoList({ rows, now }: { rows: TodoRow[]; now: Date }) {
               ? `lu ${formatRelative(row.lastActivityAt, now)}`
               : null;
         const urgent = isUrgent(row.action);
-        const meta = [row.company && row.contact ? row.contact : null, row.documentName].filter(Boolean).join(" · ");
+        const meta = [row.contact && row.contact !== row.label ? row.contact : null, row.documentName]
+          .filter(Boolean)
+          .join(" · ");
         return (
           <li
             key={row.id}
@@ -87,7 +98,7 @@ export function TodoList({ rows, now }: { rows: TodoRow[]; now: Date }) {
                   {read && <span>· {read}</span>}
                 </span>
               </div>
-              <p className="truncate text-small text-muted-foreground">{meta}</p>
+              {meta && <p className="truncate text-small text-muted-foreground">{meta}</p>}
               <p
                 className={cn(
                   "inline-flex max-w-full items-start gap-2 rounded-md px-2 py-1 text-sm",
@@ -101,7 +112,7 @@ export function TodoList({ rows, now }: { rows: TodoRow[]; now: Date }) {
                 )}
                 <span>{describeNextAction(row.action, now)}</span>
               </p>
-              {row.insightHeadline && (
+              {row.insightHeadline && row.id !== headlineDealId && (
                 <p className="flex items-start gap-1.5 text-small text-muted-foreground" title={row.insightHeadline}>
                   <Sparkles className="mt-0.5 size-3.5 shrink-0 text-brand" aria-label="Analyse IA" />
                   <span className="line-clamp-2">{row.insightHeadline}</span>

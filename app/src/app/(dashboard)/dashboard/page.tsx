@@ -144,6 +144,8 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
   const funnel = buildFunnel(funnelFacts);
   const feed = buildFeed(feedSource, FEED_LIMIT);
 
+  // The deal the day's headline is about: its AI line is not repeated in the list
+  const focus = rows.find((row) => (row.aiPriority ?? 0) >= 4 && row.insightHeadline) ?? null;
   const { headline, hint } = buildTodayHeadline({
     // "Hot" by the score alone, unless the analysis reads the deal as calm
     hotProspects: rows
@@ -156,10 +158,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
     documentCount,
     unopenedCount: distribution.unopened,
     nextFollowupLabel: upcomingFollowups[0] ? formatRelative(upcomingFollowups[0].scheduledFor, now) : null,
-    aiFocus: (() => {
-      const focus = rows.find((row) => (row.aiPriority ?? 0) >= 4 && row.insightHeadline);
-      return focus ? { label: focus.label, headline: focus.insightHeadline! } : null;
-    })(),
+    aiFocus: focus ? { label: focus.label, headline: focus.insightHeadline! } : null,
     draftsToReview: deals.reduce((sum, deal) => sum + deal.draftCount, 0),
   });
 
@@ -169,10 +168,10 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
     <div className="space-y-10">
       <section className="space-y-6">
         <div className="flex flex-col-reverse gap-6 sm:flex-row sm:items-start sm:justify-between">
-          <h1 className="max-w-3xl text-title text-balance [font-stretch:88%] sm:text-display">
-            {headline}
-            <span className="block text-muted-foreground">{hint}</span>
-          </h1>
+          <div className="max-w-3xl space-y-2">
+            <h1 className="text-title text-balance [font-stretch:88%] sm:text-display">{headline}</h1>
+            <p className="text-body text-muted-foreground">{hint}</p>
+          </div>
           <div className="shrink-0 sm:pt-1.5">
             <UploadButton uploadPrefix={uploadPrefix} pitchUploadPrefix={pitchPrefix} />
           </div>
@@ -212,7 +211,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
               />
             ) : (
               <>
-                <TodoList rows={rows.slice(0, TODO_LIMIT)} now={now} />
+                <TodoList rows={rows.slice(0, TODO_LIMIT)} now={now} headlineDealId={focus?.id ?? null} />
                 {rows.length > TODO_LIMIT && (
                   <p className="mt-3 text-sm text-muted-foreground">
                     Et {rows.length - TODO_LIMIT} autres deals en cours, moins urgents.
