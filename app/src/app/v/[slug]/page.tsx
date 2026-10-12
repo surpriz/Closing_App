@@ -10,6 +10,7 @@ import { EmailGate } from "@/components/viewer/email-gate";
 import { ExpiryGate } from "@/components/viewer/expiry-gate";
 import { LinkExpired } from "@/components/viewer/link-expired";
 import { PdfViewer } from "@/components/viewer/pdf-viewer";
+import { SmartLinkHandoff } from "@/components/viewer/smart-link-handoff";
 import { VideoViewer } from "@/components/viewer/video-viewer";
 import { WebViewer } from "@/components/viewer/web-viewer";
 import { getLanguageModel } from "@/lib/closing/ai/provider";
@@ -23,6 +24,7 @@ import { getViewerLabels, pickLocale, type ViewerLabels } from "@/lib/closing/i1
 import { getViewerAccess, knownRecipient, resolveViewerLink, type ViewerLink } from "@/lib/closing/links";
 import { maskEmail } from "@/lib/closing/prospects/mask-email";
 import { firstNameOf } from "@/lib/closing/share/compose";
+import { parseSmartParams } from "@/lib/closing/shared/smart-params";
 import { VISITOR_COOKIE } from "@/lib/closing/tracking/visitor";
 import { prisma } from "@/lib/db";
 import { isWorkspaceMember } from "@/lib/session";
@@ -43,8 +45,9 @@ export async function generateMetadata({
 
 export default async function ViewerPage({ params, searchParams }: PageProps<"/v/[slug]">) {
   const { slug } = await params;
+  const query = await searchParams;
   // "Ce n'est pas moi" after a contact change: the plain gate
-  const plainGate = (await searchParams).email === "1";
+  const plainGate = query.email === "1";
   const resolved = await resolveViewerLink(slug);
   if (!resolved) notFound();
   const { link, expired } = resolved;
@@ -90,6 +93,10 @@ export default async function ViewerPage({ params, searchParams }: PageProps<"/v
 
   // A shared link is a door: once the reader is known, they read on their own link
   if (link.shared && access.email && !isSeller) redirect(`/api/v/${slug}/reader`);
+
+  // A Smart Link from a cold email: the tool said who it was sent to, no form
+  const smart = link.shared && !isSeller ? parseSmartParams(query) : null;
+  if (smart) return <SmartLinkHandoff slug={slug} reader={smart} label={labels.loading} />;
 
   if (!access.allowed) {
     const recipient = plainGate ? null : await knownRecipient(link.id);
