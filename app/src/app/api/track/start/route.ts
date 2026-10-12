@@ -5,6 +5,7 @@ import type { NextRequest } from "next/server";
 import { z } from "zod";
 
 import { inBackground } from "@/lib/closing/background";
+import { emitReaderEvent } from "@/lib/closing/channels/engagement-webhooks";
 import { VIEW_SESSION_WINDOW_MS } from "@/lib/closing/constants";
 import { confirmDraftOnOpen } from "@/lib/closing/documents/create-link";
 import { refreshEngagementScore } from "@/lib/closing/engagement/refresh-score";
@@ -137,6 +138,8 @@ export async function POST(request: NextRequest) {
       const readerAlert = await evaluateReaders(viewId, now);
       if (!readerAlert) await evaluateHotLead(viewId, !!recentView, now);
       await refreshEngagementScore(link.id);
+      // A Smart Link reader really reading: their cold email sequence can stop
+      if (link.parentLinkId) await emitReaderEvent(link.id, "reader.opened");
     });
   }
 

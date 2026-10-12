@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { runProspectingTick } from "@/lib/prospecting/tick";
 
 import { sendMorningDigests } from "./alerts/morning-digest";
+import { retryEngagementWebhooks } from "./channels/engagement-webhooks";
 import { analyzePendingDeals } from "./brain/analyze-deal";
 import { archiveStaleDrafts } from "./documents/create-link";
 import { readPendingDocuments } from "./documents/read-pages";
@@ -66,6 +67,7 @@ export async function runClosingTick(now = new Date()) {
   // Scores first: the analysis reads them
   const dealsAnalyzed = await analyzePendingDeals(now, { includeQuiet: true });
   const digests = await sendMorningDigests(now);
+  const webhooksRetried = await retryEngagementWebhooks(now);
   const draftsArchived = await archiveStaleDrafts(now);
   const purged = await purgeExpiredData(now);
   // Prospecting POC: an outage at a provider must not stop the closing engine
@@ -84,6 +86,7 @@ export async function runClosingTick(now = new Date()) {
     documentsRead,
     dealsAnalyzed,
     digests,
+    webhooksRetried,
     draftsArchived,
     purged,
     prospecting,
