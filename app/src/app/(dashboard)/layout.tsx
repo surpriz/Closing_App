@@ -4,6 +4,7 @@ import { ImpersonationBanner } from "@/components/admin/impersonation-banner";
 import { Logo } from "@/components/brand/logo";
 import { CommandMenu, type CommandEntry } from "@/components/dashboard/command-menu";
 import { DashboardNav, MobileNav } from "@/components/dashboard/dashboard-nav";
+import { HelpMenu } from "@/components/dashboard/help-menu";
 import { HelpWidget } from "@/components/dashboard/help-widget";
 import { UserMenu } from "@/components/dashboard/user-menu";
 import { dealDocumentMeta, dealLabel, linkLabelSelect } from "@/lib/closing/dashboard/labels";
@@ -22,7 +23,7 @@ export default async function DashboardLayout({
   const { user, organization, role, scope } = await requireWorkspace();
   const isManager = isManagerRole(role);
 
-  const [links, documents] = await Promise.all([
+  const [links, documents, memberCount] = await Promise.all([
     prisma.link.findMany({
       where: {
         organizationId: organization.id,
@@ -41,7 +42,10 @@ export default async function DashboardLayout({
       take: 100,
       select: { id: true, name: true },
     }),
+    prisma.member.count({ where: { organizationId: organization.id } }),
   ]);
+  // Alone in the workspace, there is no team to look at: the tab waits for a second member
+  const hasTeam = memberCount >= 2;
   const entries: CommandEntry[] = [
     ...links.map((link) => {
       const contact = link.prospects[0];
@@ -69,9 +73,10 @@ export default async function DashboardLayout({
           >
             <Logo />
           </Link>
-          <DashboardNav isManager={isManager} prospecting={isProspectingEnabled(organization.id)} />
+          <DashboardNav isManager={isManager} hasTeam={hasTeam} prospecting={isProspectingEnabled(organization.id)} />
           <div className="ml-auto flex items-center gap-2">
             <CommandMenu entries={entries} />
+            <HelpMenu />
             <UserMenu
               name={user.name}
               email={user.email}
@@ -84,7 +89,7 @@ export default async function DashboardLayout({
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-8 pb-28 sm:px-6 sm:pt-10 sm:pb-16">
         {children}
       </main>
-      <MobileNav isManager={isManager} />
+      <MobileNav isManager={isManager} hasTeam={hasTeam} />
       <HelpWidget firstName={user.name?.trim().split(/\s+/)[0] || null} />
     </div>
   );

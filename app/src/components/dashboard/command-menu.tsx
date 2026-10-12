@@ -38,7 +38,7 @@ const PAGES: Item[] = [
   { kind: "page", href: "/settings", label: "Réglages" },
   { kind: "page", href: "/bienvenue", label: "Prise en main" },
   { kind: "page", href: "/faq", label: "Questions fréquentes", hint: "FAQ" },
-  { kind: "page", href: "#aide", label: "Aide et suggestions", hint: "Poser une question, signaler un bug", help: true },
+  { kind: "page", href: "#aide", label: "Poser une question", hint: "Aide, suggestions, bugs", help: true },
 ];
 
 const PAGE_ICONS: Record<string, typeof Sun> = {

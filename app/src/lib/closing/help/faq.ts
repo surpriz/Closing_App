@@ -45,7 +45,7 @@ export const FAQ: FaqSection[] = [
       {
         id: "prise-en-main",
         q: "Comment revoir la prise en main ?",
-        a: "Menu du compte (votre avatar en haut à droite) → Revoir la prise en main, ou depuis la page Comment ça marche. Trois étapes : votre messagerie, l'outil adapté (extension, complément ou rien), puis c'est parti.",
+        a: "Bouton « ? » en haut à droite → Revoir la prise en main, ou depuis la page Comment ça marche. Trois étapes : votre messagerie, l'outil adapté (extension, complément ou rien), puis c'est parti.",
         link: { href: "/bienvenue", label: "Revoir la prise en main" },
       },
       {
@@ -561,7 +561,7 @@ export const FAQ: FaqSection[] = [
       {
         id: "assistant-aide",
         q: "Comment poser une question qui n'est pas ici ?",
-        a: "Ouvrez l'assistant d'aide : le bouton bouée en bas à droite, « Aide et suggestions » dans le menu du compte, ou Cmd+K. Il répond tout de suite et, si besoin, transmet votre question à l'équipe.",
+        a: "Ouvrez l'assistant d'aide : bouton « ? » en haut à droite → « Poser une question », ou Cmd+K. Il répond tout de suite et, si besoin, transmet votre question à l'équipe.",
       },
       {
         id: "suggestion",

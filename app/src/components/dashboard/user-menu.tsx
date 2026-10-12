@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleHelp, Compass, LifeBuoy, LogOut, Shield, ShieldCheck } from "lucide-react";
+import { LogOut, Shield, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 
@@ -14,8 +14,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth-client";
-
-import { openHelp } from "./open-help";
 
 function initials(name: string | null, email: string) {
   const source = name?.trim() || email.split("@")[0];
@@ -56,18 +54,6 @@ export function UserMenu({
           <p className="truncate text-xs text-muted-foreground">{email}</p>
         </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={openHelp}>
-          <LifeBuoy />
-          Aide et suggestions
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => router.push("/faq")}>
-          <CircleHelp />
-          Questions fréquentes
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => router.push("/bienvenue")}>
-          <Compass />
-          Revoir la prise en main
-        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => router.push("/settings#donnees")}>
           <ShieldCheck />
           Données et confidentialité

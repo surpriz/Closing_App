@@ -12,11 +12,15 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
   téléphone, sans rien installer.
 - Les lectures du vendeur connecté à Clozer ne comptent pas, ni les robots ni les aperçus automatiques (Slack,
   LinkedIn).
-- Navigation principale (onglets en haut, barre en bas sur téléphone) : Aujourd'hui (/dashboard), Équipe
-  (/equipe, propriétaires et admins seulement), Documents (/documents), Comment ça marche (/comment-ca-marche,
-  « Le pilote » sur téléphone), Réglages (/settings).
-- Menu du compte (avatar en haut à droite) : Aide et suggestions, Questions fréquentes, Revoir la prise en
-  main, Données et confidentialité (/settings#donnees), choix du thème, Se déconnecter.
+- Navigation principale (onglets en haut, barre en bas sur téléphone) : Aujourd'hui (/dashboard), Documents
+  (/documents), Réglages (/settings). Équipe (/equipe) s'ajoute pour les propriétaires et admins dès que
+  l'espace a un deuxième membre (sinon : Réglages → Équipe → « Inviter un commercial », et /equipe reste
+  accessible par son adresse). Prospection (/prospection) n'existe que pour les espaces où elle est activée.
+- Bouton « ? » en haut à droite : Poser une question (l'assistant d'aide, aussi pour les suggestions et les
+  bugs), Comment ça marche (/comment-ca-marche), Questions fréquentes (/faq), Revoir la prise en main
+  (/bienvenue).
+- Menu du compte (avatar en haut à droite) : Données et confidentialité (/settings#donnees), choix du thème,
+  Se déconnecter.
 
 ## Parcours d'un deal
 1. Vous déposez un document. Clozer le lit une fois : type, résumé de chaque page, où sont le prix, le
@@ -304,7 +308,7 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
 - Marquez Gagné ou Perdu dès que c'est tranché : les relances s'arrêtent.
 
 ## Aide et suggestions
-- L'assistant d'aide (bouton bouée en bas à droite, « Aide et suggestions » dans le menu du compte ou Cmd+K)
+- L'assistant d'aide (bouton « ? » en haut à droite → « Poser une question », ou Cmd+K)
   répond aux questions sur Clozer et transmet à l'équipe Clozer, avec votre accord, vos suggestions, bugs,
   remarques et les questions auxquelles il n'a pas su répondre. L'équipe lit tout et peut vous répondre par
   email.
@@ -314,7 +318,7 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
 
 ## Raccourcis
 - Cmd+K (Ctrl+K sur Windows) ou « Rechercher… » en haut : aller à un prospect, une société, un document ou une
-  page (Aujourd'hui, Documents, Comment ça marche, Réglages, Prise en main), ou ouvrir Aide et suggestions.
-- Revoir la prise en main (/bienvenue) : depuis le menu du compte ou Comment ça marche. Trois étapes : Votre
+  page (Aujourd'hui, Documents, Comment ça marche, Réglages, Prise en main), ou « Poser une question ».
+- Revoir la prise en main (/bienvenue) : depuis le bouton « ? » ou Comment ça marche. Trois étapes : Votre
   messagerie, L'outil (extension, complément ou rien), C'est parti (offre, premier document).
 `;
