@@ -133,7 +133,7 @@ export default async function ProspectionPage() {
                   ? "en cours…"
                   : run.status === "FAILED"
                     ? `échec : ${run.error ?? "erreur inconnue"}`
-                    : `${run.created} nouvelle${run.created > 1 ? "s" : ""} suggestion${run.created > 1 ? "s" : ""} sur ${run.found} trouvée${run.found > 1 ? "s" : ""}`}
+                    : `${run.created} nouvelle${run.created > 1 ? "s" : ""} suggestion${run.created > 1 ? "s" : ""} sur ${run.found} trouvée${run.found > 1 ? "s" : ""}${run.error ? ` (${run.error})` : ""}`}
               </li>
             ))}
           </ul>

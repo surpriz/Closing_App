@@ -1,4 +1,4 @@
-// Apollo request and response shapes (docs.apollo.io, checked 11/10/2026). Pure.
+// Apollo request and response shapes (docs.apollo.io, checked live 12/10/2026). Pure.
 import { placeNames } from "../geo";
 import { headcountRanges } from "../headcount";
 import { searchKeywords, type TargetFilters } from "../target";
@@ -20,8 +20,8 @@ export function apolloSearchParams(filters: TargetFilters, page: number) {
     params.append("organization_num_employees_ranges[]", `${range.min},${range.max ?? 1_000_000}`);
   }
 
-  const keywords = searchKeywords(filters);
-  if (keywords.length) params.set("q_keywords", keywords.slice(0, 3).join(" "));
+  // Organization tags, not q_keywords: q_keywords matches the person's name and title
+  for (const keyword of searchKeywords(filters).slice(0, 6)) params.append("q_organization_keyword_tags[]", keyword);
   return params;
 }
 

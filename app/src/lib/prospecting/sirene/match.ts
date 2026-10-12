@@ -35,22 +35,24 @@ export type RegistryCandidate = {
 
 /**
  * Best candidate and how sure we are. The registry ranks by relevance, so on a tie the
- * first one wins. A departement that matches what we know adds confidence.
+ * first one wins. A departement that matches what we know adds confidence. Several
+ * companies with the same name (there are many "INOV") halve it: the pick is a guess.
  */
 export function pickCompany(
   query: { name: string; departement?: string | null },
   candidates: RegistryCandidate[],
 ): { siren: string; confidence: number } | null {
-  let best: { siren: string; score: number } | null = null;
-
-  for (const candidate of candidates) {
+  const scored = candidates.map((candidate) => {
     const similarity = Math.max(0, ...candidate.names.map((name) => nameSimilarity(query.name, name)));
     const place = query.departement && candidate.departement === query.departement ? 0.1 : 0;
-    const score = similarity + place;
-    if (!best || score > best.score) best = { siren: candidate.siren, score };
-  }
+    return { siren: candidate.siren, score: similarity + place };
+  });
+  const best = scored.reduce<(typeof scored)[number] | null>((top, c) => (!top || c.score > top.score ? c : top), null);
+  if (!best || best.score < 0.5) return null;
 
-  return best && best.score >= 0.5 ? { siren: best.siren, confidence: Math.min(1, best.score) } : null;
+  const ambiguous = scored.some((c) => c.siren !== best.siren && c.score >= best.score - 0.05);
+  const confidence = Math.min(1, best.score) * (ambiguous ? 0.5 : 1);
+  return { siren: best.siren, confidence };
 }
 
 /** "acme-studio.fr" → "acme studio": what to type in the registry search. */

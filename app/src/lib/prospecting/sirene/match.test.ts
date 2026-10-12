@@ -33,8 +33,9 @@ describe("pickCompany", () => {
       { siren: "111111111", names: ["ACME"], departement: "75" },
       { siren: "222222222", names: ["ACME"], departement: "69" },
     ];
-    expect(pickCompany({ name: "Acme", departement: "69" }, twins)?.siren).toBe("222222222");
-    expect(pickCompany({ name: "Acme" }, twins)?.siren).toBe("111111111");
+    expect(pickCompany({ name: "Acme", departement: "69" }, twins)).toEqual({ siren: "222222222", confidence: 1 });
+    // Two companies with the same name and nothing to tell them apart: a guess
+    expect(pickCompany({ name: "Acme" }, twins)).toEqual({ siren: "111111111", confidence: 0.5 });
   });
 
   it("returns nothing when no name is close enough", () => {

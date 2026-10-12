@@ -60,9 +60,10 @@ function spaced<T>(task: () => Promise<T>) {
 }
 
 /** Active companies matching a name, best first. Throws on network or API errors. */
-export async function searchCompanies(query: { name: string; departement?: string | null }) {
+export async function searchCompanies(query: { name: string; departement?: string | null; regions?: string[] }) {
   const params = new URLSearchParams({ q: query.name, etat_administratif: "A", per_page: "5", minimal: "true", include: "siege" });
   if (query.departement) params.set("departement", query.departement);
+  if (query.regions?.length) params.set("region", query.regions.join(","));
 
   return spaced(async () => {
     for (let attempt = 0; attempt < 2; attempt++) {

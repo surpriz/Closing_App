@@ -50,6 +50,7 @@ async function call(apiKey: string, method: "GET" | "POST", path: string, init: 
 export function lemlistProvider(apiKey: string): ProspectingProvider {
   return {
     name: "LEMLIST",
+    maxPages: 10,
 
     async searchPeople(filters: TargetFilters, page: number) {
       const { body } = await call(apiKey, "POST", "/database/people", { body: lemlistSearchBody(filters, page) });

@@ -29,6 +29,7 @@ async function call(apiKey: string, path: string, init: { query?: URLSearchParam
 export function apolloProvider(apiKey: string): ProspectingProvider {
   return {
     name: "APOLLO",
+    maxPages: 4,
 
     async searchPeople(filters: TargetFilters, page: number) {
       const body = await call(apiKey, "/mixed_people/api_search", { query: apolloSearchParams(filters, page) });

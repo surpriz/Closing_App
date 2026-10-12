@@ -30,8 +30,8 @@ async function cached(key: string, now: Date, resolve: () => Promise<CompanyReco
   return record;
 }
 
-async function resolveByName(name: string, departement: string | null): Promise<CompanyRecord> {
-  const companies = await searchCompanies({ name, departement });
+async function resolveByName(name: string, departement: string | null, regions: string[] = []): Promise<CompanyRecord> {
+  const companies = await searchCompanies({ name, departement, regions });
   const picked = pickCompany({ name, departement }, companies);
   const company = picked && companies.find((c) => c.siren === picked.siren);
   if (!picked || !company) {
@@ -55,8 +55,9 @@ export function lookupDomain(domain: string, now = new Date()) {
   return cached(`domain:${domain.toLowerCase()}`, now, () => resolveByName(name, null));
 }
 
-/** Company named by a provider, optionally in a departement. */
-export function lookupCompanyName(name: string, departement: string | null, now = new Date()) {
-  const key = `name:${fold(name)}|${departement ?? ""}`;
-  return cached(key, now, () => resolveByName(name, departement));
+/** Company named by a provider, in the target's regions when it has some (fewer namesakes). */
+export function lookupCompanyName(name: string, place: { departement?: string | null; regions?: string[] }, now = new Date()) {
+  const regions = [...(place.regions ?? [])].sort();
+  const key = `name:${fold(name)}|${place.departement ?? ""}|${regions.join(",")}`;
+  return cached(key, now, () => resolveByName(name, place.departement ?? null, regions));
 }

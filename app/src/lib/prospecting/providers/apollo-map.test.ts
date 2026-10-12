@@ -23,7 +23,8 @@ describe("apolloSearchParams", () => {
     expect(params.getAll("person_seniorities[]")).toEqual(["owner", "director"]);
     expect(params.getAll("organization_locations[]")).toEqual(["Auvergne-Rhône-Alpes, France", "Île-de-France, France"]);
     expect(params.getAll("organization_num_employees_ranges[]")).toEqual(["10,49", "10000,1000000"]);
-    expect(params.get("q_keywords")).toBe("agence web Publicité et études de marché");
+    expect(params.getAll("q_organization_keyword_tags[]")).toEqual(["agence web", "marketing & advertising"]);
+    expect(params.has("q_keywords")).toBe(false);
   });
 
   it("searches the whole country without a place", () => {

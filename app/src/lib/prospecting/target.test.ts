@@ -59,10 +59,10 @@ describe("describeTarget", () => {
 });
 
 describe("searchKeywords", () => {
-  it("adds NAF labels after the seller's words", () => {
-    expect(searchKeywords({ ...EMPTY_TARGET, keywords: ["agence web"], nafCodes: ["73.11Z"] })).toEqual([
+  it("adds the English industry of each NAF code after the seller's words", () => {
+    expect(searchKeywords({ ...EMPTY_TARGET, keywords: ["agence web"], nafCodes: ["73.11Z", "73.12Z"] })).toEqual([
       "agence web",
-      "Publicité et études de marché",
+      "marketing & advertising",
     ]);
   });
 });

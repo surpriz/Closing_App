@@ -55,6 +55,8 @@ export type RevealOutcome = RevealDone | RevealPending | RevealFailed;
 
 export interface ProspectingProvider {
   name: ProviderName;
+  /** Pages one search may read: Lemlist answers one person per call and counts calls per day. */
+  maxPages: number;
   searchPeople(filters: TargetFilters, page: number): Promise<SearchPage>;
   /**
    * Sync providers answer "done", async ones "pending" with a job to poll. Never throws:

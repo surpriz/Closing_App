@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { isDepartementCode, REGIONS, regionName } from "./geo";
 import { formatHeadcountRange, HEADCOUNT_BRACKETS, headcountRanges } from "./headcount";
-import { nafDivision, nafLabel, normalizeNafCode } from "./naf";
+import { nafDivision, nafIndustryEn, nafLabel, normalizeNafCode } from "./naf";
 
 /** Apollo's seniority vocabulary, used as the common one. */
 export const SENIORITIES = ["owner", "founder", "c_suite", "partner", "vp", "head", "director", "manager"] as const;
@@ -94,10 +94,13 @@ export function targetIsSearchable(target: TargetFilters) {
   return sector && people;
 }
 
-/** Words the provider understands: the seller's keywords, then the NAF labels. */
+/**
+ * Sector words for the providers: the seller's own words first, then the LinkedIn industry of
+ * each NAF division (providers index companies in English, not by NAF).
+ */
 export function searchKeywords(target: TargetFilters) {
-  const labels = target.nafCodes.map(nafLabel).filter((label): label is string => !!label);
-  return [...new Set([...target.keywords, ...labels])];
+  const industries = target.nafCodes.map(nafIndustryEn).filter((label): label is string => !!label);
+  return [...new Set([...target.keywords, ...industries])];
 }
 
 /** "Programmation et conseil informatique · 10-49 salariés · Auvergne-Rhône-Alpes" */

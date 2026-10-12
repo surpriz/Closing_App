@@ -1236,7 +1236,7 @@ model ProspectingRun {
   found           Int                  @default(0)
   skipped         Int                  @default(0) // duplicates, opt-outs, off-target companies
   created         Int                  @default(0)
-  error           String?
+  error           String? // why it failed, or why a done run stopped early
   startedAt       DateTime             @default(now())
   finishedAt      DateTime?
 
@@ -1265,7 +1265,7 @@ model ProspectSuggestion {
   companyName    String?
   companyDomain  String?
   companySiren   String?
-  nafVerified    Boolean? // null = not checked, false = not found or off-target
+  nafVerified    Boolean? // registry: true = target sector, false = another NAF code, null = unknown
   linkedinUrl    String? // only as given by the provider, never scraped
   dedupeKey      String // sha256 of the person key: all that stays once the personal fields are purged
 

@@ -23,6 +23,7 @@ function candidate(index: number, filters: TargetFilters): Candidate {
 export function mockProvider(): ProspectingProvider {
   return {
     name: "MOCK",
+    maxPages: 4,
     async searchPeople(filters, page) {
       const candidates = Array.from({ length: 10 }, (_, i) => candidate((page - 1) * 10 + i, filters));
       return { candidates, hasMore: page < 3, credits: 0, estimated: false };

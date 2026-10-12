@@ -69,7 +69,8 @@ export function SuggestionsList({ rows, documents }: { rows: SuggestionRow[]; do
               <Badge variant={row.status === "READY" ? "success" : row.status === "INVALID" ? "destructive" : "secondary"}>
                 {row.status === "INVALID" && row.invalidReason ? INVALID_LABELS[row.invalidReason] : STATUS_LABELS[row.status]}
               </Badge>
-              {row.nafVerified === false && <Badge variant="warning">Secteur non confirmé</Badge>}
+              {row.nafVerified === true && <Badge variant="success">Secteur confirmé</Badge>}
+              {row.nafVerified === false && <Badge variant="warning">Autre code NAF</Badge>}
               <span className="text-micro text-muted-foreground">via {PROVIDER_LABELS[row.provider] ?? row.provider}</span>
               {row.email && <span className="font-mono text-small">{row.email}</span>}
             </div>
