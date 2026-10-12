@@ -4,16 +4,25 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { AutoRefresh } from "@/components/dashboard/auto-refresh";
-import { ActivityTimeline, type TimelineItem } from "@/components/dashboard/activity-timeline";
+import {
+  ActivityTimeline,
+  type TimelineItem,
+} from "@/components/dashboard/activity-timeline";
 import { ArchiveLinkButton } from "@/components/dashboard/archive-link-button";
-import { ChatTranscript, type TranscriptConversation } from "@/components/dashboard/chat-transcript";
+import {
+  ChatTranscript,
+  type TranscriptConversation,
+} from "@/components/dashboard/chat-transcript";
 import { CopyButton } from "@/components/dashboard/copy-button";
 import { DealContextForm } from "@/components/dashboard/deal-context-form";
 import { DealContextSummaryDetails } from "@/components/dashboard/deal-context-details";
 import { dealContextSummary } from "@/components/dashboard/deal-context-summary";
 import { DealVerdict } from "@/components/dashboard/deal-verdict";
 import { DealStatusSelect } from "@/components/dashboard/deal-status-select";
-import { toFollowupItem, type FollowupItem } from "@/components/dashboard/followup-item";
+import {
+  toFollowupItem,
+  type FollowupItem,
+} from "@/components/dashboard/followup-item";
 import { FollowupsPanel } from "@/components/dashboard/followups-panel";
 import {
   ALERT_TYPE_LABELS,
@@ -25,19 +34,34 @@ import {
   TIER_LABELS,
   TIMING_LABELS,
 } from "@/components/dashboard/labels";
-import { LinkCapsules, type LinkCapsuleRow } from "@/components/dashboard/link-capsules";
+import {
+  LinkCapsules,
+  type LinkCapsuleRow,
+} from "@/components/dashboard/link-capsules";
 import { LinkSettingsDialog } from "@/components/dashboard/link-settings-form";
 import { ShareReady } from "@/components/dashboard/share-ready";
-import { SharedReaders, type SharedReader } from "@/components/dashboard/shared-readers";
+import {
+  SharedReaders,
+  type SharedReader,
+} from "@/components/dashboard/shared-readers";
 import { WelcomeMessage } from "@/components/dashboard/welcome-message";
 import { LinkTestTools } from "@/components/dashboard/link-test-tools";
 import { LiveActivity } from "@/components/dashboard/live-activity";
 import { MarkWonButton } from "@/components/dashboard/mark-won-button";
 import { SectionTitle, Surface } from "@/components/dashboard/page-header";
-import { PageTimeChart, type PageTimeDatum } from "@/components/dashboard/page-time-chart";
+import {
+  PageTimeChart,
+  type PageTimeDatum,
+} from "@/components/dashboard/page-time-chart";
 import { ProspectPanel } from "@/components/dashboard/prospect-panel";
-import { SellerActivityForm, SnoozeControl } from "@/components/dashboard/seller-activity-form";
-import { VoiceComments, type VoiceCommentItem } from "@/components/dashboard/voice-comments";
+import {
+  SellerActivityForm,
+  SnoozeControl,
+} from "@/components/dashboard/seller-activity-form";
+import {
+  VoiceComments,
+  type VoiceCommentItem,
+} from "@/components/dashboard/voice-comments";
 import { ShareMailToolTip } from "@/components/onboarding/share-mail-tool-tip";
 import { getAppOrigin } from "@/lib/app-origin";
 import { capsuleUploadPrefix } from "@/lib/blob";
@@ -46,7 +70,10 @@ import type { ViewSignalType } from "@/generated/prisma/enums";
 import { getLinkAnalytics } from "@/lib/closing/analytics";
 import { dealLabel, linkLabelSelect } from "@/lib/closing/dashboard/labels";
 import { videoProvider } from "@/lib/closing/documents/web-link";
-import { DOC_TYPE_LABELS, type DocType } from "@/lib/closing/documents/doc-types";
+import {
+  DOC_TYPE_LABELS,
+  type DocType,
+} from "@/lib/closing/documents/doc-types";
 import { linkTitle } from "@/lib/closing/documents/link-title";
 import { reachedLabel } from "@/lib/closing/documents/video-segments";
 import { showsCountdown } from "@/lib/closing/expiry";
@@ -57,12 +84,24 @@ import { sellerBookingUrl } from "@/lib/closing/booking/link-booking";
 import { getLatestInsight } from "@/lib/closing/brain/latest";
 import { getReaderMap } from "@/lib/closing/committee/queries";
 import { ACTION_KIND } from "@/lib/closing/dashboard/feed";
-import { computeNextAction, withAiAdvice, type OpenDealStatus } from "@/lib/closing/dashboard/next-action";
-import { canEditDeal, CONTACT_ACTIVITY_TYPES, PLANNED_FOLLOWUP_STATUSES } from "@/lib/closing/dashboard/queries";
+import {
+  computeNextAction,
+  withAiAdvice,
+  type OpenDealStatus,
+} from "@/lib/closing/dashboard/next-action";
+import {
+  canEditDeal,
+  CONTACT_ACTIVITY_TYPES,
+  PLANNED_FOLLOWUP_STATUSES,
+} from "@/lib/closing/dashboard/queries";
 import { showsReadingDetail } from "@/lib/closing/dashboard/reading-detail";
 import { labelReaders } from "@/lib/closing/dashboard/readers";
 import { catchUpInBackground } from "@/lib/closing/catch-up";
-import { capsulesVisibleOnLink, resolveCapsules, WELCOME_PAGE } from "@/lib/closing/capsules/resolve";
+import {
+  capsulesVisibleOnLink,
+  resolveCapsules,
+  WELCOME_PAGE,
+} from "@/lib/closing/capsules/resolve";
 import { hasReason } from "@/lib/closing/engagement/reasons";
 import { freshEngagementScore } from "@/lib/closing/engagement/refresh-score";
 import { getLinkLiveState } from "@/lib/closing/live";
@@ -74,7 +113,9 @@ import { isManagerRole } from "@/lib/roles";
 import { requireWorkspace } from "@/lib/session";
 import { testToolsEnabled } from "@/lib/test-tools";
 
-export async function generateMetadata({ params }: PageProps<"/links/[id]">): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: PageProps<"/links/[id]">): Promise<Metadata> {
   const { id } = await params;
   const { organization } = await requireWorkspace();
   const link = await prisma.link.findFirst({
@@ -84,7 +125,10 @@ export async function generateMetadata({ params }: PageProps<"/links/[id]">): Pr
   return { title: link ? dealLabel(link) : "Prospect" };
 }
 
-export default async function LinkDetailPage({ params, searchParams }: PageProps<"/links/[id]">) {
+export default async function LinkDetailPage({
+  params,
+  searchParams,
+}: PageProps<"/links/[id]">) {
   const { id } = await params;
   const justCreated = (await searchParams).new === "1";
   const workspace = await requireWorkspace();
@@ -104,7 +148,10 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
           displayTitle: true,
           aiProcessedAt: true,
           durationMs: true,
-          pages: { select: { pageNumber: true, tags: true, summary: true }, orderBy: { pageNumber: "asc" } },
+          pages: {
+            select: { pageNumber: true, tags: true, summary: true },
+            orderBy: { pageNumber: "asc" },
+          },
         },
       },
       prospects: { orderBy: { createdAt: "asc" } },
@@ -118,13 +165,35 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
   const canEdit = canEditDeal(link.createdById, workspace);
   const seller =
     !canEdit && link.createdById
-      ? await prisma.user.findUnique({ where: { id: link.createdById }, select: { name: true, email: true } })
+      ? await prisma.user.findUnique({
+          where: { id: link.createdById },
+          select: { name: true, email: true },
+        })
       : null;
 
   const score = await freshEngagementScore(link.id, link.engagementScore);
-  catchUpInBackground({ organizationId: organization.id, linkId: link.id, documentId: link.document.id });
+  catchUpInBackground({
+    organizationId: organization.id,
+    linkId: link.id,
+    documentId: link.document.id,
+  });
 
-  const [analytics, settings, origin, followups, alerts, actions, live, sellerActivities, insight, readerMap, chatRows, capsuleRows, capsulePlays, voiceRows] = await Promise.all([
+  const [
+    analytics,
+    settings,
+    origin,
+    followups,
+    alerts,
+    actions,
+    live,
+    sellerActivities,
+    insight,
+    readerMap,
+    chatRows,
+    capsuleRows,
+    capsulePlays,
+    voiceRows,
+  ] = await Promise.all([
     getLinkAnalytics(link.id),
     getWorkspaceSettings(organization.id),
     getAppOrigin(),
@@ -136,7 +205,20 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
     }),
     // Prospect actions and forwarded questions have their own timeline entries
     prisma.sellerAlert.findMany({
-      where: { linkId: link.id, type: { notIn: ["PROSPECT_VALIDATED", "CHANGE_REQUESTED", "QUOTE_REQUESTED", "MEETING_BOOKED", "PROSPECT_QUESTION", "LINK_EXTENSION_REQUESTED", "VOICE_COMMENT"] } },
+      where: {
+        linkId: link.id,
+        type: {
+          notIn: [
+            "PROSPECT_VALIDATED",
+            "CHANGE_REQUESTED",
+            "QUOTE_REQUESTED",
+            "MEETING_BOOKED",
+            "PROSPECT_QUESTION",
+            "LINK_EXTENSION_REQUESTED",
+            "VOICE_COMMENT",
+          ],
+        },
+      },
       orderBy: { createdAt: "desc" },
       take: 20,
     }),
@@ -147,7 +229,11 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
       include: { prospect: { select: { name: true, email: true } } },
     }),
     getLinkLiveState(link.id),
-    prisma.sellerActivity.findMany({ where: { linkId: link.id }, orderBy: { occurredAt: "desc" }, take: 20 }),
+    prisma.sellerActivity.findMany({
+      where: { linkId: link.id },
+      orderBy: { occurredAt: "desc" },
+      take: 20,
+    }),
     getLatestInsight(link.id),
     getReaderMap(link.id),
     // The seller testing their own link is left out
@@ -162,7 +248,13 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
         escalated: true,
         flags: true,
         createdAt: true,
-        view: { select: { visitorId: true, email: true, prospect: { select: { name: true, email: true } } } },
+        view: {
+          select: {
+            visitorId: true,
+            email: true,
+            prospect: { select: { name: true, email: true } },
+          },
+        },
       },
     }),
     // The document's capsules and this link's own, with the plays of this link only
@@ -182,7 +274,17 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
       where: { linkId: link.id },
       orderBy: { createdAt: "desc" },
       take: 20,
-      select: { id: true, pageNumber: true, createdAt: true, view: { select: { email: true, prospect: { select: { name: true, email: true } } } } },
+      select: {
+        id: true,
+        pageNumber: true,
+        createdAt: true,
+        view: {
+          select: {
+            email: true,
+            prospect: { select: { name: true, email: true } },
+          },
+        },
+      },
     }),
     prisma.voiceComment.findMany({
       where: { linkId: link.id, view: { fromSeller: false } },
@@ -195,7 +297,12 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
         transcript: true,
         durationMs: true,
         createdAt: true,
-        view: { select: { email: true, prospect: { select: { name: true, email: true } } } },
+        view: {
+          select: {
+            email: true,
+            prospect: { select: { name: true, email: true } },
+          },
+        },
       },
     }),
   ]);
@@ -212,8 +319,12 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
   // The AI has not said what the document is yet: the settings may still follow it (a few seconds)
   const reading =
     link.document.status === "PROCESSING" ||
-    (link.autoSettings && !link.document.aiProcessedAt && new Date().getTime() - link.createdAt.getTime() < 2 * 60_000);
-  const sellerPrefs = sharing ? await getSellerPrefs(workspace.user.id, organization.id) : null;
+    (link.autoSettings &&
+      !link.document.aiProcessedAt &&
+      new Date().getTime() - link.createdAt.getTime() < 2 * 60_000);
+  const sellerPrefs = sharing
+    ? await getSellerPrefs(workspace.user.id, organization.id)
+    : null;
   const sellerBooking = canEdit ? await sellerBookingUrl(link) : null;
   const settingsPanel = {
     linkId: link.id,
@@ -228,7 +339,10 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
     },
     expiresAt: link.expiresAt?.toISOString() ?? null,
     requests: link.expiresAt
-      ? actions.filter((a) => a.type === "REQUEST_EXTENSION" && a.createdAt >= link.expiresAt!).length
+      ? actions.filter(
+          (a) =>
+            a.type === "REQUEST_EXTENSION" && a.createdAt >= link.expiresAt!,
+        ).length
       : 0,
     kind: link.document.kind,
     shared: link.shared,
@@ -242,18 +356,26 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
     return {
       pageNumber: page.pageNumber,
       totalSeconds: Math.round(total / 1000),
-      avgSeconds: stat?.viewCount ? Math.round(total / stat.viewCount / 1000) : 0,
+      avgSeconds: stat?.viewCount
+        ? Math.round(total / stat.viewCount / 1000)
+        : 0,
       isPricing: page.tags.includes("PRICING"),
       summary: page.summary,
     };
   });
 
-  const reasons = Array.isArray(score?.reasons) ? (score.reasons as unknown as EngagementReason[]) : [];
+  const reasons = Array.isArray(score?.reasons)
+    ? (score.reasons as unknown as EngagementReason[])
+    : [];
   const opened = analytics.viewCount > 0;
   const readingNow = live.readers.length > 0;
   // Same rule as the "À traiter" row: the analysis has the last word when it is current
-  const insightCurrent = !!insight && (!link.lastActivityAt || insight.createdAt >= link.lastActivityAt);
-  const openStatus = (["OPEN", "CHANGE_REQUESTED", "VALIDATED"] as const).find((status) => status === link.dealStatus);
+  const insightCurrent =
+    !!insight &&
+    (!link.lastActivityAt || insight.createdAt >= link.lastActivityAt);
+  const openStatus = (["OPEN", "CHANGE_REQUESTED", "VALIDATED"] as const).find(
+    (status) => status === link.dealStatus,
+  );
   const nextAction = withAiAdvice(
     computeNextAction({
       now: new Date(),
@@ -267,18 +389,28 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
       followupsEnabled: link.followupsEnabled,
       nextFollowup:
         followups
-          .filter((f) => (PLANNED_FOLLOWUP_STATUSES as readonly string[]).includes(f.status))
-          .sort((a, b) => a.scheduledFor.getTime() - b.scheduledFor.getTime())[0] ?? null,
+          .filter((f) =>
+            (PLANNED_FOLLOWUP_STATUSES as readonly string[]).includes(f.status),
+          )
+          .sort(
+            (a, b) => a.scheduledFor.getTime() - b.scheduledFor.getTime(),
+          )[0] ?? null,
       draftToReview: followups.some((f) => f.status === "DRAFT"),
       lastSellerContactAt:
-        sellerActivities.find((a) => (CONTACT_ACTIVITY_TYPES as readonly string[]).includes(a.type))?.occurredAt ?? null,
+        sellerActivities.find((a) =>
+          (CONTACT_ACTIVITY_TYPES as readonly string[]).includes(a.type),
+        )?.occurredAt ?? null,
       snoozedUntil: link.snoozedUntil,
       meetingBookedAt: link.meetingBookedAt,
       meetingAt: link.meetingAt,
       quoteRequestedAt: link.quoteRequestedAt,
     }),
     insightCurrent && insight
-      ? { type: insight.recommendedAction.type, timing: insight.recommendedAction.timing, priority: insight.priority }
+      ? {
+          type: insight.recommendedAction.type,
+          timing: insight.recommendedAction.timing,
+          priority: insight.priority,
+        }
       : null,
     { action: INSIGHT_ACTION_LABELS, timing: TIMING_LABELS },
   );
@@ -293,7 +425,11 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
   for (const row of [...chatRows].reverse()) {
     const conversation = conversations.get(row.view.visitorId) ?? {
       visitorId: row.view.visitorId,
-      reader: row.view.prospect?.name ?? row.view.prospect?.email ?? row.view.email ?? "Lecteur anonyme",
+      reader:
+        row.view.prospect?.name ??
+        row.view.prospect?.email ??
+        row.view.email ??
+        "Lecteur anonyme",
       messages: [],
     };
     conversation.messages.push(row);
@@ -302,9 +438,15 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
   // Latest conversation first
   const transcript = [...conversations.values()].reverse();
 
-  const readerName = (view: { email: string | null; prospect: { name: string | null; email: string } | null }) =>
+  const readerName = (view: {
+    email: string | null;
+    prospect: { name: string | null; email: string } | null;
+  }) =>
     view.prospect?.name ?? view.prospect?.email ?? view.email ?? "Le prospect";
-  const voiceComments: VoiceCommentItem[] = voiceRows.map((row) => ({ ...row, reader: readerName(row.view) }));
+  const voiceComments: VoiceCommentItem[] = voiceRows.map((row) => ({
+    ...row,
+    reader: readerName(row.view),
+  }));
   const capsuleSummary = (row: (typeof capsuleRows)[number]) => ({
     id: row.id,
     kind: row.kind,
@@ -312,21 +454,26 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
     durationMs: row.durationMs,
     plays: row._count.plays,
   });
-  const welcomeRows = capsuleRows.filter((row) => row.pageNumber === WELCOME_PAGE);
+  const welcomeRows = capsuleRows.filter(
+    (row) => row.pageNumber === WELCOME_PAGE,
+  );
   const documentWelcomeRow = welcomeRows.find((row) => row.linkId === null);
   const linkWelcomeRow = welcomeRows.find((row) => row.linkId === link.id);
   const isVideo = link.document.kind === "VIDEO";
   // A video pitch is already the seller speaking: no welcome bubble on top
-  const welcome = canEdit && !isVideo ? (
-    <WelcomeMessage
-      documentId={link.document.id}
-      // A shared link speaks to everyone: the document's message is the one
-      linkId={link.shared ? null : link.id}
-      documentWelcome={documentWelcomeRow ? capsuleSummary(documentWelcomeRow) : null}
-      linkWelcome={linkWelcomeRow ? capsuleSummary(linkWelcomeRow) : null}
-      uploadPrefix={capsuleUploadPrefix(organization.id)}
-    />
-  ) : null;
+  const welcome =
+    canEdit && !isVideo ? (
+      <WelcomeMessage
+        documentId={link.document.id}
+        // A shared link speaks to everyone: the document's message is the one
+        linkId={link.shared ? null : link.id}
+        documentWelcome={
+          documentWelcomeRow ? capsuleSummary(documentWelcomeRow) : null
+        }
+        linkWelcome={linkWelcomeRow ? capsuleSummary(linkWelcomeRow) : null}
+        uploadPrefix={capsuleUploadPrefix(organization.id)}
+      />
+    ) : null;
   // Recorded before the welcome message: still played on their page, no longer created
   const linkCapsules: LinkCapsuleRow[] = [
     ...resolveCapsules(
@@ -344,11 +491,20 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
   }));
 
   // Only the latest booking's slot is kept (Link.meetingAt)
-  const latestBooking = actions.find((action) => action.type === "MEETING_BOOKED");
+  const latestBooking = actions.find(
+    (action) => action.type === "MEETING_BOOKED",
+  );
   const readerLabels = labelReaders(analytics.recentViews);
-  const isEmbeddedVideo = link.document.kind === "URL" && videoProvider(link.document.embedUrl) !== null;
+  const isEmbeddedVideo =
+    link.document.kind === "URL" &&
+    videoProvider(link.document.embedUrl) !== null;
   const timeline: TimelineItem[] = [
-    { id: `created-${link.id}`, at: link.createdAt, kind: "created" as const, title: "Lien créé" },
+    {
+      id: `created-${link.id}`,
+      at: link.createdAt,
+      kind: "created" as const,
+      title: "Lien créé",
+    },
     ...analytics.recentViews.map((view) => ({
       id: `view-${view.id}`,
       at: view.startedAt,
@@ -361,7 +517,9 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
           : link.document.kind === "VIDEO"
             ? `regardé ${reachedLabel(view.maxPageReached)}`
             : `jusqu'à la page ${view.maxPageReached}`,
-        link.document.kind === "URL" ? depthDetail(view.pageViews[0]?.maxScrollDepth ?? 0, isEmbeddedVideo) : null,
+        link.document.kind === "URL"
+          ? depthDetail(view.pageViews[0]?.maxScrollDepth ?? 0, isEmbeddedVideo)
+          : null,
         ...signalDetails(view.signals),
         [view.deviceType, view.browser].filter(Boolean).join(" "),
         view.timezone,
@@ -392,10 +550,10 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
         ? `« ${action.message} »`
         : action.id === latestBooking?.id && link.meetingAt
           ? `Rendez-vous le ${formatDate(link.meetingAt)}`
-        : action.signerName && action.prospect?.email
-          ? // The gate takes the reader's word: nothing proves they own that mailbox
-            `Nom saisi par le signataire, lien ouvert avec l'email ${action.prospect.email} (non vérifié)`
-          : null,
+          : action.signerName && action.prospect?.email
+            ? // The gate takes the reader's word: nothing proves they own that mailbox
+              `Nom saisi par le signataire, lien ouvert avec l'email ${action.prospect.email} (non vérifié)`
+            : null,
     })),
     ...chatRows
       .filter((row) => row.escalated)
@@ -439,7 +597,11 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
       detail: activity.note,
     })),
     ...alerts.map((alert) => {
-      const payload = alert.payload as { liveViewers?: number; inactiveDays?: number; reason?: string };
+      const payload = alert.payload as {
+        liveViewers?: number;
+        inactiveDays?: number;
+        reason?: string;
+      };
       return {
         id: `alert-${alert.id}`,
         at: alert.createdAt,
@@ -448,23 +610,31 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
         detail: payload.reason
           ? payload.reason
           : payload.liveViewers
-          ? `${payload.liveViewers} lecteurs en même temps`
-          : payload.inactiveDays
-            ? `après ${payload.inactiveDays} jours sans lecture`
-            : null,
+            ? `${payload.liveViewers} lecteurs en même temps`
+            : payload.inactiveDays
+              ? `après ${payload.inactiveDays} jours sans lecture`
+              : null,
       };
     }),
   ]
     .sort((a, b) => b.at.getTime() - a.at.getTime())
     .slice(0, 40);
 
-  const followupItems: FollowupItem[] = followups.map((f) => toFollowupItem(f, title));
+  const followupItems: FollowupItem[] = followups.map((f) =>
+    toFollowupItem(f, title),
+  );
 
   const now = new Date();
   const signature = actions.find((action) => action.type === "VALIDATE_SIGN");
-  const sharedReaders: SharedReader[] = link.shared ? await loadSharedReaders(link.id, now) : [];
-  const contactLine = [mainProspect?.company ? mainProspect.name : null, mainProspect?.email]
-    .filter(Boolean)
+  const sharedReaders: SharedReader[] = link.shared
+    ? await loadSharedReaders(link.id, now)
+    : [];
+  // What the title does not already say
+  const contactLine = [
+    mainProspect?.company ? mainProspect.name : null,
+    mainProspect?.email,
+  ]
+    .filter((part): part is string => !!part && part !== title)
     .join(", ");
 
   return (
@@ -473,27 +643,50 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
         <div className="space-y-3">
           <ShareReady
             // Remount when the server state moves: sent, contact added, settings tuned by the AI
-            key={[!!link.draftAt, link.prospects.length, link.expiresAt?.getTime(), link.ctaEnabled].join("|")}
+            key={[
+              !!link.draftAt,
+              link.prospects.length,
+              link.expiresAt?.getTime(),
+              link.ctaEnabled,
+            ].join("|")}
             linkId={link.id}
             url={url}
-            title={linkTitle({ ...link.document, company: mainProspect?.company })}
+            title={linkTitle({
+              ...link.document,
+              company: mainProspect?.company,
+            })}
             sent={!link.draftAt}
-            recipient={mainProspect ? { email: mainProspect.email, firstName: firstNameOf(mainProspect.name) } : null}
-            mailClient={sellerPrefs?.mailClient ?? guessMailClient(workspace.user.email)}
+            recipient={
+              mainProspect
+                ? {
+                    email: mainProspect.email,
+                    firstName: firstNameOf(mainProspect.name),
+                  }
+                : null
+            }
+            mailClient={
+              sellerPrefs?.mailClient ?? guessMailClient(workspace.user.email)
+            }
             signature={settings.senderSignature}
             processing={reading}
             summary={settingsSummary(link, now)}
             shared={link.shared}
             welcome={welcome}
             notice={
-              link.autoSettings && link.expiresAt && showsCountdown(link.document.docType)
+              link.autoSettings &&
+              link.expiresAt &&
+              showsCountdown(link.document.docType)
                 ? `Reconnu comme « ${DOC_TYPE_LABELS[link.document.docType as DocType]} » : le prospect a jusqu'au ${formatDate(link.expiresAt)} et voit le décompte.`
                 : null
             }
             settings={settingsPanel}
           />
           {sellerPrefs && (
-            <ShareMailToolTip user={workspace.user} organizationId={organization.id} prefs={sellerPrefs} />
+            <ShareMailToolTip
+              user={workspace.user}
+              organizationId={organization.id}
+              prefs={sellerPrefs}
+            />
           )}
         </div>
       )}
@@ -511,8 +704,12 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
             <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-body text-muted-foreground">
               {contactLine && <span>{contactLine}</span>}
               {link.parentLink && (
-                <Link href={`/links/${link.parentLink.id}`} className="hover:text-foreground hover:underline">
-                  via le lien partagé{link.parentLink.name ? ` « ${link.parentLink.name} »` : ""}
+                <Link
+                  href={`/links/${link.parentLink.id}`}
+                  className="hover:text-foreground hover:underline"
+                >
+                  via le lien partagé
+                  {link.parentLink.name ? ` « ${link.parentLink.name} »` : ""}
                 </Link>
               )}
               <span className="inline-flex items-center gap-0.5 rounded-md bg-muted py-0.5 pr-0.5 pl-2 font-mono text-small ring-1 ring-border">
@@ -534,34 +731,45 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
                   }`}
                 >
                   <Hourglass className="size-3.5" aria-hidden />
-                  {link.expiresAt <= now ? `Expiré ${formatRelative(link.expiresAt, now)}` : `Expire ${formatRelative(link.expiresAt, now)}`}
+                  {link.expiresAt <= now
+                    ? `Expiré ${formatRelative(link.expiresAt, now)}`
+                    : `Expire ${formatRelative(link.expiresAt, now)}`}
                 </a>
               )}
             </p>
           </div>
           {canEdit ? (
             <div className="flex flex-wrap items-center gap-2">
-              {!link.shared && <DealStatusSelect linkId={link.id} status={link.dealStatus} />}
+              {!link.shared && (
+                <DealStatusSelect linkId={link.id} status={link.dealStatus} />
+              )}
               <LinkSettingsDialog name={link.name ?? ""} {...settingsPanel} />
               <ArchiveLinkButton linkId={link.id} />
             </div>
           ) : (
-            <span className="text-sm text-muted-foreground">{DEAL_STATUS_LABELS[link.dealStatus]}</span>
+            <span className="text-sm text-muted-foreground">
+              {DEAL_STATUS_LABELS[link.dealStatus]}
+            </span>
           )}
         </div>
         {!canEdit && (
           <p className="rounded-xl bg-muted px-4 py-3 text-sm text-muted-foreground">
-            Deal de {seller?.name || seller?.email || "un autre commercial"}. Vous pouvez le consulter, seuls son
-            commercial et les admins peuvent le modifier.
+            Deal de {seller?.name || seller?.email || "un autre commercial"}.
+            Vous pouvez le consulter, seuls son commercial et les admins peuvent
+            le modifier.
           </p>
         )}
         {canEdit && link.dealStatus === "VALIDATED" && signature && (
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-success/10 px-4 py-3 text-sm">
             <span>
               <span className="font-medium">
-                {signature.signerName ?? signature.prospect?.name ?? signature.prospect?.email ?? "Le prospect"}
+                {signature.signerName ??
+                  signature.prospect?.name ??
+                  signature.prospect?.email ??
+                  "Le prospect"}
               </span>{" "}
-              a validé {formatRelative(signature.createdAt, now)}. Confirmez la vente pour arrêter les relances.
+              a validé {formatRelative(signature.createdAt, now)}. Confirmez la
+              vente pour arrêter les relances.
             </span>
             <MarkWonButton linkId={link.id} />
           </div>
@@ -572,42 +780,62 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
             className="flex items-center gap-2 rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive hover:underline"
           >
             <Hourglass className="size-4 shrink-0" aria-hidden />
-            Ce lien a expiré : le prospect ne peut plus l&apos;ouvrir. Prolongez-le pour le réactiver.
+            Ce lien a expiré : le prospect ne peut plus l&apos;ouvrir.
+            Prolongez-le pour le réactiver.
           </a>
         )}
       </div>
 
       {/* Disables every form and button below for a read-only visit */}
       <fieldset disabled={!canEdit} className="min-w-0 space-y-10">
-
         <div className="space-y-4">
           <LiveActivity
             key={live.stamp}
             linkId={link.id}
             initial={live}
-            pageCount={link.document.kind === "URL" ? null : link.document.pages.length}
+            pageCount={
+              link.document.kind === "URL" ? null : link.document.pages.length
+            }
             video={link.document.kind === "VIDEO"}
           />
 
           <DealVerdict
             linkId={link.id}
             insight={insight}
-            score={score ? { tier: score.tier, score: score.score, reasons } : null}
+            score={
+              score ? { tier: score.tier, score: score.score, reasons } : null
+            }
             opened={opened}
             readingNow={readingNow}
             lastActivityAt={analytics.lastActivityAt}
             viewCount={analytics.viewCount}
             totalDurationMs={analytics.totalDurationMs}
             action={nextAction}
-            recipientName={insightRecipient ? (insightRecipient.name ?? insightRecipient.email) : null}
+            recipientName={(() => {
+              const name = insightRecipient
+                ? (insightRecipient.name ?? insightRecipient.email)
+                : null;
+              return name && name !== title ? name : null;
+            })()}
             aiAvailable={getLanguageModel("analyze") !== null}
-            readSince={!!insight && !!link.lastActivityAt && link.lastActivityAt > insight.createdAt}
-            draftWaiting={followups.some((f) => f.trigger === "AI_DECISION" && (f.status === "DRAFT" || f.status === "PENDING"))}
+            readSince={
+              !!insight &&
+              !!link.lastActivityAt &&
+              link.lastActivityAt > insight.createdAt
+            }
+            draftWaiting={followups.some(
+              (f) =>
+                f.trigger === "AI_DECISION" &&
+                (f.status === "DRAFT" || f.status === "PENDING"),
+            )}
             now={now}
             scoreGuide={{
               hasPages: link.document.kind !== "URL",
-              hasPricing: link.document.pages.some((page) => page.tags.includes("PRICING")),
-              pricingThresholdSec: link.hotPricingThresholdSec ?? settings.hotPricingThresholdSec,
+              hasPricing: link.document.pages.some((page) =>
+                page.tags.includes("PRICING"),
+              ),
+              pricingThresholdSec:
+                link.hotPricingThresholdSec ?? settings.hotPricingThresholdSec,
             }}
           />
         </div>
@@ -623,7 +851,9 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
 
             {transcript.length > 0 && (
               <section id="questions" className="scroll-mt-20">
-                <SectionTitle hint="posées à l'assistant du document">Questions du prospect</SectionTitle>
+                <SectionTitle hint="posées à l'assistant du document">
+                  Questions du prospect
+                </SectionTitle>
                 <Surface>
                   <ChatTranscript conversations={transcript} />
                 </Surface>
@@ -632,7 +862,9 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
 
             {voiceComments.length > 0 && (
               <section id="vocaux" className="scroll-mt-20">
-                <SectionTitle hint="laissés sur les pages du document">Commentaires vocaux</SectionTitle>
+                <SectionTitle hint="laissés sur les pages du document">
+                  Commentaires vocaux
+                </SectionTitle>
                 <Surface>
                   <VoiceComments comments={voiceComments} />
                 </Surface>
@@ -641,14 +873,18 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
 
             {!sharing && welcome && (
               <section id="mot-accueil" className="scroll-mt-20">
-                <SectionTitle hint="le prospect le voit dès l'ouverture">Mot d&apos;accueil</SectionTitle>
+                <SectionTitle hint="le prospect le voit dès l'ouverture">
+                  Mot d&apos;accueil
+                </SectionTitle>
                 <Surface className="px-4 py-3">{welcome}</Surface>
               </section>
             )}
 
             {linkCapsules.length > 0 && (
               <section id="capsules" className="scroll-mt-20">
-                <SectionTitle hint="enregistrées avant le mot d'accueil">Capsules par page</SectionTitle>
+                <SectionTitle hint="enregistrées avant le mot d'accueil">
+                  Capsules par page
+                </SectionTitle>
                 <Surface className="px-4 py-3">
                   <LinkCapsules
                     documentId={link.document.id}
@@ -665,15 +901,20 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
             {showsDetail && (
               <details className="group">
                 <summary className="flex cursor-pointer list-none items-baseline gap-2 text-body font-semibold outline-none focus-visible:underline [&::-webkit-details-marker]:hidden">
-                  <span className="text-muted-foreground transition-transform group-open:rotate-90">›</span>
+                  <span className="text-muted-foreground transition-transform group-open:rotate-90">
+                    ›
+                  </span>
                   Lecture détaillée
                   <span className="font-normal text-muted-foreground">
-                    {isVideo ? "temps passé sur chaque passage de la vidéo" : "temps passé par page"}
+                    {isVideo
+                      ? "temps passé sur chaque passage de la vidéo"
+                      : "temps passé par page"}
                   </span>
                 </summary>
                 <Surface className="mt-3 p-4">
                   <p className="mb-2 flex items-center justify-end gap-1.5 text-sm text-muted-foreground">
-                    <span className="size-2.5 rounded-sm bg-heat-warm" /> {isVideo ? "passage sur les tarifs" : "page de tarifs"}
+                    <span className="size-2.5 rounded-sm bg-heat-warm" />{" "}
+                    {isVideo ? "passage sur les tarifs" : "page de tarifs"}
                   </p>
                   <PageTimeChart data={chartData} video={isVideo} />
                 </Surface>
@@ -693,15 +934,24 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
           <aside className="space-y-10">
             {link.shared ? (
               <section id="lecteurs" className="scroll-mt-20">
-                <SectionTitle hint="chacun a son lien et son suivi">Lecteurs</SectionTitle>
+                <SectionTitle hint="chacun a son lien et son suivi">
+                  Lecteurs
+                </SectionTitle>
                 <Surface>
                   <SharedReaders readers={sharedReaders} />
                 </Surface>
               </section>
             ) : (
               <section>
-                <SectionTitle hint="reçoit les relances, et qui a lu">Prospect</SectionTitle>
-                <ProspectPanel linkId={link.id} prospects={link.prospects} map={readerMap} now={now} />
+                <SectionTitle hint="reçoit les relances, et qui a lu">
+                  Prospect
+                </SectionTitle>
+                <ProspectPanel
+                  linkId={link.id}
+                  prospects={link.prospects}
+                  map={readerMap}
+                  now={now}
+                />
               </section>
             )}
 
@@ -730,9 +980,13 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
                         link.sellerNotes,
                         !!link.referenceConsentAt,
                       ].join("|"),
-                      dealAmount: link.dealAmountCents !== null ? String(link.dealAmountCents / 100) : "",
+                      dealAmount:
+                        link.dealAmountCents !== null
+                          ? String(link.dealAmountCents / 100)
+                          : "",
                       dealCurrency: link.dealCurrency ?? "EUR",
-                      decisionDeadline: link.decisionDeadline?.toISOString().slice(0, 10) ?? "",
+                      decisionDeadline:
+                        link.decisionDeadline?.toISOString().slice(0, 10) ?? "",
                       decisionMakerName: link.decisionMakerName ?? "",
                       decisionMakerRole: link.decisionMakerRole ?? "",
                       sellerNotes: link.sellerNotes ?? "",
@@ -741,14 +995,20 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
                   />
                   <SnoozeControl
                     linkId={link.id}
-                    snoozedUntil={link.snoozedUntil && link.snoozedUntil > now ? link.snoozedUntil.toISOString() : null}
+                    snoozedUntil={
+                      link.snoozedUntil && link.snoozedUntil > now
+                        ? link.snoozedUntil.toISOString()
+                        : null
+                    }
                   />
                 </div>
               </DealContextSummaryDetails>
             </section>
 
             <section>
-              <SectionTitle hint="appels, réponses, rendez-vous">Noter un échange</SectionTitle>
+              <SectionTitle hint="appels, réponses, rendez-vous">
+                Noter un échange
+              </SectionTitle>
               <Surface>
                 <SellerActivityForm linkId={link.id} />
               </Surface>
@@ -761,10 +1021,16 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
 }
 
 /** Readers of a shared link, most recently active first: each one's own link and where it stands. */
-async function loadSharedReaders(linkId: string, now: Date): Promise<SharedReader[]> {
+async function loadSharedReaders(
+  linkId: string,
+  now: Date,
+): Promise<SharedReader[]> {
   const links = await prisma.link.findMany({
     where: { parentLinkId: linkId, archivedAt: null },
-    orderBy: [{ lastActivityAt: { sort: "desc", nulls: "last" } }, { createdAt: "desc" }],
+    orderBy: [
+      { lastActivityAt: { sort: "desc", nulls: "last" } },
+      { createdAt: "desc" },
+    ],
     take: 200,
     select: {
       id: true,
@@ -772,7 +1038,11 @@ async function loadSharedReaders(linkId: string, now: Date): Promise<SharedReade
       lastActivityAt: true,
       createdAt: true,
       engagementScore: { select: { tier: true } },
-      prospects: { select: { email: true, name: true, company: true }, orderBy: { createdAt: "asc" }, take: 1 },
+      prospects: {
+        select: { email: true, name: true, company: true },
+        orderBy: { createdAt: "asc" },
+        take: 1,
+      },
     },
   });
   return links.map((reader) => {
@@ -780,7 +1050,11 @@ async function loadSharedReaders(linkId: string, now: Date): Promise<SharedReade
     return {
       linkId: reader.id,
       label: prospect?.name ?? prospect?.email ?? "Lecteur",
-      detail: [prospect?.name ? prospect.email : null, prospect?.company, `lu ${formatRelative(reader.lastActivityAt ?? reader.createdAt, now)}`]
+      detail: [
+        prospect?.name ? prospect.email : null,
+        prospect?.company,
+        `lu ${formatRelative(reader.lastActivityAt ?? reader.createdAt, now)}`,
+      ]
         .filter(Boolean)
         .join(" · "),
       state:
@@ -801,13 +1075,24 @@ function depthDetail(depth: number, video: boolean) {
 }
 
 /** What the reader did around the content, for a line of the timeline. */
-function signalDetails(signals: { type: ViewSignalType; valueMs: number | null }[]) {
+function signalDetails(
+  signals: { type: ViewSignalType; valueMs: number | null }[],
+) {
   const details: string[] = [];
   if (signals.some((s) => s.type === "EXTERNAL_OPEN")) {
-    const awayMs = signals.reduce((sum, s) => sum + (s.type === "EXTERNAL_RETURN" ? (s.valueMs ?? 0) : 0), 0);
-    details.push(awayMs > 0 ? `site ouvert, ≈ ${formatDuration(awayMs)} dessus` : "site ouvert dans un onglet");
+    const awayMs = signals.reduce(
+      (sum, s) => sum + (s.type === "EXTERNAL_RETURN" ? (s.valueMs ?? 0) : 0),
+      0,
+    );
+    details.push(
+      awayMs > 0
+        ? `site ouvert, ≈ ${formatDuration(awayMs)} dessus`
+        : "site ouvert dans un onglet",
+    );
   }
-  if (signals.some((s) => s.type === "DOWNLOAD")) details.push("PDF téléchargé");
-  if (signals.some((s) => s.type === "EXIT_PROMPT_OPENED")) details.push("a ouvert l'assistant en partant");
+  if (signals.some((s) => s.type === "DOWNLOAD"))
+    details.push("PDF téléchargé");
+  if (signals.some((s) => s.type === "EXIT_PROMPT_OPENED"))
+    details.push("a ouvert l'assistant en partant");
   return details;
 }
