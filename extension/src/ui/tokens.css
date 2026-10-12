@@ -1,0 +1,41 @@
+/*
+ * The app's palette (app/src/app/globals.css), same names, for the popup, the
+ * in-page panel (shadow root, hence :host) and the Outlook pane. Ink on cold
+ * paper; colour only where it means something: heat, success, trouble, action.
+ */
+:root, :host {
+  --background: oklch(0.982 0.004 255);
+  --foreground: oklch(0.235 0.045 258);
+  --card: oklch(1 0 0);
+  --muted: oklch(0.955 0.008 255);
+  --muted-foreground: oklch(0.5 0.035 258);
+  --border: oklch(0.92 0.008 255);
+  --brand: oklch(0.52 0.17 262);
+  --brand-foreground: oklch(1 0 0);
+  --success: oklch(0.52 0.12 155);
+  --warning: oklch(0.6 0.13 70);
+  --destructive: oklch(0.55 0.19 22);
+  --heat-hot: oklch(0.63 0.2 33);
+  --heat-warm: oklch(0.76 0.14 70);
+  --heat-cold: oklch(0.72 0.06 255);
+  --radius: 8px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root, :host {
+    --background: oklch(0.17 0.02 258);
+    --foreground: oklch(0.94 0.008 255);
+    --card: oklch(0.205 0.024 258);
+    --muted: oklch(0.26 0.028 258);
+    --muted-foreground: oklch(0.72 0.025 258);
+    --border: oklch(0.29 0.03 258);
+    --brand: oklch(0.7 0.14 262);
+    --brand-foreground: oklch(0.17 0.02 258);
+    --success: oklch(0.74 0.13 155);
+    --warning: oklch(0.8 0.13 75);
+    --destructive: oklch(0.7 0.17 22);
+    --heat-hot: oklch(0.7 0.19 35);
+    --heat-warm: oklch(0.81 0.13 75);
+    --heat-cold: oklch(0.72 0.06 255);
+  }
+}
