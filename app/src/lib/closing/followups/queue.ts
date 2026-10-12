@@ -1,4 +1,4 @@
-import type { FollowupChannel, FollowupTrigger } from "@/generated/prisma/enums";
+import type { FollowupChannel, FollowupTrigger, PageTag } from "@/generated/prisma/enums";
 import { getPublicAppUrl } from "@/lib/app-origin";
 import { prisma } from "@/lib/db";
 
@@ -90,7 +90,7 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
   const { link, prospect } = followup;
   const settings = link.organization.settings;
   const pages = link.document.pages;
-  const context = (followup.context ?? {}) as { brief?: FollowupPromptInput["brief"] };
+  const context = (followup.context ?? {}) as { brief?: FollowupPromptInput["brief"]; readTags?: PageTag[] };
   const brief = followup.trigger === "AI_DECISION" ? (context.brief ?? null) : null;
   const now = new Date();
   // The link no longer opens: a message pointing to it would be off-key, and the writer call wasted
@@ -142,7 +142,13 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
           : null,
       brief,
       offer: { description: settings?.offerDescription ?? null, valueProps: settings?.valueProps ?? null },
-      relevantSections: pickRelevantSections(pages, brief?.goal ?? null, followup.trigger, link.document.docType),
+      relevantSections: pickRelevantSections(
+        pages,
+        brief?.goal ?? null,
+        followup.trigger,
+        link.document.docType,
+        followup.trigger === "WARM_READ" ? context.readTags : undefined,
+      ),
       documentPurpose: link.document.docPurpose,
       previousFollowups: link.followups.map((f) => ({
         daysAgo: Math.floor((now.getTime() - f.sentAt!.getTime()) / DAY_MS),

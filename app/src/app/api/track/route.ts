@@ -13,8 +13,10 @@ import {
 import { refreshEngagementScore } from "@/lib/closing/engagement/refresh-score";
 import { viewerDeadline } from "@/lib/closing/expiry";
 import { VISITOR_COOKIE } from "@/lib/closing/tracking/visitor";
+import { emitReaderEvent } from "@/lib/closing/channels/engagement-webhooks";
 import { evaluatePricingCallMoment } from "@/lib/closing/triggers/hot-lead";
 import { evaluateHotPricing } from "@/lib/closing/triggers/hot-pricing";
+import { evaluateWarmRead } from "@/lib/closing/triggers/warm-read";
 import { prisma } from "@/lib/db";
 
 // The deal analysis runs after the response when a reader leaves
@@ -62,6 +64,7 @@ export async function POST(request: Request) {
         select: {
           expiresAt: true,
           dealStatus: true,
+          parentLinkId: true,
           document: { select: { numPages: true } },
           organization: { select: { suspendedAt: true } },
         },
@@ -158,6 +161,11 @@ export async function POST(request: Request) {
         await evaluatePricingCallMoment(view.id, now);
       }
     });
+    // A Smart Link reader: a follow-up on what they read, and the cold email tool hears when they get hot
+    if (view.link.parentLinkId) {
+      inBackground("warm-read", () => evaluateWarmRead(view.id, now));
+      inBackground("reader-hot", () => emitReaderEvent(view.linkId, "reader.hot"));
+    }
   }
 
   return new Response(null, { status: 204 });

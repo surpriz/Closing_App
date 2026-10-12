@@ -289,6 +289,7 @@ enum FollowupTrigger {
   MANUAL // queued by the seller
   AI_DECISION // decided by the deal analysis
   EXPIRY_REMINDER // the link expires soon (quotes and proposals)
+  WARM_READ // a cold email reader read for a while without answering
 }
 
 enum FollowupStatus {
@@ -368,6 +369,7 @@ enum ProspectOrigin {
   SELLER // added by the seller (dashboard or extension): the original recipient
   EMAIL_GATE // typed an email to open the link, the proposal was passed on
   PROSPECTING // suggested by Clozer prospecting: an unsubscribe also opts out of prospecting for everyone
+  COLD_EMAIL // came from a cold email Smart Link: the address was in the URL, unverified
 }
 
 enum SellerAlertChannel {
@@ -629,6 +631,7 @@ model Link {
   capsulePlays     CapsulePlay[]
   voiceComments    VoiceComment[]
   viewSignals      ViewSignal[]
+  webhookEvents    WebhookEvent[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -856,6 +859,34 @@ model SellerAlert {
   @@map("seller_alerts")
 }
 
+enum WebhookEventStatus {
+  PENDING // waiting for its first send or a retry
+  SENT
+  FAILED // gave up after the last retry
+}
+
+// An engagement event for the workspace's outbound webhook (a cold email tool
+// pausing its sequence): stored first, so a failed send is retried by the cron.
+model WebhookEvent {
+  id     String @id @default(cuid())
+  linkId String
+  link   Link   @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  event         String
+  dedupeKey     String             @unique
+  payload       Json
+  status        WebhookEventStatus @default(PENDING)
+  attempts      Int                @default(0)
+  lastError     String?
+  nextAttemptAt DateTime           @default(now())
+  sentAt        DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([status, nextAttemptAt])
+  @@map("webhook_events")
+}
+
 // What one seller wants to be told about, in one workspace. No row = defaults.
 model NotificationPreference {
   id             String       @id @default(cuid())
@@ -1081,16 +1112,16 @@ model PageCapsule {
   // "doc" or the link id: Postgres treats NULLs as distinct, a unique on linkId would allow two defaults
   scopeKey   String
 
-  pageNumber   Int // 0 = welcome message, else 1-based page
-  kind         CapsuleKind
-  blobPathname String
-  contentType  String // without codecs
+  pageNumber     Int // 0 = welcome message, else 1-based page
+  kind           CapsuleKind
+  blobPathname   String
+  contentType    String // without codecs
   // First frame of a video, so the bubble shows a still instead of downloading the clip
   posterPathname String?
-  sizeBytes    Int
-  durationMs   Int
-  hookText     String? // "Sur cette partie, laisse-moi t'expliquer…"
-  createdById  String?
+  sizeBytes      Int
+  durationMs     Int
+  hookText       String? // "Sur cette partie, laisse-moi t'expliquer…"
+  createdById    String?
 
   plays CapsulePlay[]
 

@@ -73,3 +73,6 @@ export const DEEP_READ = {
   pdfMinMs: 30_000,
   webMinMs: 60_000,
 } as const;
+
+/** A cold email reader who read this long without answering gets a follow-up on what they read. */
+export const WARM_READ_MIN_MS = 30_000;

@@ -98,9 +98,9 @@ export async function actOnInsight(insightId: string, { force = false, now = new
   });
   if (!decision.allowed || !prospect) return { ok: false, reasons: decision.allowed ? [] : decision.reasons };
 
-  // One AI follow-up in flight per deal: the newest reading replaces the older draft
+  // One AI follow-up in flight per deal: the newest reading replaces the older draft (a cold email one too)
   await prisma.followup.updateMany({
-    where: { linkId: link.id, trigger: "AI_DECISION", status: { in: [...UNAPPROVED] } },
+    where: { linkId: link.id, trigger: { in: ["AI_DECISION", "WARM_READ"] }, status: { in: [...UNAPPROVED] } },
     data: { status: "CANCELLED", cancelledAt: now, error: "Remplacée par une analyse plus récente" },
   });
 

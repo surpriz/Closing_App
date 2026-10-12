@@ -17,6 +17,7 @@ const SECTIONS_BY_GOAL: Record<string, PageTag[]> = {
   involve_decision_maker: ["SCOPE", "PRICING"],
   reactivate: ["SCOPE", "TIMELINE"],
   expiry_reminder: ["PRICING", "TERMS", "TIMELINE"],
+  follow_reading: ["CASE_STUDY", "SCOPE", "TEAM"],
 };
 const TRIGGER_GOAL: Record<string, string> = {
   HOT_PRICING: "clarify_pricing",
@@ -24,6 +25,7 @@ const TRIGGER_GOAL: Record<string, string> = {
   MANUAL: "gentle_reminder",
   AI_DECISION: "gentle_reminder",
   EXPIRY_REMINDER: "expiry_reminder",
+  WARM_READ: "follow_reading",
 };
 const MAX_SECTIONS = 6;
 
@@ -32,9 +34,12 @@ export function pickRelevantSections(
   goal: string | null,
   trigger: string,
   docType?: string | null,
+  /** What the reader spent the most time on, first: the topic, never how it was read. */
+  readTags?: PageTag[],
 ) {
   const names = tagLabels(docType);
-  const wanted = SECTIONS_BY_GOAL[goal ?? TRIGGER_GOAL[trigger] ?? "gentle_reminder"] ?? [];
+  const read = readTags?.filter((tag) => tag !== "OTHER") ?? [];
+  const wanted = read.length > 0 ? read : (SECTIONS_BY_GOAL[goal ?? TRIGGER_GOAL[trigger] ?? "gentle_reminder"] ?? []);
   const sections: { section: string; summary: string | null; keyFacts: string[] }[] = [];
   for (const tag of wanted) {
     for (const page of pages) {

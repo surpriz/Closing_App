@@ -54,6 +54,7 @@ export const FOLLOWUP_TRIGGER_LABELS: Record<FollowupTrigger, string> = {
   MANUAL: "Relance manuelle",
   AI_DECISION: "Conseillée par l'analyse",
   EXPIRY_REMINDER: "Rappel avant expiration",
+  WARM_READ: "Après un clic de cold email",
 };
 
 export const SELLER_ACTIVITY_LABELS: Record<SellerActivityType, string> = {

@@ -21,6 +21,16 @@ describe("pickRelevantSections", () => {
     expect(pickRelevantSections(pages, null, "HOT_PRICING").map((s) => s.section)).toEqual(["Tarifs"]);
     expect(pickRelevantSections(pages, null, "ANTI_GHOSTING").map((s) => s.section)).toEqual(["Périmètre"]);
   });
+
+  it("follows what a cold email reader read the longest, else the trigger's sections", () => {
+    expect(
+      pickRelevantSections(pages, null, "WARM_READ", null, ["CASE_STUDY", "OTHER", "SCOPE"]).map((s) => s.section),
+    ).toEqual(["Références", "Périmètre"]);
+    expect(pickRelevantSections(pages, null, "WARM_READ", null, []).map((s) => s.section)).toEqual([
+      "Références",
+      "Périmètre",
+    ]);
+  });
 });
 
 describe("guardSourceText", () => {

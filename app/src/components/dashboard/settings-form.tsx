@@ -412,6 +412,12 @@ export function SettingsForm({
                       </code>
                     </p>
                   )}
+                  <p className="text-sm text-muted-foreground">
+                    Smart Link : <code>reader.opened</code> part dès qu&apos;un prospect venu
+                    d&apos;un cold email se met à lire, avec son email. Dans Zapier ou Make,
+                    branchez-le sur « mettre le lead en pause » de Lemlist ou Instantly.{" "}
+                    <code>reader.hot</code> suit quand il dépasse le seuil chaud.
+                  </p>
                 </div>
               </div>
             </details>

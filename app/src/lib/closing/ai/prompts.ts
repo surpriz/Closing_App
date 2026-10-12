@@ -49,6 +49,8 @@ const GOALS: Record<FollowupDraftInput["trigger"], string> = {
   AI_DECISION: "Send a short, friendly follow-up about the document and offer to answer questions.",
   EXPIRY_REMINDER:
     "The sender set an expiry date on the document link: after it the prospect can no longer open it without asking. Remind them of the exact date and time given, and make it easy to act before then (ask a question, validate, or ask for more time). Honest urgency from this real date only: no invented consequences, discounts or new deadlines.",
+  WARM_READ:
+    "The prospect came from a cold email and has not answered yet. Write a short, relevant follow-up about one topic from the given sections that matters to a company like theirs, and end with one simple question (for example whether it is a priority this quarter). It is an early conversation: no hard sell, no call request in the first line.",
 };
 
 const BRIEF_GOALS: Record<string, string> = {
