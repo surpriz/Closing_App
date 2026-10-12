@@ -54,19 +54,16 @@ function signupError(refusal: SignupRefusal) {
   return APIError.from("FORBIDDEN", { code: SIGNUP_REFUSAL_CODES[refusal], message: signupRefusalMessage(refusal) });
 }
 
-// Refused before the email goes out, so the login form says why right away
-async function refuseMagicLink(email: unknown) {
-  if (typeof email !== "string") return;
+// Why this email gets no sign-in link. Told by email, never on the login form:
+// the form answers the same for everyone so nobody can probe who has an account
+async function magicLinkRefusal(email: string) {
   const user = await prisma.user.findFirst({
     where: { email: { equals: normalizeEmail(email), mode: "insensitive" } },
     select: { banned: true, banExpires: true },
   });
-  if (user) {
-    if (isUserBlocked(user)) throw APIError.from("FORBIDDEN", { code: "BANNED_USER", message: BANNED_USER_MESSAGE });
-    return;
-  }
+  if (user) return isUserBlocked(user) ? BANNED_USER_MESSAGE : null;
   const refusal = await signupRefusal(email);
-  if (refusal) throw signupError(refusal);
+  return refusal && signupRefusalMessage(refusal);
 }
 
 export const auth = betterAuth({
@@ -105,7 +102,6 @@ export const auth = betterAuth({
   },
   hooks: {
     before: createAuthMiddleware(async (ctx) => {
-      if (ctx.path === "/sign-in/magic-link") return refuseMagicLink(ctx.body?.email);
       // The admin plugin trusts users.role; also require the configured email, so a
       // role set by mistake in the database never opens the admin endpoints
       if (!ctx.path.startsWith("/admin/")) return;
@@ -139,6 +135,21 @@ export const auth = betterAuth({
     }),
     magicLink({
       sendMagicLink: async ({ email, url }) => {
+        const refusal = await magicLinkRefusal(email);
+        if (refusal) {
+          if (devMagicLinksEnabled()) {
+            console.info(`[auth] no magic link for ${email}: ${refusal}`);
+            return;
+          }
+          await sendEmail({
+            to: email,
+            subject: "Connexion à Clozer",
+            html: `<p>${refusal}</p>`,
+            text: refusal,
+          });
+          return;
+        }
+
         if (devMagicLinksEnabled()) {
           rememberDevMagicLink(email, url);
           console.info(`[auth] magic link for ${email}: ${url}`);
