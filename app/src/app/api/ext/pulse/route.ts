@@ -1,5 +1,5 @@
 import { getPublicAppUrl } from "@/lib/app-origin";
-import { prospectLabel } from "@/lib/closing/dashboard/labels";
+import { dealLabel, linkLabelSelect } from "@/lib/closing/dashboard/labels";
 import { getWorkspaceLiveState } from "@/lib/closing/live";
 import { extensionNotice } from "@/lib/closing/notify/extension-notice";
 import { upsertSellerPrefs } from "@/lib/closing/notify/preferences";
@@ -56,7 +56,7 @@ export const GET = withExtensionAuth(async (request, { user, organization }) => 
         priority: true,
         payload: true,
         createdAt: true,
-        link: { select: { id: true, name: true, slug: true, dealStatus: true, prospects: { orderBy: { createdAt: "asc" }, take: 1, select: { name: true, email: true, company: true } }, document: { select: { name: true } } } },
+        link: { select: { ...linkLabelSelect, dealStatus: true } },
       },
     }),
   ]);
@@ -85,7 +85,7 @@ export const GET = withExtensionAuth(async (request, { user, organization }) => 
       createdAt: alert.createdAt.toISOString(),
       // Signed and not closed yet: the extension offers "Marquer gagné" right on the alert
       canMarkWon: alert.type === "PROSPECT_VALIDATED" && alert.link.dealStatus === "VALIDATED",
-      ...extensionNotice(alert.type, prospectLabel(alert.link), alert.link.document.name, (alert.payload ?? {}) as object),
+      ...extensionNotice(alert.type, dealLabel(alert.link), alert.link.document.name, (alert.payload ?? {}) as object),
     })),
     next: (alerts.at(-1)?.createdAt ?? since).toISOString(),
   });

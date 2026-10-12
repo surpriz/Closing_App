@@ -24,6 +24,8 @@ export type FeedItem = {
   linkId: string;
   who: string;
   what: string;
+  /** Deal and document, whichever `who` does not already say. */
+  context: string | null;
   /** The prospect's own words, shown as a quote. */
   quote?: string | null;
 };
@@ -44,6 +46,7 @@ export type FeedSource = {
     createdAt: Date;
     linkId: string;
     who: string;
+    linkLabel: string;
     type: ProspectActionType;
     documentName: string;
     message: string | null;
@@ -53,6 +56,7 @@ export type FeedSource = {
     createdAt: Date;
     linkId: string;
     linkLabel: string;
+    documentName: string | null;
     type: SellerAlertType;
     payload: unknown;
   }[];
@@ -61,6 +65,7 @@ export type FeedSource = {
     sentAt: Date;
     linkId: string;
     who: string;
+    linkLabel: string;
     channel: FollowupChannel;
     trigger: FollowupTrigger;
   }[];
@@ -74,15 +79,19 @@ const PRICING_MENTION_MS = 20_000;
 /** CHANNEL_LABELS in lower case, but WhatsApp keeps its capital. */
 const CHANNEL: Record<FollowupChannel, string> = { EMAIL: "email", WHATSAPP: "WhatsApp" };
 
-export function readerLabel(reader: string | null, linkLabel: string) {
-  return reader && reader !== linkLabel ? `${reader} (${linkLabel})` : linkLabel;
+/** The quiet second line: deal, then document, each only when the line above does not say it. */
+export function feedContext(who: string, linkLabel: string, documentName: string | null): string | null {
+  const parts: string[] = [];
+  if (linkLabel !== who) parts.push(linkLabel);
+  if (documentName && documentName !== linkLabel && documentName !== who) parts.push(documentName);
+  return parts.length ? parts.join(" · ") : null;
 }
 
 function describeRead(view: FeedSource["views"][number]) {
-  if (view.totalDurationMs < GLANCE_MS) return `a ouvert ${view.documentName}`;
+  if (view.totalDurationMs < GLANCE_MS) return "a ouvert le document";
   const pricing =
     view.pricingDurationMs >= PRICING_MENTION_MS ? `, dont ${formatDuration(view.pricingDurationMs)} sur les tarifs` : "";
-  return `a lu ${view.documentName} pendant ${formatDuration(view.totalDurationMs)}${pricing}`;
+  return `a lu pendant ${formatDuration(view.totalDurationMs)}${pricing}`;
 }
 
 export const ACTION_KIND = {
@@ -94,13 +103,13 @@ export const ACTION_KIND = {
   MEETING_CLICK: "meeting_click",
 } as const satisfies Record<ProspectActionType, FeedKind>;
 
-function describeAction(type: ProspectActionType, documentName: string) {
-  if (type === "VALIDATE_SIGN") return `a validé ${documentName}`;
-  if (type === "REQUEST_EXTENSION") return `demande une prolongation de ${documentName}`;
-  if (type === "MEETING_BOOKED") return `a pris rendez-vous depuis ${documentName}`;
-  if (type === "MEETING_CLICK") return `a ouvert votre agenda depuis ${documentName}`;
-  if (type === "REQUEST_QUOTE") return `demande un devis après ${documentName}`;
-  return `demande un ajustement sur ${documentName}`;
+function describeAction(type: ProspectActionType) {
+  if (type === "VALIDATE_SIGN") return "a validé la proposition";
+  if (type === "REQUEST_EXTENSION") return "demande une prolongation";
+  if (type === "MEETING_BOOKED") return "a pris rendez-vous";
+  if (type === "MEETING_CLICK") return "a ouvert votre agenda";
+  if (type === "REQUEST_QUOTE") return "demande un devis";
+  return "demande un ajustement";
 }
 
 function describeAlert(type: SellerAlertType, payload: unknown) {
@@ -136,8 +145,9 @@ export function buildFeed(source: FeedSource, limit: number): FeedItem[] {
       at: view.lastSeenAt,
       kind: "read" as const,
       linkId: view.linkId,
-      who: readerLabel(view.reader, view.linkLabel),
+      who: view.reader ?? view.linkLabel,
       what: describeRead(view),
+      context: feedContext(view.reader ?? view.linkLabel, view.linkLabel, view.documentName),
     })),
     ...source.actions.map((action) => ({
       id: `action-${action.id}`,
@@ -145,7 +155,8 @@ export function buildFeed(source: FeedSource, limit: number): FeedItem[] {
       kind: ACTION_KIND[action.type],
       linkId: action.linkId,
       who: action.who,
-      what: describeAction(action.type, action.documentName),
+      what: describeAction(action.type),
+      context: feedContext(action.who, action.linkLabel, action.documentName),
       quote: action.message,
     })),
     ...source.alerts.map((alert) => ({
@@ -155,6 +166,7 @@ export function buildFeed(source: FeedSource, limit: number): FeedItem[] {
       linkId: alert.linkId,
       who: alert.linkLabel,
       what: describeAlert(alert.type, alert.payload),
+      context: feedContext(alert.linkLabel, alert.linkLabel, alert.documentName),
     })),
     ...source.followups.map((followup) => ({
       id: `followup-${followup.id}`,
@@ -162,6 +174,7 @@ export function buildFeed(source: FeedSource, limit: number): FeedItem[] {
       kind: "followup" as const,
       linkId: followup.linkId,
       who: followup.who,
+      context: feedContext(followup.who, followup.linkLabel, null),
       what: `a reçu une relance ${CHANNEL[followup.channel]}${
         followup.trigger === "ANTI_GHOSTING"
           ? " (lien pas encore ouvert)"

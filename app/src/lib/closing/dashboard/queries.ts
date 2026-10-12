@@ -5,7 +5,7 @@ import { DAY_MS } from "../constants";
 import { hasReason } from "../engagement/reasons";
 import type { FeedSource } from "./feed";
 import type { FunnelLinkFacts } from "./funnel";
-import { firstProspect, linkLabelSelect, prospectLabel } from "./labels";
+import { dealLabel, firstProspect, linkLabelSelect } from "./labels";
 import type { OpenDealStatus } from "./next-action";
 
 /**
@@ -93,7 +93,7 @@ export async function getOpenDeals(
       meetingAt: true,
       quoteRequestedAt: true,
       engagementScore: { select: { score: true, tier: true, reasons: true } },
-      document: { select: { name: true } },
+      document: { select: { name: true, displayTitle: true, docType: true } },
       prospects: firstProspect,
       followups: {
         where: { status: { in: [...PLANNED_FOLLOWUP_STATUSES] } },
@@ -202,7 +202,6 @@ export async function getFeedSource(
   owner?: SellerScope,
 ): Promise<FeedSource> {
   const ofWorkspace = { link: { organizationId, archivedAt: null, ...(owner && sellerLinks(owner)) } };
-  const linkWithDocument = { select: { ...linkLabelSelect, document: { select: { name: true } } } } as const;
 
   const [views, actions, alerts, followups] = await Promise.all([
     prisma.documentView.findMany({
@@ -216,7 +215,7 @@ export async function getFeedSource(
         totalDurationMs: true,
         email: true,
         prospect: { select: { name: true, email: true } },
-        link: linkWithDocument,
+        link: { select: linkLabelSelect },
       },
     }),
     prisma.prospectAction.findMany({
@@ -229,7 +228,7 @@ export async function getFeedSource(
         type: true,
         message: true,
         prospect: { select: { name: true, email: true, company: true } },
-        link: linkWithDocument,
+        link: { select: linkLabelSelect },
       },
     }),
     prisma.sellerAlert.findMany({
@@ -264,7 +263,7 @@ export async function getFeedSource(
       id: view.id,
       lastSeenAt: view.lastSeenAt,
       linkId: view.link.id,
-      linkLabel: prospectLabel(view.link),
+      linkLabel: dealLabel(view.link),
       reader: view.prospect?.name ?? view.prospect?.email ?? view.email,
       documentName: view.link.document.name,
       totalDurationMs: view.totalDurationMs,
@@ -274,7 +273,8 @@ export async function getFeedSource(
       id: action.id,
       createdAt: action.createdAt,
       linkId: action.link.id,
-      who: action.prospect?.company ?? action.prospect?.name ?? prospectLabel(action.link),
+      who: action.prospect?.company ?? action.prospect?.name ?? dealLabel(action.link),
+      linkLabel: dealLabel(action.link),
       type: action.type,
       documentName: action.link.document.name,
       message: action.message,
@@ -283,7 +283,8 @@ export async function getFeedSource(
       id: alert.id,
       createdAt: alert.createdAt,
       linkId: alert.link.id,
-      linkLabel: prospectLabel(alert.link),
+      linkLabel: dealLabel(alert.link),
+      documentName: alert.link.document.name,
       type: alert.type,
       payload: alert.payload,
     })),
@@ -291,7 +292,8 @@ export async function getFeedSource(
       id: followup.id,
       sentAt: followup.sentAt!,
       linkId: followup.link.id,
-      who: followup.prospect.company ?? followup.prospect.name ?? prospectLabel(followup.link),
+      who: followup.prospect.company ?? followup.prospect.name ?? dealLabel(followup.link),
+      linkLabel: dealLabel(followup.link),
       channel: followup.channel,
       trigger: followup.trigger,
     })),
@@ -352,10 +354,10 @@ export async function getFreshValidations(organizationId: string, now: Date, own
     orderBy: { createdAt: "desc" },
     select: {
       prospect: { select: { company: true } },
-      link: { select: { name: true, slug: true, prospects: firstProspect } },
+      link: { select: linkLabelSelect },
     },
   });
-  return actions.map((action) => action.prospect?.company ?? prospectLabel(action.link));
+  return actions.map((action) => action.prospect?.company ?? dealLabel(action.link));
 }
 
 /** Follow-ups written and waiting for the seller's go, oldest slot first. */

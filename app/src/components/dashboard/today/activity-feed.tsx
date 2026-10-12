@@ -37,9 +37,10 @@ export function ActivityFeed({ items, now }: { items: FeedItem[]; now: Date }) {
             {item.quote && (
               <p className="border-l-2 border-border pl-2.5 text-pretty text-muted-foreground">{item.quote}</p>
             )}
-            <time className="block text-xs text-muted-foreground" title={formatDate(item.at)}>
-              {formatRelative(item.at, now)}
-            </time>
+            <p className="text-small text-muted-foreground">
+              <time title={formatDate(item.at)}>{formatRelative(item.at, now)}</time>
+              {item.context && <span> · {item.context}</span>}
+            </p>
           </div>
         </li>
       ))}

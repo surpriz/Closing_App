@@ -20,7 +20,7 @@ import { documentUploadPrefix, pitchUploadPrefix } from "@/lib/blob";
 import { dealAction } from "@/lib/closing/dashboard/deal-action";
 import { buildFeed } from "@/lib/closing/dashboard/feed";
 import { buildFunnel, buildHeatDistribution } from "@/lib/closing/dashboard/funnel";
-import { prospectLabel } from "@/lib/closing/dashboard/labels";
+import { dealDocumentMeta, dealLabel } from "@/lib/closing/dashboard/labels";
 import { parsePeriod, periodStart, PERIODS } from "@/lib/closing/dashboard/period";
 import { compareDeals } from "@/lib/closing/dashboard/rank";
 import {
@@ -309,10 +309,10 @@ function toTodoRow(
     id: deal.id,
     dealStatus: deal.dealStatus,
     opened: deal.opened,
-    label: prospectLabel(deal),
+    label: dealLabel(deal),
     company: prospect?.company ?? null,
     contact: prospect ? (prospect.name ?? prospect.email) : null,
-    documentName: deal.document.name,
+    documentName: dealDocumentMeta(deal),
     tier,
     score,
     state: dealState(deal.dealStatus, deal.opened, tier),

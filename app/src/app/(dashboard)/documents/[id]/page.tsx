@@ -38,6 +38,7 @@ import { WELCOME_PAGE } from "@/lib/closing/capsules/resolve";
 import { getDocumentAnalytics } from "@/lib/closing/analytics";
 import { getLanguageModel } from "@/lib/closing/ai/provider";
 import { catchUpInBackground } from "@/lib/closing/catch-up";
+import { dealLabel, linkLabelSelect } from "@/lib/closing/dashboard/labels";
 import { buildDocumentFrictions } from "@/lib/closing/dashboard/frictions";
 import { labelReaders } from "@/lib/closing/dashboard/readers";
 import { tagLabels } from "@/lib/closing/documents/doc-types";
@@ -97,14 +98,14 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
       take: 30,
       include: {
         prospect: { select: { name: true, email: true } },
-        link: { select: { name: true, slug: true } },
+        link: { select: linkLabelSelect },
       },
     }),
     prisma.sellerAlert.findMany({
       where: { link: { documentId: document.id }, type: { notIn: ["PROSPECT_VALIDATED", "CHANGE_REQUESTED", "QUOTE_REQUESTED", "MEETING_BOOKED"] } },
       orderBy: { createdAt: "desc" },
       take: 10,
-      include: { link: { select: { name: true, slug: true } } },
+      include: { link: { select: linkLabelSelect } },
     }),
     prisma.documentView.groupBy({
       by: ["linkId"],
@@ -147,7 +148,7 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
   });
   const taggedPages = document.pages.filter((p) => p.tags.length > 0);
 
-  const followupItems: FollowupItem[] = followups.map((f) => toFollowupItem(f, f.link.name ?? f.link.slug));
+  const followupItems: FollowupItem[] = followups.map((f) => toFollowupItem(f, dealLabel(f.link)));
 
   const now = new Date();
   const readerLabels = labelReaders(analytics.recentViews);
@@ -290,7 +291,7 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
                           href={`/links/${link.id}`}
                           className="font-semibold outline-none after:absolute after:inset-0 focus-visible:after:ring-3 focus-visible:after:ring-ring/30 focus-visible:after:ring-inset"
                         >
-                          {prospect?.company ?? link.name ?? prospect?.name ?? prospect?.email ?? "Sans nom"}
+                          {dealLabel({ ...link, document })}
                         </Link>
                         <p className="truncate text-sm text-muted-foreground">
                           {[prospect?.company ? prospect.name : null, prospect?.email].filter(Boolean).join(", ") ||
@@ -520,7 +521,7 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
                           {readerLabels.get(view.id)?.name}
                           <span className="font-normal text-muted-foreground">
                             {" "}
-                            sur le lien « {view.link.name ?? view.link.slug} »
+                            pour {dealLabel(view.link)}
                           </span>
                         </p>
                         <p className="truncate text-muted-foreground">
@@ -578,7 +579,7 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
                           <p className="font-medium">
                             {ALERT_TYPE_LABELS[alert.type]}
                             <span className="font-normal text-muted-foreground">
-                              , {alert.link.name ?? alert.link.slug}
+                              , {dealLabel(alert.link)}
                               {payload.reason
                                 ? `, ${payload.reason.toLowerCase()}`
                                 : `${payload.liveViewers ? `, ${payload.liveViewers} lecteurs en même temps` : ""}${payload.inactiveDays ? `, après ${payload.inactiveDays} jours` : ""}`}

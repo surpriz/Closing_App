@@ -6,7 +6,7 @@ import { CommandMenu, type CommandEntry } from "@/components/dashboard/command-m
 import { DashboardNav, MobileNav } from "@/components/dashboard/dashboard-nav";
 import { HelpWidget } from "@/components/dashboard/help-widget";
 import { UserMenu } from "@/components/dashboard/user-menu";
-import { linkLabelSelect, prospectLabel } from "@/lib/closing/dashboard/labels";
+import { dealDocumentMeta, dealLabel, linkLabelSelect } from "@/lib/closing/dashboard/labels";
 import { sellerLinks } from "@/lib/closing/dashboard/queries";
 import { prisma } from "@/lib/db";
 import { isPlatformAdminEmail } from "@/lib/platform-admin";
@@ -33,7 +33,7 @@ export default async function DashboardLayout({
       },
       orderBy: { updatedAt: "desc" },
       take: 300,
-      select: { ...linkLabelSelect, document: { select: { name: true } } },
+      select: linkLabelSelect,
     }),
     prisma.document.findMany({
       where: { organizationId: organization.id, archivedAt: null },
@@ -45,13 +45,13 @@ export default async function DashboardLayout({
   const entries: CommandEntry[] = [
     ...links.map((link) => {
       const contact = link.prospects[0];
-      const label = prospectLabel(link);
+      const label = dealLabel(link);
       const who = contact?.name ?? contact?.email;
       return {
         kind: "deal" as const,
         href: `/links/${link.id}`,
         label,
-        hint: [who !== label ? who : null, link.document.name].filter(Boolean).join(" · "),
+        hint: [who !== label ? who : null, dealDocumentMeta(link)].filter(Boolean).join(" · "),
       };
     }),
     ...documents.map((doc) => ({ kind: "document" as const, href: `/documents/${doc.id}`, label: doc.name })),

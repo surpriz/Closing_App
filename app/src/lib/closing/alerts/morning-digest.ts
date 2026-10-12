@@ -5,7 +5,7 @@ import { isOwnerRole } from "@/lib/roles";
 
 import { DAY_MS } from "../constants";
 import { dealAction } from "../dashboard/deal-action";
-import { prospectLabel } from "../dashboard/labels";
+import { dealLabel, linkLabelSelect } from "../dashboard/labels";
 import { describeNextAction, isUrgent } from "../dashboard/next-action";
 import { getOpenDeals, sellerLinks, type SellerScope } from "../dashboard/queries";
 import { compareDeals } from "../dashboard/rank";
@@ -105,7 +105,7 @@ async function loadDigestData(
   const appUrl = getPublicAppUrl();
   const mine = { organizationId, ...sellerLinks(scope) };
 
-  const linkLabel = { select: { name: true, slug: true, prospects: { orderBy: { createdAt: "asc" }, take: 1, select: { name: true, email: true, company: true } } } } as const;
+  const linkLabel = { select: linkLabelSelect } as const;
   const [deals, actions, questions, readers, followupsSent, followupsFailed, unsubscribed, autoSent, drafts, expiring] = await Promise.all([
     getOpenDeals(organizationId, { owner: scope }),
     prisma.prospectAction.findMany({
@@ -142,7 +142,7 @@ async function loadDigestData(
         expiresAt: { gt: now, lte: new Date(now.getTime() + EXPIRING_SOON_MS) },
       },
       orderBy: { expiresAt: "asc" },
-      select: { id: true, expiresAt: true, document: { select: { name: true } }, ...linkLabel.select },
+      select: { expiresAt: true, ...linkLabel.select },
     }),
   ]);
 
@@ -153,7 +153,7 @@ async function loadDigestData(
     .sort(compareDeals)
     .slice(0, DIGEST_TODO_MAX)
     .map((row) => ({
-      label: prospectLabel(row.deal),
+      label: dealLabel(row.deal),
       documentName: row.deal.document.name,
       why: row.insightHeadline ?? describeNextAction(row.action, now),
       url: `${appUrl}/links/${row.deal.id}`,
@@ -166,7 +166,7 @@ async function loadDigestData(
     actions: [
       ...actions.map((a) => ({
         at: a.createdAt,
-        label: prospectLabel(a.link),
+        label: dealLabel(a.link),
         kind: (
           {
             VALIDATE_SIGN: "validated",
@@ -182,7 +182,7 @@ async function loadDigestData(
       })),
       ...questions.map((q) => ({
         at: q.createdAt,
-        label: prospectLabel(q.link),
+        label: dealLabel(q.link),
         kind: "question" as const,
         message: q.content,
         url: `${appUrl}/links/${q.linkId}#questions`,
@@ -198,7 +198,7 @@ async function loadDigestData(
     })),
     drafts,
     expiring: expiring.map((link) => ({
-      label: prospectLabel(link),
+      label: dealLabel(link),
       documentName: link.document.name,
       when: formatDeadline(link.expiresAt!, "fr-FR", timezone),
       url: `${appUrl}/links/${link.id}#expiration`,

@@ -45,6 +45,7 @@ import { capsuleUploadPrefix } from "@/lib/blob";
 import { getLanguageModel } from "@/lib/closing/ai/provider";
 import type { ViewSignalType } from "@/generated/prisma/enums";
 import { getLinkAnalytics } from "@/lib/closing/analytics";
+import { dealLabel, linkLabelSelect } from "@/lib/closing/dashboard/labels";
 import { videoProvider } from "@/lib/closing/documents/web-link";
 import { DOC_TYPE_LABELS, type DocType } from "@/lib/closing/documents/doc-types";
 import { linkTitle } from "@/lib/closing/documents/link-title";
@@ -77,9 +78,9 @@ export async function generateMetadata({ params }: PageProps<"/links/[id]">): Pr
   const { organization } = await requireWorkspace();
   const link = await prisma.link.findFirst({
     where: { id, organizationId: organization.id },
-    select: { name: true, slug: true, prospects: { select: { company: true }, orderBy: { createdAt: "asc" }, take: 1 } },
+    select: linkLabelSelect,
   });
-  return { title: link?.prospects[0]?.company ?? link?.name ?? "Prospect" };
+  return { title: link ? dealLabel(link) : "Prospect" };
 }
 
 export default async function LinkDetailPage({ params, searchParams }: PageProps<"/links/[id]">) {
@@ -201,7 +202,7 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
     : null;
 
   const mainProspect = link.prospects[0];
-  const title = mainProspect?.company ?? link.name ?? mainProspect?.email ?? link.slug;
+  const title = dealLabel(link);
   const url = `${origin}/v/${link.slug}`;
 
   // Just dropped, or not sent yet: the share screen leads the page
@@ -416,7 +417,7 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
     .sort((a, b) => b.at.getTime() - a.at.getTime())
     .slice(0, 40);
 
-  const followupItems: FollowupItem[] = followups.map((f) => toFollowupItem(f, link.name ?? link.slug));
+  const followupItems: FollowupItem[] = followups.map((f) => toFollowupItem(f, title));
 
   const now = new Date();
   const signature = actions.find((action) => action.type === "VALIDATE_SIGN");

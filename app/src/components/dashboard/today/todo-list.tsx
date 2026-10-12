@@ -19,7 +19,8 @@ export type TodoRow = {
   /** Company when known, else the contact. */
   company: string | null;
   contact: string | null;
-  documentName: string;
+  /** Null when the label already names the document. */
+  documentName: string | null;
   tier: EngagementTier | null;
   score: number;
   /** "Chaud", "Ajustement demandé", "Pas encore ouvert"… */
