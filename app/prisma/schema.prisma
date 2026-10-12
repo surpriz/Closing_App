@@ -31,6 +31,8 @@ model User {
   extensionTokens         ExtensionToken[]
   sellerAlerts            SellerAlert[]
   notificationPreferences NotificationPreference[]
+  helpMessages            HelpMessage[]
+  helpFeedback            HelpFeedback[]
 
   @@map("users")
 }
@@ -103,6 +105,8 @@ model Organization {
   extensionTokens  ExtensionToken[]
 
   notificationPreferences NotificationPreference[]
+  helpMessages            HelpMessage[]
+  helpFeedback            HelpFeedback[]
 
   @@map("organizations")
 }
@@ -337,6 +341,13 @@ enum ProspectActionType {
 enum ChatRole {
   USER
   ASSISTANT
+}
+
+enum HelpFeedbackKind {
+  SUGGESTION
+  BUG
+  QUESTION // the help assistant could not answer
+  OTHER
 }
 
 // =============================================================================
@@ -929,6 +940,52 @@ model ChatMessage {
   @@index([viewId, createdAt])
   @@index([linkId, createdAt])
   @@map("chat_messages")
+}
+
+// =============================================================================
+// Help assistant: the users' own questions about Clozer, and what they send the team
+// =============================================================================
+
+model HelpMessage {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  role      ChatRole
+  content   String
+  pathname  String? // USER row: the page the question was asked from
+  model     String?
+  tokensIn  Int?
+  tokensOut Int?
+  escalated Boolean  @default(false) // USER row: the assistant sent something to the team
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([organizationId, createdAt])
+  @@map("help_messages")
+}
+
+model HelpFeedback {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  kind      HelpFeedbackKind
+  summary   String
+  details   String?
+  pathname  String?
+  emailedAt DateTime? // null: no team inbox configured, or the email failed
+
+  createdAt DateTime @default(now())
+
+  @@index([createdAt(sort: Desc)])
+  @@index([userId])
+  @@map("help_feedback")
 }
 
 // =============================================================================

@@ -27,12 +27,17 @@ const serverEnvSchema = z.object({
   AI_MODEL_CHAT: z.string().optional(),
   AI_MODEL_CLASSIFY: z.string().optional(),
   AI_MODEL_ANALYZE: z.string().optional(),
+  AI_MODEL_HELP: z.string().optional(),
   AI_MODEL_TRANSCRIBE: z.string().optional(),
   // Deal analyses per workspace per day, and AI spend per day across all workspaces
   AI_BRAIN_DAILY_LIMIT: z.coerce.number().int().min(0).default(200),
   AI_DAILY_BUDGET_USD: z.coerce.number().min(0).default(20),
   AI_CHAT_DAILY_LIMIT: z.coerce.number().int().min(0).default(300),
   AI_CHAT_DAILY_BUDGET_USD: z.coerce.number().min(0).default(10),
+  // Help assistant for users, across all workspaces, USD per day
+  AI_HELP_DAILY_BUDGET_USD: z.coerce.number().min(0).default(5),
+  // Where the help assistant sends users' suggestions, bugs and unanswered questions. Unset: stored only
+  HELP_INBOX_EMAIL: z.preprocess((value) => value || undefined, z.email().optional()),
 
   TWILIO_ACCOUNT_SID: z.string().optional(),
   TWILIO_AUTH_TOKEN: z.string().optional(),

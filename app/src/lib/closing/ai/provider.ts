@@ -3,17 +3,19 @@ import { createOpenAI } from "@ai-sdk/openai";
 
 import type { AiProvider } from "../types";
 
-export type AiPurpose = "followup" | "chat" | "classify" | "analyze";
+/** `help` answers the users themselves about Clozer; `chat` answers prospects. */
+export type AiPurpose = "followup" | "chat" | "classify" | "analyze" | "help";
 /** Purposes recorded in ai_usage: the language model ones, plus speech to text. */
 export type AiUsagePurpose = AiPurpose | "transcribe";
 
 const DEFAULT_MODELS: Record<AiProvider, Record<AiPurpose, string>> = {
-  openai: { followup: "gpt-4o", chat: "gpt-4o-mini", classify: "gpt-4o-mini", analyze: "gpt-4o" },
+  openai: { followup: "gpt-4o", chat: "gpt-4o-mini", classify: "gpt-4o-mini", analyze: "gpt-4o", help: "gpt-4o-mini" },
   anthropic: {
     followup: "claude-sonnet-5-5",
     chat: "claude-sonnet-5-5",
     classify: "claude-haiku-5-5",
     analyze: "claude-sonnet-5-5",
+    help: "claude-sonnet-5-5",
   },
 };
 
@@ -29,6 +31,9 @@ const MODEL_ENV: Record<AiPurpose, string | undefined> = {
   },
   get analyze() {
     return process.env.AI_MODEL_ANALYZE;
+  },
+  get help() {
+    return process.env.AI_MODEL_HELP;
   },
 };
 

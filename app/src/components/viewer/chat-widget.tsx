@@ -5,6 +5,7 @@ import { DefaultChatTransport } from "ai";
 import { ArrowUp, Forward, Loader2, MessageCircleQuestion, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
+import { Bubble, textOf } from "@/components/chat/bubble";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { CHAT_MESSAGE_MAX } from "@/lib/closing/chat/constants";
@@ -37,13 +38,6 @@ type Props = ChatWidgetData & {
 
 // The route answers 429 with { error: <quota code> }; the transport puts the body in error.message
 const LIMIT_ERRORS = new RegExp(CHAT_QUOTA_ERRORS.join("|"));
-
-function textOf(message: ChatUIMessage) {
-  return message.parts
-    .map((part) => (part.type === "text" ? part.text : ""))
-    .join("")
-    .trim();
-}
 
 // The seller testing their own link gets forwarded: false, nothing was sent
 function wasForwarded(message: ChatUIMessage) {
@@ -292,18 +286,5 @@ export function ChatWidget({
         <p className="pt-2 text-center text-xs text-muted-foreground">{withSender(labels.chatDisclaimer)}</p>
       </form>
     </section>
-  );
-}
-
-function Bubble({ role, children }: { role: "user" | "assistant"; children: React.ReactNode }) {
-  return (
-    <div
-      className={cn(
-        "w-fit max-w-[85%] rounded-2xl px-3.5 py-2 text-sm whitespace-pre-wrap break-words",
-        role === "user" ? "ml-auto rounded-br-md bg-primary text-primary-foreground" : "rounded-bl-md bg-muted",
-      )}
-    >
-      {children}
-    </div>
   );
 }

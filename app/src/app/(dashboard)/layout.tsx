@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
 import { CommandMenu, type CommandEntry } from "@/components/dashboard/command-menu";
 import { DashboardNav, MobileNav } from "@/components/dashboard/dashboard-nav";
+import { HelpWidget } from "@/components/dashboard/help-widget";
 import { UserMenu } from "@/components/dashboard/user-menu";
 import { linkLabelSelect, prospectLabel } from "@/lib/closing/dashboard/labels";
 import { sellerLinks } from "@/lib/closing/dashboard/queries";
@@ -75,6 +76,7 @@ export default async function DashboardLayout({
         {children}
       </main>
       <MobileNav isManager={isManager} />
+      <HelpWidget firstName={user.name?.trim().split(/\s+/)[0] || null} />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { Compass, LogOut, ShieldCheck } from "lucide-react";
+import { Compass, LifeBuoy, LogOut, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 
@@ -14,6 +14,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth-client";
+
+import { openHelp } from "./open-help";
 
 function initials(name: string | null, email: string) {
   const source = name?.trim() || email.split("@")[0];
@@ -52,6 +54,10 @@ export function UserMenu({
           <p className="truncate text-xs text-muted-foreground">{email}</p>
         </div>
         <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={openHelp}>
+          <LifeBuoy />
+          Aide et suggestions
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => router.push("/bienvenue")}>
           <Compass />
           Revoir la prise en main
