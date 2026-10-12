@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { MULTIPART_THRESHOLD_BYTES, PITCH_MAX_MS } from "@/lib/closing/media/limits";
 import { baseMime, extensionFor } from "@/lib/closing/media/mime";
+import { isStaleDeployment, STALE_DEPLOYMENT_MESSAGE } from "@/lib/stale-deployment";
 import { cn } from "@/lib/utils";
 
 const RECORDER_ERRORS: Record<RecorderError, string> = {
@@ -122,7 +123,15 @@ function PitchRecorder({ uploadPrefix, onDone }: { uploadPrefix: string; onDone:
       onDone();
       router.push(`/links/${result.linkId}?new=1`);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "L'envoi a échoué.");
+      if (isStaleDeployment(error)) {
+        // The take can't be saved from this tab any more: say why, and offer the reload
+        toast.error(STALE_DEPLOYMENT_MESSAGE, {
+          duration: Infinity,
+          action: { label: "Recharger", onClick: () => window.location.reload() },
+        });
+      } else {
+        toast.error(error instanceof Error ? error.message : "L'envoi a échoué.");
+      }
       setProgress(null);
     }
   }
