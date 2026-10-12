@@ -91,6 +91,17 @@ export const auth = betterAuth({
         },
       },
     },
+    session: {
+      create: {
+        // PLATFORM_ADMIN_EMAIL changed: the former admin keeps no role behind
+        before: async (session) => {
+          const user = await prisma.user.findUnique({ where: { id: session.userId }, select: { email: true, role: true } });
+          if (user?.role === PLATFORM_ADMIN_ROLE && !isPlatformAdminEmail(user.email)) {
+            await prisma.user.update({ where: { id: session.userId }, data: { role: "user" } });
+          }
+        },
+      },
+    },
   },
   hooks: {
     before: createAuthMiddleware(async (ctx) => {
