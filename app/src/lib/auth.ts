@@ -13,12 +13,16 @@ import {
 import { isEmailConfigured, sendEmail } from "@/lib/email";
 import { buildInvitationEmail } from "@/lib/invitation-email";
 import {
+  BANNED_USER_MESSAGE,
   PLATFORM_ADMIN_ROLE,
-  SIGNUP_REFUSAL_MESSAGES,
+  SIGNUP_REFUSAL_CODES,
+  type SignupRefusal,
   checkSignup,
   isPlatformAdminEmail,
+  isUserBlocked,
   normalizeEmail,
   parseSignupMode,
+  signupRefusalMessage,
 } from "@/lib/platform-admin";
 
 const googleEnabled =
@@ -45,6 +49,26 @@ async function signupRefusal(email: string) {
   });
 }
 
+// The code lets the magic link verify redirect to /login?error= instead of showing raw JSON
+function signupError(refusal: SignupRefusal) {
+  return APIError.from("FORBIDDEN", { code: SIGNUP_REFUSAL_CODES[refusal], message: signupRefusalMessage(refusal) });
+}
+
+// Refused before the email goes out, so the login form says why right away
+async function refuseMagicLink(email: unknown) {
+  if (typeof email !== "string") return;
+  const user = await prisma.user.findFirst({
+    where: { email: { equals: normalizeEmail(email), mode: "insensitive" } },
+    select: { banned: true, banExpires: true },
+  });
+  if (user) {
+    if (isUserBlocked(user)) throw APIError.from("FORBIDDEN", { code: "BANNED_USER", message: BANNED_USER_MESSAGE });
+    return;
+  }
+  const refusal = await signupRefusal(email);
+  if (refusal) throw signupError(refusal);
+}
+
 export const auth = betterAuth({
   database: prismaAdapter(prisma, { provider: "postgresql" }),
   // Tokens written before this was on stay readable and get encrypted on the next sign-in
@@ -62,16 +86,17 @@ export const auth = betterAuth({
       create: {
         before: async (user) => {
           const refusal = await signupRefusal(user.email);
-          if (refusal) throw new APIError("FORBIDDEN", { message: SIGNUP_REFUSAL_MESSAGES[refusal] });
+          if (refusal) throw signupError(refusal);
           if (isPlatformAdminEmail(user.email)) return { data: { ...user, role: PLATFORM_ADMIN_ROLE } };
         },
       },
     },
   },
   hooks: {
-    // The admin plugin trusts users.role; also require the configured email, so a
-    // role set by mistake in the database never opens the admin endpoints
     before: createAuthMiddleware(async (ctx) => {
+      if (ctx.path === "/sign-in/magic-link") return refuseMagicLink(ctx.body?.email);
+      // The admin plugin trusts users.role; also require the configured email, so a
+      // role set by mistake in the database never opens the admin endpoints
       if (!ctx.path.startsWith("/admin/")) return;
       const session = await getSessionFromCtx(ctx);
       if (ctx.path === "/admin/stop-impersonating" && session?.session.impersonatedBy) return;
@@ -120,7 +145,7 @@ export const auth = betterAuth({
     admin({
       adminRoles: [PLATFORM_ADMIN_ROLE],
       impersonationSessionDuration: 60 * 60,
-      bannedUserMessage: "Votre compte est désactivé. Contactez le support si vous pensez que c'est une erreur.",
+      bannedUserMessage: BANNED_USER_MESSAGE,
     }),
     // must stay last so cookies set in server actions are forwarded
     nextCookies(),

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { checkSignup, isPlatformAdminEmail, isUserBlocked, parseSignupMode, userStatus } from "./platform-admin";
+import { checkSignup, isPlatformAdminEmail, isUserBlocked, loginErrorMessage, parseSignupMode, userStatus } from "./platform-admin";
 
 const ADMIN = "boss@clozer.test";
 
@@ -85,5 +85,17 @@ describe("parseSignupMode", () => {
     expect(parseSignupMode("invite_only")).toBe("invite_only");
     expect(parseSignupMode("whatever")).toBe("open");
     expect(parseSignupMode(null)).toBe("open");
+  });
+});
+
+describe("loginErrorMessage", () => {
+  it("explains known codes in French", () => {
+    expect(loginErrorMessage("SIGNUP_CLOSED")).toBe("Les inscriptions sont sur invitation pour le moment.");
+    expect(loginErrorMessage("BANNED_USER")).toContain("désactivé");
+  });
+
+  it("has a fallback for unknown codes and nothing without one", () => {
+    expect(loginErrorMessage("whatever")).toContain("nouveau lien");
+    expect(loginErrorMessage(undefined)).toBeNull();
   });
 });

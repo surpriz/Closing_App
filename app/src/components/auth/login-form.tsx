@@ -23,10 +23,18 @@ const WEBMAILS: { match: RegExp; label: string; url: string }[] = [
   { match: /@(yahoo|ymail)\.[a-z.]+$/i, label: "Ouvrir Yahoo Mail", url: "https://mail.yahoo.com" },
 ];
 
-export function LoginForm({ devMode, next }: { devMode: boolean; next: string }) {
+export function LoginForm({
+  devMode,
+  next,
+  initialError = null,
+}: {
+  devMode: boolean;
+  next: string;
+  initialError?: string | null;
+}) {
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<Status>("idle");
-  const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<Status>(initialError ? "error" : "idle");
+  const [error, setError] = useState<string | null>(initialError);
   const [devLink, setDevLink] = useState<string | null>(null);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -38,6 +46,7 @@ export function LoginForm({ devMode, next }: { devMode: boolean; next: string })
     const { error } = await authClient.signIn.magicLink({
       email,
       callbackURL: next,
+      errorCallbackURL: `/login?next=${encodeURIComponent(next)}`,
     });
 
     if (error) {
