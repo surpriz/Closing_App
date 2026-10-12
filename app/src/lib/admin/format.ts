@@ -37,3 +37,17 @@ export type AdminAction = keyof typeof ADMIN_ACTION_LABELS;
 
 export const adminDate = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", year: "numeric" });
 export const adminDateTime = new Intl.DateTimeFormat("fr-FR", { dateStyle: "short", timeStyle: "short" });
+
+const usd = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: 2 });
+
+/** AiUsage stores millionths of a dollar. */
+export function formatMicroUsd(micro: number) {
+  return usd.format(micro / 1_000_000);
+}
+
+export const WORKSPACE_FILTERS = ["actif", "suspendu"] as const;
+export type WorkspaceFilter = (typeof WORKSPACE_FILTERS)[number];
+
+export function parseWorkspaceFilter(value: string | undefined): WorkspaceFilter | undefined {
+  return WORKSPACE_FILTERS.find((filter) => filter === value);
+}
