@@ -49,7 +49,14 @@ describe("attachmentNotice", () => {
 
   it("keeps the outcome within Outlook's limit", () => {
     const long = `${"x".repeat(300)}.pdf`;
-    expect(replacedMessage(long, "Prospect : Marie Dupont. Le suivi démarre à l'envoi.").length).toBeLessThanOrEqual(150);
+    expect(replacedMessage(long, "Pensez à retirer la pièce jointe.").length).toBeLessThanOrEqual(150);
     expect(failedMessage(long, "Ce PDF dépasse 25 Mo.")).toContain("Ce PDF dépasse 25 Mo.");
+  });
+
+  it("says what happened, and only what is left to do", () => {
+    expect(replacedMessage("Devis.pdf", "")).toBe("« Devis.pdf » remplacé par un lien Clozer.");
+    expect(replacedMessage("Devis.pdf", "Pensez à retirer la pièce jointe.")).toBe(
+      "« Devis.pdf » remplacé par un lien Clozer. Pensez à retirer la pièce jointe.",
+    );
   });
 });

@@ -1,6 +1,9 @@
+import { COPY } from "@ext/copy";
+import { waitForTitle } from "@ext/title-wait";
+
 import type { DocumentSummary } from "./api";
 import { base64ToBytes, firstRecipient, type AttachmentInfo } from "./compose";
-import { createLink, ensureDocument, linkContent } from "./documents";
+import { createLink, ensureDocument, getDocument, linkContent } from "./documents";
 import { ClozerError } from "./errors";
 import { rememberLink } from "./links-store";
 import { officeCall } from "./office";
@@ -27,7 +30,8 @@ export async function replaceAttachment(compose: Office.MessageCompose, attachme
 
 // Link for this email (first "To" recipient = prospect), inserted where the seller was typing
 export async function insertDocument(compose: Office.MessageCompose, document: DocumentSummary, step: Step, attachmentId?: string) {
-  // No wait for the AI title: the link reads like the file name, and the seller sends right away
+  // The AI title lands a few seconds after upload: the link then carries it instead of the file name
+  document = (await waitForTitle(() => getDocument(document.id), { initial: document, onWait: () => step(COPY.naming) })) ?? document;
   step("Création du lien…");
   const to = await officeCall<Office.EmailAddressDetails[]>((callback) => compose.to.getAsync(callback)).catch(() => []);
   const recipient = firstRecipient(to);
@@ -65,14 +69,7 @@ export async function insertDocument(compose: Office.MessageCompose, document: D
   return { link, recipient, attachmentLeft };
 }
 
-// What the seller reads once the link is in
-export function insertedNote(result: { recipient: { email: string; displayName: string | null } | null; attachmentLeft: boolean }) {
-  return [
-    result.recipient
-      ? `Pour ${result.recipient.displayName ?? result.recipient.email}, suivi dès l'envoi.`
-      : "Suivi dès l'envoi, avec les destinataires de l'email.",
-    result.attachmentLeft ? "Pensez à retirer la pièce jointe." : null,
-  ]
-    .filter(Boolean)
-    .join(" ");
+// What the seller reads once the link is in: only what is left to do
+export function insertedNote(result: { attachmentLeft: boolean }) {
+  return result.attachmentLeft ? COPY.removeAttachment : "";
 }

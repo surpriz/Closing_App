@@ -1,4 +1,5 @@
 import type { DocumentSummary } from "@/lib/messages";
+import { COPY } from "@/lib/copy";
 
 import { h } from "./dom";
 import { STYLES } from "./styles";
@@ -108,13 +109,14 @@ export class ComposeWidget {
     );
   }
 
-  message(title: string, text: string | null, actions: Action[] = []) {
-    this.live.textContent = text ? `${title}. ${text}` : title;
-    this.show(h("p", { class: "title" }, title), text ? h("p", { class: "muted" }, text) : null, actions.length ? this.actions(actions) : null);
+  message(title: string, text: string | (string | null)[] | null, actions: Action[] = []) {
+    const lines = (Array.isArray(text) ? text : [text]).filter((line): line is string => !!line);
+    this.live.textContent = lines.length ? `${title}. ${lines.join(" ")}` : title;
+    this.show(h("p", { class: "title" }, title), ...lines.map((line) => h("p", { class: "muted" }, line)), actions.length ? this.actions(actions) : null);
   }
 
   error(text: string, actions: Action[] = []) {
-    this.show(h("p", { class: "error", role: "alert" }, text), this.actions([...actions, { label: "Fermer", run: () => this.hide() }]));
+    this.show(h("p", { class: "error", role: "alert" }, text), this.actions([...actions, { label: COPY.close, run: () => this.hide() }]));
   }
 
   progress(title: string, percent: number | null) {
@@ -124,7 +126,7 @@ export class ComposeWidget {
 
   picker(handlers: PickerHandlers) {
     const list = h("ul");
-    const search = h("input", { class: "search", type: "search", placeholder: "Rechercher un document", "aria-label": "Rechercher un document" });
+    const search = h("input", { class: "search", type: "search", placeholder: COPY.searchDocument, "aria-label": COPY.searchDocument });
     const file = h("input", { type: "file", accept: "application/pdf,.pdf", hidden: true });
     file.addEventListener("change", () => {
       const picked = file.files?.[0];
@@ -134,14 +136,14 @@ export class ComposeWidget {
     let seq = 0;
     const refresh = async () => {
       const current = ++seq;
-      list.replaceChildren(h("li", {}, h("p", { class: "muted" }, "Chargement…")));
+      list.replaceChildren(h("li", {}, h("p", { class: "muted" }, COPY.loading)));
       try {
         const documents = await handlers.load(search.value.trim());
         if (current !== seq) return;
         list.replaceChildren(
           ...(documents.length
             ? documents.map((doc) => h("li", {}, h("button", { type: "button", onclick: () => handlers.pickDocument(doc) }, doc.name)))
-            : [h("li", {}, h("p", { class: "muted" }, "Aucun document. Ajoutez un PDF."))]),
+            : [h("li", {}, h("p", { class: "muted" }, COPY.noDocument))]),
         );
       } catch (error) {
         if (current === seq) list.replaceChildren(h("li", {}, h("p", { class: "error" }, (error as Error).message)));
@@ -154,10 +156,10 @@ export class ComposeWidget {
     });
 
     this.show(
-      h("p", { class: "title" }, "Insérer un document"),
+      h("p", { class: "title" }, COPY.insertDocument),
       this.actions([
-        { label: "Ajouter un PDF…", run: () => file.click(), primary: true },
-        { label: "Fermer", run: () => this.hide() },
+        { label: COPY.addPdf, run: () => file.click(), primary: true },
+        { label: COPY.close, run: () => this.hide() },
       ]),
       file,
       search,
