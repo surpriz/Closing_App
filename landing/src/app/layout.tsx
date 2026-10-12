@@ -30,6 +30,14 @@ export const metadata: Metadata = {
     locale: "fr_FR",
     type: "website",
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Clozer — savoir qui lit vraiment votre devis",
+    description:
+      "Envoyez votre proposition en lien suivi. Clozer vous dit qui relancer, et prépare le message.",
+  },
+  // "./" resolves against each route's own path, so the legal pages get their own canonical.
+  alternates: { canonical: "./" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

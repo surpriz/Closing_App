@@ -1,3 +1,5 @@
+import { pickLocale } from "@/lib/closing/i18n/viewer";
+
 // Prospect-facing unsubscribe copy. Like the follow-ups themselves, it must
 // never hint that reading is tracked.
 
@@ -53,6 +55,11 @@ const COPY: Record<"en" | "fr" | "es" | "de", UnsubscribeCopy> = {
 export function getUnsubscribeCopy(locale: string | null | undefined): UnsubscribeCopy {
   const base = (locale ?? "").toLowerCase().split("-")[0];
   return COPY[base as keyof typeof COPY] ?? COPY.en;
+}
+
+/** The <title> of /u/[token], picked from the Accept-Language header like the body. */
+export function unsubscribePageTitle(acceptLanguage: string | null) {
+  return getUnsubscribeCopy(pickLocale(acceptLanguage)).pageTitle;
 }
 
 function escapeHtml(value: string) {

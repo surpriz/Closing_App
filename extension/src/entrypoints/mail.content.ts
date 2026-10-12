@@ -13,6 +13,7 @@ import {
 } from "@/adapters/mail";
 import { splitChunks } from "@/lib/chunks";
 import { MAX_UPLOAD_BYTES } from "@/lib/config";
+import { COPY } from "@/lib/copy";
 import { MAIL_MATCHES, mailHost } from "@/lib/hosts";
 import {
   ask,
@@ -31,6 +32,7 @@ import { hasPdfMagic, looksLikePdf } from "@/lib/pdf";
 import { getAskFirst, getLinkStyle } from "@/lib/preferences";
 import { bannersToShow, MAIL_ALERTS_KEY, MAIL_DISMISSED_KEY, type MailAlert } from "@/lib/pulse";
 import { sha256Hex } from "@/lib/sha256";
+import { waitForTitle } from "@/lib/title-wait";
 import { isOlder } from "@/lib/version";
 import { renderBanners } from "@/ui/banner";
 import { ComposeWidget, removeLayer } from "@/ui/widget";
@@ -46,6 +48,8 @@ type Compose = {
   // An attach is being handled: a second event for it must not start another
   offering: boolean;
   sending: boolean;
+  // What the seller asked for while not connected: replayed once the token arrives
+  pending: { kind: "files"; files: File[] } | { kind: "picker" } | null;
 };
 
 const POLL_MS = 3000;
@@ -151,7 +155,7 @@ export default defineContentScript({
 
     const onStorage = (changes: Record<string, unknown>, area: string) => {
       if (area !== "local") return;
-      if ("token" in changes) void loadAccount().then(showBanners);
+      if ("token" in changes) void loadAccount().then(showBanners).then(replayPending);
       if (MAIL_ALERTS_KEY in changes || MAIL_DISMISSED_KEY in changes) void showBanners();
     };
     browser.storage.onChanged.addListener(onStorage);
@@ -173,14 +177,32 @@ export default defineContentScript({
     };
 
     const connectAction = (compose: Compose) => ({
-      label: "Connecter Clozer",
+      label: COPY.connect,
       primary: true,
       run: () => {
         void ask({ type: "connect" });
-        compose.widget.message("Connexion en cours", "Validez dans l'onglet Clozer, puis revenez ici.");
+        compose.widget.message(COPY.connectingTitle, COPY.connectingText);
       },
     });
-    const ignoreAction = (compose: Compose) => ({ label: "Ignorer", run: () => compose.widget.hide() });
+    const ignoreAction = (compose: Compose) => ({
+      label: COPY.ignore,
+      run: () => {
+        compose.pending = null;
+        compose.widget.hide();
+      },
+    });
+
+    // The seller connected in the other tab: the offer or the picker they asked for comes back on its own
+    function replayPending() {
+      if (!account) return;
+      for (const compose of composes.values()) {
+        const pending = compose.pending;
+        compose.pending = null;
+        if (!pending || !compose.body.isConnected) continue;
+        if (pending.kind === "files") void offer(compose, pending.files);
+        else openPicker(compose);
+      }
+    }
 
     async function run(compose: Compose, task: () => Promise<void>) {
       if (compose.busy) return;
@@ -218,6 +240,13 @@ export default defineContentScript({
 
       let link = compose.links.get(document.id);
       if (!link) {
+        // The AI title lands a few seconds after upload: the link then carries it instead of the file name
+        document =
+          (await waitForTitle(() => ask<DocumentSummary>({ type: "document", id: document.id }), {
+            initial: document,
+            onWait: () => compose.widget.progress(COPY.naming, 85),
+          })) ?? document;
+        compose.widget.progress("Création du lien…", 90);
         link = await ask<CreatedLink>({ type: "link", documentId: document.id, recipient, source: host });
         compose.links.set(document.id, link);
       }
@@ -236,20 +265,10 @@ export default defineContentScript({
         attachmentLeft = !remover || !!findAttachmentRemover(compose.root, compose.body, attachmentName);
       }
 
-      // What the prospect will meet, and one click to change it or add a welcome video
-      const notes = [
-        link.summary?.length ? `${link.summary.join(" · ")}.` : null,
-        recipient
-          ? `Pour ${recipient.displayName ?? recipient.email}, suivi dès l'envoi.`
-          : "Suivi dès l'envoi, avec les destinataires de l'email.",
-        attachmentLeft ? "Pensez à retirer la pièce jointe." : null,
-      ].filter(Boolean);
-      const manageUrl = link.manageUrl;
-      compose.widget.message("Lien inséré", notes.join(" "), [
-        ...(manageUrl
-          ? [{ label: "Mot d'accueil, réglages…", run: () => void ask({ type: "openUrl", url: manageUrl }) }]
-          : []),
-        { label: "OK", primary: true, run: () => compose.widget.hide() },
+      // The title the prospect will see, and one click to the link's page in Clozer
+      const target = link.manageUrl ?? link.url;
+      compose.widget.message(COPY.linkInserted, [link.title, attachmentLeft ? COPY.removeAttachment : null], [
+        { label: COPY.seeLink, primary: true, run: () => void ask({ type: "openUrl", url: target }) },
       ]);
       if (!attachmentLeft) compose.widget.hideAfter(8000);
 
@@ -266,7 +285,6 @@ export default defineContentScript({
 
       const sha256 = await sha256Hex(buffer);
       const existing = await ask<DocumentSummary | null>({ type: "lookup", sha256 });
-      // No wait for the AI title: the link reads like the file name, and the seller sends right away
       const document =
         existing ?? (await uploadPdf(file.name, bytes, sha256, (percent) => compose.widget.progress("Envoi du PDF…", Math.min(percent, 80))));
 
@@ -287,6 +305,7 @@ export default defineContentScript({
     async function offerFiles(compose: Compose, files: File[]) {
       const [file] = files;
       if (!account) {
+        compose.pending = { kind: "files", files };
         compose.widget.message(`Envoyer « ${file.name} » en lien ?`, "Connectez Clozer pour remplacer la pièce jointe par un lien.", [
           connectAction(compose),
           ignoreAction(compose),
@@ -300,7 +319,7 @@ export default defineContentScript({
       if (!(await getAskFirst())) return void replaceAll();
       const label = files.length > 1 ? `ces ${files.length} PDF` : `« ${file.name} »`;
       compose.widget.message(`Remplacer ${label} par un lien Clozer ?`, null, [
-        { label: "Remplacer", primary: true, run: () => void replaceAll() },
+        { label: COPY.replaceWithLink, primary: true, run: () => void replaceAll() },
         ignoreAction(compose),
       ]);
     }
@@ -314,6 +333,7 @@ export default defineContentScript({
       if (compose.busy) return;
       if (compose.widget.showingPicker) return compose.widget.hide();
       if (!account) {
+        compose.pending = { kind: "picker" };
         compose.widget.message("Clozer n'est pas connecté", "Connectez votre compte pour insérer vos documents.", [
           connectAction(compose),
           ignoreAction(compose),
@@ -340,11 +360,13 @@ export default defineContentScript({
           busy: false,
           offering: false,
           sending: false,
+          pending: null,
         };
         composes.set(body, compose);
       }
       for (const [body, compose] of composes) {
         if (body.isConnected) continue;
+        compose.pending = null;
         compose.widget.destroy();
         composes.delete(body);
         if (lastCompose === compose) lastCompose = null;

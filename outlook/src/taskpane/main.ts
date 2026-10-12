@@ -1,4 +1,5 @@
 import type { LinkStyle } from "@ext/link-html";
+import { COPY } from "@ext/copy";
 import { alertsToShow, readerLine, rememberSeen, type Pulse, type PulseAlert, type PulseReader } from "@ext/pulse";
 import { h } from "@extui/dom";
 
@@ -16,7 +17,7 @@ import { getAskFirst, getLinkStyle, getToken, setAskFirst, setLinkStyle, setToke
 const PULSE_MS = 30_000;
 const SEEN_KEY = "clozerSeenAlerts";
 
-type Status = { kind: "progress" | "done" | "error"; title: string; detail?: string };
+type Status = { kind: "progress" | "done" | "error"; title: string; detail?: string; action?: { label: string; run: () => void } };
 
 const state = {
   account: null as Account | null,
@@ -31,6 +32,7 @@ const state = {
   readers: [] as PulseReader[],
   alerts: [] as PulseAlert[],
   since: null as string | null,
+  settingsOpen: false,
 };
 
 const app = document.getElementById("app")!;
@@ -51,6 +53,7 @@ function statusView() {
     { class: `status${status.kind === "error" ? " error" : ""}`, role: status.kind === "error" ? "alert" : "status" },
     h("strong", {}, status.title),
     status.detail ? h("span", { class: "small" }, status.detail) : null,
+    status.action ? h("div", { class: "row" }, h("button", { class: "primary", onclick: status.action.run }, status.action.label)) : null,
   );
 }
 
@@ -63,8 +66,8 @@ function connectView(): (Node | null)[] {
       h(
         "div",
         { class: "row" },
-        h("button", { class: "primary", onclick: () => openInBrowser(CONNECT_URL) }, "Ouvrir Clozer"),
-        h("button", { onclick: () => cancelPairing() }, "Annuler"),
+        h("button", { class: "primary", onclick: () => openInBrowser(CONNECT_URL) }, COPY.openApp),
+        h("button", { onclick: () => cancelPairing() }, COPY.cancel),
       ),
       h("p", { class: "muted small" }, "Cette fenêtre se met à jour toute seule une fois le code validé."),
     ];
@@ -72,52 +75,45 @@ function connectView(): (Node | null)[] {
   return [
     h("p", {}, "Remplacez le PDF joint à un email par un lien Clozer, et voyez qui consulte vos propositions."),
     state.pairingError ? h("p", { class: "error", role: "alert" }, state.pairingError) : null,
-    h("button", { class: "primary", onclick: () => void connect() }, "Connecter Clozer"),
+    h("button", { class: "primary", onclick: () => void connect() }, COPY.connect),
   ];
 }
 
 function mainView(): (Node | null)[] {
   const account = state.account;
   if (account?.disabledHosts.includes(KILL_SWITCH_HOST)) {
-    return [h("p", { class: "muted" }, "Clozer est momentanément indisponible dans Outlook. Réessayez plus tard."), footer()];
+    return [h("p", { class: "muted" }, COPY.paused("Outlook")), settingsView()];
   }
   const compose = composeItem();
+  // What to do first, then what happened, then what is going on elsewhere; the settings fold away
   return [
     statusView(),
-    compose ? linksView() : null,
     compose ? attachmentsView(compose) : null,
     compose ? documentsView(compose) : null,
-    compose ? linkStyleView() : null,
-    compose ? askFirstView() : null,
+    compose ? linksView() : null,
     alertsView(),
     readersView(),
-    footer(),
+    settingsView(),
   ];
 }
 
-// The links already in this email: what the prospect will meet, and one click to add a welcome video
+// The links already in this email, and one click to each one's page in Clozer
 function linksView() {
   if (!state.links.length) return null;
   return h(
     "fieldset",
     {},
     h("legend", {}, "Dans cet email"),
-    ...state.links.map((link) =>
-      h(
+    ...state.links.map((link) => {
+      // Only our own pages open from the pane
+      const target = link.manageUrl?.startsWith(`${APP_ORIGIN}/`) ? link.manageUrl : link.url;
+      return h(
         "div",
-        { class: "alert" },
-        h("strong", {}, link.title ?? "Lien Clozer"),
-        link.summary?.length ? h("span", { class: "small" }, link.summary.join(" · ")) : null,
-        // Only our own pages open from the pane
-        link.manageUrl?.startsWith(`${APP_ORIGIN}/`)
-          ? h(
-              "div",
-              { class: "row" },
-              h("button", { onclick: () => openInBrowser(link.manageUrl!) }, "Mot d'accueil, réglages…"),
-            )
-          : null,
-      ),
-    ),
+        { class: "item" },
+        h("span", { title: link.title ?? "Lien Clozer" }, link.title ?? "Lien Clozer"),
+        h("button", { class: "link", onclick: () => openInBrowser(target) }, COPY.seeLink),
+      );
+    }),
   );
 }
 
@@ -125,7 +121,7 @@ function attachmentsView(compose: Office.MessageCompose) {
   if (!supports("1.8")) return null;
   const pdfs = state.attachments.filter(isPdfAttachment);
   if (!pdfs.length) {
-    return h("p", { class: "muted" }, "Joignez un PDF à cet email : Clozer le remplacera par un lien.");
+    return h("p", { class: "muted" }, COPY.pitchHere);
   }
   return h(
     "fieldset",
@@ -139,12 +135,15 @@ function attachmentsView(compose: Office.MessageCompose) {
         h(
           "button",
           { class: "primary", disabled: state.busy, onclick: () => void replaceInPane(compose, attachment) },
-          "Remplacer par un lien",
+          COPY.replaceWithLink,
         ),
       ),
     ),
   );
 }
+
+// Search results land in this list alone: no re-render, so the caret stays in the field
+let refreshList: (() => void) | null = null;
 
 function documentsView(compose: Office.MessageCompose) {
   const fileInput = h("input", {
@@ -156,33 +155,40 @@ function documentsView(compose: Office.MessageCompose) {
       if (file) void insertFile(compose, file);
     },
   });
-  const list = state.documents;
+  const listHost = h("div", { class: "list" });
+  refreshList = () => {
+    const list = state.documents;
+    listHost.replaceChildren(
+      ...(list && !list.length ? [h("p", { class: "muted small" }, COPY.noDocument)] : []),
+      ...(list ?? []).map((doc) =>
+        h("button", { class: "pick", title: doc.name, disabled: state.busy, onclick: () => void insertExisting(compose, doc) }, doc.name),
+      ),
+    );
+  };
+  refreshList();
   return h(
     "fieldset",
     {},
-    h("legend", {}, "Insérer un document Clozer"),
+    h("legend", {}, COPY.insertDocument),
     h("input", {
       type: "search",
-      placeholder: "Rechercher un document…",
+      placeholder: COPY.searchDocument,
       value: state.query,
-      "aria-label": "Rechercher un document",
+      "aria-label": COPY.searchDocument,
       oninput: (event: Event) => void search((event.target as HTMLInputElement).value),
       onfocus: () => {
         if (!state.documents) void search(state.query);
       },
     }),
-    list && !list.length ? h("p", { class: "muted small" }, "Aucun document trouvé.") : null,
-    ...(list ?? []).map((doc) =>
-      h("button", { class: "pick", title: doc.name, disabled: state.busy, onclick: () => void insertExisting(compose, doc) }, doc.name),
-    ),
+    listHost,
     fileInput,
-    h("button", { class: "link", disabled: state.busy, onclick: () => fileInput.click() }, "Ajouter un PDF depuis l'ordinateur…"),
+    h("button", { class: "link", disabled: state.busy, onclick: () => fileInput.click() }, COPY.addPdf),
   );
 }
 
-const STYLES: { value: LinkStyle; label: string }[] = [
-  { value: "card", label: "Carte avec le titre" },
-  { value: "text", label: "Lien simple" },
+const STYLES: { value: LinkStyle; label: string; hint: string }[] = [
+  { value: "card", label: COPY.card, hint: COPY.cardHint },
+  { value: "text", label: COPY.plainLink, hint: COPY.plainLinkHint },
 ];
 
 function linkStyleView() {
@@ -190,7 +196,7 @@ function linkStyleView() {
   return h(
     "fieldset",
     {},
-    h("legend", {}, "Format du lien"),
+    h("legend", {}, COPY.linkStyleLegend),
     ...STYLES.map((style) =>
       h(
         "label",
@@ -202,7 +208,7 @@ function linkStyleView() {
           checked: style.value === current,
           onchange: () => void setLinkStyle(style.value).catch(() => undefined),
         }),
-        h("span", {}, style.label),
+        h("span", {}, h("strong", {}, style.label), h("span", { class: "muted small" }, style.hint)),
       ),
     ),
   );
@@ -212,13 +218,13 @@ function linkStyleView() {
 function askFirstView() {
   const askFirst = getAskFirst();
   const choices = [
-    { value: false, label: "Le remplacer tout de suite" },
-    { value: true, label: "Me demander d'abord" },
+    { value: false, label: COPY.replaceWithLink, hint: COPY.replaceWithLinkHint },
+    { value: true, label: COPY.askFirst, hint: COPY.askFirstHint },
   ];
   return h(
     "fieldset",
     {},
-    h("legend", {}, "Quand je joins un PDF"),
+    h("legend", {}, COPY.askFirstLegend),
     ...choices.map((choice) =>
       h(
         "label",
@@ -229,7 +235,7 @@ function askFirstView() {
           checked: choice.value === askFirst,
           onchange: () => void setAskFirst(choice.value).catch(() => undefined),
         }),
-        h("span", {}, choice.label),
+        h("span", {}, h("strong", {}, choice.label), h("span", { class: "muted small" }, choice.hint)),
       ),
     ),
   );
@@ -259,11 +265,11 @@ function alertsView() {
 }
 
 function readersView() {
-  if (!state.readers.length) return h("p", { class: "muted small" }, "Personne ne lit vos propositions en ce moment.");
+  if (!state.readers.length) return h("p", { class: "muted small" }, COPY.nobodyReading);
   return h(
     "fieldset",
     {},
-    h("legend", {}, "En train de lire"),
+    h("legend", {}, COPY.readingNow),
     ...state.readers.map((reader) =>
       h(
         "button",
@@ -275,12 +281,38 @@ function readersView() {
   );
 }
 
-function footer() {
+// "Déconnecter" asks once, in place: no dialog, no second screen
+function disconnectView() {
+  const row = h("div", { class: "row" });
+  const askButton = h("button", { class: "link", onclick: () => confirm() }, COPY.disconnect);
+  const confirm = () =>
+    row.replaceChildren(
+      h("p", {}, COPY.disconnectConfirmOutlook),
+      h("button", { class: "primary", onclick: () => void disconnect() }, COPY.disconnect),
+      h("button", { onclick: () => row.replaceChildren(askButton) }, COPY.cancel),
+    );
+  row.append(askButton);
+  return row;
+}
+
+// Folded by default; the pulse re-renders every 30 s, so the fold is remembered
+function settingsView() {
+  const account = state.account;
   return h(
-    "div",
-    { class: "row" },
-    state.account ? h("span", { class: "muted small" }, state.account.user.email) : null,
-    h("button", { class: "link", onclick: () => void disconnect() }, "Déconnecter"),
+    "details",
+    {
+      class: "settings",
+      open: state.settingsOpen,
+      ontoggle: (event: Event) => {
+        state.settingsOpen = (event.target as HTMLDetailsElement).open;
+      },
+    },
+    h("summary", {}, COPY.settings),
+    linkStyleView(),
+    askFirstView(),
+    account ? h("p", { class: "muted small" }, COPY.connected(account.user.email)) : null,
+    account ? h("p", { class: "muted small" }, COPY.workspace(account.organization.name)) : null,
+    disconnectView(),
   );
 }
 
@@ -384,7 +416,14 @@ function done(result: Awaited<ReturnType<typeof insertDocument>>) {
   const compose = composeItem();
   if (compose) void officeCall<void>((callback) => compose.notificationMessages.removeAsync(NOTICE_KEY, callback)).catch(() => undefined);
   void refreshAttachments().then(render);
-  setStatus({ kind: "done", title: "Lien inséré", detail: insertedNote(result) });
+  const note = insertedNote(result);
+  const target = result.link.manageUrl?.startsWith(`${APP_ORIGIN}/`) ? result.link.manageUrl : result.link.url;
+  setStatus({
+    kind: "done",
+    title: COPY.linkInserted,
+    detail: note ? `${result.link.title} · ${note}` : result.link.title,
+    action: { label: COPY.seeLink, run: () => openInBrowser(target) },
+  });
 }
 
 let searchToken = 0;
@@ -395,14 +434,7 @@ async function search(query: string) {
   const documents = await searchDocuments(query.trim()).catch(() => []);
   if (mine !== searchToken) return;
   state.documents = documents;
-  // Keep the caret in the search field across the re-render
-  const focused = document.activeElement instanceof HTMLInputElement && document.activeElement.type === "search";
-  render();
-  if (focused) {
-    const input = app.querySelector<HTMLInputElement>('input[type="search"]');
-    input?.focus();
-    input?.setSelectionRange(query.length, query.length);
-  }
+  refreshList?.();
 }
 
 async function refreshAttachments() {

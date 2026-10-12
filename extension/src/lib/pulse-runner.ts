@@ -20,7 +20,8 @@ import {
 
 export const PULSE_ALARM = "clozer-pulse";
 const NOTICE_PREFIX = "clozer:";
-const BADGE_COLOR = "#c2410c";
+// heat-hot from the app palette, as a hex: the badge API takes no oklch
+const BADGE_COLOR = "#e8492e";
 
 // storage.session: cleared when the browser closes, never synced
 const SINCE = "pulseSince";

@@ -85,8 +85,6 @@ function EmailForm({
 }) {
   return (
     <>
-      <p className="mt-3 text-sm text-muted-foreground">{labels.emailDescription}</p>
-
       <form action={action} className="mt-6 space-y-4">
         <div className="space-y-2">
           <Label htmlFor="email">{labels.emailLabel}</Label>

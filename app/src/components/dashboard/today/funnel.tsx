@@ -12,7 +12,7 @@ function counted(count: number, [one, many]: Words) {
 const STEPS: { key: keyof Funnel; words: Words }[] = [
   { key: "sent", words: ["envoyé", "envoyés"] },
   { key: "opened", words: ["ouvert", "ouverts"] },
-  { key: "deep", words: ["lu en profondeur", "lus en profondeur"] },
+  { key: "deep", words: ["lu attentivement", "lus attentivement"] },
   { key: "validated", words: ["validé", "validés"] },
 ];
 
@@ -46,7 +46,7 @@ export function FunnelStrip({ funnel }: { funnel: Funnel }) {
             )}
           >
             <p className="flex items-baseline gap-2">
-              <span className="font-mono text-2xl font-medium tracking-tight tabular-nums">{value}</span>
+              <span className="font-mono text-title font-medium tabular-nums">{value}</span>
               {index > 0 && funnel.sent > 0 && (
                 <span className="text-xs text-muted-foreground tabular-nums">{share} %</span>
               )}
@@ -95,10 +95,10 @@ export function HeatDistributionBar({ distribution }: { distribution: HeatDistri
         ))}
       </div>
       <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm lg:block lg:space-y-1">
-        {SEGMENTS.map((segment) => {
+        {parts.map((segment) => {
           const count = distribution[segment.key];
           return (
-            <li key={segment.key} className={cn("flex items-center gap-2", count === 0 && "text-muted-foreground")}>
+            <li key={segment.key} className="flex items-center gap-2">
               <span className={cn("size-2 rounded-full", segment.className)} />
               <span className="tabular-nums">{count}</span>
               <span className="text-muted-foreground">{counted(count, segment.words)}</span>

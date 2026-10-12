@@ -15,7 +15,9 @@ type Props = {
 
 export function ViewerHeader({ documentName, senderName, labels, aside, progress, className }: Props) {
   return (
-    <header className={`sticky top-0 z-10 border-b bg-background/85 backdrop-blur-md ${className ?? ""}`}>
+    <header
+      className={`sticky top-0 z-10 border-b bg-background/85 pt-[env(safe-area-inset-top)] backdrop-blur-md ${className ?? ""}`}
+    >
       <div className="mx-auto flex h-14 max-w-4xl items-center gap-3 px-4">
         <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-card text-muted-foreground shadow-xs ring-1 ring-border">
           <FileText className="size-4" aria-hidden />

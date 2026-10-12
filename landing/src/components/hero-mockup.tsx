@@ -49,7 +49,7 @@ export function HeroMockup() {
               </div>
               <div className="h-1.5 overflow-hidden rounded-full bg-muted">
                 <div
-                  className={`read-bar h-full rounded-full ${page.pricing ? "bg-heat-warm" : "bg-ink/70"}`}
+                  className={`read-bar h-full rounded-full ${page.pricing ? "bg-heat-hot" : "bg-ink/70"}`}
                   style={{ width: `${page.width}%`, animationDelay: `${0.3 + index * 0.1}s` }}
                 />
               </div>

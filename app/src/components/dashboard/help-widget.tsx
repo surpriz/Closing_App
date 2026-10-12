@@ -38,7 +38,6 @@ export function HelpWidget({ firstName }: { firstName: string | null }) {
   const [input, setInput] = useState("");
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const launcherRef = useRef<HTMLButtonElement>(null);
   const wasOpen = useRef(false);
   const loaded = useRef(false);
 
@@ -98,7 +97,8 @@ export function HelpWidget({ firstName }: { firstName: string | null }) {
   useEffect(() => {
     if (!open) {
       // Back to the launcher when the panel closes
-      if (wasOpen.current) launcherRef.current?.focus();
+      // Back to the "?" in the header that opened the panel
+    if (wasOpen.current) document.querySelector<HTMLElement>("[data-help-launcher]")?.focus();
       return;
     }
     wasOpen.current = true;
@@ -127,21 +127,8 @@ export function HelpWidget({ firstName }: { firstName: string | null }) {
     }
   }
 
-  if (!open) {
-    return (
-      <Button
-        ref={launcherRef}
-        size="icon-lg"
-        onClick={openPanel}
-        aria-label="Aide et suggestions"
-        title="Aide et suggestions"
-        // Above the mobile tab bar (min-h-14) on phones
-        className="fixed right-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-30 size-11 rounded-full shadow-lg sm:bottom-6"
-      >
-        <LifeBuoy className="size-5" />
-      </Button>
-    );
-  }
+  // Opened from the "?" menu, ⌘K or a help link: no floating launcher of its own
+  if (!open) return null;
 
   return (
     <section

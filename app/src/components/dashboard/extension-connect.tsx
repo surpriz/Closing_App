@@ -1,18 +1,27 @@
 "use client";
 
-import { Check } from "lucide-react";
+import { Check, ChevronRight } from "lucide-react";
 import { useState } from "react";
 
-import { connectExtension, enableCallMomentEmails, revokeExtensionToken } from "@/app/extension/actions";
+import {
+  connectExtension,
+  enableCallMomentEmails,
+  revokeExtensionToken,
+} from "@/app/extension/actions";
 import { Button } from "@/components/ui/button";
 
 type ChromeRuntime = {
-  sendMessage: (id: string, message: unknown, callback: (response: unknown) => void) => void;
+  sendMessage: (
+    id: string,
+    message: unknown,
+    callback: (response: unknown) => void,
+  ) => void;
   lastError?: { message?: string };
 };
 
 function chromeRuntime() {
-  return (globalThis as { chrome?: { runtime?: ChromeRuntime } }).chrome?.runtime;
+  return (globalThis as { chrome?: { runtime?: ChromeRuntime } }).chrome
+    ?.runtime;
 }
 
 // Resolves true when one of our extensions took the token
@@ -22,7 +31,10 @@ function sendToExtension(id: string, message: unknown) {
     if (!runtime?.sendMessage) return resolve(false);
     try {
       runtime.sendMessage(id, message, (response) => {
-        resolve(!runtime.lastError && (response as { ok?: boolean } | undefined)?.ok === true);
+        resolve(
+          !runtime.lastError &&
+            (response as { ok?: boolean } | undefined)?.ok === true,
+        );
       });
     } catch {
       resolve(false);
@@ -39,14 +51,18 @@ export function ExtensionConnect({
   extensionIds: string[];
   account: { email: string; workspace: string };
 }) {
-  const [status, setStatus] = useState<"idle" | "pending" | "done" | "missing">("idle");
+  const [status, setStatus] = useState<"idle" | "pending" | "done" | "missing">(
+    "idle",
+  );
   const [connectedId, setConnectedId] = useState<string | null>(null);
 
   async function connect() {
     setStatus("pending");
     const { id, token } = await connectExtension();
     const results = await Promise.all(
-      extensionIds.map((extensionId) => sendToExtension(extensionId, { type: "clozer:connect", token, nonce })),
+      extensionIds.map((extensionId) =>
+        sendToExtension(extensionId, { type: "clozer:connect", token, nonce }),
+      ),
     );
     const index = results.indexOf(true);
     if (index !== -1) {
@@ -61,7 +77,8 @@ export function ExtensionConnect({
   if (!nonce) {
     return (
       <p className="text-body text-muted-foreground">
-        Ouvrez l&apos;extension Clozer dans Chrome et cliquez sur « Connecter » pour arriver ici.
+        Ouvrez l&apos;extension Clozer dans Chrome et cliquez sur « Connecter
+        Clozer » pour arriver ici.
       </p>
     );
   }
@@ -71,10 +88,11 @@ export function ExtensionConnect({
       <div className="space-y-4 rounded-xl bg-card p-6 shadow-xs ring-1 ring-border">
         <p className="flex items-center gap-2 text-heading">
           <Check className="size-4 text-success" aria-hidden />
-          Extension connectée
+          Clozer est connecté à Chrome
         </p>
         <p className="text-body text-muted-foreground">
-          Joignez un PDF à un email dans Gmail ou Outlook : Clozer vous proposera de le remplacer par un lien.
+          Revenez dans Gmail ou Outlook : joignez un PDF, le lien se fait tout
+          seul. Vous pouvez fermer cet onglet.
         </p>
         {connectedId && <NotificationCheck extensionId={connectedId} />}
       </div>
@@ -84,34 +102,35 @@ export function ExtensionConnect({
   return (
     <div className="space-y-4 rounded-xl bg-card p-6 shadow-xs ring-1 ring-border">
       <p className="text-body">
-        L&apos;extension créera les liens dans l&apos;espace <strong>{account.workspace}</strong>, au nom de{" "}
-        {account.email}.
+        L&apos;extension créera les liens dans l&apos;espace{" "}
+        <strong>{account.workspace}</strong>, au nom de {account.email}.
       </p>
       {status === "missing" && (
         <p role="alert" className="text-small text-destructive">
-          L&apos;extension n&apos;a pas répondu. Vérifiez qu&apos;elle est installée dans ce navigateur, puis
-          réessayez depuis son bouton « Connecter ».
+          L&apos;extension n&apos;a pas répondu. Vérifiez qu&apos;elle est
+          installée dans ce navigateur, puis réessayez depuis son bouton «
+          Connecter Clozer ».
         </p>
       )}
       <Button onClick={connect} disabled={status === "pending"}>
-        {status === "pending" ? "Connexion…" : "Connecter l'extension"}
+        {status === "pending" ? "Connexion…" : "Connecter Clozer"}
       </Button>
     </div>
   );
 }
 
 /**
- * The OS can block Chrome's notifications without the extension knowing.
- * The extension just showed a test one: ask whether it appeared.
+ * The OS can block Chrome's notifications without the extension knowing. A
+ * test one just fired: whoever did not see it opens the fold and gets the
+ * two steps, with emails turned on meanwhile.
  */
 function NotificationCheck({ extensionId }: { extensionId: string }) {
-  const [answer, setAnswer] = useState<"ask" | "seen" | "missed">("ask");
   const [resent, setResent] = useState(false);
-  const isMac = typeof navigator !== "undefined" && /Mac/.test(navigator.userAgent);
+  const isMac =
+    typeof navigator !== "undefined" && /Mac/.test(navigator.userAgent);
 
-  async function missed() {
-    setAnswer("missed");
-    await enableCallMomentEmails();
+  async function missed(event: React.SyntheticEvent<HTMLDetailsElement>) {
+    if (event.currentTarget.open) await enableCallMomentEmails();
   }
 
   async function resend() {
@@ -119,29 +138,32 @@ function NotificationCheck({ extensionId }: { extensionId: string }) {
     setResent(true);
   }
 
-  if (answer === "seen") {
-    return (
-      <p className="text-body text-muted-foreground">
-        Parfait. Quand un prospect lira votre proposition, une notification vous préviendra, avec un bandeau en haut de Gmail
-        ou Outlook. Vous pouvez fermer cet onglet.
-      </p>
-    );
-  }
-
-  if (answer === "missed") {
-    return (
-      <div className="space-y-3 border-t border-border pt-4">
-        <p className="text-body">Votre ordinateur bloque les notifications de Chrome. Deux clics pour les autoriser :</p>
+  return (
+    <details className="group border-t border-border pt-4" onToggle={missed}>
+      <summary className="flex cursor-pointer list-none items-center gap-1.5 text-sm text-muted-foreground outline-none hover:text-foreground focus-visible:underline [&::-webkit-details-marker]:hidden">
+        <ChevronRight className="size-4 transition-transform group-open:rotate-90" />
+        Je n&apos;ai pas vu la notification « Clozer est prêt »
+      </summary>
+      <div className="mt-3 space-y-3">
+        <p className="text-body">
+          Votre ordinateur bloque sans doute les notifications de Chrome. Deux
+          clics pour les autoriser :
+        </p>
         {isMac ? (
           <ol className="list-decimal space-y-1 pl-5 text-body text-muted-foreground">
             <li>
               Ouvrez{" "}
-              <a className="underline" href="x-apple.systempreferences:com.apple.Notifications-Settings.extension">
+              <a
+                className="underline"
+                href="x-apple.systempreferences:com.apple.Notifications-Settings.extension"
+              >
                 Réglages Système › Notifications
               </a>
               .
             </li>
-            <li>Choisissez Google Chrome, activez « Autoriser les notifications ».</li>
+            <li>
+              Choisissez Google Chrome, activez « Autoriser les notifications ».
+            </li>
           </ol>
         ) : (
           <ol className="list-decimal space-y-1 pl-5 text-body text-muted-foreground">
@@ -150,32 +172,16 @@ function NotificationCheck({ extensionId }: { extensionId: string }) {
           </ol>
         )}
         <p className="text-small text-muted-foreground">
-          En attendant, les alertes s&apos;affichent dans un bandeau en haut de Gmail ou Outlook, et vous les recevez
-          aussi par email (modifiable dans Réglages › Être prévenu).
+          En attendant, les alertes s&apos;affichent dans un bandeau en haut de
+          Gmail ou Outlook, et vous les recevez aussi par email (modifiable dans
+          Réglages › Être prévenu).
         </p>
         <Button variant="outline" onClick={resend}>
-          {resent ? "Renvoyée, vous la voyez ?" : "Renvoyer une notification de test"}
-        </Button>
-        {resent && (
-          <Button variant="ghost" onClick={() => setAnswer("seen")}>
-            Oui, je la vois
-          </Button>
-        )}
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-3 border-t border-border pt-4">
-      <p className="text-body">
-        Une notification « Clozer est prêt » vient de s&apos;afficher sur votre écran. Vous l&apos;avez vue ?
-      </p>
-      <div className="flex flex-wrap gap-2">
-        <Button onClick={() => setAnswer("seen")}>Oui</Button>
-        <Button variant="outline" onClick={missed}>
-          Non
+          {resent
+            ? "Renvoyée, vous la voyez ?"
+            : "Renvoyer une notification de test"}
         </Button>
       </div>
-    </div>
+    </details>
   );
 }

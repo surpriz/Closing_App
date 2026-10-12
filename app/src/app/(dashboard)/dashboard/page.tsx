@@ -6,22 +6,39 @@ import { AutopilotBanner } from "@/components/dashboard/autopilot-banner";
 import { NewLinkButton } from "@/components/dashboard/create-link-form";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { FirstSteps } from "@/components/dashboard/first-steps";
-import { CHANNEL_LABELS, DEAL_STATUS_LABELS, TIER_LABELS } from "@/components/dashboard/labels";
+import {
+  CHANNEL_LABELS,
+  DEAL_STATUS_LABELS,
+  TIER_LABELS,
+} from "@/components/dashboard/labels";
 import { SectionTitle } from "@/components/dashboard/page-header";
 import { ActivityFeed } from "@/components/dashboard/today/activity-feed";
-import { FunnelStrip, HeatDistributionBar } from "@/components/dashboard/today/funnel";
+import {
+  FunnelStrip,
+  HeatDistributionBar,
+} from "@/components/dashboard/today/funnel";
 import { LiveStrip } from "@/components/dashboard/today/live-strip";
 import { PeriodTabs } from "@/components/dashboard/today/period-tabs";
 import { TodoList, type TodoRow } from "@/components/dashboard/today/todo-list";
 import { buildTodayHeadline } from "@/components/dashboard/today-headline";
-import { UploadButton, UploadDropzone } from "@/components/dashboard/upload-dropzone";
+import {
+  UploadButton,
+  UploadDropzone,
+} from "@/components/dashboard/upload-dropzone";
 import { getAppOrigin } from "@/lib/app-origin";
 import { documentUploadPrefix, pitchUploadPrefix } from "@/lib/blob";
 import { dealAction } from "@/lib/closing/dashboard/deal-action";
 import { buildFeed } from "@/lib/closing/dashboard/feed";
-import { buildFunnel, buildHeatDistribution } from "@/lib/closing/dashboard/funnel";
-import { prospectLabel } from "@/lib/closing/dashboard/labels";
-import { parsePeriod, periodStart, PERIODS } from "@/lib/closing/dashboard/period";
+import {
+  buildFunnel,
+  buildHeatDistribution,
+} from "@/lib/closing/dashboard/funnel";
+import { dealDocumentMeta, dealLabel } from "@/lib/closing/dashboard/labels";
+import {
+  parsePeriod,
+  periodStart,
+  PERIODS,
+} from "@/lib/closing/dashboard/period";
 import { compareDeals } from "@/lib/closing/dashboard/rank";
 import {
   getFeedSource,
@@ -102,7 +119,10 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
     }),
     prisma.link.count({ where: { ...mine, archivedAt: null, draftAt: null } }),
     // Bots and the seller's own reads are flagged isBot
-    prisma.documentView.findFirst({ where: { link: mine, isBot: false }, select: { id: true } }),
+    prisma.documentView.findFirst({
+      where: { link: mine, isBot: false },
+      select: { id: true },
+    }),
   ]);
   const uploadPrefix = documentUploadPrefix(organizationId);
   const pitchPrefix = pitchUploadPrefix(organizationId);
@@ -111,21 +131,32 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
     return (
       <div className="space-y-8">
         <div className="space-y-3">
-          <h1 className="max-w-2xl text-display [font-stretch:88%]">Bienvenue sur Clozer.</h1>
+          <h1 className="max-w-2xl text-display [font-stretch:88%]">
+            Bienvenue sur Clozer.
+          </h1>
           <p className="max-w-xl text-body text-muted-foreground">
-            Déposez un devis ou une proposition : le lien à envoyer est prêt dans la seconde.
+            Déposez un devis ou une proposition : le lien à envoyer est prêt
+            dans la seconde.
           </p>
         </div>
         <FirstSteps
           hasDocument={false}
           hasLink={false}
           hasRead={false}
-          action={<UploadDropzone uploadPrefix={uploadPrefix} pitchUploadPrefix={pitchPrefix} />}
+          action={
+            <UploadDropzone
+              uploadPrefix={uploadPrefix}
+              pitchUploadPrefix={pitchPrefix}
+            />
+          }
         />
         {!mailClient && (
           <p className="text-sm text-muted-foreground">
             Vous envoyez depuis Gmail ou Outlook ?{" "}
-            <Link href="/bienvenue" className="text-foreground underline underline-offset-4">
+            <Link
+              href="/bienvenue"
+              className="text-foreground underline underline-offset-4"
+            >
               Clozer peut créer le lien directement dans vos emails
             </Link>
             .
@@ -138,28 +169,44 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
 
   const readingLinks = new Set(live.readers.map((reader) => reader.linkId));
   const rows = deals
-    .map((deal) => toTodoRow(deal, { now, readingNow: readingLinks.has(deal.id), origin }))
+    .map((deal) =>
+      toTodoRow(deal, { now, readingNow: readingLinks.has(deal.id), origin }),
+    )
     .sort(compareDeals);
-  const distribution = buildHeatDistribution(rows.map((row) => ({ opened: row.opened, tier: row.tier })));
+  const distribution = buildHeatDistribution(
+    rows.map((row) => ({ opened: row.opened, tier: row.tier })),
+  );
   const funnel = buildFunnel(funnelFacts);
   const feed = buildFeed(feedSource, FEED_LIMIT);
 
+  // The deal the day's headline is about: its AI line is not repeated in the list
+  const focus =
+    rows.find((row) => (row.aiPriority ?? 0) >= 4 && row.insightHeadline) ??
+    null;
   const { headline, hint } = buildTodayHeadline({
     // "Hot" by the score alone, unless the analysis reads the deal as calm
     hotProspects: rows
-      .filter((row) => row.dealStatus === "OPEN" && row.tier === "HOT" && (row.aiPriority ?? 5) >= 4)
+      .filter(
+        (row) =>
+          row.dealStatus === "OPEN" &&
+          row.tier === "HOT" &&
+          (row.aiPriority ?? 5) >= 4,
+      )
       .map((row) => row.label),
     warmCount: distribution.WARM,
-    changeRequests: rows.filter((row) => row.dealStatus === "CHANGE_REQUESTED").map((row) => row.label),
+    changeRequests: rows
+      .filter((row) => row.dealStatus === "CHANGE_REQUESTED")
+      .map((row) => row.label),
     freshValidations,
     activeCount: deals.length,
     documentCount,
     unopenedCount: distribution.unopened,
-    nextFollowupLabel: upcomingFollowups[0] ? formatRelative(upcomingFollowups[0].scheduledFor, now) : null,
-    aiFocus: (() => {
-      const focus = rows.find((row) => (row.aiPriority ?? 0) >= 4 && row.insightHeadline);
-      return focus ? { label: focus.label, headline: focus.insightHeadline! } : null;
-    })(),
+    nextFollowupLabel: upcomingFollowups[0]
+      ? formatRelative(upcomingFollowups[0].scheduledFor, now)
+      : null,
+    aiFocus: focus
+      ? { label: focus.label, headline: focus.insightHeadline! }
+      : null,
     draftsToReview: deals.reduce((sum, deal) => sum + deal.draftCount, 0),
   });
 
@@ -169,16 +216,26 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
     <div className="space-y-10">
       <section className="space-y-6">
         <div className="flex flex-col-reverse gap-6 sm:flex-row sm:items-start sm:justify-between">
-          <h1 className="max-w-3xl text-title text-balance [font-stretch:88%] sm:text-display">
-            {headline}
-            <span className="block text-muted-foreground">{hint}</span>
-          </h1>
+          <div className="max-w-3xl space-y-2">
+            <h1 className="text-title text-balance [font-stretch:88%] sm:text-display">
+              {headline}
+            </h1>
+            <p className="text-body text-muted-foreground">{hint}</p>
+          </div>
           <div className="shrink-0 sm:pt-1.5">
-            <UploadButton uploadPrefix={uploadPrefix} pitchUploadPrefix={pitchPrefix} />
+            <UploadButton
+              uploadPrefix={uploadPrefix}
+              pitchUploadPrefix={pitchPrefix}
+            />
           </div>
         </div>
         <LiveStrip key={live.stamp} initial={live} />
-        {settings.autonomy === "AUTOPILOT" && <AutopilotBanner sentToday={sentAlone} canPause={isManagerRole(role)} />}
+        {settings.autonomy === "AUTOPILOT" && (
+          <AutopilotBanner
+            sentToday={sentAlone}
+            canPause={isManagerRole(role)}
+          />
+        )}
         {showFirstSteps && (
           <FirstSteps
             hasDocument
@@ -186,7 +243,9 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
             hasRead={!!firstRead}
             action={
               linkCount === 0 &&
-              latestReadyDocument && <NewLinkButton documentId={latestReadyDocument.id} />
+              latestReadyDocument && (
+                <NewLinkButton documentId={latestReadyDocument.id} />
+              )
             }
           />
         )}
@@ -195,7 +254,9 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
       <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1fr)_18rem]">
         <div className="min-w-0 space-y-12">
           <section>
-            <SectionTitle hint="du plus urgent au moins urgent">À traiter</SectionTitle>
+            <SectionTitle hint="du plus urgent au moins urgent">
+              À traiter
+            </SectionTitle>
             {rows.length === 0 ? (
               <EmptyState
                 title="Aucun deal en cours."
@@ -206,16 +267,24 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
                 }
                 action={
                   latestReadyDocument && (
-                    <NewLinkButton documentId={latestReadyDocument.id} variant="outline" />
+                    <NewLinkButton
+                      documentId={latestReadyDocument.id}
+                      variant="outline"
+                    />
                   )
                 }
               />
             ) : (
               <>
-                <TodoList rows={rows.slice(0, TODO_LIMIT)} now={now} />
+                <TodoList
+                  rows={rows.slice(0, TODO_LIMIT)}
+                  now={now}
+                  headlineDealId={focus?.id ?? null}
+                />
                 {rows.length > TODO_LIMIT && (
                   <p className="mt-3 text-sm text-muted-foreground">
-                    Et {rows.length - TODO_LIMIT} autres deals en cours, moins urgents.
+                    Et {rows.length - TODO_LIMIT} autres deals en cours, moins
+                    urgents.
                   </p>
                 )}
               </>
@@ -223,7 +292,10 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
           </section>
 
           <section>
-            <SectionTitle hint={periodHint} action={<PeriodTabs current={period} />}>
+            <SectionTitle
+              hint={`où en sont les liens envoyés, ${periodHint}`}
+              action={<PeriodTabs current={period} />}
+            >
               Vos envois
             </SectionTitle>
             <FunnelStrip funnel={funnel} />
@@ -238,14 +310,21 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
 
           {drafts.length > 0 && (
             <section>
-              <SectionTitle hint="rien ne part sans vous">Relances à valider</SectionTitle>
+              <SectionTitle hint="rien ne part sans vous">
+                Relances à valider
+              </SectionTitle>
               <ul className="space-y-3 text-sm">
                 {drafts.map((draft) => (
                   <li key={draft.id} className="flex gap-3">
                     <PenLine className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
                     <div className="min-w-0">
-                      <Link href={`/links/${draft.link.id}#relances`} className="font-medium hover:underline">
-                        {draft.prospect.company ?? draft.prospect.name ?? draft.prospect.email}
+                      <Link
+                        href={`/links/${draft.link.id}#relances`}
+                        className="font-medium hover:underline"
+                      >
+                        {draft.prospect.company ??
+                          draft.prospect.name ??
+                          draft.prospect.email}
                       </Link>
                       <p className="truncate text-muted-foreground">
                         {CHANNEL_LABELS[draft.channel]}
@@ -259,10 +338,13 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
           )}
 
           <section>
-            <SectionTitle hint={periodHint}>Ce qui s&apos;est passé</SectionTitle>
+            <SectionTitle hint={periodHint}>
+              Ce qui s&apos;est passé
+            </SectionTitle>
             {feed.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                Les lectures, les réponses de vos prospects et les relances envoyées s&apos;afficheront ici.
+                Les lectures, les réponses de vos prospects et les relances
+                envoyées s&apos;afficheront ici.
               </p>
             ) : (
               <ActivityFeed items={feed} now={now} />
@@ -277,14 +359,20 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
                   <li key={followup.id} className="flex gap-3">
                     <Send className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
                     <div className="min-w-0">
-                      <Link href={`/links/${followup.link.id}`} className="font-medium hover:underline">
-                        {followup.prospect.company ?? followup.prospect.name ?? followup.prospect.email}
+                      <Link
+                        href={`/links/${followup.link.id}`}
+                        className="font-medium hover:underline"
+                      >
+                        {followup.prospect.company ??
+                          followup.prospect.name ??
+                          followup.prospect.email}
                       </Link>
                       <p
                         className="text-muted-foreground"
                         title={`${formatInTimeZone(followup.scheduledFor, followup.timezone)}, heure du prospect`}
                       >
-                        {CHANNEL_LABELS[followup.channel]} {formatRelative(followup.scheduledFor, now)}
+                        {CHANNEL_LABELS[followup.channel]}{" "}
+                        {formatRelative(followup.scheduledFor, now)}
                       </p>
                     </div>
                   </li>
@@ -300,19 +388,27 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
 
 function toTodoRow(
   deal: OpenDeal,
-  { now, readingNow, origin }: { now: Date; readingNow: boolean; origin: string },
+  {
+    now,
+    readingNow,
+    origin,
+  }: { now: Date; readingNow: boolean; origin: string },
 ): TodoRow {
   const prospect = deal.prospects[0];
-  const { action, tier, score, insightHeadline, aiPriority } = dealAction(deal, now, readingNow);
+  const { action, tier, score, insightHeadline, aiPriority } = dealAction(
+    deal,
+    now,
+    readingNow,
+  );
 
   return {
     id: deal.id,
     dealStatus: deal.dealStatus,
     opened: deal.opened,
-    label: prospectLabel(deal),
+    label: dealLabel(deal),
     company: prospect?.company ?? null,
     contact: prospect ? (prospect.name ?? prospect.email) : null,
-    documentName: deal.document.name,
+    documentName: dealDocumentMeta(deal),
     tier,
     score,
     state: dealState(deal.dealStatus, deal.opened, tier),
@@ -324,10 +420,12 @@ function toTodoRow(
   };
 }
 
-function dealState(dealStatus: TodoRow["dealStatus"], opened: boolean, tier: TodoRow["tier"]) {
+function dealState(
+  dealStatus: TodoRow["dealStatus"],
+  opened: boolean,
+  tier: TodoRow["tier"],
+) {
   if (dealStatus !== "OPEN") return DEAL_STATUS_LABELS[dealStatus];
   if (!opened) return "Pas encore ouvert";
   return tier ? TIER_LABELS[tier] : "Ouvert";
 }
-
-

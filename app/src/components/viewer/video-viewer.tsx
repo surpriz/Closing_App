@@ -61,6 +61,7 @@ export function VideoViewer({
   const [started, setStarted] = useState(false);
   const [atEnd, setAtEnd] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
   const barVisible = quote || !!booking;
 
   function followPosition(video: HTMLVideoElement) {
@@ -147,6 +148,7 @@ export function VideoViewer({
           answers={false}
           quote={quote}
           booking={booking}
+          onAskQuestion={chat ? () => setChatOpen(true) : undefined}
         />
       )}
 
@@ -158,7 +160,9 @@ export function VideoViewer({
           locale={locale}
           senderName={senderName}
           getViewId={getViewId}
-          ctaVisible={barVisible}
+          open={chatOpen}
+          onOpenChange={setChatOpen}
+          launcher={barVisible ? "docked" : "floating"}
         />
       )}
     </div>

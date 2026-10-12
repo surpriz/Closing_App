@@ -1,6 +1,6 @@
 "use client";
 
-import { FlaskConical } from "lucide-react";
+import { ChevronRight, FlaskConical } from "lucide-react";
 import { useTransition } from "react";
 import { toast } from "sonner";
 
@@ -18,11 +18,12 @@ export function LinkTestTools({ linkId }: { linkId: string }) {
     });
 
   return (
-    <div className="space-y-3 rounded-xl border border-dashed border-border p-4 text-sm">
-      <p className="flex items-center gap-1.5 font-medium">
-        <FlaskConical className="size-4" /> Outils de test (absents en production)
-      </p>
-      <div className="flex flex-wrap items-center gap-2">
+    <details className="group text-sm text-muted-foreground">
+      <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 outline-none hover:text-foreground focus-visible:underline [&::-webkit-details-marker]:hidden">
+        <ChevronRight className="size-3.5 transition-transform group-open:rotate-90" />
+        <FlaskConical className="size-3.5" /> Outils de test
+      </summary>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
         <span className="text-muted-foreground">Faire passer le temps :</span>
         {[1, 3, 7].map((days) => (
           <Button key={days} size="sm" variant="outline" disabled={pending} onClick={() => travel(days)}>
@@ -30,7 +31,7 @@ export function LinkTestTools({ linkId }: { linkId: string }) {
           </Button>
         ))}
       </div>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="mt-2 flex flex-wrap items-center gap-2">
         <Button
           size="sm"
           variant="outline"
@@ -50,6 +51,6 @@ export function LinkTestTools({ linkId }: { linkId: string }) {
           rappels « pas ouvert », envois à l&apos;heure prévue, analyses en retard
         </span>
       </div>
-    </div>
+    </details>
   );
 }

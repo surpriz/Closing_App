@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist_Mono, Instrument_Sans } from "next/font/google";
 
 import { ThemeProvider } from "@/components/theme/theme-provider";
@@ -22,6 +22,9 @@ export const metadata: Metadata = {
   title: { default: "Clozer", template: "%s · Clozer" },
   description: "Suivez qui consulte vos documents et relancez au bon moment.",
 };
+
+// Without viewport-fit the safe-area insets stay at 0 on iPhone
+export const viewport: Viewport = { viewportFit: "cover" };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (

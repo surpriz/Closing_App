@@ -44,6 +44,10 @@ export function linkContent(link: LinkCreated, bodyType: "html" | "text", style:
   return bodyType === "html" ? linkHtml(link.url, link.title, style) : `${link.title} : ${link.url}\n`;
 }
 
+export async function getDocument(id: string) {
+  return (await api<{ document: DocumentSummary }>(`/api/ext/documents/${encodeURIComponent(id)}`)).document;
+}
+
 export async function searchDocuments(q: string) {
   const query = q ? `?q=${encodeURIComponent(q)}` : "";
   return (await api<{ documents: DocumentSummary[] }>(`/api/ext/documents${query}`)).documents;

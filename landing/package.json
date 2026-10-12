@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "check:legal": "! grep -rniE '\\[(raison sociale|forme juridique|montant|adresse|ville|numéro|prénom nom|fonction)' src/app || (echo 'Legal placeholders left above: fill them in from the Kbis before chaining this to the build.' && exit 1)"
   },
   "dependencies": {
     "next": "16.3.5",

@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, Check, Download, MessageSquareText, Receipt } from "lucide-react";
+import { CalendarDays, Check, Download, MessageCircleQuestion, MessageSquareText, Receipt } from "lucide-react";
 import { useState, useTransition } from "react";
 
 import { recordMeetingBooked, recordMeetingClick, submitProspectAction } from "@/app/v/[slug]/actions";
@@ -45,6 +45,10 @@ type Props = {
   quote?: boolean;
   /** The seller's booking page, null when they have none or it is off on this link. */
   booking: BookingTarget | null;
+  /** The assistant is on: "Une question ?" opens its panel from the bar. */
+  onAskQuestion?: () => void;
+  /** The voice note button, when the prospect may leave one and no sheet is open. */
+  voice?: React.ReactNode;
 };
 
 export function CtaBar({
@@ -59,6 +63,8 @@ export function CtaBar({
   answers,
   quote = false,
   booking,
+  onAskQuestion,
+  voice,
 }: Props) {
   const [status, setStatus] = useState<DealStatus>(initialStatus);
   const [dialog, setDialog] = useState<"validate" | "change" | "quote" | null>(null);
@@ -125,7 +131,7 @@ export function CtaBar({
           )}
         >
           {done ? (
-            <div className="flex items-center gap-3 px-2 py-1.5">
+            <div className="flex min-h-11 items-center gap-3 px-2 py-1.5">
               <span className="flex size-9 shrink-0 animate-pop items-center justify-center rounded-full bg-success text-success-foreground">
                 <Check className="size-5" strokeWidth={2.5} aria-hidden />
               </span>
@@ -165,6 +171,20 @@ export function CtaBar({
                 )}
               </p>
               <div className="flex gap-2">
+                {onAskQuestion && (
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="h-11 w-11 px-0 md:w-auto md:px-4"
+                    aria-label={labels.chatAsk}
+                    onClick={onAskQuestion}
+                    data-chat-trigger
+                  >
+                    <MessageCircleQuestion />
+                    <span className="hidden md:inline">{labels.chatAsk}</span>
+                  </Button>
+                )}
+                {voice}
                 {booking &&
                   (answers || (quote && !quoteSent) ? (
                     <Button
@@ -239,11 +259,7 @@ export function CtaBar({
             <>
               <DialogHeader>
                 <DialogTitle className="text-heading">{labels.confirmTitle}</DialogTitle>
-                <DialogDescription>
-                  <span className="font-medium text-foreground">{documentName}</span>
-                  <br />
-                  {labels.confirmValidate}
-                </DialogDescription>
+                <DialogDescription>{documentName}</DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div className="space-y-2">

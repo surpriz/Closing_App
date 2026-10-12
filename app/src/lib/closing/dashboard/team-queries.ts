@@ -3,7 +3,7 @@ import { isOwnerRole } from "@/lib/roles";
 
 import { getWorkspaceLiveState } from "../live";
 import { dealAction } from "./deal-action";
-import { prospectLabel } from "./labels";
+import { dealLabel } from "./labels";
 import { getOpenDeals } from "./queries";
 import { classifyDeal, summarizeBySeller } from "./team";
 
@@ -40,7 +40,7 @@ export async function getTeamBoard(organizationId: string, now: Date) {
     const { health, signals } = classifyDeal(deal, now, readingNow);
     return {
       id: deal.id,
-      label: prospectLabel(deal),
+      label: dealLabel(deal),
       documentName: deal.document.name,
       sellerId: deal.createdById && memberIds.has(deal.createdById) ? deal.createdById : fallbackId,
       tier,

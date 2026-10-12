@@ -25,7 +25,7 @@ To load a build by hand: `chrome://extensions` → Developer mode → Load unpac
 
 ## Connecting
 
-The popup opens `/extension/connect?nonce=…` on the app. The seller signs in if needed, clicks "Connecter l'extension", and the page hands a token to the extension through `externally_connectable`. Only the hash is stored server side (`extension_tokens`). Tokens are listed and revocable in Réglages.
+The popup opens `/extension/connect?nonce=…` on the app. The seller signs in if needed, clicks "Connecter Clozer", and the page hands a token to the extension through `externally_connectable`. Only the hash is stored server side (`extension_tokens`). Tokens are listed and revocable in Réglages.
 
 The app only sends tokens to extension IDs listed in `EXTENSION_IDS`. Dev and staging builds pin their ID with `WXT_MANIFEST_KEY` (public key, in `.env.development` / `.env.staging`): `oidkcbbpbinommpbbpabnlhlnffekbjb`. Production uses the Web Store ID.
 

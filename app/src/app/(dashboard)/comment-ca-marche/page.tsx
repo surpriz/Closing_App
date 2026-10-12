@@ -144,7 +144,7 @@ export default function HowItWorksPage() {
       />
 
       <section>
-        <p className="text-xl leading-snug font-medium tracking-[-0.01em] text-balance">
+        <p className="text-heading text-balance">
           Clozer voit comment votre prospect lit votre document, comprend où en est le deal comme le ferait un
           commercial expérimenté, et prépare la bonne relance au bon moment. Vous validez et vous appelez ceux qui sont
           prêts.

@@ -4,14 +4,16 @@ import { headers } from "next/headers";
 import { UnsubscribeForm } from "@/components/viewer/unsubscribe-form";
 import { pickLocale } from "@/lib/closing/i18n/viewer";
 import { findProspectByUnsubscribeToken } from "@/lib/closing/unsubscribe";
-import { getUnsubscribeCopy } from "@/lib/closing/unsubscribe/copy";
+import { getUnsubscribeCopy, unsubscribePageTitle } from "@/lib/closing/unsubscribe/copy";
 
 import { confirmUnsubscribe } from "./actions";
 
-export const metadata: Metadata = {
-  title: "Unsubscribe",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: unsubscribePageTitle((await headers()).get("accept-language")),
+    robots: { index: false, follow: false },
+  };
+}
 
 // Opening the page changes nothing: mail scanners follow links, so the
 // prospect has to confirm with a click (POST).

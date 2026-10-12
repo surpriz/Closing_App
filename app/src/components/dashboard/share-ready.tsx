@@ -111,7 +111,7 @@ export function ShareReady({
     <section className="space-y-5 rounded-2xl bg-card p-5 ring-1 ring-border sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-1">
-          <h2 className="text-lg font-medium tracking-[-0.01em]">
+          <h2 className="text-heading">
             {sent
               ? shared
                 ? "C'est en ligne. Chaque nouveau lecteur apparaît ici."

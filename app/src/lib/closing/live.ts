@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 
 import { LIVE_READING_WINDOW_MS } from "./constants";
-import { linkLabelSelect, prospectLabel } from "./dashboard/labels";
+import { dealLabel, linkLabelSelect } from "./dashboard/labels";
 import { sellerLinks, type SellerScope } from "./dashboard/queries";
 import { isReadingNow } from "./tracking/live-status";
 
@@ -110,7 +110,7 @@ export async function getWorkspaceLiveState(
   const readers = pickReaders(recent, now, (view) => `${view.link.id}:${view.visitorId}`).map((view) => ({
     ...toLiveReader(view),
     linkId: view.link.id,
-    label: prospectLabel(view.link),
+    label: dealLabel(view.link),
   }));
 
   const stamp = [

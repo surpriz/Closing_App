@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/db";
 
+import { linkLabelSelect } from "./dashboard/labels";
+
 type Scope = { documentId: string } | { linkId: string };
 
 // Reading stats for a whole document (all links) or a single prospect link
@@ -33,7 +35,7 @@ export async function getReadingAnalytics(scope: Scope) {
       orderBy: { lastSeenAt: "desc" },
       take: 15,
       include: {
-        link: { select: { name: true, slug: true } },
+        link: { select: linkLabelSelect },
         prospect: { select: { name: true, email: true, company: true } },
         // Page 1 depth is the share watched when the document is a video
         pageViews: { where: { pageNumber: 1 }, select: { maxScrollDepth: true } },

@@ -1,6 +1,8 @@
 import { browser } from "wxt/browser";
 
 import { API_ORIGIN } from "@/lib/config";
+import { COPY } from "@/lib/copy";
+import { mailHost } from "@/lib/hosts";
 import { ask, type Account } from "@/lib/messages";
 import { getAskFirst, getLinkStyle, setAskFirst, setLinkStyle, type LinkStyle } from "@/lib/preferences";
 import { readerLine, type PulseReader } from "@/lib/pulse";
@@ -13,17 +15,16 @@ function render(...children: (Node | string | null)[]) {
 }
 
 const STYLES: { value: LinkStyle; label: string; hint: string }[] = [
-  { value: "card", label: "Carte", hint: "Un encadré avec le titre et « Consulter le document »" },
-  { value: "text", label: "Lien simple", hint: "Une ligne soulignée, plus discrète" },
+  { value: "card", label: COPY.card, hint: COPY.cardHint },
+  { value: "text", label: COPY.plainLink, hint: COPY.plainLinkHint },
 ];
 
-// Applies to the next links inserted from this browser
 async function linkStyleField() {
   const current = await getLinkStyle();
   return h(
     "fieldset",
     {},
-    h("legend", {}, "Format du lien dans l'email"),
+    h("legend", {}, COPY.linkStyleLegend),
     ...STYLES.map((style) =>
       h(
         "label",
@@ -41,16 +42,15 @@ async function linkStyleField() {
   );
 }
 
-// Zero click by default; some sellers want the question back
 async function askFirstField() {
   const current = await getAskFirst();
   return h(
     "fieldset",
     {},
-    h("legend", {}, "Quand je joins un PDF"),
+    h("legend", {}, COPY.askFirstLegend),
     ...[
-      { value: false, label: "Le remplacer tout de suite", hint: "Par un lien suivi, sans clic." },
-      { value: true, label: "Me demander d'abord", hint: "Un bouton « Remplacer » apparaît." },
+      { value: false, label: COPY.replaceWithLink, hint: COPY.replaceWithLinkHint },
+      { value: true, label: COPY.askFirst, hint: COPY.askFirstHint },
     ].map((choice) =>
       h(
         "label",
@@ -67,14 +67,13 @@ async function askFirstField() {
   );
 }
 
-// Who reads the seller's proposals right now (last pulse, at most 30 s old)
 async function readingNow() {
   const readers = await ask<PulseReader[]>({ type: "readers" }).catch(() => []);
-  if (!readers.length) return h("p", { class: "muted" }, "Personne ne lit vos propositions en ce moment.");
+  if (!readers.length) return h("p", { class: "muted" }, COPY.nobodyReading);
   return h(
     "fieldset",
     {},
-    h("legend", {}, "En train de lire"),
+    h("legend", {}, COPY.readingNow),
     ...readers.map((reader) =>
       h(
         "button",
@@ -99,19 +98,38 @@ async function callMomentsField() {
     h(
       "span",
       {},
-      h("strong", {}, "Me prévenir quand c'est le moment d'appeler"),
-      h("span", { class: "muted" }, "Première ouverture, retour après un silence, tarifs, lecture à plusieurs"),
-      h(
-        "button",
-        { class: "link", type: "button", onclick: () => void ask({ type: "testNotification" }) },
-        "Tester la notification",
-      ),
+      h("strong", {}, COPY.callMoments),
+      h("span", { class: "muted" }, COPY.callMomentsHint),
+      h("button", { class: "link", type: "button", onclick: () => void ask({ type: "testNotification" }) }, COPY.testNotification),
     ),
   );
 }
 
+// "Déconnecter" asks once, in place: no dialog, no second screen
+function disconnectField() {
+  const row = h("div", { class: "row" });
+  const askButton = h("button", { class: "ghost", type: "button", onclick: () => confirm() }, COPY.disconnect);
+  const confirm = () =>
+    row.replaceChildren(
+      h("p", {}, COPY.disconnectConfirm),
+      h("button", { class: "primary", type: "button", onclick: () => void ask({ type: "disconnect" }).then(show) }, COPY.disconnect),
+      h("button", { class: "ghost", type: "button", onclick: () => row.replaceChildren(askButton) }, COPY.cancel),
+    );
+  row.append(askButton);
+  return row;
+}
+
+// The mail tab in front, when the app switched Clozer off there: the seller sees why nothing happens
+async function pausedOn(account: Account) {
+  if (!account.disabledHosts.length) return null;
+  const [tab] = await browser.tabs.query({ active: true, currentWindow: true }).catch(() => []);
+  const host = tab?.url ? mailHost(new URL(tab.url).hostname) : null;
+  if (!host || !account.disabledHosts.includes(host)) return null;
+  return h("p", { class: "muted" }, COPY.paused(host === "gmail" ? "Gmail" : "Outlook"));
+}
+
 async function show() {
-  render(h("p", { class: "muted" }, "Chargement…"));
+  render(h("p", { class: "muted" }, COPY.loading));
   let account: Account | null = null;
   let error: string | null = null;
   try {
@@ -122,12 +140,12 @@ async function show() {
 
   if (!account) {
     render(
-      h("p", {}, "Joignez un PDF dans Gmail ou Outlook : Clozer le remplace par un lien suivi, tout seul."),
+      h("p", {}, COPY.pitch),
       error ? h("p", { class: "error" }, error) : null,
       h(
         "div",
         { class: "row" },
-        h("button", { class: "primary", onclick: () => void ask({ type: "connect" }).then(() => window.close()) }, "Connecter"),
+        h("button", { class: "primary", onclick: () => void ask({ type: "connect" }).then(() => window.close()) }, COPY.connect),
       ),
     );
     return;
@@ -135,17 +153,23 @@ async function show() {
 
   const notifications = account.notificationsEnabled !== false;
   render(
-    h("p", {}, `Connecté : ${account.user.email}`),
-    h("p", { class: "muted" }, `Espace ${account.organization.name}`),
+    h("p", {}, COPY.connected(account.user.email)),
+    await pausedOn(account),
     notifications ? await readingNow() : null,
-    notifications ? await callMomentsField() : null,
-    await askFirstField(),
-    await linkStyleField(),
     h(
       "div",
       { class: "row" },
-      h("button", { class: "primary", onclick: () => void browser.tabs.create({ url: `${API_ORIGIN}/dashboard` }) }, "Ouvrir Clozer"),
-      h("button", { class: "ghost", onclick: () => void ask({ type: "disconnect" }).then(show) }, "Déconnecter"),
+      h("button", { class: "primary", onclick: () => void browser.tabs.create({ url: `${API_ORIGIN}/dashboard` }) }, COPY.openApp),
+    ),
+    h(
+      "details",
+      { class: "settings" },
+      h("summary", {}, COPY.settings),
+      notifications ? await callMomentsField() : null,
+      await askFirstField(),
+      await linkStyleField(),
+      h("p", { class: "muted" }, COPY.workspace(account.organization.name)),
+      disconnectField(),
     ),
   );
 }

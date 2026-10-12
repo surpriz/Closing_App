@@ -63,7 +63,7 @@ export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 export const DEFAULT_LOCALE: SupportedLocale = "en";
 
 /**
- * "Lu en profondeur" on the dashboard funnel. A PDF counts once half of it was
+ * "Lu attentivement" on the dashboard funnel. A PDF counts once half of it was
  * reached with some real reading time (maxPageReached alone is a scroll, not a
  * read). Web documents have no pages, and their time runs on a 10 min idle
  * timeout, hence a higher bar.

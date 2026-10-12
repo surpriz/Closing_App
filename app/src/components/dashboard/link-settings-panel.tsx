@@ -156,7 +156,9 @@ export function LinkSettingsPanel({
                 </Fragment>
               ))}
             {group.title === "Accès" && (
-              <ExpiryControl linkId={linkId} expiresAt={expiresAt} requests={requests} canEdit />
+              <div id="expiration" className="scroll-mt-20">
+                <ExpiryControl linkId={linkId} expiresAt={expiresAt} requests={requests} canEdit />
+              </div>
             )}
           </div>
         </section>

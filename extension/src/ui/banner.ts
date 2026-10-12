@@ -1,4 +1,5 @@
 import type { MailAlert } from "@/lib/pulse";
+import { COPY } from "@/lib/copy";
 
 import { h } from "./dom";
 import { getLayer } from "./widget";
@@ -26,7 +27,7 @@ export function renderBanners(alerts: MailAlert[], handlers: BannerHandlers) {
         { class: action ? "banner action" : "banner", role: "status" },
         h("span", { class: "dot", "aria-hidden": "true" }),
         h("div", { class: "text" }, h("p", { class: "title" }, alert.title), h("p", { class: "muted" }, alert.body)),
-        h("button", { class: "close", type: "button", "aria-label": "Fermer", onclick: () => handlers.close(alert) }, "×"),
+        h("button", { class: "close", type: "button", "aria-label": COPY.close, onclick: () => handlers.close(alert) }, "×"),
         h(
           "div",
           { class: "row" },

@@ -32,9 +32,19 @@ type Props = ChatWidgetData & {
   locale: SupportedLocale;
   senderName: string | null;
   getViewId: () => string | null;
-  /** The call-to-action bar is at the bottom: the launcher sits above it. */
-  ctaVisible: boolean;
+  /** Owned by the viewer: the call-to-action bar opens the panel too. */
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  /**
+   * "floating": a round button bottom right, when nothing else sits there.
+   * "docked": the trigger is the "Une question ?" button of the bar, only
+   * the exit nudge is drawn here, above the bar.
+   */
+  launcher: "floating" | "docked";
 };
+
+/** Above the bar (5rem tall on phones, 4.5rem from sm up) or the floating launcher (4.5rem). */
+const NUDGE_BOTTOM = "bottom-[calc(5.5rem+env(safe-area-inset-bottom))]";
 
 // The route answers 429 with { error: <quota code> }; the transport puts the body in error.message
 const LIMIT_ERRORS = new RegExp(CHAT_QUOTA_ERRORS.join("|"));
@@ -58,13 +68,14 @@ export function ChatWidget({
   locale,
   senderName,
   getViewId,
-  ctaVisible,
+  open,
+  onOpenChange,
+  launcher,
   kind,
   initialMessages,
   suggestions,
 }: Props) {
   const kindLabels = labels.chatKinds[kind];
-  const [open, setOpen] = useState(false);
   const [nudge, setNudge] = useState(false);
   const [input, setInput] = useState("");
   const listRef = useRef<HTMLDivElement>(null);
@@ -99,7 +110,7 @@ export function ChatWidget({
   function openChat() {
     if (nudge) sendSignal(getViewId(), "EXIT_PROMPT_OPENED");
     setNudge(false);
-    setOpen(true);
+    onOpenChange(true);
   }
 
   const sender = senderName ?? labels.chatSenderFallback;
@@ -119,8 +130,10 @@ export function ChatWidget({
 
   useEffect(() => {
     if (!open) {
-      // Back to the launcher when the panel closes
-      if (wasOpen.current) launcherRef.current?.focus();
+      // Back to the trigger when the panel closes: ours, or the bar's button
+      if (wasOpen.current) {
+        (launcherRef.current ?? document.querySelector<HTMLElement>("[data-chat-trigger]"))?.focus();
+      }
       return;
     }
     wasOpen.current = true;
@@ -150,37 +163,37 @@ export function ChatWidget({
   }
 
   if (!open) {
-    const bottom = ctaVisible
-      ? "bottom-[calc(7.5rem+env(safe-area-inset-bottom))] sm:bottom-24 lg:bottom-6"
-      : "bottom-6";
+    const floating = launcher === "floating";
     return (
       <>
         {nudge && (
           <div
             role="status"
             className={cn(
-              "fixed right-4 z-30 mb-16 flex animate-pop items-center gap-1 rounded-full bg-popover py-1 pr-1 pl-4 text-sm text-popover-foreground shadow-lg ring-1 ring-border",
-              bottom,
+              "fixed right-4 z-30 flex animate-pop items-center gap-1 rounded-full bg-popover py-1 pr-1 pl-4 text-sm text-popover-foreground shadow-lg ring-1 ring-border",
+              NUDGE_BOTTOM,
             )}
           >
             <button type="button" onClick={openChat} className="font-medium hover:underline">
               {labels.chatExitNudge}
             </button>
-            <Button variant="ghost" size="icon-sm" onClick={() => setNudge(false)} aria-label={labels.chatClose}>
+            <Button variant="ghost" size="icon" onClick={() => setNudge(false)} aria-label={labels.chatClose}>
               <X />
             </Button>
           </div>
         )}
-        <Button
-          ref={launcherRef}
-          size="xl"
-          onClick={openChat}
-          aria-label={labels.chatLauncher}
-          className={cn("fixed right-4 z-30 size-12 rounded-full px-0 shadow-lg sm:size-auto sm:px-5", bottom)}
-        >
-          <MessageCircleQuestion className="size-5" />
-          <span className="hidden sm:inline">{labels.chatLauncher}</span>
-        </Button>
+        {floating && (
+          <Button
+            ref={launcherRef}
+            size="xl"
+            onClick={openChat}
+            aria-label={labels.chatLauncher}
+            className="fixed right-4 bottom-[calc(1.5rem+env(safe-area-inset-bottom))] z-30 size-12 rounded-full px-0 shadow-lg sm:size-auto sm:px-5"
+          >
+            <MessageCircleQuestion className="size-5" />
+            <span className="hidden sm:inline">{labels.chatLauncher}</span>
+          </Button>
+        )}
       </>
     );
   }
@@ -189,7 +202,7 @@ export function ChatWidget({
     <section
       role="dialog"
       aria-label={kindLabels.title}
-      onKeyDown={(event) => event.key === "Escape" && setOpen(false)}
+      onKeyDown={(event) => event.key === "Escape" && onOpenChange(false)}
       className="fixed inset-0 z-50 flex animate-rise flex-col bg-card sm:inset-auto sm:right-4 sm:bottom-4 sm:z-40 sm:h-[min(620px,calc(100dvh-2rem))] sm:w-[380px] sm:rounded-2xl sm:shadow-xl sm:ring-1 sm:ring-border"
     >
       <header className="flex shrink-0 items-center gap-3 border-b px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:pt-3">
@@ -200,7 +213,7 @@ export function ChatWidget({
           <p className="truncate text-sm font-semibold">{kindLabels.title}</p>
           {senderName && <p className="truncate text-small text-muted-foreground">{senderName}</p>}
         </div>
-        <Button variant="ghost" size="icon" onClick={() => setOpen(false)} aria-label={labels.chatClose}>
+        <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} aria-label={labels.chatClose}>
           <X />
         </Button>
       </header>
@@ -279,7 +292,13 @@ export function ChatWidget({
             onKeyDown={onKeyDown}
             className="max-h-32 min-h-10 resize-none"
           />
-          <Button type="submit" size="icon-lg" disabled={busy || !input.trim()} aria-label={labels.send}>
+          <Button
+            type="submit"
+            size="icon-lg"
+            className="size-11 sm:size-10"
+            disabled={busy || !input.trim()}
+            aria-label={labels.send}
+          >
             <ArrowUp />
           </Button>
         </div>

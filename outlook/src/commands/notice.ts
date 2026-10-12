@@ -1,3 +1,5 @@
+import { COPY } from "@ext/copy";
+
 import { isPdfAttachment, type AttachmentInfo } from "../lib/compose";
 
 // What the attachment event shows. Kept free of Office.js so it is tested.
@@ -28,7 +30,7 @@ export function attachmentNotice(
     return {
       kind: "show",
       message: `Envoyez « ${name} » en lien Clozer : connectez d'abord Outlook à votre compte.`.slice(0, MAX_MESSAGE),
-      actionText: "Connecter Clozer",
+      actionText: COPY.connect,
       attachmentId: null,
     };
   }
@@ -36,14 +38,14 @@ export function attachmentNotice(
   return {
     kind: "show",
     message: `Remplacer « ${name} » par un lien Clozer ?`.slice(0, MAX_MESSAGE),
-    actionText: "Remplacer par un lien",
+    actionText: COPY.replaceWithLink,
     attachmentId: details!.id,
   };
 }
 
 // Outcome of an automatic replacement, shown in the same bar
 export function replacedMessage(name: string, note: string) {
-  return `« ${shorten(name, 60)} » remplacé par un lien Clozer. ${note}`.slice(0, MAX_MESSAGE);
+  return `« ${shorten(name, 60)} » remplacé par un lien Clozer. ${note}`.trim().slice(0, MAX_MESSAGE);
 }
 
 export function failedMessage(name: string, reason: string) {

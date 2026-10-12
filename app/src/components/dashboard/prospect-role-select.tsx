@@ -28,7 +28,7 @@ export function ProspectRoleSelect({
   const [pending, startTransition] = useTransition();
 
   const items = [
-    { value: AUTO, label: detected ? `Auto (${PROSPECT_ROLE_LABELS[detected]})` : "Auto" },
+    { value: AUTO, label: detected ? `Deviné : ${PROSPECT_ROLE_LABELS[detected]}` : "Rôle à préciser" },
     ...(Object.keys(PROSPECT_ROLE_LABELS) as ProspectRole[]).map((value) => ({ value, label: PROSPECT_ROLE_LABELS[value] })),
   ];
 

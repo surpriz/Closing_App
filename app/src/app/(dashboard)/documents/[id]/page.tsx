@@ -9,7 +9,10 @@ import { NewLinkButton } from "@/components/dashboard/create-link-form";
 import { DeleteDocumentButton } from "@/components/dashboard/delete-document-button";
 import { DocumentPreview } from "@/components/dashboard/document-preview";
 import { EmptyState } from "@/components/dashboard/empty-state";
-import { toFollowupItem, type FollowupItem } from "@/components/dashboard/followup-item";
+import {
+  toFollowupItem,
+  type FollowupItem,
+} from "@/components/dashboard/followup-item";
 import { FollowupsPanel } from "@/components/dashboard/followups-panel";
 import { HeatBar } from "@/components/dashboard/heat";
 import {
@@ -19,7 +22,12 @@ import {
   TIER_LABELS,
 } from "@/components/dashboard/labels";
 import { LinkFollowupsToggle } from "@/components/dashboard/link-followups-toggle";
-import { PageHeader, SectionTitle, StatLine, Surface } from "@/components/dashboard/page-header";
+import {
+  PageHeader,
+  SectionTitle,
+  StatLine,
+  Surface,
+} from "@/components/dashboard/page-header";
 import {
   AssistantNotesForm,
   DocumentPages,
@@ -27,7 +35,10 @@ import {
   SellerDescriptionForm,
   WebPageReading,
 } from "@/components/dashboard/document-content";
-import { PageTimeChart, type PageTimeDatum } from "@/components/dashboard/page-time-chart";
+import {
+  PageTimeChart,
+  type PageTimeDatum,
+} from "@/components/dashboard/page-time-chart";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getAppOrigin } from "@/lib/app-origin";
 import { videoProvider } from "@/lib/closing/documents/web-link";
@@ -38,16 +49,25 @@ import { WELCOME_PAGE } from "@/lib/closing/capsules/resolve";
 import { getDocumentAnalytics } from "@/lib/closing/analytics";
 import { getLanguageModel } from "@/lib/closing/ai/provider";
 import { catchUpInBackground } from "@/lib/closing/catch-up";
+import { dealLabel, linkLabelSelect } from "@/lib/closing/dashboard/labels";
+import { showsReadingDetail } from "@/lib/closing/dashboard/reading-detail";
 import { buildDocumentFrictions } from "@/lib/closing/dashboard/frictions";
 import { labelReaders } from "@/lib/closing/dashboard/readers";
 import { tagLabels } from "@/lib/closing/documents/doc-types";
 import { segmentLabel } from "@/lib/closing/documents/video-segments";
 import { prisma } from "@/lib/db";
-import { formatBytes, formatDate, formatDuration, formatRelative } from "@/lib/format";
+import {
+  formatBytes,
+  formatDate,
+  formatDuration,
+  formatRelative,
+} from "@/lib/format";
 import { isManagerRole } from "@/lib/roles";
 import { requireWorkspace } from "@/lib/session";
 
-export async function generateMetadata({ params }: PageProps<"/documents/[id]">): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: PageProps<"/documents/[id]">): Promise<Metadata> {
   const { id } = await params;
   const { organization } = await requireWorkspace();
   const document = await prisma.document.findFirst({
@@ -57,7 +77,9 @@ export async function generateMetadata({ params }: PageProps<"/documents/[id]">)
   return { title: document?.name ?? "Document" };
 }
 
-export default async function DocumentDetailPage({ params }: PageProps<"/documents/[id]">) {
+export default async function DocumentDetailPage({
+  params,
+}: PageProps<"/documents/[id]">) {
   const { id } = await params;
   const { organization, role } = await requireWorkspace();
 
@@ -65,19 +87,35 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
     where: { id, organizationId: organization.id },
     include: {
       pages: {
-        select: { pageNumber: true, tags: true, tagSource: true, summary: true, keyFacts: true },
+        select: {
+          pageNumber: true,
+          tags: true,
+          tagSource: true,
+          summary: true,
+          keyFacts: true,
+        },
         orderBy: { pageNumber: "asc" },
       },
       // The document's own capsules; the ones recorded for one link live on its page
       capsules: {
         where: { linkId: null },
-        select: { id: true, pageNumber: true, kind: true, hookText: true, durationMs: true, _count: { select: { plays: true } } },
+        select: {
+          id: true,
+          pageNumber: true,
+          kind: true,
+          hookText: true,
+          durationMs: true,
+          _count: { select: { plays: true } },
+        },
       },
       links: {
         where: { archivedAt: null, draftAt: null },
         orderBy: { createdAt: "desc" },
         include: {
-          prospects: { select: { email: true, name: true, company: true }, take: 1 },
+          prospects: {
+            select: { email: true, name: true, company: true },
+            take: 1,
+          },
           engagementScore: true,
           _count: { select: { views: true } },
         },
@@ -85,51 +123,72 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
     },
   });
   if (!document) notFound();
-  catchUpInBackground({ organizationId: organization.id, documentId: document.id });
+  catchUpInBackground({
+    organizationId: organization.id,
+    documentId: document.id,
+  });
 
   const linkIds = document.links.map((link) => link.id);
-  const [analytics, origin, followups, alerts, furthest, insights] = await Promise.all([
-    getDocumentAnalytics(document.id),
-    getAppOrigin(),
-    prisma.followup.findMany({
-      where: { link: { documentId: document.id } },
-      orderBy: { createdAt: "desc" },
-      take: 30,
-      include: {
-        prospect: { select: { name: true, email: true } },
-        link: { select: { name: true, slug: true } },
-      },
-    }),
-    prisma.sellerAlert.findMany({
-      where: { link: { documentId: document.id }, type: { notIn: ["PROSPECT_VALIDATED", "CHANGE_REQUESTED", "QUOTE_REQUESTED", "MEETING_BOOKED"] } },
-      orderBy: { createdAt: "desc" },
-      take: 10,
-      include: { link: { select: { name: true, slug: true } } },
-    }),
-    prisma.documentView.groupBy({
-      by: ["linkId"],
-      where: { linkId: { in: linkIds }, isBot: false },
-      _max: { maxPageReached: true },
-    }),
-    prisma.dealInsight.findMany({
-      where: { linkId: { in: linkIds }, model: { not: null } },
-      orderBy: { createdAt: "desc" },
-      take: 400,
-      select: { linkId: true, frictions: true },
-    }),
-  ]);
+  const [analytics, origin, followups, alerts, furthest, insights] =
+    await Promise.all([
+      getDocumentAnalytics(document.id),
+      getAppOrigin(),
+      prisma.followup.findMany({
+        where: { link: { documentId: document.id } },
+        orderBy: { createdAt: "desc" },
+        take: 30,
+        include: {
+          prospect: { select: { name: true, email: true } },
+          link: { select: linkLabelSelect },
+        },
+      }),
+      prisma.sellerAlert.findMany({
+        where: {
+          link: { documentId: document.id },
+          type: {
+            notIn: [
+              "PROSPECT_VALIDATED",
+              "CHANGE_REQUESTED",
+              "QUOTE_REQUESTED",
+              "MEETING_BOOKED",
+            ],
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+        include: { link: { select: linkLabelSelect } },
+      }),
+      prisma.documentView.groupBy({
+        by: ["linkId"],
+        where: { linkId: { in: linkIds }, isBot: false },
+        _max: { maxPageReached: true },
+      }),
+      prisma.dealInsight.findMany({
+        where: { linkId: { in: linkIds }, model: { not: null } },
+        orderBy: { createdAt: "desc" },
+        take: 400,
+        select: { linkId: true, frictions: true },
+      }),
+    ]);
 
   // The latest analysis of each deal only
   const latestFrictions = new Map<string, string[]>();
   for (const insight of insights) {
     if (latestFrictions.has(insight.linkId)) continue;
-    latestFrictions.set(insight.linkId, (insight.frictions as { kind: string }[]).map((f) => f.kind));
+    latestFrictions.set(
+      insight.linkId,
+      (insight.frictions as { kind: string }[]).map((f) => f.kind),
+    );
   }
-  const furthestByLink = new Map(furthest.map((row) => [row.linkId, row._max.maxPageReached]));
+  const furthestByLink = new Map(
+    furthest.map((row) => [row.linkId, row._max.maxPageReached]),
+  );
   const frictions = buildDocumentFrictions({
     numPages: document.kind !== "URL" ? document.pages.length : 0,
     pages: document.pages,
-    deals: linkIds.map((id) => ({ furthestPage: furthestByLink.get(id) ?? null })),
+    deals: linkIds.map((id) => ({
+      furthestPage: furthestByLink.get(id) ?? null,
+    })),
     aiFrictions: [...latestFrictions.values()],
   });
 
@@ -140,25 +199,44 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
     return {
       pageNumber: page.pageNumber,
       totalSeconds: Math.round(total / 1000),
-      avgSeconds: stat?.viewCount ? Math.round(total / stat.viewCount / 1000) : 0,
+      avgSeconds: stat?.viewCount
+        ? Math.round(total / stat.viewCount / 1000)
+        : 0,
       isPricing: page.tags.includes("PRICING"),
       summary: page.summary,
     };
   });
   const taggedPages = document.pages.filter((p) => p.tags.length > 0);
+  const showsDetail = showsReadingDetail({
+    kind: document.kind,
+    durationMs: document.durationMs,
+    viewCount: analytics.viewCount,
+    pagesWithTime: chartData.filter((page) => page.totalSeconds > 0).length,
+  });
 
-  const followupItems: FollowupItem[] = followups.map((f) => toFollowupItem(f, f.link.name ?? f.link.slug));
+  const followupItems: FollowupItem[] = followups.map((f) =>
+    toFollowupItem(f, dealLabel(f.link)),
+  );
 
   const now = new Date();
   const readerLabels = labelReaders(analytics.recentViews);
-  const anonymousReaders = [...readerLabels.values()].some((label) => !label.identified);
+  const anonymousReaders = [...readerLabels.values()].some(
+    (label) => !label.identified,
+  );
   const ready = document.status === "READY";
-  const welcome = document.capsules.find((capsule) => capsule.pageNumber === WELCOME_PAGE);
+  const welcome = document.capsules.find(
+    (capsule) => capsule.pageNumber === WELCOME_PAGE,
+  );
   const isWeb = document.kind === "URL";
   const isVideo = document.kind === "VIDEO";
-  const pageName = (n: number) => (isVideo ? `passage ${segmentLabel(n)}` : `page ${n}`);
-  const webHost = document.externalUrl ? new URL(document.externalUrl).hostname.replace(/^www\./, "") : null;
-  const pendingFollowups = followups.filter((f) => ["PENDING", "DRAFT", "GENERATED", "SCHEDULED"].includes(f.status)).length;
+  const pageName = (n: number) =>
+    isVideo ? `passage ${segmentLabel(n)}` : `page ${n}`;
+  const webHost = document.externalUrl
+    ? new URL(document.externalUrl).hostname.replace(/^www\./, "")
+    : null;
+  const pendingFollowups = followups.filter((f) =>
+    ["PENDING", "DRAFT", "GENERATED", "SCHEDULED"].includes(f.status),
+  ).length;
 
   return (
     <div className="space-y-8">
@@ -176,7 +254,8 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
           description={
             document.status === "FAILED" ? (
               <span className="text-destructive">
-                L&apos;analyse a échoué : {document.processingError ?? "erreur inconnue"}
+                L&apos;analyse a échoué :{" "}
+                {document.processingError ?? "erreur inconnue"}
               </span>
             ) : isWeb ? (
               <>
@@ -211,7 +290,10 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
               <NewLinkButton documentId={document.id} />
               {/* Deleting takes every seller's links down with it */}
               {isManagerRole(role) && (
-                <DeleteDocumentButton documentId={document.id} linkCount={document.links.length} />
+                <DeleteDocumentButton
+                  documentId={document.id}
+                  linkCount={document.links.length}
+                />
               )}
             </div>
           }
@@ -219,14 +301,29 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
         {analytics.viewCount > 0 && (
           <StatLine
             items={[
-              { value: analytics.viewCount, label: analytics.viewCount === 1 ? "lecture" : "lectures" },
+              {
+                value: analytics.viewCount,
+                label: analytics.viewCount === 1 ? "lecture" : "lectures",
+              },
               {
                 value: analytics.uniqueVisitors,
-                label: analytics.uniqueVisitors === 1 ? "lecteur" : "lecteurs différents",
+                label:
+                  analytics.uniqueVisitors === 1
+                    ? "lecteur"
+                    : "lecteurs différents",
               },
-              { value: formatDuration(analytics.totalDurationMs), label: "de lecture au total" },
+              {
+                value: formatDuration(analytics.totalDurationMs),
+                label: "de lecture au total",
+              },
               ...(analytics.lastActivityAt
-                ? [{ value: formatRelative(analytics.lastActivityAt, now), label: "lu", labelFirst: true }]
+                ? [
+                    {
+                      value: formatRelative(analytics.lastActivityAt, now),
+                      label: "lu",
+                      labelFirst: true,
+                    },
+                  ]
                 : []),
             ]}
           />
@@ -234,9 +331,15 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
       </div>
 
       <Tabs defaultValue="prospects" className="gap-6">
-        <TabsList variant="line" className="w-full justify-start gap-6 border-b border-border pb-px">
+        <TabsList
+          variant="line"
+          className="w-full justify-start gap-6 border-b border-border pb-px"
+        >
           <TabsTrigger value="prospects" className="flex-none px-0 text-body">
-            Prospects <span className="text-muted-foreground tabular-nums">{document.links.length}</span>
+            Prospects{" "}
+            <span className="text-muted-foreground tabular-nums">
+              {document.links.length}
+            </span>
           </TabsTrigger>
           <TabsTrigger value="reading" className="flex-none px-0 text-body">
             Lecture
@@ -246,7 +349,11 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
           </TabsTrigger>
           <TabsTrigger value="followups" className="flex-none px-0 text-body">
             Relances
-            {pendingFollowups > 0 && <span className="text-muted-foreground tabular-nums">{pendingFollowups}</span>}
+            {pendingFollowups > 0 && (
+              <span className="text-muted-foreground tabular-nums">
+                {pendingFollowups}
+              </span>
+            )}
           </TabsTrigger>
         </TabsList>
 
@@ -258,10 +365,12 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
                 isVideo
                   ? "Envoyez-le à la place d'un lien Loom. Vous verrez qui la regarde, jusqu'où, et Clozer relancera pour vous."
                   : isWeb
-                  ? "Envoyez-le à la place du lien d'origine. Vous verrez qui l'ouvre, combien de temps il y passe, et Clozer relancera pour vous."
-                  : "Envoyez-le à la place du PDF. Vous verrez qui l'ouvre, combien de temps il lit, et Clozer relancera pour vous."
+                    ? "Envoyez-le à la place du lien d'origine. Vous verrez qui l'ouvre, combien de temps il y passe, et Clozer relancera pour vous."
+                    : "Envoyez-le à la place du PDF. Vous verrez qui l'ouvre, combien de temps il lit, et Clozer relancera pour vous."
               }
-              action={<NewLinkButton documentId={document.id} variant="outline" />}
+              action={
+                <NewLinkButton documentId={document.id} variant="outline" />
+              }
             />
           ) : (
             <Surface>
@@ -277,44 +386,63 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
                       : link.expiresAt && link.expiresAt <= now
                         ? "Expiré"
                         : score
-                        ? TIER_LABELS[score.tier]
-                        : "Pas encore ouvert";
+                          ? TIER_LABELS[score.tier]
+                          : "Pas encore ouvert";
                   return (
                     <li
                       key={link.id}
                       className="relative flex items-stretch gap-4 py-4 pr-3 pl-4 transition-colors duration-150 hover:bg-muted/40"
                     >
-                      <HeatBar tier={score?.tier ?? null} score={score?.score ?? 0} />
+                      <HeatBar
+                        tier={score?.tier ?? null}
+                        score={score?.score ?? 0}
+                      />
                       <div className="min-w-0 flex-1">
                         <Link
                           href={`/links/${link.id}`}
                           className="font-semibold outline-none after:absolute after:inset-0 focus-visible:after:ring-3 focus-visible:after:ring-ring/30 focus-visible:after:ring-inset"
                         >
-                          {prospect?.company ?? link.name ?? prospect?.name ?? prospect?.email ?? "Sans nom"}
+                          {dealLabel({ ...link, document })}
                         </Link>
                         <p className="truncate text-sm text-muted-foreground">
-                          {[prospect?.company ? prospect.name : null, prospect?.email].filter(Boolean).join(", ") ||
+                          {[
+                            prospect?.company ? prospect.name : null,
+                            prospect?.email,
+                          ]
+                            .filter(Boolean)
+                            .join(", ") ||
                             `Créé ${formatRelative(link.createdAt, now)}`}
                         </p>
                         <p className="mt-0.5 text-sm sm:hidden">
                           {state}
                           <span className="text-muted-foreground">
-                            , {link._count.views} {link._count.views === 1 ? "lecture" : "lectures"}
+                            , {link._count.views}{" "}
+                            {link._count.views === 1 ? "lecture" : "lectures"}
                           </span>
                         </p>
                       </div>
                       <div className="hidden shrink-0 flex-col items-end justify-center text-sm sm:flex">
-                        <span className={score || link.dealStatus !== "OPEN" ? "" : "text-muted-foreground"}>
+                        <span
+                          className={
+                            score || link.dealStatus !== "OPEN"
+                              ? ""
+                              : "text-muted-foreground"
+                          }
+                        >
                           {state}
                         </span>
                         <span className="text-muted-foreground">
-                          {link._count.views} {link._count.views === 1 ? "lecture" : "lectures"}
+                          {link._count.views}{" "}
+                          {link._count.views === 1 ? "lecture" : "lectures"}
                         </span>
                       </div>
                       <div className="relative z-10 flex items-center gap-3 pl-2">
                         <label className="flex items-center gap-2 text-sm text-muted-foreground">
                           <span className="hidden md:inline">Relances</span>
-                          <LinkFollowupsToggle linkId={link.id} enabled={link.followupsEnabled} />
+                          <LinkFollowupsToggle
+                            linkId={link.id}
+                            enabled={link.followupsEnabled}
+                          />
                         </label>
                         <CopyButton value={url} />
                       </div>
@@ -329,19 +457,33 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
         <TabsContent value="content" className="space-y-10">
           {/* A video pitch already is the seller speaking */}
           {!isVideo && (
-          <section>
-            <SectionTitle hint="vu par le prospect dès l'ouverture, sur tous les liens">Mot d&apos;accueil</SectionTitle>
-            <WelcomeMessage
-              documentId={document.id}
-              linkId={null}
-              documentWelcome={welcome ? { id: welcome.id, kind: welcome.kind, hookText: welcome.hookText, durationMs: welcome.durationMs, plays: welcome._count.plays } : null}
-              linkWelcome={null}
-              uploadPrefix={capsuleUploadPrefix(organization.id)}
-            />
-          </section>
+            <section>
+              <SectionTitle hint="vu par le prospect dès l'ouverture, sur tous les liens">
+                Mot d&apos;accueil
+              </SectionTitle>
+              <WelcomeMessage
+                documentId={document.id}
+                linkId={null}
+                documentWelcome={
+                  welcome
+                    ? {
+                        id: welcome.id,
+                        kind: welcome.kind,
+                        hookText: welcome.hookText,
+                        durationMs: welcome.durationMs,
+                        plays: welcome._count.plays,
+                      }
+                    : null
+                }
+                linkWelcome={null}
+                uploadPrefix={capsuleUploadPrefix(organization.id)}
+              />
+            </section>
           )}
           <section>
-            <SectionTitle hint="décide du vocabulaire des étiquettes et de l'assistant">Type de document</SectionTitle>
+            <SectionTitle hint="décide du vocabulaire des étiquettes et de l'assistant">
+              Type de document
+            </SectionTitle>
             <DocumentTypeSelect
               documentId={document.id}
               docType={document.docType}
@@ -349,51 +491,77 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
             />
           </section>
           <section>
-            <SectionTitle hint="pour répondre aux questions du prospect">Infos pour l&apos;assistant</SectionTitle>
-            <AssistantNotesForm documentId={document.id} initial={document.assistantNotes ?? ""} />
+            <SectionTitle hint="pour répondre aux questions du prospect">
+              Infos pour l&apos;assistant
+            </SectionTitle>
+            <AssistantNotesForm
+              documentId={document.id}
+              initial={document.assistantNotes ?? ""}
+            />
           </section>
           <section>
-            <SectionTitle hint={isVideo ? "passage par passage, ce que Clozer a compris" : "page par page, ce que Clozer a compris"}>
+            <SectionTitle
+              hint={
+                isVideo
+                  ? "passage par passage, ce que Clozer a compris"
+                  : "page par page, ce que Clozer a compris"
+              }
+            >
               Contenu
             </SectionTitle>
-              {isWeb ? (
-                <div className="space-y-6">
-                  <WebPageReading
-                    documentId={document.id}
-                    docPurpose={document.docPurpose}
-                    page={document.pages[0] ?? null}
-                    aiAvailable={getLanguageModel("classify") !== null}
-                  />
-                  <SellerDescriptionForm documentId={document.id} initial={document.sellerDescription ?? ""} />
-                </div>
-              ) : document.pages.length === 0 ? (
-                <p className="py-12 text-center text-sm text-muted-foreground">
-                  {ready ? "Aucune page détectée." : "Analyse du document en cours…"}
-                </p>
-              ) : (
-                <DocumentPages
+            {isWeb ? (
+              <div className="space-y-6">
+                <WebPageReading
                   documentId={document.id}
-                  pages={document.pages.map((page) => {
-                    const capsule = document.capsules.find((c) => c.pageNumber === page.pageNumber);
-                    return {
-                      ...page,
-                      capsule: capsule
-                        ? { id: capsule.id, kind: capsule.kind, hookText: capsule.hookText, durationMs: capsule.durationMs, plays: capsule._count.plays }
-                        : null,
-                    };
-                  })}
-                  capsuleUploadPrefix={capsuleUploadPrefix(organization.id)}
-                  aiRead={document.aiProcessedAt !== null}
-                  aiGaveUp={document.aiAttempts >= 3}
-                  docType={document.docType}
                   docPurpose={document.docPurpose}
+                  page={document.pages[0] ?? null}
                   aiAvailable={getLanguageModel("classify") !== null}
-                  video={isVideo}
                 />
-              )}
+                <SellerDescriptionForm
+                  documentId={document.id}
+                  initial={document.sellerDescription ?? ""}
+                />
+              </div>
+            ) : document.pages.length === 0 ? (
+              <p className="py-12 text-center text-sm text-muted-foreground">
+                {ready
+                  ? "Aucune page détectée."
+                  : "Analyse du document en cours…"}
+              </p>
+            ) : (
+              <DocumentPages
+                documentId={document.id}
+                pages={document.pages.map((page) => {
+                  const capsule = document.capsules.find(
+                    (c) => c.pageNumber === page.pageNumber,
+                  );
+                  return {
+                    ...page,
+                    capsule: capsule
+                      ? {
+                          id: capsule.id,
+                          kind: capsule.kind,
+                          hookText: capsule.hookText,
+                          durationMs: capsule.durationMs,
+                          plays: capsule._count.plays,
+                        }
+                      : null,
+                  };
+                })}
+                capsuleUploadPrefix={capsuleUploadPrefix(organization.id)}
+                aiRead={document.aiProcessedAt !== null}
+                aiGaveUp={document.aiAttempts >= 3}
+                docType={document.docType}
+                docPurpose={document.docPurpose}
+                aiAvailable={getLanguageModel("classify") !== null}
+                video={isVideo}
+              />
+            )}
           </section>
           <section>
-            <SectionTitle hint="tel que vos prospects le voient">Aperçu</SectionTitle>
+            <SectionTitle hint="tel que vos prospects le voient">
+              Aperçu
+            </SectionTitle>
             {isWeb ? (
               document.embedUrl ? (
                 <iframe
@@ -416,8 +584,8 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
                 </div>
               ) : (
                 <p className="py-16 text-center text-sm text-muted-foreground">
-                  Ce site refuse l&apos;affichage intégré. Vos prospects verront un bouton pour l&apos;ouvrir dans un
-                  nouvel onglet.{" "}
+                  Ce site refuse l&apos;affichage intégré. Vos prospects verront
+                  un bouton pour l&apos;ouvrir dans un nouvel onglet.{" "}
                   <a
                     href={document.externalUrl ?? undefined}
                     target="_blank"
@@ -431,7 +599,11 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
             ) : isVideo ? (
               <video
                 src={`/api/documents/${document.id}/file`}
-                poster={document.posterPathname ? `/api/documents/${document.id}/file?poster` : undefined}
+                poster={
+                  document.posterPathname
+                    ? `/api/documents/${document.id}/file?poster`
+                    : undefined
+                }
                 controls
                 playsInline
                 preload="metadata"
@@ -450,7 +622,9 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
         <TabsContent value="reading" className="space-y-10">
           {frictions.length > 0 && (
             <section>
-              <SectionTitle hint="sur tous les prospects de ce document">Ce qui bloque</SectionTitle>
+              <SectionTitle hint="sur tous les prospects de ce document">
+                Ce qui bloque
+              </SectionTitle>
               <Surface className="p-4">
                 <ul className="space-y-1.5 text-body">
                   {frictions.map((line) => (
@@ -478,18 +652,25 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
                 hint="toutes lectures confondues"
                 action={
                   <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <span className="size-2.5 rounded-sm bg-heat-warm" /> {isVideo ? "passage sur les tarifs" : "page de tarifs"}
+                    <span className="size-2.5 rounded-sm bg-heat-warm" />{" "}
+                    {isVideo ? "passage sur les tarifs" : "page de tarifs"}
                   </span>
                 }
               >
-                {isVideo ? "Temps passé sur chaque passage de la vidéo" : "Temps passé par page"}
+                {isVideo
+                  ? "Temps passé sur chaque passage de la vidéo"
+                  : "Temps passé par page"}
               </SectionTitle>
               <Surface className="p-4">
-                {chartData.length > 0 ? (
+                {chartData.length > 0 && showsDetail ? (
                   <PageTimeChart data={chartData} video={isVideo} />
                 ) : (
                   <p className="py-12 text-center text-sm text-muted-foreground">
-                    {ready ? "Aucune page détectée." : "Analyse du document en cours…"}
+                    {chartData.length > 0
+                      ? "Pas encore assez de lecture pour le détail par page."
+                      : ready
+                        ? "Aucune page détectée."
+                        : "Analyse du document en cours…"}
                   </p>
                 )}
               </Surface>
@@ -497,7 +678,10 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
                 <p className="mt-3 text-sm text-muted-foreground">
                   Repéré automatiquement :{" "}
                   {taggedPages
-                    .map((page) => `${pageName(page.pageNumber)} (${page.tags.map((t) => tagLabels(document.docType)[t].toLowerCase()).join(", ")})`)
+                    .map(
+                      (page) =>
+                        `${pageName(page.pageNumber)} (${page.tags.map((t) => tagLabels(document.docType)[t].toLowerCase()).join(", ")})`,
+                    )
                     .join(", ")}
                 </p>
               )}
@@ -508,34 +692,47 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
             <SectionTitle>Dernières lectures</SectionTitle>
             {analytics.recentViews.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                Personne n&apos;a encore ouvert ce document. Les lectures s&apos;afficheront ici.
+                Personne n&apos;a encore ouvert ce document. Les lectures
+                s&apos;afficheront ici.
               </p>
             ) : (
               <Surface>
                 <ul className="divide-y divide-border">
                   {analytics.recentViews.map((view) => (
-                    <li key={view.id} className="flex items-center justify-between gap-4 px-4 py-3 text-sm">
+                    <li
+                      key={view.id}
+                      className="flex items-center justify-between gap-4 px-4 py-3 text-sm"
+                    >
                       <div className="min-w-0">
                         <p className="font-medium">
                           {readerLabels.get(view.id)?.name}
                           <span className="font-normal text-muted-foreground">
                             {" "}
-                            sur le lien « {view.link.name ?? view.link.slug} »
+                            pour {dealLabel(view.link)}
                           </span>
                         </p>
                         <p className="truncate text-muted-foreground">
                           {[
-                            [view.city, view.country].filter(Boolean).join(", ") || null,
+                            [view.city, view.country]
+                              .filter(Boolean)
+                              .join(", ") || null,
                             view.timezone,
-                            [view.deviceType, view.browser].filter(Boolean).join(" ") || null,
+                            [view.deviceType, view.browser]
+                              .filter(Boolean)
+                              .join(" ") || null,
                           ]
                             .filter(Boolean)
                             .join(", ")}
                         </p>
                       </div>
                       <div className="shrink-0 text-right">
-                        <p className="tabular-nums">{formatDuration(view.totalDurationMs)}</p>
-                        <p className="text-muted-foreground" title={formatDate(view.lastSeenAt)}>
+                        <p className="tabular-nums">
+                          {formatDuration(view.totalDurationMs)}
+                        </p>
+                        <p
+                          className="text-muted-foreground"
+                          title={formatDate(view.lastSeenAt)}
+                        >
                           {formatRelative(view.lastSeenAt, now)}
                         </p>
                       </div>
@@ -546,9 +743,11 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
             )}
             {anonymousReaders && (
               <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
-                Ces lecteurs n&apos;ont pas donné leur email. Une même lettre, c&apos;est un même navigateur ; deux
-                lettres, souvent deux personnes (ou la même sur deux appareils). Pour savoir exactement qui lit,
-                activez « Demander l&apos;email avant lecture » dans les réglages du lien.
+                Ces lecteurs n&apos;ont pas donné leur email. Une même lettre,
+                c&apos;est un même navigateur ; deux lettres, souvent deux
+                personnes (ou la même sur deux appareils). Pour savoir
+                exactement qui lit, activez « Demander l&apos;email avant
+                lecture » dans les réglages du lien.
               </p>
             )}
           </section>
@@ -557,8 +756,9 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
         <TabsContent value="followups" className="space-y-10">
           <section className="space-y-4">
             <p className="max-w-2xl text-body text-muted-foreground">
-              Les relances de tous les prospects de ce document. Clozer en écrit une quand il juge que c&apos;est
-              le bon moment ; vous la relisez ici ou sur la fiche du prospect, puis vous la validez.
+              Les relances de tous les prospects de ce document. Clozer en écrit
+              une quand il juge que c&apos;est le bon moment ; vous la relisez
+              ici ou sur la fiche du prospect, puis vous la validez.
             </p>
             <Surface className="p-4">
               <FollowupsPanel followups={followupItems} showLink />
@@ -571,14 +771,21 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
               <Surface>
                 <ul className="divide-y divide-border">
                   {alerts.map((alert) => {
-                    const payload = alert.payload as { liveViewers?: number; inactiveDays?: number; reason?: string };
+                    const payload = alert.payload as {
+                      liveViewers?: number;
+                      inactiveDays?: number;
+                      reason?: string;
+                    };
                     return (
-                      <li key={alert.id} className="flex items-start justify-between gap-4 px-4 py-3 text-sm">
+                      <li
+                        key={alert.id}
+                        className="flex items-start justify-between gap-4 px-4 py-3 text-sm"
+                      >
                         <div>
                           <p className="font-medium">
                             {ALERT_TYPE_LABELS[alert.type]}
                             <span className="font-normal text-muted-foreground">
-                              , {alert.link.name ?? alert.link.slug}
+                              , {dealLabel(alert.link)}
                               {payload.reason
                                 ? `, ${payload.reason.toLowerCase()}`
                                 : `${payload.liveViewers ? `, ${payload.liveViewers} lecteurs en même temps` : ""}${payload.inactiveDays ? `, après ${payload.inactiveDays} jours` : ""}`}
@@ -588,12 +795,18 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
                             {alert.channels.length === 0
                               ? "Pas envoyée (hors horaires ou désactivée)"
                               : `${alert.sentAt ? "Envoyée" : "Non envoyée"} par ${alert.channels
-                                  .map((c) => ALERT_CHANNEL_LABELS[c].toLowerCase())
+                                  .map((c) =>
+                                    ALERT_CHANNEL_LABELS[c].toLowerCase(),
+                                  )
                                   .join(", ")}`}
                           </p>
-                          {alert.error && <p className="text-destructive">{alert.error}</p>}
+                          {alert.error && (
+                            <p className="text-destructive">{alert.error}</p>
+                          )}
                         </div>
-                        <span className="shrink-0 text-muted-foreground">{formatRelative(alert.createdAt, now)}</span>
+                        <span className="shrink-0 text-muted-foreground">
+                          {formatRelative(alert.createdAt, now)}
+                        </span>
                       </li>
                     );
                   })}
