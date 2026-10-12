@@ -8,13 +8,13 @@ import { SiteHeader } from "@/components/site-header";
 const STEPS: { icon: IconName; title: string; body: string }[] = [
   {
     icon: "upload",
-    title: "Ajoutez votre proposition",
-    body: "Un devis ou une présentation en PDF, ou un lien Notion, Loom, Figma. Rien à installer, ni pour vous ni pour le prospect.",
+    title: "Partagez votre proposition",
+    body: "Un PDF, une page web (Notion, Loom, Figma…) ou un pitch vidéo enregistré en trois minutes. Depuis Gmail ou Outlook avec l'extension, ou depuis Clozer.",
   },
   {
     icon: "link",
     title: "Un lien par prospect",
-    body: "Collez-le dans votre email à la place de la pièce jointe. Chaque personne a le sien : vous savez qui lit, et qui ne lit pas.",
+    body: "Il remplace la pièce jointe. Chaque personne a le sien : vous savez qui lit, qui regarde, et qui ne fait rien.",
   },
   {
     icon: "send",
@@ -27,13 +27,13 @@ const FEATURES: { icon: IconName; title: string; body: string; wide?: boolean }[
   {
     icon: "eye",
     title: "Page par page",
-    body: "Pages lues, temps passé sur chacune, retours sur les tarifs, nombre de lecteurs. Vous voyez si le devis circule en interne.",
+    body: "Pages lues, temps passé sur chacune, retours sur les tarifs, nombre de lecteurs. Pour une vidéo, les passages regardés et où le prospect a décroché. Vous voyez si le devis circule en interne.",
     wide: true,
   },
   {
     icon: "radio",
     title: "En direct",
-    body: "Un bandeau s'allume quand un prospect lit. Une alerte part s'il revient après un long silence ou s'il lit à plusieurs.",
+    body: "Une notification dans Chrome, ou en haut de Gmail et Outlook, quand un prospect lit. Une alerte part s'il revient après un long silence ou s'il lit à plusieurs.",
   },
   {
     icon: "gauge",
@@ -49,12 +49,12 @@ const FEATURES: { icon: IconName; title: string; body: string; wide?: boolean }[
   {
     icon: "pen",
     title: "Des relances prêtes",
-    body: "Écrites à partir de votre offre et de ce qui a été lu, envoyées aux heures de bureau du prospect. Par défaut, vous validez chacune.",
+    body: "Écrites à partir de votre offre et de ce qui a été lu, envoyées aux heures de bureau du prospect. Vous validez chacune, ou vous laissez partir seules les plus simples.",
   },
   {
     icon: "message",
     title: "Le prospect répond dans le document",
-    body: "Deux boutons sous la proposition : la valider, ou demander un ajustement. Sa réponse remonte en tête de votre tableau de bord.",
+    body: "Sous la proposition : la valider, demander un ajustement, prendre rendez-vous dans votre agenda, poser une question à l'assistant ou laisser un vocal sur une page. Tout remonte en tête de votre tableau de bord.",
     wide: true,
   },
 ];
@@ -67,10 +67,12 @@ const GUARANTEES = [
 ];
 
 const BETA_INCLUDES = [
-  "Documents et liens prospects",
+  "PDF, pages web et pitchs vidéo",
+  "Extension Gmail et Outlook",
   "Suivi page par page et alertes en direct",
   "Lecture des deals et relances préparées",
-  "Alertes par email ou Slack",
+  "Rendez-vous, assistant et vocaux du prospect",
+  "Alertes par email, Slack, Chrome ou Outlook",
 ];
 
 const FAQ = [
@@ -84,7 +86,7 @@ const FAQ = [
   },
   {
     q: "Quels documents puis-je envoyer ?",
-    a: "Des PDF (devis, propositions, présentations) et des pages web : Notion, Loom, Figma, Google Slides, Webflow… Pour un PDF, vous voyez la lecture page par page ; pour une page web, l'ouverture et le temps passé.",
+    a: "Trois sortes. Un PDF (devis, proposition, présentation) : vous voyez la lecture page par page. Une page web (Notion, Loom, Figma, Google Slides, Webflow…) : l'ouverture et le temps passé, et une vue lecture si le site refuse de s'afficher dans Clozer. Un pitch vidéo enregistré dans Clozer, jusqu'à trois minutes : vous savez jusqu'où il a été regardé.",
   },
   {
     q: "Mes propres ouvertures faussent-elles les chiffres ?",
@@ -92,7 +94,11 @@ const FAQ = [
   },
   {
     q: "Faut-il installer quelque chose ?",
-    a: "Rien. Vous vous connectez avec votre email, sans mot de passe, et le prospect lit dans son navigateur, sur ordinateur comme sur téléphone.",
+    a: "Pas pour commencer : vous vous connectez avec votre email, sans mot de passe, et le prospect lit dans son navigateur, sur ordinateur comme sur téléphone. Si vous envoyez depuis Gmail ou Outlook, l'extension Chrome ou le complément Outlook remplace la pièce jointe par le lien, sans quitter votre email.",
+  },
+  {
+    q: "Le prospect peut-il me répondre ?",
+    a: "Oui, sans quitter le document. Il peut valider la proposition ou demander un ajustement, prendre rendez-vous dans votre agenda (Calendly, Cal.com…), poser ses questions à l'assistant qui répond à partir de votre offre quand vous n'êtes pas là, ou laisser un vocal sur une page. Vous recevez tout, avec la transcription.",
   },
 ];
 
@@ -113,8 +119,9 @@ export default function Home() {
               Sachez qui lit votre devis. <span className="text-ink-soft">Relancez au bon moment.</span>
             </h1>
             <p className="mt-6 max-w-lg text-lg leading-relaxed text-ink-soft">
-              Envoyez votre proposition en lien suivi. Clozer vous montre les pages lues, le temps passé, les
-              retours sur les tarifs, puis vous dit qui relancer aujourd&apos;hui et prépare le message.
+              Un PDF, une page web ou une vidéo : envoyez votre proposition en lien suivi. Clozer vous montre les
+              pages lues, le temps passé, les retours sur les tarifs, puis vous dit qui relancer aujourd&apos;hui et
+              prépare le message.
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-4">
               <PrimaryCta>Créer mon premier lien</PrimaryCta>
@@ -130,7 +137,7 @@ export default function Home() {
                 <Icon name="check" className="size-3.5 text-success" /> Sans carte bancaire
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <Icon name="check" className="size-3.5 text-success" /> Rien à installer
+                <Icon name="check" className="size-3.5 text-success" /> Depuis Gmail, Outlook ou le navigateur
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <Icon name="check" className="size-3.5 text-success" /> Connexion par email
@@ -289,7 +296,7 @@ export default function Home() {
             Votre prochain devis peut partir avec un lien suivi.
           </h2>
           <p className="mx-auto mt-4 max-w-md text-lg text-ink-soft">
-            Créez votre compte avec votre email, ajoutez un PDF, envoyez le lien.
+            Créez votre compte avec votre email, ajoutez un PDF ou une vidéo, envoyez le lien.
           </p>
           <PrimaryCta className="mt-9">Créer mon premier lien</PrimaryCta>
         </section>
