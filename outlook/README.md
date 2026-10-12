@@ -27,7 +27,7 @@ Outlook can't see the browser session, so connecting works like pairing a TV. Th
 - `src/commands/` holds the event handlers, which do the replacement themselves (`src/lib/insert.ts`, shared with the pane). They are built as a single IIFE (`commands.js`), because classic Outlook on Windows runs them in a JavaScript-only runtime: no DOM, no modules, no localStorage.
 - `src/taskpane/` is the pane.
 - `src/lib/` holds the Office.js wrappers and the API client.
-- Pure modules are imported from source in `../extension/src/lib` and `../extension/src/ui/dom.ts` (aliases `@ext`, `@extui`). Keep those files free of WXT and Chrome imports.
+- Pure modules are imported from source in `../extension/src/lib` (`copy.ts`, `title-wait.ts`, `pulse.ts`...) and `../extension/src/ui` (`dom.ts`, `tokens.css`) through the aliases `@ext` and `@extui`. Keep those files free of WXT and Chrome imports.
 
 ## Commands
 
@@ -55,7 +55,7 @@ The customer's Microsoft 365 admin uploads the production `manifest.xml` in the 
 
 ## Kill switch
 
-Add `outlook-addin` to `EXTENSION_DISABLED_HOSTS` in the app. The pane then shows "momentanément indisponible", and nothing needs redeploying.
+Add `outlook-addin` to `EXTENSION_DISABLED_HOSTS` in the app. The pane then shows "Clozer est en pause sur Outlook pour le moment.", and nothing needs redeploying.
 
 ## Not covered
 
