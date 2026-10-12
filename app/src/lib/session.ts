@@ -1,13 +1,14 @@
 import { randomUUID } from "node:crypto";
 
 import { headers } from "next/headers";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
 
 import { auth } from "@/lib/auth";
 import type { SellerScope } from "@/lib/closing/dashboard/queries";
 import { prisma } from "@/lib/db";
 import { randomSlug } from "@/lib/ids";
+import { PLATFORM_ADMIN_ROLE, isPlatformAdminEmail } from "@/lib/platform-admin";
 import { isManagerRole, isOwnerRole } from "@/lib/roles";
 
 export const getSession = cache(async () =>
@@ -133,4 +134,20 @@ export async function isWorkspaceMember(organizationId: string) {
     select: { id: true },
   });
   return member !== null;
+}
+
+/**
+ * The platform admin only, everyone else gets a 404: /admin does not exist for them.
+ * Also refused while impersonating, the banner leads back first.
+ */
+export async function requirePlatformAdmin() {
+  const session = await getSession();
+  if (!session || session.session.impersonatedBy) notFound();
+  const { user } = session;
+  if (!user.emailVerified || !isPlatformAdminEmail(user.email)) notFound();
+  // Accounts created before the admin plugin have no role yet; the plugin's endpoints check it
+  if (user.role !== PLATFORM_ADMIN_ROLE) {
+    await prisma.user.update({ where: { id: user.id }, data: { role: PLATFORM_ADMIN_ROLE } });
+  }
+  return user;
 }

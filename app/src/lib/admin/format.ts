@@ -1,0 +1,39 @@
+import type { UserStatus } from "@/lib/platform-admin";
+
+export const ADMIN_PAGE_SIZE = 50;
+
+/** ?page=N from the URL, 1 when missing or nonsense. */
+export function parsePage(value: string | string[] | undefined) {
+  const page = Number(Array.isArray(value) ? value[0] : value);
+  return Number.isInteger(page) && page > 0 ? page : 1;
+}
+
+export function firstParam(value: string | string[] | undefined) {
+  return (Array.isArray(value) ? value[0] : value)?.trim() || undefined;
+}
+
+export const USER_STATUS_LABELS: Record<UserStatus, string> = {
+  active: "Actif",
+  disabled: "Désactivé",
+  banned: "Banni",
+};
+
+export const ADMIN_ACTION_LABELS = {
+  "user.disable": "Compte désactivé",
+  "user.ban": "Compte banni",
+  "user.reactivate": "Compte réactivé",
+  "user.revoke_sessions": "Sessions révoquées",
+  "user.impersonate": "Connexion en tant que",
+  "organization.suspend": "Espace suspendu",
+  "organization.reactivate": "Espace réactivé",
+  "settings.signup_mode": "Mode d'inscription changé",
+  "settings.allow_email": "Email autorisé",
+  "settings.disallow_email": "Email retiré des autorisés",
+  "settings.block_email": "Email bloqué",
+  "settings.unblock_email": "Email débloqué",
+} as const;
+
+export type AdminAction = keyof typeof ADMIN_ACTION_LABELS;
+
+export const adminDate = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", year: "numeric" });
+export const adminDateTime = new Intl.DateTimeFormat("fr-FR", { dateStyle: "short", timeStyle: "short" });
