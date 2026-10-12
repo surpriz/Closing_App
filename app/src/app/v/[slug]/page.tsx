@@ -265,7 +265,7 @@ function SellerNotice({ children }: { children: React.ReactNode }) {
   return (
     <p
       role="status"
-      className="fixed top-3 left-1/2 z-50 -translate-x-1/2 rounded-full bg-foreground px-4 py-1.5 text-xs text-background shadow-lg"
+      className="fixed top-[calc(0.75rem+env(safe-area-inset-top))] left-1/2 z-50 -translate-x-1/2 rounded-full bg-foreground px-4 py-1.5 text-xs text-background shadow-lg"
     >
       {children}
     </p>
