@@ -488,6 +488,7 @@ model Document {
   sizeBytes       Int            @default(0)
   externalUrl     String? // URL documents: the page as pasted by the seller
   embedUrl        String? // URL documents: what the viewer frames, null when the site refuses framing
+  readerHtml      String? // URL documents that refuse framing: their article, cleaned, shown in Clozer
   numPages        Int?
   status          DocumentStatus @default(UPLOADED)
   // VIDEO documents: still shown before playing, mic-only track that gets transcribed, length measured by the recorder

@@ -161,7 +161,7 @@ describe("buildDealStory", () => {
         document: { name: "Démo", kind: "URL", embeddedVideo: true, pages: [page(1)] },
         views: [
           view("v1", at(1), [[1, 120_000]], {
-            watchedRatio: 0.42,
+            depth: 0.42,
             signals: [
               { type: "EXTERNAL_OPEN", valueMs: null },
               { type: "EXTERNAL_RETURN", valueMs: 180_000 },
@@ -174,6 +174,16 @@ describe("buildDealStory", () => {
     expect(session).toContain("42 % de la vidéo vue");
     expect(session).toContain("a ouvert le site dans un nouvel onglet (≈");
     expect(session).not.toContain("surtout");
+  });
+
+  it("tells how far an article read in Clozer went", () => {
+    const story = buildDealStory(
+      base({
+        document: { name: "Article", kind: "URL", pages: [page(1)] },
+        views: [view("v1", at(1), [[1, 90_000]], { depth: 0.6 })],
+      }),
+    );
+    expect(story.facts.find((f) => f.kind === "SESSION")!.text).toContain("article lu jusqu'à 60 %");
   });
 
   it("says when a deal was never opened", () => {

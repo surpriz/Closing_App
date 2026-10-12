@@ -319,7 +319,7 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
           : link.document.kind === "VIDEO"
             ? `regardé ${reachedLabel(view.maxPageReached)}`
             : `jusqu'à la page ${view.maxPageReached}`,
-        isEmbeddedVideo ? `${Math.round((view.pageViews[0]?.maxScrollDepth ?? 0) * 100)} % de la vidéo vue` : null,
+        link.document.kind === "URL" ? depthDetail(view.pageViews[0]?.maxScrollDepth ?? 0, isEmbeddedVideo) : null,
         ...signalDetails(view.signals),
         [view.deviceType, view.browser].filter(Boolean).join(" "),
         view.timezone,
@@ -856,6 +856,13 @@ async function loadSharedReaders(linkId: string, now: Date): Promise<SharedReade
             : "Ouvert",
     };
   });
+}
+
+/** How far into a web page: the share of its video watched, or of its article read in Clozer. */
+function depthDetail(depth: number, video: boolean) {
+  const percent = Math.round(depth * 100);
+  if (video) return `${percent} % de la vidéo vue`;
+  return percent > 0 ? `article lu à ${percent} %` : null;
 }
 
 /** What the reader did around the content, for a line of the timeline. */

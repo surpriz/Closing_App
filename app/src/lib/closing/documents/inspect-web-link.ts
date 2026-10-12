@@ -1,5 +1,6 @@
 import { resolvesToPublicAddress } from "../channels/public-address";
 import { isSafeOutboundUrl } from "../channels/webhooks";
+import { extractReaderHtml } from "./reader-view";
 import { extractPageTitle, fallbackName, framingAllowed, htmlToText, knownEmbedUrl, videoProvider } from "./web-link";
 
 const MAX_REDIRECTS = 5;
@@ -99,21 +100,32 @@ async function videoText(url: URL, provider: string) {
     .slice(0, 20_000);
 }
 
+export type WebPageContent = {
+  /** For the AI reading and the prospect assistant; empty when the page is rendered in the browser. */
+  text: string;
+  /** The article, cleaned, for sites that refuse framing; null when there is none. */
+  readerHtml: string | null;
+};
+
 /**
- * The text of a web page for the AI reading and the prospect assistant.
- * Empty when the page has no readable text (rendered in the browser), null
- * when it could not be fetched: what was read before is then kept. Never throws.
+ * What a web page says. Null when it could not be fetched: what was read
+ * before is then kept. Never throws.
  */
-export async function readWebText(url: URL): Promise<string | null> {
+export async function readWebPage(url: URL): Promise<WebPageContent | null> {
   try {
     const provider = videoProvider(knownEmbedUrl(url));
-    if (provider) return await videoText(url, provider);
+    if (provider) {
+      const text = await videoText(url, provider);
+      return text === null ? null : { text, readerHtml: null };
+    }
     const response = await fetchPage(url);
     if (!response?.ok) {
       await response?.body?.cancel().catch(() => {});
       return null;
     }
-    return htmlToText(await readHtml(response, MAX_PAGE_BYTES, false));
+    const html = await readHtml(response, MAX_PAGE_BYTES, false);
+    // Redirects land elsewhere: links and images resolve against the final page
+    return { text: htmlToText(html), readerHtml: extractReaderHtml(html, new URL(response.url || url)) };
   } catch (error) {
     console.warn(`[documents] could not read ${url.hostname}`, error);
     return null;

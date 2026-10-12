@@ -2,12 +2,13 @@ import { createHash } from "node:crypto";
 
 import { prisma } from "@/lib/db";
 
-import { readWebText } from "./inspect-web-link";
+import { readWebPage } from "./inspect-web-link";
 import { readDocumentPages, type ReadPagesOutcome } from "./read-pages";
 
 /**
  * Reads a web page into a single page of text, so the AI can type it and the
- * prospect assistant can answer from it. The page carries no tags: time spent
+ * prospect assistant can answer from it, and keeps its article for the reader
+ * view when the site refuses framing. The page carries no tags: time spent
  * on "page 1" is time on the whole site, not on its pricing.
  */
 export async function processWebDocument(
@@ -19,9 +20,10 @@ export async function processWebDocument(
   });
   if (document?.kind !== "URL" || !document.externalUrl) return "skipped";
 
-  const text = await readWebText(new URL(document.externalUrl));
+  const content = await readWebPage(new URL(document.externalUrl));
   // A page down for a moment must not wipe what was read before
-  if (text === null) return "unreachable";
+  if (!content) return "unreachable";
+  const { text, readerHtml } = content;
   // What a signer had in front of them, as far as we could read it
   const contentSha256 = text ? createHash("sha256").update(text).digest("hex") : null;
 
@@ -30,7 +32,7 @@ export async function processWebDocument(
     ...(text ? [prisma.documentPage.create({ data: { documentId, pageNumber: 1, text } })] : []),
     prisma.document.update({
       where: { id: documentId },
-      data: { contentSha256, aiProcessedAt: null, aiAttempts: 0 },
+      data: { contentSha256, readerHtml, aiProcessedAt: null, aiAttempts: 0 },
     }),
   ]);
   if (!text) return "no_text";

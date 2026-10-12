@@ -133,7 +133,6 @@ function decodeEntities(value: string) {
     .replace(/&([a-z]+|#39);/gi, (entity, name: string) => ENTITIES[name] ?? entity);
 }
 
-// og:title first (Notion, Figma put the real name there), then <title>
 /** A <meta> content, whichever order its attributes come in. Apostrophes inside "…" are kept. */
 function metaContent(html: string, attribute: "name" | "property", value: string) {
   for (const [tag] of html.matchAll(/<meta\b[^>]*>/gi)) {
@@ -145,6 +144,7 @@ function metaContent(html: string, attribute: "name" | "property", value: string
   return null;
 }
 
+// og:title first (Notion, Figma put the real name there), then <title>
 export function extractPageTitle(html: string): string | null {
   const raw = metaContent(html, "property", "og:title") ?? html.match(/<title[^>]*>([^<]*)<\/title>/i)?.[1];
   const title = raw ? decodeEntities(raw).replace(/\s+/g, " ").trim() : "";

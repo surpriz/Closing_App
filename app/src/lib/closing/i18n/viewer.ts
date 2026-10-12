@@ -52,6 +52,8 @@ export type ViewerLabels = {
   privacyLink: string;
   openExternal: string;
   externalTitle: string;
+  /** Before the site name, above the article shown in Clozer. */
+  readerSource: string;
   externalDescription: string;
   sharedBy: string;
   readyPrompt: string;
@@ -159,6 +161,7 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     privacyLink: "Privacy",
     openExternal: "Open in a new tab",
     externalTitle: "This document opens on its own site",
+    readerSource: "Reader view of",
     externalDescription: "It cannot be displayed here. Open it in a new tab, then come back to reply.",
     sharedBy: "Shared by",
     readyPrompt: "Ready to move forward?",
@@ -294,6 +297,7 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     privacyLink: "Confidentialité",
     openExternal: "Ouvrir dans un nouvel onglet",
     externalTitle: "Ce document s'ouvre sur son propre site",
+    readerSource: "Version lecture de",
     externalDescription: "Il ne peut pas s'afficher ici. Ouvrez-le dans un nouvel onglet, puis revenez pour répondre.",
     sharedBy: "Envoyé par",
     readyPrompt: "Prêt à avancer ?",
@@ -429,6 +433,7 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     privacyLink: "Privacidad",
     openExternal: "Abrir en una pestaña nueva",
     externalTitle: "Este documento se abre en su propio sitio",
+    readerSource: "Versión de lectura de",
     externalDescription: "No se puede mostrar aquí. Ábrelo en una pestaña nueva y vuelve para responder.",
     sharedBy: "Enviado por",
     readyPrompt: "¿Listo para avanzar?",
@@ -564,6 +569,7 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     privacyLink: "Datenschutz",
     openExternal: "In neuem Tab öffnen",
     externalTitle: "Dieses Dokument öffnet sich auf seiner eigenen Website",
+    readerSource: "Leseansicht von",
     externalDescription: "Es kann hier nicht angezeigt werden. Öffnen Sie es in einem neuen Tab und kommen Sie dann zurück, um zu antworten.",
     sharedBy: "Gesendet von",
     readyPrompt: "Bereit für den nächsten Schritt?",

@@ -32,7 +32,7 @@ export async function refreshEngagementScore(linkId: string, now = new Date()) {
   const viewWhere = { linkId, isBot: false };
   const isVideo = link.document.kind === "URL" && videoProvider(link.document.embedUrl) !== null;
 
-  const [totals, visitors, pricing, meetingClicks, watched, external] = await Promise.all([
+  const [totals, visitors, pricing, meetingClicks, depth, external] = await Promise.all([
     prisma.documentView.aggregate({
       where: viewWhere,
       _count: { _all: true },
@@ -47,7 +47,8 @@ export async function refreshEngagementScore(linkId: string, now = new Date()) {
         })
       : null,
     prisma.prospectAction.count({ where: { linkId, type: "MEETING_CLICK" } }),
-    isVideo
+    // A web page is one page: its depth is the share watched, or read in the reader view
+    link.document.kind === "URL"
       ? prisma.pageView.aggregate({
           where: { linkId, pageNumber: 1, view: { isBot: false } },
           _max: { maxScrollDepth: true },
@@ -65,8 +66,8 @@ export async function refreshEngagementScore(linkId: string, now = new Date()) {
     uniqueViewers: visitors.length,
     pricingDurationMs: pricing?._sum.totalDurationMs ?? 0,
     pricingThresholdMs: (link.hotPricingThresholdSec ?? settings.hotPricingThresholdSec) * 1000,
-    completionRatio: isVideo
-      ? (watched?._max.maxScrollDepth ?? 0)
+    completionRatio: depth
+      ? (depth._max.maxScrollDepth ?? 0)
       : link.document.numPages
         ? (totals._max.maxPageReached ?? 0) / link.document.numPages
         : 0,

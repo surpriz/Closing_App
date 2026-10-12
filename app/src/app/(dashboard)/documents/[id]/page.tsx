@@ -32,6 +32,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getAppOrigin } from "@/lib/app-origin";
 import { videoProvider } from "@/lib/closing/documents/web-link";
 import { WelcomeMessage } from "@/components/dashboard/welcome-message";
+import { ReaderArticle } from "@/components/viewer/reader-article";
 import { capsuleUploadPrefix } from "@/lib/blob";
 import { WELCOME_PAGE } from "@/lib/closing/capsules/resolve";
 import { getDocumentAnalytics } from "@/lib/closing/analytics";
@@ -404,6 +405,15 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
                   referrerPolicy="strict-origin-when-cross-origin"
                   sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms allow-presentation"
                 />
+              ) : document.readerHtml && document.externalUrl ? (
+                <div className="max-h-[75vh] overflow-y-auto rounded-xl bg-muted/60 p-4 ring-1 ring-border">
+                  <ReaderArticle
+                    html={document.readerHtml}
+                    title={document.name}
+                    sourceLabel="Version lecture de"
+                    externalUrl={document.externalUrl}
+                  />
+                </div>
               ) : (
                 <p className="py-16 text-center text-sm text-muted-foreground">
                   Ce site refuse l&apos;affichage intégré. Vos prospects verront un bouton pour l&apos;ouvrir dans un
@@ -458,7 +468,9 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
                   ? "Pour une vidéo, Clozer mesure le temps passé et la part réellement regardée (les passages sautés ne comptent pas)."
                   : document.embedUrl
                     ? "Pour un lien web, Clozer mesure le temps passé sur la page, sans détail page par page."
-                    : "Ce site s'ouvre dans un nouvel onglet : Clozer voit quand le prospect l'ouvre, et estime le temps passé dessus d'après son retour sur le lien."}
+                    : document.readerHtml
+                      ? "Ce site refuse l'affichage intégré : vos prospects lisent l'article dans Clozer. Clozer mesure le temps passé et jusqu'où ils l'ont lu."
+                      : "Ce site s'ouvre dans un nouvel onglet : Clozer voit quand le prospect l'ouvre, et estime le temps passé dessus d'après son retour sur le lien."}
             </p>
           ) : (
             <section>

@@ -15,6 +15,7 @@ import { CapsuleBubble, type ViewerCapsule } from "./capsule-bubble";
 import { CtaBar } from "./cta-bar";
 import { ExpiryChip } from "./expiry-countdown";
 import { PrivacyNotice } from "./privacy-notice";
+import { ReaderArticle } from "./reader-article";
 import { usePageTracking } from "./use-page-tracking";
 import { useVideoProgress } from "./use-video-progress";
 import { sendSignal } from "./view-signal";
@@ -25,8 +26,10 @@ type Props = {
   documentName: string;
   senderName: string | null;
   externalUrl: string;
-  /** Null when the site refuses to be framed: the prospect opens it in a new tab. */
+  /** Null when the site refuses to be framed: its article is shown instead, or it opens in a new tab. */
   embedUrl: string | null;
+  /** The article of a site that refuses framing, cleaned on our side. */
+  readerHtml: string | null;
   labels: ViewerLabels;
   ctaEnabled: boolean;
   /** The reader's name when known, offered when they sign. */
@@ -49,6 +52,7 @@ export function WebViewer({
   senderName,
   externalUrl,
   embedUrl,
+  readerHtml,
   labels,
   ctaEnabled,
   signerName,
@@ -63,9 +67,11 @@ export function WebViewer({
   const iframeRef = useRef<HTMLIFrameElement>(null);
   // Share of the video watched, reported as the depth of the only page
   const watchedRef = useRef(0);
-  const { getViewId, markActive } = usePageTracking(slug, 1, {
-    embedded: true,
-    countTime: !!embedUrl,
+  // The article is read here like a PDF page: real scroll, real depth
+  const reader = !embedUrl && !!readerHtml;
+  const { getViewId, markActive, registerPage } = usePageTracking(slug, 1, {
+    embedded: !reader,
+    countTime: !!embedUrl || reader,
     depthRef: provider ? watchedRef : undefined,
   });
   useVideoProgress(iframeRef, provider, watchedRef, markActive);
@@ -74,7 +80,7 @@ export function WebViewer({
   const barVisible = ctaEnabled || !!booking;
 
   return (
-    <div className="flex h-dvh flex-col bg-muted/60">
+    <div className={`flex flex-col bg-muted/60 ${reader ? "min-h-dvh" : "h-dvh"}`}>
       <ViewerHeader
         className="shrink-0"
         documentName={documentName}
@@ -83,7 +89,7 @@ export function WebViewer({
         aside={
           <>
             {countdown && <ExpiryChip labels={labels} />}
-            {embedUrl && (
+            {(embedUrl || reader) && (
               <a
                 href={externalUrl}
                 target="_blank"
@@ -101,7 +107,16 @@ export function WebViewer({
       />
 
       <main className={`flex min-h-0 flex-1 flex-col gap-2 px-2 pt-2 sm:px-4 ${barVisible ? "pb-36 sm:pb-24" : chat ? "pb-20" : "pb-2"}`}>
-        {embedUrl ? (
+        {!embedUrl && readerHtml ? (
+          <ReaderArticle
+            ref={(element) => registerPage(1, element)}
+            html={readerHtml}
+            title={documentName}
+            sourceLabel={labels.readerSource}
+            externalUrl={externalUrl}
+            onOpen={openExternal}
+          />
+        ) : embedUrl ? (
           <iframe
             ref={iframeRef}
             src={playerSrc(embedUrl)}

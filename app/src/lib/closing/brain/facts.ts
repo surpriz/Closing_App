@@ -72,8 +72,8 @@ export type DealFactsInput = {
     timezone: string | null;
     maxPageReached: number;
     pages: { pageNumber: number; totalDurationMs: number }[];
-    /** Share of the video watched in this session, videos only. */
-    watchedRatio?: number | null;
+    /** Web pages: share of the video watched, or of the article read in Clozer. */
+    depth?: number | null;
     /** What the reader did around the content (tracking/view-signals.ts). */
     signals?: { type: ViewSignalType; valueMs: number | null }[];
   }[];
@@ -310,7 +310,11 @@ export function buildDealStory(input: DealFactsInput): DealStory {
         : numPages
           ? `jusqu'à la p.${view.maxPageReached}/${numPages}`
           : null,
-      document.embeddedVideo ? `${Math.round((view.watchedRatio ?? 0) * 100)} % de la vidéo vue` : null,
+      document.embeddedVideo
+        ? `${Math.round((view.depth ?? 0) * 100)} % de la vidéo vue`
+        : view.depth
+          ? `article lu jusqu'à ${Math.round(view.depth * 100)} %`
+          : null,
       numPages && notable.length ? `surtout : ${notable.join(", ")}` : null,
       ...signalNotes(view.signals ?? []),
       notes.length ? notes.join(", ") : null,

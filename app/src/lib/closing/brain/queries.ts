@@ -96,8 +96,8 @@ export async function loadDealForAnalysis(linkId: string, now: Date) {
     views: link.views.map(({ pageViews, ...view }) => ({
       ...view,
       pages: pageViews.map(({ pageNumber, totalDurationMs }) => ({ pageNumber, totalDurationMs })),
-      // A video is one page: its depth is the share watched
-      watchedRatio: isVideo ? (pageViews.find((p) => p.pageNumber === 1)?.maxScrollDepth ?? 0) : null,
+      // A web page is one page: its depth is the share watched, or read in the reader view
+      depth: link.document.kind === "URL" ? (pageViews.find((p) => p.pageNumber === 1)?.maxScrollDepth ?? 0) : null,
     })),
     actions: link.actions,
     followups: link.followups.map((f) => ({ ...f, sentAt: f.sentAt! })),

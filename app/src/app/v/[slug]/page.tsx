@@ -196,6 +196,10 @@ export default async function ViewerPage({ params, searchParams }: PageProps<"/v
   const capsules = await loadCapsules(slug, link);
 
   if (link.document.kind === "URL" && link.document.externalUrl) {
+    // Loaded apart, and only when needed: an article weighs far more than the rest of the link
+    const reader = link.document.embedUrl
+      ? null
+      : await prisma.document.findUnique({ where: { id: link.document.id }, select: { readerHtml: true } });
     return (
       <>
         {sellerNotice}
@@ -206,6 +210,7 @@ export default async function ViewerPage({ params, searchParams }: PageProps<"/v
             senderName={senderName}
             externalUrl={link.document.externalUrl}
             embedUrl={link.document.embedUrl}
+            readerHtml={reader?.readerHtml ?? null}
             labels={labels}
             ctaEnabled={link.ctaEnabled}
             signerName={signerName}
