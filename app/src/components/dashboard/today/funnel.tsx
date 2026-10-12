@@ -46,7 +46,7 @@ export function FunnelStrip({ funnel }: { funnel: Funnel }) {
             )}
           >
             <p className="flex items-baseline gap-2">
-              <span className="font-mono text-2xl font-medium tracking-tight tabular-nums">{value}</span>
+              <span className="font-mono text-title font-medium tabular-nums">{value}</span>
               {index > 0 && funnel.sent > 0 && (
                 <span className="text-xs text-muted-foreground tabular-nums">{share} %</span>
               )}

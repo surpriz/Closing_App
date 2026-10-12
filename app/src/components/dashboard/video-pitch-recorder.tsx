@@ -45,7 +45,7 @@ export function VideoPitchDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-lg">Enregistrer un pitch vidéo</DialogTitle>
+          <DialogTitle className="text-heading">Enregistrer un pitch vidéo</DialogTitle>
           <DialogDescription>
             Jusqu&apos;à {PITCH_MAX_MS / 60_000} minutes, face caméra ou en montrant votre écran. Le prospect voit la
             vidéo en grand, avec vos boutons rendez-vous et devis, et vous savez jusqu&apos;où il l&apos;a regardée.

@@ -93,7 +93,7 @@ export function Stat({
         )}
         {label}
       </p>
-      <p className="font-mono text-2xl font-medium tracking-tight tabular-nums">{value}</p>
+      <p className="font-mono text-title font-medium tabular-nums">{value}</p>
       {hint && <p className="text-small text-muted-foreground">{hint}</p>}
     </div>
   );

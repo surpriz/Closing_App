@@ -63,7 +63,7 @@ export function LinkSettingsDialog({ name, ...panel }: Props) {
       </DialogTrigger>
       <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-lg">Réglages du lien</DialogTitle>
+          <DialogTitle className="text-heading">Réglages du lien</DialogTitle>
           <DialogDescription>Chaque changement est enregistré tout de suite.</DialogDescription>
         </DialogHeader>
         <div className="space-y-6">
