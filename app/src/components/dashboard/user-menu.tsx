@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleHelp, Compass, LifeBuoy, LogOut, ShieldCheck } from "lucide-react";
+import { CircleHelp, Compass, LifeBuoy, LogOut, Shield, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 
@@ -28,10 +28,12 @@ export function UserMenu({
   name,
   email,
   workspace,
+  isPlatformAdmin = false,
 }: {
   name: string | null;
   email: string;
   workspace: string;
+  isPlatformAdmin?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -70,6 +72,12 @@ export function UserMenu({
           <ShieldCheck />
           Données et confidentialité
         </DropdownMenuItem>
+        {isPlatformAdmin && (
+          <DropdownMenuItem onClick={() => router.push("/admin")}>
+            <Shield />
+            Admin
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <ThemeMenuItems />
         <DropdownMenuSeparator />

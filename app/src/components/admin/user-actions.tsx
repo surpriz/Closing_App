@@ -107,7 +107,7 @@ function BanDialog({ userId, email }: { userId: string; email: string }) {
             <DialogTitle>Bannir {email} ?</DialogTitle>
             <DialogDescription>
               Accès coupé, extension déconnectée, et cet email ne pourra plus créer de compte. Réversible depuis cette
-              page ou les réglages d&apos;inscription.
+              page.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">

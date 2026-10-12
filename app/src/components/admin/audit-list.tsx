@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import type { AuditEntry } from "@/lib/admin/audit";
-import { ADMIN_ACTION_LABELS, adminDateTime, type AdminAction } from "@/lib/admin/format";
+import { ADMIN_ACTION_LABELS, adminDateTime, auditDetail, type AdminAction } from "@/lib/admin/format";
 
 const TARGET_PATHS: Record<string, string> = { user: "/admin/users", organization: "/admin/workspaces" };
 
@@ -17,10 +17,12 @@ export function AuditList({ entries, showTarget = false }: { entries: AuditEntry
     <ul className="divide-y divide-border">
       {entries.map((entry) => {
         const targetPath = entry.targetId && TARGET_PATHS[entry.targetType];
+        const detail = auditDetail(entry.metadata);
         return (
           <li key={entry.id} className="space-y-0.5 px-5 py-3 text-sm">
             <p>
               <span className="font-medium">{actionLabel(entry.action)}</span>
+              {detail && <span className="text-muted-foreground"> · {detail}</span>}
               {showTarget && targetPath && (
                 <>
                   {" · "}

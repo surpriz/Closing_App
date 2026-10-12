@@ -51,3 +51,15 @@ export type WorkspaceFilter = (typeof WORKSPACE_FILTERS)[number];
 export function parseWorkspaceFilter(value: string | undefined): WorkspaceFilter | undefined {
   return WORKSPACE_FILTERS.find((filter) => filter === value);
 }
+
+/** The useful bit of an audit line's metadata: which email, which mode, how long. */
+export function auditDetail(metadata: unknown): string | null {
+  if (!metadata || typeof metadata !== "object") return null;
+  const data = metadata as { email?: unknown; mode?: unknown; days?: unknown };
+  if (typeof data.email === "string") return data.email;
+  if (data.mode === "open") return "ouvertes à tous";
+  if (data.mode === "invite_only") return "sur invitation";
+  if (typeof data.days === "number") return `${data.days} jour${data.days > 1 ? "s" : ""}`;
+  if ("days" in data && data.days === null) return "jusqu'à réactivation";
+  return null;
+}

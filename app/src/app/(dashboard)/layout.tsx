@@ -9,6 +9,7 @@ import { UserMenu } from "@/components/dashboard/user-menu";
 import { linkLabelSelect, prospectLabel } from "@/lib/closing/dashboard/labels";
 import { sellerLinks } from "@/lib/closing/dashboard/queries";
 import { prisma } from "@/lib/db";
+import { isPlatformAdminEmail } from "@/lib/platform-admin";
 import { isManagerRole } from "@/lib/roles";
 import { requireWorkspace } from "@/lib/session";
 
@@ -70,7 +71,12 @@ export default async function DashboardLayout({
           <DashboardNav isManager={isManager} />
           <div className="ml-auto flex items-center gap-2">
             <CommandMenu entries={entries} />
-            <UserMenu name={user.name} email={user.email} workspace={organization.name} />
+            <UserMenu
+              name={user.name}
+              email={user.email}
+              workspace={organization.name}
+              isPlatformAdmin={isPlatformAdminEmail(user.email)}
+            />
           </div>
         </div>
       </header>
