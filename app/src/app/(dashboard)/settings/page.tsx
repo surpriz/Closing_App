@@ -3,6 +3,11 @@ import type { Metadata } from "next";
 import { ExtensionTokens } from "@/components/dashboard/extension-tokens";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { PrivacySettings } from "@/components/dashboard/privacy-settings";
+import {
+  AdvancedSettingsBlock,
+  AdvancedSettingsProvider,
+  SettingsNav,
+} from "@/components/dashboard/settings-advanced";
 import { SettingsForm } from "@/components/dashboard/settings-form";
 import { TeamSettings } from "@/components/dashboard/team-settings";
 import { getLanguageModel } from "@/lib/closing/ai/provider";
@@ -25,14 +30,17 @@ function safeDecrypt(value: string | null) {
 
 export const metadata: Metadata = { title: "Réglages" };
 
-const SECTIONS = [
+const ESSENTIAL = [
   { id: "pilote", label: "Pilote automatique" },
+  { id: "alertes", label: "Être prévenu" },
+  { id: "agenda", label: "Votre agenda" },
+];
+
+const ADVANCED = [
   { id: "offre", label: "Votre offre" },
   { id: "liens", label: "Vos liens" },
   { id: "assistant", label: "Assistant prospect" },
   { id: "messages", label: "Vos messages" },
-  { id: "agenda", label: "Votre agenda" },
-  { id: "alertes", label: "Être prévenu" },
   { id: "extension", label: "Chrome et Outlook" },
   { id: "equipe", label: "Équipe", managerOnly: true },
   { id: "donnees", label: "Données" },
@@ -44,9 +52,19 @@ export default async function SettingsPage() {
   const [settings, tokens, prefs, team] = await Promise.all([
     getWorkspaceSettings(organization.id),
     prisma.extensionToken.findMany({
-      where: { userId: user.id, organizationId: organization.id, revokedAt: null },
+      where: {
+        userId: user.id,
+        organizationId: organization.id,
+        revokedAt: null,
+      },
       orderBy: { createdAt: "desc" },
-      select: { id: true, label: true, hint: true, createdAt: true, lastUsedAt: true },
+      select: {
+        id: true,
+        label: true,
+        hint: true,
+        createdAt: true,
+        lastUsedAt: true,
+      },
     }),
     getSellerPrefs(user.id, organization.id),
     isManager ? getTeam(organization.id) : null,
@@ -55,82 +73,89 @@ export default async function SettingsPage() {
 
   return (
     <div className="space-y-10">
-      <PageHeader title="Réglages" description={`Le pilote automatique de l'espace ${organization.name}.`} />
+      <PageHeader
+        title="Réglages"
+        description="L'essentiel d'abord. Le reste attend sous Réglages avancés."
+      />
 
-      <div className="grid grid-cols-1 gap-10 lg:grid-cols-[11rem_minmax(0,1fr)]">
-        <nav aria-label="Sections des réglages" className="hidden lg:block">
-          <ul className="sticky top-24 space-y-0.5 text-sm">
-            {SECTIONS.filter((section) => isManager || !section.managerOnly).map((section) => (
-              <li key={section.id}>
-                <a
-                  href={`#${section.id}`}
-                  className="block rounded-md px-2.5 py-1.5 text-muted-foreground transition-colors outline-none hover:bg-foreground/[0.04] hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/30"
-                >
-                  {section.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
-        <div className="space-y-10">
-          <SettingsForm
-            initial={{
-              version: settings.updatedAt.toISOString(),
-              alertChannels: settings.alertChannels,
-              alertEmail: settings.alertEmail ?? "",
-              slackConfigured: !!settings.slackWebhookUrl,
-              // Integration secrets stay with the people who can change them
-              outboundWebhookUrl: isManager ? (settings.outboundWebhookUrl ?? "") : "",
-              webhookSecret: isManager ? safeDecrypt(settings.webhookSecret) : null,
-              aiTone: settings.aiTone ?? "",
-              senderName: settings.senderName ?? "",
-              senderSignature: settings.senderSignature ?? "",
-              autonomy: settings.autonomy,
-              chatEnabledByDefault: settings.chatEnabledByDefault,
-              requireEmailByDefault: settings.requireEmailByDefault,
-              voiceCommentsByDefault: settings.voiceCommentsByDefault,
-              followupsByDefault: settings.followupsByDefault,
-              quoteExpiryDays: settings.quoteExpiryDays,
-              assistantKnowledge: settings.assistantKnowledge ?? "",
-              offerDescription: settings.offerDescription ?? "",
-              targetCustomer: settings.targetCustomer ?? "",
-              valueProps: settings.valueProps ?? "",
-              commonObjections: settings.commonObjections ?? "",
-              avgSalesCycleDays: settings.avgSalesCycleDays?.toString() ?? "",
-              offerInferredFrom: settings.offerInferredFrom,
-            }}
-            notifications={{
-              emailActions: prefs.emailActions,
-              emailCallMoments: prefs.emailCallMoments,
-              extensionCallMoments: prefs.extensionCallMoments,
-              morningDigest: prefs.morningDigest,
-              digestHour: prefs.digestHour,
-              extensionConnected: tokens.length > 0,
-              bookingUrl: prefs.bookingUrl ?? "",
-            }}
-            providers={{
-              email: isEmailConfigured(),
-              ai: llm ? `${llm.provider} · ${llm.modelId}` : null,
-            }}
-            canEditWorkspace={isManager}
+      <AdvancedSettingsProvider>
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-[11rem_minmax(0,1fr)]">
+          <SettingsNav
+            essential={ESSENTIAL}
+            advanced={ADVANCED.filter(
+              (section) => isManager || !section.managerOnly,
+            )}
           />
-          <ExtensionTokens
-            tokens={tokens.map((token) => ({
-              ...token,
-              createdAt: token.createdAt.toISOString(),
-              lastUsedAt: token.lastUsedAt?.toISOString() ?? null,
-            }))}
-          />
-          {team && (
-            <TeamSettings
-              viewer={{ userId: user.id, isOwner: isOwnerRole(role) }}
-              members={team.members}
-              invitations={team.invitations}
+          <div className="space-y-10">
+            <SettingsForm
+              initial={{
+                version: settings.updatedAt.toISOString(),
+                alertChannels: settings.alertChannels,
+                alertEmail: settings.alertEmail ?? "",
+                slackConfigured: !!settings.slackWebhookUrl,
+                // Integration secrets stay with the people who can change them
+                outboundWebhookUrl: isManager
+                  ? (settings.outboundWebhookUrl ?? "")
+                  : "",
+                webhookSecret: isManager
+                  ? safeDecrypt(settings.webhookSecret)
+                  : null,
+                aiTone: settings.aiTone ?? "",
+                senderName: settings.senderName ?? "",
+                senderSignature: settings.senderSignature ?? "",
+                autonomy: settings.autonomy,
+                chatEnabledByDefault: settings.chatEnabledByDefault,
+                requireEmailByDefault: settings.requireEmailByDefault,
+                voiceCommentsByDefault: settings.voiceCommentsByDefault,
+                followupsByDefault: settings.followupsByDefault,
+                quoteExpiryDays: settings.quoteExpiryDays,
+                assistantKnowledge: settings.assistantKnowledge ?? "",
+                offerDescription: settings.offerDescription ?? "",
+                targetCustomer: settings.targetCustomer ?? "",
+                valueProps: settings.valueProps ?? "",
+                commonObjections: settings.commonObjections ?? "",
+                avgSalesCycleDays: settings.avgSalesCycleDays?.toString() ?? "",
+                offerInferredFrom: settings.offerInferredFrom,
+              }}
+              notifications={{
+                emailActions: prefs.emailActions,
+                emailCallMoments: prefs.emailCallMoments,
+                extensionCallMoments: prefs.extensionCallMoments,
+                morningDigest: prefs.morningDigest,
+                digestHour: prefs.digestHour,
+                extensionConnected: tokens.length > 0,
+                bookingUrl: prefs.bookingUrl ?? "",
+              }}
+              providers={{
+                email: isEmailConfigured(),
+                ai: llm ? `${llm.provider} · ${llm.modelId}` : null,
+              }}
+              canEditWorkspace={isManager}
             />
-          )}
-          <PrivacySettings workspaceName={organization.name} isManager={isManager} isOwner={isOwnerRole(role)} />
+            <AdvancedSettingsBlock className="space-y-10">
+              <ExtensionTokens
+                tokens={tokens.map((token) => ({
+                  ...token,
+                  createdAt: token.createdAt.toISOString(),
+                  lastUsedAt: token.lastUsedAt?.toISOString() ?? null,
+                }))}
+              />
+              {team && (
+                <TeamSettings
+                  viewer={{ userId: user.id, isOwner: isOwnerRole(role) }}
+                  members={team.members}
+                  invitations={team.invitations}
+                />
+              )}
+              <PrivacySettings
+                workspaceName={organization.name}
+                isManager={isManager}
+                isOwner={isOwnerRole(role)}
+              />
+            </AdvancedSettingsBlock>
+          </div>
         </div>
-      </div>
+      </AdvancedSettingsProvider>
     </div>
   );
 }
@@ -140,16 +165,29 @@ async function getTeam(organizationId: string) {
     prisma.member.findMany({
       where: { organizationId },
       orderBy: { createdAt: "asc" },
-      select: { id: true, userId: true, role: true, user: { select: { name: true, email: true } } },
+      select: {
+        id: true,
+        userId: true,
+        role: true,
+        user: { select: { name: true, email: true } },
+      },
     }),
     prisma.invitation.findMany({
-      where: { organizationId, status: "pending", expiresAt: { gt: new Date() } },
+      where: {
+        organizationId,
+        status: "pending",
+        expiresAt: { gt: new Date() },
+      },
       orderBy: { createdAt: "desc" },
       select: { id: true, email: true, role: true, expiresAt: true },
     }),
   ]);
   return {
-    members: members.map(({ user, ...member }) => ({ ...member, name: user.name || user.email, email: user.email })),
+    members: members.map(({ user, ...member }) => ({
+      ...member,
+      name: user.name || user.email,
+      email: user.email,
+    })),
     invitations: invitations.map((invitation) => ({
       ...invitation,
       role: invitation.role ?? "member",

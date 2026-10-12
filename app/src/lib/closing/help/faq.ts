@@ -29,7 +29,7 @@ export const FAQ: FaqSection[] = [
       {
         id: "par-ou-commencer",
         q: "Par où commencer ?",
-        a: "Trois étapes, cochées automatiquement sur Aujourd'hui dans « Premiers pas » : déposez un document, envoyez le lien, le prospect l'ouvre.\n\nEnsuite, prenez cinq minutes pour remplir Réglages → Votre offre et Vos messages : les relances seront plus justes et signées comme vous.",
+        a: "Trois étapes, cochées automatiquement sur Aujourd'hui dans « Premiers pas » : déposez un document, envoyez le lien, le prospect l'ouvre.\n\nEnsuite, prenez cinq minutes pour remplir Réglages → Réglages avancés → Votre offre et Vos messages : les relances seront plus justes et signées comme vous.",
         link: { href: "/documents", label: "Déposer un document" },
       },
       {
@@ -139,12 +139,12 @@ export const FAQ: FaqSection[] = [
       {
         id: "demander-email",
         q: "Comment savoir exactement qui lit ?",
-        a: "Activez « Demander son email avant de lire » dans les réglages du lien (ou pour tous les nouveaux liens dans Réglages → Vos liens). Sans cela, les lecteurs anonymes sont désignés par une lettre : une même lettre = un même navigateur.\n\nUtile surtout quand le document circule en interne chez le prospect.",
+        a: "Activez « Demander son email avant de lire » dans les réglages du lien (ou pour tous les nouveaux liens dans Réglages → Réglages avancés → Vos liens). Sans cela, les lecteurs anonymes sont désignés par une lettre : une même lettre = un même navigateur.\n\nUtile surtout quand le document circule en interne chez le prospect.",
       },
       {
         id: "expiration",
         q: "Comment fonctionne l'expiration d'un lien ?",
-        a: "Sur la fiche du deal, « Réglages du lien » → Expiration : Aucune, 48 h, 7, 15 ou 30 jours, ou une date précise. Pour un devis ou une proposition, le prospect voit un décompte. Après l'échéance, le lien ne s'ouvre plus.\n\nLe réglage par défaut se fait dans Réglages → Vos liens (7, 15, 30 jours ou jamais).",
+        a: "Sur la fiche du deal, « Réglages du lien » → Expiration : Aucune, 48 h, 7, 15 ou 30 jours, ou une date précise. Pour un devis ou une proposition, le prospect voit un décompte. Après l'échéance, le lien ne s'ouvre plus.\n\nLe réglage par défaut se fait dans Réglages → Réglages avancés → Vos liens (7, 15, 30 jours ou jamais).",
       },
       {
         id: "prolonger",
@@ -309,13 +309,13 @@ export const FAQ: FaqSection[] = [
       {
         id: "arreter",
         q: "Comment arrêter les relances ?",
-        a: "Pour tout l'espace : « Tout valider moi-même » sur Aujourd'hui, ou repasser en « Je la relis et je valide ».\n\nPour un deal : l'interrupteur « Relances » (onglet Prospects du document), « Relances préparées par Clozer » dans les réglages du lien, « Mettre en pause jusqu'au », ou un statut autre que En cours.\n\nPour les nouveaux liens : Réglages → Vos liens → « Préparer les relances ».",
+        a: "Pour tout l'espace : « Tout valider moi-même » sur Aujourd'hui, ou repasser en « Je la relis et je valide ».\n\nPour un deal : l'interrupteur « Relances » (onglet Prospects du document), « Relances préparées par Clozer » dans les réglages du lien, « Mettre en pause jusqu'au », ou un statut autre que En cours.\n\nPour les nouveaux liens : Réglages → Réglages avancés → Vos liens → « Préparer les relances ».",
       },
       {
         id: "ton-signature",
         q: "Comment faire pour que les relances me ressemblent ?",
-        a: "Réglages → Vos messages : « Signé par », le ton (par exemple « direct, vouvoiement, sans jargon ») et votre signature. Remplissez aussi Votre offre : Clozer s'en sert pour écrire.",
-        link: { href: "/settings#messages", label: "Réglages → Vos messages" },
+        a: "Réglages → Réglages avancés → Vos messages : « Signé par », le ton (par exemple « direct, vouvoiement, sans jargon ») et votre signature. Remplissez aussi Votre offre : Clozer s'en sert pour écrire.",
+        link: { href: "/settings#messages", label: "Réglages → Réglages avancés → Vos messages" },
       },
       {
         id: "whatsapp",
@@ -331,7 +331,7 @@ export const FAQ: FaqSection[] = [
       {
         id: "assistant-quoi",
         q: "Qu'est-ce que l'assistant prospect ?",
-        a: "Sur votre document, il répond aux questions du prospect quand vous n'êtes pas là. Il s'appuie sur le document, votre offre, les « Infos pour l'assistant » du document et « Ce que l'assistant doit savoir » (Réglages → Assistant prospect). Il n'invente jamais un prix ou une condition.",
+        a: "Sur votre document, il répond aux questions du prospect quand vous n'êtes pas là. Il s'appuie sur le document, votre offre, les « Infos pour l'assistant » du document et « Ce que l'assistant doit savoir » (Réglages → Réglages avancés → Assistant prospect). Il n'invente jamais un prix ou une condition.",
       },
       {
         id: "assistant-ne-sait-pas",
@@ -341,8 +341,8 @@ export const FAQ: FaqSection[] = [
       {
         id: "assistant-nourrir",
         q: "Comment le rendre plus utile ?",
-        a: "Ajoutez vos modalités, garanties et questions fréquentes dans Réglages → Assistant prospect (pour tous les documents) ou dans « Infos pour l'assistant » sur la page d'un document. Puis lisez les questions posées : elles révèlent les objections.\n\nAttention : tout ce que vous écrivez pour l'assistant peut être obtenu par le prospect. Rien de confidentiel.",
-        link: { href: "/settings#assistant", label: "Réglages → Assistant prospect" },
+        a: "Ajoutez vos modalités, garanties et questions fréquentes dans Réglages → Réglages avancés → Assistant prospect (pour tous les documents) ou dans « Infos pour l'assistant » sur la page d'un document. Puis lisez les questions posées : elles révèlent les objections.\n\nAttention : tout ce que vous écrivez pour l'assistant peut être obtenu par le prospect. Rien de confidentiel.",
+        link: { href: "/settings#assistant", label: "Réglages → Réglages avancés → Assistant prospect" },
       },
       {
         id: "assistant-activer",
@@ -373,7 +373,7 @@ export const FAQ: FaqSection[] = [
       {
         id: "vocaux",
         q: "Le prospect peut-il me laisser un message vocal ?",
-        a: "Oui, sur une page d'un PDF (60 secondes maximum). Vous recevez l'audio et sa transcription, sur la fiche (Commentaires vocaux) et par une alerte. À activer dans Réglages → Vos liens, ou lien par lien avec « Laisser un vocal sur une page ».",
+        a: "Oui, sur une page d'un PDF (60 secondes maximum). Vous recevez l'audio et sa transcription, sur la fiche (Commentaires vocaux) et par une alerte. À activer dans Réglages → Réglages avancés → Vos liens, ou lien par lien avec « Laisser un vocal sur une page ».",
       },
       {
         id: "capsules",
@@ -390,7 +390,7 @@ export const FAQ: FaqSection[] = [
         id: "outil-pourquoi",
         q: "À quoi servent l'extension et le complément Outlook ?",
         a: "Vous joignez un PDF dans Gmail ou Outlook comme d'habitude : Clozer le remplace par un lien suivi, avec le premier destinataire comme prospect. Le bouton « C » dans l'email permet aussi de choisir un document existant.",
-        link: { href: "/settings#extension", label: "Réglages → Chrome et Outlook" },
+        link: { href: "/settings#extension", label: "Réglages → Réglages avancés → Chrome et Outlook" },
       },
       {
         id: "chrome",
@@ -400,7 +400,7 @@ export const FAQ: FaqSection[] = [
       {
         id: "outlook",
         q: "Comment installer le complément Outlook (Windows ou Mac) ?",
-        a: "Téléchargez le fichier manifeste (lien dans Réglages → Chrome et Outlook ou dans la prise en main), puis dans Outlook : Compléments → Mes compléments → Ajouter à partir d'un fichier. Dans un nouvel email, cliquez « Clozer » dans le ruban : un code s'affiche ; saisissez-le sur la page « Connecter Outlook ».\n\nVotre service informatique peut aussi le déployer pour toute l'équipe depuis le centre d'administration Microsoft 365.",
+        a: "Téléchargez le fichier manifeste (lien dans Réglages → Réglages avancés → Chrome et Outlook ou dans la prise en main), puis dans Outlook : Compléments → Mes compléments → Ajouter à partir d'un fichier. Dans un nouvel email, cliquez « Clozer » dans le ruban : un code s'affiche ; saisissez-le sur la page « Connecter Outlook ».\n\nVotre service informatique peut aussi le déployer pour toute l'équipe depuis le centre d'administration Microsoft 365.",
       },
       {
         id: "autre-messagerie",
@@ -415,7 +415,7 @@ export const FAQ: FaqSection[] = [
       {
         id: "deconnecter-outil",
         q: "Comment déconnecter l'extension ou Outlook ?",
-        a: "Réglages → Chrome et Outlook : vos connexions sont listées avec un bouton « Révoquer ».",
+        a: "Réglages → Réglages avancés → Chrome et Outlook : vos connexions sont listées avec un bouton « Révoquer ».",
       },
     ],
   },
@@ -469,13 +469,13 @@ export const FAQ: FaqSection[] = [
       {
         id: "inviter",
         q: "Comment inviter un collègue ?",
-        a: "Réglages → Équipe (ou « Inviter un commercial » sur la page Équipe) : email + rôle (Membre ou Admin), puis « Inviter ». Réservé aux propriétaires et admins.",
-        link: { href: "/settings#equipe", label: "Réglages → Équipe" },
+        a: "Réglages → Réglages avancés → Équipe (ou « Inviter un commercial » sur la page Équipe) : email + rôle (Membre ou Admin), puis « Inviter ». Réservé aux propriétaires et admins.",
+        link: { href: "/settings#equipe", label: "Réglages → Réglages avancés → Équipe" },
       },
       {
         id: "role-retirer",
         q: "Comment changer un rôle ou retirer quelqu'un ?",
-        a: "Réglages → Équipe : changez le rôle, « Retirer » un membre ou annulez une invitation en attente.",
+        a: "Réglages → Réglages avancés → Équipe : changez le rôle, « Retirer » un membre ou annulez une invitation en attente.",
       },
       {
         id: "vue-equipe",
@@ -534,13 +534,13 @@ export const FAQ: FaqSection[] = [
         id: "votre-offre",
         q: "À quoi sert « Votre offre » ?",
         a: "Ce que vous vendez, vos clients, pourquoi ils vous choisissent, les objections fréquentes et la durée habituelle d'un deal. Clozer s'en sert pour analyser et rédiger. C'est facultatif : Clozer la pré-remplit à la lecture du premier document. Pensez à « Enregistrer les réglages ».",
-        link: { href: "/settings#offre", label: "Réglages → Votre offre" },
+        link: { href: "/settings#offre", label: "Réglages → Réglages avancés → Votre offre" },
       },
       {
         id: "vos-liens",
         q: "Comment changer les réglages par défaut des nouveaux liens ?",
-        a: "Réglages → Vos liens : demander l'email du lecteur, expiration des devis et propositions, vocaux, préparer les relances. Chaque lien reste modifiable ensuite.",
-        link: { href: "/settings#liens", label: "Réglages → Vos liens" },
+        a: "Réglages → Réglages avancés → Vos liens : demander l'email du lecteur, expiration des devis et propositions, vocaux, préparer les relances. Chaque lien reste modifiable ensuite.",
+        link: { href: "/settings#liens", label: "Réglages → Réglages avancés → Vos liens" },
       },
       {
         id: "theme",
