@@ -49,12 +49,12 @@ async function smartReader(linkId: string) {
 
 /** Fired once per reader and event. Does nothing without a webhook or for other readers. */
 export async function emitReaderEvent(linkId: string, event: ReaderEvent) {
+  // Most tracking flushes land here after the event went out: one cheap lookup
+  if (await prisma.webhookEvent.findFirst({ where: { linkId, event }, select: { id: true } })) return;
   const reader = await smartReader(linkId);
   if (!reader) return;
   const { link, prospect } = reader;
   const dedupeKey = `${event}:${prospect.id}`;
-  // Most tracking flushes land here after the event went out
-  if (await prisma.webhookEvent.findUnique({ where: { dedupeKey }, select: { id: true } })) return;
 
   const settings = await getWorkspaceSettings(link.organizationId);
   if (!settings.outboundWebhookUrl || !settings.webhookSecret) return;

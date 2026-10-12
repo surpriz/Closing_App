@@ -138,9 +138,9 @@ export async function POST(request: NextRequest) {
       const readerAlert = await evaluateReaders(viewId, now);
       if (!readerAlert) await evaluateHotLead(viewId, !!recentView, now);
       await refreshEngagementScore(link.id);
-      // A Smart Link reader really reading: their cold email sequence can stop
-      if (link.parentLinkId) await emitReaderEvent(link.id, "reader.opened");
     });
+    // A Smart Link reader really reading: their cold email sequence can stop. Apart, so nothing above can skip it
+    if (link.parentLinkId) inBackground("reader-opened", () => emitReaderEvent(link.id, "reader.opened"));
   }
 
   return Response.json({ viewId, resumed: !!recentView });

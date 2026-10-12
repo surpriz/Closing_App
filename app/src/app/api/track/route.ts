@@ -160,12 +160,12 @@ export async function POST(request: Request) {
         await markDealDirty(view.linkId, now);
         await evaluatePricingCallMoment(view.id, now);
       }
-      // A Smart Link reader: a follow-up on what they read, and the cold email tool hears when they get hot
-      if (view.link.parentLinkId) {
-        await evaluateWarmRead(view.id, now);
-        await emitReaderEvent(view.linkId, "reader.hot");
-      }
     });
+    // A Smart Link reader: a follow-up on what they read, and the cold email tool hears when they get hot
+    if (view.link.parentLinkId) {
+      inBackground("warm-read", () => evaluateWarmRead(view.id, now));
+      inBackground("reader-hot", () => emitReaderEvent(view.linkId, "reader.hot"));
+    }
   }
 
   return new Response(null, { status: 204 });

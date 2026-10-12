@@ -51,11 +51,15 @@ export async function evaluateWarmRead(viewId: string, now = new Date()) {
   if (link.snoozedUntil && link.snoozedUntil > now) return;
   if (isLinkExpired(link, now)) return;
 
-  const open = await prisma.followup.findFirst({
-    where: { linkId: link.id, status: { in: [...OPEN_FOLLOWUP_STATUSES] } },
+  // Already written once, or another follow-up in flight: most flushes stop here
+  const existing = await prisma.followup.findFirst({
+    where: {
+      linkId: link.id,
+      OR: [{ trigger: "WARM_READ" }, { status: { in: [...OPEN_FOLLOWUP_STATUSES] } }],
+    },
     select: { id: true },
   });
-  if (open) return;
+  if (existing) return;
 
   const reading = await readingOfLink(link.id, link.documentId);
   if (reading.readingMs < WARM_READ_MIN_MS) return;

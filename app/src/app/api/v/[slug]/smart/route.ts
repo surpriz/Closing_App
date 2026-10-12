@@ -1,12 +1,17 @@
 import type { NextRequest } from "next/server";
 import { z } from "zod";
 
+import { HOUR_MS } from "@/lib/closing/constants";
 import { getLinkForViewer, identifyProspect } from "@/lib/closing/links";
 import { readerLinkFor } from "@/lib/closing/shared/reader-link";
 import { parseSmartParams } from "@/lib/closing/shared/smart-params";
 import { getRequestContext } from "@/lib/closing/tracking/request-context";
 import { VISITOR_COOKIE } from "@/lib/closing/tracking/visitor";
+import { prisma } from "@/lib/db";
 import { isWorkspaceMember } from "@/lib/session";
+
+/** New readers per Smart Link per hour; beyond that they type their email. */
+const SMART_READERS_PER_LINK_HOUR = 120;
 
 const bodySchema = z.object({
   email: z.string().max(254),
@@ -32,6 +37,11 @@ export async function POST(request: NextRequest, ctx: RouteContext<"/api/v/[slug
   if (getRequestContext(request.headers).isBot || (await isWorkspaceMember(link.organizationId))) {
     return Response.json({ error: "Not identified" }, { status: 403 });
   }
+  // A campaign brings clicks by the dozen an hour, a script by the thousand: past this, the plain gate
+  const recent = await prisma.link.count({
+    where: { parentLinkId: link.id, createdAt: { gte: new Date(Date.now() - HOUR_MS) } },
+  });
+  if (recent >= SMART_READERS_PER_LINK_HOUR) return Response.json({ error: "Too many" }, { status: 429 });
 
   const reader = await readerLinkFor(link, smart.email, request.cookies.get(VISITOR_COOKIE)?.value, smart.name, {
     origin: "COLD_EMAIL",

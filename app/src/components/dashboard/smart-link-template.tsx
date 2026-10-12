@@ -43,8 +43,8 @@ export function SmartLinkTemplate({ url }: { url: string }) {
         <CopyButton value={value} />
       </div>
       <p className="text-xs text-muted-foreground">
-        {tool === "lemlist"
-          ? "Les variables sont celles de Lemlist."
+        {SMART_LINK_TOOLS[tool].documented
+          ? `Les variables sont celles de ${SMART_LINK_TOOLS[tool].label}.`
           : "Vérifiez le nom des variables dans l'éditeur de votre outil."}{" "}
         Pour mettre la séquence en pause dès qu&apos;un prospect lit, branchez le{" "}
         <Link href="/settings#alertes" className="underline underline-offset-2 hover:text-foreground">

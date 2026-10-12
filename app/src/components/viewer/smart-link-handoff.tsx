@@ -1,7 +1,7 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 import type { SmartParams } from "@/lib/closing/shared/smart-params";
 
@@ -13,8 +13,11 @@ type Props = { slug: string; reader: SmartParams; label: string };
  * Refused (a scanner, the seller): the plain gate.
  */
 export function SmartLinkHandoff({ slug, reader, label }: Props) {
+  // Once per page: a second POST from the dev double effect would make a second reader link
+  const sent = useRef(false);
   useEffect(() => {
-    let cancelled = false;
+    if (sent.current) return;
+    sent.current = true;
     fetch(`/api/v/${slug}/smart`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -27,12 +30,8 @@ export function SmartLinkHandoff({ slug, reader, label }: Props) {
       .then((response) => (response.ok ? response.json() : null))
       .catch(() => null)
       .then((result: { slug?: string } | null) => {
-        if (cancelled) return;
         window.location.replace(result?.slug ? `/v/${result.slug}` : `/v/${slug}?email=1`);
       });
-    return () => {
-      cancelled = true;
-    };
   }, [slug, reader.email, reader.company, reader.name]);
 
   return (

@@ -1,4 +1,4 @@
-import type { ProspectOrigin } from "@/generated/prisma/enums";
+import type { FollowupChannel, ProspectOrigin } from "@/generated/prisma/enums";
 import { prisma } from "@/lib/db";
 import { randomSlug } from "@/lib/ids";
 
@@ -30,6 +30,11 @@ export async function readerLinkFor(
     voiceCommentsEnabled: boolean;
     followupsEnabled: boolean;
     expiresAt: Date | null;
+    hotPricingThresholdSec: number | null;
+    channels: FollowupChannel[];
+    inactivityDays: number[];
+    businessHourStart: number | null;
+    businessHourEnd: number | null;
   },
   email: string,
   visitorId: string | null | undefined,
@@ -67,6 +72,11 @@ export async function readerLinkFor(
       chatEnabled: parent.chatEnabled,
       voiceCommentsEnabled: parent.voiceCommentsEnabled,
       followupsEnabled: parent.followupsEnabled,
+      hotPricingThresholdSec: parent.hotPricingThresholdSec,
+      channels: parent.channels,
+      inactivityDays: parent.inactivityDays,
+      businessHourStart: parent.businessHourStart,
+      businessHourEnd: parent.businessHourEnd,
       expiresAt: parent.expiresAt,
       sentAt: new Date(),
       prospects: { create: { email, name: name || null, company, origin: from.origin ?? "EMAIL_GATE" } },
