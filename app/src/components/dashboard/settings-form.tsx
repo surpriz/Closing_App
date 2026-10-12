@@ -53,7 +53,7 @@ type Props = {
     extensionCallMoments: boolean;
     morningDigest: boolean;
     digestHour: number;
-    extensionConnected: boolean;
+    extensionConnected: { chrome: boolean; outlook: boolean };
     /** The seller's own booking page, offered on their links. */
     bookingUrl: string;
   };
@@ -266,9 +266,17 @@ export function SettingsForm({
           </Row>
           <Row
             hint={
-              notifications.extensionConnected
-                ? "Extension connectée. Une notification arrive quand un prospect ouvre votre proposition pour la première fois, revient après un silence, s'attarde sur les tarifs ou la lit à plusieurs. Jamais le soir ni le week-end, 4 par heure au plus."
-                : "Extension non connectée : installez-la plus bas pour recevoir une alerte pendant la lecture."
+              notifications.extensionConnected.chrome ||
+              notifications.extensionConnected.outlook
+                ? `${
+                    notifications.extensionConnected.chrome &&
+                    notifications.extensionConnected.outlook
+                      ? "Chrome et Outlook connectés."
+                      : notifications.extensionConnected.chrome
+                        ? "Chrome connecté."
+                        : "Outlook connecté."
+                  } Une alerte arrive quand un prospect ouvre votre proposition pour la première fois, revient après un silence, s'attarde sur les tarifs ou la lit à plusieurs. Jamais le soir ni le week-end, 4 par heure au plus.`
+                : "Rien de connecté : installez Chrome ou Outlook plus bas (Réglages avancés) pour être prévenu pendant la lecture."
             }
           >
             <span className="mb-1 block">
@@ -278,7 +286,7 @@ export function SettingsForm({
               <ChannelBox
                 name="extensionCallMoments"
                 value="on"
-                label="Notification de l'extension Chrome"
+                label="Notification dans Chrome, alerte dans le volet Outlook"
                 defaultChecked={notifications.extensionCallMoments}
                 onChange={markDirty}
               />

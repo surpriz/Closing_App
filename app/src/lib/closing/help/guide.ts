@@ -229,7 +229,7 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
   Dans un nouvel email, cliquez « Clozer » dans le ruban : un code s'affiche ; saisissez-le sur la page «
   Connecter Outlook » (Code affiché dans Outlook). L'informatique peut le déployer pour toute l'équipe via le
   centre d'administration Microsoft 365.
-- Connexions listées dans Réglages → Chrome et Outlook, avec « Révoquer ».
+- Connexions listées dans Réglages → Réglages avancés → Chrome et Outlook (une carte Chrome, une carte Outlook), avec « Révoquer » (confirmation demandée).
 - Pas encore couvert : pièces jointes depuis Drive ou OneDrive, pièces jointes transférées. Utilisez le bouton
   « C » ou déposez le PDF dans Clozer.
 - Autre messagerie : déposez le PDF dans Clozer, puis copiez le lien ou « Envoyer par email ».

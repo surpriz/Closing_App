@@ -415,7 +415,7 @@ export const FAQ: FaqSection[] = [
       {
         id: "deconnecter-outil",
         q: "Comment déconnecter l'extension ou Outlook ?",
-        a: "Réglages → Réglages avancés → Chrome et Outlook : vos connexions sont listées avec un bouton « Révoquer ».",
+        a: "Réglages → Réglages avancés → Chrome et Outlook : une carte Chrome, une carte Outlook, chacune avec ses connexions et un bouton « Révoquer » (une confirmation est demandée).",
       },
     ],
   },

@@ -14,6 +14,8 @@ import { getLanguageModel } from "@/lib/closing/ai/provider";
 import { getSellerPrefs } from "@/lib/closing/notify/preferences";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
 import { decryptSecret } from "@/lib/crypto";
+import { getEnv } from "@/lib/env";
+import { connectedClients } from "@/lib/extension-tokens";
 import { prisma } from "@/lib/db";
 import { isEmailConfigured } from "@/lib/email";
 import { isManagerRole, isOwnerRole } from "@/lib/roles";
@@ -123,7 +125,7 @@ export default async function SettingsPage() {
                 extensionCallMoments: prefs.extensionCallMoments,
                 morningDigest: prefs.morningDigest,
                 digestHour: prefs.digestHour,
-                extensionConnected: tokens.length > 0,
+                extensionConnected: connectedClients(tokens),
                 bookingUrl: prefs.bookingUrl ?? "",
               }}
               providers={{
@@ -139,6 +141,7 @@ export default async function SettingsPage() {
                   createdAt: token.createdAt.toISOString(),
                   lastUsedAt: token.lastUsedAt?.toISOString() ?? null,
                 }))}
+                chromeStoreUrl={getEnv().EXTENSION_STORE_URL ?? null}
               />
               {team && (
                 <TeamSettings

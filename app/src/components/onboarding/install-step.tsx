@@ -77,7 +77,7 @@ function ChromeInstall({ mailClient, connected, chromeStoreUrl }: Props) {
               ),
             },
             {
-              text: "Épinglez-la dans la barre du navigateur (icône puzzle), cliquez sur Clozer puis sur « Connecter ».",
+              text: "Épinglez-la dans la barre du navigateur (icône puzzle), cliquez sur Clozer puis sur « Connecter Clozer ».",
             },
             {
               text: `Ouvrez ${mailbox}, écrivez un email et joignez un PDF : Clozer le remplace aussitôt par un lien.`,
