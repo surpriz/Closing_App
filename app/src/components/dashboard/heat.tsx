@@ -94,6 +94,21 @@ export function HeatDot({
   );
 }
 
+/** The temperature as a small pill: dot + word, "Pas encore lu" without a score. */
+export function HeatPill({ tier, className }: { tier: EngagementTier | null; className?: string }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-0.5 text-small font-medium ring-1 ring-border",
+        className,
+      )}
+    >
+      <span className={cn("size-2 rounded-full", tier ? HEAT_BG[tier] : "bg-foreground/20")} aria-hidden />
+      {tier ? TIER_LABELS[tier] : "Pas encore lu"}
+    </span>
+  );
+}
+
 /** Pulsing hot dot: someone is reading right now. */
 export function LiveDot({ className }: { className?: string }) {
   return (

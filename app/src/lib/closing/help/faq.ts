@@ -144,12 +144,12 @@ export const FAQ: FaqSection[] = [
       {
         id: "expiration",
         q: "Comment fonctionne l'expiration d'un lien ?",
-        a: "Sur la fiche du deal, bloc Expiration : Aucune, 48 h, 7, 15 ou 30 jours, ou une date précise. Pour un devis ou une proposition, le prospect voit un décompte. Après l'échéance, le lien ne s'ouvre plus.\n\nLe réglage par défaut se fait dans Réglages → Vos liens (7, 15, 30 jours ou jamais).",
+        a: "Sur la fiche du deal, « Réglages du lien » → Expiration : Aucune, 48 h, 7, 15 ou 30 jours, ou une date précise. Pour un devis ou une proposition, le prospect voit un décompte. Après l'échéance, le lien ne s'ouvre plus.\n\nLe réglage par défaut se fait dans Réglages → Vos liens (7, 15, 30 jours ou jamais).",
       },
       {
         id: "prolonger",
         q: "Comment prolonger ou rouvrir un lien expiré ?",
-        a: "Fiche du deal → Expiration : +3 j, +7 j, +14 j ou « Autre date ». Le prospect d'un lien expiré peut aussi cliquer « Demander une prolongation » : vous êtes prévenu. Un lien expiré doit être prolongé avant toute relance.",
+        a: "Fiche du deal → « Réglages du lien » → Expiration : +3 j, +7 j, +14 j ou « Autre date ». Le prospect d'un lien expiré peut aussi cliquer « Demander une prolongation » : vous êtes prévenu. Un lien expiré doit être prolongé avant toute relance.",
       },
       {
         id: "reglages-lien",
@@ -175,12 +175,12 @@ export const FAQ: FaqSection[] = [
       {
         id: "temperature",
         q: "Que veut dire la température ?",
-        a: "Une note sur 100 (Chaud, Tiède, Froid) qui dit combien il lit. Elle est calculée sans IA : lecture récente, temps passé, visites répétées, plusieurs lecteurs, tarifs lus, lecture jusqu'au bout, demandes, rendez-vous. Le bloc « Pourquoi » de la fiche détaille chaque point.",
+        a: "Une note sur 100 (Chaud, Tiède, Froid) qui dit combien il lit. Elle est calculée sans IA : lecture récente, temps passé, visites répétées, plusieurs lecteurs, tarifs lus, lecture jusqu'au bout, demandes, rendez-vous. Sur la fiche, le repli « Pourquoi cette température » détaille chaque point.",
       },
       {
         id: "temperature-vs-ia",
         q: "Pourquoi un prospect chaud a une lecture IA prudente ?",
-        a: "Ce sont deux questions différentes. La température dit combien il lit ; la lecture IA dit ce que ça veut dire. Beaucoup de lectures courtes, ou trop tôt pour conclure : chaud, mais prudent. La fiabilité est faible quand il y a peu de signaux.",
+        a: "Ce sont deux questions différentes. La température dit combien il lit ; la lecture IA dit ce que ça veut dire. Beaucoup de lectures courtes, ou trop tôt pour conclure : chaud, mais prudent. La lecture IA mène la fiche ; la température reste en pastille, avec son détail dans « Pourquoi cette température ». « Sûre à N % » (dans « Détails de l'analyse ») est faible quand il y a peu de signaux.",
       },
       {
         id: "lu-en-profondeur",
@@ -190,7 +190,7 @@ export const FAQ: FaqSection[] = [
       {
         id: "plusieurs-lecteurs",
         q: "Comment savoir si plusieurs personnes lisent ?",
-        a: "Bloc « Qui lit » de la fiche : les personnes qui ont ouvert, regroupées par société ou réseau, avec leur rôle (Décideur, Finance / achats, Technique…), deviné depuis l'email ou choisi par vous. Deux lettres différentes = souvent deux personnes.",
+        a: "Bloc « Prospect » de la fiche : chaque contact avec ce qu'il a lu, puis « Autres lecteurs », regroupés par société ou réseau, avec leur rôle (Décideur, Finance / achats, Technique…), deviné depuis l'email ou choisi par vous. Deux lettres différentes = souvent deux personnes.",
       },
       {
         id: "pas-de-lecture",
@@ -242,7 +242,7 @@ export const FAQ: FaqSection[] = [
       {
         id: "infos-deal",
         q: "Où renseigner le montant, l'échéance ou le décideur ?",
-        a: "Fiche du deal → bloc Le deal : montant, devise, décision attendue avant le, décideur, son rôle et vos notes. Votre équipe le voit, pas le prospect. Les notes servent à l'analyse, jamais à la rédaction d'un message.",
+        a: "Fiche du deal → « Contexte du deal » (replié, colonne de droite) : montant, devise, décision attendue avant le, décideur, son rôle et vos notes. Votre équipe le voit, pas le prospect. Les notes servent à l'analyse, jamais à la rédaction d'un message.",
       },
       {
         id: "pause-deal",

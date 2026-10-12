@@ -105,9 +105,9 @@ export const PROSPECT_ROLE_LABELS: Record<ProspectRole, string> = {
 
 export const READER_ORIGIN_LABELS = {
   initial: "Destinataire",
-  forwarded_internal: "Repartagé en interne",
-  external: "Lecteur externe",
-  anonymous: "Non identifié",
+  forwarded_internal: "Transféré en interne",
+  external: "Hors de l'entreprise",
+  anonymous: "Sans email",
 } as const;
 
 export const SCORE_REASON_LABELS: Record<string, string> = {

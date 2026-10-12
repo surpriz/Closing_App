@@ -122,28 +122,37 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
 - Prospect qui a validé : bandeau « a validé… Confirmez la vente pour arrêter les relances » avec « Marquer
   gagné ».
 - Lien expiré : bandeau rouge, le prospect ne peut plus l'ouvrir ; prolongez-le pour le réactiver.
-- Lecture en direct, puis la lecture IA : « Ce qui compte », « Ce qui coince », action conseillée avec ses
-  faits sources, fiabilité, boutons « Réanalyser » (au plus toutes les deux minutes), « Préparer une relance
-  », « Voir la relance prête ». Sans analyse encore : « Analyser ce deal ».
-- Température mesurée (sur 100) et « Pourquoi » : chaque raison avec ses points.
+- Bandeau « En train de lire » dès qu'un lecteur est sur le document (rien n'est affiché sinon).
+- Le verdict, un seul bloc en tête : pastille de température (Chaud, Tiède, Froid, « Pas encore lu »),
+  « lu il y a… », nombre de lectures, puis la phrase de la lecture IA (ou, sans analyse, la température et
+  ses deux raisons les plus fortes), puis l'action conseillée (la même que sur Aujourd'hui) avec « Préparer
+  une relance », « Voir la relance prête » ou « Analyser ce deal ».
+  - Repli « Pourquoi cette température » : score sur 100, jauge, chaque raison avec ses points, « Comment la
+    température est calculée ».
+  - Repli « Détails de l'analyse » : date, « sûre à N % », stade et dynamique, « Ce qui compte », « Ce qui
+    coince » avec leurs faits sources, « À surveiller », « Réanalyser » (au plus toutes les deux minutes),
+    « Les N faits lus par l'IA ».
 - Relances (#relances), Questions du prospect (#questions, posées à l'assistant), Commentaires vocaux
   (#vocaux), Mot d'accueil (#mot-accueil, version perso pour ce prospect possible), Capsules par page
-  (#capsules), Activité (chronologie complète).
+  (#capsules), « Lecture détaillée » (repli : temps par page ou par passage de la vidéo, affiché seulement
+  quand il y a assez de lecture), Activité (chronologie complète).
 - Colonne de droite :
-  - Expiration (#expiration) : Aucune, 48 h, 7 jours, 15 jours, 30 jours ou Date précise ; boutons +3 j, +7 j,
-    +14 j, « Autre date », « Retirer ». Le prospect d'un lien expiré peut « Demander une prolongation » : vous
-    êtes prévenu.
-  - Qui lit (#qui-lit) : les personnes qui ont ouvert, regroupées par société ou réseau, avec leur rôle
-    (Décideur, Finance / achats, Technique…) deviné depuis l'email ou choisi par vous.
-  - Contacts (reçoivent les relances) : modifier un contact (email, nom, entreprise, téléphone mobile, «
-    Accepte d'être contacté sur WhatsApp ») ou « Ajouter un contact ». Pour un lien partagé : « Lecteurs »,
-    chacun avec son lien.
-  - Le deal (votre équipe le voit, pas le prospect) : Montant du deal, Devise, Décision attendue avant le,
-    Décideur, Son rôle, Vos notes. Les notes servent à l'analyse, jamais à la rédaction d'un message.
-  - « Mettre en pause jusqu'au » : le prospect revient vers vous plus tard, Clozer se tait d'ici là. «
-    Reprendre » pour annuler.
+  - Prospect : les contacts qui reçoivent les relances, chacun avec ce qu'il a lu (1re lecture, dernière,
+    durée), son rôle (Décideur, Finance / achats, Technique…) deviné depuis l'email ou choisi par vous ;
+    ouvrir un contact pour le modifier (email, nom, entreprise, téléphone mobile, « Accepte d'être contacté
+    sur WhatsApp ») ; « Ajouter un contact » ; puis « Autres lecteurs » (#qui-lit), regroupés par société ou
+    réseau. Pour un lien partagé : « Lecteurs », chacun avec son lien.
+  - Contexte du deal (replié ; votre équipe le voit, pas le prospect) : Montant du deal, Devise, Décision
+    attendue avant le, Décideur, Son rôle, Vos notes. Les notes servent à l'analyse, jamais à la rédaction
+    d'un message. Le résumé (montant · échéance · décideur) reste visible sur la ligne repliée.
+  - « Mettre en pause jusqu'au » (dans Contexte du deal) : le prospect revient vers vous plus tard, Clozer se
+    tait d'ici là. « Reprendre » pour annuler.
   - Noter un échange : Appel, Réponse reçue, Rendez-vous, Note, avec « Ce qui s'est dit » et « Quand » (vide =
     maintenant), bouton « Noter l'échange ». Clozer en tient compte et ne relance pas juste après.
+- Expiration : dans « Réglages du lien » (#expiration ouvre la fenêtre) : Aucune, 48 h, 7 jours, 15 jours, 30
+  jours ou Date précise ; boutons +3 j, +7 j, +14 j, « Autre date », « Retirer ». Un lien qui expire montre
+  « Expire dans … » sous le titre. Le prospect d'un lien expiré peut « Demander une prolongation » : vous
+  êtes prévenu.
 - Réglages du lien (« Chaque changement est enregistré tout de suite ») : Nom du lien, « Demander son email
   avant de lire », et ce que le prospect peut faire : « Valider ou demander un ajustement » (deux boutons en
   bas du document ; « Demander un devis » sous une vidéo), « Prendre rendez-vous », « Poser ses questions à

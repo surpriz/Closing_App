@@ -1,4 +1,4 @@
-import { ArrowLeft, ChevronRight, Hourglass, Plus } from "lucide-react";
+import { ArrowLeft, Hourglass } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -9,21 +9,22 @@ import { ArchiveLinkButton } from "@/components/dashboard/archive-link-button";
 import { ChatTranscript, type TranscriptConversation } from "@/components/dashboard/chat-transcript";
 import { CopyButton } from "@/components/dashboard/copy-button";
 import { DealContextForm } from "@/components/dashboard/deal-context-form";
-import { DealInsightPanel } from "@/components/dashboard/deal-insight-panel";
+import { DealContextSummaryDetails } from "@/components/dashboard/deal-context-details";
+import { dealContextSummary } from "@/components/dashboard/deal-context-summary";
+import { DealVerdict } from "@/components/dashboard/deal-verdict";
 import { DealStatusSelect } from "@/components/dashboard/deal-status-select";
 import { toFollowupItem, type FollowupItem } from "@/components/dashboard/followup-item";
 import { FollowupsPanel } from "@/components/dashboard/followups-panel";
-import { HEAT_BG } from "@/components/dashboard/heat";
 import {
   ALERT_TYPE_LABELS,
   CHANNEL_LABELS,
   DEAL_STATUS_LABELS,
   FOLLOWUP_TRIGGER_LABELS,
-  SCORE_REASON_LABELS,
+  INSIGHT_ACTION_LABELS,
   SELLER_ACTIVITY_LABELS,
   TIER_LABELS,
+  TIMING_LABELS,
 } from "@/components/dashboard/labels";
-import { ExpiryControl } from "@/components/dashboard/expiry-control";
 import { LinkCapsules, type LinkCapsuleRow } from "@/components/dashboard/link-capsules";
 import { LinkSettingsDialog } from "@/components/dashboard/link-settings-form";
 import { ShareReady } from "@/components/dashboard/share-ready";
@@ -32,12 +33,10 @@ import { WelcomeMessage } from "@/components/dashboard/welcome-message";
 import { LinkTestTools } from "@/components/dashboard/link-test-tools";
 import { LiveActivity } from "@/components/dashboard/live-activity";
 import { MarkWonButton } from "@/components/dashboard/mark-won-button";
-import { SectionTitle, StatLine, Surface } from "@/components/dashboard/page-header";
+import { SectionTitle, Surface } from "@/components/dashboard/page-header";
 import { PageTimeChart, type PageTimeDatum } from "@/components/dashboard/page-time-chart";
-import { ProspectForm } from "@/components/dashboard/prospect-form";
-import { ReadersMap } from "@/components/dashboard/readers-map";
+import { ProspectPanel } from "@/components/dashboard/prospect-panel";
 import { SellerActivityForm, SnoozeControl } from "@/components/dashboard/seller-activity-form";
-import { ScoreGuide, TemperatureGauge } from "@/components/dashboard/temperature";
 import { VoiceComments, type VoiceCommentItem } from "@/components/dashboard/voice-comments";
 import { ShareMailToolTip } from "@/components/onboarding/share-mail-tool-tip";
 import { getAppOrigin } from "@/lib/app-origin";
@@ -58,10 +57,13 @@ import { sellerBookingUrl } from "@/lib/closing/booking/link-booking";
 import { getLatestInsight } from "@/lib/closing/brain/latest";
 import { getReaderMap } from "@/lib/closing/committee/queries";
 import { ACTION_KIND } from "@/lib/closing/dashboard/feed";
-import { canEditDeal } from "@/lib/closing/dashboard/queries";
+import { computeNextAction, withAiAdvice, type OpenDealStatus } from "@/lib/closing/dashboard/next-action";
+import { canEditDeal, CONTACT_ACTIVITY_TYPES, PLANNED_FOLLOWUP_STATUSES } from "@/lib/closing/dashboard/queries";
+import { showsReadingDetail } from "@/lib/closing/dashboard/reading-detail";
 import { labelReaders } from "@/lib/closing/dashboard/readers";
 import { catchUpInBackground } from "@/lib/closing/catch-up";
 import { capsulesVisibleOnLink, resolveCapsules, WELCOME_PAGE } from "@/lib/closing/capsules/resolve";
+import { hasReason } from "@/lib/closing/engagement/reasons";
 import { freshEngagementScore } from "@/lib/closing/engagement/refresh-score";
 import { getLinkLiveState } from "@/lib/closing/live";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
@@ -71,7 +73,6 @@ import { formatDate, formatDuration, formatRelative } from "@/lib/format";
 import { isManagerRole } from "@/lib/roles";
 import { requireWorkspace } from "@/lib/session";
 import { testToolsEnabled } from "@/lib/test-tools";
-import { cn } from "@/lib/utils";
 
 export async function generateMetadata({ params }: PageProps<"/links/[id]">): Promise<Metadata> {
   const { id } = await params;
@@ -102,6 +103,7 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
           docType: true,
           displayTitle: true,
           aiProcessedAt: true,
+          durationMs: true,
           pages: { select: { pageNumber: true, tags: true, summary: true }, orderBy: { pageNumber: "asc" } },
         },
       },
@@ -247,6 +249,45 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
   });
 
   const reasons = Array.isArray(score?.reasons) ? (score.reasons as unknown as EngagementReason[]) : [];
+  const opened = analytics.viewCount > 0;
+  const readingNow = live.readers.length > 0;
+  // Same rule as the "À traiter" row: the analysis has the last word when it is current
+  const insightCurrent = !!insight && (!link.lastActivityAt || insight.createdAt >= link.lastActivityAt);
+  const openStatus = (["OPEN", "CHANGE_REQUESTED", "VALIDATED"] as const).find((status) => status === link.dealStatus);
+  const nextAction = withAiAdvice(
+    computeNextAction({
+      now: new Date(),
+      dealStatus: (openStatus ?? "OPEN") as OpenDealStatus,
+      readingNow,
+      opened,
+      tier: opened ? (score?.tier ?? null) : null,
+      pricingFocus: hasReason(score?.reasons, "pricing_focus"),
+      lastActivityAt: link.lastActivityAt,
+      sentAt: link.sentAt ?? link.createdAt,
+      followupsEnabled: link.followupsEnabled,
+      nextFollowup:
+        followups
+          .filter((f) => (PLANNED_FOLLOWUP_STATUSES as readonly string[]).includes(f.status))
+          .sort((a, b) => a.scheduledFor.getTime() - b.scheduledFor.getTime())[0] ?? null,
+      draftToReview: followups.some((f) => f.status === "DRAFT"),
+      lastSellerContactAt:
+        sellerActivities.find((a) => (CONTACT_ACTIVITY_TYPES as readonly string[]).includes(a.type))?.occurredAt ?? null,
+      snoozedUntil: link.snoozedUntil,
+      meetingBookedAt: link.meetingBookedAt,
+      meetingAt: link.meetingAt,
+      quoteRequestedAt: link.quoteRequestedAt,
+    }),
+    insightCurrent && insight
+      ? { type: insight.recommendedAction.type, timing: insight.recommendedAction.timing, priority: insight.priority }
+      : null,
+    { action: INSIGHT_ACTION_LABELS, timing: TIMING_LABELS },
+  );
+  const showsDetail = showsReadingDetail({
+    kind: link.document.kind,
+    durationMs: link.document.durationMs,
+    viewCount: analytics.viewCount,
+    pagesWithTime: chartData.filter((page) => page.totalSeconds > 0).length,
+  });
 
   const conversations = new Map<string, TranscriptConversation>();
   for (const row of [...chatRows].reverse()) {
@@ -485,6 +526,17 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
                 </a>
                 <CopyButton value={url} />
               </span>
+              {link.expiresAt && canEdit && (
+                <a
+                  href="#expiration"
+                  className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-small ring-1 ring-border hover:text-foreground hover:underline ${
+                    link.expiresAt <= now ? "text-destructive" : ""
+                  }`}
+                >
+                  <Hourglass className="size-3.5" aria-hidden />
+                  {link.expiresAt <= now ? `Expiré ${formatRelative(link.expiresAt, now)}` : `Expire ${formatRelative(link.expiresAt, now)}`}
+                </a>
+              )}
             </p>
           </div>
           {canEdit ? (
@@ -537,118 +589,35 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
             video={link.document.kind === "VIDEO"}
           />
 
-          <DealInsightPanel
+          <DealVerdict
             linkId={link.id}
             insight={insight}
+            score={score ? { tier: score.tier, score: score.score, reasons } : null}
+            opened={opened}
+            readingNow={readingNow}
+            lastActivityAt={analytics.lastActivityAt}
+            viewCount={analytics.viewCount}
+            totalDurationMs={analytics.totalDurationMs}
+            action={nextAction}
             recipientName={insightRecipient ? (insightRecipient.name ?? insightRecipient.email) : null}
             aiAvailable={getLanguageModel("analyze") !== null}
             readSince={!!insight && !!link.lastActivityAt && link.lastActivityAt > insight.createdAt}
             draftWaiting={followups.some((f) => f.trigger === "AI_DECISION" && (f.status === "DRAFT" || f.status === "PENDING"))}
             now={now}
+            scoreGuide={{
+              hasPages: link.document.kind !== "URL",
+              hasPricing: link.document.pages.some((page) => page.tags.includes("PRICING")),
+              pricingThresholdSec: link.hotPricingThresholdSec ?? settings.hotPricingThresholdSec,
+            }}
           />
-
-          <Surface className="overflow-hidden">
-            <div className="grid grid-cols-1 md:grid-cols-[16rem_minmax(0,1fr)]">
-              <div className="relative space-y-3 border-b border-border p-5 md:border-r md:border-b-0">
-                <span
-                  aria-hidden
-                  className={cn(
-                    "absolute inset-y-0 left-0 w-1 origin-bottom animate-heat-fill motion-reduce:animate-none",
-                    score ? HEAT_BG[score.tier] : "bg-foreground/10",
-                  )}
-                />
-                <p className="text-sm text-muted-foreground">Température mesurée</p>
-                <p className="text-[2rem] leading-none font-medium tracking-[-0.03em] [font-stretch:88%]">
-                  {score ? TIER_LABELS[score.tier] : "Pas encore lu"}
-                </p>
-                {score && (
-                  <>
-                    <p className="text-sm text-muted-foreground">
-                      <span className="font-mono font-semibold text-foreground tabular-nums">{score.score}</span> sur 100
-                    </p>
-                    <TemperatureGauge tier={score.tier} score={score.score} />
-                  </>
-                )}
-                {insight?.scoreNuance && <p className="text-sm text-muted-foreground">{insight.scoreNuance}</p>}
-              </div>
-              <div className="p-5">
-                <p className="mb-3 text-sm text-muted-foreground">Pourquoi</p>
-                {reasons.length === 0 ? (
-                  <p className="text-body">
-                    Rien encore : la température monte dès que le prospect ouvre son lien et lit.
-                  </p>
-                ) : (
-                  <ul className="grid gap-x-8 gap-y-2 text-body sm:grid-cols-2">
-                    {reasons.map((reason) => (
-                      <li key={reason.code} className="flex items-baseline justify-between gap-3">
-                        <span>
-                          {SCORE_REASON_LABELS[reason.code] ?? reason.code}
-                          {reason.detail && <span className="text-muted-foreground"> ({reason.detail})</span>}
-                        </span>
-                        <span className="text-sm text-muted-foreground tabular-nums">+{reason.weight}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                {analytics.viewCount > 0 && (
-                  <div className="mt-5 border-t border-border pt-4">
-                    <StatLine
-                      items={[
-                        { value: analytics.viewCount, label: analytics.viewCount === 1 ? "lecture" : "lectures" },
-                        { value: formatDuration(analytics.totalDurationMs), label: "de lecture" },
-                        ...(live.readers.length > 0
-                          ? [{ value: "en ce moment", label: "lu", labelFirst: true }]
-                          : analytics.lastActivityAt
-                            ? [{ value: formatRelative(analytics.lastActivityAt, now), label: "lu", labelFirst: true }]
-                            : []),
-                      ]}
-                    />
-                  </div>
-                )}
-                <ScoreGuide
-                  hasPages={link.document.kind !== "URL"}
-                  hasPricing={link.document.pages.some((page) => page.tags.includes("PRICING"))}
-                  pricingThresholdSec={link.hotPricingThresholdSec ?? settings.hotPricingThresholdSec}
-                />
-              </div>
-            </div>
-          </Surface>
-
         </div>
 
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_20rem]">
           <div className="space-y-10">
-            {link.document.kind !== "URL" && (
-              <section>
-                <SectionTitle
-                  hint="pour ce prospect"
-                  action={
-                    <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                      <span className="size-2.5 rounded-sm bg-heat-warm" /> {isVideo ? "passage sur les tarifs" : "page de tarifs"}
-                    </span>
-                  }
-                >
-                  {isVideo ? "Temps passé sur chaque passage de la vidéo" : "Temps passé par page"}
-                </SectionTitle>
-                <Surface className="p-4">
-                  <PageTimeChart data={chartData} video={isVideo} />
-                </Surface>
-              </section>
-            )}
-
             <section id="relances" className="scroll-mt-20">
               <SectionTitle>Relances</SectionTitle>
               <Surface className="p-4">
-                <FollowupsPanel
-                  followups={followupItems}
-                  emptyHint={
-                    insight?.byAi
-                      ? insight.recommendedAction.type === "send_followup"
-                        ? `L'analyse conseille de relancer, mais ce n'est pas encore le moment (${insight.recommendedAction.why}). Vous pouvez aussi cliquer « Préparer une relance » plus haut.`
-                        : `L'analyse conseille plutôt : ${insight.recommendedAction.why} Besoin d'écrire quand même ? « Préparer une relance » plus haut.`
-                      : null
-                  }
-                />
+                <FollowupsPanel followups={followupItems} />
               </Surface>
             </section>
 
@@ -693,7 +662,23 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
               </section>
             )}
 
-            {testToolsEnabled() && <LinkTestTools linkId={link.id} />}
+            {showsDetail && (
+              <details className="group">
+                <summary className="flex cursor-pointer list-none items-baseline gap-2 text-body font-semibold outline-none focus-visible:underline [&::-webkit-details-marker]:hidden">
+                  <span className="text-muted-foreground transition-transform group-open:rotate-90">›</span>
+                  Lecture détaillée
+                  <span className="font-normal text-muted-foreground">
+                    {isVideo ? "temps passé sur chaque passage de la vidéo" : "temps passé par page"}
+                  </span>
+                </summary>
+                <Surface className="mt-3 p-4">
+                  <p className="mb-2 flex items-center justify-end gap-1.5 text-sm text-muted-foreground">
+                    <span className="size-2.5 rounded-sm bg-heat-warm" /> {isVideo ? "passage sur les tarifs" : "page de tarifs"}
+                  </p>
+                  <PageTimeChart data={chartData} video={isVideo} />
+                </Surface>
+              </details>
+            )}
 
             <section>
               <SectionTitle>Activité</SectionTitle>
@@ -701,30 +686,11 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
                 <ActivityTimeline items={timeline} />
               </div>
             </section>
+
+            {testToolsEnabled() && <LinkTestTools linkId={link.id} />}
           </div>
 
           <aside className="space-y-10">
-            <section id="expiration" className="scroll-mt-20">
-              <SectionTitle hint="le lien se verrouille ensuite">Expiration</SectionTitle>
-              <Surface>
-                <ExpiryControl
-                  linkId={link.id}
-                  expiresAt={link.expiresAt?.toISOString() ?? null}
-                  requests={
-                    link.expiresAt
-                      ? actions.filter((a) => a.type === "REQUEST_EXTENSION" && a.createdAt >= link.expiresAt!).length
-                      : 0
-                  }
-                  canEdit={canEdit}
-                />
-              </Surface>
-            </section>
-
-            <section id="qui-lit" className="scroll-mt-20">
-              <SectionTitle hint="qui a ouvert la proposition">Qui lit</SectionTitle>
-              <ReadersMap linkId={link.id} map={readerMap} now={now} />
-            </section>
-
             {link.shared ? (
               <section id="lecteurs" className="scroll-mt-20">
                 <SectionTitle hint="chacun a son lien et son suivi">Lecteurs</SectionTitle>
@@ -733,55 +699,23 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
                 </Surface>
               </section>
             ) : (
-            <section>
-              <SectionTitle hint="reçoivent les relances">Contacts</SectionTitle>
-            <Surface>
-              <div className="divide-y divide-border">
-                {link.prospects.map((prospect) => (
-                  <details key={prospect.id} className="group px-4 py-3">
-                    <summary className="flex cursor-pointer list-none items-start justify-between gap-3 outline-none focus-visible:underline [&::-webkit-details-marker]:hidden">
-                      <span className="min-w-0 text-sm">
-                        <span className="font-medium">{prospect.name ?? prospect.email}</span>
-                        {prospect.unsubscribedAt && <span className="ml-2 text-destructive">désinscrit</span>}
-                        <span className="block truncate text-muted-foreground">
-                          {[
-                            prospect.name ? prospect.email : null,
-                            prospect.phoneE164,
-                            prospect.whatsappOptInAt ? "WhatsApp accepté" : null,
-                          ]
-                            .filter(Boolean)
-                            .join(", ")}
-                        </span>
-                      </span>
-                      <ChevronRight className="mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90" />
-                    </summary>
-                    <ProspectForm
-                      linkId={link.id}
-                      prospect={{
-                        id: prospect.id,
-                        email: prospect.email,
-                        name: prospect.name,
-                        company: prospect.company,
-                        phoneE164: prospect.phoneE164,
-                        whatsappOptIn: !!prospect.whatsappOptInAt,
-                      }}
-                    />
-                  </details>
-                ))}
-                <details className="group px-4 py-3">
-                  <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-medium outline-none focus-visible:underline [&::-webkit-details-marker]:hidden">
-                    <Plus className="size-4" /> Ajouter un contact
-                  </summary>
-                  <ProspectForm linkId={link.id} />
-                </details>
-              </div>
-            </Surface>
-            </section>
+              <section>
+                <SectionTitle hint="reçoit les relances, et qui a lu">Prospect</SectionTitle>
+                <ProspectPanel linkId={link.id} prospects={link.prospects} map={readerMap} now={now} />
+              </section>
             )}
 
             <section>
-              <SectionTitle hint="votre équipe le voit, pas le prospect">Le deal</SectionTitle>
-              <Surface>
+              <DealContextSummaryDetails
+                summary={dealContextSummary({
+                  amountCents: link.dealAmountCents,
+                  currency: link.dealCurrency,
+                  decisionDeadline: link.decisionDeadline,
+                  decisionMakerName: link.decisionMakerName,
+                  decisionMakerRole: link.decisionMakerRole,
+                })}
+                paused={!!link.snoozedUntil && link.snoozedUntil > now}
+              >
                 <div className="divide-y divide-border">
                   <DealContextForm
                     linkId={link.id}
@@ -810,7 +744,7 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
                     snoozedUntil={link.snoozedUntil && link.snoozedUntil > now ? link.snoozedUntil.toISOString() : null}
                   />
                 </div>
-              </Surface>
+              </DealContextSummaryDetails>
             </section>
 
             <section>

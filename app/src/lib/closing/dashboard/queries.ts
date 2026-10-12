@@ -15,9 +15,9 @@ import type { OpenDealStatus } from "./next-action";
  */
 
 /** Follow-ups that will go out without the seller doing anything. */
-const PLANNED_FOLLOWUP_STATUSES = ["PENDING", "GENERATED", "SCHEDULED"] as const;
+export const PLANNED_FOLLOWUP_STATUSES = ["PENDING", "GENERATED", "SCHEDULED"] as const;
 /** Kinds of logged exchange that mean the seller and the prospect talked. */
-const CONTACT_ACTIVITY_TYPES = ["CALL", "EMAIL_REPLY_RECEIVED", "MEETING", "MANUAL_SEND"] as const;
+export const CONTACT_ACTIVITY_TYPES = ["CALL", "EMAIL_REPLY_RECEIVED", "MEETING", "MANUAL_SEND"] as const;
 const FEED_TAKE = 15;
 /** Open deals loaded for the temperature bar and the "À traiter" list. */
 const DEALS_TAKE = 200;

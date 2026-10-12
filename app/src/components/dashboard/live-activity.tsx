@@ -31,15 +31,8 @@ export function LiveActivity({
 }) {
   const { readers } = useLivePoll(`/api/links/${linkId}/live`, initial);
 
-  if (readers.length === 0) {
-    return (
-      <p className="flex items-center gap-2 text-sm text-muted-foreground">
-        <span className="size-1.5 rounded-full bg-foreground/25" />
-        Personne ne lit en ce moment. Dès qu&apos;un lecteur ouvre le document, ça s&apos;affiche ici (en
-        quelques secondes).
-      </p>
-    );
-  }
+  // Nothing to say while nobody reads: the poll above still refreshes the page
+  if (readers.length === 0) return null;
 
   return (
     <div

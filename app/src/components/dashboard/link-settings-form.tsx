@@ -1,7 +1,7 @@
 "use client";
 
 import { Settings2 } from "lucide-react";
-import { useState, type ComponentProps } from "react";
+import { useEffect, useState, type ComponentProps } from "react";
 import { toast } from "sonner";
 
 import { renameLink } from "@/app/(dashboard)/links/actions";
@@ -44,6 +44,16 @@ function LinkName({ linkId, name }: { linkId: string; name: string }) {
 
 export function LinkSettingsDialog({ name, ...panel }: Props) {
   const [open, setOpen] = useState(false);
+
+  // Expiration lives in this dialog: an email or the header chip links to #expiration
+  useEffect(() => {
+    const sync = () => {
+      if (window.location.hash === "#expiration") setOpen(true);
+    };
+    sync();
+    window.addEventListener("hashchange", sync);
+    return () => window.removeEventListener("hashchange", sync);
+  }, []);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
