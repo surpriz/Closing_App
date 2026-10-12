@@ -70,7 +70,8 @@ export async function refreshEngagementScore(linkId: string, now = new Date()) {
       : link.document.numPages
         ? (totals._max.maxPageReached ?? 0) / link.document.numPages
         : 0,
-    isVideo,
+    // A video pitch is watched too, its completion coming from the tenths reached
+    isVideo: isVideo || link.document.kind === "VIDEO",
     externalMs: external._sum.valueMs ?? 0,
     meetingClicked: meetingClicks > 0,
     meetingBooked: link.meetingBookedAt !== null,
