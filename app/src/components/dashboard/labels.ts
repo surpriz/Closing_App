@@ -10,7 +10,7 @@ import type {
   SellerAlertChannel,
   SellerAlertType,
 } from "@/generated/prisma/enums";
-import type { HealthSignal } from "@/lib/closing/dashboard/team";
+import type { DealHealth, HealthSignal } from "@/lib/closing/dashboard/team";
 
 export const DEAL_STATUS_LABELS: Record<DealStatus, string> = {
   OPEN: "En cours",
@@ -192,11 +192,30 @@ export const ROLE_LABELS = {
   member: "Membre",
 } as const;
 
-export const roleLabel = (role: string) => ROLE_LABELS[role as keyof typeof ROLE_LABELS] ?? role;
+export const roleLabel = (role: string) =>
+  ROLE_LABELS[role as keyof typeof ROLE_LABELS] ?? role;
 
-const dayFormat = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" });
+const dayFormat = new Intl.DateTimeFormat("fr-FR", {
+  day: "numeric",
+  month: "short",
+});
 
 /** Why a deal sits in its column on the team page. */
+/** Where a deal stands for the team: lifecycle words, so the temperature keeps its own. */
+export const TEAM_HEALTH_LABELS: Record<DealHealth, string> = {
+  hot: "Ça avance",
+  at_risk: "Ça glisse",
+  dead: "À classer",
+  steady: "Suit son cours",
+};
+
+export const TEAM_HEALTH_HINTS: Record<DealHealth, string> = {
+  hot: "à suivre de près",
+  at_risk: "en train de refroidir",
+  dead: "à relancer une dernière fois ou à classer",
+  steady: "",
+};
+
 export function describeHealthSignal(signal: HealthSignal) {
   switch (signal.code) {
     case "reading_now":
@@ -204,7 +223,7 @@ export function describeHealthSignal(signal: HealthSignal) {
     case "change_requested":
       return "Ajustement demandé";
     case "tier_hot":
-      return "Score chaud";
+      return "Température chaude";
     case "ai_priority":
       return "Prioritaire selon l'analyse";
     case "pricing_focus":

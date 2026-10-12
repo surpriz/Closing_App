@@ -184,7 +184,7 @@ export const FAQ: FaqSection[] = [
       },
       {
         id: "lu-en-profondeur",
-        q: "Que veut dire « lu en profondeur » ?",
+        q: "Que veut dire « lu attentivement » ?",
         a: "La moitié du PDF avec au moins 30 secondes de lecture, une minute sur un lien web, ou une longue lecture des tarifs. C'est une étape de l'entonnoir « Vos envois » sur Aujourd'hui.",
       },
       {
@@ -480,7 +480,7 @@ export const FAQ: FaqSection[] = [
       {
         id: "vue-equipe",
         q: "Comment lire la vue équipe ?",
-        a: "Page Équipe (propriétaires et admins) : les chiffres En cours, Chauds, À risque, Morts et Pipeline, un tableau « Par commercial » (cliquez pour filtrer) et les colonnes Chauds, À risque, Morts.",
+        a: "Page Équipe (propriétaires et admins), visible dès qu'un deuxième membre a rejoint l'espace : les chiffres En cours, Ça avance, Ça glisse, À classer et Pipeline, un tableau « Par commercial » (cliquez pour filtrer) et trois colonnes : Ça avance (à suivre de près), Ça glisse (en train de refroidir), À classer (à relancer une dernière fois ou à classer). La température (Chaud, Tiède, Froid) reste celle d'Aujourd'hui.",
       },
       {
         id: "reglages-grises",

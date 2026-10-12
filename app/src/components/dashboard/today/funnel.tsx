@@ -12,7 +12,7 @@ function counted(count: number, [one, many]: Words) {
 const STEPS: { key: keyof Funnel; words: Words }[] = [
   { key: "sent", words: ["envoyé", "envoyés"] },
   { key: "opened", words: ["ouvert", "ouverts"] },
-  { key: "deep", words: ["lu en profondeur", "lus en profondeur"] },
+  { key: "deep", words: ["lu attentivement", "lus attentivement"] },
   { key: "validated", words: ["validé", "validés"] },
 ];
 

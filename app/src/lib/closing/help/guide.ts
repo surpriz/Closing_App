@@ -63,8 +63,8 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
 - À traiter : vos deals du plus urgent au moins urgent (15 affichés), avec leur état (Chaud, Tiède, Froid, Pas
   encore ouvert, Validé…), l'action conseillée et un bouton pour copier le lien, ou « Marquer gagné » quand le
   prospect a validé.
-- Vos envois : entonnoir envoyés, ouverts, lus en profondeur, validés, sur 7 jours, 30 jours ou Tout. « Lu en
-  profondeur » = la moitié du PDF avec au moins 30 s de lecture, une minute sur un lien web, ou une longue
+- Vos envois : entonnoir envoyés, ouverts, lus attentivement, validés, sur 7 jours, 30 jours ou Tout. « Lu
+  attentivement » = la moitié du PDF avec au moins 30 s de lecture, une minute sur un lien web, ou une longue
   lecture des tarifs.
 - Colonne de droite : Deals en cours (répartition par température), Relances à valider (mène à la fiche,
   rubrique Relances), Ce qui s'est passé, Relances à venir.
@@ -268,8 +268,10 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
   documents, invite et retire des membres.
 - Propriétaire : comme un admin, plus les liens sans commercial attitré, la possibilité de nommer un autre
   propriétaire et de supprimer l'espace.
-- Page Équipe (/equipe) : chiffres En cours, Chauds, À risque, Morts, Pipeline ; tableau « Par commercial »
-  (cliquez pour filtrer) ; colonnes Chauds, À risque, Morts.
+- Page Équipe (/equipe) : chiffres En cours, Ça avance, Ça glisse, À classer, Pipeline ; tableau « Par
+  commercial » (cliquez pour filtrer) ; colonnes Ça avance (à suivre de près), Ça glisse (en train de
+  refroidir), À classer (à relancer une dernière fois ou à classer). Ces mots décrivent la vie du deal ; la
+  température (Chaud, Tiède, Froid) reste celle du dashboard.
 - Inviter : « Inviter un commercial » ou Réglages → Équipe (/settings#equipe), email + rôle (Membre ou Admin),
   « Inviter ». Changer un rôle, « Retirer » un membre, annuler une invitation.
 
