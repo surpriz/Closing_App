@@ -21,6 +21,12 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  // Better Auth admin plugin. "admin" is the platform admin, not a workspace role.
+  role       String?
+  banned     Boolean   @default(false)
+  banReason  String?
+  banExpires DateTime?
+
   sessions    Session[]
   accounts    Account[]
   members     Member[]
@@ -48,6 +54,8 @@ model Session {
   userId               String
   user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   activeOrganizationId String?
+  // Set when the platform admin signed in as this user
+  impersonatedBy       String?
 
   @@index([userId])
   @@map("sessions")
@@ -103,6 +111,10 @@ model Organization {
   stripeCustomerId String?            @unique
   plan             String             @default("free")
   extensionTokens  ExtensionToken[]
+
+  // Suspended by the platform admin: members locked out, cron and public links stopped
+  suspendedAt     DateTime?
+  suspendedReason String?
 
   notificationPreferences NotificationPreference[]
   helpMessages            HelpMessage[]
@@ -173,6 +185,52 @@ model ExtensionPairing {
   createdAt       DateTime @default(now())
 
   @@map("extension_pairings")
+}
+
+// =============================================================================
+// Platform admin
+// =============================================================================
+
+// Banned emails: no account can be created with them, even after deletion
+model BlockedEmail {
+  email       String   @id
+  reason      String?
+  createdById String
+  createdAt   DateTime @default(now())
+
+  @@map("blocked_emails")
+}
+
+// Emails that may sign up while sign-ups are invite-only
+model AllowedEmail {
+  email     String   @id
+  createdAt DateTime @default(now())
+
+  @@map("allowed_emails")
+}
+
+// One row, id "singleton"
+model PlatformSettings {
+  id         String   @id @default("singleton")
+  signupMode String   @default("open") // open | invite_only
+  updatedAt  DateTime @updatedAt
+
+  @@map("platform_settings")
+}
+
+model AdminAuditLog {
+  id         String   @id @default(cuid())
+  actorId    String
+  action     String
+  targetType String // user | organization | settings
+  targetId   String?
+  reason     String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([targetType, targetId])
+  @@index([createdAt])
+  @@map("admin_audit_logs")
 }
 
 // =============================================================================
