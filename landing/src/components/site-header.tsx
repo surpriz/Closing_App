@@ -3,6 +3,7 @@ import Link from "next/link";
 import { PrimaryCta } from "./cta";
 import { APP_URL } from "./links";
 import { Logo } from "./logo";
+import { MobileMenu } from "./mobile-menu";
 
 const NAV = [
   { href: "/#comment", label: "Comment ça marche" },
@@ -37,6 +38,7 @@ export function SiteHeader() {
             Se connecter
           </a>
           <PrimaryCta size="md">Essayer</PrimaryCta>
+          <MobileMenu items={NAV} />
         </div>
       </div>
     </header>
