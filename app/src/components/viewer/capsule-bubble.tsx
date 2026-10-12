@@ -26,8 +26,16 @@ type Props = {
   labels: ViewerLabels;
   senderName: string | null;
   getViewId: () => string | null;
+  /** The call-to-action bar is at the bottom: the bubble sits above it. */
   ctaVisible: boolean;
+  /** Another sheet (chat, voice note) is open: the bubble steps aside. */
+  sheetOpen?: boolean;
+  /** Tells the viewer when the clip itself is open or closed. */
+  onOpenChange?: (open: boolean) => void;
 };
+
+/** How long the hook text stays next to the avatar before folding to the avatar alone. */
+const FRESH_MS = 10_000;
 
 function readDismissed(slug: string) {
   if (typeof window === "undefined") return [];
@@ -45,7 +53,16 @@ function readDismissed(slug: string) {
  */
 const noSubscribe = () => () => {};
 
-export function CapsuleBubble({ capsule, slug, labels, senderName, getViewId, ctaVisible }: Props) {
+export function CapsuleBubble({
+  capsule,
+  slug,
+  labels,
+  senderName,
+  getViewId,
+  ctaVisible,
+  sheetOpen = false,
+  onOpenChange,
+}: Props) {
   // Closed clips live in localStorage: render nothing on the server (the web viewer is server-rendered)
   const inBrowser = useSyncExternalStore(noSubscribe, () => true, () => false);
   const [dismissed, setDismissed] = useState(() => readDismissed(slug));
@@ -74,6 +91,7 @@ export function CapsuleBubble({ capsule, slug, labels, senderName, getViewId, ct
 
   const expand = (target: ViewerCapsule) => {
     setOpen(target);
+    onOpenChange?.(true);
     if (!counted.current.has(target.id)) {
       counted.current.add(target.id);
       void fetch(`/api/v/${slug}/capsules/${target.id}/play`, {
@@ -88,6 +106,7 @@ export function CapsuleBubble({ capsule, slug, labels, senderName, getViewId, ct
   const close = () => {
     if (open) dismiss(open.id);
     setOpen(null);
+    onOpenChange?.(false);
   };
 
   // iOS only plays with sound when play() follows the tap, so start as soon as the player mounts
@@ -108,7 +127,14 @@ export function CapsuleBubble({ capsule, slug, labels, senderName, getViewId, ct
       >
         <header className="flex items-center gap-3">
           <p className="min-w-0 flex-1 truncate text-sm font-semibold">{from}</p>
-          <Button variant="ghost" size="icon-sm" onClick={close} aria-label={labels.capsuleClose} autoFocus>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-11 sm:size-9"
+            onClick={close}
+            aria-label={labels.capsuleClose}
+            autoFocus
+          >
             <X />
           </Button>
         </header>
@@ -132,26 +158,67 @@ export function CapsuleBubble({ capsule, slug, labels, senderName, getViewId, ct
     );
   }
 
-  if (!inBrowser || !capsule || dismissed.includes(capsule.id)) return null;
+  if (!inBrowser || !capsule || sheetOpen || dismissed.includes(capsule.id)) return null;
+
+  return (
+    <Bubble
+      // Remounted for each clip: the hook text shows fresh again, then folds
+      key={capsule.id}
+      capsule={capsule}
+      from={from}
+      initials={initials}
+      labels={labels}
+      ctaVisible={ctaVisible}
+      onOpen={() => expand(capsule)}
+      onDismiss={() => dismiss(capsule.id)}
+    />
+  );
+}
+
+type BubbleProps = {
+  capsule: ViewerCapsule;
+  from: string;
+  initials: string;
+  labels: ViewerLabels;
+  ctaVisible: boolean;
+  onOpen: () => void;
+  onDismiss: () => void;
+};
+
+/**
+ * Fresh for a few seconds: a big still with the hook text next to it. Then
+ * the avatar alone, small enough to leave the bar and the page in peace.
+ */
+function Bubble({ capsule, from, initials, labels, ctaVisible, onOpen, onDismiss }: BubbleProps) {
+  const [fresh, setFresh] = useState(true);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setFresh(false), FRESH_MS);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   return (
     <div
-      key={capsule.id}
       className={cn(
         "fixed left-4 z-30 flex animate-rise items-center gap-2",
-        ctaVisible ? "bottom-[calc(7.5rem+env(safe-area-inset-bottom))] sm:bottom-24 lg:bottom-6" : "bottom-6",
+        ctaVisible ? "bottom-[calc(5.5rem+env(safe-area-inset-bottom))]" : "bottom-[calc(1.5rem+env(safe-area-inset-bottom))]",
       )}
     >
       {/* A few pulses to catch the eye, then still */}
-      <span
-        aria-hidden
-        className="pointer-events-none absolute left-0 size-16 rounded-full bg-brand/40 motion-safe:animate-ping motion-safe:[animation-iteration-count:3] sm:size-20"
-      />
+      {fresh && (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute left-0 size-16 rounded-full bg-brand/40 motion-safe:animate-ping motion-safe:[animation-iteration-count:3] sm:size-20"
+        />
+      )}
       <button
         type="button"
-        onClick={() => expand(capsule)}
+        onClick={onOpen}
         aria-label={`${labels.capsuleOpen} · ${from}`}
-        className="group relative size-16 shrink-0 overflow-hidden rounded-full bg-brand shadow-lg ring-4 ring-card outline-none focus-visible:ring-brand/40 sm:size-20"
+        className={cn(
+          "group relative shrink-0 overflow-hidden rounded-full bg-brand shadow-lg ring-card outline-none transition-[width,height] duration-300 focus-visible:ring-brand/40",
+          fresh ? "size-16 ring-4 sm:size-20" : "size-11 ring-2 sm:size-14",
+        )}
       >
         {/* No autoplaying teaser: it would download the whole clip for every reader, tap or not */}
         {capsule.kind === "VIDEO" && capsule.poster ? (
@@ -161,21 +228,29 @@ export function CapsuleBubble({ capsule, slug, labels, senderName, getViewId, ct
           // Older clips without a still: the first frame, fetched as a small range
           <video src={`${capsule.src}#t=0.1`} muted playsInline preload="metadata" className="size-full object-cover" />
         ) : (
-          <Avatar initials={initials} playing className="size-full" />
+          <Avatar initials={initials} playing={fresh} className={cn("size-full", !fresh && "text-sm")} />
         )}
         <span className="absolute inset-0 flex items-center justify-center bg-black/10 transition-colors group-hover:bg-black/25">
-          <Play className="size-6 fill-white text-white drop-shadow" aria-hidden />
+          <Play className={cn("fill-white text-white drop-shadow", fresh ? "size-6" : "size-4")} aria-hidden />
         </span>
       </button>
-      <div className="flex max-w-[min(15rem,calc(100vw-9rem))] items-start gap-1 rounded-2xl bg-card py-2 pr-1 pl-3 text-sm shadow-lg ring-1 ring-border">
-        <button type="button" onClick={() => expand(capsule)} className="min-w-0 text-left">
-          <span className="block text-xs text-muted-foreground">{from}</span>
-          <span className="line-clamp-2">{capsule.hookText ?? labels.capsuleOpen}</span>
-        </button>
-        <Button variant="ghost" size="icon-xs" onClick={() => dismiss(capsule.id)} aria-label={labels.capsuleDismiss}>
-          <X />
-        </Button>
-      </div>
+      {fresh && (
+        <div className="flex max-w-[min(15rem,calc(100vw-9rem))] items-center gap-1 rounded-2xl bg-card py-1.5 pr-1 pl-3 text-sm shadow-lg ring-1 ring-border">
+          <button type="button" onClick={onOpen} className="min-w-0 py-0.5 text-left">
+            <span className="block text-xs text-muted-foreground">{from}</span>
+            <span className="line-clamp-2">{capsule.hookText ?? labels.capsuleOpen}</span>
+          </button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-11 sm:size-9"
+            onClick={onDismiss}
+            aria-label={labels.capsuleDismiss}
+          >
+            <X />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

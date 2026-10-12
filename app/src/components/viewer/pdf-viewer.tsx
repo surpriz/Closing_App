@@ -17,7 +17,7 @@ import { ExpiryBanner, ExpiryChip } from "./expiry-countdown";
 import { PrivacyNotice } from "./privacy-notice";
 import { usePageTracking } from "./use-page-tracking";
 import { ViewerHeader } from "./viewer-header";
-import { VoiceCommentButton } from "./voice-comment-button";
+import { VoiceCommentButton, VoiceCommentPanel } from "./voice-comment-button";
 
 export type PageSize = { width: number; height: number };
 
@@ -67,6 +67,14 @@ export function PdfViewer({
   const barVisible = ctaEnabled || !!booking;
   // An open voice comment stays on its page while the reader scrolls
   const [voicePage, setVoicePage] = useState<number | null>(null);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [capsuleOpen, setCapsuleOpen] = useState(false);
+  // One sheet at a time at the bottom: the others step aside while it is open
+  const sheetOpen = chatOpen || capsuleOpen || voicePage !== null;
+  const voiceTrigger = (placement: "bar" | "corner") =>
+    voiceComments && !sheetOpen ? (
+      <VoiceCommentButton labels={labels} placement={placement} onClick={() => setVoicePage(currentPage)} />
+    ) : undefined;
 
   useEffect(() => {
     let cancelled = false;
@@ -145,20 +153,8 @@ export function PdfViewer({
               size={size}
               registerPage={registerPage}
               overlay={countdown?.pricingPages.includes(index + 1) ? <ExpiryBanner labels={labels} /> : undefined}
-              corner={
-                voiceComments &&
-                index + 1 === (voicePage ?? currentPage) && (
-                  <VoiceCommentButton
-                    open={voicePage === index + 1}
-                    onOpenChange={(open) => setVoicePage(open ? index + 1 : null)}
-                    slug={slug}
-                    pageNumber={index + 1}
-                    labels={labels}
-                    senderName={senderName}
-                    getViewId={getViewId}
-                  />
-                )
-              }
+              // With a bar, the mic sits in it; without, in the corner of the page on screen
+              corner={!barVisible && index + 1 === currentPage ? voiceTrigger("corner") : undefined}
             />
           ))}
         {/* Also shown here because the email gate is optional per link */}
@@ -177,6 +173,19 @@ export function PdfViewer({
           booking={booking}
           downloadUrl={`${fileUrl}?download=1`}
           atEnd={sizes.length > 0 && currentPage >= sizes.length}
+          onAskQuestion={chat ? () => setChatOpen(true) : undefined}
+          voice={voiceTrigger("bar")}
+        />
+      )}
+
+      {voicePage !== null && (
+        <VoiceCommentPanel
+          slug={slug}
+          pageNumber={voicePage}
+          labels={labels}
+          senderName={senderName}
+          getViewId={getViewId}
+          onClose={() => setVoicePage(null)}
         />
       )}
 
@@ -193,6 +202,8 @@ export function PdfViewer({
           senderName={senderName}
           getViewId={getViewId}
           ctaVisible={barVisible}
+          sheetOpen={chatOpen || voicePage !== null}
+          onOpenChange={setCapsuleOpen}
         />
       )}
 
@@ -204,7 +215,9 @@ export function PdfViewer({
           locale={locale}
           senderName={senderName}
           getViewId={getViewId}
-          ctaVisible={barVisible && !!pdf}
+          open={chatOpen}
+          onOpenChange={setChatOpen}
+          launcher={barVisible && !!pdf ? "docked" : "floating"}
         />
       )}
     </div>
@@ -289,7 +302,7 @@ export function PdfPage({ pdf, pageNumber, size, registerPage, overlay, corner }
         registerPage?.(pageNumber, element);
       }}
       data-page={pageNumber}
-      className="relative w-full overflow-hidden rounded-sm bg-white shadow-md ring-1 ring-border"
+      className="group/page relative w-full overflow-hidden rounded-sm bg-white shadow-md ring-1 ring-border"
       style={{ aspectRatio: `${size.width} / ${size.height}` }}
       onContextMenu={(event) => event.preventDefault()}
     >

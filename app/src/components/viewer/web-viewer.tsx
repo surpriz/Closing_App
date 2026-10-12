@@ -1,7 +1,7 @@
 "use client";
 
 import { ExternalLink } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { buttonVariants } from "@/components/ui/button";
 import type { DealStatus } from "@/generated/prisma/enums";
@@ -78,6 +78,7 @@ export function WebViewer({
   const openExternal = useExternalVisit(getViewId);
   // The bottom bar carries the answers, the booking button, or both
   const barVisible = ctaEnabled || !!booking;
+  const [chatOpen, setChatOpen] = useState(false);
 
   return (
     <div className={`flex flex-col bg-muted/60 ${reader ? "min-h-dvh" : "h-dvh"}`}>
@@ -158,6 +159,7 @@ export function WebViewer({
           signerName={signerName}
           answers={ctaEnabled}
           booking={booking}
+          onAskQuestion={chat ? () => setChatOpen(true) : undefined}
         />
       )}
 
@@ -168,6 +170,7 @@ export function WebViewer({
         senderName={senderName}
         getViewId={getViewId}
         ctaVisible={barVisible}
+        sheetOpen={chatOpen}
       />
 
       {chat && (
@@ -178,7 +181,9 @@ export function WebViewer({
           locale={locale}
           senderName={senderName}
           getViewId={getViewId}
-          ctaVisible={barVisible}
+          open={chatOpen}
+          onOpenChange={setChatOpen}
+          launcher={barVisible ? "docked" : "floating"}
         />
       )}
     </div>
