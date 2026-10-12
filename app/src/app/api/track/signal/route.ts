@@ -29,13 +29,20 @@ export async function POST(request: Request) {
 
   const view = await prisma.documentView.findUnique({
     where: { id: viewId },
-    select: { id: true, linkId: true, visitorId: true, isBot: true },
+    select: {
+      id: true,
+      linkId: true,
+      visitorId: true,
+      isBot: true,
+      link: { select: { organization: { select: { suspendedAt: true } } } },
+    },
   });
   // Only the browser that opened the view may report on it
   const visitorId = (await cookies()).get(VISITOR_COOKIE)?.value;
   if (!view || !visitorId || view.visitorId !== visitorId) {
     return new Response(null, { status: 403 });
   }
+  if (view.link.organization.suspendedAt) return new Response(null, { status: 404 });
 
   const valueMs = signalValue(type, parsed.data.valueMs);
   if (view.isBot || valueMs === undefined) return new Response(null, { status: 204 });

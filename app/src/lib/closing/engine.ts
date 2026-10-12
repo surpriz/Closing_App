@@ -1,3 +1,4 @@
+import { ACTIVE_WORKSPACE } from "@/lib/closing/active-workspace";
 import { prisma } from "@/lib/db";
 
 import { sendMorningDigests } from "./alerts/morning-digest";
@@ -50,7 +51,7 @@ export async function runClosingTick(now = new Date()) {
 
   // Messages whose generation crashed or timed out after being queued
   const stale = await prisma.followup.findMany({
-    where: { status: "PENDING", createdAt: { lte: new Date(now.getTime() - STALE_PENDING_MS) } },
+    where: { status: "PENDING", createdAt: { lte: new Date(now.getTime() - STALE_PENDING_MS) }, link: ACTIVE_WORKSPACE },
     select: { id: true },
     take: 20,
   });
