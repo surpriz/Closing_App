@@ -1,6 +1,6 @@
 "use client";
 
-import { Compass, LifeBuoy, LogOut, ShieldCheck } from "lucide-react";
+import { CircleHelp, Compass, LifeBuoy, LogOut, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 
@@ -57,6 +57,10 @@ export function UserMenu({
         <DropdownMenuItem onClick={openHelp}>
           <LifeBuoy />
           Aide et suggestions
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => router.push("/faq")}>
+          <CircleHelp />
+          Questions fréquentes
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => router.push("/bienvenue")}>
           <Compass />

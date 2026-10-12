@@ -8,6 +8,7 @@ import { canHelp } from "@/lib/closing/brain/budget";
 import { toModelMessages, toUIMessages } from "@/lib/closing/chat/messages";
 import { HELP_MESSAGE_MAX } from "@/lib/closing/help/constants";
 import { formatHelpContext, loadHelpContext } from "@/lib/closing/help/context";
+import { faqAsText } from "@/lib/closing/help/faq";
 import { FEEDBACK_KINDS, saveFeedback } from "@/lib/closing/help/feedback";
 import { HELP_GUIDE } from "@/lib/closing/help/guide";
 import { buildHelpInstructions } from "@/lib/closing/help/prompts";
@@ -17,6 +18,9 @@ import { prisma } from "@/lib/db";
 import { getWorkspace } from "@/lib/session";
 
 export const maxDuration = 60;
+
+/** The guide and the FAQ page, so the assistant and /faq never disagree. Same for everyone: cached. */
+const KNOWLEDGE = `${HELP_GUIDE}\n## Questions fréquentes (page /faq)\n${faqAsText()}\n`;
 
 /** Messages shown when the panel opens: the whole current conversation, not just what the model gets. */
 const SHOWN_HISTORY_MAX = 50;
@@ -76,7 +80,7 @@ export async function POST(request: Request) {
   const startedAt = Date.now();
   const result = streamText({
     model: llm.model,
-    instructions: buildHelpInstructions({ guide: HELP_GUIDE, contextText: formatHelpContext(state, pathname) }),
+    instructions: buildHelpInstructions({ guide: KNOWLEDGE, contextText: formatHelpContext(state, pathname) }),
     messages: [...toModelMessages(history), { role: "user", content: text }],
     tools: {
       send_to_team: tool({

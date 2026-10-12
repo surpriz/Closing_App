@@ -15,8 +15,8 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
 - Navigation principale (onglets en haut, barre en bas sur téléphone) : Aujourd'hui (/dashboard), Équipe
   (/equipe, propriétaires et admins seulement), Documents (/documents), Comment ça marche (/comment-ca-marche,
   « Le pilote » sur téléphone), Réglages (/settings).
-- Menu du compte (avatar en haut à droite) : Aide et suggestions, Revoir la prise en main, Données et
-  confidentialité (/settings#donnees), choix du thème, Se déconnecter.
+- Menu du compte (avatar en haut à droite) : Aide et suggestions, Questions fréquentes, Revoir la prise en
+  main, Données et confidentialité (/settings#donnees), choix du thème, Se déconnecter.
 
 ## Parcours d'un deal
 1. Vous déposez un document. Clozer le lit une fois : type, résumé de chaque page, où sont le prix, le
@@ -300,6 +300,8 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
   remarques et les questions auxquelles il n'a pas su répondre. L'équipe lit tout et peut vous répondre par
   email.
 - Il ne voit ni vos documents ni vos deals et ne peut rien modifier à votre place.
+- Questions fréquentes (/faq) : toutes les questions courantes, par thème, avec une recherche. Depuis le menu
+  du compte, Cmd+K ou Comment ça marche.
 
 ## Raccourcis
 - Cmd+K (Ctrl+K sur Windows) ou « Rechercher… » en haut : aller à un prospect, une société, un document ou une

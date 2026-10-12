@@ -28,6 +28,7 @@ const PAGE_LABELS: [prefix: string, label: string][] = [
   ["/equipe", "Équipe (team view, managers only)"],
   ["/settings", "Réglages"],
   ["/comment-ca-marche", "Comment ça marche"],
+  ["/faq", "Questions fréquentes (FAQ)"],
 ];
 
 export function pageLabel(pathname: string | null | undefined) {
