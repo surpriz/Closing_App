@@ -1,7 +1,8 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
+import { APIError, createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
-import { magicLink, organization } from "better-auth/plugins";
+import { admin, magicLink, organization } from "better-auth/plugins";
 
 import { getPublicAppUrl } from "@/lib/app-origin";
 import { prisma } from "@/lib/db";
@@ -11,9 +12,59 @@ import {
 } from "@/lib/dev-magic-links";
 import { isEmailConfigured, sendEmail } from "@/lib/email";
 import { buildInvitationEmail } from "@/lib/invitation-email";
+import {
+  BANNED_USER_MESSAGE,
+  PLATFORM_ADMIN_ROLE,
+  SIGNUP_REFUSAL_CODES,
+  type SignupRefusal,
+  checkSignup,
+  isPlatformAdminEmail,
+  isUserBlocked,
+  normalizeEmail,
+  parseSignupMode,
+  signupRefusalMessage,
+} from "@/lib/platform-admin";
 
 const googleEnabled =
   !!process.env.GOOGLE_CLIENT_ID && !!process.env.GOOGLE_CLIENT_SECRET;
+
+// Blocklist and invite-only mode, for both magic link and Google sign-ups
+async function signupRefusal(email: string) {
+  const normalized = normalizeEmail(email);
+  const [settings, blocked, allowed, invitation] = await Promise.all([
+    prisma.platformSettings.findUnique({ where: { id: "singleton" }, select: { signupMode: true } }),
+    prisma.blockedEmail.findUnique({ where: { email: normalized }, select: { email: true } }),
+    prisma.allowedEmail.findUnique({ where: { email: normalized }, select: { email: true } }),
+    prisma.invitation.findFirst({
+      where: { email: { equals: normalized, mode: "insensitive" }, status: "pending", expiresAt: { gt: new Date() } },
+      select: { id: true },
+    }),
+  ]);
+  return checkSignup({
+    isAdmin: isPlatformAdminEmail(email),
+    mode: parseSignupMode(settings?.signupMode),
+    blocked: blocked !== null,
+    allowed: allowed !== null,
+    hasPendingInvitation: invitation !== null,
+  });
+}
+
+// The code lets the magic link verify redirect to /login?error= instead of showing raw JSON
+function signupError(refusal: SignupRefusal) {
+  return APIError.from("FORBIDDEN", { code: SIGNUP_REFUSAL_CODES[refusal], message: signupRefusalMessage(refusal) });
+}
+
+// Why this email gets no sign-in link. Told by email, never on the login form:
+// the form answers the same for everyone so nobody can probe who has an account
+async function magicLinkRefusal(email: string) {
+  const user = await prisma.user.findFirst({
+    where: { email: { equals: normalizeEmail(email), mode: "insensitive" } },
+    select: { banned: true, banExpires: true },
+  });
+  if (user) return isUserBlocked(user) ? BANNED_USER_MESSAGE : null;
+  const refusal = await signupRefusal(email);
+  return refusal && signupRefusalMessage(refusal);
+}
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, { provider: "postgresql" }),
@@ -27,6 +78,38 @@ export const auth = betterAuth({
         },
       }
     : undefined,
+  databaseHooks: {
+    user: {
+      create: {
+        before: async (user) => {
+          const refusal = await signupRefusal(user.email);
+          if (refusal) throw signupError(refusal);
+          if (isPlatformAdminEmail(user.email)) return { data: { ...user, role: PLATFORM_ADMIN_ROLE } };
+        },
+      },
+    },
+    session: {
+      create: {
+        // PLATFORM_ADMIN_EMAIL changed: the former admin keeps no role behind
+        before: async (session) => {
+          const user = await prisma.user.findUnique({ where: { id: session.userId }, select: { email: true, role: true } });
+          if (user?.role === PLATFORM_ADMIN_ROLE && !isPlatformAdminEmail(user.email)) {
+            await prisma.user.update({ where: { id: session.userId }, data: { role: "user" } });
+          }
+        },
+      },
+    },
+  },
+  hooks: {
+    before: createAuthMiddleware(async (ctx) => {
+      // The admin plugin trusts users.role; also require the configured email, so a
+      // role set by mistake in the database never opens the admin endpoints
+      if (!ctx.path.startsWith("/admin/")) return;
+      const session = await getSessionFromCtx(ctx);
+      if (ctx.path === "/admin/stop-impersonating" && session?.session.impersonatedBy) return;
+      if (!isPlatformAdminEmail(session?.user.email)) throw new APIError("FORBIDDEN");
+    }),
+  },
   plugins: [
     organization({
       invitationExpiresIn: 7 * 24 * 60 * 60,
@@ -52,6 +135,21 @@ export const auth = betterAuth({
     }),
     magicLink({
       sendMagicLink: async ({ email, url }) => {
+        const refusal = await magicLinkRefusal(email);
+        if (refusal) {
+          if (devMagicLinksEnabled()) {
+            console.info(`[auth] no magic link for ${email}: ${refusal}`);
+            return;
+          }
+          await sendEmail({
+            to: email,
+            subject: "Connexion à Clozer",
+            html: `<p>${refusal}</p>`,
+            text: refusal,
+          });
+          return;
+        }
+
         if (devMagicLinksEnabled()) {
           rememberDevMagicLink(email, url);
           console.info(`[auth] magic link for ${email}: ${url}`);
@@ -65,6 +163,11 @@ export const auth = betterAuth({
           text: `Se connecter : ${url}`,
         });
       },
+    }),
+    admin({
+      adminRoles: [PLATFORM_ADMIN_ROLE],
+      impersonationSessionDuration: 60 * 60,
+      bannedUserMessage: BANNED_USER_MESSAGE,
     }),
     // must stay last so cookies set in server actions are forwarded
     nextCookies(),

@@ -1,3 +1,4 @@
+import { ACTIVE_WORKSPACE } from "@/lib/closing/active-workspace";
 import { prisma } from "@/lib/db";
 
 import { markDealDirty } from "../brain/analyze-deal";
@@ -37,6 +38,7 @@ export async function scanExpiryReminders(now = new Date()) {
       document: { docType: { in: [...COUNTDOWN_DOC_TYPES] } },
       AND: [{ OR: [{ snoozedUntil: null }, { snoozedUntil: { lte: now } }] }],
       prospects: { some: { unsubscribedAt: null, origin: "SELLER" } },
+      ...ACTIVE_WORKSPACE,
     },
     include: {
       prospects: {
@@ -117,6 +119,7 @@ export async function scanExpiringLinks(now = new Date()) {
       parentLinkId: null,
       dealStatus: { in: ["OPEN", "CHANGE_REQUESTED"] },
       expiresAt: { gt: now, lte: new Date(now.getTime() + SELLER_ALERT_LEAD_MS) },
+      ...ACTIVE_WORKSPACE,
     },
     select: { id: true, expiresAt: true },
     take: 200,

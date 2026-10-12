@@ -43,7 +43,9 @@ import { ShareMailToolTip } from "@/components/onboarding/share-mail-tool-tip";
 import { getAppOrigin } from "@/lib/app-origin";
 import { capsuleUploadPrefix } from "@/lib/blob";
 import { getLanguageModel } from "@/lib/closing/ai/provider";
+import type { ViewSignalType } from "@/generated/prisma/enums";
 import { getLinkAnalytics } from "@/lib/closing/analytics";
+import { videoProvider } from "@/lib/closing/documents/web-link";
 import { DOC_TYPE_LABELS, type DocType } from "@/lib/closing/documents/doc-types";
 import { linkTitle } from "@/lib/closing/documents/link-title";
 import { reachedLabel } from "@/lib/closing/documents/video-segments";
@@ -94,6 +96,7 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
           id: true,
           name: true,
           kind: true,
+          embedUrl: true,
           status: true,
           docType: true,
           displayTitle: true,
@@ -301,6 +304,7 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
   // Only the latest booking's slot is kept (Link.meetingAt)
   const latestBooking = actions.find((action) => action.type === "MEETING_BOOKED");
   const readerLabels = labelReaders(analytics.recentViews);
+  const isEmbeddedVideo = link.document.kind === "URL" && videoProvider(link.document.embedUrl) !== null;
   const timeline: TimelineItem[] = [
     { id: `created-${link.id}`, at: link.createdAt, kind: "created" as const, title: "Lien créé" },
     ...analytics.recentViews.map((view) => ({
@@ -315,6 +319,8 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
           : link.document.kind === "VIDEO"
             ? `regardé ${reachedLabel(view.maxPageReached)}`
             : `jusqu'à la page ${view.maxPageReached}`,
+        isEmbeddedVideo ? `${Math.round((view.pageViews[0]?.maxScrollDepth ?? 0) * 100)} % de la vidéo vue` : null,
+        ...signalDetails(view.signals),
         [view.deviceType, view.browser].filter(Boolean).join(" "),
         view.timezone,
       ]
@@ -848,4 +854,16 @@ async function loadSharedReaders(linkId: string, now: Date): Promise<SharedReade
             : "Ouvert",
     };
   });
+}
+
+/** What the reader did around the content, for a line of the timeline. */
+function signalDetails(signals: { type: ViewSignalType; valueMs: number | null }[]) {
+  const details: string[] = [];
+  if (signals.some((s) => s.type === "EXTERNAL_OPEN")) {
+    const awayMs = signals.reduce((sum, s) => sum + (s.type === "EXTERNAL_RETURN" ? (s.valueMs ?? 0) : 0), 0);
+    details.push(awayMs > 0 ? `site ouvert, ≈ ${formatDuration(awayMs)} dessus` : "site ouvert dans un onglet");
+  }
+  if (signals.some((s) => s.type === "DOWNLOAD")) details.push("PDF téléchargé");
+  if (signals.some((s) => s.type === "EXIT_PROMPT_OPENED")) details.push("a ouvert l'assistant en partant");
+  return details;
 }

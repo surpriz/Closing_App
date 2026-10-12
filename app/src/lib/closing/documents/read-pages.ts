@@ -1,6 +1,7 @@
 import { generateText, Output } from "ai";
 import { z } from "zod";
 
+import { ACTIVE_WORKSPACE } from "@/lib/closing/active-workspace";
 import { prisma } from "@/lib/db";
 
 import { getLanguageModel, getTranscriptionModel, THINKING_ROOM_TOKENS } from "../ai/provider";
@@ -78,7 +79,7 @@ async function classifyDocument(llm: Llm, document: { name: string; organization
 export type ReadPagesOutcome = "done" | "partial" | "failed" | "no_ai" | "skipped";
 
 /**
- * Summarizes every page of a PDF, refines its tags and pulls key facts
+ * Summarizes every page of a PDF (or the text of a web page), refines its tags and pulls key facts
  * (amounts, durations). Never fails the document: without AI, or when a call
  * breaks, the keyword tags from the upload stay.
  * A video pitch is transcribed first, each tenth of the video becoming a page.
@@ -106,7 +107,7 @@ export async function readDocumentPages(documentId: string): Promise<ReadPagesOu
       },
     },
   });
-  if (!document || document.kind === "URL" || document.status !== "READY") return "skipped";
+  if (!document || document.status !== "READY") return "skipped";
   if (document.aiAttempts >= MAX_AI_ATTEMPTS) return "skipped";
 
   let pages = document.pages;
@@ -210,7 +211,12 @@ export async function readDocumentPages(documentId: string): Promise<ReadPagesOu
         const reading = byPage.get(page.pageNumber)!;
         return prisma.documentPage.update({
           where: { id: page.id },
-          data: { summary: reading.summary, keyFacts: reading.keyFacts, tags: mergePageTags(page, reading) },
+          data: {
+            summary: reading.summary,
+            keyFacts: reading.keyFacts,
+            // A web page is one "page": tagging it PRICING would make all time on the site pricing time
+            tags: document.kind === "URL" ? [] : mergePageTags(page, reading),
+          },
         });
       }),
   );
@@ -236,12 +242,12 @@ export async function readPendingDocuments(
   if (!getLanguageModel("classify")) return 0;
   const pending = await prisma.document.findMany({
     where: {
-      kind: { in: ["FILE", "VIDEO"] },
       status: "READY",
       archivedAt: null,
       aiProcessedAt: null,
       aiAttempts: { lt: MAX_AI_ATTEMPTS },
       updatedAt: { lte: new Date(now.getTime() - RETRY_AFTER_MS) },
+      ...ACTIVE_WORKSPACE,
       ...(scope.organizationId && { organizationId: scope.organizationId }),
       ...(scope.documentId && { id: scope.documentId }),
     },

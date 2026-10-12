@@ -132,9 +132,14 @@ export default function HowItWorksPage() {
         title="Comment Clozer pense"
         description="Ce qui se passe derrière chaque lien que vous envoyez, et pourquoi vous n'avez presque rien à faire."
         action={
-          <Link href="/bienvenue" className={buttonVariants({ variant: "outline" })}>
-            Revoir la prise en main
-          </Link>
+          <>
+            <Link href="/faq" className={buttonVariants({ variant: "outline" })}>
+              Questions fréquentes
+            </Link>
+            <Link href="/bienvenue" className={buttonVariants({ variant: "outline" })}>
+              Revoir la prise en main
+            </Link>
+          </>
         }
       />
 

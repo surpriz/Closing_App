@@ -25,14 +25,12 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 import { CopyButton } from "./copy-button";
-import { ROLE_LABELS } from "./labels";
+import { ROLE_LABELS, roleLabel } from "./labels";
 
 export type TeamMemberRow = { id: string; userId: string; name: string; email: string; role: string };
 export type TeamInvitationRow = { id: string; email: string; role: string; expiresAt: string };
 
 const dateFormat = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" });
-
-const roleLabel = (role: string) => ROLE_LABELS[role as keyof typeof ROLE_LABELS] ?? role;
 
 function report(result: TeamActionState, success: string) {
   if (result?.error) toast.error(result.error);

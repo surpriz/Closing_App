@@ -1,13 +1,14 @@
 import { randomUUID } from "node:crypto";
 
 import { headers } from "next/headers";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
 
 import { auth } from "@/lib/auth";
 import type { SellerScope } from "@/lib/closing/dashboard/queries";
 import { prisma } from "@/lib/db";
 import { randomSlug } from "@/lib/ids";
+import { PLATFORM_ADMIN_ROLE, isPlatformAdminEmail } from "@/lib/platform-admin";
 import { isManagerRole, isOwnerRole } from "@/lib/roles";
 
 export const getSession = cache(async () =>
@@ -25,6 +26,7 @@ type Workspace = {
 type Resolved =
   | { kind: "signed_out" }
   | { kind: "invited"; invitationId: string }
+  | { kind: "suspended" }
   | { kind: "ok"; workspace: Workspace };
 
 // The signed-in user's workspace: the active organization when Better Auth
@@ -49,6 +51,7 @@ const resolveWorkspace = cache(async (): Promise<Resolved> => {
       include: { organization: true },
     }));
 
+  if (membership?.organization.suspendedAt) return { kind: "suspended" };
   if (membership) {
     return {
       kind: "ok",
@@ -94,8 +97,8 @@ const resolveWorkspace = cache(async (): Promise<Resolved> => {
 });
 
 // Returns the signed-in user, their workspace and role, creating the
-// workspace on first sign-in. Null when signed out or still to accept an
-// invitation.
+// workspace on first sign-in. Null when signed out, still to accept an
+// invitation, or the workspace is suspended.
 export const getWorkspace = cache(async () => {
   const resolved = await resolveWorkspace();
   return resolved.kind === "ok" ? resolved.workspace : null;
@@ -106,7 +109,13 @@ export async function requireWorkspace(next?: string) {
   const resolved = await resolveWorkspace();
   if (resolved.kind === "invited") redirect(`/invitation/${resolved.invitationId}`);
   if (resolved.kind === "signed_out") redirect(next ? `/login?next=${encodeURIComponent(next)}` : "/login");
+  if (resolved.kind === "suspended") redirect("/suspendu");
   return resolved.workspace;
+}
+
+/** The signed-in user's workspace was suspended by the platform admin. */
+export async function isWorkspaceSuspended() {
+  return (await resolveWorkspace()).kind === "suspended";
 }
 
 /** Owners and admins only: the others land back on their own day. */
@@ -125,4 +134,20 @@ export async function isWorkspaceMember(organizationId: string) {
     select: { id: true },
   });
   return member !== null;
+}
+
+/**
+ * The platform admin only, everyone else gets a 404: /admin does not exist for them.
+ * Also refused while impersonating, the banner leads back first.
+ */
+export async function requirePlatformAdmin() {
+  const session = await getSession();
+  if (!session || session.session.impersonatedBy) notFound();
+  const { user } = session;
+  if (!user.emailVerified || !isPlatformAdminEmail(user.email)) notFound();
+  // Accounts created before the admin plugin have no role yet; the plugin's endpoints check it
+  if (user.role !== PLATFORM_ADMIN_ROLE) {
+    await prisma.user.update({ where: { id: user.id }, data: { role: PLATFORM_ADMIN_ROLE } });
+  }
+  return user;
 }

@@ -58,7 +58,14 @@ export async function POST(request: Request) {
       visitorId: true,
       prospectId: true,
       isBot: true,
-      link: { select: { expiresAt: true, dealStatus: true, document: { select: { numPages: true } } } },
+      link: {
+        select: {
+          expiresAt: true,
+          dealStatus: true,
+          document: { select: { numPages: true } },
+          organization: { select: { suspendedAt: true } },
+        },
+      },
     },
   });
 
@@ -67,6 +74,8 @@ export async function POST(request: Request) {
   if (!view || !visitorId || view.visitorId !== visitorId) {
     return new Response(null, { status: 403 });
   }
+  // A tab still open when the workspace was suspended: nothing recorded or analysed
+  if (view.link.organization.suspendedAt) return new Response(null, { status: 404 });
   // A tab left open past the deadline stops counting; the flush right after zero still lands
   const deadline = viewerDeadline(view.link);
   if (deadline && deadline.getTime() < Date.now() - EXPIRED_FLUSH_GRACE_MS) {

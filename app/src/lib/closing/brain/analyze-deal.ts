@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { generateText, Output } from "ai";
 
 import type { InsightTrigger } from "@/generated/prisma/enums";
+import { ACTIVE_WORKSPACE } from "@/lib/closing/active-workspace";
 import { prisma } from "@/lib/db";
 
 import { getLanguageModel } from "../ai/provider";
@@ -258,6 +259,7 @@ export async function analyzePendingDeals(now = new Date(), scope: PendingScope 
     // A shared link is a source of leads, not a deal: nothing to analyse
     shared: false,
     dealStatus: { in: ["OPEN" as const, "CHANGE_REQUESTED" as const] },
+    ...ACTIVE_WORKSPACE,
     ...(scope.organizationId && { organizationId: scope.organizationId }),
     ...(scope.linkId && { id: scope.linkId }),
     // `dirty` below has its own OR: the expiry filter stays inside AND

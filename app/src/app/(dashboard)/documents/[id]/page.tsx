@@ -25,10 +25,12 @@ import {
   DocumentPages,
   DocumentTypeSelect,
   SellerDescriptionForm,
+  WebPageReading,
 } from "@/components/dashboard/document-content";
 import { PageTimeChart, type PageTimeDatum } from "@/components/dashboard/page-time-chart";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getAppOrigin } from "@/lib/app-origin";
+import { videoProvider } from "@/lib/closing/documents/web-link";
 import { WelcomeMessage } from "@/components/dashboard/welcome-message";
 import { capsuleUploadPrefix } from "@/lib/blob";
 import { WELCOME_PAGE } from "@/lib/closing/capsules/resolve";
@@ -354,7 +356,15 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
               Contenu
             </SectionTitle>
               {isWeb ? (
-                <SellerDescriptionForm documentId={document.id} initial={document.sellerDescription ?? ""} />
+                <div className="space-y-6">
+                  <WebPageReading
+                    documentId={document.id}
+                    docPurpose={document.docPurpose}
+                    page={document.pages[0] ?? null}
+                    aiAvailable={getLanguageModel("classify") !== null}
+                  />
+                  <SellerDescriptionForm documentId={document.id} initial={document.sellerDescription ?? ""} />
+                </div>
               ) : document.pages.length === 0 ? (
                 <p className="py-12 text-center text-sm text-muted-foreground">
                   {ready ? "Aucune page détectée." : "Analyse du document en cours…"}
@@ -442,9 +452,13 @@ export default async function DocumentDetailPage({ params }: PageProps<"/documen
           )}
           {isWeb ? (
             <p className="max-w-2xl text-body text-muted-foreground">
-              {document.embedUrl
-                ? "Pour un lien web, Clozer mesure le temps passé sur la page, sans détail page par page."
-                : "Ce site s'ouvre dans un nouvel onglet : Clozer voit quand le prospect ouvre son lien, mais pas combien de temps il reste sur la page."}
+              {videoProvider(document.embedUrl) === "loom"
+                ? "Pour une vidéo Loom, Clozer mesure le temps passé sur la page, pas la part de la vidéo regardée."
+                : videoProvider(document.embedUrl)
+                  ? "Pour une vidéo, Clozer mesure le temps passé et la part réellement regardée (les passages sautés ne comptent pas)."
+                  : document.embedUrl
+                    ? "Pour un lien web, Clozer mesure le temps passé sur la page, sans détail page par page."
+                    : "Ce site s'ouvre dans un nouvel onglet : Clozer voit quand le prospect l'ouvre, et estime le temps passé dessus d'après son retour sur le lien."}
             </p>
           ) : (
             <section>

@@ -13,7 +13,9 @@ export type EngagementInput = {
   uniqueViewers: number;
   pricingDurationMs: number;
   pricingThresholdMs: number;
-  completionRatio: number; // furthest page reached / page count, 0..1
+  completionRatio: number; // furthest page reached / page count, or share of the video watched, 0..1
+  isVideo?: boolean; // the document is an embedded video: completion means watching
+  externalMs?: number; // time away on a site opened in a new tab, an estimate
   meetingClicked?: boolean; // opened the seller's booking page
   meetingBooked?: boolean; // and the widget confirmed a booking
   quoteRequested?: boolean; // asked for a quote under a video pitch
@@ -55,7 +57,8 @@ export function computeEngagementScore(input: EngagementInput): EngagementResult
     else if (age <= 7 * 24 * HOUR) add("recent_activity_7d", 5);
   }
 
-  const readingSeconds = Math.round(input.totalDurationMs / 1000);
+  // Time on a site opened in a new tab is not seen, only guessed from the time away: it counts as reading
+  const readingSeconds = Math.round((input.totalDurationMs + (input.externalMs ?? 0)) / 1000);
   add("reading_time", Math.min(25, Math.round(readingSeconds / 12)), `${readingSeconds}s`);
 
   if (input.visitCount >= 3) add("repeat_visits", 20, String(input.visitCount));
@@ -72,8 +75,9 @@ export function computeEngagementScore(input: EngagementInput): EngagementResult
     add("pricing_interest", 7, `${pricingSeconds}s`);
   }
 
-  if (input.completionRatio >= 0.9) add("read_to_end", 10);
-  else if (input.completionRatio >= 0.5) add("read_halfway", 4);
+  const completion = input.isVideo ? "watched" : "read";
+  if (input.completionRatio >= 0.9) add(`${completion}_to_end`, 10);
+  else if (input.completionRatio >= 0.5) add(`${completion}_halfway`, 4);
 
   if (input.dealStatus === "CHANGE_REQUESTED") add("change_requested", 10);
   // As strong as a booking: the prospect asks to go further

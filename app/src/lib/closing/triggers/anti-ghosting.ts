@@ -1,3 +1,4 @@
+import { ACTIVE_WORKSPACE } from "@/lib/closing/active-workspace";
 import { prisma } from "@/lib/db";
 
 import { DAY_MS } from "../constants";
@@ -23,6 +24,7 @@ export async function scanAntiGhosting(now = new Date()) {
       sentAt: { lte: new Date(now.getTime() - DAY_MS) },
       views: { none: { isBot: false } },
       prospects: { some: { unsubscribedAt: null } },
+      ...ACTIVE_WORKSPACE,
     },
     include: {
       prospects: { where: { unsubscribedAt: null } },

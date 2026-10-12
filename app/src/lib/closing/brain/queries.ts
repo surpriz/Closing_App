@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { getEnv } from "@/lib/env";
 
 import { DAY_MS } from "../constants";
+import { videoProvider } from "../documents/web-link";
 import type { DealFactsInput } from "./facts";
 import type { AnalyzerDeal, AnalyzerProfile } from "./prompts";
 
@@ -16,6 +17,7 @@ export async function loadDealForAnalysis(linkId: string, now: Date) {
           name: true,
           kind: true,
           durationMs: true,
+          embedUrl: true,
           sellerDescription: true,
           docType: true,
           docPurpose: true,
@@ -40,7 +42,8 @@ export async function loadDealForAnalysis(linkId: string, now: Date) {
           country: true,
           timezone: true,
           maxPageReached: true,
-          pageViews: { select: { pageNumber: true, totalDurationMs: true } },
+          pageViews: { select: { pageNumber: true, totalDurationMs: true, maxScrollDepth: true } },
+          signals: { orderBy: { createdAt: "asc" }, select: { type: true, valueMs: true } },
         },
       },
       actions: { orderBy: { createdAt: "asc" }, select: { type: true, message: true, createdAt: true, prospectId: true } },
@@ -58,6 +61,7 @@ export async function loadDealForAnalysis(linkId: string, now: Date) {
   const settings = link.organization.settings;
   const sentLast30Days = link.followups.filter((f) => f.sentAt!.getTime() >= now.getTime() - 30 * DAY_MS).length;
 
+  const isVideo = link.document.kind === "URL" && videoProvider(link.document.embedUrl) !== null;
   const facts: DealFactsInput = {
     now,
     defaultTimezone: getEnv().DEFAULT_TIMEZONE,
@@ -79,6 +83,7 @@ export async function loadDealForAnalysis(linkId: string, now: Date) {
       name: link.document.name,
       kind: link.document.kind,
       durationMs: link.document.durationMs,
+      embeddedVideo: isVideo,
       docType: link.document.docType,
       pages: link.document.pages.map((page) => ({
         pageNumber: page.pageNumber,
@@ -88,7 +93,12 @@ export async function loadDealForAnalysis(linkId: string, now: Date) {
       })),
     },
     prospects: link.prospects,
-    views: link.views.map(({ pageViews, ...view }) => ({ ...view, pages: pageViews })),
+    views: link.views.map(({ pageViews, ...view }) => ({
+      ...view,
+      pages: pageViews.map(({ pageNumber, totalDurationMs }) => ({ pageNumber, totalDurationMs })),
+      // A video is one page: its depth is the share watched
+      watchedRatio: isVideo ? (pageViews.find((p) => p.pageNumber === 1)?.maxScrollDepth ?? 0) : null,
+    })),
     actions: link.actions,
     followups: link.followups.map((f) => ({ ...f, sentAt: f.sentAt! })),
     sellerActivities: link.sellerActivities,

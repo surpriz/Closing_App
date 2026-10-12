@@ -1,12 +1,25 @@
 "use client";
 
-import { Brain, Compass, CornerDownLeft, FileText, Search, Settings2, Sun, User } from "lucide-react";
+import {
+  Brain,
+  CircleHelp,
+  Compass,
+  CornerDownLeft,
+  FileText,
+  LifeBuoy,
+  Search,
+  Settings2,
+  Sun,
+  User,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Kbd } from "@/components/ui/kbd";
 import { cn } from "@/lib/utils";
+
+import { openHelp } from "./open-help";
 
 export type CommandEntry = {
   kind: "deal" | "document";
@@ -15,7 +28,8 @@ export type CommandEntry = {
   hint?: string;
 };
 
-type Item = CommandEntry | { kind: "page"; href: string; label: string; hint?: string };
+// `help` opens the help assistant instead of navigating
+type Item = CommandEntry | { kind: "page"; href: string; label: string; hint?: string; help?: true };
 
 const PAGES: Item[] = [
   { kind: "page", href: "/dashboard", label: "Aujourd'hui" },
@@ -23,6 +37,8 @@ const PAGES: Item[] = [
   { kind: "page", href: "/comment-ca-marche", label: "Comment ça marche" },
   { kind: "page", href: "/settings", label: "Réglages" },
   { kind: "page", href: "/bienvenue", label: "Prise en main" },
+  { kind: "page", href: "/faq", label: "Questions fréquentes", hint: "FAQ" },
+  { kind: "page", href: "#aide", label: "Aide et suggestions", hint: "Poser une question, signaler un bug", help: true },
 ];
 
 const PAGE_ICONS: Record<string, typeof Sun> = {
@@ -31,6 +47,8 @@ const PAGE_ICONS: Record<string, typeof Sun> = {
   "/comment-ca-marche": Brain,
   "/settings": Settings2,
   "/bienvenue": Compass,
+  "/faq": CircleHelp,
+  "#aide": LifeBuoy,
 };
 
 const GROUPS = [
@@ -76,7 +94,8 @@ export function CommandMenu({ entries }: { entries: CommandEntry[] }) {
   function go(item: Item | undefined) {
     if (!item) return;
     setOpen(false);
-    router.push(item.href);
+    if (item.kind === "page" && item.help) openHelp();
+    else router.push(item.href);
   }
 
   function onOpenChange(next: boolean) {

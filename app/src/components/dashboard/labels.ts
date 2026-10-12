@@ -124,6 +124,8 @@ export const SCORE_REASON_LABELS: Record<string, string> = {
   pricing_interest: "Lecture des tarifs",
   read_to_end: "Lu jusqu'au bout",
   read_halfway: "Lu à moitié",
+  watched_to_end: "Vidéo vue jusqu'au bout",
+  watched_halfway: "Vidéo vue à moitié",
   change_requested: "Ajustement demandé",
   quote_requested: "A demandé un devis",
   meeting_clicked: "A ouvert votre agenda",
@@ -189,6 +191,8 @@ export const ROLE_LABELS = {
   admin: "Admin",
   member: "Membre",
 } as const;
+
+export const roleLabel = (role: string) => ROLE_LABELS[role as keyof typeof ROLE_LABELS] ?? role;
 
 const dayFormat = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" });
 

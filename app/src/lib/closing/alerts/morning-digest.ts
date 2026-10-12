@@ -25,7 +25,12 @@ const EXPIRING_SOON_MS = 36 * 60 * 60 * 1000;
 export async function sendMorningDigests(now = new Date()) {
   if (!isEmailConfigured()) return 0;
 
+  // Disabled sellers and suspended workspaces get no digest
   const members = await prisma.member.findMany({
+    where: {
+      organization: { suspendedAt: null },
+      user: { OR: [{ banned: false }, { banExpires: { lte: now } }] },
+    },
     select: {
       userId: true,
       organizationId: true,

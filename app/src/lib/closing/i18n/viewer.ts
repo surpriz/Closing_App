@@ -85,6 +85,8 @@ export type ViewerLabels = {
   extensionSellerPreview: string;
   /** Assistant on the document. {sender} is replaced by the sender's name. */
   chatLauncher: string;
+  /** Offered once when the mouse heads for the tab bar. */
+  chatExitNudge: string;
   chatIntro: string;
   chatClose: string;
   chatThinking: string;
@@ -184,6 +186,7 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     extensionEmailOptional: "Email (optional, to be notified)",
     extensionSellerPreview: "This is what your prospect sees. Your own request isn't sent.",
     chatLauncher: "Ask a question",
+    chatExitNudge: "A question before you go?",
     chatIntro: "Hi! I can answer your questions about this document while {sender} is away.",
     chatClose: "Close",
     chatThinking: "Writing…",
@@ -318,6 +321,7 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     extensionEmailOptional: "Email (facultatif, pour être prévenu)",
     extensionSellerPreview: "C'est ce que voit votre prospect. Votre propre demande n'est pas envoyée.",
     chatLauncher: "Poser une question",
+    chatExitNudge: "Une question avant de partir ?",
     chatIntro: "Bonjour ! Je peux répondre à vos questions sur ce document en l'absence de {sender}.",
     chatClose: "Fermer",
     chatThinking: "Rédaction…",
@@ -452,6 +456,7 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     extensionEmailOptional: "Email (opcional, para recibir el aviso)",
     extensionSellerPreview: "Esto es lo que ve tu cliente. Tu propia solicitud no se envía.",
     chatLauncher: "Hacer una pregunta",
+    chatExitNudge: "¿Alguna pregunta antes de irse?",
     chatIntro: "¡Hola! Puedo responder a sus preguntas sobre este documento mientras {sender} no está disponible.",
     chatClose: "Cerrar",
     chatThinking: "Escribiendo…",
@@ -586,6 +591,7 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     extensionEmailOptional: "E-Mail (optional, um benachrichtigt zu werden)",
     extensionSellerPreview: "So sieht es Ihr Interessent. Ihre eigene Anfrage wird nicht gesendet.",
     chatLauncher: "Frage stellen",
+    chatExitNudge: "Noch eine Frage, bevor Sie gehen?",
     chatIntro: "Hallo! Ich beantworte Ihre Fragen zu diesem Dokument, während {sender} nicht erreichbar ist.",
     chatClose: "Schließen",
     chatThinking: "Schreibt…",

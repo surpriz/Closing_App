@@ -1,8 +1,10 @@
+import { resolvesToPublicAddress } from "../channels/public-address";
 import { isSafeOutboundUrl } from "../channels/webhooks";
-import { extractPageTitle, fallbackName, framingAllowed, knownEmbedUrl } from "./web-link";
+import { extractPageTitle, fallbackName, framingAllowed, htmlToText, knownEmbedUrl, videoProvider } from "./web-link";
 
 const MAX_REDIRECTS = 5;
-const MAX_HTML_BYTES = 256 * 1024;
+const MAX_HEAD_BYTES = 256 * 1024;
+const MAX_PAGE_BYTES = 1536 * 1024;
 
 export type WebLinkInfo = {
   name: string;
@@ -10,29 +12,29 @@ export type WebLinkInfo = {
   embedUrl: string | null;
 };
 
-// Reads at most MAX_HTML_BYTES, enough for <head>
-async function readHead(response: Response) {
+// Reads at most maxBytes of HTML, stopping after <head> when that is all we need
+async function readHtml(response: Response, maxBytes: number, headOnly: boolean) {
   if (!response.body || !response.headers.get("content-type")?.includes("html")) return "";
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let html = "";
   let bytes = 0;
-  while (bytes < MAX_HTML_BYTES) {
+  while (bytes < maxBytes) {
     const { done, value } = await reader.read();
     if (done) break;
     bytes += value.byteLength;
     html += decoder.decode(value, { stream: true });
-    if (/<\/head>/i.test(html)) break;
+    if (headOnly && /<\/head>/i.test(html)) break;
   }
   await reader.cancel().catch(() => {});
   return html;
 }
 
-// Follows redirects by hand so each hop goes through the SSRF guard
+// Follows redirects by hand so each hop goes through the SSRF guard, DNS included
 async function fetchPage(url: URL) {
   let current = url;
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
-    if (!isSafeOutboundUrl(current.toString())) return null;
+    if (!isSafeOutboundUrl(current.toString()) || !(await resolvesToPublicAddress(current.hostname))) return null;
     const response = await fetch(current, {
       redirect: "manual",
       headers: {
@@ -62,7 +64,7 @@ export async function inspectWebLink(url: URL, appOrigin: string): Promise<WebLi
   const known = knownEmbedUrl(url);
   try {
     const response = await fetchPage(url);
-    const html = response?.ok ? await readHead(response) : "";
+    const html = response?.ok ? await readHtml(response, MAX_HEAD_BYTES, true) : "";
     if (response && !response.ok) await response.body?.cancel().catch(() => {});
     const name = extractPageTitle(html) ?? fallbackName(url);
     if (known) return { name, embedUrl: known };
@@ -71,5 +73,49 @@ export async function inspectWebLink(url: URL, appOrigin: string): Promise<WebLi
   } catch (error) {
     console.warn(`[documents] could not inspect ${url.hostname}`, error);
     return { name: fallbackName(url), embedUrl: known };
+  }
+}
+
+const OEMBED: Record<string, string> = {
+  youtube: "https://www.youtube.com/oembed?format=json&url=",
+  vimeo: "https://vimeo.com/api/oembed.json?url=",
+  loom: "https://www.loom.com/v1/oembed?url=",
+};
+
+// A video page has no readable text: its title, author and description say what it is about
+async function videoText(url: URL, provider: string) {
+  const response = await fetch(`${OEMBED[provider]}${encodeURIComponent(url.toString())}`, {
+    signal: AbortSignal.timeout(8_000),
+  });
+  if (!response.ok) return null;
+  const data = (await response.json()) as { title?: string; author_name?: string; description?: string };
+  return [
+    data.title && `Vidéo : ${data.title}`,
+    data.author_name && `Auteur : ${data.author_name}`,
+    data.description,
+  ]
+    .filter(Boolean)
+    .join("\n")
+    .slice(0, 20_000);
+}
+
+/**
+ * The text of a web page for the AI reading and the prospect assistant.
+ * Empty when the page has no readable text (rendered in the browser), null
+ * when it could not be fetched: what was read before is then kept. Never throws.
+ */
+export async function readWebText(url: URL): Promise<string | null> {
+  try {
+    const provider = videoProvider(knownEmbedUrl(url));
+    if (provider) return await videoText(url, provider);
+    const response = await fetchPage(url);
+    if (!response?.ok) {
+      await response?.body?.cancel().catch(() => {});
+      return null;
+    }
+    return htmlToText(await readHtml(response, MAX_PAGE_BYTES, false));
+  } catch (error) {
+    console.warn(`[documents] could not read ${url.hostname}`, error);
+    return null;
   }
 }

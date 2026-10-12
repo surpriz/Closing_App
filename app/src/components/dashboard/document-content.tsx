@@ -56,7 +56,6 @@ export function DocumentPages({
   /** Three readings failed: only the button retries now. */
   aiGaveUp: boolean;
 }) {
-  const [pending, startTransition] = useTransition();
   const labels = tagLabels(docType);
 
   return (
@@ -78,22 +77,7 @@ export function DocumentPages({
                   ? "L'IA est en train de lire les pages (une minute environ). Rechargez la page pour voir les résumés."
                   : "Étiquettes repérées par mots-clés. Corrigez-les si besoin : votre choix ne sera plus touché."}
         </p>
-        {aiAvailable && (
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={pending}
-            onClick={() =>
-              startTransition(async () => {
-                const result = await rereadDocument(documentId);
-                if (result.error) toast.error(result.error);
-                else toast.success("Pages relues");
-              })
-            }
-          >
-            <RefreshCw className={cn(pending && "animate-spin")} /> {pending ? "Lecture…" : "Relire les pages"}
-          </Button>
-        )}
+        {aiAvailable && <RereadButton documentId={documentId} label="Relire les pages" done="Pages relues" />}
       </div>
       <ul className="divide-y divide-border rounded-xl bg-card ring-1 ring-border">
         {pages.map((page) => (
@@ -108,6 +92,63 @@ export function DocumentPages({
           />
         ))}
       </ul>
+    </div>
+  );
+}
+
+function RereadButton({ documentId, label, done }: { documentId: string; label: string; done: string }) {
+  const [pending, startTransition] = useTransition();
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      disabled={pending}
+      onClick={() =>
+        startTransition(async () => {
+          const result = await rereadDocument(documentId);
+          if (result.error) toast.error(result.error);
+          else toast.success(done);
+        })
+      }
+    >
+      <RefreshCw className={cn(pending && "animate-spin")} /> {pending ? "Lecture…" : label}
+    </Button>
+  );
+}
+
+/** What Clozer read of a web page. Pages drawn in the browser give nothing: the seller's description takes over. */
+export function WebPageReading({
+  documentId,
+  docPurpose,
+  page,
+  aiAvailable,
+}: {
+  documentId: string;
+  docPurpose: string | null;
+  /** Null when no text could be read from the page. */
+  page: { summary: string | null; keyFacts: string[] } | null;
+  aiAvailable: boolean;
+}) {
+  return (
+    <div className="max-w-2xl space-y-3">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0 flex-1 space-y-1.5">
+          {docPurpose && <p className="text-body">{docPurpose}</p>}
+          {page?.summary && <p className="text-body text-muted-foreground">{page.summary}</p>}
+          {page && page.keyFacts.length > 0 && (
+            <p className="text-sm text-muted-foreground">{page.keyFacts.join(" · ")}</p>
+          )}
+          {!page && (
+            <p className="text-body text-muted-foreground">
+              Clozer n&apos;a pas pu lire le texte de cette page (contenu affiché par le navigateur, ou accès privé).
+            </p>
+          )}
+          {page && !page.summary && aiAvailable && (
+            <p className="text-body text-muted-foreground">L&apos;IA lit la page, rechargez dans une minute.</p>
+          )}
+        </div>
+        <RereadButton documentId={documentId} label="Relire la page" done="Page relue" />
+      </div>
     </div>
   );
 }
@@ -186,7 +227,7 @@ function PageRow({
   );
 }
 
-/** Web links have no readable text: the seller describes the page instead. */
+/** What the page holds beyond its text, in the seller's words. */
 export function SellerDescriptionForm({ documentId, initial }: { documentId: string; initial: string }) {
   const [value, setValue] = useState(initial);
   const [pending, startTransition] = useTransition();
@@ -204,8 +245,9 @@ export function SellerDescriptionForm({ documentId, initial }: { documentId: str
       }}
     >
       <p className="text-body text-muted-foreground">
-        Clozer ne peut pas lire le contenu d&apos;une page web. Dites en quelques lignes ce qu&apos;elle présente
-        (offre, prix, options, planning) : l&apos;IA s&apos;en servira pour comprendre vos deals et écrire les relances.
+        Ce que Clozer ne voit pas sur la page (vidéo, contenu derrière un clic) : dites en quelques lignes ce
+        qu&apos;elle présente (offre, prix, options, planning). L&apos;IA s&apos;en servira pour comprendre vos deals
+        et écrire les relances.
       </p>
       <Textarea
         aria-label="Ce que présente la page"

@@ -1,6 +1,6 @@
 "use client";
 
-import { Compass, LogOut, ShieldCheck } from "lucide-react";
+import { CircleHelp, Compass, LifeBuoy, LogOut, Shield, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 
@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth-client";
 
+import { openHelp } from "./open-help";
+
 function initials(name: string | null, email: string) {
   const source = name?.trim() || email.split("@")[0];
   const parts = source.split(/[\s._-]+/).filter(Boolean);
@@ -26,10 +28,12 @@ export function UserMenu({
   name,
   email,
   workspace,
+  isPlatformAdmin = false,
 }: {
   name: string | null;
   email: string;
   workspace: string;
+  isPlatformAdmin?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -52,6 +56,14 @@ export function UserMenu({
           <p className="truncate text-xs text-muted-foreground">{email}</p>
         </div>
         <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={openHelp}>
+          <LifeBuoy />
+          Aide et suggestions
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => router.push("/faq")}>
+          <CircleHelp />
+          Questions fréquentes
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => router.push("/bienvenue")}>
           <Compass />
           Revoir la prise en main
@@ -60,6 +72,12 @@ export function UserMenu({
           <ShieldCheck />
           Données et confidentialité
         </DropdownMenuItem>
+        {isPlatformAdmin && (
+          <DropdownMenuItem onClick={() => router.push("/admin")}>
+            <Shield />
+            Admin
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <ThemeMenuItems />
         <DropdownMenuSeparator />

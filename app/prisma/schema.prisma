@@ -21,6 +21,12 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  // Better Auth admin plugin. "admin" is the platform admin, not a workspace role.
+  role       String?
+  banned     Boolean   @default(false)
+  banReason  String?
+  banExpires DateTime?
+
   sessions    Session[]
   accounts    Account[]
   members     Member[]
@@ -31,6 +37,8 @@ model User {
   extensionTokens         ExtensionToken[]
   sellerAlerts            SellerAlert[]
   notificationPreferences NotificationPreference[]
+  helpMessages            HelpMessage[]
+  helpFeedback            HelpFeedback[]
 
   @@map("users")
 }
@@ -46,6 +54,8 @@ model Session {
   userId               String
   user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   activeOrganizationId String?
+  // Set when the platform admin signed in as this user
+  impersonatedBy       String?
 
   @@index([userId])
   @@map("sessions")
@@ -102,7 +112,13 @@ model Organization {
   plan             String             @default("free")
   extensionTokens  ExtensionToken[]
 
+  // Suspended by the platform admin: members locked out, cron and public links stopped
+  suspendedAt     DateTime?
+  suspendedReason String?
+
   notificationPreferences NotificationPreference[]
+  helpMessages            HelpMessage[]
+  helpFeedback            HelpFeedback[]
 
   @@map("organizations")
 }
@@ -169,6 +185,52 @@ model ExtensionPairing {
   createdAt       DateTime @default(now())
 
   @@map("extension_pairings")
+}
+
+// =============================================================================
+// Platform admin
+// =============================================================================
+
+// Banned emails: no account can be created with them, even after deletion
+model BlockedEmail {
+  email       String   @id
+  reason      String?
+  createdById String
+  createdAt   DateTime @default(now())
+
+  @@map("blocked_emails")
+}
+
+// Emails that may sign up while sign-ups are invite-only
+model AllowedEmail {
+  email     String   @id
+  createdAt DateTime @default(now())
+
+  @@map("allowed_emails")
+}
+
+// One row, id "singleton"
+model PlatformSettings {
+  id         String   @id @default("singleton")
+  signupMode String   @default("open") // open | invite_only
+  updatedAt  DateTime @updatedAt
+
+  @@map("platform_settings")
+}
+
+model AdminAuditLog {
+  id         String   @id @default(cuid())
+  actorId    String
+  action     String
+  targetType String // user | organization | settings
+  targetId   String?
+  reason     String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([targetType, targetId])
+  @@index([createdAt])
+  @@map("admin_audit_logs")
 }
 
 // =============================================================================
@@ -316,6 +378,15 @@ enum AlertPriority {
   INFO // can wait for the morning digest
 }
 
+// What a reader did around the content that page time does not show (tracking/view-signals.ts)
+enum ViewSignalType {
+  EXTERNAL_OPEN // opened the web page in a new tab
+  EXTERNAL_RETURN // came back to the tab; valueMs = time away, an estimate of time on the site
+  DOWNLOAD // downloaded the PDF
+  EXIT_PROMPT_SHOWN // about to leave: the assistant offered to answer a question
+  EXIT_PROMPT_OPENED // and the reader took it
+}
+
 enum ProspectActionType {
   VALIDATE_SIGN
   REQUEST_CHANGE
@@ -328,6 +399,13 @@ enum ProspectActionType {
 enum ChatRole {
   USER
   ASSISTANT
+}
+
+enum HelpFeedbackKind {
+  SUGGESTION
+  BUG
+  QUESTION // the help assistant could not answer
+  OTHER
 }
 
 // =============================================================================
@@ -541,6 +619,7 @@ model Link {
   capsules         PageCapsule[]
   capsulePlays     CapsulePlay[]
   voiceComments    VoiceComment[]
+  viewSignals      ViewSignal[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -632,11 +711,28 @@ model DocumentView {
   chatMessages  ChatMessage[]
   capsulePlays  CapsulePlay[]
   voiceComments VoiceComment[]
+  signals       ViewSignal[]
 
   @@index([linkId, lastSeenAt(sort: Desc)])
   @@index([linkId, visitorId])
   @@index([documentId])
   @@map("document_views")
+}
+
+model ViewSignal {
+  id      String         @id @default(cuid())
+  viewId  String
+  view    DocumentView   @relation(fields: [viewId], references: [id], onDelete: Cascade)
+  linkId  String
+  link    Link           @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  type    ViewSignalType
+  valueMs Int?
+
+  createdAt DateTime @default(now())
+
+  @@index([linkId, createdAt])
+  @@index([viewId])
+  @@map("view_signals")
 }
 
 // Time spent per page, aggregated per view (upserted on each tracking flush)
@@ -902,6 +998,52 @@ model ChatMessage {
   @@index([viewId, createdAt])
   @@index([linkId, createdAt])
   @@map("chat_messages")
+}
+
+// =============================================================================
+// Help assistant: the users' own questions about Clozer, and what they send the team
+// =============================================================================
+
+model HelpMessage {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  role      ChatRole
+  content   String
+  pathname  String? // USER row: the page the question was asked from
+  model     String?
+  tokensIn  Int?
+  tokensOut Int?
+  escalated Boolean  @default(false) // USER row: the assistant sent something to the team
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([organizationId, createdAt])
+  @@map("help_messages")
+}
+
+model HelpFeedback {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  kind      HelpFeedbackKind
+  summary   String
+  details   String?
+  pathname  String?
+  emailedAt DateTime? // null: no team inbox configured, or the email failed
+
+  createdAt DateTime @default(now())
+
+  @@index([createdAt(sort: Desc)])
+  @@index([userId])
+  @@map("help_feedback")
 }
 
 // =============================================================================

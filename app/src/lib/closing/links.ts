@@ -30,6 +30,7 @@ async function findViewerLink(slug: string) {
           archivedAt: true,
         },
       },
+      organization: { select: { suspendedAt: true } },
     },
   });
 }
@@ -43,7 +44,8 @@ export type ViewerLink = NonNullable<Awaited<ReturnType<typeof findViewerLink>>>
 export async function resolveViewerLink(slug: string, now = new Date()) {
   if (!SLUG_PATTERN.test(slug)) return null;
   const link = await findViewerLink(slug);
-  if (!link || link.archivedAt || link.document.archivedAt) return null;
+  // A suspended workspace's links read as unknown: no page, no tracking
+  if (!link || link.archivedAt || link.document.archivedAt || link.organization.suspendedAt) return null;
   // A signed quote stays readable after its deadline: the receipt link keeps working
   return { link, expired: isLinkExpired({ expiresAt: viewerDeadline(link) }, now) };
 }

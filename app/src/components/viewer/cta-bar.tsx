@@ -25,6 +25,7 @@ import type { ViewerLabels } from "@/lib/closing/i18n/viewer";
 import { cn } from "@/lib/utils";
 
 import { BookingDialog } from "./booking-dialog";
+import { sendSignal } from "./view-signal";
 
 type Props = {
   slug: string;
@@ -140,7 +141,7 @@ export function CtaBar({
                   size="lg"
                   className="h-11 w-11 shrink-0 px-0 sm:w-auto sm:px-4"
                   aria-label={labels.download}
-                  render={<a href={downloadUrl} />}
+                  render={<a href={downloadUrl} onClick={() => sendSignal(getViewId(), "DOWNLOAD")} />}
                   nativeButton={false}
                 >
                   <Download />
