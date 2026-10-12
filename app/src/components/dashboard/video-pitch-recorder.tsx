@@ -152,10 +152,18 @@ function PitchRecorder({ uploadPrefix, onDone }: { uploadPrefix: string; onDone:
       )}
 
       <div className="relative flex aspect-video items-center justify-center overflow-hidden rounded-lg bg-muted">
+        {/* Keys: a fresh element for the take, or it keeps the stopped camera as srcObject and plays black */}
         {recorder.recording ? (
-          <video src={recorder.recording.url} controls playsInline className="size-full bg-black object-contain" />
+          <video
+            key="take"
+            src={recorder.recording.url}
+            controls
+            playsInline
+            className="size-full bg-black object-contain"
+          />
         ) : recorder.preview ? (
           <video
+            key="live"
             ref={liveRef}
             autoPlay
             muted

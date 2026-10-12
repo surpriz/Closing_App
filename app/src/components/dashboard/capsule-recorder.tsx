@@ -155,14 +155,15 @@ function Recorder({ target, initialHook, onDone }: { target: CapsuleTarget; init
       </div>
 
       <div className="relative mx-auto flex size-48 items-center justify-center overflow-hidden rounded-full bg-muted">
+        {/* Keys: a fresh element for the take, or it keeps the stopped camera as srcObject and plays black */}
         {recorder.recording ? (
           kind === "VIDEO" ? (
-            <video src={recorder.recording.url} controls playsInline className="size-full object-cover" />
+            <video key="take" src={recorder.recording.url} controls playsInline className="size-full object-cover" />
           ) : (
             <audio src={recorder.recording.url} controls className="w-44" />
           )
         ) : kind === "VIDEO" && recorder.stream ? (
-          <video ref={liveRef} autoPlay muted playsInline className="size-full -scale-x-100 object-cover" />
+          <video key="live" ref={liveRef} autoPlay muted playsInline className="size-full -scale-x-100 object-cover" />
         ) : (
           <Mic className={cn("size-10 text-muted-foreground", recorder.status === "recording" && "animate-pulse text-destructive")} />
         )}
