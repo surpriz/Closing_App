@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { ImpersonationBanner } from "@/components/admin/impersonation-banner";
 import { Logo } from "@/components/brand/logo";
 import { CommandMenu, type CommandEntry } from "@/components/dashboard/command-menu";
 import { DashboardNav, MobileNav } from "@/components/dashboard/dashboard-nav";
@@ -56,6 +57,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex flex-1 flex-col">
+      <ImpersonationBanner />
       <header className="sticky top-0 z-30 border-b border-border/70 bg-background/80 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-4 sm:px-6">
           <Link

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import {
   banUser,
   disableUser,
+  impersonateUser,
   reactivateUser,
   revokeUserSessions,
   type AdminActionState,
@@ -153,6 +154,22 @@ export function UserActions({ userId, email, status }: { userId: string; email: 
           onClick={() => startTransition(async () => void report(await reactivateUser(userId), `${email} est réactivé`))}
         >
           Réactiver
+        </Button>
+      )}
+      {status === "active" && (
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={pending}
+          onClick={() =>
+            startTransition(async () => {
+              // Redirects to the app on success
+              const result = await impersonateUser(userId);
+              if (result?.error) toast.error(result.error);
+            })
+          }
+        >
+          Se connecter en tant que
         </Button>
       )}
       <Button
