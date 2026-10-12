@@ -25,6 +25,7 @@ type Workspace = {
 type Resolved =
   | { kind: "signed_out" }
   | { kind: "invited"; invitationId: string }
+  | { kind: "suspended" }
   | { kind: "ok"; workspace: Workspace };
 
 // The signed-in user's workspace: the active organization when Better Auth
@@ -49,6 +50,7 @@ const resolveWorkspace = cache(async (): Promise<Resolved> => {
       include: { organization: true },
     }));
 
+  if (membership?.organization.suspendedAt) return { kind: "suspended" };
   if (membership) {
     return {
       kind: "ok",
@@ -94,8 +96,8 @@ const resolveWorkspace = cache(async (): Promise<Resolved> => {
 });
 
 // Returns the signed-in user, their workspace and role, creating the
-// workspace on first sign-in. Null when signed out or still to accept an
-// invitation.
+// workspace on first sign-in. Null when signed out, still to accept an
+// invitation, or the workspace is suspended.
 export const getWorkspace = cache(async () => {
   const resolved = await resolveWorkspace();
   return resolved.kind === "ok" ? resolved.workspace : null;
@@ -106,7 +108,13 @@ export async function requireWorkspace(next?: string) {
   const resolved = await resolveWorkspace();
   if (resolved.kind === "invited") redirect(`/invitation/${resolved.invitationId}`);
   if (resolved.kind === "signed_out") redirect(next ? `/login?next=${encodeURIComponent(next)}` : "/login");
+  if (resolved.kind === "suspended") redirect("/suspendu");
   return resolved.workspace;
+}
+
+/** The signed-in user's workspace was suspended by the platform admin. */
+export async function isWorkspaceSuspended() {
+  return (await resolveWorkspace()).kind === "suspended";
 }
 
 /** Owners and admins only: the others land back on their own day. */

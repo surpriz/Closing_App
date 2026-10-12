@@ -1,6 +1,7 @@
 import { generateText, Output } from "ai";
 import { z } from "zod";
 
+import { ACTIVE_WORKSPACE } from "@/lib/closing/active-workspace";
 import { prisma } from "@/lib/db";
 
 import { getLanguageModel, getTranscriptionModel, THINKING_ROOM_TOKENS } from "../ai/provider";
@@ -246,6 +247,7 @@ export async function readPendingDocuments(
       aiProcessedAt: null,
       aiAttempts: { lt: MAX_AI_ATTEMPTS },
       updatedAt: { lte: new Date(now.getTime() - RETRY_AFTER_MS) },
+      ...ACTIVE_WORKSPACE,
       ...(scope.organizationId && { organizationId: scope.organizationId }),
       ...(scope.documentId && { id: scope.documentId }),
     },

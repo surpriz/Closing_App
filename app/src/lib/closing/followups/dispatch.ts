@@ -1,5 +1,6 @@
 import type { FollowupStatus } from "@/generated/prisma/enums";
 import { getPublicAppUrl } from "@/lib/app-origin";
+import { ACTIVE_WORKSPACE } from "@/lib/closing/active-workspace";
 import { prisma } from "@/lib/db";
 import { isEmailConfigured } from "@/lib/email";
 
@@ -173,7 +174,7 @@ export async function sendFollowup(
 
 export async function dispatchDueFollowups(now = new Date(), limit = 25) {
   const due = await prisma.followup.findMany({
-    where: { status: { in: SENDABLE }, scheduledFor: { lte: now } },
+    where: { status: { in: SENDABLE }, scheduledFor: { lte: now }, link: ACTIVE_WORKSPACE },
     orderBy: { scheduledFor: "asc" },
     select: { id: true },
     take: limit,
