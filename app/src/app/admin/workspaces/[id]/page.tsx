@@ -6,7 +6,7 @@ import { AuditList } from "@/components/admin/audit-list";
 import { AdminSection } from "@/components/admin/section";
 import { UserStatusBadge, WorkspaceStatusBadge } from "@/components/admin/status-badge";
 import { WorkspaceActions } from "@/components/admin/workspace-actions";
-import { ROLE_LABELS } from "@/components/dashboard/labels";
+import { roleLabel } from "@/components/dashboard/labels";
 import { loadAuditEntries } from "@/lib/admin/audit";
 import { adminDate, adminDateTime, formatMicroUsd } from "@/lib/admin/format";
 import { loadBlockedEmails, statusOf } from "@/lib/admin/users";
@@ -73,7 +73,7 @@ export default async function AdminWorkspacePage({ params }: PageProps<"/admin/w
                 <p className="truncate text-small text-muted-foreground">{member.user.name}</p>
               </div>
               <span className="flex shrink-0 items-center gap-3 text-muted-foreground">
-                {ROLE_LABELS[member.role as keyof typeof ROLE_LABELS] ?? member.role}
+                {roleLabel(member.role)}
                 <UserStatusBadge status={statusOf(member.user, blocked)} />
               </span>
             </li>

@@ -3,12 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { blockEmailAddress, findUserByEmail } from "@/lib/admin/accounts";
+import type { AdminActionState } from "@/lib/admin/action-state";
 import { logAdminAction } from "@/lib/admin/audit";
 import { prisma } from "@/lib/db";
 import { isPlatformAdminEmail, normalizeEmail } from "@/lib/platform-admin";
 import { requirePlatformAdmin } from "@/lib/session";
-
-import type { AdminActionState } from "./user-actions";
 
 /** Who may create an account: open, or invite-only with an allowlist; plus the blocklist. */
 
@@ -63,18 +63,11 @@ export async function blockEmail(_prev: AdminActionState, formData: FormData): P
   const email = parseEmail(formData);
   if (!email.success) return { error: email.error.issues[0]?.message };
   if (isPlatformAdminEmail(email.data)) return { error: "Le compte admin ne peut pas être bloqué." };
-  const user = await prisma.user.findFirst({
-    where: { email: { equals: email.data, mode: "insensitive" } },
-    select: { id: true },
-  });
-  if (user) return { error: "Un compte existe avec cet email : bannissez-le depuis sa fiche." };
+  if (await findUserByEmail(email.data)) return { error: "Un compte existe avec cet email : bannissez-le depuis sa fiche." };
+  // Optional here, unlike the account dialogs: blocking a stranger needs no justification
   const reason = String(formData.get("reason") ?? "").trim().slice(0, 500) || null;
 
-  await prisma.blockedEmail.upsert({
-    where: { email: email.data },
-    create: { email: email.data, reason, createdById: admin.id },
-    update: { reason, createdById: admin.id },
-  });
+  await blockEmailAddress(email.data, reason, admin.id);
   await logAdminAction({
     actorId: admin.id,
     action: "settings.block_email",
@@ -88,11 +81,7 @@ export async function blockEmail(_prev: AdminActionState, formData: FormData): P
 
 export async function unblockEmail(email: string): Promise<AdminActionState> {
   const admin = await requirePlatformAdmin();
-  const user = await prisma.user.findFirst({
-    where: { email: { equals: email, mode: "insensitive" } },
-    select: { id: true },
-  });
-  if (user) return { error: "Un compte existe avec cet email : réactivez-le depuis sa fiche." };
+  if (await findUserByEmail(email)) return { error: "Un compte existe avec cet email : réactivez-le depuis sa fiche." };
 
   await prisma.blockedEmail.deleteMany({ where: { email } });
   await logAdminAction({ actorId: admin.id, action: "settings.unblock_email", targetType: "settings", metadata: { email } });

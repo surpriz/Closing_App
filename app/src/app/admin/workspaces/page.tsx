@@ -1,20 +1,21 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { AdminFilterBar } from "@/components/admin/filter-bar";
 import { AdminPagination } from "@/components/admin/pagination";
 import { WorkspaceStatusBadge } from "@/components/admin/status-badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { ADMIN_CARD } from "@/components/admin/styles";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   ADMIN_PAGE_SIZE,
   adminDate,
+  filterOptions,
   firstParam,
   formatMicroUsd,
+  parseFilter,
   parsePage,
-  parseWorkspaceFilter,
 } from "@/lib/admin/format";
-import { aiCostLast30Days } from "@/lib/admin/workspaces";
+import { WORKSPACE_FILTERS, aiCostLast30Days } from "@/lib/admin/workspaces";
 import { prisma } from "@/lib/db";
 import { requirePlatformAdmin } from "@/lib/session";
 
@@ -24,7 +25,7 @@ export default async function AdminWorkspacesPage({ searchParams }: PageProps<"/
   await requirePlatformAdmin();
   const params = await searchParams;
   const q = firstParam(params.q);
-  const statut = parseWorkspaceFilter(firstParam(params.statut));
+  const statut = parseFilter(WORKSPACE_FILTERS, firstParam(params.statut));
   const page = parsePage(params.page);
 
   const where = {
@@ -35,8 +36,7 @@ export default async function AdminWorkspacesPage({ searchParams }: PageProps<"/
         { members: { some: { user: { email: { contains: q, mode: "insensitive" as const } } } } },
       ],
     }),
-    ...(statut === "actif" && { suspendedAt: null }),
-    ...(statut === "suspendu" && { suspendedAt: { not: null } }),
+    ...(statut && WORKSPACE_FILTERS[statut].where),
   };
 
   const [total, workspaces] = await Promise.all([
@@ -61,27 +61,15 @@ export default async function AdminWorkspacesPage({ searchParams }: PageProps<"/
 
   return (
     <>
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <h1 className="text-title [font-stretch:92%]">Espaces</h1>
-        <form className="flex flex-wrap gap-2">
-          <Input name="q" defaultValue={q} placeholder="Nom ou email d'un membre" aria-label="Recherche" className="w-60" />
-          <select
-            name="statut"
-            defaultValue={statut ?? ""}
-            aria-label="Statut"
-            className="h-9 rounded-md border border-input bg-transparent px-2 text-sm"
-          >
-            <option value="">Tous</option>
-            <option value="actif">Actifs</option>
-            <option value="suspendu">Suspendus</option>
-          </select>
-          <Button type="submit" variant="outline">
-            Filtrer
-          </Button>
-        </form>
-      </div>
+      <AdminFilterBar
+        title="Espaces"
+        q={q}
+        placeholder="Nom ou email d'un membre"
+        statut={statut}
+        options={filterOptions(WORKSPACE_FILTERS)}
+      />
 
-      <div className="overflow-hidden rounded-xl bg-card shadow-xs ring-1 ring-border">
+      <div className={ADMIN_CARD}>
         <Table>
           <TableHeader>
             <TableRow>

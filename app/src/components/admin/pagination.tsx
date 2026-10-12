@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { buttonVariants } from "@/components/ui/button";
-import { ADMIN_PAGE_SIZE } from "@/lib/admin/format";
+import { ADMIN_PAGE_SIZE, plural } from "@/lib/admin/format";
 
 /** Previous / next links that keep the current filters. */
 export function AdminPagination({
@@ -27,7 +27,7 @@ export function AdminPagination({
   return (
     <div className="flex items-center justify-between gap-4 text-sm text-muted-foreground">
       <span>
-        {total} résultat{total > 1 ? "s" : ""} · page {Math.min(page, pages)} sur {pages}
+        {total} {plural(total, "résultat")} · page {Math.min(page, pages)} sur {pages}
       </span>
       <div className="flex gap-2">
         {page > 1 && (

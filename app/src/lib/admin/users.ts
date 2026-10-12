@@ -1,17 +1,12 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
-import { userStatus, type UserStatus } from "@/lib/platform-admin";
+import { normalizeEmail, userStatus, type UserStatus } from "@/lib/platform-admin";
 
-export const STATUS_FILTERS = { actif: "active", desactive: "disabled", banni: "banned" } as const satisfies Record<
-  string,
-  UserStatus
->;
-
-export type StatusFilter = keyof typeof STATUS_FILTERS;
-
-export function parseStatusFilter(value: string | undefined): StatusFilter | undefined {
-  return value && value in STATUS_FILTERS ? (value as StatusFilter) : undefined;
-}
+export const USER_FILTERS = {
+  actif: { label: "Actifs", status: "active" },
+  desactive: { label: "Désactivés", status: "disabled" },
+  banni: { label: "Bannis", status: "banned" },
+} as const;
 
 /** Banned = blocked email; disabled = ban still running; active = the rest. */
 export function userStatusWhere(status: UserStatus, blockedEmails: string[], now: Date): Prisma.UserWhereInput {
@@ -34,5 +29,5 @@ export function statusOf(
   blocked: Set<string>,
   now = new Date(),
 ) {
-  return userStatus(user, blocked.has(user.email.toLowerCase()), now);
+  return userStatus(user, blocked.has(normalizeEmail(user.email)), now);
 }

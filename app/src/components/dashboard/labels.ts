@@ -192,6 +192,8 @@ export const ROLE_LABELS = {
   member: "Membre",
 } as const;
 
+export const roleLabel = (role: string) => ROLE_LABELS[role as keyof typeof ROLE_LABELS] ?? role;
+
 const dayFormat = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" });
 
 /** Why a deal sits in its column on the team page. */

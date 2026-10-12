@@ -1,13 +1,21 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { AdminFilterBar } from "@/components/admin/filter-bar";
 import { AdminPagination } from "@/components/admin/pagination";
 import { UserStatusBadge } from "@/components/admin/status-badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { ADMIN_CARD } from "@/components/admin/styles";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ADMIN_PAGE_SIZE, adminDate, adminDateTime, firstParam, parsePage } from "@/lib/admin/format";
-import { STATUS_FILTERS, loadBlockedEmails, parseStatusFilter, statusOf, userStatusWhere } from "@/lib/admin/users";
+import {
+  ADMIN_PAGE_SIZE,
+  adminDate,
+  adminDateTime,
+  filterOptions,
+  firstParam,
+  parseFilter,
+  parsePage,
+} from "@/lib/admin/format";
+import { USER_FILTERS, loadBlockedEmails, statusOf, userStatusWhere } from "@/lib/admin/users";
 import { prisma } from "@/lib/db";
 import { requirePlatformAdmin } from "@/lib/session";
 
@@ -17,7 +25,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps<"/admin
   await requirePlatformAdmin();
   const params = await searchParams;
   const q = firstParam(params.q);
-  const statut = parseStatusFilter(firstParam(params.statut));
+  const statut = parseFilter(USER_FILTERS, firstParam(params.statut));
   const page = parsePage(params.page);
   const now = new Date();
   const blockedEmails = await loadBlockedEmails();
@@ -33,7 +41,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps<"/admin
             ],
           }
         : {},
-      statut ? userStatusWhere(STATUS_FILTERS[statut], blockedEmails, now) : {},
+      statut ? userStatusWhere(USER_FILTERS[statut].status, blockedEmails, now) : {},
     ],
   };
 
@@ -59,28 +67,15 @@ export default async function AdminUsersPage({ searchParams }: PageProps<"/admin
 
   return (
     <>
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <h1 className="text-title [font-stretch:92%]">Utilisateurs</h1>
-        <form className="flex flex-wrap gap-2">
-          <Input name="q" defaultValue={q} placeholder="Email ou nom" aria-label="Recherche" className="w-56" />
-          <select
-            name="statut"
-            defaultValue={statut ?? ""}
-            aria-label="Statut"
-            className="h-9 rounded-md border border-input bg-transparent px-2 text-sm"
-          >
-            <option value="">Tous</option>
-            <option value="actif">Actifs</option>
-            <option value="desactive">Désactivés</option>
-            <option value="banni">Bannis</option>
-          </select>
-          <Button type="submit" variant="outline">
-            Filtrer
-          </Button>
-        </form>
-      </div>
+      <AdminFilterBar
+        title="Utilisateurs"
+        q={q}
+        placeholder="Email ou nom"
+        statut={statut}
+        options={filterOptions(USER_FILTERS)}
+      />
 
-      <div className="overflow-hidden rounded-xl bg-card shadow-xs ring-1 ring-border">
+      <div className={ADMIN_CARD}>
         <Table>
           <TableHeader>
             <TableRow>

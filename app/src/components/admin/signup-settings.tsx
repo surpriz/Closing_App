@@ -1,7 +1,6 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useTransition } from "react";
-import { toast } from "sonner";
 
 import {
   allowEmail,
@@ -10,12 +9,13 @@ import {
   setSignupMode,
   unblockEmail,
 } from "@/app/admin/settings-actions";
-import type { AdminActionState } from "@/app/admin/user-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import type { AdminActionState } from "@/lib/admin/action-state";
 import type { SignupMode } from "@/lib/platform-admin";
 
-import { report } from "./user-actions";
+import { report } from "./report";
+import { ADMIN_SELECT } from "./styles";
 
 export function SignupModeForm({ mode }: { mode: SignupMode }) {
   const [pending, startTransition] = useTransition();
@@ -29,7 +29,7 @@ export function SignupModeForm({ mode }: { mode: SignupMode }) {
         name="mode"
         defaultValue={mode}
         aria-label="Mode d'inscription"
-        className="h-9 rounded-md border border-input bg-transparent px-2 text-sm"
+        className={ADMIN_SELECT}
       >
         <option value="open">Ouvertes à tous</option>
         <option value="invite_only">Sur invitation ou liste autorisée</option>
@@ -56,11 +56,7 @@ function AddEmailForm({
   const form = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
-    if (state?.error) toast.error(state.error);
-    if (state?.ok) {
-      toast.success(success);
-      form.current?.reset();
-    }
+    if (state && report(state, success)) form.current?.reset();
   }, [state, success]);
 
   return (
