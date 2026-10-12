@@ -12,10 +12,12 @@ import { adminDate, adminDateTime, formatMicroUsd } from "@/lib/admin/format";
 import { loadBlockedEmails, statusOf } from "@/lib/admin/users";
 import { aiCostLast30Days } from "@/lib/admin/workspaces";
 import { prisma } from "@/lib/db";
+import { requirePlatformAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Espace" };
 
 export default async function AdminWorkspacePage({ params }: PageProps<"/admin/workspaces/[id]">) {
+  await requirePlatformAdmin();
   const { id } = await params;
   const workspace = await prisma.organization.findUnique({
     where: { id },

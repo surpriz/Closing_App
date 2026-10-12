@@ -16,10 +16,12 @@ import {
 } from "@/lib/admin/format";
 import { aiCostLast30Days } from "@/lib/admin/workspaces";
 import { prisma } from "@/lib/db";
+import { requirePlatformAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Espaces" };
 
 export default async function AdminWorkspacesPage({ searchParams }: PageProps<"/admin/workspaces">) {
+  await requirePlatformAdmin();
   const params = await searchParams;
   const q = firstParam(params.q);
   const statut = parseWorkspaceFilter(firstParam(params.statut));

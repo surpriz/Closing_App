@@ -128,6 +128,8 @@ export async function revokeUserSessions(userId: string): Promise<AdminActionSta
   } catch (error) {
     return failed(error);
   }
+  // Extension and Outlook tokens are sessions too
+  await prisma.extensionToken.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: new Date() } });
   await logAdminAction({ actorId: admin.id, action: "user.revoke_sessions", targetType: "user", targetId: userId });
   refresh(userId);
   return { ok: true };

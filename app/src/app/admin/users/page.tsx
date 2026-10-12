@@ -9,10 +9,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ADMIN_PAGE_SIZE, adminDate, adminDateTime, firstParam, parsePage } from "@/lib/admin/format";
 import { STATUS_FILTERS, loadBlockedEmails, parseStatusFilter, statusOf, userStatusWhere } from "@/lib/admin/users";
 import { prisma } from "@/lib/db";
+import { requirePlatformAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Utilisateurs" };
 
 export default async function AdminUsersPage({ searchParams }: PageProps<"/admin/users">) {
+  await requirePlatformAdmin();
   const params = await searchParams;
   const q = firstParam(params.q);
   const statut = parseStatusFilter(firstParam(params.statut));

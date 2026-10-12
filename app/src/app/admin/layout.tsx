@@ -10,6 +10,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+// Each page calls requirePlatformAdmin too: a layout is not re-run on every navigation
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const admin = await requirePlatformAdmin();
 

@@ -10,11 +10,13 @@ import { ROLE_LABELS } from "@/components/dashboard/labels";
 import { loadAuditEntries } from "@/lib/admin/audit";
 import { adminDate, adminDateTime } from "@/lib/admin/format";
 import { prisma } from "@/lib/db";
+import { requirePlatformAdmin } from "@/lib/session";
 import { isPlatformAdminEmail, normalizeEmail, userStatus } from "@/lib/platform-admin";
 
 export const metadata: Metadata = { title: "Utilisateur" };
 
 export default async function AdminUserPage({ params }: PageProps<"/admin/users/[id]">) {
+  await requirePlatformAdmin();
   const { id } = await params;
   const now = new Date();
   const user = await prisma.user.findUnique({
