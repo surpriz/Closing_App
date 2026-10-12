@@ -10,6 +10,7 @@ import { linkLabelSelect, prospectLabel } from "@/lib/closing/dashboard/labels";
 import { sellerLinks } from "@/lib/closing/dashboard/queries";
 import { prisma } from "@/lib/db";
 import { isPlatformAdminEmail } from "@/lib/platform-admin";
+import { isProspectingEnabled } from "@/lib/prospecting/flag";
 import { isManagerRole } from "@/lib/roles";
 import { requireWorkspace } from "@/lib/session";
 
@@ -68,7 +69,7 @@ export default async function DashboardLayout({
           >
             <Logo />
           </Link>
-          <DashboardNav isManager={isManager} />
+          <DashboardNav isManager={isManager} prospecting={isProspectingEnabled(organization.id)} />
           <div className="ml-auto flex items-center gap-2">
             <CommandMenu entries={entries} />
             <UserMenu

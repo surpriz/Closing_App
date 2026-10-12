@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
+import { FormCheckbox } from "./form-checkbox";
+
 const CURRENCIES = ["EUR", "USD", "GBP", "CHF", "CAD"];
 
 type Props = {
@@ -21,6 +23,7 @@ type Props = {
     decisionMakerName: string;
     decisionMakerRole: string;
     sellerNotes: string;
+    referenceConsent: boolean;
   };
 };
 
@@ -90,6 +93,12 @@ export function DealContextForm({ linkId, initial }: Props) {
             Servent à l&apos;analyse du deal. Jamais reprises telles quelles dans un message au prospect.
           </p>
         </div>
+        <FormCheckbox
+          name="referenceConsent"
+          label="Ce client accepte d'être cité comme référence"
+          hint="Sans son accord, son nom n'apparaît jamais dans vos messages de prospection."
+          defaultChecked={initial.referenceConsent}
+        />
       </div>
       <Button type="submit" size="sm" variant="outline" disabled={pending}>
         {pending ? "Enregistrement…" : "Enregistrer"}

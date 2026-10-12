@@ -793,6 +793,7 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
                         link.decisionMakerName,
                         link.decisionMakerRole,
                         link.sellerNotes,
+                        !!link.referenceConsentAt,
                       ].join("|"),
                       dealAmount: link.dealAmountCents !== null ? String(link.dealAmountCents / 100) : "",
                       dealCurrency: link.dealCurrency ?? "EUR",
@@ -800,6 +801,7 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
                       decisionMakerName: link.decisionMakerName ?? "",
                       decisionMakerRole: link.decisionMakerRole ?? "",
                       sellerNotes: link.sellerNotes ?? "",
+                      referenceConsent: !!link.referenceConsentAt,
                     }}
                   />
                   <SnoozeControl

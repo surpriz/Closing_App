@@ -1,5 +1,6 @@
 import { getPublicAppUrl } from "@/lib/app-origin";
 import { prisma } from "@/lib/db";
+import { addOptOut } from "@/lib/prospecting/opt-out";
 
 import { createUnsubscribeToken, verifyUnsubscribeToken } from "./token";
 
@@ -35,6 +36,8 @@ export async function findProspectByUnsubscribeToken(token: string) {
       id: true,
       email: true,
       unsubscribedAt: true,
+      origin: true,
+      linkId: true,
       link: { select: { organizationId: true } },
     },
   });
@@ -65,5 +68,23 @@ export async function unsubscribeByToken(token: string) {
       data: { status: "CANCELLED", cancelledAt: now, error: "Prospect désinscrit" },
     }),
   ]);
+
+  // Found by Clozer prospecting: nobody will be suggested this person again
+  if (prospect.origin === "PROSPECTING") {
+    const suggestion = await prisma.prospectSuggestion.findFirst({
+      where: { linkId: prospect.linkId },
+      select: { provider: true, externalId: true, linkedinUrl: true, dedupeKey: true },
+    });
+    await addOptOut(
+      {
+        email: prospect.email,
+        linkedinUrl: suggestion?.linkedinUrl,
+        provider: suggestion?.provider,
+        externalId: suggestion?.externalId,
+        personHash: suggestion?.dedupeKey,
+      },
+      "unsubscribe",
+    );
+  }
   return true;
 }

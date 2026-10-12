@@ -8,7 +8,7 @@ import { onLinkExpiryChanged } from "../triggers/expiry";
 import { linkTitle } from "./link-title";
 import { linkDefaultsFor } from "./smart-defaults";
 
-export type LinkSource = "extension_gmail" | "extension_outlook" | "outlook_addin";
+export type LinkSource = "extension_gmail" | "extension_outlook" | "outlook_addin" | "prospecting";
 
 // One link = one proposal sent to one prospect company
 export async function createDocumentLink(input: {
@@ -16,12 +16,19 @@ export async function createDocumentLink(input: {
   userId: string;
   documentId: string;
   name?: string | null;
-  prospect?: { email: string; name?: string | null; company?: string | null } | null;
+  prospect?: {
+    email: string;
+    name?: string | null;
+    company?: string | null;
+    origin?: "SELLER" | "PROSPECTING";
+  } | null;
   /** Left out: the workspace defaults, adjusted to the document type (and again once the AI knows it). */
   requireEmail?: boolean;
   /** After it the viewer locks and the prospect can ask for more time. Left out: from the defaults. */
   expiresAt?: Date | null;
   source?: LinkSource;
+  /** Left out: from the defaults. Off for contacts who never asked to hear from the seller. */
+  followupsEnabled?: boolean;
   // Inserted in an email that is not sent yet: confirmed by confirmLinkSent
   draft?: boolean;
 }) {
@@ -60,7 +67,7 @@ export async function createDocumentLink(input: {
       expiresAt: input.expiresAt === undefined ? defaults.expiresAt : input.expiresAt,
       chatEnabled: defaults.chatEnabled,
       voiceCommentsEnabled: defaults.voiceCommentsEnabled,
-      followupsEnabled: defaults.followupsEnabled,
+      followupsEnabled: input.followupsEnabled ?? defaults.followupsEnabled,
       ctaEnabled: defaults.ctaEnabled,
       bookingEnabled: defaults.bookingEnabled,
       shared: defaults.shared,
@@ -74,6 +81,7 @@ export async function createDocumentLink(input: {
               email: prospect.email,
               name: prospect.name || null,
               company: prospect.company || null,
+              origin: prospect.origin,
             },
           }
         : undefined,

@@ -51,6 +51,11 @@ export async function GET(request: Request) {
       whatsapp: isWhatsAppConfigured(),
       ai: llm ? `${llm.provider}:${llm.modelId}` : null,
       extension: !!process.env.EXTENSION_IDS,
+      prospecting: {
+        workspaces: !!process.env.PROSPECTING_ORG_IDS,
+        apollo: !!process.env.APOLLO_API_KEY,
+        lemlist: !!process.env.LEMLIST_API_KEY,
+      },
     },
     database,
     vercelEnv: process.env.VERCEL_ENV ?? null,
