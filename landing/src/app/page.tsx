@@ -1,62 +1,62 @@
-import { PrimaryCta } from "@/components/cta";
-import { HeroMockup } from "@/components/hero-mockup";
-import { Icon, type IconName } from "@/components/icons";
-import { CONTACT_EMAIL } from "@/components/links";
+import { Icon } from "@/components/icons";
+import { APP_URL, CONTACT_EMAIL } from "@/components/links";
+import { SignupForm } from "@/components/signup-form";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { HeatScale, ThermalPlate } from "@/components/thermal-plate";
+import { ThermalReading } from "@/components/thermal-reading";
 
-const STEPS: { icon: IconName; title: string; body: string }[] = [
+const STEPS = [
   {
-    icon: "upload",
     title: "Partagez votre proposition",
     body: "Un PDF, une page web (Notion, Loom, Figma…) ou un pitch vidéo enregistré en trois minutes. Depuis Gmail ou Outlook avec l'extension, ou depuis Clozer.",
+    measure: "PDF · page web · vidéo",
   },
   {
-    icon: "link",
     title: "Un lien par prospect",
     body: "Il remplace la pièce jointe. Chaque personne a le sien : vous savez qui lit, qui regarde, et qui ne fait rien.",
+    measure: "1 lien = 1 lecteur",
   },
   {
-    icon: "send",
     title: "Relancez au bon moment",
     body: "Clozer suit la lecture, vous dit qui relancer aujourd'hui et prépare le message. Vous le relisez, il part.",
+    measure: "Relance validée par vous",
   },
 ];
 
-const FEATURES: { icon: IconName; title: string; body: string; wide?: boolean }[] = [
+const READINGS = [
   {
-    icon: "eye",
     title: "Page par page",
     body: "Pages lues, temps passé sur chacune, retours sur les tarifs, nombre de lecteurs. Pour une vidéo, les passages regardés et où le prospect a décroché. Vous voyez si le devis circule en interne.",
-    wide: true,
   },
   {
-    icon: "radio",
     title: "En direct",
     body: "Une notification dans Chrome, ou en haut de Gmail et Outlook, quand un prospect lit. Une alerte part s'il revient après un long silence ou s'il lit à plusieurs.",
   },
   {
-    icon: "gauge",
     title: "Une température qui s'explique",
     body: "Froid, tiède, chaud : un score sur 100 dont chaque point a une raison lisible. Pas de boîte noire.",
   },
   {
-    icon: "sparkles",
     title: "Une lecture de chaque deal",
     body: "Où en est le prospect, ce qui coince, quoi faire et quand. Chaque affirmation renvoie à un fait mesuré, sinon elle est écartée.",
-    wide: true,
   },
   {
-    icon: "pen",
     title: "Des relances prêtes",
     body: "Écrites à partir de votre offre et de ce qui a été lu, envoyées aux heures de bureau du prospect. Vous validez chacune, ou vous laissez partir seules les plus simples.",
   },
   {
-    icon: "message",
     title: "Le prospect répond dans le document",
-    body: "Sous la proposition : la valider, demander un ajustement, prendre rendez-vous dans votre agenda, poser une question à l'assistant ou laisser un vocal sur une page. Tout remonte en tête de votre tableau de bord.",
-    wide: true,
+    body: "Valider la proposition, demander un ajustement, prendre rendez-vous dans votre agenda, poser une question à l'assistant ou laisser un vocal sur une page. Tout remonte en tête de votre tableau de bord.",
   },
+];
+
+// Example score breakdown, labelled as such.
+const SCORE_REASONS = [
+  { points: "+34", label: "Tarifs lus 3 min 38" },
+  { points: "+22", label: "Revenu 3 fois depuis hier" },
+  { points: "+18", label: "Transmis à un 2e lecteur" },
+  { points: "+12", label: "Méthode lue en entier" },
 ];
 
 const GUARANTEES = [
@@ -66,13 +66,36 @@ const GUARANTEES = [
   "Lien de désinscription dans chaque relance, adresses IP jamais stockées en clair.",
 ];
 
+const SEGMENTS = [
+  {
+    name: "Solo",
+    who: "Indépendants, artisans, consultants, agences de quelques personnes.",
+    body: "Vos devis, vos relances, rien à installer. Connexion avec Google ou votre email, premier lien en quelques minutes.",
+    offer: "Gratuit pendant la bêta",
+    action: { label: "Créer mon compte", href: APP_URL },
+  },
+  {
+    name: "Équipe",
+    who: "Commerciaux de PME avec un manager.",
+    body: "Invitez l'équipe : chacun suit ses deals, le manager voit l'ensemble dans la vue Équipe. Alertes par email, Slack, Chrome ou Outlook.",
+    offer: "Gratuit pendant la bêta",
+    action: { label: "Créer l'espace d'équipe", href: APP_URL },
+  },
+  {
+    name: "Entreprise",
+    who: "Grandes équipes commerciales.",
+    body: "Déploiement à plusieurs équipes, besoins de sécurité ou d'intégration : on regarde votre cas ensemble avant de vous ouvrir l'accès.",
+    offer: "Sur échange",
+    action: { label: "Nous écrire", href: `mailto:${CONTACT_EMAIL}?subject=Clozer%20pour%20notre%20%C3%A9quipe` },
+  },
+];
+
 const BETA_INCLUDES = [
   "PDF, pages web et pitchs vidéo",
   "Extension Gmail et Outlook",
-  "Suivi page par page et alertes en direct",
-  "Lecture des deals et relances préparées",
+  "Suivi page par page, alertes en direct",
+  "Lecture des deals, relances préparées",
   "Rendez-vous, assistant et vocaux du prospect",
-  "Alertes par email, Slack, Chrome ou Outlook",
 ];
 
 const FAQ = [
@@ -94,7 +117,7 @@ const FAQ = [
   },
   {
     q: "Faut-il installer quelque chose ?",
-    a: "Pas pour commencer : vous vous connectez avec votre email, sans mot de passe, et le prospect lit dans son navigateur, sur ordinateur comme sur téléphone. Si vous envoyez depuis Gmail ou Outlook, l'extension Chrome ou le complément Outlook remplace la pièce jointe par le lien, sans quitter votre email.",
+    a: "Pas pour commencer : vous vous connectez avec Google ou votre email, sans mot de passe, et le prospect lit dans son navigateur, sur ordinateur comme sur téléphone. Si vous envoyez depuis Gmail ou Outlook, l'extension Chrome ou le complément Outlook remplace la pièce jointe par le lien, sans quitter votre email.",
   },
   {
     q: "Le prospect peut-il me répondre ?",
@@ -102,203 +125,227 @@ const FAQ = [
   },
 ];
 
+const WRAP = "mx-auto w-full max-w-[90rem] px-5 sm:px-8";
+
 export default function Home() {
   return (
     <div className="flex min-h-full flex-col overflow-x-clip">
       <SiteHeader />
 
       <main className="flex-1">
-        {/* Hero */}
-        <section className="mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-16 px-5 pt-14 pb-20 sm:px-6 md:pt-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-12 lg:pb-28">
-          <div className="animate-rise max-w-xl">
-            <p className="inline-flex items-center gap-2 rounded-full bg-sheet px-3 py-1 text-small font-medium shadow-xs ring-1 ring-rule">
-              <span className="size-1.5 rounded-full bg-success" aria-hidden />
-              Gratuit pendant la bêta
-            </p>
-            <h1 className="mt-6 text-[2.5rem] leading-[1.06] font-medium tracking-[-0.035em] [font-stretch:88%] sm:text-display">
-              Sachez qui lit votre devis. <span className="text-ink-soft">Relancez au bon moment.</span>
-            </h1>
-            <p className="mt-6 max-w-lg text-lg leading-relaxed text-ink-soft">
-              Un PDF, une page web ou une vidéo : envoyez votre proposition en lien suivi. Clozer vous montre les
-              pages lues, le temps passé, les retours sur les tarifs, puis vous dit qui relancer aujourd&apos;hui et
-              prépare le message.
-            </p>
-            <div className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-4">
-              <PrimaryCta>Créer mon premier lien</PrimaryCta>
-              <a
-                href="#comment"
-                className="text-sm font-medium text-ink-soft underline decoration-rule decoration-2 underline-offset-[6px] transition-colors hover:text-ink hover:decoration-ink"
-              >
-                Voir comment ça marche
-              </a>
+        {/* Report header: the promise, and the signup in the "Client" field. */}
+        <section>
+          <p className={`${WRAP} flex flex-wrap gap-x-6 gap-y-1 border-b border-rule py-3 font-mono text-micro text-ink-soft`}>
+            <span>Rapport de lecture n° 0412</span>
+            <span>Devis « Refonte du site » · Atelier Morel</span>
+            <span className="font-sans font-medium text-ink">Exemple de démonstration</span>
+          </p>
+          <div className={`${WRAP} grid gap-10 pt-10 pb-12 md:pt-14 lg:grid-cols-[minmax(0,1fr)_26rem] lg:items-end lg:gap-16`}>
+            <div>
+              <h1 className="condensed max-w-[12ch] text-display font-extrabold">
+                Voyez où votre devis{" "}
+                <span className="relative inline-block">
+                  chauffe.
+                  <HeatScale orientation="horizontal" className="absolute inset-x-0 -bottom-2 sm:-bottom-3" />
+                </span>
+              </h1>
+              <p className="mt-10 max-w-[52ch] text-lead text-ink-soft">
+                Envoyez votre proposition en lien suivi. Clozer mesure la lecture page par page, vous dit qui relancer
+                aujourd&apos;hui et prépare le message.
+              </p>
             </div>
-            <p className="mt-6 flex flex-wrap gap-x-5 gap-y-1 text-small text-ink-soft">
-              <span className="inline-flex items-center gap-1.5">
-                <Icon name="check" className="size-3.5 text-success" /> Sans carte bancaire
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Icon name="check" className="size-3.5 text-success" /> Depuis Gmail, Outlook ou le navigateur
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Icon name="check" className="size-3.5 text-success" /> Connexion par email
-              </span>
-            </p>
+            <div>
+              <SignupForm id="email-hero" />
+              <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-small text-ink-soft">
+                <span>Gratuit pendant la bêta</span>
+                <span>Sans carte bancaire</span>
+              </p>
+            </div>
           </div>
-          <HeroMockup />
+
+          <ThermalReading />
+
+          <div className="border-b border-ink">
+          <dl className={`${WRAP} grid grid-cols-2 text-small md:grid-cols-4`}>
+            <Readout label="Prospect">Marie Dupont · Atelier Morel</Readout>
+            <Readout label="Température">
+              <span className="inline-flex items-center gap-2">
+                <span className="size-2.5 bg-iron-2" aria-hidden />
+                Chaud · <span className="font-mono">86/100</span>
+              </span>
+            </Readout>
+            <Readout label="Activité">Revenu 3 fois depuis hier</Readout>
+            <Readout label="À faire">
+              <span className="hatch inline-flex px-2 py-0.5 text-ink-soft">
+                <span className="bg-paper px-1 text-ink">Relance prévue hier</span>
+              </span>
+            </Readout>
+          </dl>
+          </div>
         </section>
 
-        {/* Problem */}
-        <section className="border-y border-rule bg-sheet">
-          <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-10 px-5 py-16 sm:px-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] md:py-20">
-            <h2 className="text-title font-medium [font-stretch:92%]">Après l&apos;envoi, le silence.</h2>
-            <div className="space-y-4 text-lg leading-relaxed text-ink-soft">
-              <p>
-                Le devis est parti. A-t-il été ouvert ? Lu jusqu&apos;aux tarifs ? Transmis au décideur ? Vous
-                relancez à l&apos;aveugle : trop tôt, vous agacez ; trop tard, le prospect a signé ailleurs.
+        {/* The problem, shown: an attachment measures nothing. */}
+        <section className="border-b border-ink">
+          <div className={`${WRAP} grid gap-12 py-20 md:py-28 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-20`}>
+            <div>
+              <h2 className="condensed text-title font-bold">Après l&apos;envoi, le silence.</h2>
+              <p className="mt-6 max-w-[56ch] text-lead text-ink-soft">
+                Le devis est parti. A-t-il été ouvert ? Lu jusqu&apos;aux tarifs ? Transmis au décideur ? Vous relancez
+                à l&apos;aveugle : trop tôt, vous agacez ; trop tard, le prospect a signé ailleurs.
               </p>
-              <p className="text-ink">
+              <p className="mt-4 max-w-[56ch] text-lead">
                 Clozer remplace la pièce jointe par un lien, et le doute par ce qui s&apos;est vraiment passé.
               </p>
             </div>
-          </div>
-        </section>
-
-        {/* How it works */}
-        <section id="comment" className="mx-auto w-full max-w-6xl scroll-mt-20 px-5 py-20 sm:px-6 md:py-28">
-          <SectionHeading kicker="Comment ça marche" title="Trois étapes, une seule fois par proposition." />
-          <ol className="mt-12 grid grid-cols-1 gap-4 md:grid-cols-3">
-            {STEPS.map((step, index) => (
-              <li key={step.title} className="rounded-2xl bg-sheet p-6 shadow-xs ring-1 ring-rule">
-                <div className="flex items-center justify-between">
-                  <span className="flex size-10 items-center justify-center rounded-xl bg-muted ring-1 ring-rule">
-                    <Icon name={step.icon} className="size-[1.125rem]" />
-                  </span>
-                  <span className="font-mono text-small text-ink-soft">0{index + 1}</span>
-                </div>
-                <h3 className="mt-6 text-lg font-semibold tracking-[-0.01em]">{step.title}</h3>
-                <p className="mt-2 text-body text-ink-soft">{step.body}</p>
-              </li>
-            ))}
-          </ol>
-        </section>
-
-        {/* Features */}
-        <section id="fonctionnalites" className="scroll-mt-20 border-t border-rule bg-muted/50">
-          <div className="mx-auto w-full max-w-6xl px-5 py-20 sm:px-6 md:py-28">
-            <SectionHeading
-              kicker="Fonctionnalités"
-              title="Tout ce qu'il faut pour savoir quand relancer, et quoi dire."
-            />
-            <ul className="mt-12 grid grid-cols-1 gap-4 md:grid-cols-3">
-              {FEATURES.map((feature) => (
-                <li
-                  key={feature.title}
-                  className={`rounded-2xl bg-sheet p-6 shadow-xs ring-1 ring-rule transition-shadow duration-200 hover:shadow-md ${feature.wide ? "md:col-span-2" : ""}`}
-                >
-                  <span className="flex size-9 items-center justify-center rounded-lg bg-ink text-sheet">
-                    <Icon name={feature.icon} className="size-4" />
-                  </span>
-                  <h3 className="mt-5 text-lg font-semibold tracking-[-0.01em]">{feature.title}</h3>
-                  <p className="mt-2 max-w-xl text-body text-ink-soft">{feature.body}</p>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-
-        {/* Respect */}
-        <section className="mx-auto w-full max-w-6xl px-5 py-20 sm:px-6 md:py-28">
-          <div className="grid grid-cols-1 gap-12 rounded-3xl bg-ink p-8 text-sheet sm:p-12 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
-            <div>
-              <span className="flex size-10 items-center justify-center rounded-xl bg-sheet/10">
-                <Icon name="shield" className="size-5" />
-              </span>
-              <h2 className="mt-6 text-title font-medium [font-stretch:92%]">Suivre sans fliquer.</h2>
-              <p className="mt-4 text-lg leading-relaxed text-sheet/70">
-                Vos prospects sont vos futurs clients. Clozer est conçu pour les respecter, et pour que votre
-                relance reste celle d&apos;un commercial attentif.
-              </p>
-            </div>
-            <ul className="space-y-4 self-center">
-              {GUARANTEES.map((item) => (
-                <li key={item} className="flex gap-3 text-body">
-                  <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-success">
-                    <Icon name="check" className="size-3 text-sheet" />
-                  </span>
-                  <span className="text-sheet/90">{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-
-        {/* Pricing */}
-        <section id="tarif" className="scroll-mt-20 border-t border-rule">
-          <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-12 px-5 py-20 sm:px-6 md:grid-cols-2 md:py-28">
-            <SectionHeading
-              kicker="Tarif"
-              title="Gratuit pendant la bêta."
-              body="Clozer est en bêta. Toutes les fonctionnalités sont ouvertes, sans carte bancaire. Si une offre payante arrive, vous serez prévenu avant."
-            />
-            <div className="rounded-2xl bg-sheet p-8 shadow-md ring-1 ring-rule">
-              <p className="flex items-baseline gap-2">
-                <span className="text-5xl font-medium tracking-[-0.03em]">0 €</span>
-                <span className="text-ink-soft">pendant la bêta</span>
-              </p>
-              <ul className="mt-6 space-y-3">
-                {BETA_INCLUDES.map((item) => (
-                  <li key={item} className="flex items-center gap-3 text-body">
-                    <Icon name="check" className="size-4 shrink-0 text-success" />
-                    {item}
-                  </li>
+            <div className="grid gap-8 self-center">
+              <Comparison label="Pièce jointe PDF" verdict="Aucune mesure">
+                {Array.from({ length: 6 }, (_, i) => (
+                  <div key={i} className="aspect-[3/4] border border-rule bg-sheet" />
                 ))}
-              </ul>
-              <PrimaryCta className="mt-8 w-full">Commencer gratuitement</PrimaryCta>
+              </Comparison>
+              <Comparison label="Lien Clozer" verdict="Tarifs lus 3 min 38">
+                {[0.3, 0.5, 0.68, 1, 0.38, 0].map((heat, i) => (
+                  <ThermalPlate key={i} heat={heat} seed={i} className="aspect-[3/4]" />
+                ))}
+              </Comparison>
             </div>
+          </div>
+        </section>
+
+        {/* How it works: the protocol, three rows. */}
+        <section id="comment" className="scroll-mt-14 border-b border-ink">
+          <div className={`${WRAP} py-20 md:py-28`}>
+            <h2 className="condensed max-w-[18ch] text-title font-bold">Trois gestes, une fois par proposition.</h2>
+            <ol className="mt-14 border-t border-ink">
+              {STEPS.map((step, index) => (
+                <li
+                  key={step.title}
+                  className="grid gap-3 border-b border-rule py-8 md:grid-cols-[4rem_minmax(0,5fr)_minmax(0,6fr)_minmax(0,3fr)] md:gap-8"
+                >
+                  <span className="font-mono text-small text-ink-soft">{index + 1}/3</span>
+                  <h3 className="condensed text-[1.75rem] leading-tight font-bold tracking-[-0.02em]">{step.title}</h3>
+                  <p className="max-w-[60ch] text-body text-ink-soft">{step.body}</p>
+                  <p className="text-small font-medium md:text-right">{step.measure}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        {/* What you see: one prospect sheet as the specimen, the readings beside it. */}
+        <section id="releves" className="scroll-mt-14 border-b border-ink bg-sheet">
+          <div className={`${WRAP} grid gap-14 py-20 md:py-28 lg:grid-cols-[minmax(0,6fr)_minmax(0,7fr)] lg:gap-20`}>
+            <div className="lg:sticky lg:top-24 lg:self-start">
+              <h2 className="condensed max-w-[16ch] text-title font-bold">Une fiche par prospect, chaque matin.</h2>
+              <ProspectSheet />
+            </div>
+            <ul className="border-t border-ink lg:mt-2">
+              {READINGS.map((item) => (
+                <li key={item.title} className="border-b border-rule py-7">
+                  <h3 className="text-[1.25rem] leading-snug font-semibold tracking-[-0.01em]">{item.title}</h3>
+                  <p className="mt-2 max-w-[62ch] text-body text-ink-soft">{item.body}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        {/* Respect: the one dark band. */}
+        <section className="bg-ink text-sheet">
+          <div className={`${WRAP} grid gap-12 py-20 md:py-28 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-20`}>
+            <div>
+              <h2 className="condensed text-title font-bold">Suivre sans fliquer.</h2>
+              <p className="mt-6 max-w-[48ch] text-lead text-sheet/75">
+                Vos prospects sont vos futurs clients. La chaleur se mesure sur les pages, jamais sur les personnes,
+                et votre relance reste celle d&apos;un commercial attentif.
+              </p>
+            </div>
+            <ul className="border-t border-sheet/30 self-center">
+              {GUARANTEES.map((item) => (
+                <li key={item} className="flex gap-4 border-b border-sheet/20 py-5 text-lead">
+                  <Icon name="check" className="mt-1 size-5 shrink-0 text-sheet/60" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        {/* Segments: no prices exist yet, so none are shown. */}
+        <section id="pour-qui" className="scroll-mt-14 border-b border-ink">
+          <div className={`${WRAP} py-20 md:py-28`}>
+            <div className="flex flex-wrap items-end justify-between gap-6">
+              <h2 className="condensed max-w-[16ch] text-title font-bold">Un seul outil, de l&apos;artisan à l&apos;équipe.</h2>
+              <p className="max-w-[40ch] text-body text-ink-soft">
+                Clozer est en bêta : tout est ouvert, sans carte bancaire. Si une offre payante arrive, vous serez
+                prévenu avant.
+              </p>
+            </div>
+            <div className="mt-14 grid border-t border-ink md:grid-cols-3">
+              {SEGMENTS.map((segment) => (
+                <article
+                  key={segment.name}
+                  className="flex flex-col border-b border-rule py-8 md:border-r md:border-b-0 md:px-8 md:first:pl-0 md:last:border-r-0 md:last:pr-0"
+                >
+                  <h3 className="condensed text-[2.5rem] leading-none font-extrabold tracking-[-0.03em]">{segment.name}</h3>
+                  <p className="mt-4 font-medium">{segment.who}</p>
+                  <p className="mt-2 flex-1 text-body text-ink-soft">{segment.body}</p>
+                  <p className="mt-8 text-small font-semibold">{segment.offer}</p>
+                  <a
+                    href={segment.action.href}
+                    className="group mt-3 flex h-12 items-center justify-between border border-ink px-4 font-semibold transition-colors hover:bg-ink hover:text-sheet"
+                  >
+                    {segment.action.label}
+                    <Icon name="arrow" className="size-5 transition-transform duration-300 ease-[var(--ease-out-expo)] group-hover:translate-x-1" />
+                  </a>
+                </article>
+              ))}
+            </div>
+            <p className="mt-10 flex flex-wrap gap-x-6 gap-y-2 text-small text-ink-soft">
+              <span className="font-medium text-ink">Inclus pendant la bêta :</span>
+              {BETA_INCLUDES.map((item) => (
+                <span key={item}>{item}</span>
+              ))}
+            </p>
           </div>
         </section>
 
         {/* FAQ */}
-        <section id="faq" className="scroll-mt-20 border-t border-rule bg-sheet">
-          <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-12 px-5 py-20 sm:px-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] md:py-28">
-            <SectionHeading
-              kicker="Questions"
-              title="Ce qu'on nous demande."
-              body={
-                <>
-                  Une autre question ?{" "}
-                  <a href={`mailto:${CONTACT_EMAIL}`} className="font-medium text-ink underline underline-offset-4">
-                    Écrivez-nous
-                  </a>
-                  .
-                </>
-              }
-            />
-            <div className="divide-y divide-rule border-y border-rule">
+        <section id="faq" className="scroll-mt-14 border-b border-ink">
+          <div className={`${WRAP} grid gap-12 py-20 md:py-28 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-20`}>
+            <div>
+              <h2 className="condensed text-title font-bold">Ce qu&apos;on nous demande.</h2>
+              <p className="mt-6 text-lead text-ink-soft">
+                Une autre question ?{" "}
+                <a href={`mailto:${CONTACT_EMAIL}`} className="font-medium text-ink underline underline-offset-4">
+                  Écrivez-nous
+                </a>
+                .
+              </p>
+            </div>
+            <div className="border-t border-ink">
               {FAQ.map((item) => (
-                <details key={item.q} className="group py-5">
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-6 text-body font-semibold [&::-webkit-details-marker]:hidden">
+                <details key={item.q} className="group border-b border-rule">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-6 py-5 text-[1.125rem] font-semibold [&::-webkit-details-marker]:hidden">
                     {item.q}
-                    <span className="flex size-7 shrink-0 items-center justify-center rounded-full ring-1 ring-rule transition-transform duration-200 group-open:rotate-45">
-                      <Icon name="plus" className="size-3.5" />
-                    </span>
+                    <Icon
+                      name="plus"
+                      className="size-5 shrink-0 transition-transform duration-300 ease-[var(--ease-out-expo)] group-open:rotate-45"
+                    />
                   </summary>
-                  <p className="mt-3 max-w-2xl text-body text-ink-soft">{item.a}</p>
+                  <p className="max-w-[62ch] pb-6 text-body text-ink-soft">{item.a}</p>
                 </details>
               ))}
             </div>
           </div>
         </section>
 
-        {/* Final CTA */}
-        <section className="mx-auto w-full max-w-6xl px-5 py-20 text-center sm:px-6 md:py-28">
-          <h2 className="mx-auto max-w-2xl text-title font-medium [font-stretch:92%] sm:text-[2.75rem] sm:leading-[1.08]">
-            Votre prochain devis peut partir avec un lien suivi.
-          </h2>
-          <p className="mx-auto mt-4 max-w-md text-lg text-ink-soft">
-            Créez votre compte avec votre email, ajoutez un PDF ou une vidéo, envoyez le lien.
-          </p>
-          <PrimaryCta className="mt-9">Créer mon premier lien</PrimaryCta>
+        {/* Close: the same field, once more. */}
+        <section>
+          <div className={`${WRAP} grid gap-10 py-20 md:py-28 lg:grid-cols-[minmax(0,1fr)_26rem] lg:items-end lg:gap-16`}>
+            <h2 className="condensed max-w-[14ch] text-display font-extrabold">Votre prochain devis part avec un lien suivi.</h2>
+            <SignupForm id="email-final" />
+          </div>
         </section>
       </main>
 
@@ -307,20 +354,73 @@ export default function Home() {
   );
 }
 
-function SectionHeading({
-  kicker,
-  title,
-  body,
-}: {
-  kicker: string;
-  title: string;
-  body?: React.ReactNode;
-}) {
+function Readout({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="max-w-2xl">
-      <p className="text-small font-medium text-brand">{kicker}</p>
-      <h2 className="mt-3 text-title font-medium [font-stretch:92%]">{title}</h2>
-      {body && <p className="mt-4 text-lg leading-relaxed text-ink-soft">{body}</p>}
+    <div className="border-rule py-3 odd:pr-4 even:pl-4 max-md:nth-[-n+2]:border-b max-md:odd:border-r md:border-r md:px-4 md:first:pl-0 md:last:border-r-0">
+      <dt className="font-mono text-micro text-ink-soft">{label}</dt>
+      <dd className="mt-1">{children}</dd>
     </div>
+  );
+}
+
+function Comparison({ label, verdict, children }: { label: string; verdict: string; children: React.ReactNode }) {
+  return (
+    <figure>
+      <figcaption className="mb-3 flex items-baseline justify-between gap-4 border-b border-ink pb-2 text-small">
+        <span className="font-semibold">{label}</span>
+        <span className="text-ink-soft">{verdict}</span>
+      </figcaption>
+      <div className="grid grid-cols-6 gap-2">{children}</div>
+    </figure>
+  );
+}
+
+function ProspectSheet() {
+  return (
+    <figure className="mt-10 border border-ink bg-paper">
+      <figcaption className="sr-only">
+        Exemple de fiche prospect : Marie Dupont, chaude, 86 sur 100, avec le détail du score et une relance prête à
+        valider.
+      </figcaption>
+      <div aria-hidden>
+        <div className="flex items-start justify-between gap-4 border-b border-ink p-5">
+          <div>
+            <p className="text-lead font-semibold">Marie Dupont</p>
+            <p className="text-small text-ink-soft">Atelier Morel · devis « Refonte du site »</p>
+          </div>
+          <div className="text-right">
+            <p className="condensed text-[2.75rem] leading-none font-extrabold">86</p>
+            <p className="font-mono text-micro text-ink-soft">/100 · chaud</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-6 gap-1 border-b border-ink p-5">
+          {[0.3, 0.5, 0.68, 1, 0.38, 0].map((heat, i) => (
+            <ThermalPlate key={i} heat={heat} seed={i} className="aspect-[3/4]" />
+          ))}
+        </div>
+        <ul className="divide-y divide-rule border-b border-ink px-5">
+          {SCORE_REASONS.map((reason) => (
+            <li key={reason.label} className="flex items-baseline gap-4 py-2.5 text-small">
+              <span className="w-8 font-mono">{reason.points}</span>
+              {reason.label}
+            </li>
+          ))}
+        </ul>
+        <div className="p-5">
+          <p className="flex items-baseline justify-between text-small font-semibold">
+            Relance prête <span className="font-normal text-ink-soft">à valider</span>
+          </p>
+          <p className="mt-2 text-small text-ink-soft">
+            « Bonjour Marie, pour faciliter la décision, je peux vous proposer un paiement en trois fois. Un créneau
+            jeudi pour en parler ? »
+          </p>
+          <div className="mt-4 flex gap-2 text-small font-semibold">
+            <span className="bg-ink px-3 py-2 text-sheet">Valider l&apos;envoi</span>
+            <span className="border border-ink px-3 py-2">Modifier</span>
+          </div>
+        </div>
+      </div>
+      <p className="border-t border-rule px-5 py-2 text-micro text-ink-soft">Exemple de démonstration</p>
+    </figure>
   );
 }

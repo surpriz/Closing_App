@@ -6,12 +6,20 @@ export const alt = "Clozer — savoir qui lit vraiment votre devis";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-const BARS = [
-  { label: "Contexte", width: 22 },
-  { label: "Méthode", width: 38 },
-  { label: "Tarifs", width: 100, hot: true },
-  { label: "Conditions", width: 14 },
-];
+// Heat per page of the example quote, as on the home page.
+const PLATES = [0.3, 0.5, 0.68, 1, 0.38, 0];
+
+function plateBackground(heat: number) {
+  if (heat === 0) return BRAND.iron0;
+  const stops = [
+    heat > 0.9 ? `${BRAND.iron4} 0%` : null,
+    heat > 0.7 ? `${BRAND.iron3} ${heat > 0.9 ? 14 : 0}%` : null,
+    heat > 0.35 ? `${BRAND.iron2} ${heat > 0.7 ? 32 : 0}%` : null,
+    `${BRAND.iron1} ${heat > 0.35 ? 55 : 0}%`,
+    `${BRAND.iron0} ${Math.round(60 + heat * 30)}%`,
+  ].filter(Boolean);
+  return `radial-gradient(circle at 50% 45%, ${stops.join(", ")})`;
+}
 
 export default function OpengraphImage() {
   return new ImageResponse(
@@ -21,61 +29,28 @@ export default function OpengraphImage() {
           width: "100%",
           height: "100%",
           display: "flex",
+          flexDirection: "column",
           background: BRAND.paper,
           color: BRAND.ink,
-          padding: 72,
           fontFamily: "sans-serif",
         }}
       >
-        <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", flex: 1 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 34, fontWeight: 700 }}>
-            {/* Same mark as components/logo.tsx: an open ring that the hot dot closes. */}
-            <svg width="44" height="44" viewBox="0 0 24 24">
-              <path
-                d="M19.07 7.5A8.5 8.5 0 1 0 19.07 16.5"
-                fill="none"
-                stroke={BRAND.ink}
-                strokeWidth="3"
-                strokeLinecap="round"
-              />
-              <circle cx="20.2" cy="12" r="2.2" fill={BRAND.heatHot} />
+        <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: "56px 64px 40px", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 36, fontWeight: 800, letterSpacing: -1 }}>
+            {/* Same mark as components/logo.tsx: a reticle closing on one hot spot. */}
+            <svg width="40" height="40" viewBox="0 0 24 24">
+              <path d="M3 8.5V3h5.5M15.5 3H21v5.5M21 15.5V21h-5.5M8.5 21H3v-5.5" fill="none" stroke={BRAND.ink} strokeWidth="2.4" />
+              <circle cx="12" cy="12" r="3.4" fill={BRAND.iron2} />
             </svg>
-            Clozer
+            clozer
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-            <div style={{ fontSize: 68, fontWeight: 700, lineHeight: 1.05, letterSpacing: -2, maxWidth: 620 }}>
-              Sachez qui lit votre devis.
-            </div>
-            <div style={{ fontSize: 34, color: BRAND.inkSoft, maxWidth: 600 }}>Relancez au bon moment.</div>
+          <div style={{ fontSize: 84, fontWeight: 800, lineHeight: 0.95, letterSpacing: -3, maxWidth: 900 }}>
+            Voyez où votre devis chauffe.
           </div>
         </div>
-        <div
-          style={{
-            width: 400,
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            gap: 22,
-            background: BRAND.sheet,
-            borderRadius: 28,
-            padding: 40,
-            border: `1px solid ${BRAND.rule}`,
-          }}
-        >
-          {BARS.map((bar) => (
-            <div key={bar.label} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <div style={{ fontSize: 22, color: bar.hot ? BRAND.ink : BRAND.inkSoft }}>{bar.label}</div>
-              <div style={{ display: "flex", height: 12, borderRadius: 6, background: BRAND.muted }}>
-                <div
-                  style={{
-                    width: `${bar.width}%`,
-                    height: 12,
-                    borderRadius: 6,
-                    background: bar.hot ? BRAND.heatHot : BRAND.ink,
-                  }}
-                />
-              </div>
-            </div>
+        <div style={{ display: "flex", gap: 2, background: BRAND.ink, borderTop: `2px solid ${BRAND.ink}`, height: 230 }}>
+          {PLATES.map((heat, i) => (
+            <div key={i} style={{ display: "flex", flex: 1, backgroundImage: plateBackground(heat), backgroundColor: BRAND.iron0 }} />
           ))}
         </div>
       </div>

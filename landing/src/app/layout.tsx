@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Instrument_Sans } from "next/font/google";
+import { Archivo, Geist_Mono } from "next/font/google";
 
 import "./globals.css";
 
-const instrumentSans = Instrument_Sans({
-  variable: "--font-instrument-sans",
+const archivo = Archivo({
+  variable: "--font-archivo",
   subsets: ["latin", "latin-ext"],
   axes: ["wdth"],
   display: "swap",
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="fr" className={`${instrumentSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html lang="fr" className={`${archivo.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full font-sans">{children}</body>
     </html>
   );

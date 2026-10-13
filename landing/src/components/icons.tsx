@@ -13,6 +13,7 @@ const PATHS = {
   send: "M14.5 21.7a.5.5 0 0 0 .9 0L22 2.6a.5.5 0 0 0-.6-.6L2.3 8.6a.5.5 0 0 0 0 .9l7.9 3.2a2 2 0 0 1 1.1 1.1zM21.9 2.1 11 13",
   message: "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z",
   plus: "M12 5v14M5 12h14",
+  arrow: "M4 12h15M13 6l6 6-6 6",
 } as const;
 
 export type IconName = keyof typeof PATHS;

@@ -4,15 +4,14 @@
  * Keep in sync with @theme in app/globals.css.
  */
 export const BRAND = {
-  paper: "#f7f9fc",
+  paper: "#f4f5f7",
   sheet: "#ffffff",
-  ink: "#101e33",
-  inkSoft: "#576478",
-  muted: "#edf0f6",
-  rule: "#e1e5ea",
-  brand: "#2e62c9",
-  success: "#187c49",
-  heatHot: "#e94a2b",
-  heatWarm: "#e9a03e",
-  heatCold: "#8ca7ca",
+  ink: "#15171c",
+  inkSoft: "#5a5e68",
+  rule: "#d9dbe0",
+  iron0: "#1b0b3a",
+  iron1: "#7a1e8c",
+  iron2: "#e2452b",
+  iron3: "#ffc93c",
+  iron4: "#fff6d8",
 } as const;

@@ -32,7 +32,7 @@ export function MobileMenu({ items }: { items: { href: string; label: string }[]
         aria-controls="mobile-menu"
         aria-label={open ? "Fermer le menu" : "Ouvrir le menu"}
         onClick={() => setOpen((value) => !value)}
-        className="-mr-2 flex size-11 items-center justify-center rounded-lg text-ink transition-colors hover:bg-ink/[0.04]"
+        className="-mr-2 ml-1 flex size-11 items-center justify-center text-ink transition-colors hover:bg-sheet"
       >
         <svg viewBox="0 0 24 24" aria-hidden className="size-5" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round">
           {open ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
@@ -42,20 +42,20 @@ export function MobileMenu({ items }: { items: { href: string; label: string }[]
         <div
           id="mobile-menu"
           onClick={() => setOpen(false)}
-          className="absolute inset-x-0 top-full border-b border-rule bg-sheet px-5 py-4 shadow-md"
+          className="absolute inset-x-0 top-full border-b border-ink bg-paper px-5 py-2"
         >
-          <nav aria-label="Navigation" className="grid">
+          <nav aria-label="Navigation" className="grid divide-y divide-rule">
             {items.map((item) => (
-              <a key={item.href} href={item.href} className="rounded-lg px-3 py-2.5 text-body font-medium text-ink hover:bg-ink/[0.04]">
+              <a key={item.href} href={item.href} className="py-3.5 text-lead font-medium text-ink">
                 {item.label}
               </a>
             ))}
           </nav>
-          <div className="mt-3 flex items-center justify-between gap-3 border-t border-rule pt-4">
-            <a href={APP_URL} className="px-3 py-2 text-sm font-medium text-ink-soft hover:text-ink">
+          <div className="flex items-center justify-between gap-3 border-t border-ink py-3">
+            <a href={APP_URL} className="py-2 text-body font-medium text-ink-soft hover:text-ink">
               Se connecter
             </a>
-            <PrimaryCta size="md">Essayer</PrimaryCta>
+            <PrimaryCta>Essayer</PrimaryCta>
           </div>
         </div>
       )}

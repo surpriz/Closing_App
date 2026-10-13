@@ -7,37 +7,38 @@ import { MobileMenu } from "./mobile-menu";
 
 const NAV = [
   { href: "/#comment", label: "Comment ça marche" },
-  { href: "/#fonctionnalites", label: "Fonctionnalités" },
-  { href: "/#tarif", label: "Tarif" },
+  { href: "/#releves", label: "Ce que vous voyez" },
+  { href: "/#pour-qui", label: "Pour qui" },
   { href: "/#faq", label: "Questions" },
 ];
 
+/** The report's header strip: one hairline row, fields separated like a form. */
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-30 border-b border-rule/70 bg-paper/80 backdrop-blur-md">
-      <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-8 px-5 sm:px-6">
-        <Link href="/" aria-label="Clozer, accueil">
+    <header className="sticky top-0 z-30 border-b border-ink bg-paper">
+      <div className="mx-auto flex h-14 w-full max-w-[90rem] items-stretch px-5 sm:px-8">
+        <Link href="/" aria-label="Clozer, accueil" className="flex items-center pr-6">
           <Logo />
         </Link>
-        <nav aria-label="Navigation" className="hidden items-center gap-1 md:flex">
+        <nav aria-label="Navigation" className="hidden items-stretch border-l border-rule md:flex">
           {NAV.map((item) => (
             <a
               key={item.href}
               href={item.href}
-              className="rounded-lg px-3 py-1.5 text-sm text-ink-soft transition-colors hover:bg-ink/[0.04] hover:text-ink"
+              className="flex items-center border-r border-rule px-4 text-small text-ink-soft transition-colors hover:bg-sheet hover:text-ink"
             >
               {item.label}
             </a>
           ))}
         </nav>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-1">
           <a
             href={APP_URL}
-            className="hidden rounded-lg px-3 py-2 text-sm font-medium text-ink-soft transition-colors hover:text-ink sm:inline-flex"
+            className="hidden h-10 items-center px-3 text-small font-medium text-ink-soft transition-colors hover:text-ink sm:inline-flex"
           >
             Se connecter
           </a>
-          <PrimaryCta size="md">Essayer</PrimaryCta>
+          <PrimaryCta>Essayer</PrimaryCta>
           <MobileMenu items={NAV} />
         </div>
       </div>
