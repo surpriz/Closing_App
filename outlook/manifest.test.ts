@@ -15,6 +15,7 @@ describe("manifest", () => {
     expect(xml).toContain("<Id>6352200e-6950-46a5-9623-8132438db368</Id>");
     expect(xml).toContain("<Version>0.1.0.0</Version>");
     expect(xml).toContain('<DisplayName DefaultValue="Clozer"/>');
+    expect(xml).toContain('<SupportUrl DefaultValue="https://www.clozer.club/support"/>');
     expect(xml).toContain('DefaultValue="https://app.clozer.club/outlook/commands.js"');
   });
 
