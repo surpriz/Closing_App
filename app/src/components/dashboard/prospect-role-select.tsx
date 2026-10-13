@@ -50,7 +50,7 @@ export function ProspectRoleSelect({
         });
       }}
     >
-      <SelectTrigger aria-label="Rôle du contact" size="sm" className="h-7 min-w-32 bg-card text-xs">
+      <SelectTrigger aria-label="Rôle du contact" size="sm" className="h-7 min-w-32 bg-card text-small">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>

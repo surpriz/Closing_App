@@ -85,7 +85,7 @@ export function ExtensionConnect({
 
   if (status === "done") {
     return (
-      <div className="space-y-4 rounded-xl bg-card p-6 shadow-xs ring-1 ring-border">
+      <div className="space-y-4 rounded-xl bg-card p-6 ring-1 ring-foreground/85">
         <p className="flex items-center gap-2 text-heading">
           <Check className="size-4 text-success" aria-hidden />
           Clozer est connecté à Chrome
@@ -100,7 +100,7 @@ export function ExtensionConnect({
   }
 
   return (
-    <div className="space-y-4 rounded-xl bg-card p-6 shadow-xs ring-1 ring-border">
+    <div className="space-y-4 rounded-xl bg-card p-6 ring-1 ring-foreground/85">
       <p className="text-body">
         L&apos;extension créera les liens dans l&apos;espace{" "}
         <strong>{account.workspace}</strong>, au nom de {account.email}.
@@ -140,7 +140,7 @@ function NotificationCheck({ extensionId }: { extensionId: string }) {
 
   return (
     <details className="group border-t border-border pt-4" onToggle={missed}>
-      <summary className="flex cursor-pointer list-none items-center gap-1.5 text-sm text-muted-foreground outline-none hover:text-foreground focus-visible:underline [&::-webkit-details-marker]:hidden">
+      <summary className="flex cursor-pointer list-none items-center gap-1.5 text-small text-muted-foreground outline-none hover:text-foreground focus-visible:underline [&::-webkit-details-marker]:hidden">
         <ChevronRight className="size-4 transition-transform group-open:rotate-90" />
         Je n&apos;ai pas vu la notification « Clozer est prêt »
       </summary>

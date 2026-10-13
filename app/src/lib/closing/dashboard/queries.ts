@@ -93,7 +93,7 @@ export async function getOpenDeals(
       meetingAt: true,
       quoteRequestedAt: true,
       engagementScore: { select: { score: true, tier: true, reasons: true } },
-      document: { select: { name: true, displayTitle: true, docType: true } },
+      document: { select: { name: true, displayTitle: true, docType: true, numPages: true } },
       prospects: firstProspect,
       followups: {
         where: { status: { in: [...PLANNED_FOLLOWUP_STATUSES] } },
@@ -144,6 +144,23 @@ export async function getOpenDeals(
 }
 
 export type OpenDeal = Awaited<ReturnType<typeof getOpenDeals>>[number];
+
+/** Reading time per page for each link, bots and the seller's own reads aside. */
+export async function getPageReadings(linkIds: string[]) {
+  if (linkIds.length === 0) return new Map<string, { pageNumber: number; durationMs: number }[]>();
+  const rows = await prisma.pageView.groupBy({
+    by: ["linkId", "pageNumber"],
+    where: { linkId: { in: linkIds }, view: { isBot: false } },
+    _sum: { totalDurationMs: true },
+  });
+  const byLink = new Map<string, { pageNumber: number; durationMs: number }[]>();
+  for (const row of rows) {
+    const pages = byLink.get(row.linkId) ?? [];
+    pages.push({ pageNumber: row.pageNumber, durationMs: row._sum.totalDurationMs ?? 0 });
+    byLink.set(row.linkId, pages);
+  }
+  return byLink;
+}
 
 /** Links sent since `since` (all links when null), and how far each one went. */
 export async function getFunnelFacts(

@@ -108,7 +108,7 @@ export function ShareReady({
   }
 
   return (
-    <section className="space-y-5 rounded-2xl bg-card p-5 ring-1 ring-border sm:p-6">
+    <section className="space-y-5 border-y border-foreground bg-card px-4 py-5 sm:px-6 sm:py-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-1">
           <h2 className="text-heading">
@@ -119,14 +119,14 @@ export function ShareReady({
               : "Votre lien est prêt"}
           </h2>
           {!sent && (
-            <p className="max-w-xl text-sm text-muted-foreground">
+            <p className="max-w-xl text-body text-muted-foreground">
               {shared
                 ? "Postez-le, mettez-le en signature ou transférez-le : chaque lecteur donne son email et reçoit son propre lien, suivi comme un deal."
                 : "Envoyez-le comme vous voulez : vous saurez qui le lit, quelles pages, et quand relancer."}
             </p>
           )}
         </div>
-        <div className="flex gap-1 rounded-lg bg-muted p-1" role="radiogroup" aria-label="Pour qui est ce lien">
+        <div className="flex gap-px border border-border bg-border" role="radiogroup" aria-label="Pour qui est ce lien">
           {[
             { value: false, label: "Une personne", icon: User },
             { value: true, label: "Plusieurs personnes", icon: Users },
@@ -139,8 +139,10 @@ export function ShareReady({
               disabled={pending}
               onClick={() => switchMode(value)}
               className={cn(
-                "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm transition-colors disabled:opacity-60",
-                shared === value ? "bg-card shadow-xs" : "text-muted-foreground hover:text-foreground",
+                "flex items-center gap-1.5 bg-card px-2.5 py-1.5 text-small transition-colors disabled:opacity-60",
+                shared === value
+                  ? "font-semibold text-foreground shadow-[inset_0_-2px_0_var(--foreground)]"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
               )}
             >
               <Icon className="size-4" aria-hidden />
@@ -154,7 +156,7 @@ export function ShareReady({
         <button
           type="button"
           onClick={copy}
-          className="min-w-0 flex-1 truncate rounded-lg bg-muted px-3 py-2.5 text-left font-mono text-sm ring-1 ring-border hover:ring-foreground/30"
+          className="h-10 min-w-0 flex-1 truncate rounded-lg border border-input bg-muted/50 px-3 text-left font-mono text-small transition-colors hover:border-foreground/60"
           title="Copier le lien"
         >
           {url.replace(/^https?:\/\//, "")}
@@ -170,7 +172,7 @@ export function ShareReady({
       </div>
 
       {shared ? null : recipient ? (
-        <p className="text-sm text-muted-foreground">
+        <p className="text-small text-muted-foreground">
           Pour <span className="text-foreground">{recipient.email}</span>
         </p>
       ) : (
@@ -180,7 +182,7 @@ export function ShareReady({
             onChange={(e) => setWho(e.target.value)}
             placeholder="Pour qui ? Un email ou un nom (facultatif)"
             aria-label="Pour qui"
-            className="h-9"
+            className="h-10"
             disabled={pending}
           />
           <Button type="submit" variant="outline" size="lg" disabled={pending || !who.trim()}>
@@ -190,23 +192,23 @@ export function ShareReady({
       )}
 
       {processing && (
-        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+        <p className="flex items-center gap-2 text-small text-muted-foreground">
           <Sparkles className="size-4 shrink-0 animate-pulse" aria-hidden />
           Clozer lit votre document pour adapter les réglages. Vous pouvez déjà l&apos;envoyer.
         </p>
       )}
       {notice && (
-        <p className="flex items-center gap-2 text-sm">
+        <p className="flex items-center gap-2 text-small">
           <Sparkles className="size-4 shrink-0" aria-hidden />
           {notice}
         </p>
       )}
 
       <div className="space-y-2 border-t border-border pt-4">
-        <p className="text-sm font-medium">
+        <p className="text-body font-medium">
           Mot d&apos;accueil <span className="font-normal text-muted-foreground">(facultatif)</span>
         </p>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-small text-muted-foreground">
           Une vidéo ou un vocal pour présenter le document : le prospect voit votre bulle dès l&apos;ouverture.
         </p>
         {welcome}
@@ -217,10 +219,10 @@ export function ShareReady({
           type="button"
           onClick={() => setShowSettings((open) => !open)}
           aria-expanded={showSettings}
-          className="flex w-full flex-wrap items-center gap-1.5 text-left text-sm"
+          className="flex w-full flex-wrap items-center gap-x-1.5 gap-y-1 text-left text-small"
         >
           {summary.map((item) => (
-            <span key={item} className="rounded-full bg-muted px-2.5 py-1 text-muted-foreground ring-1 ring-border">
+            <span key={item} className="rounded-sm bg-muted px-2 py-0.5 text-muted-foreground">
               {item}
             </span>
           ))}
@@ -236,7 +238,7 @@ export function ShareReady({
         href={url}
         target="_blank"
         rel="noreferrer"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+        className="inline-flex items-center gap-1.5 text-small text-muted-foreground hover:text-foreground"
       >
         <Eye className="size-4" aria-hidden />
         Voir ce que verra le prospect

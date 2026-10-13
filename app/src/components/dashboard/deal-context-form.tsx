@@ -40,7 +40,7 @@ export function DealContextForm({ linkId, initial }: Props) {
   }, [state]);
 
   return (
-    <form action={formAction} className="space-y-3 px-4 py-3">
+    <form action={formAction} className="space-y-3 py-4">
       <div key={initial.version} className="space-y-3">
         <div className="grid grid-cols-[minmax(0,1fr)_5.5rem] gap-2">
           <div className="space-y-1.5">
@@ -53,7 +53,7 @@ export function DealContextForm({ linkId, initial }: Props) {
               id="dealCurrency"
               name="dealCurrency"
               defaultValue={initial.dealCurrency}
-              className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm"
+              className="h-9 w-full rounded-lg border border-input bg-card px-2 text-body"
             >
               {CURRENCIES.map((c) => (
                 <option key={c}>{c}</option>
@@ -89,7 +89,7 @@ export function DealContextForm({ linkId, initial }: Props) {
             defaultValue={initial.sellerNotes}
             placeholder="Budget serré, compare avec un concurrent, veut démarrer en janvier…"
           />
-          <p className="text-xs text-muted-foreground">
+          <p className="text-small text-muted-foreground">
             Servent à l&apos;analyse du deal. Jamais reprises telles quelles dans un message au prospect.
           </p>
         </div>

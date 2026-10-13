@@ -87,7 +87,7 @@ function TokenList({ tokens }: { tokens: ExtensionTokenRow[] }) {
           <div className="min-w-0">
             <p className="text-body">
               {token.label ?? "Navigateur"}{" "}
-              <span className="font-mono text-muted-foreground">
+              <span className="font-mono text-small text-muted-foreground">
                 …{token.hint}
               </span>
             </p>
@@ -114,7 +114,7 @@ function Card({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-w-0 flex-col rounded-xl bg-card shadow-xs ring-1 ring-border">
+    <div className="flex min-w-0 flex-col bg-card">
       <div className="space-y-0.5 px-5 pt-4 pb-3">
         <p className="text-body font-semibold">{title}</p>
         <p className="text-small text-muted-foreground">{hint}</p>
@@ -144,7 +144,7 @@ export function ExtensionTokens({
           et vous prévient pendant la lecture.
         </p>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-px border-y border-foreground bg-border sm:grid-cols-2">
         <Card title="Chrome" hint="Gmail et Outlook sur le web.">
           <div className="px-5 pb-4">
             {chromeStoreUrl ? (

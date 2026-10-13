@@ -37,13 +37,13 @@ export function LiveActivity({
   return (
     <div
       role="status"
-      className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl bg-card px-4 py-3 ring-1 ring-heat-hot/40"
+      className="flex flex-wrap items-center gap-x-6 gap-y-2 border-y border-foreground bg-card px-4 py-3"
     >
       <span className="flex items-center gap-2.5 text-body font-medium">
         <LiveDot />
         {readers.length === 1 ? "En train de lire" : `${readers.length} lecteurs en ce moment`}
       </span>
-      <ul className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
+      <ul className="flex flex-wrap gap-x-6 gap-y-1 text-small">
         {readers.map((reader) => (
           <li key={reader.viewId}>
             <span className="font-medium">{reader.name ?? "Lecteur anonyme"}</span>

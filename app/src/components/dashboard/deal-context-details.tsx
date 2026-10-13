@@ -1,7 +1,5 @@
 import { ChevronRight } from "lucide-react";
 
-import { Surface } from "./page-header";
-
 /**
  * "Contexte du deal", folded: the summary line says what is filled in, the
  * form waits underneath. Open by default only while a pause is running.
@@ -16,18 +14,21 @@ export function DealContextSummaryDetails({
   children: React.ReactNode;
 }) {
   return (
-    <details className="group" open={paused}>
-      <summary className="mb-3 flex cursor-pointer list-none flex-wrap items-baseline gap-x-2 gap-y-1 outline-none focus-visible:underline [&::-webkit-details-marker]:hidden">
-        <span className="flex items-center gap-1 text-body font-semibold">
-          <ChevronRight className="size-4 text-muted-foreground transition-transform group-open:rotate-90" />
+    <details className="group border-t border-foreground" open={paused}>
+      <summary className="flex cursor-pointer list-none flex-wrap items-baseline gap-x-2 gap-y-1 py-2 outline-none focus-visible:underline [&::-webkit-details-marker]:hidden">
+        <span className="flex items-center gap-1.5 text-heading">
+          <ChevronRight
+            className="size-4 self-center text-muted-foreground transition-transform group-open:rotate-90"
+            aria-hidden
+          />
           Contexte du deal
         </span>
-        <span className="text-body text-muted-foreground">
+        <span className="text-small text-muted-foreground">
           {summary ?? "votre équipe le voit, pas le prospect"}
           {paused && " · en pause"}
         </span>
       </summary>
-      <Surface>{children}</Surface>
+      <div className="border-t border-border">{children}</div>
     </details>
   );
 }

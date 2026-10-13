@@ -55,7 +55,7 @@ export function ToolSetup({
             />
           )}
         </div>
-        <footer className="mt-12 flex items-center justify-between gap-4 border-t border-border pt-6">
+        <footer className="mt-12 flex items-center justify-between gap-4 border-t border-foreground pt-6">
           {!choosing && (
             <Button variant="ghost" onClick={() => setChoosing(true)}>
               <ArrowLeft />

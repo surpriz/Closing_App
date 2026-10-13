@@ -1,3 +1,5 @@
+import { clipAtWord } from "@/lib/clip-text";
+
 import type { DealStory } from "./facts";
 import type { Insight, RawInsight } from "./schema";
 
@@ -13,10 +15,7 @@ const SUMMARY_MAX = 500;
 const TEXT_MAX = 240;
 const WHY_MAX = 400;
 
-const clip = (text: string, max: number) => {
-  const clean = text.replace(/\s+/g, " ").trim();
-  return clean.length > max ? `${clean.slice(0, max - 1).trimEnd()}…` : clean;
-};
+const clip = clipAtWord;
 
 export function validateInsight(raw: RawInsight, story: DealStory): { insight: Insight; dropped: number } {
   const known = new Set(story.facts.map((fact) => fact.id));

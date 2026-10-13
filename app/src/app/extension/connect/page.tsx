@@ -22,7 +22,7 @@ export default async function ExtensionConnectPage({ searchParams }: PageProps<"
       <div className="w-full max-w-md animate-rise space-y-8">
         <Logo />
         <div className="space-y-2">
-          <h1 className="text-title [font-stretch:92%]">Connecter Clozer à Chrome</h1>
+          <h1 className="text-title condensed">Connecter Clozer à Chrome</h1>
           <p className="text-body text-muted-foreground">Créez vos liens Clozer sans quitter Gmail ou Outlook.</p>
         </div>
         <ExtensionConnect

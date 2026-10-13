@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -39,20 +40,24 @@ export default async function AdminUserPage({ params }: PageProps<"/admin/users/
   return (
     <>
       <div className="space-y-3">
-        <Link href="/admin/users" className="text-sm text-muted-foreground hover:text-foreground">
-          ← Utilisateurs
+        <Link
+          href="/admin/users"
+          className="inline-flex items-center gap-1.5 text-small text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="size-3.5" aria-hidden />
+          Utilisateurs
         </Link>
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-title [font-stretch:92%]">{user.email}</h1>
+          <h1 className="text-title condensed">{user.email}</h1>
           <UserStatusBadge status={status} />
-          {isAdmin && <span className="text-sm text-muted-foreground">Admin plateforme</span>}
+          {isAdmin && <span className="text-small text-muted-foreground">Admin plateforme</span>}
         </div>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-small text-muted-foreground">
           {user.name} · inscrit le {adminDate.format(user.createdAt)}
           {user.emailVerified ? "" : " · email non vérifié"}
         </p>
         {status !== "active" && (
-          <p className="text-sm">
+          <p className="text-body">
             {user.banReason && <>Motif : « {user.banReason} ». </>}
             {status === "disabled" && user.banExpires && <>Jusqu&apos;au {adminDateTime.format(user.banExpires)}.</>}
           </p>
@@ -63,7 +68,7 @@ export default async function AdminUserPage({ params }: PageProps<"/admin/users/
       <AdminSection title="Espaces">
         <ul className="divide-y divide-border">
           {user.members.map((member) => (
-            <li key={member.id} className="flex items-center justify-between gap-4 px-5 py-3 text-sm">
+            <li key={member.id} className="flex items-center justify-between gap-4 px-5 py-3 text-body">
               <Link href={`/admin/workspaces/${member.organization.id}`} className="font-medium hover:underline">
                 {member.organization.name}
               </Link>
@@ -73,14 +78,14 @@ export default async function AdminUserPage({ params }: PageProps<"/admin/users/
               </span>
             </li>
           ))}
-          {user.members.length === 0 && <li className="px-5 py-3 text-sm text-muted-foreground">Aucun espace.</li>}
+          {user.members.length === 0 && <li className="px-5 py-3 text-body text-muted-foreground">Aucun espace.</li>}
         </ul>
       </AdminSection>
 
       <AdminSection title="Sessions actives">
         <ul className="divide-y divide-border">
           {user.sessions.map((session) => (
-            <li key={session.id} className="space-y-0.5 px-5 py-3 text-sm">
+            <li key={session.id} className="space-y-0.5 px-5 py-3 text-body">
               <p className="truncate">{session.userAgent ?? "Navigateur inconnu"}</p>
               <p className="text-small text-muted-foreground">
                 {session.ipAddress ?? "IP inconnue"} · vue le {adminDateTime.format(session.updatedAt)}
@@ -88,14 +93,14 @@ export default async function AdminUserPage({ params }: PageProps<"/admin/users/
               </p>
             </li>
           ))}
-          {user.sessions.length === 0 && <li className="px-5 py-3 text-sm text-muted-foreground">Aucune session.</li>}
+          {user.sessions.length === 0 && <li className="px-5 py-3 text-body text-muted-foreground">Aucune session.</li>}
         </ul>
       </AdminSection>
 
       <AdminSection title="Extension et Outlook">
         <ul className="divide-y divide-border">
           {user.extensionTokens.map((token) => (
-            <li key={token.id} className="flex items-center justify-between gap-4 px-5 py-3 text-sm">
+            <li key={token.id} className="flex items-center justify-between gap-4 px-5 py-3 text-body">
               <span className="truncate">
                 {token.label ?? "Appareil"} <span className="font-mono text-muted-foreground">…{token.hint}</span>
               </span>
@@ -109,7 +114,7 @@ export default async function AdminUserPage({ params }: PageProps<"/admin/users/
             </li>
           ))}
           {user.extensionTokens.length === 0 && (
-            <li className="px-5 py-3 text-sm text-muted-foreground">Jamais connectée.</li>
+            <li className="px-5 py-3 text-body text-muted-foreground">Jamais connectée.</li>
           )}
         </ul>
       </AdminSection>

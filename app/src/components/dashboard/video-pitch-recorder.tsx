@@ -139,7 +139,7 @@ function PitchRecorder({ uploadPrefix, onDone }: { uploadPrefix: string; onDone:
   return (
     <div className="space-y-4">
       {screenAllowed && (
-        <div className="flex gap-1 rounded-lg bg-muted p-1" role="radiogroup" aria-label="Ce que vous enregistrez">
+        <div className="flex gap-px border border-foreground bg-foreground" role="radiogroup" aria-label="Ce que vous enregistrez">
           {(["camera", "screen"] as const).map((option) => (
             <button
               key={option}
@@ -149,8 +149,10 @@ function PitchRecorder({ uploadPrefix, onDone }: { uploadPrefix: string; onDone:
               disabled={busy || recorder.status === "recorded"}
               onClick={() => setSource(option)}
               className={cn(
-                "flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-sm transition-colors disabled:opacity-60",
-                source === option ? "bg-card shadow-xs" : "text-muted-foreground hover:text-foreground",
+                "flex flex-1 items-center justify-center gap-1.5 py-1.5 text-small transition-colors duration-150 outline-none focus-visible:ring-3 focus-visible:ring-ring/30 focus-visible:ring-inset disabled:opacity-60",
+                source === option
+                  ? "bg-foreground font-medium text-background"
+                  : "bg-card text-muted-foreground hover:bg-muted hover:text-foreground",
               )}
             >
               {option === "camera" ? <Video className="size-4" /> : <Monitor className="size-4" />}
@@ -160,7 +162,7 @@ function PitchRecorder({ uploadPrefix, onDone }: { uploadPrefix: string; onDone:
         </div>
       )}
 
-      <div className="relative flex aspect-video items-center justify-center overflow-hidden rounded-lg bg-muted">
+      <div className="relative flex aspect-video items-center justify-center overflow-hidden border border-foreground bg-muted">
         {/* Keys: a fresh element for the take, or it keeps the stopped camera as srcObject and plays black */}
         {recorder.recording ? (
           <video
@@ -180,7 +182,7 @@ function PitchRecorder({ uploadPrefix, onDone }: { uploadPrefix: string; onDone:
             className={cn("size-full object-contain", source === "camera" && "-scale-x-100")}
           />
         ) : (
-          <div className="flex flex-col items-center gap-2 px-6 text-center text-sm text-muted-foreground">
+          <div className="flex flex-col items-center gap-2 px-6 text-center text-small text-muted-foreground">
             {source === "camera" ? <Video className="size-8" /> : <Monitor className="size-8" />}
             {source === "camera"
               ? "Présentez-vous et dites au prospect ce que vous lui proposez."
@@ -188,21 +190,23 @@ function PitchRecorder({ uploadPrefix, onDone }: { uploadPrefix: string; onDone:
           </div>
         )}
         {recorder.status === "recording" && (
-          <span className="absolute top-3 left-3 rounded-full bg-destructive px-2 py-0.5 text-xs font-medium text-white tabular-nums">
-            ● {clock(PITCH_MAX_MS - recorder.elapsedMs)}
+          <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 bg-black/75 px-2 py-0.5 font-mono text-micro text-white">
+            <span aria-hidden className="size-1.5 animate-pulse bg-destructive motion-reduce:animate-none" />
+            <span className="sr-only">Enregistrement, temps restant</span>
+            {clock(PITCH_MAX_MS - recorder.elapsedMs)}
           </span>
         )}
       </div>
 
       {source === "screen" && recorder.status === "recording" && (
-        <p className="text-sm text-muted-foreground">
+        <p className="text-small text-muted-foreground">
           Vous pouvez passer sur la fenêtre partagée : l&apos;enregistrement continue. Gardez seulement cet onglet ouvert.
         </p>
       )}
-      {recorder.error && <p className="text-sm text-destructive">{RECORDER_ERRORS[recorder.error]}</p>}
+      {recorder.error && <p className="text-small text-destructive">{RECORDER_ERRORS[recorder.error]}</p>}
 
       <label className="block space-y-1.5">
-        <span className="text-sm font-medium">Titre (facultatif)</span>
+        <span className="text-small font-medium">Titre (facultatif)</span>
         <Input
           value={title}
           maxLength={200}
@@ -214,7 +218,7 @@ function PitchRecorder({ uploadPrefix, onDone }: { uploadPrefix: string; onDone:
 
       <DialogFooter>
         {recorder.status === "recording" ? (
-          <Button variant="destructive" onClick={recorder.stop}>
+          <Button onClick={recorder.stop}>
             <Square /> Arrêter
           </Button>
         ) : recorder.status === "recorded" ? (
@@ -228,7 +232,6 @@ function PitchRecorder({ uploadPrefix, onDone }: { uploadPrefix: string; onDone:
           </>
         ) : (
           <Button
-            variant="destructive"
             disabled={recorder.status === "requesting"}
             onClick={() => void recorder.start(source)}
           >

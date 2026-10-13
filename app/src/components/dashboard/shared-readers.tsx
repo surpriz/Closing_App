@@ -24,7 +24,7 @@ const OPEN_LIST_MAX = 8;
 export function SharedReaders({ readers }: { readers: SharedReader[] }) {
   if (readers.length === 0) {
     return (
-      <p className="px-4 py-3 text-sm text-muted-foreground">
+      <p className="py-3 text-small text-muted-foreground">
         Personne pour l&apos;instant. Chaque lecteur apparaîtra ici avec son propre suivi.
       </p>
     );
@@ -38,7 +38,7 @@ export function SharedReaders({ readers }: { readers: SharedReader[] }) {
     <div className="divide-y divide-border">
       {hot.length > 0 && (
         <div>
-          <p className="flex items-center gap-1.5 px-4 pt-3 text-xs font-medium text-heat-hot">
+          <p className="flex items-center gap-1.5 pt-3 text-small font-semibold">
             <Phone className="size-3.5" aria-hidden />
             À appeler maintenant
           </p>
@@ -47,7 +47,7 @@ export function SharedReaders({ readers }: { readers: SharedReader[] }) {
       )}
       {fold ? (
         <details className="group">
-          <summary className="flex cursor-pointer list-none items-center gap-1.5 px-4 py-3 text-sm text-muted-foreground hover:bg-muted/40">
+          <summary className="flex cursor-pointer list-none items-center gap-1.5 py-3 text-small text-muted-foreground hover:text-foreground">
             <ChevronRight className="size-4 transition-transform group-open:rotate-90" aria-hidden />
             {others.length} autres lecteurs
           </summary>
@@ -67,15 +67,15 @@ function ReaderList({ readers }: { readers: SharedReader[] }) {
         <li key={reader.linkId}>
           <Link
             href={`/links/${reader.linkId}`}
-            className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-muted/40"
+            className="-mx-2 flex items-center justify-between gap-3 px-2 py-3 transition-colors hover:bg-muted/60"
           >
-            <span className="min-w-0 text-sm">
+            <span className="min-w-0 text-body">
               <span className="block truncate font-medium">{reader.label}</span>
-              <span className="block truncate text-muted-foreground">
+              <span className="block truncate text-small text-muted-foreground">
                 {[reader.time, reader.detail].filter(Boolean).join(" · ")}
               </span>
             </span>
-            <span className="flex shrink-0 items-center gap-1.5 text-sm text-muted-foreground">
+            <span className="flex shrink-0 items-center gap-1.5 text-small text-muted-foreground">
               {reader.state}
               <ArrowRight className="size-4" aria-hidden />
             </span>

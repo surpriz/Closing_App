@@ -45,8 +45,8 @@ describe("onboarding", () => {
     expect(mailToolTip(null, { chrome: false, outlook: true })).toBeNull();
   });
 
-  it("shows the value before the tools", () => {
-    expect(ONBOARDING_STEPS[0]).toBe("value");
+  it("starts with the seller's own document, tools last", () => {
+    expect(ONBOARDING_STEPS[0]).toBe("drop");
     expect(ONBOARDING_STEPS.at(-1)).toBe("daily");
   });
 

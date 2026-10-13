@@ -7,13 +7,21 @@ import { toast } from "sonner";
 import { prepareFollowupFromInsight } from "@/app/(dashboard)/links/actions";
 import { Button } from "@/components/ui/button";
 
-export function PrepareFollowupButton({ linkId }: { linkId: string }) {
+export function PrepareFollowupButton({
+  linkId,
+  size = "sm",
+  variant = "outline",
+}: {
+  linkId: string;
+  size?: "sm" | "lg";
+  variant?: "default" | "outline";
+}) {
   const [pending, startTransition] = useTransition();
 
   return (
     <Button
-      size="sm"
-      variant="outline"
+      size={size}
+      variant={variant}
       disabled={pending}
       onClick={() =>
         startTransition(async () => {

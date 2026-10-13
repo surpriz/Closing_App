@@ -12,7 +12,7 @@ type Props = {
 
 export function FormCheckbox({ name, label, defaultChecked, value, hint }: Props) {
   return (
-    <label className="flex cursor-pointer items-start gap-2.5 text-sm">
+    <label className="flex cursor-pointer items-start gap-2.5 text-small">
       <Checkbox name={name} value={value} defaultChecked={defaultChecked} className="mt-0.5" />
       <span>
         {label}

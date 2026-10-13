@@ -55,15 +55,14 @@ export function mailToolTip(
 }
 
 /**
- * Value first, tools last: the seller drops a real document and opens it as
- * their prospect would before anything about mailboxes or extensions.
+ * Value by doing, tools last: the seller drops a real document straight away and
+ * opens it as their prospect would before anything about mailboxes or extensions.
  */
-export const ONBOARDING_STEPS = ["value", "drop", "test", "daily"] as const;
+export const ONBOARDING_STEPS = ["drop", "test", "daily"] as const;
 
 export type OnboardingStep = (typeof ONBOARDING_STEPS)[number];
 
 export const STEP_LABELS: Record<OnboardingStep, string> = {
-  value: "Ce que fait Clozer",
   drop: "Votre document",
   test: "Côté prospect",
   daily: "Au quotidien",

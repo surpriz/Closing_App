@@ -129,7 +129,7 @@ function InviteForm() {
           name="role"
           defaultValue="member"
           aria-label="Rôle"
-          className="h-9 rounded-md border border-input bg-transparent px-2 text-sm"
+          className="h-9 rounded-lg border border-input bg-card px-2 text-small outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/20"
         >
           <option value="member">{ROLE_LABELS.member}</option>
           <option value="admin">{ROLE_LABELS.admin}</option>
@@ -139,9 +139,9 @@ function InviteForm() {
         </Button>
       </div>
       {state?.devUrl && (
-        <p className="flex items-center gap-1 text-sm text-muted-foreground">
+        <p className="flex items-center gap-1 text-small text-muted-foreground">
           Pas d&apos;email en local, lien à ouvrir :
-          <span className="truncate font-mono text-foreground">{state.devUrl}</span>
+          <span className="truncate font-mono text-micro text-foreground">{state.devUrl}</span>
           <CopyButton value={state.devUrl} />
         </p>
       )}
@@ -172,7 +172,7 @@ export function TeamSettings({
           l&apos;espace.
         </p>
       </div>
-      <div className="divide-y divide-border rounded-xl bg-card shadow-xs ring-1 ring-border">
+      <div className="divide-y divide-border border-y border-foreground bg-card">
         {members.map((member) => (
           <div key={member.id} className="flex items-center justify-between gap-4 px-5 py-3">
             <div className="min-w-0">
@@ -188,7 +188,7 @@ export function TeamSettings({
                 <RemoveButton member={member} />
               </div>
             ) : (
-              <span className="shrink-0 text-sm text-muted-foreground">{roleLabel(member.role)}</span>
+              <span className="shrink-0 text-small text-muted-foreground">{roleLabel(member.role)}</span>
             )}
           </div>
         ))}

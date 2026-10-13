@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 import { SCORE_REASON_LABELS, TIER_LABELS } from "./labels";
 
-/** Temperature is the only colour in the interface. */
+/** Temperature is the only colour in the interface: three readings of the ironbow scale. */
 export const HEAT_BG: Record<EngagementTier, string> = {
   HOT: "bg-heat-hot",
   WARM: "bg-heat-warm",
@@ -20,38 +20,32 @@ export function scoreReasons(reasons: unknown) {
   }));
 }
 
+const fill = (score: number) => Math.max(12, Math.min(100, score));
+
 /**
- * Vertical gauge on the left edge of a prospect row. It fills from the bottom
- * up to the score, once, when the page loads.
+ * Horizontal thermal gauge: the ironbow scale uncovered from the left up to the score.
+ * Use where per-page readings are not at hand; prefer HeatStrip (heat-strip.tsx) when they are.
  */
-export function HeatBar({
-  tier,
-  score,
-  className,
-}: {
-  tier: EngagementTier | null;
-  score: number;
-  className?: string;
-}) {
+export function HeatGauge({ tier, score, className }: { tier: EngagementTier | null; score: number; className?: string }) {
   return (
-    <span
-      aria-hidden
-      className={cn("relative block w-1 self-stretch overflow-hidden rounded-full bg-foreground/[0.06]", className)}
-    >
+    <span aria-hidden className={cn("relative block h-1.5 w-full overflow-hidden bg-foreground/[0.07]", className)}>
       {tier && (
         <span
-          className={cn(
-            "absolute inset-x-0 bottom-0 origin-bottom animate-heat-fill rounded-full motion-reduce:animate-none",
-            HEAT_BG[tier],
-          )}
-          style={{ height: `${Math.max(12, Math.min(100, score))}%` }}
+          className="absolute inset-y-0 left-0"
+          style={{
+            width: `${fill(score)}%`,
+            backgroundImage:
+              "linear-gradient(to right, var(--iron-0), var(--iron-1) 30%, var(--iron-2) 58%, var(--iron-3) 82%, var(--iron-4))",
+            backgroundSize: `${(100 / fill(score)) * 100}% 100%`,
+            backgroundPosition: "left",
+          }}
         />
       )}
     </span>
   );
 }
 
-/** Dot + word, with the score's reasons on hover or focus. */
+/** Swatch + word, with the score's reasons on hover or focus. */
 export function HeatDot({
   tier,
   score,
@@ -65,8 +59,8 @@ export function HeatDot({
 }) {
   const lines = scoreReasons(reasons);
   const label = (
-    <span className={cn("inline-flex items-center gap-1.5 text-sm", className)}>
-      <span className={cn("size-2 rounded-full", HEAT_BG[tier])} />
+    <span className={cn("inline-flex items-center gap-1.5 text-small", className)}>
+      <span className={cn("size-2", HEAT_BG[tier])} />
       {TIER_LABELS[tier]}
       <span className="text-muted-foreground tabular-nums">{score}</span>
     </span>
@@ -94,16 +88,16 @@ export function HeatDot({
   );
 }
 
-/** The temperature as a small pill: dot + word, "Pas encore lu" without a score. */
+/** The temperature as a small tag: swatch + word, "Pas encore lu" without a score. */
 export function HeatPill({ tier, className }: { tier: EngagementTier | null; className?: string }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-0.5 text-small font-medium ring-1 ring-border",
+        "inline-flex items-center gap-1.5 rounded-sm bg-muted px-2 py-0.5 text-small font-medium",
         className,
       )}
     >
-      <span className={cn("size-2 rounded-full", tier ? HEAT_BG[tier] : "bg-foreground/20")} aria-hidden />
+      <span className={cn("size-2", tier ? HEAT_BG[tier] : "bg-foreground/20")} aria-hidden />
       {tier ? TIER_LABELS[tier] : "Pas encore lu"}
     </span>
   );

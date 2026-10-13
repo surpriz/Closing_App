@@ -28,11 +28,11 @@ export function ChatTranscript({ conversations }: { conversations: TranscriptCon
         const forwarded = questions.filter((m) => m.escalated).length;
         const last = conversation.messages[conversation.messages.length - 1];
         return (
-          <details key={conversation.visitorId} open={index === 0} className="group px-4 py-3">
+          <details key={conversation.visitorId} open={index === 0} className="group py-3">
             <summary className="flex cursor-pointer list-none items-start justify-between gap-3 outline-none focus-visible:underline [&::-webkit-details-marker]:hidden">
-              <span className="min-w-0 text-sm">
+              <span className="min-w-0 text-body">
                 <span className="font-medium">{conversation.reader}</span>
-                <span className="block text-muted-foreground">
+                <span className="block text-small text-muted-foreground">
                   {questions.length} {questions.length === 1 ? "question" : "questions"}
                   {forwarded > 0 && `, dont ${forwarded} pour vous`}
                   {last && ` · ${formatRelative(last.createdAt)}`}
@@ -45,18 +45,18 @@ export function ChatTranscript({ conversations }: { conversations: TranscriptCon
               {conversation.messages.map((message) => (
                 <li
                   key={message.id}
-                  className={cn("text-sm", message.role === "USER" ? "font-medium" : "border-l-2 pl-3 text-muted-foreground")}
+                  className={cn("text-body", message.role === "USER" ? "font-medium" : "border-l border-foreground/30 pl-3 text-muted-foreground")}
                 >
                   <p className="whitespace-pre-wrap" title={formatDate(message.createdAt)}>
                     {message.content || "(pas de réponse)"}
                   </p>
                   {message.escalated && (
-                    <p className="mt-0.5 flex items-center gap-1 text-xs font-normal text-brand">
+                    <p className="mt-0.5 flex items-center gap-1 text-small font-normal text-foreground">
                       <Forward className="size-3" aria-hidden /> Transmise : l&apos;assistant a dit que vous répondriez
                     </p>
                   )}
                   {message.flags.length > 0 && (
-                    <p className="mt-0.5 flex items-center gap-1 text-xs text-heat-hot">
+                    <p className="mt-0.5 flex items-center gap-1 text-small text-warning-foreground dark:text-warning">
                       <TriangleAlert className="size-3" aria-hidden /> À vérifier :{" "}
                       {message.flags.map((flag) => CHAT_FLAG_LABELS[flag as ChatFlag] ?? flag).join(", ")}
                     </p>

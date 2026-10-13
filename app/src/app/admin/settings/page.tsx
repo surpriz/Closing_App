@@ -19,10 +19,10 @@ export default async function AdminSettingsPage() {
 
   return (
     <>
-      <h1 className="text-title [font-stretch:92%]">Inscriptions</h1>
+      <h1 className="text-title condensed">Inscriptions</h1>
 
       <AdminSection title="Qui peut créer un compte">
-        <p className="px-5 pt-4 text-sm text-muted-foreground">
+        <p className="px-5 pt-4 text-small text-muted-foreground">
           Sur invitation : seuls les emails invités dans un espace ou ajoutés ci-dessous peuvent s&apos;inscrire. Les
           comptes existants ne sont pas touchés.
         </p>

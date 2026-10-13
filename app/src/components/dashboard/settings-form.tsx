@@ -88,12 +88,12 @@ function Section({
         <h2 className="text-heading">{title}</h2>
         <p className="text-body text-muted-foreground">{description}</p>
         {locked && (
-          <p className="text-sm text-muted-foreground">{LOCKED_NOTE}</p>
+          <p className="text-small text-muted-foreground">{LOCKED_NOTE}</p>
         )}
       </div>
       <fieldset
         disabled={locked}
-        className="min-w-0 divide-y divide-border rounded-xl bg-card shadow-xs ring-1 ring-border disabled:opacity-60"
+        className="min-w-0 divide-y divide-border border-y border-foreground bg-card disabled:opacity-60"
       >
         {children}
       </fieldset>
@@ -111,7 +111,7 @@ function Row({
   return (
     <div className="space-y-1.5 px-5 py-4">
       <div className="text-body leading-9">{children}</div>
-      {hint && <p className="text-sm text-muted-foreground">{hint}</p>}
+      {hint && <p className="text-small text-muted-foreground">{hint}</p>}
     </div>
   );
 }
@@ -153,7 +153,7 @@ function ChannelBox({
         onCheckedChange={onChange}
       />
       <span>{label}</span>
-      {note && <span className="text-sm text-muted-foreground">{note}</span>}
+      {note && <span className="text-small text-muted-foreground">{note}</span>}
     </label>
   );
 }
@@ -222,7 +222,7 @@ export function SettingsForm({
                 />
                 <span>
                   Je la relis et je valide
-                  <span className="block text-sm text-muted-foreground">
+                  <span className="block text-small text-muted-foreground">
                     Recommandé pour commencer. Vous recevez un email, et la
                     relance vous attend sur le tableau de bord (« Relances à
                     valider ») et sur la fiche du prospect, rubrique Relances.
@@ -239,7 +239,7 @@ export function SettingsForm({
                 />
                 <span>
                   Elle part seule quand Clozer est sûr de lui
-                  <span className="block text-sm text-muted-foreground">
+                  <span className="block text-small text-muted-foreground">
                     Les cas délicats (objection, message du prospect, doute)
                     attendent quand même votre accord. Un récapitulatif vous
                     arrive chaque matin.
@@ -313,7 +313,7 @@ export function SettingsForm({
                 <select
                   name="digestHour"
                   defaultValue={String(notifications.digestHour)}
-                  className="mx-1.5 h-8 rounded-md border border-input bg-transparent px-2 tabular-nums"
+                  className="mx-1.5 h-8 rounded-lg border border-input bg-card px-2 tabular-nums outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/20"
                 >
                   {DIGEST_HOURS.map((hour) => (
                     <option key={hour} value={hour}>
@@ -383,7 +383,7 @@ export function SettingsForm({
                     }
                   />
                   {initial.slackConfigured && (
-                    <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <label className="flex items-center gap-2 text-small text-muted-foreground">
                       <Checkbox
                         name="removeSlack"
                         onCheckedChange={markDirty}
@@ -404,7 +404,7 @@ export function SettingsForm({
                     placeholder="https://…"
                   />
                   {initial.webhookSecret && (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-small text-muted-foreground">
                       Chaque envoi est signé (HMAC SHA-256, en-tête{" "}
                       <code>X-Closing-Signature</code>) avec le secret{" "}
                       <code className="break-all text-foreground">
@@ -412,7 +412,7 @@ export function SettingsForm({
                       </code>
                     </p>
                   )}
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-small text-muted-foreground">
                     Smart Link : <code>reader.opened</code> part dès qu&apos;un prospect venu
                     d&apos;un cold email se met à lire, avec son email. Dans Zapier ou Make,
                     branchez-le sur « mettre le lead en pause » de Lemlist ou Instantly.{" "}
@@ -440,7 +440,7 @@ export function SettingsForm({
               defaultValue={notifications.bookingUrl}
               placeholder="https://calendly.com/vous/30min"
             />
-            <p className="text-sm text-muted-foreground">
+            <p className="text-small text-muted-foreground">
               Calendly et Cal.com s&apos;affichent dans la page du prospect,
               avec son nom et son email déjà remplis. HubSpot, Google Agenda,
               Microsoft Bookings et les autres s&apos;ouvrent dans un nouvel
@@ -544,7 +544,7 @@ export function SettingsForm({
                 <select
                   name="quoteExpiryDays"
                   defaultValue={initial.quoteExpiryDays?.toString() ?? ""}
-                  className="mx-1.5 h-8 rounded-md border border-input bg-transparent px-2 tabular-nums"
+                  className="mx-1.5 h-8 rounded-lg border border-input bg-card px-2 tabular-nums outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/20"
                 >
                   {QUOTE_EXPIRY_CHOICES.map((days) => (
                     <option key={days} value={days}>
@@ -613,7 +613,7 @@ export function SettingsForm({
                   "Paiement : 30 % à la commande, le solde à la livraison.\nGarantie : 12 mois, support par email sous 24 h ouvrées.\nNos outils : Shopify, Klaviyo. Pas de développement mobile natif."
                 }
               />
-              <p className="text-sm text-muted-foreground">
+              <p className="text-small text-muted-foreground">
                 Valable pour tous vos documents : modalités, garanties, SAV,
                 questions fréquentes, précisions techniques. Le prospect peut
                 tout obtenir en posant la question : rien de confidentiel ici.
@@ -663,7 +663,7 @@ export function SettingsForm({
 
       <div
         className={cn(
-          "sticky bottom-20 z-20 mt-10 flex items-center justify-between gap-4 rounded-xl bg-foreground py-2.5 pr-2.5 pl-5 text-background shadow-lg transition-all duration-200 sm:bottom-6 motion-reduce:transition-none",
+          "sticky bottom-20 z-20 mt-10 flex items-center justify-between gap-4 rounded-lg bg-foreground py-2.5 pr-2.5 pl-5 text-background shadow-lg transition-all duration-200 sm:bottom-6 motion-reduce:transition-none",
           dirty || pending
             ? "translate-y-0 opacity-100"
             : "pointer-events-none translate-y-3 opacity-0",

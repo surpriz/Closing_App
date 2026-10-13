@@ -96,7 +96,7 @@ export function EmailList({
   return (
     <div className="divide-y divide-border">
       {rows.map((row) => (
-        <div key={row.email} className="flex items-center justify-between gap-4 px-5 py-3 text-sm">
+        <div key={row.email} className="flex items-center justify-between gap-4 px-5 py-3 text-body">
           <div className="min-w-0">
             <p className="truncate">{row.email}</p>
             {row.detail && <p className="truncate text-small text-muted-foreground">{row.detail}</p>}

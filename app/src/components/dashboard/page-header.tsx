@@ -14,7 +14,7 @@ export function PageHeader({
   return (
     <div className={cn("flex flex-wrap items-end justify-between gap-4", className)}>
       <div className="min-w-0 space-y-1.5">
-        <h1 className="text-title [font-stretch:92%]">{title}</h1>
+        <h1 className="text-title condensed">{title}</h1>
         {description && <p className="max-w-2xl text-body text-muted-foreground">{description}</p>}
       </div>
       {action && <div className="flex flex-wrap items-center gap-2">{action}</div>}
@@ -33,7 +33,7 @@ export function SectionTitle({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+    <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-foreground pb-2">
       <h2 className="text-body font-semibold">
         {children}
         {hint && <span className="ml-2 font-normal text-muted-foreground">{hint}</span>}
@@ -50,7 +50,7 @@ export function StatLine({
   items: { value: React.ReactNode; label: string; labelFirst?: boolean }[];
 }) {
   return (
-    <div className="flex flex-wrap gap-x-8 gap-y-2 text-sm">
+    <div className="flex flex-wrap gap-x-8 gap-y-2 text-small">
       {items.map((item) => (
         <p key={item.label} className="flex items-baseline gap-1.5">
           {item.labelFirst && <span className="text-muted-foreground">{item.label}</span>}
@@ -73,7 +73,7 @@ export function Stat({
   label: React.ReactNode;
   value: React.ReactNode;
   hint?: React.ReactNode;
-  tone?: "hot" | "warm" | "cold" | "success";
+  tone?: "hot" | "warm" | "cold" | "success" | "warning";
   className?: string;
 }) {
   return (
@@ -83,17 +83,18 @@ export function Stat({
           <span
             aria-hidden
             className={cn(
-              "size-1.5 rounded-full",
+              "size-2",
               tone === "hot" && "bg-heat-hot",
               tone === "warm" && "bg-heat-warm",
               tone === "cold" && "bg-heat-cold",
               tone === "success" && "bg-success",
+              tone === "warning" && "bg-warning",
             )}
           />
         )}
         {label}
       </p>
-      <p className="font-mono text-title font-medium tabular-nums">{value}</p>
+      <p className="condensed text-title tabular-nums">{value}</p>
       {hint && <p className="text-small text-muted-foreground">{hint}</p>}
     </div>
   );
@@ -115,8 +116,8 @@ export function Surface({
   return (
     <div
       className={cn(
-        "rounded-xl bg-card shadow-xs ring-1 ring-border",
-        interactive && "transition-shadow duration-200 hover:shadow-md",
+        "bg-card ring-1 ring-foreground/85",
+        interactive && "transition-colors duration-200 hover:bg-muted/50",
         className,
       )}
     >

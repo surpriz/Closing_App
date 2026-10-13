@@ -3,6 +3,7 @@
 import type { PDFDocumentLoadingTask, PDFDocumentProxy } from "pdfjs-dist";
 import { useEffect, useState } from "react";
 
+import { Skeleton } from "@/components/ui/skeleton";
 import { PdfPage, type PageSize } from "@/components/viewer/pdf-viewer";
 
 /** The seller's own view of a PDF document. Same rendering as the prospect's, without tracking. */
@@ -44,9 +45,9 @@ export function DocumentPreview({ fileUrl }: { fileUrl: string }) {
 
   if (failed) {
     return (
-      <p className="py-16 text-center text-sm text-muted-foreground">
+      <p className="border-y border-border py-12 text-center text-body text-muted-foreground">
         Impossible d&apos;afficher le PDF ici.{" "}
-        <a href={fileUrl} target="_blank" rel="noreferrer" className="text-foreground underline">
+        <a href={fileUrl} target="_blank" rel="noreferrer" className="text-foreground underline underline-offset-4">
           Ouvrir dans un nouvel onglet
         </a>
       </p>
@@ -54,7 +55,12 @@ export function DocumentPreview({ fileUrl }: { fileUrl: string }) {
   }
 
   if (!pdf) {
-    return <p className="py-16 text-center text-sm text-muted-foreground">Chargement du PDF…</p>;
+    return (
+      <div className="mx-auto max-w-3xl space-y-2" aria-busy aria-label="Chargement du PDF">
+        <Skeleton className="aspect-[1/1.414] w-full rounded-none" />
+        <p className="text-center text-small text-muted-foreground">Chargement du PDF…</p>
+      </div>
+    );
   }
 
   return (
@@ -62,7 +68,7 @@ export function DocumentPreview({ fileUrl }: { fileUrl: string }) {
       {sizes.map((size, index) => (
         <div key={index + 1} className="space-y-1.5">
           <PdfPage pdf={pdf} pageNumber={index + 1} size={size} />
-          <p className="text-center text-xs text-muted-foreground tabular-nums">
+          <p className="text-center font-mono text-micro text-muted-foreground">
             {index + 1} / {sizes.length}
           </p>
         </div>

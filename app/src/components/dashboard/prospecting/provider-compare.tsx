@@ -8,9 +8,9 @@ const percent = (value: number | null) => (value === null ? "—" : `${Math.roun
 export function ProviderCompare({ metrics }: { metrics: ProviderMetrics[] }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm" aria-label="Comparaison des fournisseurs sur votre cible">
-        <thead className="text-left text-small text-muted-foreground">
-          <tr className="border-b">
+      <table className="w-full text-small" aria-label="Comparaison des fournisseurs sur votre cible">
+        <thead className="text-left text-micro text-muted-foreground">
+          <tr className="border-b border-foreground">
             <th scope="col" className="sticky left-0 bg-card px-5 py-2 font-normal">Fournisseur</th>
             <th scope="col" className="px-3 py-2 font-normal">Proposés</th>
             <th scope="col" className="px-3 py-2 font-normal">Décideurs</th>
@@ -22,8 +22,8 @@ export function ProviderCompare({ metrics }: { metrics: ProviderMetrics[] }) {
         </thead>
         <tbody className="font-mono tabular-nums">
           {metrics.map((m) => (
-            <tr key={m.provider} className="border-b last:border-0">
-              <th scope="row" className="sticky left-0 bg-card px-5 py-2 text-left font-sans font-medium">
+            <tr key={m.provider} className="border-b border-border last:border-0">
+              <th scope="row" className="sticky left-0 bg-card px-5 py-2.5 text-left font-sans font-semibold">
                 {PROVIDER_LABELS[m.provider] ?? m.provider}
               </th>
               <td className="px-3 py-2">{m.found}</td>

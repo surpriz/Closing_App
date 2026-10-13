@@ -7,7 +7,6 @@ import { formatDuration, formatRelative } from "@/lib/format";
 
 import { LiveDot } from "./heat";
 import { PROSPECT_ROLE_LABELS, READER_ORIGIN_LABELS } from "./labels";
-import { Surface } from "./page-header";
 import { ProspectForm } from "./prospect-form";
 import { ProspectRoleSelect } from "./prospect-role-select";
 
@@ -48,25 +47,24 @@ export function ProspectPanel({
     .filter((group) => group.persons.length > 0);
 
   return (
-    <Surface>
-      <div className="divide-y divide-border">
+    <div className="divide-y divide-border">
         {prospects.map((prospect) => {
           const person = personByProspect.get(prospect.id);
           return (
-            <details key={prospect.id} className="group px-4 py-3">
+            <details key={prospect.id} className="group py-3">
               <summary className="flex cursor-pointer list-none items-start justify-between gap-3 outline-none focus-visible:underline [&::-webkit-details-marker]:hidden">
-                <span className="min-w-0 space-y-1 text-sm">
+                <span className="min-w-0 space-y-1 text-body">
                   <span className="flex min-w-0 items-center gap-2">
                     {person?.readingNow && <LiveDot className="shrink-0" />}
                     <span className="truncate font-medium">{prospect.name ?? prospect.email}</span>
                     {prospect.unsubscribedAt && <span className="shrink-0 text-destructive">désinscrit</span>}
                   </span>
-                  <span className="block truncate text-muted-foreground">
+                  <span className="block truncate text-small text-muted-foreground">
                     {[prospect.name ? prospect.email : null, prospect.phoneE164, prospect.whatsappOptInAt ? "WhatsApp accepté" : null]
                       .filter(Boolean)
                       .join(", ")}
                   </span>
-                  {person ? <ReadingFacts person={person} now={now} /> : <span className="block text-muted-foreground">Pas encore lu.</span>}
+                  {person ? <ReadingFacts person={person} now={now} /> : <span className="block text-small text-muted-foreground">Pas encore lu.</span>}
                 </span>
                 <ChevronRight className="mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90" />
               </summary>
@@ -96,15 +94,15 @@ export function ProspectPanel({
             </details>
           );
         })}
-        <details className="group px-4 py-3">
-          <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-medium outline-none focus-visible:underline [&::-webkit-details-marker]:hidden">
+        <details className="group py-3">
+          <summary className="flex cursor-pointer list-none items-center gap-2 text-small font-medium outline-none focus-visible:underline [&::-webkit-details-marker]:hidden">
             <Plus className="size-4" /> Ajouter un contact
           </summary>
           <ProspectForm linkId={linkId} />
         </details>
         {others.length > 0 && (
-          <div id="qui-lit" className="scroll-mt-20 px-4 py-3">
-            <p className="mb-2 text-sm font-medium">Autres lecteurs</p>
+          <div id="qui-lit" className="scroll-mt-20 py-3">
+            <h3 className="mb-2 text-small font-medium">Autres lecteurs</h3>
             <div className="space-y-3">
               {others.map((group) => (
                 <div key={group.key}>
@@ -113,7 +111,7 @@ export function ProspectPanel({
                   </p>
                   <ul className="space-y-2.5">
                     {group.persons.map((person) => (
-                      <li key={person.key} className="space-y-1 text-sm">
+                      <li key={person.key} className="space-y-1 text-body">
                         <span className="flex min-w-0 items-center gap-2">
                           {person.readingNow && <LiveDot className="shrink-0" />}
                           <span className="truncate font-medium">{person.label}</span>
@@ -127,8 +125,7 @@ export function ProspectPanel({
             </div>
           </div>
         )}
-      </div>
-    </Surface>
+    </div>
   );
 }
 
@@ -143,7 +140,7 @@ function ReadingFacts({ person, now }: { person: Person; now: Date }) {
       {(decision || (person.role && person.role.role !== "OTHER") || person.origin !== "initial" || person.viaNetwork) && (
         <span className="flex flex-wrap items-center gap-1.5">
           {decision && person.role && (
-            <Badge variant="hot" title={person.role.source === "seller" ? "Tagué par vous" : "Deviné depuis l'email"}>
+            <Badge variant="default" title={person.role.source === "seller" ? "Tagué par vous" : "Deviné depuis l'email"}>
               Décideur{person.role.source === "detected" ? " (deviné)" : ""}
             </Badge>
           )}

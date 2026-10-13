@@ -8,7 +8,7 @@ export async function ImpersonationBanner() {
   if (!session?.session.impersonatedBy) return null;
 
   return (
-    <div className="bg-warning/15 text-sm">
+    <div className="border-b border-foreground bg-warning/15 text-small">
       <form
         action={stopImpersonating}
         className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-2 sm:px-6"

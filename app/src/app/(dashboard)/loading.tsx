@@ -7,10 +7,18 @@ export default function Loading() {
         <Skeleton className="h-9 w-2/3 max-w-lg" />
         <Skeleton className="h-4 w-64" />
       </div>
-      <div className="space-y-2">
-        {Array.from({ length: 5 }, (_, i) => (
-          <Skeleton key={i} className="h-16 w-full rounded-xl" />
-        ))}
+      <div>
+        <div className="mb-3 border-b border-foreground pb-2">
+          <Skeleton className="h-4 w-36" />
+        </div>
+        <div className="divide-y divide-border border-y border-foreground bg-card">
+          {Array.from({ length: 5 }, (_, i) => (
+            <div key={i} className="space-y-2 px-4 py-4">
+              <Skeleton className="h-4 w-1/3" />
+              <Skeleton className="h-3 w-1/2" />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

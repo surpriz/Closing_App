@@ -5,6 +5,7 @@ import { useEffect, useEffectEvent, useState } from "react";
 import { toast } from "sonner";
 
 import { onboardingTestStatus, type TestLinkStatus } from "@/app/bienvenue/actions";
+import { ThermalPlate } from "@/components/brand/thermal-plate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -71,25 +72,32 @@ export function TestStep({
       )}
 
       {read ? (
-        <div className="animate-rise space-y-2 rounded-xl bg-success/10 px-5 py-4">
-          <p className="flex items-center gap-2 font-medium">
+        <figure className="animate-rise border border-foreground">
+          <figcaption className="flex items-center gap-2 border-b border-foreground px-4 py-3 font-semibold">
             <Check className="size-4 text-success" aria-hidden />
             Votre document vient d&apos;être ouvert.
-          </p>
-          <p className="text-body">
-            {read.pages > 1 ? `Lu jusqu'à la page ${read.pages}` : "Première page ouverte"}
-            {read.seconds > 0 && `, ${formatSeconds(read.seconds)} de lecture`}.
-          </p>
-          <p className="text-body text-muted-foreground">
-            C&apos;est ce que vous verrez quand votre prospect l&apos;ouvrira, en direct. Et Clozer vous dira quand le
-            relancer.
-          </p>
-        </div>
+          </figcaption>
+          <div className="grid grid-cols-6 gap-1 p-4 sm:grid-cols-8">
+            {Array.from({ length: Math.min(8, Math.max(1, read.pages)) }, (_, i) => (
+              <ThermalPlate key={i} heat={i === 0 ? 0.9 : 0.75 - i * 0.06} seed={i} className="aspect-[3/4]" />
+            ))}
+          </div>
+          <div className="space-y-1 border-t border-border px-4 py-3">
+            <p className="text-body">
+              {read.pages > 1 ? `Lu jusqu'à la page ${read.pages}` : "Première page ouverte"}
+              {read.seconds > 0 && `, ${formatSeconds(read.seconds)} de lecture`}.
+            </p>
+            <p className="text-body text-muted-foreground">
+              C&apos;est ce que vous verrez quand votre prospect l&apos;ouvrira, en direct. Et Clozer vous dira quand
+              le relancer.
+            </p>
+          </div>
+        </figure>
       ) : (
         testLink &&
         status?.ready && (
           <p className="flex items-center gap-2 text-small text-muted-foreground">
-            <span className="size-2 animate-pulse rounded-full bg-foreground/40" aria-hidden />
+            <span className="size-2 animate-pulse bg-iron-2" aria-hidden />
             En attente de votre lecture…
           </p>
         )

@@ -46,18 +46,18 @@ export function SuggestionsList({ rows, documents }: { rows: SuggestionRow[]; do
     });
 
   return (
-    <ul className="divide-y">
+    <ul className="divide-y divide-border">
       {rows.map((row) => (
         <li key={row.id} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center">
           <div className="min-w-0 flex-1 space-y-1">
-            <p className="flex flex-wrap items-center gap-2 font-medium">
+            <p className="flex flex-wrap items-center gap-2 text-body font-semibold">
               {[row.firstName, row.lastName ?? row.lastNameMasked].filter(Boolean).join(" ") || "Contact"}
               <a
                 href={linkedinHref(row)}
                 target="_blank"
                 rel="noreferrer"
                 aria-label={row.linkedinUrl ? "Voir le profil LinkedIn" : "Chercher sur LinkedIn"}
-                className="text-muted-foreground hover:text-foreground"
+                className="rounded-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/30"
               >
                 <ExternalLink className="size-3.5" aria-hidden />
               </a>
@@ -72,7 +72,7 @@ export function SuggestionsList({ rows, documents }: { rows: SuggestionRow[]; do
               {row.nafVerified === true && <Badge variant="success">Secteur confirmé</Badge>}
               {row.nafVerified === false && <Badge variant="warning">Autre code NAF</Badge>}
               <span className="text-micro text-muted-foreground">via {PROVIDER_LABELS[row.provider] ?? row.provider}</span>
-              {row.email && <span className="font-mono text-small">{row.email}</span>}
+              {row.email && <span className="text-small">{row.email}</span>}
             </div>
           </div>
 

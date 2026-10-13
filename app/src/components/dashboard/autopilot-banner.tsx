@@ -11,7 +11,7 @@ export function AutopilotBanner({ sentToday, canPause }: { sentToday: number; ca
   const [pending, startTransition] = useTransition();
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-muted px-4 py-3 text-sm">
+    <div className="flex flex-wrap items-center justify-between gap-3 border-y border-foreground bg-card px-4 py-3 text-body">
       <p>
         <span className="font-medium">Mode automatique.</span>{" "}
         <span className="text-muted-foreground">

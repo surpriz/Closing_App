@@ -35,16 +35,18 @@ export default async function AdminAuditPage({ searchParams }: PageProps<"/admin
   return (
     <>
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <h1 className="text-title [font-stretch:92%]">Journal</h1>
-        <nav aria-label="Filtrer le journal" className="flex gap-1 text-sm">
+        <h1 className="text-title condensed">Journal</h1>
+        <nav aria-label="Filtrer le journal" className="flex border border-border text-small">
           {TABS.map((filter) => (
             <Link
               key={filter.label}
               href={filter.value ? `/admin/audit?cible=${filter.value}` : "/admin/audit"}
               aria-current={filter.value === cible ? "page" : undefined}
               className={cn(
-                "rounded-lg px-3 py-1.5",
-                filter.value === cible ? "bg-card font-medium shadow-xs ring-1 ring-border" : "text-muted-foreground",
+                "border-r border-border px-3 py-1 transition-colors outline-none last:border-r-0 focus-visible:ring-3 focus-visible:ring-ring/30",
+                filter.value === cible
+                  ? "bg-foreground font-medium text-background"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               {filter.label}

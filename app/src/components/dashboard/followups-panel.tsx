@@ -62,9 +62,9 @@ export function FollowupsPanel({
 }) {
   if (followups.length === 0) {
     return (
-      <div className="space-y-1.5 text-sm">
+      <div className="space-y-1.5 text-body">
         <p className="font-medium">Aucune relance pour l&apos;instant.</p>
-        <p className="text-muted-foreground">
+        <p className="text-small text-muted-foreground">
           {emptyHint ??
             "Dès que Clozer juge qu'il faut relancer, il écrit le message et le met ici. Vous recevez un email, vous relisez, vous validez."}
         </p>
@@ -86,7 +86,7 @@ function FollowupRow({ followup: f, showLink }: { followup: FollowupItem; showLi
 
   return (
     <li className="space-y-2.5 py-4 first:pt-0 last:pb-0">
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-small">
         <Badge variant={statusVariant(f.status)}>{FOLLOWUP_STATUS_LABELS[f.status]}</Badge>
         <span className="font-medium">{FOLLOWUP_TRIGGER_LABELS[f.trigger]}</span>
         <span className="text-muted-foreground">
@@ -95,7 +95,7 @@ function FollowupRow({ followup: f, showLink }: { followup: FollowupItem; showLi
         </span>
       </div>
 
-      <p className="text-sm text-muted-foreground">
+      <p className="text-small text-muted-foreground">
         {f.sentAt
           ? `Envoyée le ${formatInZone(f.sentAt, f.timezone)}${f.sentVia === "MANUAL" ? ", par vous" : ""}`
           : f.status === "DRAFT"
@@ -104,7 +104,7 @@ function FollowupRow({ followup: f, showLink }: { followup: FollowupItem; showLi
       </p>
 
       {f.rationale && (
-        <p className="text-sm">
+        <p className="text-body">
           <span className="font-medium">Pourquoi : </span>
           {f.rationale}
           {f.confidence !== null && <span className="text-muted-foreground"> (fiabilité de l&apos;analyse {f.confidence} %)</span>}
@@ -115,14 +115,14 @@ function FollowupRow({ followup: f, showLink }: { followup: FollowupItem; showLi
         <DraftEditor key={f.version} followup={f} />
       ) : (
         f.body && (
-          <details className="group rounded-lg bg-muted px-3 py-2 text-sm">
+          <details className="group border-l border-foreground/30 pl-3 text-body">
             <summary className="cursor-pointer select-none font-medium">{f.subject ?? "Message WhatsApp"}</summary>
-            <p className="mt-2 whitespace-pre-wrap text-muted-foreground">{f.body}</p>
+            <p className="mt-2 max-w-prose whitespace-pre-wrap text-muted-foreground">{f.body}</p>
           </details>
         )
       )}
 
-      {f.error && f.status !== "SENT" && <p className="text-sm text-destructive">{f.error}</p>}
+      {f.error && f.status !== "SENT" && <p className="text-small text-destructive">{f.error}</p>}
     </li>
   );
 }
@@ -163,13 +163,13 @@ function DraftEditor({ followup: f }: { followup: FollowupItem }) {
     });
 
   return (
-    <div className="space-y-2.5 rounded-lg bg-muted p-3">
+    <div className="space-y-2.5 border border-border bg-muted/50 p-3">
       {isEmail && (
         <Input
           aria-label="Objet"
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
-          className="bg-background font-medium"
+          className="bg-card font-medium"
           disabled={pending}
         />
       )}
@@ -177,16 +177,16 @@ function DraftEditor({ followup: f }: { followup: FollowupItem }) {
         aria-label="Message"
         value={body}
         onChange={(e) => setBody(e.target.value)}
-        className="min-h-40 bg-background"
+        className="min-h-40 bg-card text-body"
         disabled={pending}
       />
-      <p className="text-xs text-muted-foreground">
+      <p className="text-small text-muted-foreground">
         {f.aiProvider === "template" ? "Écrite à partir d'un modèle" : "Rédigée par l'IA"}
         {f.edited && ", retouchée par vous"}. Le lien de désinscription est ajouté à l&apos;envoi.
       </p>
 
       {rewriting && (
-        <div className="space-y-2 rounded-md bg-background p-2.5">
+        <div className="space-y-2 border border-border bg-card p-2.5">
           <div className="flex flex-wrap gap-1.5">
             {REWRITE_PRESETS.map((preset) => (
               <Button key={preset} size="xs" variant="outline" disabled={pending} onClick={() => rewrite(preset)}>

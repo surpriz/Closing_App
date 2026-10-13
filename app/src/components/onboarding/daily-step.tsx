@@ -85,8 +85,8 @@ function MailClientQuestion({
             aria-checked={value === client}
             onClick={() => pick(client)}
             className={cn(
-              "rounded-full px-3.5 py-1.5 text-small ring-1 ring-border transition-colors outline-none hover:bg-muted/60 focus-visible:ring-3 focus-visible:ring-ring/30",
-              value === client && "ring-2 ring-foreground",
+              "rounded-sm border border-border bg-card px-3 py-1.5 text-small transition-colors duration-150 outline-none hover:bg-muted/60 focus-visible:ring-3 focus-visible:ring-ring/30",
+              value === client && "border-foreground bg-foreground font-medium text-background hover:bg-foreground",
             )}
           >
             {MAIL_CLIENT_LABELS[client].title}

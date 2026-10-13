@@ -28,7 +28,7 @@ export function InstallStep(props: Props) {
 
 function Connected({ children }: { children: React.ReactNode }) {
   return (
-    <p className="flex items-center gap-2 rounded-xl bg-success/10 px-4 py-3 text-body font-medium">
+    <p className="flex items-center gap-2 border-y border-foreground bg-card px-4 py-3 text-body font-medium">
       <Check className="size-4 text-success" aria-hidden />
       {children}
     </p>

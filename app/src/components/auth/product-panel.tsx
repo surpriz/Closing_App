@@ -1,69 +1,48 @@
-import { Check, Eye, PenLine, Sparkles } from "lucide-react";
+import { HeatScale, ThermalPlate } from "@/components/brand/thermal-plate";
 
+// Example rows, labelled as such: what tomorrow morning looks like.
 const ROWS = [
-  { name: "Atelier Morel", action: "Appelez maintenant, elle relit les tarifs", heat: "bg-heat-hot", fill: "h-[88%]", live: true },
-  { name: "Verso Studio", action: "Relance prête : relisez-la et validez", heat: "bg-heat-warm", fill: "h-[58%]" },
-  { name: "Brunet & Fils", action: "Laissez-lui le temps, il a répondu hier", heat: "bg-heat-cold", fill: "h-[30%]" },
+  { name: "Atelier Morel", reading: "Tarifs relus 3 min 38", action: "Appelez maintenant", heat: [0.3, 0.5, 0.7, 1, 0.4, 0] },
+  { name: "Verso Studio", reading: "Lu jusqu'au planning", action: "Relance prête à valider", heat: [0.4, 0.55, 0.5, 0.45, 0.6, 0.1] },
+  { name: "Brunet & Fils", reading: "Ouvert, couverture seule", action: "Laissez-lui le temps", heat: [0.3, 0.05, 0, 0, 0, 0] },
 ];
 
-const BENEFITS = [
-  { icon: Eye, text: "Voyez qui lit votre proposition, page par page." },
-  { icon: Sparkles, text: "Sachez qui relancer aujourd'hui, et quoi lui dire." },
-  { icon: PenLine, text: "Les relances s'écrivent seules. Vous validez." },
-];
-
-/** Right half of the login screen: what the product looks like, in plain HTML. */
+/** Right half of the login screen: the morning report the seller gets, drawn in HTML. */
 export function ProductPanel() {
   return (
     <aside
       aria-label="Aperçu de Clozer"
-      className="relative hidden overflow-hidden border-l border-border bg-muted/50 lg:flex lg:flex-col lg:justify-center lg:px-12 xl:px-20"
+      className="hidden border-l border-foreground bg-card lg:flex lg:flex-col lg:justify-center lg:px-12 xl:px-20"
     >
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -top-40 -right-40 size-[32rem] rounded-full bg-heat-hot/10 blur-3xl"
-      />
-      <div className="relative max-w-md space-y-10">
-        <div aria-hidden className="animate-rise rounded-2xl bg-card p-2 shadow-lg ring-1 ring-border">
-          <p className="px-3 pt-2 pb-3 text-sm font-semibold">
-            À traiter <span className="font-normal text-muted-foreground">aujourd&apos;hui</span>
-          </p>
-          <ul className="stagger divide-y divide-border">
+      <div className="max-w-xl">
+        <p className="condensed text-title">Chaque matin, votre devis à la caméra thermique.</p>
+        <figure aria-hidden className="mt-10 border border-foreground">
+          <div className="flex items-baseline justify-between border-b border-foreground px-4 py-2.5 text-small">
+            <span className="font-semibold">Rapport du jour</span>
+            <span className="text-muted-foreground">exemple</span>
+          </div>
+          <ul className="divide-y divide-border">
             {ROWS.map((row) => (
-              <li key={row.name} className="flex gap-3 px-3 py-3">
-                <span className="relative w-1 overflow-hidden rounded-full bg-foreground/[0.06]">
-                  <span className={`absolute inset-x-0 bottom-0 rounded-full ${row.heat} ${row.fill}`} />
+              <li key={row.name} className="grid grid-cols-[7.5rem_minmax(0,1fr)] items-center gap-4 px-4 py-3.5">
+                <span className="grid grid-cols-6 gap-px">
+                  {row.heat.map((heat, i) => (
+                    <ThermalPlate key={i} heat={heat} seed={i} skeleton={false} className="aspect-[3/4]" />
+                  ))}
                 </span>
-                <div className="min-w-0 space-y-1.5">
-                  <p className="flex items-center gap-2 text-sm font-semibold">
-                    {row.name}
-                    {row.live && (
-                      <span className="relative flex size-2">
-                        <span className="absolute inline-flex size-full animate-ping rounded-full bg-heat-hot opacity-60 motion-reduce:animate-none" />
-                        <span className="relative inline-flex size-2 rounded-full bg-heat-hot" />
-                      </span>
-                    )}
-                  </p>
-                  <p className="truncate rounded-md bg-muted px-2 py-1 text-small">{row.action}</p>
-                </div>
+                <span className="min-w-0">
+                  <span className="block text-body font-semibold">{row.name}</span>
+                  <span className="block truncate text-small text-muted-foreground">
+                    {row.reading} · <span className="text-foreground">{row.action}</span>
+                  </span>
+                </span>
               </li>
             ))}
           </ul>
-        </div>
-
-        <ul className="space-y-4">
-          {BENEFITS.map(({ icon: Icon, text }) => (
-            <li key={text} className="flex items-start gap-3 text-body">
-              <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-card shadow-xs ring-1 ring-border">
-                <Icon className="size-3.5" aria-hidden />
-              </span>
-              <span className="pt-0.5">{text}</span>
-            </li>
-          ))}
-        </ul>
-
-        <p className="flex items-center gap-2 text-small text-muted-foreground">
-          <Check className="size-3.5 text-success" aria-hidden />
+          <div className="flex items-center gap-3 border-t border-foreground px-4 py-2 font-mono text-micro text-muted-foreground">
+            Froid <HeatScale className="flex-1" /> Chaud
+          </div>
+        </figure>
+        <p className="mt-6 text-small text-muted-foreground">
           Par défaut, rien ne part à vos prospects sans votre accord.
         </p>
       </div>

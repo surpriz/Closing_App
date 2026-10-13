@@ -16,12 +16,12 @@ export function SmartLinkTemplate({ url }: { url: string }) {
   const value = smartLinkUrl(url, tool);
 
   return (
-    <div className="space-y-3 px-4 py-3 text-sm">
+    <div className="space-y-3 py-4 text-small">
       <p className="text-muted-foreground">
         Collez ce lien dans votre séquence : chaque prospect qui clique arrive sans formulaire,
         avec son propre suivi.
       </p>
-      <div className="flex flex-wrap gap-1 rounded-lg bg-muted p-1" role="radiogroup" aria-label="Outil de cold email">
+      <div className="flex flex-wrap gap-px border border-border bg-border" role="radiogroup" aria-label="Outil de cold email">
         {TOOLS.map((key) => (
           <button
             key={key}
@@ -30,19 +30,19 @@ export function SmartLinkTemplate({ url }: { url: string }) {
             aria-checked={tool === key}
             onClick={() => setTool(key)}
             className={cn(
-              "rounded-md px-2.5 py-1 text-sm transition-colors",
-              tool === key ? "bg-card shadow-xs" : "text-muted-foreground hover:text-foreground",
+              "bg-card px-2.5 py-1 text-small transition-colors",
+              tool === key ? "font-semibold text-foreground shadow-[inset_0_-2px_0_var(--foreground)]" : "text-muted-foreground hover:bg-muted hover:text-foreground",
             )}
           >
             {SMART_LINK_TOOLS[key].label}
           </button>
         ))}
       </div>
-      <div className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2 ring-1 ring-border">
-        <code className="min-w-0 flex-1 truncate text-xs">{value}</code>
+      <div className="flex items-center gap-2 rounded-sm border border-border bg-card py-1.5 pr-1 pl-3">
+        <code className="min-w-0 flex-1 truncate font-mono text-micro">{value}</code>
         <CopyButton value={value} />
       </div>
-      <p className="text-xs text-muted-foreground">
+      <p className="text-small text-muted-foreground">
         {SMART_LINK_TOOLS[tool].documented
           ? `Les variables sont celles de ${SMART_LINK_TOOLS[tool].label}.`
           : "Vérifiez le nom des variables dans l'éditeur de votre outil."}{" "}

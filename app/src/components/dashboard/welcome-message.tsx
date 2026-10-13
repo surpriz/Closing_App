@@ -29,7 +29,7 @@ export function WelcomeMessage({
   if (forLink && linkWelcome) {
     return (
       <div className="space-y-1.5">
-        <p className="text-xs text-muted-foreground">Version pour ce prospect, à la place de celle du document</p>
+        <p className="text-small text-muted-foreground">Version pour ce prospect, à la place de celle du document</p>
         <PageCapsuleControl target={forLink} capsule={linkWelcome} />
       </div>
     );

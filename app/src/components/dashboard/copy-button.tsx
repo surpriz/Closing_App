@@ -5,15 +5,26 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
-export function CopyButton({ value }: { value: string }) {
+/** Copies a link. Icon only by default; with `label` it becomes a full button. */
+export function CopyButton({
+  value,
+  label,
+  variant = "ghost",
+  size,
+}: {
+  value: string;
+  label?: string;
+  variant?: "default" | "outline" | "ghost";
+  size?: "sm" | "default" | "lg";
+}) {
   const [copied, setCopied] = useState(false);
 
   return (
     <Button
       type="button"
-      variant="ghost"
-      size="icon-xs"
-      aria-label="Copier le lien"
+      variant={variant}
+      size={label ? (size ?? "default") : "icon-xs"}
+      aria-label={label ? undefined : "Copier le lien"}
       onClick={async () => {
         await navigator.clipboard.writeText(value);
         setCopied(true);
@@ -21,6 +32,7 @@ export function CopyButton({ value }: { value: string }) {
       }}
     >
       {copied ? <Check /> : <Copy />}
+      {label && (copied ? "Copié" : label)}
     </Button>
   );
 }

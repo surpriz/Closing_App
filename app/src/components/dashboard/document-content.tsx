@@ -79,7 +79,7 @@ export function DocumentPages({
         </p>
         {aiAvailable && <RereadButton documentId={documentId} label="Relire les pages" done="Pages relues" />}
       </div>
-      <ul className="divide-y divide-border rounded-xl bg-card ring-1 ring-border">
+      <ul className="divide-y divide-border border-y border-foreground bg-card">
         {pages.map((page) => (
           // Remount when the stored tags change (AI reread), so the row shows them
           <PageRow
@@ -136,7 +136,7 @@ export function WebPageReading({
           {docPurpose && <p className="text-body">{docPurpose}</p>}
           {page?.summary && <p className="text-body text-muted-foreground">{page.summary}</p>}
           {page && page.keyFacts.length > 0 && (
-            <p className="text-sm text-muted-foreground">{page.keyFacts.join(" · ")}</p>
+            <p className="text-small text-muted-foreground">{page.keyFacts.join(" · ")}</p>
           )}
           {!page && (
             <p className="text-body text-muted-foreground">
@@ -182,14 +182,14 @@ function PageRow({
   };
 
   return (
-    <li className={cn("grid gap-x-4 gap-y-2 px-4 py-3", video ? "sm:grid-cols-[5.5rem_minmax(0,1fr)]" : "sm:grid-cols-[3rem_minmax(0,1fr)]")}>
-      <span className="text-sm font-medium text-muted-foreground tabular-nums">
+    <li className={cn("grid gap-x-4 gap-y-2 px-3 py-3 sm:px-4", video ? "sm:grid-cols-[5.5rem_minmax(0,1fr)]" : "sm:grid-cols-[3rem_minmax(0,1fr)]")}>
+      <span className="font-mono text-small text-muted-foreground">
         {video ? segmentLabel(page.pageNumber) : `p.${page.pageNumber}`}
       </span>
       <div className="min-w-0 space-y-2">
         {page.summary && <p className="text-body">{page.summary}</p>}
         {page.keyFacts.length > 0 && (
-          <p className="text-sm text-muted-foreground">{page.keyFacts.join(" · ")}</p>
+          <p className="text-small text-muted-foreground">{page.keyFacts.join(" · ")}</p>
         )}
         <div className="flex flex-wrap items-center gap-1.5">
           {EDITABLE_TAGS.map((tag) => {
@@ -202,17 +202,17 @@ function PageRow({
                 disabled={pending}
                 onClick={() => toggle(tag)}
                 className={cn(
-                  "rounded-full px-2.5 py-0.5 text-xs ring-1 transition-colors",
+                  "rounded-sm px-2 py-0.5 text-small ring-1 transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/30",
                   on
                     ? "bg-foreground text-background ring-foreground"
-                    : "text-muted-foreground ring-border hover:text-foreground",
+                    : "bg-card text-muted-foreground ring-input hover:text-foreground hover:ring-foreground/60",
                 )}
               >
                 {labels[tag]}
               </button>
             );
           })}
-          {page.tagSource === "MANUAL" && <span className="text-xs text-muted-foreground">corrigé par vous</span>}
+          {page.tagSource === "MANUAL" && <span className="text-small text-muted-foreground">corrigé par vous</span>}
         </div>
         {/* Recorded before the welcome message: kept on its page, no new ones */}
         {page.capsule && (
@@ -305,7 +305,7 @@ export function DocumentTypeSelect({
           ))}
         </SelectContent>
       </Select>
-      <span className="text-sm text-muted-foreground">{setBySeller ? "choisi par vous" : "deviné par l'IA"}</span>
+      <span className="text-small text-muted-foreground">{setBySeller ? "choisi par vous" : "deviné par l'IA"}</span>
     </div>
   );
 }

@@ -125,7 +125,7 @@ export function SettingsNav({
         <a
           href={`#${section.id}`}
           onClick={isAdvanced ? () => setOpen(true) : undefined}
-          className="block rounded-md px-2.5 py-1.5 text-muted-foreground transition-colors outline-none hover:bg-foreground/[0.04] hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/30"
+          className="-ml-px block border-l border-transparent px-3 py-1.5 text-muted-foreground transition-colors duration-150 outline-none hover:border-foreground hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/30"
         >
           {section.label}
         </a>
@@ -136,13 +136,13 @@ export function SettingsNav({
 
   return (
     <nav aria-label="Sections des réglages" className="hidden lg:block">
-      <ul className="sticky top-24 space-y-0.5 text-sm">
+      <ul className="sticky top-24 border-l border-border text-small">
         {essential.map((section) => link(section, false))}
-        <li className="pt-3 pb-1 pl-2.5 text-micro font-medium tracking-wide text-muted-foreground uppercase">
+        <li className="mt-3 border-t border-border pt-3 pb-1 pl-3 text-micro font-medium tracking-wide text-muted-foreground uppercase">
           <button
             type="button"
             onClick={() => setOpen(!open)}
-            className="hover:text-foreground"
+            className="outline-none hover:text-foreground focus-visible:underline"
           >
             Avancés
           </button>

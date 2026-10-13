@@ -32,16 +32,16 @@ export function LinkCapsules({
           const capsule = byPage.get(page.pageNumber)!;
           return (
             <li key={page.pageNumber} className="grid gap-x-4 gap-y-2 py-3 sm:grid-cols-[3rem_minmax(0,1fr)]">
-              <span className="text-sm font-medium text-muted-foreground tabular-nums">p.{page.pageNumber}</span>
+              <span className="font-mono text-small text-muted-foreground">P.{page.pageNumber}</span>
               <div className="min-w-0 space-y-2">
-                <p className="text-xs text-muted-foreground">
+                <p className="text-small text-muted-foreground">
                   {capsule.forLink ? "Enregistrée pour ce prospect" : "Capsule du document, vue par tous les prospects"}
                 </p>
                 {canEdit && capsule.forLink ? (
                   <PageCapsuleControl target={target(page.pageNumber)} capsule={capsule} legacy />
                 ) : (
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-sm">
+                    <p className="text-body">
                       {capsule.hookText ?? "Sans phrase d'accroche"}
                       <span className="text-muted-foreground">
                         {" "}

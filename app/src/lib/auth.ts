@@ -25,7 +25,7 @@ import {
   signupRefusalMessage,
 } from "@/lib/platform-admin";
 
-const googleEnabled =
+export const googleEnabled =
   !!process.env.GOOGLE_CLIENT_ID && !!process.env.GOOGLE_CLIENT_SECRET;
 
 // Blocklist and invite-only mode, for both magic link and Google sign-ups

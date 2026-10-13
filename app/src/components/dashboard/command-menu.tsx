@@ -111,7 +111,7 @@ export function CommandMenu({ entries }: { entries: CommandEntry[] }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="hidden h-8 w-56 items-center gap-2 rounded-lg bg-muted/70 px-2.5 text-sm text-muted-foreground ring-1 ring-border transition-colors outline-none hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/30 md:flex"
+        className="hidden h-8 w-56 items-center gap-2 rounded-md border border-input bg-card px-2.5 text-small text-muted-foreground transition-colors duration-150 outline-none hover:border-foreground/50 hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/30 md:flex"
       >
         <Search className="size-3.5" aria-hidden />
         <span className="flex-1 text-left">Rechercher…</span>
@@ -121,7 +121,7 @@ export function CommandMenu({ entries }: { entries: CommandEntry[] }) {
         type="button"
         aria-label="Rechercher"
         onClick={() => setOpen(true)}
-        className="flex size-9 items-center justify-center rounded-lg text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/30 md:hidden"
+        className="flex size-9 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors duration-150 hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/30 md:hidden"
       >
         <Search className="size-4.5" aria-hidden />
       </button>
@@ -132,7 +132,7 @@ export function CommandMenu({ entries }: { entries: CommandEntry[] }) {
           className="top-[15vh] translate-y-0 gap-0 overflow-hidden p-0 sm:max-w-lg"
         >
           <DialogTitle className="sr-only">Rechercher</DialogTitle>
-          <div className="flex items-center gap-2 border-b px-4">
+          <div className="flex items-center gap-2 border-b border-foreground px-4">
             <Search className="size-4 text-muted-foreground" aria-hidden />
             <input
               autoFocus
@@ -164,7 +164,7 @@ export function CommandMenu({ entries }: { entries: CommandEntry[] }) {
           </div>
           <div id="command-results" role="listbox" className="max-h-[min(60vh,24rem)] overflow-y-auto p-2">
             {results.length === 0 && (
-              <p className="px-3 py-8 text-center text-sm text-muted-foreground">Rien ne correspond.</p>
+              <p className="px-3 py-8 text-center text-small text-muted-foreground">Rien ne correspond.</p>
             )}
             {GROUPS.map((group) => {
               const items = results
@@ -188,7 +188,7 @@ export function CommandMenu({ entries }: { entries: CommandEntry[] }) {
                         onMouseMove={() => setActive(index)}
                         onClick={() => go(item)}
                         className={cn(
-                          "flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm",
+                          "flex cursor-pointer items-center gap-3 rounded-sm px-3 py-2 text-small",
                           index === active && "bg-muted",
                         )}
                       >

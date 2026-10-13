@@ -25,7 +25,7 @@ export function LiveStrip({ initial }: { initial: WorkspaceLiveState }) {
         <LiveDot />
         En train de lire
       </span>
-      <ul className="flex flex-wrap gap-x-5 gap-y-1 text-sm">
+      <ul className="flex flex-wrap gap-x-5 gap-y-1 text-small">
         {readers.map((reader) => (
           <li key={reader.viewId}>
             <Link href={`/links/${reader.linkId}`} className="font-medium hover:underline">

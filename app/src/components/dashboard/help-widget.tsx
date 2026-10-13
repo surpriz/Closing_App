@@ -96,9 +96,8 @@ export function HelpWidget({ firstName }: { firstName: string | null }) {
 
   useEffect(() => {
     if (!open) {
-      // Back to the launcher when the panel closes
       // Back to the "?" in the header that opened the panel
-    if (wasOpen.current) document.querySelector<HTMLElement>("[data-help-launcher]")?.focus();
+      if (wasOpen.current) document.querySelector<HTMLElement>("[data-help-launcher]")?.focus();
       return;
     }
     wasOpen.current = true;
@@ -135,14 +134,14 @@ export function HelpWidget({ firstName }: { firstName: string | null }) {
       role="dialog"
       aria-label="Aide Clozer"
       onKeyDown={(event) => event.key === "Escape" && setOpen(false)}
-      className="fixed inset-0 z-50 flex animate-rise flex-col bg-card sm:inset-auto sm:right-4 sm:bottom-4 sm:z-40 sm:h-[min(620px,calc(100dvh-2rem))] sm:w-[380px] sm:rounded-2xl sm:shadow-xl sm:ring-1 sm:ring-border"
+      className="fixed inset-0 z-50 flex animate-rise flex-col bg-card sm:inset-auto sm:right-4 sm:bottom-4 sm:z-40 sm:h-[min(620px,calc(100dvh-2rem))] sm:w-[380px] sm:rounded-xl sm:shadow-lg sm:ring-1 sm:ring-foreground/85"
     >
-      <header className="flex shrink-0 items-center gap-3 border-b px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:pt-3">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">
+      <header className="flex shrink-0 items-center gap-3 border-b border-foreground px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:pt-3">
+        <span className="flex size-9 shrink-0 items-center justify-center border border-border bg-background">
           <LifeBuoy className="size-5" aria-hidden />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold">Aide Clozer</p>
+          <p className="truncate text-body font-semibold">Aide Clozer</p>
           <p className="truncate text-small text-muted-foreground">Questions, conseils, idées, bugs</p>
         </div>
         <Button variant="ghost" size="icon" onClick={() => setOpen(false)} aria-label="Fermer">
@@ -165,7 +164,7 @@ export function HelpWidget({ firstName }: { firstName: string | null }) {
                 key={suggestion}
                 type="button"
                 onClick={() => send(suggestion)}
-                className="rounded-full border bg-background px-3 py-1.5 text-left text-sm transition-colors hover:bg-muted"
+                className="rounded-sm border border-border bg-background px-3 py-1.5 text-left text-small transition-colors duration-150 outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/30"
               >
                 {suggestion}
               </button>
@@ -201,7 +200,7 @@ export function HelpWidget({ firstName }: { firstName: string | null }) {
         )}
 
         {error && (
-          <p role="alert" className="text-center text-sm text-destructive">
+          <p role="alert" className="text-center text-small text-destructive">
             {LIMIT_ERRORS.test(error.message)
               ? "Vous avez posé beaucoup de questions d'un coup. Réessayez un peu plus tard."
               : "L'assistant est indisponible, réessayez dans un instant."}
@@ -210,7 +209,7 @@ export function HelpWidget({ firstName }: { firstName: string | null }) {
       </div>
 
       <form
-        className="shrink-0 border-t px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+        className="shrink-0 border-t border-border px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
         onSubmit={(event) => {
           event.preventDefault();
           send(input);
@@ -232,7 +231,7 @@ export function HelpWidget({ firstName }: { firstName: string | null }) {
             <ArrowUp />
           </Button>
         </div>
-        <p className="pt-2 text-center text-xs text-muted-foreground">
+        <p className="pt-2 text-center text-micro text-muted-foreground">
           Réponses automatiques, l&apos;assistant peut se tromper. Rien n&apos;est transmis sans votre accord.
         </p>
       </form>

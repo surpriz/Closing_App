@@ -18,7 +18,7 @@ export function LinkTestTools({ linkId }: { linkId: string }) {
     });
 
   return (
-    <details className="group text-sm text-muted-foreground">
+    <details className="group text-small text-muted-foreground">
       <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 outline-none hover:text-foreground focus-visible:underline [&::-webkit-details-marker]:hidden">
         <ChevronRight className="size-3.5 transition-transform group-open:rotate-90" />
         <FlaskConical className="size-3.5" /> Outils de test

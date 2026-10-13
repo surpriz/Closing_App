@@ -1,4 +1,19 @@
-import { BellRing, CalendarCheck, CalendarDays, CheckCircle2, Eye, Hourglass, Link2, MessageCircleQuestion, MessageSquare, Mic, Phone, PlayCircle, Receipt, Send } from "lucide-react";
+import {
+  BellRing,
+  CalendarCheck,
+  CalendarDays,
+  CheckCircle2,
+  Eye,
+  Hourglass,
+  Link2,
+  MessageCircleQuestion,
+  MessageSquare,
+  Mic,
+  Phone,
+  PlayCircle,
+  Receipt,
+  Send,
+} from "lucide-react";
 
 import { formatDate, formatRelative } from "@/lib/format";
 
@@ -37,29 +52,39 @@ const ICONS: Record<TimelineItem["kind"], React.ReactNode> = {
   voice: <Mic className="size-3.5" />,
   capsule: <PlayCircle className="size-3.5" />,
   followup: <Send className="size-3.5" />,
-  alert: <BellRing className="size-3.5 text-heat-hot" />,
+  alert: <BellRing className="size-3.5" />,
   seller: <Phone className="size-3.5" />,
 };
 
 export function ActivityTimeline({ items }: { items: TimelineItem[] }) {
   if (items.length === 0) {
-    return <p className="text-sm text-muted-foreground">Aucune activité.</p>;
+    return <p className="text-small text-muted-foreground">Aucune activité.</p>;
   }
 
   return (
     <ol className="relative space-y-4 border-l pl-6">
       {items.map((item) => (
-        <li key={item.id} className="relative text-sm">
-          <span className="absolute -left-[33px] flex size-6 items-center justify-center rounded-full border bg-card">
+        <li
+          key={item.id}
+          className="relative min-w-0 text-small [overflow-wrap:anywhere]"
+        >
+          <span className="absolute -left-[33px] flex size-6 items-center justify-center border bg-card">
             {ICONS[item.kind]}
           </span>
           <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-            <span className="font-medium">{item.title}</span>
-            <time className="text-xs text-muted-foreground" title={formatDate(item.at)}>
+            <span className="min-w-0 text-body font-medium break-words [overflow-wrap:anywhere]">
+              {item.title}
+            </span>
+            <time
+              className="text-micro text-muted-foreground"
+              title={formatDate(item.at)}
+            >
               {formatRelative(item.at)}
             </time>
           </div>
-          {item.detail && <p className="text-muted-foreground">{item.detail}</p>}
+          {item.detail && (
+            <p className="text-muted-foreground">{item.detail}</p>
+          )}
         </li>
       ))}
     </ol>

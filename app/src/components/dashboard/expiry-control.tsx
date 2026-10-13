@@ -93,7 +93,7 @@ export function ExpiryControl({
   }
 
   return (
-    <div className="space-y-3 px-4 py-3 text-sm">
+    <div className="space-y-3 px-4 py-3 text-small">
       <p className="flex items-start gap-2">
         <Hourglass className={`mt-0.5 size-4 shrink-0 ${expired ? "text-destructive" : "text-muted-foreground"}`} aria-hidden />
         <span>

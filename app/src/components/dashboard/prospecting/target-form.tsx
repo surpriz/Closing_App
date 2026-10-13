@@ -101,7 +101,7 @@ export function TargetForm({ initial, origin }: Props) {
             <Input id="jobTitles" name="jobTitles" defaultValue={filters.jobTitles.join(", ")} placeholder="Directeur commercial, CEO" />
           </div>
           <fieldset className="space-y-2">
-            <legend className="mb-2 text-sm font-medium">Niveau</legend>
+            <legend className="mb-2 text-small font-medium">Niveau</legend>
             <div className="grid grid-cols-2 gap-2">
               {SENIORITIES.map((seniority) => (
                 <FormCheckbox
@@ -127,7 +127,7 @@ export function TargetForm({ initial, origin }: Props) {
 
         <div className="space-y-4">
           <fieldset>
-            <legend className="mb-2 text-sm font-medium">Effectif</legend>
+            <legend className="mb-2 text-small font-medium">Effectif</legend>
             <div className="grid grid-cols-2 gap-2">
               {HEADCOUNT_BRACKETS.map((bracket) => (
                 <FormCheckbox
@@ -141,7 +141,7 @@ export function TargetForm({ initial, origin }: Props) {
             </div>
           </fieldset>
           <fieldset>
-            <legend className="mb-2 text-sm font-medium">Régions</legend>
+            <legend className="mb-2 text-small font-medium">Régions</legend>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {Object.entries(REGIONS).map(([code, name]) => (
                 <FormCheckbox

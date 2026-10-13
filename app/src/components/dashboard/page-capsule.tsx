@@ -68,11 +68,11 @@ export function PageCapsuleControl({
     });
 
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded-lg bg-muted/60 p-2">
+    <div className="flex flex-wrap items-center gap-3 border border-border bg-card p-2">
       <CapsulePreview capsule={capsule} />
       <div className="min-w-0 flex-1 space-y-0.5">
-        <p className="truncate text-sm">{capsule.hookText ?? <span className="text-muted-foreground">Sans phrase d&apos;accroche</span>}</p>
-        <p className="text-xs text-muted-foreground tabular-nums">
+        <p className="truncate text-body">{capsule.hookText ?? <span className="text-muted-foreground">Sans phrase d&apos;accroche</span>}</p>
+        <p className="text-small text-muted-foreground">
           {capsule.kind === "VIDEO" ? "Vidéo" : "Audio"} · {Math.round(capsule.durationMs / 1000)} s ·{" "}
           {capsule.plays === 0 ? "pas encore regardée" : `regardée ${capsule.plays} fois`}
         </p>
@@ -99,7 +99,7 @@ function CapsulePreview({ capsule }: { capsule: CapsuleSummary }) {
 }
 
 /**
- * Native controls do not fit in a 80px circle, and Chrome recordings carry no
+ * Native controls do not fit in a small thumbnail, and Chrome recordings carry no
  * duration: show the first frame and play on click instead.
  */
 function VideoThumb({ src }: { src: string }) {
@@ -116,7 +116,7 @@ function VideoThumb({ src }: { src: string }) {
       type="button"
       onClick={toggle}
       aria-label={playing ? "Mettre en pause" : "Lire la capsule"}
-      className="relative size-20 shrink-0 overflow-hidden rounded-full bg-black"
+      className="relative aspect-[4/3] w-24 shrink-0 overflow-hidden bg-black"
     >
       <video
         ref={ref}

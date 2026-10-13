@@ -33,10 +33,10 @@ export function MailToolTip({
   if (hidden) return null;
 
   return (
-    <aside className="flex items-start gap-3 rounded-xl bg-muted/60 px-4 py-3 ring-1 ring-border">
+    <aside className="flex items-start gap-3 border-y border-border bg-card px-4 py-3">
       <Paperclip className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
       <div className="min-w-0 flex-1 space-y-2">
-        <p className="text-sm">{COPY[tool](mailbox)}</p>
+        <p className="text-body">{COPY[tool](mailbox)}</p>
         <Link href="/bienvenue?etape=outil" className={buttonVariants({ variant: "outline", size: "sm" })}>
           {tool === "unknown" ? "Voir comment" : "Installer, 2 minutes"}
         </Link>
@@ -49,9 +49,9 @@ export function MailToolTip({
           setHidden(true);
           void hideMailToolTip();
         }}
-        className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+        className="rounded-sm p-1 text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/30"
       >
-        <X className="size-4" />
+        <X className="size-4" aria-hidden />
       </button>
     </aside>
   );

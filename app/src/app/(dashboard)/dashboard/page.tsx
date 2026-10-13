@@ -20,7 +20,7 @@ import {
 } from "@/components/dashboard/today/funnel";
 import { LiveStrip } from "@/components/dashboard/today/live-strip";
 import { PeriodTabs } from "@/components/dashboard/today/period-tabs";
-import { TodoList, type TodoRow } from "@/components/dashboard/today/todo-list";
+import { TodoList, UnopenedDeals, type TodoRow } from "@/components/dashboard/today/todo-list";
 import { buildTodayHeadline } from "@/components/dashboard/today-headline";
 import {
   UploadButton,
@@ -40,6 +40,7 @@ import {
   periodStart,
   PERIODS,
 } from "@/lib/closing/dashboard/period";
+import { pageHeat } from "@/lib/closing/dashboard/page-heat";
 import { compareDeals } from "@/lib/closing/dashboard/rank";
 import {
   getFeedSource,
@@ -47,6 +48,7 @@ import {
   getDraftsToReview,
   getFunnelFacts,
   getOpenDeals,
+  getPageReadings,
   getUpcomingFollowups,
   sellerLinks,
   type OpenDeal,
@@ -134,7 +136,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
     return (
       <div className="space-y-8">
         <div className="space-y-3">
-          <h1 className="max-w-2xl text-display [font-stretch:88%]">
+          <h1 className="condensed max-w-2xl text-display">
             Bienvenue sur Clozer.
           </h1>
           <p className="max-w-xl text-body text-muted-foreground">
@@ -171,11 +173,23 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
   const showFirstSteps = linkCount === 0 || !firstRead;
 
   const readingLinks = new Set(live.readers.map((reader) => reader.linkId));
+  const readings = await getPageReadings(
+    deals.filter((deal) => deal.opened).map((deal) => deal.id),
+  );
   const rows = deals
     .map((deal) =>
-      toTodoRow(deal, { now, readingNow: readingLinks.has(deal.id), origin }),
+      toTodoRow(deal, {
+        now,
+        readingNow: readingLinks.has(deal.id),
+        origin,
+        pages: readings.get(deal.id) ?? null,
+      }),
     )
     .sort(compareDeals);
+  // Links nobody opened yet have nothing to read off: one folded line, not a page of rows
+  const isWaiting = (row: TodoRow) => !row.opened && row.dealStatus === "OPEN";
+  const activeRows = rows.filter((row) => !isWaiting(row));
+  const waitingRows = rows.filter(isWaiting);
   const distribution = buildHeatDistribution(
     rows.map((row) => ({ opened: row.opened, tier: row.tier })),
   );
@@ -218,14 +232,21 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
   return (
     <div className="space-y-10">
       <section className="space-y-6">
-        <div className="flex flex-col-reverse gap-6 sm:flex-row sm:items-start sm:justify-between">
-          <div className="max-w-3xl space-y-2">
-            <h1 className="text-title text-balance [font-stretch:88%] sm:text-display">
+        <p className="flex flex-wrap gap-x-6 gap-y-1 border-b border-border pb-2 font-mono text-micro text-muted-foreground">
+          <span className="text-foreground">Rapport du jour</span>
+          <span>{reportDate(now)}</span>
+          <span>
+            {deals.length} deal{deals.length > 1 ? "s" : ""} en cours
+          </span>
+        </p>
+        <div className="flex flex-col-reverse gap-6 sm:flex-row sm:items-end sm:justify-between">
+          <div className="max-w-3xl space-y-3">
+            <h1 className="condensed text-title text-balance sm:text-display">
               {headline}
             </h1>
             <p className="text-body text-muted-foreground">{hint}</p>
           </div>
-          <div className="shrink-0 sm:pt-1.5">
+          <div className="shrink-0">
             <UploadButton
               uploadPrefix={uploadPrefix}
               pitchUploadPrefix={pitchPrefix}
@@ -279,16 +300,21 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
               />
             ) : (
               <>
-                <TodoList
-                  rows={rows.slice(0, TODO_LIMIT)}
-                  now={now}
-                  headlineDealId={focus?.id ?? null}
-                />
-                {rows.length > TODO_LIMIT && (
-                  <p className="mt-3 text-sm text-muted-foreground">
-                    Et {rows.length - TODO_LIMIT} autres deals en cours, moins
-                    urgents.
+                {activeRows.length > 0 && (
+                  <TodoList
+                    rows={activeRows.slice(0, TODO_LIMIT)}
+                    now={now}
+                    headlineDealId={focus?.id ?? null}
+                  />
+                )}
+                {activeRows.length > TODO_LIMIT && (
+                  <p className="mt-3 text-small text-muted-foreground">
+                    Et {activeRows.length - TODO_LIMIT} autres deals en cours,
+                    moins urgents.
                   </p>
+                )}
+                {waitingRows.length > 0 && (
+                  <UnopenedDeals rows={waitingRows} />
                 )}
               </>
             )}
@@ -395,7 +421,14 @@ function toTodoRow(
     now,
     readingNow,
     origin,
-  }: { now: Date; readingNow: boolean; origin: string },
+    pages,
+  }: {
+    now: Date;
+    readingNow: boolean;
+    origin: string;
+    /** Reading time per page, null when the link was never opened. */
+    pages: { pageNumber: number; durationMs: number }[] | null;
+  },
 ): TodoRow {
   const prospect = deal.prospects[0];
   const { action, tier, score, insightHeadline, aiPriority } = dealAction(
@@ -420,7 +453,18 @@ function toTodoRow(
     insightHeadline,
     aiPriority,
     url: `${origin}/v/${deal.slug}`,
+    heat: pages ? pageHeat(pages, deal.document.numPages) : null,
   };
+}
+
+// Sellers are in France for now; the date only labels the report.
+function reportDate(now: Date) {
+  return new Intl.DateTimeFormat("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    timeZone: "Europe/Paris",
+  }).format(now);
 }
 
 function dealState(

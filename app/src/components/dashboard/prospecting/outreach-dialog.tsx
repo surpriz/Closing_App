@@ -100,7 +100,7 @@ export function OutreachDialog({ suggestionId, documents, hasLink }: Props) {
                   value={documentId}
                   onChange={(event) => setDocumentId(event.target.value)}
                   disabled={hasLink}
-                  className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm"
+                  className="h-9 w-full rounded-lg border border-input bg-card px-2 text-small outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/20"
                 >
                   {documents.map((doc) => (
                     <option key={doc.id} value={doc.id}>

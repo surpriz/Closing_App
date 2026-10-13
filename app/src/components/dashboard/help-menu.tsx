@@ -22,9 +22,9 @@ export function HelpMenu() {
         aria-label="Aide"
         title="Aide"
         data-help-launcher
-        className="flex size-9 items-center justify-center rounded-full text-muted-foreground outline-none transition-colors hover:bg-foreground/[0.04] hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/30"
+        className="flex size-9 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors duration-150 hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/30 aria-expanded:bg-muted aria-expanded:text-foreground"
       >
-        <CircleHelp className="size-5" />
+        <CircleHelp className="size-5" aria-hidden />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-60">
         <DropdownMenuItem onClick={openHelp}>

@@ -17,7 +17,7 @@ export default async function OutlookConnectPage() {
       <div className="w-full max-w-md animate-rise space-y-8">
         <Logo />
         <div className="space-y-2">
-          <h1 className="text-title [font-stretch:92%]">Connecter Outlook</h1>
+          <h1 className="text-title condensed">Connecter Outlook</h1>
           <p className="text-body text-muted-foreground">
             Créez vos liens Clozer depuis Outlook sur Windows ou Mac.
           </p>

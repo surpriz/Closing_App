@@ -27,7 +27,7 @@ export function MailStep({
         title="Vous écrivez vos emails depuis…"
         lead={`${firstName ? `${firstName}, c` : "C"}lozer peut se brancher sur votre messagerie : vous joignez le PDF comme d'habitude, il le remplace par un lien.`}
       />
-      <div role="radiogroup" aria-label="Votre messagerie" className="grid gap-3 sm:grid-cols-2">
+      <div role="radiogroup" aria-label="Votre messagerie" className="grid gap-px border-y border-foreground bg-border sm:grid-cols-2">
         {MAIL_CLIENTS.map((client) => {
           const Icon = ICONS[client];
           const selected = value === client;
@@ -39,13 +39,13 @@ export function MailStep({
               aria-checked={selected}
               onClick={() => onChange(client)}
               className={cn(
-                "flex items-start gap-4 rounded-xl bg-card px-5 py-4 text-left shadow-xs ring-1 ring-border transition-[box-shadow,background-color] outline-none hover:bg-muted/60 focus-visible:ring-3 focus-visible:ring-ring/30",
-                selected && "ring-2 ring-foreground hover:bg-card",
+                "flex items-start gap-4 bg-card px-5 py-4 text-left transition-colors duration-150 outline-none hover:bg-muted/60 focus-visible:ring-3 focus-visible:ring-ring/30 focus-visible:ring-inset",
+                selected && "ring-2 ring-foreground ring-inset hover:bg-card",
               )}
             >
               <Icon className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden />
               <span className="min-w-0 flex-1 space-y-0.5">
-                <span className="block font-medium">{MAIL_CLIENT_LABELS[client].title}</span>
+                <span className="block text-body font-semibold">{MAIL_CLIENT_LABELS[client].title}</span>
                 <span className="block text-small text-muted-foreground">{MAIL_CLIENT_LABELS[client].hint}</span>
               </span>
               {selected && <Check className="mt-0.5 size-4 shrink-0" aria-hidden />}

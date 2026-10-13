@@ -26,11 +26,11 @@ export function SellerTable({
   selected: string | null;
 }) {
   return (
-    <div className="overflow-hidden rounded-xl bg-card shadow-xs ring-1 ring-border">
+    <div className="border-b border-foreground bg-card">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="pl-5">Vendeur</TableHead>
+            <TableHead className="pl-4">Vendeur</TableHead>
             <TableHead className="text-right">En cours</TableHead>
             <TableHead className="text-right">
               {TEAM_HEALTH_LABELS.hot}
@@ -42,7 +42,7 @@ export function SellerTable({
               {TEAM_HEALTH_LABELS.dead}
             </TableHead>
             <TableHead className="text-right">Pipeline</TableHead>
-            <TableHead className="pr-5 text-right">Montant à classer</TableHead>
+            <TableHead className="pr-4 text-right">Montant à classer</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -54,7 +54,7 @@ export function SellerTable({
                 selected === summary.sellerId && "bg-muted/60",
               )}
             >
-              <TableCell className="pl-5 font-medium">
+              <TableCell className="pl-4 font-semibold">
                 <Link
                   href={
                     selected === summary.sellerId
@@ -70,12 +70,12 @@ export function SellerTable({
                 {summary.open}
               </TableCell>
               <Count value={summary.hot} dot="bg-success" />
-              <Count value={summary.atRisk} dot="bg-heat-warm" />
+              <Count value={summary.atRisk} dot="bg-warning" />
               <Count value={summary.dead} dot="bg-foreground/30" />
               <TableCell className="text-right tabular-nums">
                 {formatMoney(summary.pipeline) ?? "–"}
               </TableCell>
-              <TableCell className="pr-5 text-right text-muted-foreground tabular-nums">
+              <TableCell className="pr-4 text-right text-muted-foreground tabular-nums">
                 {formatMoney(summary.deadAmount) ?? "–"}
               </TableCell>
             </TableRow>
@@ -96,7 +96,7 @@ function Count({ value, dot }: { value: number; dot: string }) {
         )}
       >
         {value > 0 && (
-          <span aria-hidden className={cn("size-1.5 rounded-full", dot)} />
+          <span aria-hidden className={cn("size-2", dot)} />
         )}
         {value}
       </span>

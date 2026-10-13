@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { AdminSection } from "@/components/admin/section";
-import { ADMIN_CARD } from "@/components/admin/styles";
 import { adminDate, formatMicroUsd, plural } from "@/lib/admin/format";
 import { loadBlockedEmails, userStatusWhere } from "@/lib/admin/users";
 import { topAiCostsLast30Days } from "@/lib/admin/workspaces";
@@ -14,9 +13,9 @@ export const metadata: Metadata = { title: "Vue d'ensemble" };
 
 function Stat({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
   return (
-    <div className={`${ADMIN_CARD} p-4`}>
+    <div className="bg-card px-4 py-4">
       <p className="text-small text-muted-foreground">{label}</p>
-      <p className="mt-1 text-title tabular-nums">{value}</p>
+      <p className="condensed mt-1 text-title tabular-nums">{value}</p>
       {hint && <p className="text-small text-muted-foreground">{hint}</p>}
     </div>
   );
@@ -58,9 +57,9 @@ export default async function AdminOverviewPage() {
 
   return (
     <>
-      <h1 className="text-title [font-stretch:92%]">Vue d&apos;ensemble</h1>
+      <h1 className="text-title condensed">Vue d&apos;ensemble</h1>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-px border-y border-foreground bg-border lg:grid-cols-4">
         <Stat label="Utilisateurs" value={users} hint={`+${signups7} en 7 j · +${signups30} en 30 j`} />
         <Stat label="Actifs sur 7 jours" value={active7} hint={`${active30} sur 30 jours`} />
         <Stat label="Espaces" value={workspaces} hint={suspended ? `${suspended} ${plural(suspended, "suspendu")}` : undefined} />
@@ -75,7 +74,7 @@ export default async function AdminOverviewPage() {
         <AdminSection title="Dernières inscriptions">
           <ul className="divide-y divide-border">
             {latest.map((user) => (
-              <li key={user.id} className="flex items-center justify-between gap-4 px-5 py-3 text-sm">
+              <li key={user.id} className="flex items-center justify-between gap-4 px-5 py-3 text-body">
                 <Link href={`/admin/users/${user.id}`} className="truncate hover:underline">
                   {user.email}
                 </Link>
@@ -88,14 +87,14 @@ export default async function AdminOverviewPage() {
         <AdminSection title="Plus gros coûts IA sur 30 jours">
           <ul className="divide-y divide-border">
             {aiCosts.top.map((row) => (
-              <li key={row.organizationId} className="flex items-center justify-between gap-4 px-5 py-3 text-sm">
+              <li key={row.organizationId} className="flex items-center justify-between gap-4 px-5 py-3 text-body">
                 <Link href={`/admin/workspaces/${row.organizationId}`} className="truncate hover:underline">
                   {row.name ?? "Espace supprimé"}
                 </Link>
                 <span className="shrink-0 tabular-nums">{formatMicroUsd(row.cost)}</span>
               </li>
             ))}
-            {aiCosts.top.length === 0 && <li className="px-5 py-3 text-sm text-muted-foreground">Aucun appel IA.</li>}
+            {aiCosts.top.length === 0 && <li className="px-5 py-3 text-body text-muted-foreground">Aucun appel IA.</li>}
           </ul>
         </AdminSection>
       </div>

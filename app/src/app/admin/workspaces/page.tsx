@@ -73,22 +73,22 @@ export default async function AdminWorkspacesPage({ searchParams }: PageProps<"/
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="pl-5">Espace</TableHead>
+              <TableHead className="pl-4">Espace</TableHead>
               <TableHead className="text-right">Membres</TableHead>
               <TableHead className="text-right">Liens</TableHead>
               <TableHead className="text-right">IA 30 j</TableHead>
               <TableHead>Plan</TableHead>
               <TableHead>Créé le</TableHead>
-              <TableHead className="pr-5">Statut</TableHead>
+              <TableHead className="pr-4">Statut</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {workspaces.map((workspace) => (
               <TableRow key={workspace.id} className="relative">
-                <TableCell className="pl-5">
+                <TableCell className="pl-4">
                   <Link
                     href={`/admin/workspaces/${workspace.id}`}
-                    className="font-medium outline-none after:absolute after:inset-0 hover:underline"
+                    className="font-semibold outline-none after:absolute after:inset-0 hover:underline focus-visible:after:ring-3 focus-visible:after:ring-ring/30 focus-visible:after:ring-inset"
                   >
                     {workspace.name}
                   </Link>
@@ -99,7 +99,7 @@ export default async function AdminWorkspacesPage({ searchParams }: PageProps<"/
                 <TableCell className="text-right tabular-nums">{formatMicroUsd(costs.get(workspace.id) ?? 0)}</TableCell>
                 <TableCell className="text-muted-foreground">{workspace.plan}</TableCell>
                 <TableCell className="text-muted-foreground">{adminDate.format(workspace.createdAt)}</TableCell>
-                <TableCell className="pr-5">
+                <TableCell className="pr-4">
                   <WorkspaceStatusBadge suspended={workspace.suspendedAt !== null} />
                 </TableCell>
               </TableRow>

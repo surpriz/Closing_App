@@ -25,7 +25,7 @@ export function AdminPagination({
   };
 
   return (
-    <div className="flex items-center justify-between gap-4 text-sm text-muted-foreground">
+    <div className="flex items-center justify-between gap-4 text-small text-muted-foreground tabular-nums">
       <span>
         {total} {plural(total, "résultat")} · page {Math.min(page, pages)} sur {pages}
       </span>

@@ -110,15 +110,17 @@ const GUARDRAILS = [
 
 function Step({ icon: Icon, title, body, index }: (typeof STEPS)[number] & { index: number }) {
   return (
-    <li className="grid grid-cols-[2.5rem_minmax(0,1fr)] gap-x-4">
-      <span className="flex size-10 items-center justify-center rounded-full bg-foreground/[0.06]">
-        <Icon className="size-[18px]" />
+    <li className="grid grid-cols-[2.5rem_minmax(0,1fr)] gap-x-4 py-5">
+      <span className="flex flex-col items-center gap-1.5">
+        <span className="flex size-10 items-center justify-center border border-border bg-card">
+          <Icon className="size-[18px]" aria-hidden />
+        </span>
+        <span className="font-mono text-micro text-muted-foreground tabular-nums">
+          {index}/{STEPS.length}
+        </span>
       </span>
-      <div className="space-y-1 pt-1.5 pb-6">
-        <h3 className="font-medium">
-          <span className="text-muted-foreground tabular-nums">{index}. </span>
-          {title}
-        </h3>
+      <div className="space-y-1 pt-2">
+        <h3 className="text-body font-semibold">{title}</h3>
         <p className="text-body text-muted-foreground">{body}</p>
       </div>
     </li>
@@ -153,7 +155,7 @@ export default function HowItWorksPage() {
 
       <section>
         <SectionTitle hint="ce qui se passe quand vous envoyez un lien">Le parcours d&apos;un deal</SectionTitle>
-        <ol>
+        <ol className="divide-y divide-border">
           {STEPS.map((step, i) => (
             <Step key={step.title} {...step} index={i + 1} />
           ))}
@@ -162,20 +164,20 @@ export default function HowItWorksPage() {
 
       <section>
         <SectionTitle>Deux indicateurs, deux questions</SectionTitle>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Surface className="space-y-2 p-5">
-            <p className="flex items-center gap-2 font-medium">
-              <Gauge className="size-4" /> Température (sur 100)
+        <div className="grid gap-px border-y border-foreground bg-border sm:grid-cols-2 [&>*]:bg-card">
+          <div className="space-y-2 p-5">
+            <p className="flex items-center gap-2 text-body font-semibold">
+              <Gauge className="size-4" aria-hidden /> Température (sur 100)
             </p>
             <p className="text-body text-muted-foreground">
               <span className="text-foreground">Combien il lit.</span> Calculée sans IA : lecture récente, temps passé,
               visites répétées, plusieurs lecteurs, tarifs lus, lecture jusqu&apos;au bout. Chaque point a sa raison,
               affichée sur la fiche.
             </p>
-          </Surface>
-          <Surface className="space-y-2 p-5">
-            <p className="flex items-center gap-2 font-medium">
-              <Sparkles className="size-4" /> Lecture IA (et sa fiabilité)
+          </div>
+          <div className="space-y-2 p-5">
+            <p className="flex items-center gap-2 text-body font-semibold">
+              <Sparkles className="size-4" aria-hidden /> Lecture IA (et sa fiabilité)
             </p>
             <p className="text-body text-muted-foreground">
               <span className="text-foreground">Ce que ça veut dire.</span> L&apos;IA interprète : un prospect peut
@@ -183,7 +185,7 @@ export default function HowItWorksPage() {
               conclure). La fiabilité dit à quel point l&apos;IA est sûre d&apos;elle : faible quand il y a peu de
               signaux.
             </p>
-          </Surface>
+          </div>
         </div>
       </section>
 
@@ -193,7 +195,7 @@ export default function HowItWorksPage() {
           <ul className="space-y-2.5 text-body">
             {GUARDRAILS.map((rule) => (
               <li key={rule} className="flex gap-2.5">
-                <ShieldCheck className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                <ShieldCheck className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
                 {rule}
               </li>
             ))}

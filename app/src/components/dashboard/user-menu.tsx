@@ -40,18 +40,18 @@ export function UserMenu({
     <DropdownMenu>
       <DropdownMenuTrigger
         aria-label="Mon compte"
-        className="rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+        className="rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
       >
         <Avatar>
-          <AvatarFallback className="bg-foreground text-xs font-medium text-background">
+          <AvatarFallback className="bg-foreground text-micro font-semibold text-background">
             {initials(name, email)}
           </AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-60">
         <div className="px-2 py-1.5">
-          <p className="truncate text-sm font-medium">{workspace}</p>
-          <p className="truncate text-xs text-muted-foreground">{email}</p>
+          <p className="truncate text-small font-semibold">{workspace}</p>
+          <p className="truncate text-micro text-muted-foreground">{email}</p>
         </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => router.push("/settings#donnees")}>

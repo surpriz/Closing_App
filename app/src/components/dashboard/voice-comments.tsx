@@ -16,16 +16,16 @@ export function VoiceComments({ comments }: { comments: VoiceCommentItem[] }) {
   return (
     <ul className="divide-y divide-border">
       {comments.map((comment) => (
-        <li key={comment.id} className="space-y-2 px-4 py-3">
-          <div className="flex flex-wrap items-baseline justify-between gap-x-3 text-sm">
+        <li key={comment.id} className="space-y-2 py-3">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 text-body">
             <span>
               <span className="font-medium">{comment.reader}</span>
-              <span className="text-muted-foreground">
+              <span className="text-small text-muted-foreground">
                 {" "}
                 · page {comment.pageNumber} · {Math.max(1, Math.round(comment.durationMs / 1000))} s
               </span>
             </span>
-            <time className="text-xs text-muted-foreground" title={formatDate(comment.createdAt)}>
+            <time className="font-mono text-micro text-muted-foreground" title={formatDate(comment.createdAt)}>
               {formatRelative(comment.createdAt)}
             </time>
           </div>
@@ -33,7 +33,7 @@ export function VoiceComments({ comments }: { comments: VoiceCommentItem[] }) {
           {comment.status === "TRANSCRIBED" && comment.transcript ? (
             <p className="text-body">« {comment.transcript} »</p>
           ) : (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-small text-muted-foreground">
               {comment.status === "PENDING" ? "Transcription en cours…" : "Pas de transcription, écoutez-le."}
             </p>
           )}

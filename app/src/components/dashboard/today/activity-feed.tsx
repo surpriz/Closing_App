@@ -12,7 +12,7 @@ const ICONS: Record<FeedKind, React.ReactNode> = {
   extension: <Hourglass />,
   meeting: <CalendarCheck />,
   meeting_click: <CalendarDays />,
-  alert: <BellRing className="text-heat-hot" />,
+  alert: <BellRing className="text-foreground" />,
   followup: <Send />,
 };
 
@@ -23,8 +23,8 @@ export function ActivityFeed({ items, now }: { items: FeedItem[]; now: Date }) {
   return (
     <ol className="space-y-4">
       {items.map((item) => (
-        <li key={item.id} className="flex gap-3 text-sm">
-          <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-card text-muted-foreground ring-1 ring-border [&_svg]:size-3.5">
+        <li key={item.id} className="flex gap-3 text-small">
+          <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center border border-border bg-card text-muted-foreground [&_svg]:size-3.5">
             {ICONS[item.kind]}
           </span>
           <div className="min-w-0 space-y-1">

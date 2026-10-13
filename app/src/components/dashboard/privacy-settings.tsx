@@ -91,8 +91,8 @@ function ProspectRequest() {
       </form>
       {lookup &&
         (found ? (
-          <div className="flex flex-col gap-3 rounded-lg bg-muted/50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-small">
+          <div className="flex flex-col gap-3 rounded-md bg-muted/60 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-small tabular-nums">
               {plural(lookup.links, "lien")}, {plural(lookup.views, "lecture")}
               {lookup.signatures > 0 && `, ${plural(lookup.signatures, "signature")}`}
             </p>
@@ -196,7 +196,7 @@ export function PrivacySettings({
           </a>
         </p>
       </div>
-      <div className="divide-y divide-border rounded-xl bg-card shadow-xs ring-1 ring-border">
+      <div className="divide-y divide-border border-y border-foreground bg-card">
         {isManager && <ProspectRequest />}
         {isManager && (
           <Row title="Exporter l'espace" description="Liens, prospects, lectures et messages, en JSON.">

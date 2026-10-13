@@ -6,7 +6,6 @@ import { EmptyState } from "@/components/dashboard/empty-state";
 import {
   PageHeader,
   SectionTitle,
-  Stat,
 } from "@/components/dashboard/page-header";
 import { DealColumn } from "@/components/dashboard/team/deal-column";
 import { formatMoney, sumMoney } from "@/components/dashboard/team/money";
@@ -95,29 +94,27 @@ export default async function TeamPage(props: PageProps<"/equipe">) {
         />
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-6 sm:grid-cols-5">
-            <Stat label="En cours" value={rows.length} />
-            <Stat
+          {/* The team's report line: fields, not a row of KPI boxes. */}
+          <dl className="flex flex-wrap gap-x-8 gap-y-2 border-y border-foreground py-3 text-body">
+            <ReportField label="En cours" value={rows.length} />
+            <ReportField
               label={TEAM_HEALTH_LABELS.hot}
               value={hot.length}
-              tone="success"
+              swatch="bg-success"
             />
-            <Stat
+            <ReportField
               label={TEAM_HEALTH_LABELS.at_risk}
               value={atRisk.length}
-              tone="warm"
+              swatch="bg-warning"
             />
-            <Stat
+            <ReportField
               label={TEAM_HEALTH_LABELS.dead}
-              value={dead.length}
-              hint={deadAmount ?? undefined}
+              value={
+                deadAmount ? `${dead.length} · ${deadAmount}` : dead.length
+              }
             />
-            <Stat
-              label="Pipeline"
-              value={pipeline ?? "–"}
-              className="col-span-2 sm:col-span-1"
-            />
-          </div>
+            <ReportField label="Pipeline" value={pipeline ?? "–"} />
+          </dl>
 
           {board.sellers.length > 1 && (
             <section>
@@ -163,13 +160,33 @@ export default async function TeamPage(props: PageProps<"/equipe">) {
           </div>
 
           {board.capped && (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-small text-muted-foreground">
               Seuls les 500 deals en cours les plus récents sont comptés : il y
               a sans doute plus de deals à classer.
             </p>
           )}
         </>
       )}
+    </div>
+  );
+}
+
+function ReportField({
+  label,
+  value,
+  swatch,
+}: {
+  label: string;
+  value: React.ReactNode;
+  swatch?: string;
+}) {
+  return (
+    <div className="flex items-baseline gap-2">
+      <dt className="flex items-center gap-1.5 text-small text-muted-foreground">
+        {swatch && <span aria-hidden className={`size-2 ${swatch}`} />}
+        {label}
+      </dt>
+      <dd className="font-mono font-medium">{value}</dd>
     </div>
   );
 }

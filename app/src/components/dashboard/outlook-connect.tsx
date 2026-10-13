@@ -32,7 +32,7 @@ export function OutlookConnect({
 
   if (done) {
     return (
-      <div className="space-y-4 rounded-xl bg-card p-6 shadow-xs ring-1 ring-border">
+      <div className="space-y-4 rounded-xl bg-card p-6 ring-1 ring-foreground/85">
         <p className="flex items-center gap-2 text-heading">
           <Check className="size-4 text-success" aria-hidden />
           Outlook connecté
@@ -46,7 +46,7 @@ export function OutlookConnect({
   }
 
   return (
-    <form onSubmit={submit} className="space-y-4 rounded-xl bg-card p-6 shadow-xs ring-1 ring-border">
+    <form onSubmit={submit} className="space-y-4 rounded-xl bg-card p-6 ring-1 ring-foreground/85">
       <p className="text-body">
         Outlook créera les liens dans l&apos;espace <strong>{account.workspace}</strong>, au nom de {account.email}.
       </p>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -42,19 +43,23 @@ export default async function AdminWorkspacePage({ params }: PageProps<"/admin/w
   return (
     <>
       <div className="space-y-3">
-        <Link href="/admin/workspaces" className="text-sm text-muted-foreground hover:text-foreground">
-          ← Espaces
+        <Link
+          href="/admin/workspaces"
+          className="inline-flex items-center gap-1.5 text-small text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="size-3.5" aria-hidden />
+          Espaces
         </Link>
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-title [font-stretch:92%]">{workspace.name}</h1>
+          <h1 className="text-title condensed">{workspace.name}</h1>
           <WorkspaceStatusBadge suspended={suspended} />
         </div>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-small text-muted-foreground">
           Créé le {adminDate.format(workspace.createdAt)} · plan {workspace.plan} · {workspace._count.documents}{" "}
           documents · {workspace._count.links} liens · IA 30 j {formatMicroUsd(costs.get(workspace.id) ?? 0)}
         </p>
         {suspended && workspace.suspendedAt && (
-          <p className="text-sm">
+          <p className="text-body">
             Suspendu le {adminDateTime.format(workspace.suspendedAt)}
             {workspace.suspendedReason && <> : « {workspace.suspendedReason} »</>}
           </p>
@@ -65,7 +70,7 @@ export default async function AdminWorkspacePage({ params }: PageProps<"/admin/w
       <AdminSection title="Membres">
         <ul className="divide-y divide-border">
           {workspace.members.map((member) => (
-            <li key={member.id} className="flex items-center justify-between gap-4 px-5 py-3 text-sm">
+            <li key={member.id} className="flex items-center justify-between gap-4 px-5 py-3 text-body">
               <div className="min-w-0">
                 <Link href={`/admin/users/${member.user.id}`} className="font-medium hover:underline">
                   {member.user.email}

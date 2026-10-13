@@ -79,20 +79,20 @@ export default async function AdminUsersPage({ searchParams }: PageProps<"/admin
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="pl-5">Utilisateur</TableHead>
+              <TableHead className="pl-4">Utilisateur</TableHead>
               <TableHead>Espaces</TableHead>
               <TableHead>Inscrit le</TableHead>
               <TableHead>Dernière activité</TableHead>
-              <TableHead className="pr-5">Statut</TableHead>
+              <TableHead className="pr-4">Statut</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {users.map((user) => (
               <TableRow key={user.id} className="relative">
-                <TableCell className="pl-5">
+                <TableCell className="pl-4">
                   <Link
                     href={`/admin/users/${user.id}`}
-                    className="font-medium outline-none after:absolute after:inset-0 hover:underline"
+                    className="font-semibold outline-none after:absolute after:inset-0 hover:underline focus-visible:after:ring-3 focus-visible:after:ring-ring/30 focus-visible:after:ring-inset"
                   >
                     {user.email}
                   </Link>
@@ -105,7 +105,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps<"/admin
                 <TableCell className="text-muted-foreground">
                   {user.sessions[0] ? adminDateTime.format(user.sessions[0].updatedAt) : "–"}
                 </TableCell>
-                <TableCell className="pr-5">
+                <TableCell className="pr-4">
                   <UserStatusBadge status={statusOf(user, blocked, now)} />
                 </TableCell>
               </TableRow>

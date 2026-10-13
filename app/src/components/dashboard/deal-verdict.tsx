@@ -3,38 +3,34 @@ import { ChevronRight, Sparkles } from "lucide-react";
 import type { EngagementTier } from "@/generated/prisma/enums";
 import type { Fact } from "@/lib/closing/brain/facts";
 import type { StoredInsight } from "@/lib/closing/brain/latest";
-import { describeNextAction, isUrgent, type NextAction } from "@/lib/closing/dashboard/next-action";
 import type { EngagementReason } from "@/lib/closing/types";
-import { formatDuration, formatRelative } from "@/lib/format";
+import { formatRelative } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-import { HeatPill, LiveDot } from "./heat";
-import {
-  FOLLOWUP_GOAL_LABELS,
-  FRICTION_LABELS,
-  MOMENTUM_LABELS,
-  SCORE_REASON_LABELS,
-  STAGE_LABELS,
-  TIER_LABELS,
-} from "./labels";
-import { Surface } from "./page-header";
-import { PrepareFollowupButton } from "./prepare-followup-button";
+import { FRICTION_LABELS, MOMENTUM_LABELS, SCORE_REASON_LABELS, STAGE_LABELS, TIER_LABELS } from "./labels";
 import { ReanalyzeButton } from "./reanalyze-button";
 import { ScoreGuide, TemperatureGauge } from "./temperature";
 import { dealVerdict } from "./verdict";
+import { tidyEllipsis } from "@/lib/clip-text";
 
-const SEVERITY_DOT = { low: "bg-foreground/25", medium: "bg-heat-warm", high: "bg-heat-hot" } as const;
+/** How much a friction weighs, in ink only: severity is not a temperature. */
+const SEVERITY_SWATCH = { low: "bg-foreground/20", medium: "bg-foreground/55", high: "bg-foreground" } as const;
+const SEVERITY_LABELS = { low: "faible", medium: "moyenne", high: "forte" } as const;
 
 const detailsSummary =
-  "flex cursor-pointer list-none items-center gap-1.5 text-sm text-muted-foreground outline-none hover:text-foreground focus-visible:underline [&::-webkit-details-marker]:hidden";
+  "flex cursor-pointer list-none items-center gap-1.5 py-3 text-small text-muted-foreground outline-none hover:text-foreground focus-visible:underline [&::-webkit-details-marker]:hidden";
 
 /** The fact ids an item rests on, with the fact itself on hover. */
-function Sources({ ids, facts }: { ids: string[]; facts: Map<string, Fact> }) {
+export function Sources({ ids, facts }: { ids: string[]; facts: Map<string, Fact> }) {
   if (ids.length === 0) return null;
   return (
     <span className="ml-1.5 inline-flex gap-1 align-middle">
       {ids.map((id) => (
-        <span key={id} title={facts.get(id)?.text} className="cursor-help rounded bg-muted px-1 text-micro text-muted-foreground tabular-nums">
+        <span
+          key={id}
+          title={facts.get(id)?.text}
+          className="cursor-help rounded-sm bg-muted px-1 font-mono text-micro text-muted-foreground"
+        >
           {id}
         </span>
       ))}
@@ -45,24 +41,17 @@ function Sources({ ids, facts }: { ids: string[]; facts: Map<string, Fact> }) {
 export type DealScore = { tier: EngagementTier; score: number; reasons: EngagementReason[] };
 
 /**
- * The one verdict at the top of a deal: the AI reading when there is one, else
- * the temperature, then what to do. The score's arithmetic and the analysis
- * details wait under two disclosures.
+ * The verdict of the deal report: the AI reading when there is one, else what
+ * the temperature says. The score's arithmetic and the analysis details wait
+ * under two disclosures. What to do about it sits at the top of the page.
  */
 export function DealVerdict({
   linkId,
   insight,
   score,
   opened,
-  readingNow,
-  lastActivityAt,
-  viewCount,
-  totalDurationMs,
-  action,
-  recipientName,
   aiAvailable,
   readSince,
-  draftWaiting,
   now,
   scoreGuide,
 }: {
@@ -70,18 +59,9 @@ export function DealVerdict({
   insight: StoredInsight | null;
   score: DealScore | null;
   opened: boolean;
-  readingNow: boolean;
-  lastActivityAt: Date | null;
-  viewCount: number;
-  totalDurationMs: number;
-  /** Same rule as the "À traiter" row: the analysis has the last word, facts of the moment come first. */
-  action: NextAction;
-  recipientName: string | null;
   aiAvailable: boolean;
   /** The prospect read again after this analysis: it will be refreshed once they stop. */
   readSince: boolean;
-  /** A follow-up from the analysis already waits in "Relances". */
-  draftWaiting: boolean;
   now: Date;
   scoreGuide: { hasPages: boolean; hasPricing: boolean; pricingThresholdSec: number };
 }) {
@@ -90,111 +70,55 @@ export function DealVerdict({
     { tier: TIER_LABELS, reason: SCORE_REASON_LABELS },
   );
   const facts = new Map((insight?.facts ?? []).map((fact) => [fact.id, fact]));
-  const urgent = isUrgent(action);
-  const aiAction = insight?.recommendedAction ?? null;
-  const showsRecipient = aiAction && aiAction.type !== "wait" && aiAction.type !== "close_lost" && recipientName;
-  const brief = insight?.followupBrief ?? null;
 
   return (
-    <Surface className="overflow-hidden">
-      <div className="space-y-4 p-5">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted-foreground">
-          <HeatPill tier={score?.tier ?? null} />
-          {readingNow ? (
-            <span className="flex items-center gap-2 font-medium text-foreground">
-              <LiveDot /> en lecture
-            </span>
-          ) : (
-            lastActivityAt && <span>lu {formatRelative(lastActivityAt, now)}</span>
-          )}
-          {viewCount > 0 && (
-            <span className="tabular-nums">
-              {viewCount} {viewCount === 1 ? "lecture" : "lectures"} · {formatDuration(totalDurationMs)}
-            </span>
-          )}
+    <section aria-labelledby="verdict-titre" className="border-t border-foreground">
+      <div className="space-y-3 py-4">
+        <h2 id="verdict-titre" className="max-w-3xl text-heading text-balance">
+          {tidyEllipsis(verdict.headline)}
+        </h2>
+        {verdict.detail && <p className="max-w-prose text-body text-muted-foreground">{verdict.detail}</p>}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-small text-muted-foreground">
           {insight && (
-            <span className="flex items-center gap-1">
-              <Sparkles className="size-3.5" aria-hidden /> Lecture IA
+            <span className="flex items-center gap-1.5">
+              <Sparkles className="size-3.5" aria-hidden />
+              Lecture IA, {insight.byAi ? "analysée" : "mise à jour"} {formatRelative(insight.createdAt, now)}
             </span>
           )}
+          {aiAvailable && !insight && <ReanalyzeButton linkId={linkId} label="Analyser ce deal" />}
         </div>
-
-        <div className="space-y-1.5">
-          <h2 className="text-heading text-balance">{verdict.headline}</h2>
-          {verdict.detail && <p className="text-body text-muted-foreground">{verdict.detail}</p>}
-        </div>
-
         {readSince && (
-          <p className="rounded-lg bg-muted px-3 py-2 text-sm">
+          <p className="bg-muted px-3 py-2 text-small">
             Le prospect a relu depuis cette analyse. Clozer la met à jour quelques minutes après la fin de sa lecture,
             ou tout de suite avec « Réanalyser ».
           </p>
         )}
       </div>
 
-      <div className="flex flex-wrap items-start justify-between gap-3 border-t border-border bg-muted/40 px-5 py-4">
-        <div className="min-w-0 space-y-1">
-          <p
-            className={cn(
-              "inline-flex max-w-full items-start gap-2 rounded-md px-2 py-1 text-sm",
-              urgent ? "bg-foreground text-background" : "bg-muted text-foreground",
-            )}
-          >
-            {action.kind === "call_now" && <LiveDot className="mt-1.5 size-2 shrink-0" />}
-            <span>
-              {describeNextAction(action, now)}
-              {showsRecipient && <span className={urgent ? "opacity-80" : "text-muted-foreground"}> {recipientName}</span>}
-            </span>
-          </p>
-          {aiAction && action.kind === "ai_advice" && (
-            <p className="text-sm text-muted-foreground">
-              {aiAction.why}
-              <Sources ids={aiAction.factIds} facts={facts} />
-            </p>
-          )}
-          {brief && action.kind === "ai_advice" && (
-            <p className="text-sm">
-              <span className="font-medium">{FOLLOWUP_GOAL_LABELS[brief.goal] ?? brief.goal}</span> : {brief.angle}
-              {brief.topics.length > 0 && <span className="text-muted-foreground"> ({brief.topics.join(", ")})</span>}
-            </p>
-          )}
-        </div>
-        {aiAvailable && (
-          <div className="shrink-0">
-            {!insight ? (
-              <ReanalyzeButton linkId={linkId} label="Analyser ce deal" />
-            ) : draftWaiting ? (
-              <a href="#relances" className="text-sm font-medium underline-offset-4 hover:underline">
-                Voir la relance prête
-              </a>
-            ) : insight.byAi ? (
-              <PrepareFollowupButton linkId={linkId} />
-            ) : null}
-          </div>
-        )}
-      </div>
-
-      <details className="group border-t border-border px-5 py-3">
+      <details className="group border-t border-border">
         <summary className={detailsSummary}>
-          <ChevronRight className="size-4 transition-transform group-open:rotate-90" />
+          <ChevronRight className="size-4 transition-transform group-open:rotate-90" aria-hidden />
           Pourquoi cette température
         </summary>
-        <div className="mt-3 space-y-4">
+        <div className="space-y-4 pb-4">
           {score ? (
             <>
-              <p className="text-sm text-muted-foreground">
-                <span className="font-mono font-semibold text-foreground tabular-nums">{score.score}</span> sur 100
+              <p className="text-small text-muted-foreground">
+                <span className="font-mono text-body font-semibold text-foreground">{score.score}</span> sur 100
               </p>
               <TemperatureGauge tier={score.tier} score={score.score} />
               {score.reasons.length > 0 && (
-                <ul className="grid gap-x-8 gap-y-2 text-body sm:grid-cols-2">
+                <ul className="grid gap-x-8 sm:grid-cols-2">
                   {score.reasons.map((reason) => (
-                    <li key={reason.code} className="flex items-baseline justify-between gap-3">
+                    <li
+                      key={reason.code}
+                      className="flex items-baseline justify-between gap-3 border-b border-border py-2 text-body"
+                    >
                       <span>
                         {SCORE_REASON_LABELS[reason.code] ?? reason.code}
                         {reason.detail && <span className="text-muted-foreground"> ({reason.detail})</span>}
                       </span>
-                      <span className="text-sm text-muted-foreground tabular-nums">+{reason.weight}</span>
+                      <span className="font-mono text-small text-muted-foreground">+{reason.weight}</span>
                     </li>
                   ))}
                 </ul>
@@ -208,13 +132,13 @@ export function DealVerdict({
       </details>
 
       {insight && (
-        <details className="group border-t border-border px-5 py-3">
+        <details className="group border-t border-border">
           <summary className={detailsSummary}>
-            <ChevronRight className="size-4 transition-transform group-open:rotate-90" />
+            <ChevronRight className="size-4 transition-transform group-open:rotate-90" aria-hidden />
             Détails de l&apos;analyse
           </summary>
-          <div className="mt-3 space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
+          <div className="space-y-4 pb-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 text-small text-muted-foreground">
               <span>
                 {insight.byAi ? "Analysée" : "Mise à jour"} {formatRelative(insight.createdAt, now)}
                 {insight.byAi && (
@@ -233,7 +157,7 @@ export function DealVerdict({
               <div className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
                 {insight.signals.length > 0 && (
                   <div>
-                    <p className="mb-1.5 text-sm text-muted-foreground">Ce qui compte</p>
+                    <h3 className="mb-1.5 text-small text-muted-foreground">Ce qui compte</h3>
                     <ul className="space-y-1.5 text-body">
                       {insight.signals.map((signal, i) => (
                         <li key={i}>
@@ -246,13 +170,14 @@ export function DealVerdict({
                 )}
                 {insight.frictions.length > 0 && (
                   <div>
-                    <p className="mb-1.5 text-sm text-muted-foreground">Ce qui coince</p>
+                    <h3 className="mb-1.5 text-small text-muted-foreground">Ce qui coince</h3>
                     <ul className="space-y-1.5 text-body">
                       {insight.frictions.map((friction, i) => (
                         <li key={i} className="flex gap-2">
                           <span
-                            aria-label={`gravité ${friction.severity}`}
-                            className={cn("mt-2 size-2 shrink-0 rounded-full", SEVERITY_DOT[friction.severity])}
+                            role="img"
+                            aria-label={`gravité ${SEVERITY_LABELS[friction.severity] ?? friction.severity}`}
+                            className={cn("mt-2 size-2 shrink-0", SEVERITY_SWATCH[friction.severity])}
                           />
                           <span>
                             <span className="font-medium">{FRICTION_LABELS[friction.kind] ?? friction.kind} :</span>{" "}
@@ -268,21 +193,23 @@ export function DealVerdict({
             )}
 
             {insight.risks.length > 0 && (
-              <p className="text-sm text-muted-foreground">À surveiller : {insight.risks.join(" · ")}</p>
+              <p className="text-small text-muted-foreground">À surveiller : {insight.risks.join(" · ")}</p>
             )}
 
             {insight.facts.length > 0 && (
               <details className="group/facts">
                 <summary className={detailsSummary}>
-                  <ChevronRight className="size-4 transition-transform group-open/facts:rotate-90" />
+                  <ChevronRight className="size-4 transition-transform group-open/facts:rotate-90" aria-hidden />
                   Les {insight.facts.length} faits lus par l&apos;IA
                 </summary>
-                <ol className="mt-3 space-y-1 text-sm text-muted-foreground">
+                <ol className="space-y-1 text-small text-muted-foreground">
                   {insight.facts.map((fact) => (
                     <li key={fact.id} className="flex gap-2">
-                      <span className="w-7 shrink-0 tabular-nums">{fact.id}</span>
+                      <span className="w-7 shrink-0 font-mono text-micro leading-[inherit]">{fact.id}</span>
                       <span className="min-w-0 break-words">
-                        {fact.text.replace(/<untrusted_prospect_message>/g, "« ").replace(/<\/untrusted_prospect_message>/g, " »")}
+                        {fact.text
+                          .replace(/<untrusted_prospect_message>/g, "« ")
+                          .replace(/<\/untrusted_prospect_message>/g, " »")}
                       </span>
                     </li>
                   ))}
@@ -292,6 +219,6 @@ export function DealVerdict({
           </div>
         </details>
       )}
-    </Surface>
+    </section>
   );
 }

@@ -64,12 +64,12 @@ export default async function DashboardLayout({
   return (
     <div className="flex flex-1 flex-col">
       <ImpersonationBanner />
-      <header className="sticky top-0 z-30 border-b border-border/70 bg-background/80 backdrop-blur-md">
-        <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-4 sm:px-6">
+      <header className="sticky top-0 z-30 border-b border-foreground bg-background">
+        <div className="mx-auto flex h-14 max-w-7xl items-stretch gap-6 px-4 sm:px-6">
           <Link
             href="/dashboard"
             aria-label="Clozer, aujourd'hui"
-            className="rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
+            className="flex items-center outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
           >
             <Logo />
           </Link>
@@ -86,7 +86,7 @@ export default async function DashboardLayout({
           </div>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-8 pb-28 sm:px-6 sm:pt-10 sm:pb-16">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 pt-8 pb-28 sm:px-6 sm:pt-10 sm:pb-16">
         {children}
       </main>
       <MobileNav isManager={isManager} hasTeam={hasTeam} />

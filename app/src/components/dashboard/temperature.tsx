@@ -26,7 +26,7 @@ export function TemperatureGauge({ tier, score }: { tier: EngagementTier; score:
   return (
     <div className="space-y-2">
       <div className="relative pt-1">
-        <div className="flex h-1.5 gap-0.5 overflow-hidden rounded-full">
+        <div className="flex h-2 gap-px">
           {SEGMENTS.map((segment) => (
             <span
               key={segment.tier}
@@ -37,18 +37,18 @@ export function TemperatureGauge({ tier, score }: { tier: EngagementTier; score:
         </div>
         <span
           aria-hidden
-          className="absolute top-0 h-3.5 w-0.5 -translate-x-1/2 rounded-full bg-foreground"
+          className="absolute top-0 h-4 w-0.5 -translate-x-1/2 bg-foreground"
           style={{ left: `${Math.max(1, Math.min(99, score))}%` }}
         />
       </div>
-      <div className="flex text-xs text-muted-foreground tabular-nums">
+      <div className="flex text-small text-muted-foreground">
         {SEGMENTS.map((segment) => (
           <span key={segment.tier} style={{ flexGrow: segment.to - segment.from }} className="basis-0">
             {TIER_LABELS[segment.tier]}
           </span>
         ))}
       </div>
-      <p className="text-sm text-muted-foreground">{nextStep(score)}</p>
+      <p className="text-small text-muted-foreground">{nextStep(score)}</p>
     </div>
   );
 }
@@ -85,7 +85,7 @@ export function ScoreGuide({
   ];
 
   return (
-    <details className="group mt-4 text-sm">
+    <details className="group text-small">
       <summary className="inline-flex cursor-pointer list-none items-center gap-1 text-muted-foreground outline-none hover:text-foreground focus-visible:underline [&::-webkit-details-marker]:hidden">
         <ChevronRight className="size-3.5 transition-transform group-open:rotate-90" />
         Comment la température est calculée

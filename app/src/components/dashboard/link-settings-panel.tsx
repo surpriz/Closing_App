@@ -56,7 +56,7 @@ function BookingUrlField({ linkId, url, fallback }: { linkId: string; url: strin
   const [saved, setSaved] = useState(url);
 
   return (
-    <div className="space-y-1.5 px-4 py-3 text-sm">
+    <div className="space-y-1.5 px-4 py-3 text-small">
       <label htmlFor="link-booking-url">Lien de l&apos;agenda</label>
       <Input
         id="link-booking-url"
@@ -135,8 +135,8 @@ export function LinkSettingsPanel({
     <div className="space-y-6">
       {GROUPS.map((group) => (
         <section key={group.title} className="space-y-2">
-          <h3 className="text-sm font-medium text-muted-foreground">{group.title}</h3>
-          <div className="divide-y divide-border rounded-xl bg-card ring-1 ring-border">
+          <h3 className="text-small font-medium text-muted-foreground">{group.title}</h3>
+          <div className="divide-y divide-border rounded-lg border border-border bg-card">
             {group.items
               .filter((item) => (kind === "FILE" || !item.pdfOnly) && !(shared && item.personalOnly))
               // Under a video pitch, the buttons are "Demander un devis"
@@ -144,9 +144,9 @@ export function LinkSettingsPanel({
               .map((item) => (
                 <Fragment key={item.key}>
                   <label className="flex cursor-pointer items-start justify-between gap-4 px-4 py-3">
-                    <span className="text-sm">
+                    <span className="text-body">
                       {item.label}
-                      {item.hint && <span className="block text-muted-foreground">{item.hint}</span>}
+                      {item.hint && <span className="block text-small text-muted-foreground">{item.hint}</span>}
                     </span>
                     <Switch className="mt-0.5" checked={values[item.key]} onCheckedChange={(checked) => flip(item.key, checked)} />
                   </label>
@@ -164,7 +164,7 @@ export function LinkSettingsPanel({
         </section>
       ))}
       {shared && (
-        <p className="text-sm text-muted-foreground">
+        <p className="text-small text-muted-foreground">
           Chaque lecteur donne son email et reçoit son propre lien, avec ces réglages. Ses relances attendent
           toujours votre feu vert : son adresse a été tapée, pas donnée par vous.
         </p>

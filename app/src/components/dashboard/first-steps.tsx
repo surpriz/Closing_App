@@ -42,16 +42,16 @@ export function FirstSteps({
   const doneCount = steps.filter((step) => step.done).length;
 
   return (
-    <section aria-label="Premiers pas" className="rounded-xl bg-card shadow-xs ring-1 ring-border">
-      <div className="flex items-center justify-between gap-4 border-b border-border px-5 py-4">
+    <section aria-label="Premiers pas" className="border-y border-foreground bg-card">
+      <div className="flex items-center justify-between gap-4 border-b border-foreground px-4 py-3">
         <p className="font-semibold">Premiers pas</p>
         <div className="flex items-center gap-3 text-small text-muted-foreground">
           <span className="font-mono tabular-nums">
             {doneCount}/{steps.length}
           </span>
-          <span aria-hidden className="block h-1.5 w-24 overflow-hidden rounded-full bg-foreground/[0.06]">
+          <span aria-hidden className="block h-1.5 w-24 overflow-hidden bg-foreground/[0.08]">
             <span
-              className="block h-full rounded-full bg-success transition-[width] duration-500"
+              className="block h-full bg-foreground transition-[width] duration-500"
               style={{ width: `${(doneCount / steps.length) * 100}%` }}
             />
           </span>
@@ -64,23 +64,23 @@ export function FirstSteps({
             <li
               key={step.title}
               aria-current={isCurrent ? "step" : undefined}
-              className={cn("flex gap-4 px-5 py-4", !isCurrent && !step.done && "opacity-60")}
+              className={cn("flex gap-4 px-4 py-4", !isCurrent && !step.done && "opacity-60")}
             >
               <span
                 className={cn(
-                  "flex size-7 shrink-0 items-center justify-center rounded-full font-mono text-small font-medium",
+                  "flex size-7 shrink-0 items-center justify-center font-mono text-small font-medium",
                   step.done
                     ? "bg-success text-success-foreground"
                     : isCurrent
                       ? "bg-foreground text-background"
-                      : "bg-muted text-muted-foreground ring-1 ring-border",
+                      : "border border-border text-muted-foreground",
                 )}
               >
                 {step.done ? <Check className="size-4" strokeWidth={2.5} aria-label="Fait" /> : index + 1}
               </span>
               <div className="min-w-0 flex-1 space-y-1 pt-0.5">
                 <p className={cn("font-medium", step.done && "text-muted-foreground line-through")}>{step.title}</p>
-                {!step.done && <p className="max-w-xl text-sm text-muted-foreground">{step.description}</p>}
+                {!step.done && <p className="max-w-xl text-small text-muted-foreground">{step.description}</p>}
                 {isCurrent && action && <div className="pt-2">{action}</div>}
               </div>
             </li>

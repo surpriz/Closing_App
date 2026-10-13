@@ -15,8 +15,8 @@ export function Bubble({ role, children }: { role: "user" | "assistant"; childre
   return (
     <div
       className={cn(
-        "w-fit max-w-[85%] rounded-2xl px-3.5 py-2 text-sm whitespace-pre-wrap break-words",
-        role === "user" ? "ml-auto rounded-br-md bg-primary text-primary-foreground" : "rounded-bl-md bg-muted",
+        "w-fit max-w-[85%] rounded-lg px-3.5 py-2 text-small whitespace-pre-wrap break-words",
+        role === "user" ? "ml-auto rounded-br-none bg-primary text-primary-foreground" : "rounded-bl-none bg-muted",
       )}
     >
       {children}

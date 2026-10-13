@@ -167,7 +167,7 @@ function FileInput({
 
 function Progress({ value }: { value: number }) {
   return (
-    <div className="h-1 w-48 overflow-hidden rounded-full bg-foreground/10">
+    <div className="h-1 w-48 overflow-hidden bg-foreground/10">
       <div className="h-full bg-foreground transition-all" style={{ width: `${value}%` }} />
     </div>
   );
@@ -198,7 +198,7 @@ function UrlForm({ source, autoFocus }: { source: AddSource; autoFocus?: boolean
           className="h-9 pl-9"
         />
       </div>
-      <Button type="submit" size="lg" variant="outline" disabled={source.busy || !value.trim()}>
+      <Button type="submit" variant="outline" disabled={source.busy || !value.trim()}>
         {source.addingUrl ? "Ajout…" : "Ajouter"}
       </Button>
     </form>
@@ -245,22 +245,25 @@ function SourcePicker({
         onDragLeave={() => setDragging(false)}
         onDrop={onDrop}
         className={cn(
-          "flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border border-dashed px-6 py-14 text-center transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
-          dragging ? "border-foreground bg-card" : "border-input hover:border-foreground/40 hover:bg-card",
+          "flex cursor-pointer flex-col items-center justify-center gap-3 border border-dashed px-6 py-14 text-center transition-colors duration-150 outline-none focus-visible:border-foreground focus-visible:ring-3 focus-visible:ring-ring/30",
+          dragging ? "border-solid border-foreground bg-card" : "border-foreground/40 hover:border-foreground hover:bg-card",
+          busy && "cursor-progress",
         )}
       >
-        <span className="flex size-11 items-center justify-center rounded-full bg-card ring-1 ring-border">
+        <span className="flex size-11 items-center justify-center border border-foreground bg-card">
           <FileUp className="size-5" />
         </span>
         {uploading ? (
           <>
-            <p className="font-medium">Import en cours, {Math.round(progress ?? 0)} %</p>
+            <p className="font-medium">
+              Import en cours, <span className="font-mono">{Math.round(progress ?? 0)} %</span>
+            </p>
             <Progress value={progress ?? 0} />
           </>
         ) : (
           <div className="space-y-1">
             <p className="text-heading">Déposez un document ou un lien ici</p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-small text-muted-foreground">
               Devis, présentation, proposition… en PDF, 25 Mo maximum
             </p>
           </div>
@@ -271,7 +274,7 @@ function SourcePicker({
       {onRecordVideo && (
         <div className="flex items-center gap-3 pt-1">
           <span className="h-px flex-1 bg-border" />
-          <Button variant="destructive" size="lg" disabled={busy} onClick={onRecordVideo}>
+          <Button variant="outline" size="lg" disabled={busy} onClick={onRecordVideo}>
             <Video />
             Enregistrer un pitch vidéo
           </Button>
@@ -333,7 +336,7 @@ function SampleButton({ source, sample }: { source: AddSource; sample: { url: st
   }
 
   return (
-    <p className="text-sm text-muted-foreground">
+    <p className="text-small text-muted-foreground">
       Pas de document sous la main ?{" "}
       <button
         type="button"
@@ -459,8 +462,8 @@ export function UploadButton({ uploadPrefix, pitchUploadPrefix }: { uploadPrefix
         <VideoPitchDialog open={recording} onOpenChange={setRecording} uploadPrefix={pitchUploadPrefix} />
       )}
       {dragging && !open && !recording && (
-        <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-foreground/60 backdrop-blur-sm">
-          <p className="rounded-full bg-card px-5 py-2.5 text-body font-medium shadow-lg">
+        <div className="pointer-events-none fixed inset-3 z-50 flex items-center justify-center border border-dashed border-foreground bg-background/85">
+          <p className="border border-foreground bg-card px-5 py-2.5 text-body font-medium">
             Déposez le fichier ou le lien pour l&apos;ajouter
           </p>
         </div>

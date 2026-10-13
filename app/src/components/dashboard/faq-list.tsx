@@ -46,7 +46,7 @@ export function FaqList() {
     <div className="space-y-10">
       <div className="space-y-4">
         <div className="relative">
-          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Search aria-hidden className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="search"
             value={query}
@@ -62,7 +62,7 @@ export function FaqList() {
               <a
                 key={section.id}
                 href={`#${section.id}`}
-                className="rounded-full border bg-background px-3 py-1 text-small transition-colors hover:bg-muted"
+                className="rounded-sm border border-border bg-card px-2.5 py-1 text-small transition-colors duration-150 outline-none hover:border-foreground/40 hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/30"
               >
                 {section.title}
               </a>
@@ -82,7 +82,7 @@ export function FaqList() {
       {sections.map((section) => (
         <section key={section.id} id={section.id} className="scroll-mt-20">
           <SectionTitle hint={searching ? `${section.items.length}` : undefined}>{section.title}</SectionTitle>
-          <Surface className="divide-y">
+          <Surface className="divide-y divide-border">
             {section.items.map((item) => (
               <details
                 // Remounted when a search starts or ends, so matches open and the rest closes again
@@ -91,7 +91,7 @@ export function FaqList() {
                 open={searching || undefined}
                 className="group scroll-mt-24"
               >
-                <summary className="flex cursor-pointer list-none items-start justify-between gap-4 px-5 py-4 text-body font-medium outline-none focus-visible:bg-muted [&::-webkit-details-marker]:hidden">
+                <summary className="flex cursor-pointer list-none items-start justify-between gap-4 px-5 py-4 text-body font-medium outline-none transition-colors hover:bg-muted/60 focus-visible:bg-muted [&::-webkit-details-marker]:hidden">
                   {item.q}
                   <ChevronDown
                     aria-hidden

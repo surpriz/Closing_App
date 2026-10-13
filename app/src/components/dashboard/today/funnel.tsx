@@ -30,7 +30,7 @@ function percent(value: number, total: number) {
 /** What became of the links sent in the period. Ink only, no heat colour. */
 export function FunnelStrip({ funnel }: { funnel: Funnel }) {
   return (
-    <ol className="grid grid-cols-2 overflow-hidden rounded-xl bg-card shadow-xs ring-1 ring-border sm:grid-cols-4">
+    <ol className="grid grid-cols-2 overflow-hidden border-y border-foreground bg-card sm:grid-cols-4">
       {STEPS.map((step, index) => {
         const value = funnel[step.key];
         const share = percent(value, funnel.sent);
@@ -48,16 +48,16 @@ export function FunnelStrip({ funnel }: { funnel: Funnel }) {
             <p className="flex items-baseline gap-2">
               <span className="font-mono text-title font-medium tabular-nums">{value}</span>
               {index > 0 && funnel.sent > 0 && (
-                <span className="text-xs text-muted-foreground tabular-nums">{share} %</span>
+                <span className="text-micro text-muted-foreground tabular-nums">{share} %</span>
               )}
             </p>
-            <span aria-hidden className="block h-1 overflow-hidden rounded-full bg-foreground/[0.06]">
+            <span aria-hidden className="block h-1 overflow-hidden bg-foreground/[0.08]">
               <span
-                className="block h-full rounded-full bg-foreground/70"
+                className="block h-full bg-foreground/70"
                 style={{ width: `${share}%` }}
               />
             </span>
-            <span className="text-sm text-muted-foreground">{counted(value, step.words)}</span>
+            <span className="text-small text-muted-foreground">{counted(value, step.words)}</span>
           </li>
         );
       })}
@@ -76,7 +76,7 @@ const SEGMENTS: { key: keyof HeatDistribution; className: string; words: Words }
 export function HeatDistributionBar({ distribution }: { distribution: HeatDistribution }) {
   const parts = SEGMENTS.filter((segment) => distribution[segment.key] > 0);
   if (parts.length === 0) {
-    return <p className="text-sm text-muted-foreground">Aucun deal en cours.</p>;
+    return <p className="text-small text-muted-foreground">Aucun deal en cours.</p>;
   }
 
   const sentence = parts
@@ -85,21 +85,21 @@ export function HeatDistributionBar({ distribution }: { distribution: HeatDistri
 
   return (
     <div className="space-y-3">
-      <div role="img" aria-label={sentence} className="flex h-2.5 gap-0.5 overflow-hidden rounded-full">
+      <div role="img" aria-label={sentence} className="flex h-2.5 gap-0.5 overflow-hidden">
         {parts.map((segment) => (
           <span
             key={segment.key}
-            className={cn("h-full first:rounded-l-full last:rounded-r-full", segment.className)}
+            className={cn("h-full", segment.className)}
             style={{ flexGrow: distribution[segment.key] }}
           />
         ))}
       </div>
-      <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm lg:block lg:space-y-1">
+      <ul className="flex flex-wrap gap-x-4 gap-y-1 text-small lg:block lg:space-y-1">
         {parts.map((segment) => {
           const count = distribution[segment.key];
           return (
             <li key={segment.key} className="flex items-center gap-2">
-              <span className={cn("size-2 rounded-full", segment.className)} />
+              <span className={cn("size-2", segment.className)} />
               <span className="tabular-nums">{count}</span>
               <span className="text-muted-foreground">{counted(count, segment.words)}</span>
             </li>

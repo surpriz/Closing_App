@@ -19,7 +19,7 @@ export default async function OnboardingEmailsPage() {
 
   return (
     <main className="flex flex-1 items-center justify-center px-4 py-16">
-      <div className="w-full max-w-sm space-y-4 rounded-xl bg-card p-6 shadow-xs ring-1 ring-border">
+      <div className="w-full max-w-sm animate-rise space-y-5 rounded-xl bg-card p-6 ring-1 ring-foreground/85">
         <Logo />
         {prefs?.onboardingEmailsOff ? (
           <p className="text-body">C&apos;est noté, vous ne recevrez plus ces conseils.</p>

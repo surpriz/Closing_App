@@ -134,7 +134,7 @@ function Recorder({ target, initialHook, onDone }: { target: CapsuleTarget; init
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-1 rounded-lg bg-muted p-1" role="radiogroup" aria-label="Type de capsule">
+      <div className="flex gap-px border border-border bg-border" role="radiogroup" aria-label="Type de capsule">
         {(["VIDEO", "AUDIO"] as const).map((option) => (
           <button
             key={option}
@@ -144,8 +144,10 @@ function Recorder({ target, initialHook, onDone }: { target: CapsuleTarget; init
             disabled={busy || recorder.status === "recorded"}
             onClick={() => setKind(option)}
             className={cn(
-              "flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-sm transition-colors disabled:opacity-60",
-              kind === option ? "bg-card shadow-xs" : "text-muted-foreground hover:text-foreground",
+              "flex flex-1 items-center justify-center gap-1.5 bg-card py-1.5 text-small transition-colors disabled:opacity-60",
+              kind === option
+                ? "font-semibold text-foreground shadow-[inset_0_-2px_0_var(--foreground)]"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
             )}
           >
             {option === "VIDEO" ? <Video className="size-4" /> : <Mic className="size-4" />}
@@ -154,7 +156,7 @@ function Recorder({ target, initialHook, onDone }: { target: CapsuleTarget; init
         ))}
       </div>
 
-      <div className="relative mx-auto flex size-48 items-center justify-center overflow-hidden rounded-full bg-muted">
+      <div className="relative mx-auto flex aspect-[4/3] w-full max-w-64 items-center justify-center overflow-hidden bg-muted">
         {/* Keys: a fresh element for the take, or it keeps the stopped camera as srcObject and plays black */}
         {recorder.recording ? (
           kind === "VIDEO" ? (
@@ -168,16 +170,17 @@ function Recorder({ target, initialHook, onDone }: { target: CapsuleTarget; init
           <Mic className={cn("size-10 text-muted-foreground", recorder.status === "recording" && "animate-pulse text-destructive")} />
         )}
         {recorder.status === "recording" && (
-          <span className="absolute top-3 rounded-full bg-destructive px-2 py-0.5 text-xs font-medium text-white tabular-nums">
-            ● {remainingS} s
+          <span className="absolute top-3 flex items-center gap-1.5 rounded-sm bg-destructive px-2 py-0.5 font-mono text-micro font-medium text-white">
+            <span aria-hidden className="size-1.5 animate-pulse rounded-full bg-white motion-reduce:animate-none" />
+            {remainingS} s
           </span>
         )}
       </div>
 
-      {recorder.error && <p className="text-sm text-destructive">{RECORDER_ERRORS[recorder.error]}</p>}
+      {recorder.error && <p className="text-small text-destructive">{RECORDER_ERRORS[recorder.error]}</p>}
 
       <label className="block space-y-1.5">
-        <span className="text-sm font-medium">Phrase d&apos;accroche (facultatif)</span>
+        <span className="text-small font-medium">Phrase d&apos;accroche (facultatif)</span>
         <Input
           value={hook}
           maxLength={CAPSULE_HOOK_MAX}

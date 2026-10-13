@@ -28,7 +28,7 @@ export function InvitationResponse({
 
   return (
     <div className="space-y-3">
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <Button disabled={pending} onClick={() => run(accept)}>
           Rejoindre l&apos;équipe
         </Button>
@@ -36,7 +36,11 @@ export function InvitationResponse({
           Refuser
         </Button>
       </div>
-      {error && <p className="text-destructive">{error}</p>}
+      {error && (
+        <p role="alert" className="text-small text-destructive">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

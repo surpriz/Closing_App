@@ -39,12 +39,12 @@ function useActive() {
   return (match: string[]) => match.some((prefix) => pathname.startsWith(prefix));
 }
 
-/** Pill tabs in the header, from the `sm` breakpoint up. */
+/** Report-strip tabs in the header, from the `sm` breakpoint up: cells between hairlines. */
 export function DashboardNav(access: Access) {
   const isActive = useActive();
 
   return (
-    <nav aria-label="Navigation principale" className="hidden items-center gap-0.5 sm:flex">
+    <nav aria-label="Navigation principale" className="hidden items-stretch border-l border-border sm:flex">
       {itemsFor(access).map((item) => {
         const active = isActive(item.match);
         return (
@@ -53,10 +53,10 @@ export function DashboardNav(access: Access) {
             href={item.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "rounded-lg px-3 py-1.5 text-sm transition-colors duration-150 outline-none focus-visible:ring-3 focus-visible:ring-ring/30",
+              "relative flex items-center border-r border-border px-4 text-small transition-colors duration-150 outline-none focus-visible:bg-muted",
               active
-                ? "bg-card font-medium text-foreground shadow-xs ring-1 ring-border"
-                : "text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground",
+                ? "bg-card font-semibold text-foreground after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:bg-foreground"
+                : "text-muted-foreground hover:bg-card hover:text-foreground",
             )}
           >
             {item.label}
@@ -75,7 +75,7 @@ export function MobileNav({ isManager, hasTeam }: { isManager: boolean; hasTeam:
   return (
     <nav
       aria-label="Navigation principale"
-      className="fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur sm:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-foreground bg-background pb-[env(safe-area-inset-bottom)] sm:hidden"
     >
       <div className={cn("grid", items.length === 4 ? "grid-cols-4" : "grid-cols-3")}>
         {items.map((item) => {
@@ -91,7 +91,7 @@ export function MobileNav({ isManager, hasTeam }: { isManager: boolean; hasTeam:
                 active ? "font-medium text-foreground" : "text-muted-foreground",
               )}
             >
-              {active && <span aria-hidden className="absolute inset-x-6 top-0 h-0.5 rounded-full bg-foreground" />}
+              {active && <span aria-hidden className="absolute inset-x-0 top-0 h-0.5 bg-foreground" />}
               <Icon className="size-5" strokeWidth={active ? 2.2 : 1.8} aria-hidden />
               {item.label}
             </Link>

@@ -30,8 +30,8 @@ export function SellerActivityForm({ linkId }: { linkId: string }) {
   }, [state]);
 
   return (
-    <form ref={formRef} action={formAction} className="space-y-3 px-4 py-3">
-      <fieldset className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm">
+    <form ref={formRef} action={formAction} className="space-y-3 py-4">
+      <fieldset className="flex flex-wrap gap-x-4 gap-y-1.5 text-small">
         <legend className="sr-only">Type d&apos;échange</legend>
         {TYPES.map((type, i) => (
           <label key={type} className="flex cursor-pointer items-center gap-1.5">
@@ -44,7 +44,7 @@ export function SellerActivityForm({ linkId }: { linkId: string }) {
       <div className="space-y-1.5">
         <Label htmlFor="occurredAt">Quand</Label>
         <Input id="occurredAt" name="occurredAt" type="datetime-local" />
-        <p className="text-xs text-muted-foreground">Laissez vide pour maintenant.</p>
+        <p className="text-small text-muted-foreground">Laissez vide pour maintenant.</p>
       </div>
       <Button type="submit" size="sm" variant="outline" disabled={pending}>
         {pending ? "Enregistrement…" : "Noter l'échange"}
@@ -59,7 +59,7 @@ export function SnoozeControl({ linkId, snoozedUntil }: { linkId: string; snooze
 
   if (snoozedUntil) {
     return (
-      <div className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+      <div className="flex items-center justify-between gap-3 py-3 text-small">
         <span>
           En pause jusqu&apos;au{" "}
           {new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long" }).format(new Date(snoozedUntil))}
@@ -83,7 +83,7 @@ export function SnoozeControl({ linkId, snoozedUntil }: { linkId: string; snooze
 
   return (
     <form
-      className="space-y-1.5 px-4 py-3"
+      className="space-y-1.5 py-4"
       onSubmit={(e) => {
         e.preventDefault();
         startTransition(async () => {
@@ -100,7 +100,7 @@ export function SnoozeControl({ linkId, snoozedUntil }: { linkId: string; snooze
           Pause
         </Button>
       </div>
-      <p className="text-xs text-muted-foreground">Le prospect revient vers vous plus tard ? Clozer se tait d&apos;ici là.</p>
+      <p className="text-small text-muted-foreground">Le prospect revient vers vous plus tard ? Clozer se tait d&apos;ici là.</p>
     </form>
   );
 }

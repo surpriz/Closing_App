@@ -2,17 +2,37 @@
 
 import { type AddedSource, UploadDropzone } from "@/components/dashboard/upload-dropzone";
 
+import { ThermalPlate } from "@/components/brand/thermal-plate";
+
 import { StepHeading } from "./parts";
 
 export const SAMPLE_DOCUMENT = { url: "/onboarding/exemple-devis.pdf", name: "Devis exemple.pdf" };
 
-export function DropStep({ uploadPrefix, onCreated }: { uploadPrefix: string; onCreated: (added: AddedSource) => void }) {
+export function DropStep({
+  firstName,
+  uploadPrefix,
+  onCreated,
+}: {
+  firstName: string | null;
+  uploadPrefix: string;
+  onCreated: (added: AddedSource) => void;
+}) {
   return (
     <div className="space-y-8">
       <StepHeading
-        title="Déposez un document que vous envoyez à vos prospects"
-        lead="Un devis, une proposition, une plaquette. Le dernier que vous avez envoyé fait très bien l'affaire : personne ne le recevra pendant ce test."
+        title={firstName ? `Bienvenue, ${firstName}. Déposez un devis.` : "Bienvenue. Déposez un devis."}
+        lead="Le dernier que vous avez envoyé fait très bien l'affaire : personne ne le recevra pendant ce test. Dans une minute, vous le verrez chauffer comme votre prospect le lira."
       />
+      <figure className="flex items-center gap-4">
+        <span aria-hidden className="grid w-40 shrink-0 grid-cols-6 gap-px">
+          {Array.from({ length: 6 }, (_, i) => (
+            <ThermalPlate key={i} heat={0} seed={i} className="aspect-[3/4]" />
+          ))}
+        </span>
+        <figcaption className="text-small text-muted-foreground">
+          Vos pages, encore froides. Elles chaufferont à chaque lecture de votre prospect.
+        </figcaption>
+      </figure>
       <UploadDropzone uploadPrefix={uploadPrefix} onCreated={onCreated} sample={SAMPLE_DOCUMENT} />
     </div>
   );
