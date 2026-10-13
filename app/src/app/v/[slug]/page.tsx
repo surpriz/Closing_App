@@ -16,12 +16,29 @@ import { WebViewer } from "@/components/viewer/web-viewer";
 import { getLanguageModel } from "@/lib/closing/ai/provider";
 import { bookingUrlForLink } from "@/lib/closing/booking/link-booking";
 import { buildBookingTarget } from "@/lib/closing/booking/url";
-import { capsulesVisibleOnLink, resolveCapsules, WELCOME_PAGE } from "@/lib/closing/capsules/resolve";
+import {
+  capsulesVisibleOnLink,
+  resolveCapsules,
+  WELCOME_PAGE,
+} from "@/lib/closing/capsules/resolve";
 import { suggestQuestions, toUIMessages } from "@/lib/closing/chat/messages";
 import { loadChatSetup } from "@/lib/closing/chat/queries";
-import { extensionRequestKey, showsCountdown, viewerDeadline } from "@/lib/closing/expiry";
-import { getViewerLabels, pickLocale, type ViewerLabels } from "@/lib/closing/i18n/viewer";
-import { getViewerAccess, knownRecipient, resolveViewerLink, type ViewerLink } from "@/lib/closing/links";
+import {
+  extensionRequestKey,
+  showsCountdown,
+  viewerDeadline,
+} from "@/lib/closing/expiry";
+import {
+  getViewerLabels,
+  pickLocale,
+  type ViewerLabels,
+} from "@/lib/closing/i18n/viewer";
+import {
+  getViewerAccess,
+  knownRecipient,
+  resolveViewerLink,
+  type ViewerLink,
+} from "@/lib/closing/links";
 import { maskEmail } from "@/lib/closing/prospects/mask-email";
 import { firstNameOf } from "@/lib/closing/share/compose";
 import { parseSmartParams } from "@/lib/closing/shared/smart-params";
@@ -29,7 +46,11 @@ import { VISITOR_COOKIE } from "@/lib/closing/tracking/visitor";
 import { prisma } from "@/lib/db";
 import { isWorkspaceMember } from "@/lib/session";
 
-import { requestLinkExtension, unlockAsKnown, unlockWithEmail } from "./actions";
+import {
+  requestLinkExtension,
+  unlockAsKnown,
+  unlockWithEmail,
+} from "./actions";
 
 export async function generateMetadata({
   params,
@@ -43,7 +64,10 @@ export async function generateMetadata({
   };
 }
 
-export default async function ViewerPage({ params, searchParams }: PageProps<"/v/[slug]">) {
+export default async function ViewerPage({
+  params,
+  searchParams,
+}: PageProps<"/v/[slug]">) {
   const { slug } = await params;
   const query = await searchParams;
   // "Ce n'est pas moi" after a contact change: the plain gate
@@ -55,15 +79,29 @@ export default async function ViewerPage({ params, searchParams }: PageProps<"/v
   const requestHeaders = await headers();
   const locale = pickLocale(requestHeaders.get("accept-language"));
   const labels = getViewerLabels(locale);
-  const [access, settings, isSeller] = await Promise.all([
+  const [access, settings, isSeller, creator] = await Promise.all([
     getViewerAccess(link),
     prisma.workspaceSettings.findUnique({
       where: { organizationId: link.organizationId },
       select: { senderName: true },
     }),
     isWorkspaceMember(link.organizationId),
+    prisma.link.findUnique({
+      where: { id: link.id },
+      select: {
+        createdBy: { select: { name: true, email: true } },
+        organization: { select: { name: true } },
+      },
+    }),
   ]);
-  const senderName = settings?.senderName?.trim() || null;
+  // The prospect should always know who is asking for their email: the name the workspace
+  // set, else the seller's own name, else the workspace, else the seller's address before the @
+  const senderName =
+    settings?.senderName?.trim() ||
+    creator?.createdBy?.name?.trim() ||
+    creator?.organization.name.trim() ||
+    creator?.createdBy?.email.split("@")[0] ||
+    null;
   const countdown = showsCountdown(link.document.docType);
   const deadline = viewerDeadline(link);
 
@@ -74,8 +112,12 @@ export default async function ViewerPage({ params, searchParams }: PageProps<"/v
       senderName={senderName}
       labels={labels}
       quote={countdown}
-      email={access.email ? "known" : link.requireEmail ? "required" : "optional"}
-      alreadyRequested={expired && (await alreadyRequestedExtension(link, access.email))}
+      email={
+        access.email ? "known" : link.requireEmail ? "required" : "optional"
+      }
+      alreadyRequested={
+        expired && (await alreadyRequestedExtension(link, access.email))
+      }
     />
   );
 
@@ -84,7 +126,9 @@ export default async function ViewerPage({ params, searchParams }: PageProps<"/v
     return (
       <>
         {isSeller && (
-          <SellerNotice>Ce lien a expiré pour le prospect : voici ce qu&apos;il voit.</SellerNotice>
+          <SellerNotice>
+            Ce lien a expiré pour le prospect : voici ce qu&apos;il voit.
+          </SellerNotice>
         )}
         {locked}
       </>
@@ -92,11 +136,15 @@ export default async function ViewerPage({ params, searchParams }: PageProps<"/v
   }
 
   // A shared link is a door: once the reader is known, they read on their own link
-  if (link.shared && access.email && !isSeller) redirect(`/api/v/${slug}/reader`);
+  if (link.shared && access.email && !isSeller)
+    redirect(`/api/v/${slug}/reader`);
 
   // A Smart Link from a cold email: the tool said who it was sent to, no form
   const smart = link.shared && !isSeller ? parseSmartParams(query) : null;
-  if (smart) return <SmartLinkHandoff slug={slug} reader={smart} label={labels.loading} />;
+  if (smart)
+    return (
+      <SmartLinkHandoff slug={slug} reader={smart} label={labels.loading} />
+    );
 
   if (!access.allowed) {
     const recipient = plainGate ? null : await knownRecipient(link.id);
@@ -119,8 +167,11 @@ export default async function ViewerPage({ params, searchParams }: PageProps<"/v
 
   if (link.document.status === "FAILED") {
     return (
-      <main className="flex flex-1 items-center justify-center px-4">
-        <p role="status" className="text-sm text-muted-foreground">
+      <main className="flex flex-1 items-center justify-center bg-background px-4">
+        <p
+          role="status"
+          className="max-w-sm text-center text-body text-pretty text-muted-foreground"
+        >
           {labels.unavailable}
         </p>
       </main>
@@ -130,10 +181,16 @@ export default async function ViewerPage({ params, searchParams }: PageProps<"/v
   // Links made from the mail extension can be opened while the PDF is still being read
   if (link.document.status !== "READY") {
     return (
-      <main className="flex flex-1 items-center justify-center px-4">
+      <main className="flex flex-1 items-center justify-center bg-background px-4">
         <AutoRefresh intervalMs={4000} />
-        <p role="status" className="flex items-center gap-3 text-sm text-muted-foreground">
-          <Loader2 className="size-4 animate-spin" aria-hidden />
+        <p
+          role="status"
+          className="flex max-w-sm items-center gap-3 text-body text-muted-foreground"
+        >
+          <Loader2
+            className="size-4 shrink-0 motion-safe:animate-spin"
+            aria-hidden
+          />
           {labels.processing}
         </p>
       </main>
@@ -154,7 +211,11 @@ export default async function ViewerPage({ params, searchParams }: PageProps<"/v
     link.bookingEnabled ? bookingUrlForLink(link) : null,
   ]);
   const booking = bookingUrl
-    ? buildBookingTarget(bookingUrl, { name: signerName, email: access.email }, requestHeaders.get("host") ?? "")
+    ? buildBookingTarget(
+        bookingUrl,
+        { name: signerName, email: access.email },
+        requestHeaders.get("host") ?? "",
+      )
     : null;
 
   const sellerNotice = isSeller && (
@@ -167,7 +228,11 @@ export default async function ViewerPage({ params, searchParams }: PageProps<"/v
   // Ticks down in the page and swaps to the locked screen at zero
   const withExpiry = (viewer: React.ReactNode) =>
     deadline ? (
-      <ExpiryGate expiresAt={deadline.toISOString()} serverNow={new Date().toISOString()} locked={locked}>
+      <ExpiryGate
+        expiresAt={deadline.toISOString()}
+        serverNow={new Date().toISOString()}
+        locked={locked}
+      >
         {viewer}
       </ExpiryGate>
     ) : (
@@ -206,7 +271,10 @@ export default async function ViewerPage({ params, searchParams }: PageProps<"/v
     // Loaded apart, and only when needed: an article weighs far more than the rest of the link
     const reader = link.document.embedUrl
       ? null
-      : await prisma.document.findUnique({ where: { id: link.document.id }, select: { readerHtml: true } });
+      : await prisma.document.findUnique({
+          where: { id: link.document.id },
+          select: { readerHtml: true },
+        });
     return (
       <>
         {sellerNotice}
@@ -226,22 +294,23 @@ export default async function ViewerPage({ params, searchParams }: PageProps<"/v
             locale={locale}
             chat={chat}
             countdown={!!deadline && countdown}
-            welcome={capsules.find((capsule) => capsule.pageNumber === WELCOME_PAGE) ?? null}
+            welcome={
+              capsules.find((capsule) => capsule.pageNumber === WELCOME_PAGE) ??
+              null
+            }
           />,
         )}
       </>
     );
   }
 
-  const pricingPages =
-    deadline && countdown
-      ? (
-          await prisma.documentPage.findMany({
-            where: { documentId: link.document.id, tags: { has: "PRICING" } },
-            select: { pageNumber: true },
-          })
-        ).map((page) => page.pageNumber)
-      : null;
+  // The pricing pages carry the countdown, and open the decision strip once reached
+  const pricingPages = (
+    await prisma.documentPage.findMany({
+      where: { documentId: link.document.id, tags: { has: "PRICING" } },
+      select: { pageNumber: true },
+    })
+  ).map((page) => page.pageNumber);
 
   return (
     <>
@@ -259,7 +328,8 @@ export default async function ViewerPage({ params, searchParams }: PageProps<"/v
           dealStatus={link.dealStatus}
           locale={locale}
           chat={chat}
-          countdown={pricingPages && { pricingPages }}
+          countdown={deadline && countdown ? { pricingPages } : null}
+          decisionPages={pricingPages}
           capsules={capsules}
           voiceComments={link.voiceCommentsEnabled}
         />,
@@ -272,7 +342,7 @@ function SellerNotice({ children }: { children: React.ReactNode }) {
   return (
     <p
       role="status"
-      className="fixed top-[calc(0.75rem+env(safe-area-inset-top))] left-1/2 z-50 -translate-x-1/2 rounded-full bg-foreground px-4 py-1.5 text-xs text-background shadow-lg"
+      className="fixed top-[calc(0.5rem+env(safe-area-inset-top))] left-1/2 z-50 w-max max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-sm bg-foreground px-3 py-1.5 text-center text-small text-background shadow-md"
     >
       {children}
     </p>
@@ -280,9 +350,15 @@ function SellerNotice({ children }: { children: React.ReactNode }) {
 }
 
 /** This reader already asked for this expiry date: show the confirmation, not the button again. */
-async function alreadyRequestedExtension(link: ViewerLink, email: string | null) {
+async function alreadyRequestedExtension(
+  link: ViewerLink,
+  email: string | null,
+) {
   const prospect = email
-    ? await prisma.prospect.findUnique({ where: { linkId_email: { linkId: link.id, email } }, select: { id: true } })
+    ? await prisma.prospect.findUnique({
+        where: { linkId_email: { linkId: link.id, email } },
+        select: { id: true },
+      })
     : null;
   const who = prospect?.id ?? (await cookies()).get(VISITOR_COOKIE)?.value;
   if (!who || !link.expiresAt) return false;
@@ -300,7 +376,14 @@ async function loadCapsules(
 ): Promise<ViewerCapsule[]> {
   const rows = await prisma.pageCapsule.findMany({
     where: capsulesVisibleOnLink(link),
-    select: { id: true, pageNumber: true, linkId: true, kind: true, hookText: true, posterPathname: true },
+    select: {
+      id: true,
+      pageNumber: true,
+      linkId: true,
+      kind: true,
+      hookText: true,
+      posterPathname: true,
+    },
   });
   return [...resolveCapsules(rows, link.id).values()].map((row) => {
     const src = `/api/v/${slug}/capsules/${row.id}/media`;
@@ -322,7 +405,10 @@ async function loadChatWidget(
 ): Promise<ChatWidgetData | null> {
   if (!link.chatEnabled || !getLanguageModel("chat")) return null;
   const visitorId = (await cookies()).get(VISITOR_COOKIE)?.value;
-  const setup = await loadChatSetup({ id: link.id, documentId: link.document.id }, visitorId);
+  const setup = await loadChatSetup(
+    { id: link.id, documentId: link.document.id },
+    visitorId,
+  );
   if (!setup.hasKnowledge) return null;
   return {
     kind: setup.kind,

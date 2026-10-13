@@ -70,9 +70,10 @@ export function VideoViewer({
   }
 
   return (
-    <div className="flex h-dvh flex-col bg-muted/60">
+    <div className="flex h-dvh flex-col bg-background selection:bg-foreground/15 selection:text-foreground">
       <ViewerHeader
         className="shrink-0"
+        kind="video"
         documentName={documentName}
         senderName={senderName}
         labels={labels}
@@ -80,11 +81,11 @@ export function VideoViewer({
       />
 
       <main
-        className={`flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-3 pt-3 sm:px-6 ${barVisible ? "pb-36 sm:pb-24" : chat ? "pb-20" : "pb-3"}`}
+        className={`flex min-h-0 flex-1 flex-col items-center justify-center gap-4 px-2 pt-3 sm:px-6 ${barVisible ? "pb-[calc(var(--decision-bar-h,4rem)+1rem)]" : chat ? "pb-20" : "pb-4"}`}
       >
-        <div className="relative w-full max-w-5xl overflow-hidden rounded-xl bg-black shadow-lg ring-1 ring-border">
+        <div className="relative w-full max-w-5xl overflow-hidden bg-black ring-1 ring-border">
           {failed ? (
-            <p role="alert" className="flex aspect-video items-center justify-center px-6 text-center text-sm text-white/80">
+            <p role="alert" className="flex aspect-video items-center justify-center px-6 text-center text-body text-white/85">
               {labels.videoError}
             </p>
           ) : (
@@ -123,17 +124,17 @@ export function VideoViewer({
                   type="button"
                   aria-label={labels.playVideo}
                   onClick={() => void videoRef.current?.play().catch(() => {})}
-                  className="group absolute inset-0 flex items-center justify-center bg-black/20 transition-colors hover:bg-black/30"
+                  className="group absolute inset-0 flex items-center justify-center bg-black/15 outline-none transition-colors hover:bg-black/30 focus-visible:ring-3 focus-visible:ring-white/70 focus-visible:ring-inset"
                 >
-                  <span className="flex size-20 items-center justify-center rounded-full bg-white/95 text-black shadow-xl transition-transform group-hover:scale-105">
-                    <Play className="ml-1 size-9 fill-current" aria-hidden />
+                  <span className="flex size-16 items-center justify-center rounded-md bg-white text-black transition-transform duration-150 ease-out-soft group-hover:scale-105 sm:size-20">
+                    <Play className="ml-1 size-7 fill-current sm:size-8" aria-hidden />
                   </span>
                 </button>
               )}
             </>
           )}
         </div>
-        <PrivacyNotice labels={labels} video className="max-w-5xl px-2 text-center" />
+        <PrivacyNotice labels={labels} video className="px-2 text-center" />
       </main>
 
       {barVisible && (

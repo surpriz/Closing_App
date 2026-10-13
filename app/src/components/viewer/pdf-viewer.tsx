@@ -37,6 +37,8 @@ type Props = {
   chat: ChatWidgetData | null;
   /** Quotes with a deadline: the countdown sits on these pages, or in the header when there are none. */
   countdown?: { pricingPages: number[] } | null;
+  /** Pages tagged as pricing: reaching one (or the last page) opens the decision strip. */
+  decisionPages?: number[];
   /** Seller clips, at most one per page. */
   capsules: ViewerCapsule[];
   /** The prospect may record a voice comment on a page. */
@@ -56,6 +58,7 @@ export function PdfViewer({
   locale,
   chat,
   countdown,
+  decisionPages = [],
   capsules,
   voiceComments,
 }: Props) {
@@ -65,6 +68,10 @@ export function PdfViewer({
   const { currentPage, registerPage, getViewId } = usePageTracking(slug, sizes.length);
   // The bottom bar carries the answers, the booking button, or both
   const barVisible = ctaEnabled || !!booking;
+  // Once the reader has seen the price or the last page, the strip stays open
+  const [decisionReached, setDecisionReached] = useState(false);
+  const atDecision = sizes.length > 0 && (currentPage >= sizes.length || decisionPages.includes(currentPage));
+  if (atDecision && !decisionReached) setDecisionReached(true);
   // An open voice comment stays on its page while the reader scrolls
   const [voicePage, setVoicePage] = useState<number | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
@@ -110,7 +117,7 @@ export function PdfViewer({
   }, [fileUrl]);
 
   return (
-    <div className="flex min-h-full flex-1 flex-col bg-muted/60">
+    <div className="flex min-h-full flex-1 flex-col bg-background selection:bg-foreground/15 selection:text-foreground">
       <ViewerHeader
         documentName={documentName}
         senderName={senderName}
@@ -120,8 +127,10 @@ export function PdfViewer({
           <>
             {countdown && countdown.pricingPages.length === 0 && <ExpiryChip labels={labels} />}
             {sizes.length > 0 && (
-              <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 font-mono text-xs text-muted-foreground tabular-nums">
-                {currentPage} / {sizes.length}
+              <span className="shrink-0 font-mono text-micro text-muted-foreground tabular-nums">
+                <span aria-hidden>
+                  P.{currentPage}/{sizes.length}
+                </span>
                 <span className="sr-only">
                   {" "}
                   {labels.page} {currentPage} {labels.of} {sizes.length}
@@ -132,14 +141,20 @@ export function PdfViewer({
         }
       />
 
-      <main className="mx-auto w-full max-w-4xl flex-1 space-y-4 px-2 py-4 pb-40 sm:space-y-6 sm:px-4 sm:py-8">
-        {failed && <p className="py-24 text-center text-sm text-muted-foreground">{labels.loadError}</p>}
+      <main
+        className={`mx-auto w-full max-w-4xl flex-1 space-y-3 px-2 pt-3 sm:space-y-5 sm:px-4 sm:pt-6 ${barVisible ? "pb-[calc(var(--decision-bar-h,4rem)+1.5rem)]" : "pb-8"}`}
+      >
+        {failed && (
+          <p role="alert" className="py-24 text-center text-body text-muted-foreground">
+            {labels.loadError}
+          </p>
+        )}
         {!failed && !pdf && (
           <div role="status" aria-label={labels.loading} className="space-y-4 sm:space-y-6">
             {[0, 1].map((i) => (
               <div
                 key={i}
-                className="aspect-[1/1.414] w-full animate-pulse rounded-sm bg-card shadow-md ring-1 ring-border"
+                className="aspect-[1/1.414] w-full bg-card ring-1 ring-border motion-safe:animate-pulse"
               />
             ))}
           </div>
@@ -158,7 +173,7 @@ export function PdfViewer({
             />
           ))}
         {/* Also shown here because the email gate is optional per link */}
-        <PrivacyNotice labels={labels} className="px-2 pt-2 text-center" />
+        <PrivacyNotice labels={labels} className="mx-auto border-t border-border px-2 pt-4 text-center" />
       </main>
 
       {barVisible && pdf && (
@@ -172,7 +187,7 @@ export function PdfViewer({
           answers={ctaEnabled}
           booking={booking}
           downloadUrl={`${fileUrl}?download=1`}
-          atEnd={sizes.length > 0 && currentPage >= sizes.length}
+          atEnd={decisionReached}
           onAskQuestion={chat ? () => setChatOpen(true) : undefined}
           voice={voiceTrigger("bar")}
         />
@@ -201,7 +216,6 @@ export function PdfViewer({
           labels={labels}
           senderName={senderName}
           getViewId={getViewId}
-          ctaVisible={barVisible}
           sheetOpen={chatOpen || voicePage !== null}
           onOpenChange={setCapsuleOpen}
         />
@@ -302,7 +316,7 @@ export function PdfPage({ pdf, pageNumber, size, registerPage, overlay, corner }
         registerPage?.(pageNumber, element);
       }}
       data-page={pageNumber}
-      className="group/page relative w-full overflow-hidden rounded-sm bg-white shadow-md ring-1 ring-border"
+      className="group/page relative w-full overflow-hidden bg-white ring-1 ring-border"
       style={{ aspectRatio: `${size.width} / ${size.height}` }}
       onContextMenu={(event) => event.preventDefault()}
     >

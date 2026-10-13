@@ -1,15 +1,13 @@
 "use client";
 
-import { ArrowRight, Lock } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useActionState, useState } from "react";
 
 import type { UnlockState } from "@/app/v/[slug]/actions";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import type { ViewerLabels } from "@/lib/closing/i18n/viewer";
 
-import { GateBackdrop } from "./gate-backdrop";
+import { GATE_BOX, GATE_FIELD, GATE_LABEL, GATE_SUBMIT, GateFrame, GateTitle } from "./gate-frame";
 import { PrivacyNotice } from "./privacy-notice";
 
 type Props = {
@@ -29,88 +27,60 @@ export function EmailGate({ action, known, documentName, senderName, labels }: P
   const greet = known && !notMe && !knownState?.error;
 
   return (
-    <main className="relative flex flex-1 items-center justify-center overflow-hidden px-4 py-16">
-      <GateBackdrop />
+    <GateFrame>
+      <GateTitle documentName={documentName} senderName={senderName} labels={labels} />
 
-      <div className="relative w-full max-w-sm animate-rise rounded-2xl bg-card p-6 shadow-lg ring-1 ring-border sm:p-7">
-        <span className="mb-5 flex size-10 items-center justify-center rounded-xl bg-muted text-muted-foreground ring-1 ring-border">
-          <Lock className="size-4.5" aria-hidden />
-        </span>
-        <h1 className="text-heading">
-          {greet && known.firstName ? labels.greeting.replace("{name}", known.firstName) : labels.emailTitle}
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          <span className="font-medium text-foreground">{documentName}</span>
-          {senderName && (
-            <>
-              {" · "}
-              {labels.sharedBy} {senderName}
-            </>
-          )}
-        </p>
-        {greet ? (
-          <form action={unlockKnown} className="mt-6 space-y-3">
-            <p className="text-sm text-muted-foreground">{labels.sentTo.replace("{email}", known.maskedEmail)}</p>
-            <Button type="submit" size="xl" className="w-full" disabled={unlocking} autoFocus>
+      {greet ? (
+        <>
+          <form action={unlockKnown} className={`mt-8 ${GATE_BOX}`}>
+            <div className="border-b border-border px-3 py-3">
+              <p className="text-body font-semibold">
+                {known.firstName ? labels.greeting.replace("{name}", known.firstName) : labels.emailTitle}
+              </p>
+              <p className="text-small text-muted-foreground">
+                {labels.sentTo.replace("{email}", known.maskedEmail)}
+              </p>
+            </div>
+            <Button type="submit" size="xl" className={GATE_SUBMIT} disabled={unlocking} autoFocus>
               {labels.emailSubmit}
               <ArrowRight data-icon="inline-end" />
             </Button>
-            <button
-              type="button"
-              onClick={() => setNotMe(true)}
-              className="w-full text-center text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-            >
-              {labels.notMe}
-            </button>
-            <PrivacyNotice labels={labels} />
           </form>
-        ) : (
-          <EmailForm action={formAction} pending={pending} invalid={invalid} labels={labels} />
-        )}
-      </div>
-    </main>
-  );
-}
-
-function EmailForm({
-  action,
-  pending,
-  invalid,
-  labels,
-}: {
-  action: (formData: FormData) => void;
-  pending: boolean;
-  invalid: boolean;
-  labels: ViewerLabels;
-}) {
-  return (
-    <>
-      <form action={action} className="mt-6 space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="email">{labels.emailLabel}</Label>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            required
-            autoComplete="email"
-            autoFocus
-            className="h-11"
-            aria-invalid={invalid || undefined}
-            aria-describedby={invalid ? "email-error" : undefined}
-          />
+          <Button variant="ghost" className="mt-2 h-11 w-full text-muted-foreground" onClick={() => setNotMe(true)}>
+            {labels.notMe}
+          </Button>
+        </>
+      ) : (
+        <form action={formAction} className="mt-8">
+          <div className={GATE_BOX}>
+            <label htmlFor="email" className={GATE_LABEL}>
+              {labels.emailLabel}
+            </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              required
+              autoComplete="email"
+              autoFocus
+              className={GATE_FIELD}
+              aria-invalid={invalid || undefined}
+              aria-describedby={invalid ? "email-error" : undefined}
+            />
+            <Button type="submit" size="xl" className={GATE_SUBMIT} disabled={pending}>
+              {labels.emailSubmit}
+              <ArrowRight data-icon="inline-end" />
+            </Button>
+          </div>
           {invalid && (
-            <p id="email-error" className="text-sm text-destructive">
+            <p id="email-error" role="alert" className="mt-2 text-small text-destructive">
               {labels.invalidEmail}
             </p>
           )}
-        </div>
-        <Button type="submit" size="xl" className="w-full" disabled={pending}>
-          {labels.emailSubmit}
-          <ArrowRight data-icon="inline-end" />
-        </Button>
-        <PrivacyNotice labels={labels} />
-      </form>
-    </>
+        </form>
+      )}
+
+      <PrivacyNotice labels={labels} className="mt-6" />
+    </GateFrame>
   );
 }

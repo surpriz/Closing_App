@@ -1,4 +1,5 @@
 import type { ViewerLabels } from "@/lib/closing/i18n/viewer";
+import { cn } from "@/lib/utils";
 
 // Published on the landing site (www.clozer.club)
 export const PRIVACY_POLICY_URL = "https://www.clozer.club/confidentialite";
@@ -19,13 +20,13 @@ export function PrivacyNotice({
   video?: boolean;
 }) {
   return (
-    <p className={`text-xs leading-relaxed text-muted-foreground ${className ?? ""}`}>
+    <p className={cn("max-w-[68ch] text-small text-pretty text-muted-foreground", className)}>
       {video ? labels.privacyNoticeVideo : web ? labels.privacyNoticeWeb : labels.privacyNotice}{" "}
       <a
         href={PRIVACY_POLICY_URL}
         target="_blank"
         rel="noopener noreferrer"
-        className="underline underline-offset-2 hover:text-foreground"
+        className="font-medium text-foreground underline decoration-foreground/40 underline-offset-[3px] hover:decoration-foreground"
       >
         {labels.privacyLink}
       </a>

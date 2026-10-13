@@ -26,8 +26,6 @@ type Props = {
   labels: ViewerLabels;
   senderName: string | null;
   getViewId: () => string | null;
-  /** The call-to-action bar is at the bottom: the bubble sits above it. */
-  ctaVisible: boolean;
   /** Another sheet (chat, voice note) is open: the bubble steps aside. */
   sheetOpen?: boolean;
   /** Tells the viewer when the clip itself is open or closed. */
@@ -47,9 +45,9 @@ function readDismissed(slug: string) {
 }
 
 /**
- * The seller's clip for the page the prospect reached: a round still frame
- * bottom left, the video downloaded only when tapped open. Once closed, it
- * stays closed.
+ * The seller's clip for the page the prospect reached: a small square still
+ * bottom left, above the decision strip, the video downloaded only when
+ * tapped open. Once closed, it stays closed.
  */
 const noSubscribe = () => () => {};
 
@@ -59,7 +57,6 @@ export function CapsuleBubble({
   labels,
   senderName,
   getViewId,
-  ctaVisible,
   sheetOpen = false,
   onOpenChange,
 }: Props) {
@@ -123,10 +120,10 @@ export function CapsuleBubble({
         role="dialog"
         aria-label={from}
         onKeyDown={(event) => event.key === "Escape" && close()}
-        className="fixed inset-x-0 bottom-0 z-50 flex animate-rise flex-col gap-3 rounded-t-2xl bg-card p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-xl ring-1 ring-border sm:inset-x-auto sm:bottom-4 sm:left-4 sm:z-40 sm:w-[340px] sm:rounded-2xl"
+        className="fixed inset-x-0 bottom-0 z-50 flex animate-rise flex-col gap-3 border-t border-foreground bg-card p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-lg sm:inset-x-auto sm:bottom-[calc(var(--decision-bar-h,0px)+1rem)] sm:left-4 sm:z-40 sm:w-[340px] sm:rounded-lg sm:border-t-0 sm:ring-1 sm:ring-border"
       >
         <header className="flex items-center gap-3">
-          <p className="min-w-0 flex-1 truncate text-sm font-semibold">{from}</p>
+          <p className="min-w-0 flex-1 truncate text-body font-semibold">{from}</p>
           <Button
             variant="ghost"
             size="icon"
@@ -145,15 +142,15 @@ export function CapsuleBubble({
             poster={open.poster ?? undefined}
             controls
             playsInline
-            className="aspect-square w-full rounded-xl bg-black object-cover"
+            className="aspect-square w-full rounded-sm bg-black object-cover"
           />
         ) : (
           <div className="flex flex-col items-center gap-3 py-2">
-            <Avatar initials={initials} playing className="size-20" />
+            <Avatar initials={initials} playing className="size-20 rounded-md text-title" />
             <audio ref={playerRef} src={open.src} controls className="w-full" />
           </div>
         )}
-        {open.hookText && <p className="text-sm text-muted-foreground">{open.hookText}</p>}
+        {open.hookText && <p className="text-body text-muted-foreground">{open.hookText}</p>}
       </section>
     );
   }
@@ -168,7 +165,6 @@ export function CapsuleBubble({
       from={from}
       initials={initials}
       labels={labels}
-      ctaVisible={ctaVisible}
       onOpen={() => expand(capsule)}
       onDismiss={() => dismiss(capsule.id)}
     />
@@ -180,16 +176,15 @@ type BubbleProps = {
   from: string;
   initials: string;
   labels: ViewerLabels;
-  ctaVisible: boolean;
   onOpen: () => void;
   onDismiss: () => void;
 };
 
 /**
- * Fresh for a few seconds: a big still with the hook text next to it. Then
- * the avatar alone, small enough to leave the bar and the page in peace.
+ * Fresh for a few seconds: the still with the hook text beside it. Then the
+ * still alone, small enough to leave the strip and the page in peace.
  */
-function Bubble({ capsule, from, initials, labels, ctaVisible, onOpen, onDismiss }: BubbleProps) {
+function Bubble({ capsule, from, initials, labels, onOpen, onDismiss }: BubbleProps) {
   const [fresh, setFresh] = useState(true);
 
   useEffect(() => {
@@ -200,24 +195,18 @@ function Bubble({ capsule, from, initials, labels, ctaVisible, onOpen, onDismiss
   return (
     <div
       className={cn(
-        "fixed left-4 z-30 flex animate-rise items-center gap-2",
-        ctaVisible ? "bottom-[calc(5.5rem+env(safe-area-inset-bottom))]" : "bottom-[calc(1.5rem+env(safe-area-inset-bottom))]",
+        "fixed left-3 z-30 flex animate-rise items-stretch overflow-hidden rounded-lg bg-card shadow-md ring-1 ring-border sm:left-4",
+        // Above the decision strip, whose height it publishes; the screen's edge when there is none
+        "bottom-[calc(var(--decision-bar-h,env(safe-area-inset-bottom))+0.75rem)]",
       )}
     >
-      {/* A few pulses to catch the eye, then still */}
-      {fresh && (
-        <span
-          aria-hidden
-          className="pointer-events-none absolute left-0 size-16 rounded-full bg-brand/40 motion-safe:animate-ping motion-safe:[animation-iteration-count:3] sm:size-20"
-        />
-      )}
       <button
         type="button"
         onClick={onOpen}
         aria-label={`${labels.capsuleOpen} · ${from}`}
         className={cn(
-          "group relative shrink-0 overflow-hidden rounded-full bg-brand shadow-lg ring-card outline-none transition-[width,height] duration-300 focus-visible:ring-brand/40",
-          fresh ? "size-16 ring-4 sm:size-20" : "size-11 ring-2 sm:size-14",
+          "group relative shrink-0 overflow-hidden bg-foreground outline-none transition-[width,height] duration-300 ease-out-soft focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+          fresh ? "size-16" : "size-12",
         )}
       >
         {/* No autoplaying teaser: it would download the whole clip for every reader, tap or not */}
@@ -228,22 +217,26 @@ function Bubble({ capsule, from, initials, labels, ctaVisible, onOpen, onDismiss
           // Older clips without a still: the first frame, fetched as a small range
           <video src={`${capsule.src}#t=0.1`} muted playsInline preload="metadata" className="size-full object-cover" />
         ) : (
-          <Avatar initials={initials} playing={fresh} className={cn("size-full", !fresh && "text-sm")} />
+          <Avatar initials={initials} playing={fresh} className={cn("size-full", fresh ? "text-heading" : "text-small")} />
         )}
-        <span className="absolute inset-0 flex items-center justify-center bg-black/10 transition-colors group-hover:bg-black/25">
-          <Play className={cn("fill-white text-white drop-shadow", fresh ? "size-6" : "size-4")} aria-hidden />
+        <span className="absolute inset-0 flex items-center justify-center bg-black/15 transition-colors group-hover:bg-black/30">
+          <Play className={cn("fill-white text-white", fresh ? "size-5" : "size-4")} aria-hidden />
         </span>
       </button>
       {fresh && (
-        <div className="flex max-w-[min(15rem,calc(100vw-9rem))] items-center gap-1 rounded-2xl bg-card py-1.5 pr-1 pl-3 text-sm shadow-lg ring-1 ring-border">
-          <button type="button" onClick={onOpen} className="min-w-0 py-0.5 text-left">
-            <span className="block text-xs text-muted-foreground">{from}</span>
-            <span className="line-clamp-2">{capsule.hookText ?? labels.capsuleOpen}</span>
+        <div className="flex max-w-[min(15rem,calc(100vw-7.5rem))] items-center gap-1 border-l border-border py-1 pr-1 pl-3">
+          <button
+            type="button"
+            onClick={onOpen}
+            className="min-w-0 rounded-sm py-0.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <span className="block text-micro text-muted-foreground">{from}</span>
+            <span className="line-clamp-2 text-small font-medium">{capsule.hookText ?? labels.capsuleOpen}</span>
           </button>
           <Button
             variant="ghost"
             size="icon"
-            className="size-11 sm:size-9"
+            className="size-11 shrink-0 sm:size-9"
             onClick={onDismiss}
             aria-label={labels.capsuleDismiss}
           >
@@ -259,7 +252,7 @@ function Avatar({ initials, playing, className }: { initials: string; playing?: 
   return (
     <span
       className={cn(
-        "relative flex items-center justify-center rounded-full bg-brand text-lg font-semibold text-brand-foreground",
+        "relative flex items-center justify-center bg-foreground font-semibold text-background",
         className,
       )}
     >
@@ -269,7 +262,7 @@ function Avatar({ initials, playing, className }: { initials: string; playing?: 
           {[0, 150, 300, 450].map((delay) => (
             <span
               key={delay}
-              className="h-2 w-0.5 rounded-full bg-brand-foreground/80 motion-safe:animate-pulse"
+              className="h-2 w-0.5 bg-background/80 motion-safe:animate-pulse"
               style={{ animationDelay: `${delay}ms` }}
             />
           ))}

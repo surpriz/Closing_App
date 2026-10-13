@@ -1,11 +1,11 @@
 import type { Ref } from "react";
 
 const ARTICLE_STYLES = [
-  "text-[17px] leading-relaxed break-words",
-  "[&_p]:my-4 [&_hr]:my-8 [&_a]:underline [&_a]:underline-offset-2",
-  "[&_h2]:mt-8 [&_h2]:mb-3 [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:mt-6 [&_h3]:mb-2 [&_h3]:text-lg [&_h3]:font-semibold [&_h4]:mt-5 [&_h4]:font-semibold",
+  "text-[1.0625rem] leading-relaxed break-words",
+  "[&_p]:my-4 [&_hr]:my-8 [&_hr]:border-border [&_a]:underline [&_a]:decoration-foreground/40 [&_a]:underline-offset-[3px]",
+  "[&_h2]:mt-9 [&_h2]:mb-3 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:tracking-[-0.01em] [&_h3]:mt-7 [&_h3]:mb-2 [&_h3]:text-heading [&_h4]:mt-5 [&_h4]:font-semibold",
   "[&_ul]:my-4 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:my-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:my-1",
-  "[&_blockquote]:my-5 [&_blockquote]:border-l-4 [&_blockquote]:pl-4 [&_blockquote]:text-muted-foreground",
+  "[&_blockquote]:my-5 [&_blockquote]:border-l [&_blockquote]:border-foreground/30 [&_blockquote]:pl-4 [&_blockquote]:text-muted-foreground",
   "[&_figure]:my-6 [&_img]:h-auto [&_img]:max-w-full [&_img]:rounded-sm [&_figcaption]:mt-2 [&_figcaption]:text-sm [&_figcaption]:text-muted-foreground",
   "[&_pre]:my-4 [&_pre]:overflow-x-auto [&_pre]:rounded-sm [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:text-sm",
   "[&_table]:my-4 [&_table]:block [&_table]:overflow-x-auto [&_table]:text-sm [&_td]:border [&_td]:p-2 [&_th]:border [&_th]:p-2",
@@ -29,21 +29,21 @@ export function ReaderArticle({ ref, html, title, sourceLabel, externalUrl, onOp
     <article
       ref={ref}
       data-page={1}
-      className="mx-auto w-full max-w-2xl rounded-sm bg-card px-5 py-8 shadow-md ring-1 ring-border sm:px-10 sm:py-10"
+      className="mx-auto w-full max-w-2xl bg-card px-5 py-8 ring-1 ring-border sm:px-10 sm:py-10"
     >
-      <p className="mb-3 text-xs text-muted-foreground">
+      <p className="mb-3 text-small text-muted-foreground">
         {sourceLabel}{" "}
         <a
           href={externalUrl}
           target="_blank"
           rel="noopener noreferrer"
           onClick={onOpen}
-          className="underline underline-offset-2"
+          className="font-mono text-foreground underline decoration-foreground/40 underline-offset-[3px]"
         >
           {siteName(externalUrl)}
         </a>
       </p>
-      <h1 className="mb-6 text-2xl font-semibold tracking-[-0.01em] sm:text-3xl">{title}</h1>
+      <h1 className="condensed mb-6 text-title font-bold">{title}</h1>
       <div className={ARTICLE_STYLES} dangerouslySetInnerHTML={{ __html: html }} />
     </article>
   );

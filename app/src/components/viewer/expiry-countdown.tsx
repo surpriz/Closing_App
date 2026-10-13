@@ -22,7 +22,7 @@ export function ExpiryBanner({ labels }: { labels: ViewerLabels }) {
     <p
       role="timer"
       aria-live="off"
-      className="mx-auto flex w-fit max-w-full items-center gap-2 rounded-full bg-foreground/90 px-3.5 py-1.5 text-xs font-medium text-background shadow-lg backdrop-blur-sm sm:text-sm"
+      className="mx-auto flex w-fit max-w-full items-center gap-2 rounded-sm bg-foreground px-3 py-1.5 text-small font-medium text-background"
     >
       <Hourglass className="size-3.5 shrink-0" aria-hidden />
       <span className="text-pretty">{labels.expiryCountdown.replace("{time}", time)}</span>
@@ -39,11 +39,11 @@ export function ExpiryChip({ labels }: { labels: ViewerLabels }) {
     <span
       role="timer"
       aria-live="off"
-      className="flex shrink-0 items-center gap-1.5 rounded-full bg-foreground px-2.5 py-1 text-xs font-medium text-background tabular-nums"
+      className="flex h-7 shrink-0 items-center gap-1.5 rounded-sm border border-border px-2 text-micro font-medium text-foreground tabular-nums sm:text-small"
     >
-      <Hourglass className="size-3 shrink-0" aria-hidden />
+      <Hourglass className="size-3 shrink-0 text-muted-foreground" aria-hidden />
       <span className="hidden sm:inline">{labels.expiryChip.replace("{time}", time)}</span>
-      <span className="sm:hidden">{time}</span>
+      <span className="font-mono sm:hidden">{time}</span>
     </span>
   );
 }

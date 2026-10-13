@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 
+import { GateFrame } from "@/components/viewer/gate-frame";
 import { UnsubscribeForm } from "@/components/viewer/unsubscribe-form";
 import { pickLocale } from "@/lib/closing/i18n/viewer";
 import { findProspectByUnsubscribeToken } from "@/lib/closing/unsubscribe";
@@ -23,9 +24,9 @@ export default async function UnsubscribePage({ params }: PageProps<"/u/[token]"
   const prospect = await findProspectByUnsubscribeToken(token);
 
   return (
-    <main className="flex flex-1 items-center justify-center bg-muted/40 px-4 py-16">
-      <div className="w-full max-w-sm rounded-xl bg-background p-6 text-sm shadow-sm ring-1 ring-border">
-        <h1 className="mb-3 text-lg font-medium">{copy.pageTitle}</h1>
+    <GateFrame>
+      <h1 className="text-heading">{copy.pageTitle}</h1>
+      <div className="mt-4 border-t border-foreground pt-4 text-body">
         {prospect ? (
           <UnsubscribeForm
             action={confirmUnsubscribe.bind(null, token)}
@@ -34,9 +35,11 @@ export default async function UnsubscribePage({ params }: PageProps<"/u/[token]"
             copy={copy}
           />
         ) : (
-          <p className="text-muted-foreground">{copy.pageInvalid}</p>
+          <p role="alert" className="text-muted-foreground">
+            {copy.pageInvalid}
+          </p>
         )}
       </div>
-    </main>
+    </GateFrame>
   );
 }

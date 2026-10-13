@@ -1,7 +1,7 @@
 "use client";
 
 import { CalendarDays, Check, Download, MessageCircleQuestion, MessageSquareText, Receipt } from "lucide-react";
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 
 import { recordMeetingBooked, recordMeetingClick, submitProspectAction } from "@/app/v/[slug]/actions";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ import type { ViewerLabels } from "@/lib/closing/i18n/viewer";
 import { cn } from "@/lib/utils";
 
 import { BookingDialog } from "./booking-dialog";
+import { BAR_HEIGHT_VAR, STRIP_CELL, STRIP_ICON_CELL } from "./decision-strip";
 import { sendSignal } from "./view-signal";
 
 type Props = {
@@ -33,7 +34,7 @@ type Props = {
   initialStatus: DealStatus;
   getViewId: () => string | null;
   documentName: string;
-  /** The reader reached the end: the bar asks for an answer. */
+  /** The reader reached the pricing or last page: the strip opens up and asks for an answer. */
   atEnd?: boolean;
   /** Offered in the name field when signing. */
   signerName: string | null;
@@ -80,6 +81,8 @@ export function CtaBar({
   const [bookingOpening, setBookingOpening] = useState(0);
   const [bookingOpen, setBookingOpen] = useState(false);
   const [booked, setBooked] = useState(false);
+  const barRef = useRef<HTMLDivElement>(null);
+  usePublishedHeight(barRef);
 
   function openBooking() {
     if (!booking) return;
@@ -120,32 +123,57 @@ export function CtaBar({
   }
 
   const done = answers && (status === "VALIDATED" || status === "WON");
+  // Past the pricing or last page the strip opens up: the question is asked plainly
+  const expanded = atEnd && !done;
+  const notice = booked
+    ? labels.meetingBooked
+    : quoteSent
+      ? labels.quoteRequested
+      : status === "CHANGE_REQUESTED"
+        ? labels.changeRequested
+        : null;
+  // The one ink cell: sign, or ask for a quote, or book when nothing else is offered
+  const bookingIsPrimary = !!booking && !(answers || (quote && !quoteSent));
+  const primaryCell = cn(
+    STRIP_CELL,
+    "flex-1 gap-2 bg-primary px-4 text-body font-semibold text-primary-foreground hover:bg-primary/85 focus-visible:ring-primary-foreground sm:flex-none sm:px-6",
+    expanded && "max-sm:order-1 max-sm:min-h-14 max-sm:basis-full sm:min-h-14",
+  );
+  const secondaryCell = cn(
+    STRIP_CELL,
+    "gap-2",
+    expanded
+      ? "flex-1 px-3 max-sm:order-2 sm:min-h-14 sm:flex-none sm:px-5"
+      : cn(STRIP_ICON_CELL, "sm:w-auto sm:px-4"),
+  );
+  const toolCell = cn(STRIP_CELL, STRIP_ICON_CELL, "gap-2", expanded && "max-sm:order-2 sm:min-h-14");
 
   return (
     <>
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <div
-          className={cn(
-            "pointer-events-auto mx-auto max-w-2xl rounded-2xl bg-card/95 p-2 shadow-lg ring-1 ring-border backdrop-blur-md transition-shadow duration-300",
-            atEnd && !done && "ring-brand/40",
-          )}
-        >
+      <div
+        ref={barRef}
+        role="region"
+        aria-label={labels.readyPrompt}
+        className="fixed inset-x-0 bottom-0 z-20 border-t border-foreground bg-card pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)]"
+      >
+        <div className="mx-auto max-w-[54rem] sm:border-x sm:border-border">
           {done ? (
-            <div className="flex min-h-11 items-center gap-3 px-2 py-1.5">
-              <span className="flex size-9 shrink-0 animate-pop items-center justify-center rounded-full bg-success text-success-foreground">
-                <Check className="size-5" strokeWidth={2.5} aria-hidden />
-              </span>
-              <div className="min-w-0 flex-1" role="status">
-                <p className="text-sm font-semibold">{labels.validated}</p>
-                <p className="text-small text-muted-foreground">
-                  {receipt ? labels.signedReceipt : labels.validatedNext}
-                </p>
+            <div className="flex items-stretch gap-px bg-border">
+              <div role="status" className="flex min-h-14 flex-1 items-center gap-3 bg-card px-4 py-2.5">
+                <span className="flex size-8 shrink-0 animate-pop items-center justify-center rounded-sm bg-success text-success-foreground">
+                  <Check className="size-4.5" strokeWidth={2.5} aria-hidden />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-body font-semibold">{labels.validated}</p>
+                  <p className="text-small text-muted-foreground">
+                    {receipt ? labels.signedReceipt : labels.validatedNext}
+                  </p>
+                </div>
               </div>
               {downloadUrl && (
                 <Button
-                  variant="outline"
-                  size="lg"
-                  className="h-11 w-11 shrink-0 px-0 sm:w-auto sm:px-4"
+                  variant="ghost"
+                  className={cn(STRIP_CELL, "w-14 gap-2 sm:w-auto sm:px-5")}
                   aria-label={labels.download}
                   render={<a href={downloadUrl} onClick={() => sendSignal(getViewId(), "DOWNLOAD")} />}
                   nativeButton={false}
@@ -156,89 +184,82 @@ export function CtaBar({
               )}
             </div>
           ) : (
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <p className="px-2 text-sm text-muted-foreground sm:mr-auto" role="status">
-                {booked ? (
-                  labels.meetingBooked
-                ) : quoteSent ? (
-                  labels.quoteRequested
-                ) : status === "CHANGE_REQUESTED" ? (
-                  labels.changeRequested
-                ) : (
-                  <span className={cn("hidden sm:inline", atEnd && "inline font-medium text-foreground")}>
-                    {labels.readyPrompt}
-                  </span>
+            <div className="flex flex-wrap items-stretch gap-px bg-border sm:flex-nowrap">
+              <p
+                role="status"
+                className={cn(
+                  "items-center bg-card px-4",
+                  expanded
+                    ? "flex basis-full py-2.5 text-body font-semibold text-foreground sm:flex-1 sm:basis-auto sm:py-0"
+                    : notice
+                      ? "flex basis-full py-2 text-small text-muted-foreground sm:flex-1 sm:basis-auto sm:py-0"
+                      : "hidden text-small text-muted-foreground sm:flex sm:flex-1",
                 )}
+              >
+                {notice ?? labels.readyPrompt}
               </p>
-              <div className="flex gap-2">
-                {onAskQuestion && (
+              {onAskQuestion && (
+                <Button
+                  variant="ghost"
+                  className={cn(toolCell, "md:w-auto md:px-4")}
+                  aria-label={labels.chatAsk}
+                  onClick={onAskQuestion}
+                  data-chat-trigger
+                >
+                  <MessageCircleQuestion />
+                  <span className="hidden md:inline">{labels.chatAsk}</span>
+                </Button>
+              )}
+              {voice && <div className={cn("flex", expanded && "max-sm:order-2")}>{voice}</div>}
+              {booking &&
+                (bookingIsPrimary ? (
+                  <Button className={primaryCell} onClick={openBooking}>
+                    <CalendarDays aria-hidden />
+                    <span className="truncate">{labels.bookMeeting}</span>
+                  </Button>
+                ) : (
                   <Button
-                    variant="outline"
-                    size="lg"
-                    className="h-11 w-11 px-0 md:w-auto md:px-4"
-                    aria-label={labels.chatAsk}
-                    onClick={onAskQuestion}
-                    data-chat-trigger
+                    variant="ghost"
+                    className={secondaryCell}
+                    aria-label={labels.bookMeeting}
+                    onClick={openBooking}
+                    disabled={pending}
                   >
-                    <MessageCircleQuestion />
-                    <span className="hidden md:inline">{labels.chatAsk}</span>
+                    <CalendarDays />
+                    <span className={cn(!expanded && "hidden sm:inline", "truncate")}>{labels.bookMeeting}</span>
                   </Button>
-                )}
-                {voice}
-                {booking &&
-                  (answers || (quote && !quoteSent) ? (
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      className="h-11 w-11 px-0 sm:w-auto sm:px-4"
-                      aria-label={labels.bookMeeting}
-                      onClick={openBooking}
-                      disabled={pending}
-                    >
-                      <CalendarDays />
-                      <span className="hidden sm:inline">{labels.bookMeeting}</span>
-                    </Button>
-                  ) : (
-                    // Alone in the bar: the main action
-                    <Button size="lg" className="h-11 flex-1 sm:flex-none" onClick={openBooking}>
-                      <CalendarDays data-icon="inline-start" />
-                      <span className="truncate">{labels.bookMeeting}</span>
-                    </Button>
-                  ))}
-                {quote && !quoteSent && (
-                  <Button size="lg" className="h-11 flex-1 sm:flex-none" onClick={() => setDialog("quote")} disabled={pending}>
-                    <Receipt data-icon="inline-start" />
-                    <span className="truncate">{labels.requestQuote}</span>
+                ))}
+              {quote && !quoteSent && (
+                <Button className={primaryCell} onClick={() => setDialog("quote")} disabled={pending}>
+                  <Receipt aria-hidden />
+                  <span className="truncate">{labels.requestQuote}</span>
+                </Button>
+              )}
+              {answers && (
+                <>
+                  <Button
+                    variant="ghost"
+                    className={secondaryCell}
+                    aria-label={labels.requestChange}
+                    onClick={() => setDialog("change")}
+                    disabled={pending}
+                  >
+                    <MessageSquareText />
+                    <span className={cn(!expanded && "hidden sm:inline", "truncate")}>{labels.requestChange}</span>
                   </Button>
-                )}
-                {answers && (
-                  <>
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      className="h-11 w-11 px-0 sm:w-auto sm:px-4"
-                      aria-label={labels.requestChange}
-                      onClick={() => setDialog("change")}
-                      disabled={pending}
-                    >
-                      <MessageSquareText />
-                      <span className="hidden sm:inline">{labels.requestChange}</span>
-                    </Button>
-                    <Button
-                      size="lg"
-                      className="h-11 flex-1 sm:flex-none"
-                      onClick={() => setDialog("validate")}
-                      disabled={pending}
-                    >
-                      <Check data-icon="inline-start" />
-                      <span className="truncate">{labels.validate}</span>
-                    </Button>
-                  </>
-                )}
-              </div>
+                  <Button className={primaryCell} onClick={() => setDialog("validate")} disabled={pending}>
+                    <Check aria-hidden />
+                    <span className="truncate">{labels.validate}</span>
+                  </Button>
+                </>
+              )}
             </div>
           )}
-          {error && !dialog && <p className="px-2 pt-1 text-center text-sm text-destructive">{labels.actionError}</p>}
+          {error && !dialog && (
+            <p role="alert" className="border-t border-border px-4 py-2 text-small text-destructive">
+              {labels.actionError}
+            </p>
+          )}
         </div>
       </div>
 
@@ -254,7 +275,7 @@ export function CtaBar({
       )}
 
       <Dialog open={dialog !== null} onOpenChange={(open) => !open && !pending && setDialog(null)}>
-        <DialogContent showCloseButton={false} className="sm:max-w-md">
+        <DialogContent showCloseButton={false} className="rounded-lg ring-foreground/85 sm:max-w-md">
           {dialog === "validate" ? (
             <>
               <DialogHeader>
@@ -268,22 +289,21 @@ export function CtaBar({
                     id="signer-name"
                     autoComplete="name"
                     autoFocus
-                    className="h-11"
+                    className="h-11 caret-foreground"
                     value={name}
                     maxLength={80}
                     onChange={(e) => setName(e.target.value)}
                   />
                 </div>
-                <label className="flex cursor-pointer items-start gap-2.5 text-sm">
-                  <Checkbox className="mt-0.5" checked={agreed} onCheckedChange={(checked) => setAgreed(checked === true)} />
+                <label className="flex cursor-pointer items-start gap-2.5 text-body">
+                  <Checkbox className="mt-1 rounded-sm" checked={agreed} onCheckedChange={(checked) => setAgreed(checked === true)} />
                   <span>{labels.signAgree}</span>
                 </label>
               </div>
-              {error && <p className="text-sm text-destructive">{labels.actionError}</p>}
+              {error && <p role="alert" className="text-small text-destructive">{labels.actionError}</p>}
               <DialogFooter>
                 <DialogClose render={<Button variant="ghost" disabled={pending} />}>{labels.cancel}</DialogClose>
                 <Button
-                  variant="success"
                   onClick={() => submit("VALIDATE_SIGN")}
                   disabled={pending || !agreed || !SIGNER_NAME.test(name.trim())}
                 >
@@ -301,12 +321,13 @@ export function CtaBar({
               <Textarea
                 autoFocus
                 rows={4}
+                className="rounded-md caret-foreground"
                 value={message}
                 placeholder={labels.quotePlaceholder}
                 aria-label={labels.quoteTitle}
                 onChange={(e) => setMessage(e.target.value)}
               />
-              {error && <p className="text-sm text-destructive">{labels.actionError}</p>}
+              {error && <p role="alert" className="text-small text-destructive">{labels.actionError}</p>}
               <DialogFooter>
                 <DialogClose render={<Button variant="ghost" disabled={pending} />}>{labels.cancel}</DialogClose>
                 <Button onClick={() => submit("REQUEST_QUOTE")} disabled={pending}>
@@ -323,12 +344,13 @@ export function CtaBar({
               <Textarea
                 autoFocus
                 rows={4}
+                className="rounded-md caret-foreground"
                 value={message}
                 placeholder={labels.changePlaceholder}
                 aria-label={labels.changeTitle}
                 onChange={(e) => setMessage(e.target.value)}
               />
-              {error && <p className="text-sm text-destructive">{labels.actionError}</p>}
+              {error && <p role="alert" className="text-small text-destructive">{labels.actionError}</p>}
               <DialogFooter>
                 <DialogClose render={<Button variant="ghost" disabled={pending} />}>{labels.cancel}</DialogClose>
                 <Button onClick={() => submit("REQUEST_CHANGE")} disabled={pending || message.trim().length === 0}>
@@ -341,4 +363,19 @@ export function CtaBar({
       </Dialog>
     </>
   );
+}
+
+/** Writes the strip's height on <html> while it is on screen: the page and the floating pieces keep clear of it. */
+function usePublishedHeight(ref: React.RefObject<HTMLElement | null>) {
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    const root = document.documentElement;
+    const observer = new ResizeObserver(() => root.style.setProperty(BAR_HEIGHT_VAR, `${element.offsetHeight}px`));
+    observer.observe(element);
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty(BAR_HEIGHT_VAR);
+    };
+  }, [ref]);
 }

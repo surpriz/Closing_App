@@ -35,9 +35,9 @@ export function SmartLinkHandoff({ slug, reader, label }: Props) {
   }, [slug, reader.email, reader.company, reader.name]);
 
   return (
-    <main className="flex flex-1 items-center justify-center px-4">
-      <p role="status" className="flex items-center gap-3 text-sm text-muted-foreground">
-        <Loader2 className="size-4 animate-spin" aria-hidden />
+    <main className="flex flex-1 items-center justify-center bg-background px-4">
+      <p role="status" className="flex items-center gap-3 text-body text-muted-foreground">
+        <Loader2 className="size-4 motion-safe:animate-spin" aria-hidden />
         {label}
       </p>
     </main>

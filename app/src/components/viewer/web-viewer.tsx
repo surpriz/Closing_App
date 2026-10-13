@@ -81,9 +81,12 @@ export function WebViewer({
   const [chatOpen, setChatOpen] = useState(false);
 
   return (
-    <div className={`flex flex-col bg-muted/60 ${reader ? "min-h-dvh" : "h-dvh"}`}>
+    <div
+      className={`flex flex-col bg-background selection:bg-foreground/15 selection:text-foreground ${reader ? "min-h-dvh" : "h-dvh"}`}
+    >
       <ViewerHeader
         className="shrink-0"
+        kind="web"
         documentName={documentName}
         senderName={senderName}
         labels={labels}
@@ -97,7 +100,7 @@ export function WebViewer({
                 rel="noopener noreferrer"
                 onClick={openExternal}
                 aria-label={labels.openExternal}
-                className={buttonVariants({ variant: "ghost", size: "sm" })}
+                className={buttonVariants({ variant: "ghost", size: "sm", className: "h-11 min-w-11 px-2 sm:h-8 sm:min-w-0" })}
               >
                 <ExternalLink />
                 <span className="hidden sm:inline">{labels.openExternal}</span>
@@ -107,7 +110,9 @@ export function WebViewer({
         }
       />
 
-      <main className={`flex min-h-0 flex-1 flex-col gap-2 px-2 pt-2 sm:px-4 ${barVisible ? "pb-36 sm:pb-24" : chat ? "pb-20" : "pb-2"}`}>
+      <main
+        className={`flex min-h-0 flex-1 flex-col gap-3 px-2 pt-2 sm:px-4 sm:pt-4 ${barVisible ? "pb-[calc(var(--decision-bar-h,4rem)+0.75rem)]" : chat ? "pb-20" : "pb-3"}`}
+      >
         {!embedUrl && readerHtml ? (
           <ReaderArticle
             ref={(element) => registerPage(1, element)}
@@ -122,31 +127,31 @@ export function WebViewer({
             ref={iframeRef}
             src={playerSrc(embedUrl)}
             title={documentName}
-            className="mx-auto min-h-0 w-full max-w-6xl flex-1 rounded-sm bg-white shadow-md ring-1 ring-border"
+            className="mx-auto min-h-0 w-full max-w-6xl flex-1 bg-white ring-1 ring-border"
             allow="autoplay; fullscreen; clipboard-write; encrypted-media; picture-in-picture"
             allowFullScreen
             referrerPolicy="strict-origin-when-cross-origin"
             sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms allow-presentation"
           />
         ) : (
-          <div className="flex flex-1 flex-col items-center justify-center gap-4 px-4 text-center">
-            <div className="max-w-md space-y-1.5">
-              <p className="text-lg font-medium tracking-[-0.01em]">{labels.externalTitle}</p>
-              <p className="text-sm text-muted-foreground">{labels.externalDescription}</p>
+          <div className="flex flex-1 flex-col items-center justify-center px-2">
+            <div className="w-full max-w-md border-y border-foreground py-6">
+              <p className="text-heading">{labels.externalTitle}</p>
+              <p className="mt-1.5 text-body text-pretty text-muted-foreground">{labels.externalDescription}</p>
+              <a
+                href={externalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={openExternal}
+                className={buttonVariants({ size: "xl", className: "mt-6 w-full justify-between" })}
+              >
+                {labels.openExternal}
+                <ExternalLink data-icon="inline-end" />
+              </a>
             </div>
-            <a
-              href={externalUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={openExternal}
-              className={buttonVariants({ size: "lg" })}
-            >
-              <ExternalLink />
-              {labels.openExternal}
-            </a>
           </div>
         )}
-        <PrivacyNotice labels={labels} web className="px-2 text-center" />
+        <PrivacyNotice labels={labels} web className="mx-auto px-2 text-center" />
       </main>
 
       {barVisible && (
@@ -169,7 +174,6 @@ export function WebViewer({
         labels={labels}
         senderName={senderName}
         getViewId={getViewId}
-        ctaVisible={barVisible}
         sheetOpen={chatOpen}
       />
 

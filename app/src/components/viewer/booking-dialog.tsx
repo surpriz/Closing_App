@@ -73,13 +73,13 @@ export function BookingDialog({ open, onOpenChange, target, labels, onBooked }: 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-3xl">
-        <DialogHeader className="px-5 pt-5 pb-3">
+      <DialogContent className="gap-0 overflow-hidden rounded-lg p-0 sm:max-w-3xl">
+        <DialogHeader className="border-b border-border px-5 pt-5 pb-3">
           <DialogTitle className="text-heading">{labels.bookingTitle}</DialogTitle>
         </DialogHeader>
         {state === "failed" ? (
-          <div className="space-y-3 px-5 pb-6 text-sm">
-            <p className="text-muted-foreground">{labels.bookingFallback}</p>
+          <div className="space-y-3 px-5 pt-4 pb-6">
+            <p className="text-body text-muted-foreground">{labels.bookingFallback}</p>
             <Button
               variant="outline"
               render={<a href={target.tabSrc} target="_blank" rel="noopener noreferrer" />}

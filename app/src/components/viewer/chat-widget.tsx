@@ -2,10 +2,10 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { ArrowUp, Forward, Loader2, MessageCircleQuestion, X } from "lucide-react";
+import { ArrowRight, ArrowUp, Forward, Loader2, MessageCircleQuestion, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
-import { Bubble, textOf } from "@/components/chat/bubble";
+import { textOf } from "@/components/chat/bubble";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { CHAT_MESSAGE_MAX } from "@/lib/closing/chat/constants";
@@ -43,8 +43,11 @@ type Props = ChatWidgetData & {
   launcher: "floating" | "docked";
 };
 
-/** Above the bar (5rem tall on phones, 4.5rem from sm up) or the floating launcher (4.5rem). */
-const NUDGE_BOTTOM = "bottom-[calc(5.5rem+env(safe-area-inset-bottom))]";
+/**
+ * Above the decision strip, whose height the strip publishes (--decision-bar-h),
+ * or above the floating launcher when there is no strip.
+ */
+const NUDGE_BOTTOM = "bottom-[calc(var(--decision-bar-h,calc(4.25rem+env(safe-area-inset-bottom)))+0.75rem)]";
 
 // The route answers 429 with { error: <quota code> }; the transport puts the body in error.message
 const LIMIT_ERRORS = new RegExp(CHAT_QUOTA_ERRORS.join("|"));
@@ -170,11 +173,16 @@ export function ChatWidget({
           <div
             role="status"
             className={cn(
-              "fixed right-4 z-30 flex animate-pop items-center gap-1 rounded-full bg-popover py-1 pr-1 pl-4 text-sm text-popover-foreground shadow-lg ring-1 ring-border",
+              "fixed right-4 z-30 flex animate-rise items-center gap-1 rounded-lg bg-popover py-1 pr-1 pl-3 text-body text-popover-foreground shadow-md ring-1 ring-border",
               NUDGE_BOTTOM,
             )}
           >
-            <button type="button" onClick={openChat} className="font-medium hover:underline">
+            <button
+              type="button"
+              onClick={openChat}
+              className="flex items-center gap-2 rounded-sm py-1.5 font-medium underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <MessageCircleQuestion className="size-4 text-muted-foreground" aria-hidden />
               {labels.chatExitNudge}
             </button>
             <Button variant="ghost" size="icon" onClick={() => setNudge(false)} aria-label={labels.chatClose}>
@@ -188,7 +196,7 @@ export function ChatWidget({
             size="xl"
             onClick={openChat}
             aria-label={labels.chatLauncher}
-            className="fixed right-4 bottom-[calc(1.5rem+env(safe-area-inset-bottom))] z-30 size-12 rounded-full px-0 shadow-lg sm:size-auto sm:px-5"
+            className="fixed right-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-30 size-12 px-0 shadow-md sm:size-auto sm:h-11 sm:px-4 sm:text-body"
           >
             <MessageCircleQuestion className="size-5" />
             <span className="hidden sm:inline">{labels.chatLauncher}</span>
@@ -203,17 +211,20 @@ export function ChatWidget({
       role="dialog"
       aria-label={kindLabels.title}
       onKeyDown={(event) => event.key === "Escape" && onOpenChange(false)}
-      className="fixed inset-0 z-50 flex animate-rise flex-col bg-card sm:inset-auto sm:right-4 sm:bottom-4 sm:z-40 sm:h-[min(620px,calc(100dvh-2rem))] sm:w-[380px] sm:rounded-2xl sm:shadow-xl sm:ring-1 sm:ring-border"
+      className="fixed inset-0 z-50 flex animate-rise flex-col bg-card selection:bg-foreground/15 selection:text-foreground sm:inset-auto sm:right-4 sm:bottom-[calc(var(--decision-bar-h,0px)+1rem)] sm:z-40 sm:h-[min(620px,calc(100dvh_-_var(--decision-bar-h,0px)_-_5rem))] sm:w-[380px] sm:rounded-lg sm:shadow-lg sm:ring-1 sm:ring-border"
     >
-      <header className="flex shrink-0 items-center gap-3 border-b px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:pt-3">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">
-          <MessageCircleQuestion className="size-5" aria-hidden />
-        </span>
+      <header className="flex shrink-0 items-center gap-3 border-b border-foreground py-2 pt-[max(0.5rem,env(safe-area-inset-top))] pr-2 pl-4 sm:pt-2">
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold">{kindLabels.title}</p>
+          <p className="truncate text-body font-semibold">{kindLabels.title}</p>
           {senderName && <p className="truncate text-small text-muted-foreground">{senderName}</p>}
         </div>
-        <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} aria-label={labels.chatClose}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-11 sm:size-9"
+          onClick={() => onOpenChange(false)}
+          aria-label={labels.chatClose}
+        >
           <X />
         </Button>
       </header>
@@ -222,21 +233,26 @@ export function ChatWidget({
         {announcement}
       </p>
       <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-4">
-        <Bubble role="assistant">{withSender(labels.chatIntro)}</Bubble>
+        <Line role="assistant">{withSender(labels.chatIntro)}</Line>
 
         {messages.length === 0 && suggestions.length > 0 && (
-          <div className="flex flex-col items-start gap-2 pt-1">
+          <ul className="border-y border-border">
             {suggestions.map((suggestion) => (
-              <button
-                key={suggestion}
-                type="button"
-                onClick={() => send(suggestion)}
-                className="rounded-full border bg-background px-3 py-1.5 text-left text-sm transition-colors hover:bg-muted"
-              >
-                {suggestion}
-              </button>
+              <li key={suggestion} className="border-t border-border first:border-t-0">
+                <button
+                  type="button"
+                  onClick={() => send(suggestion)}
+                  className="group flex min-h-11 w-full items-center gap-3 py-2 text-left text-body outline-none transition-colors hover:bg-muted/60 focus-visible:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+                >
+                  <span className="flex-1">{suggestion}</span>
+                  <ArrowRight
+                    className="size-4 shrink-0 text-muted-foreground transition-transform duration-150 ease-out-soft group-hover:translate-x-0.5"
+                    aria-hidden
+                  />
+                </button>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
 
         {messages.map((message) => {
@@ -246,9 +262,9 @@ export function ChatWidget({
           if (!text && !forwarded) return null;
           return (
             <div key={message.id} className="space-y-1">
-              {text && <Bubble role={message.role === "user" ? "user" : "assistant"}>{text}</Bubble>}
+              {text && <Line role={message.role === "user" ? "user" : "assistant"}>{text}</Line>}
               {forwarded && (
-                <p className="flex items-center gap-1.5 pl-1 text-small text-muted-foreground">
+                <p className="flex items-center gap-1.5 text-small text-muted-foreground">
                   <Forward className="size-3.5" aria-hidden />
                   {withSender(labels.chatForwarded)}
                 </p>
@@ -258,16 +274,16 @@ export function ChatWidget({
         })}
 
         {waiting && (
-          <Bubble role="assistant">
+          <Line role="assistant">
             <span className="flex items-center gap-2 text-muted-foreground">
-              <Loader2 className="size-4 animate-spin" aria-hidden />
+              <Loader2 className="size-4 motion-safe:animate-spin" aria-hidden />
               {labels.chatThinking}
             </span>
-          </Bubble>
+          </Line>
         )}
 
         {error && (
-          <p role="alert" className="text-center text-sm text-destructive">
+          <p role="alert" className="text-small text-destructive">
             {LIMIT_ERRORS.test(error.message) ? withSender(labels.chatLimit) : labels.chatError}
           </p>
         )}
@@ -290,7 +306,7 @@ export function ChatWidget({
             aria-label={kindLabels.placeholder}
             onChange={(event) => setInput(event.target.value)}
             onKeyDown={onKeyDown}
-            className="max-h-32 min-h-10 resize-none"
+            className="max-h-32 min-h-11 resize-none rounded-md caret-foreground sm:min-h-10"
           />
           <Button
             type="submit"
@@ -302,8 +318,28 @@ export function ChatWidget({
             <ArrowUp />
           </Button>
         </div>
-        <p className="pt-2 text-center text-xs text-muted-foreground">{withSender(labels.chatDisclaimer)}</p>
+        <p className="pt-2 text-micro text-pretty text-muted-foreground">{withSender(labels.chatDisclaimer)}</p>
       </form>
     </section>
+  );
+}
+
+/**
+ * One turn of the conversation, kept quiet: the assistant's answers read as
+ * plain text on the sheet, the reader's own questions sit in a near-square
+ * ink block on the right.
+ */
+function Line({ role, children }: { role: "user" | "assistant"; children: React.ReactNode }) {
+  return (
+    <div
+      className={cn(
+        "text-body break-words whitespace-pre-wrap",
+        role === "user"
+          ? "ml-auto w-fit max-w-[85%] rounded-md bg-primary px-3 py-2 text-primary-foreground"
+          : "max-w-[92%] border-l border-foreground/20 pl-3",
+      )}
+    >
+      {children}
+    </div>
   );
 }
