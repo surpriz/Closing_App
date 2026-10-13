@@ -2,9 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 
+import { getAppOrigin } from "@/lib/app-origin";
+import { createDocumentLink } from "@/lib/closing/documents/create-link";
 import { upsertSellerPrefs } from "@/lib/closing/notify/preferences";
 import { prisma } from "@/lib/db";
-import { OFFER_DESCRIPTION_MAX, parseMailClient } from "@/lib/onboarding";
+import { isTestRead, OFFER_DESCRIPTION_MAX, parseMailClient, testLinkName } from "@/lib/onboarding";
 import { isManagerRole } from "@/lib/roles";
 import { requireWorkspace } from "@/lib/session";
 
@@ -40,4 +42,76 @@ export async function saveOfferDescription(input: unknown): Promise<{ ok: boolea
   });
   revalidatePath("/settings");
   return { ok: count > 0 };
+}
+
+/** First visit of the tour, for the getting-started funnel. */
+export async function startOnboarding() {
+  const { user, organization } = await requireWorkspace();
+  const where = { userId_organizationId: { userId: user.id, organizationId: organization.id } };
+  const prefs = await prisma.notificationPreference.findUnique({ where, select: { onboardingStartedAt: true } });
+  if (prefs?.onboardingStartedAt) return;
+  await upsertSellerPrefs(user.id, organization.id, { onboardingStartedAt: new Date() });
+}
+
+/**
+ * The link the seller opens to see what the prospect sees. A draft (never a
+ * deal, archived with the other drafts), no email gate, no follow-up.
+ */
+export async function createOnboardingTestLink(
+  documentId: string,
+): Promise<{ linkId: string; url: string } | { error: string }> {
+  const { user, organization } = await requireWorkspace();
+  const document = await prisma.document.findFirst({
+    where: { id: String(documentId), organizationId: organization.id, archivedAt: null },
+    select: { id: true, name: true },
+  });
+  if (!document) return { error: "Document introuvable." };
+
+  const link = await createDocumentLink({
+    userId: user.id,
+    organizationId: organization.id,
+    documentId: document.id,
+    name: testLinkName(document.name),
+    requireEmail: false,
+    followupsEnabled: false,
+    draft: true,
+    onboardingTest: true,
+  });
+  if (!link) return { error: "Document introuvable." };
+  return { linkId: link.id, url: `${await getAppOrigin()}/v/${link.slug}` };
+}
+
+export type TestLinkStatus = {
+  /** The viewer only tracks a document once it is processed. */
+  ready: boolean;
+  read: { pages: number; seconds: number } | null;
+};
+
+/** Polled by the tour while the seller opens their test link. */
+export async function onboardingTestStatus(linkId: string): Promise<TestLinkStatus | null> {
+  const { user, organization } = await requireWorkspace();
+  const link = await prisma.link.findFirst({
+    where: { id: String(linkId), organizationId: organization.id, isOnboardingTest: true },
+    select: {
+      document: { select: { status: true } },
+      views: {
+        orderBy: { startedAt: "desc" },
+        take: 5,
+        select: { isBot: true, fromSeller: true, maxPageReached: true, totalDurationMs: true },
+      },
+    },
+  });
+  if (!link) return null;
+
+  const view = link.views.find(isTestRead);
+  if (view) {
+    await prisma.notificationPreference.updateMany({
+      where: { userId: user.id, organizationId: organization.id, onboardingTestReadAt: null },
+      data: { onboardingTestReadAt: new Date() },
+    });
+  }
+  return {
+    ready: link.document.status === "READY",
+    read: view ? { pages: view.maxPageReached, seconds: Math.round(view.totalDurationMs / 1000) } : null,
+  };
 }

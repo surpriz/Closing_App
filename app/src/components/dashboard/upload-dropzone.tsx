@@ -59,7 +59,10 @@ function isTyping(target: EventTarget | null) {
   );
 }
 
-function useAddSource(uploadPrefix: string, onDone?: () => void) {
+/** What was just added, for a caller that stays on the page instead of opening the share screen. */
+export type AddedSource = { documentId: string; linkId: string };
+
+function useAddSource(uploadPrefix: string, onDone?: () => void, onCreated?: (added: AddedSource) => void) {
   const router = useRouter();
   const [progress, setProgress] = useState<number | null>(null);
   const [addingUrl, setAddingUrl] = useState(false);
@@ -84,13 +87,18 @@ function useAddSource(uploadPrefix: string, onDone?: () => void) {
         onUploadProgress: ({ percentage }) => setProgress(percentage),
       });
 
-      const { linkId, reused } = await createDocument({
+      const { id, linkId, reused } = await createDocument({
         pathname: blob.pathname,
         name: file.name,
         sha256: await sha256Hex(file),
       });
-      if (reused) toast.success("Vous aviez déjà ce document : voici un nouveau lien.");
       onDone?.();
+      if (onCreated) {
+        setProgress(null);
+        onCreated({ documentId: id, linkId });
+        return;
+      }
+      if (reused) toast.success("Vous aviez déjà ce document : voici un nouveau lien.");
       router.push(`/links/${linkId}?new=1`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "L'import a échoué.");
@@ -112,7 +120,8 @@ function useAddSource(uploadPrefix: string, onDone?: () => void) {
         return false;
       }
       onDone?.();
-      router.push(`/links/${result.linkId}?new=1`);
+      if (onCreated) onCreated({ documentId: result.id, linkId: result.linkId });
+      else router.push(`/links/${result.linkId}?new=1`);
       return true;
     } catch {
       toast.error("L'ajout du lien a échoué.");
@@ -305,14 +314,58 @@ type PitchProps = {
   pitchUploadPrefix?: string;
 };
 
+/** A ready-made PDF for a seller with no document at hand (welcome tour). */
+function SampleButton({ source, sample }: { source: AddSource; sample: { url: string; name: string } }) {
+  const [loading, setLoading] = useState(false);
+
+  async function loadSample() {
+    setLoading(true);
+    try {
+      const response = await fetch(sample.url);
+      if (!response.ok) throw new Error();
+      const blob = await response.blob();
+      await source.handleFile(new File([blob], sample.name, { type: "application/pdf" }));
+    } catch {
+      toast.error("Impossible de charger l'exemple. Déposez plutôt un de vos documents.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <p className="text-sm text-muted-foreground">
+      Pas de document sous la main ?{" "}
+      <button
+        type="button"
+        disabled={source.busy || loading}
+        onClick={() => void loadSample()}
+        className="text-foreground underline underline-offset-4 disabled:opacity-50"
+      >
+        {loading ? "Chargement…" : "Essayer avec un devis exemple"}
+      </button>
+    </p>
+  );
+}
+
 /** Large drop zone, used when there is no document yet. */
-export function UploadDropzone({ uploadPrefix, pitchUploadPrefix }: { uploadPrefix: string } & PitchProps) {
-  const source = useAddSource(uploadPrefix);
+export function UploadDropzone({
+  uploadPrefix,
+  pitchUploadPrefix,
+  onCreated,
+  sample,
+}: {
+  uploadPrefix: string;
+  /** Stay on the page once the document and its link exist, instead of opening the share screen. */
+  onCreated?: (added: AddedSource) => void;
+  sample?: { url: string; name: string };
+} & PitchProps) {
+  const source = useAddSource(uploadPrefix, undefined, onCreated);
   const [recording, setRecording] = useState(false);
   usePasteToAdd(source, !recording);
   return (
     <>
       <SourcePicker source={source} onRecordVideo={pitchUploadPrefix ? () => setRecording(true) : undefined} />
+      {sample && <SampleButton source={source} sample={sample} />}
       {pitchUploadPrefix && (
         <VideoPitchDialog open={recording} onOpenChange={setRecording} uploadPrefix={pitchUploadPrefix} />
       )}

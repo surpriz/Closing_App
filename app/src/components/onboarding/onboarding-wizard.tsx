@@ -3,54 +3,50 @@
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
+import { toast } from "sonner";
 
-import { completeOnboarding, saveMailClient } from "@/app/bienvenue/actions";
+import { completeOnboarding, createOnboardingTestLink, startOnboarding } from "@/app/bienvenue/actions";
 import { Logo } from "@/components/brand/logo";
+import type { AddedSource } from "@/components/dashboard/upload-dropzone";
 import { Button } from "@/components/ui/button";
-import {
-  isToolConnected,
-  ONBOARDING_STEPS,
-  STEP_LABELS,
-  toolFor,
-  type MailClient,
-  type OnboardingStep,
-} from "@/lib/onboarding";
+import { ONBOARDING_STEPS, STEP_LABELS, type MailClient } from "@/lib/onboarding";
 import { cn } from "@/lib/utils";
 
-import { InstallStep } from "./install-step";
-import { MailStep } from "./mail-step";
-import { StartStep } from "./start-step";
+import { DailyStep } from "./daily-step";
+import { DropStep } from "./drop-step";
+import { TestStep } from "./test-step";
+import { ValueStep } from "./value-step";
 
 const LAST = ONBOARDING_STEPS.length - 1;
 
 export function OnboardingWizard({
   firstName,
-  account,
   initialMailClient,
-  initialStep,
   connected,
   askOffer,
-  hasDocument,
   uploadPrefix,
   chromeStoreUrl,
 }: {
   firstName: string | null;
-  account: { email: string; workspace: string };
   initialMailClient: MailClient | null;
-  initialStep: OnboardingStep;
   connected: { chrome: boolean; outlook: boolean };
   askOffer: boolean;
-  hasDocument: boolean;
   uploadPrefix: string;
   chromeStoreUrl: string | null;
 }) {
   const router = useRouter();
-  const [index, setIndex] = useState(ONBOARDING_STEPS.indexOf(initialStep));
-  const [mailClient, setMailClient] = useState(initialMailClient);
+  const [index, setIndex] = useState(0);
+  const [added, setAdded] = useState<AddedSource | null>(null);
+  const [testLink, setTestLink] = useState<{ linkId: string; url: string } | null>(null);
+  const [testRead, setTestRead] = useState(false);
   const [leaving, startLeaving] = useTransition();
   const step = ONBOARDING_STEPS[index];
 
-  // Reaching the end is enough: the upload there navigates away by itself
+  useEffect(() => {
+    void startOnboarding();
+  }, []);
+
+  // Reaching the end is enough: the seller has seen everything
   useEffect(() => {
     if (index === LAST) void completeOnboarding();
   }, [index]);
@@ -60,16 +56,20 @@ export function OnboardingWizard({
     window.scrollTo({ top: 0 });
   }
 
-  function next() {
-    // Saved on the way out: the preselected guess counts once confirmed
-    if (step === "mail" && mailClient) void saveMailClient(mailClient);
-    go(index + 1);
+  async function onDocument(source: AddedSource) {
+    setAdded(source);
+    setTestLink(null);
+    setTestRead(false);
+    go(ONBOARDING_STEPS.indexOf("test"));
+    const result = await createOnboardingTestLink(source.documentId);
+    if ("error" in result) toast.error(result.error);
+    else setTestLink(result);
   }
 
-  function leave() {
+  function leave(to: string) {
     startLeaving(async () => {
       await completeOnboarding();
-      router.push("/dashboard");
+      router.push(to);
     });
   }
 
@@ -78,7 +78,7 @@ export function OnboardingWizard({
       <header className="mx-auto flex h-14 w-full max-w-3xl items-center justify-between gap-6 px-4 sm:px-6">
         <Logo />
         {index < LAST && (
-          <Button variant="ghost" size="sm" disabled={leaving} onClick={leave}>
+          <Button variant="ghost" size="sm" disabled={leaving} onClick={() => leave("/dashboard")}>
             Passer
           </Button>
         )}
@@ -111,17 +111,17 @@ export function OnboardingWizard({
         </nav>
 
         <div key={step} className="animate-rise">
-          {step === "mail" && <MailStep firstName={firstName} value={mailClient} onChange={setMailClient} />}
-          {step === "install" && (
-            <InstallStep
-              mailClient={mailClient}
+          {step === "value" && <ValueStep firstName={firstName} />}
+          {step === "drop" && <DropStep uploadPrefix={uploadPrefix} onCreated={(source) => void onDocument(source)} />}
+          {step === "test" && <TestStep testLink={testLink} onRead={() => setTestRead(true)} />}
+          {step === "daily" && (
+            <DailyStep
+              askOffer={askOffer}
+              initialMailClient={initialMailClient}
               connected={connected}
-              account={account}
               chromeStoreUrl={chromeStoreUrl}
-              onChangeMailClient={() => go(ONBOARDING_STEPS.indexOf("mail"))}
             />
           )}
-          {step === "start" && <StartStep tool={toolFor(mailClient)} askOffer={askOffer} uploadPrefix={uploadPrefix} />}
         </div>
 
         <footer className="mt-12 flex items-center justify-between gap-4 border-t border-border pt-6">
@@ -131,22 +131,40 @@ export function OnboardingWizard({
               Retour
             </Button>
           )}
-          {index < LAST ? (
-            <Button size="lg" className="ml-auto" disabled={step === "mail" && !mailClient} onClick={next}>
-              {step === "install" && !isToolConnected(mailClient, connected) ? "Plus tard, continuer" : "Continuer"}
+          {step === "value" && (
+            <Button size="lg" className="ml-auto" onClick={() => go(index + 1)}>
+              On essaie avec un de vos documents
               <ArrowRight />
             </Button>
-          ) : (
-            <Button
-              size="lg"
-              variant={hasDocument ? "default" : "outline"}
-              className="ml-auto"
-              disabled={leaving}
-              onClick={leave}
-            >
-              {hasDocument ? "Aller au tableau de bord" : "Je le ferai plus tard"}
+          )}
+          {step === "drop" && added && (
+            <Button size="lg" variant="outline" className="ml-auto" onClick={() => go(index + 1)}>
+              Continuer avec ce document
               <ArrowRight />
             </Button>
+          )}
+          {step === "test" && (
+            <Button size="lg" variant={testRead ? "default" : "ghost"} className="ml-auto" onClick={() => go(index + 1)}>
+              {testRead ? "Continuer" : "Passer cette étape"}
+              <ArrowRight />
+            </Button>
+          )}
+          {step === "daily" && (
+            <div className="ml-auto flex flex-wrap justify-end gap-2">
+              {added && (
+                <Button size="lg" variant="ghost" disabled={leaving} onClick={() => leave("/dashboard")}>
+                  Tableau de bord
+                </Button>
+              )}
+              <Button
+                size="lg"
+                disabled={leaving}
+                onClick={() => leave(added ? `/links/${added.linkId}?new=1` : "/dashboard")}
+              >
+                {added ? "Envoyer mon document à un prospect" : "Aller à mon tableau de bord"}
+                <ArrowRight />
+              </Button>
+            </div>
           )}
         </footer>
       </main>

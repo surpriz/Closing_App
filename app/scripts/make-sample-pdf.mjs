@@ -92,6 +92,9 @@ pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
 pdf += offsets.map((o) => `${String(o).padStart(10, "0")} 00000 n \n`).join("");
 pdf += `trailer\n<< /Size ${objects.length + 1} /Root ${catalogId} 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`;
 
-mkdirSync("samples", { recursive: true });
-writeFileSync("samples/devis-exemple.pdf", Buffer.from(pdf, "latin1"));
-console.log("samples/devis-exemple.pdf written");
+// Also the sample offered by the welcome tour to a seller with no document at hand
+for (const path of ["samples/devis-exemple.pdf", "public/onboarding/exemple-devis.pdf"]) {
+  mkdirSync(path.slice(0, path.lastIndexOf("/")), { recursive: true });
+  writeFileSync(path, Buffer.from(pdf, "latin1"));
+  console.log(`${path} written`);
+}

@@ -31,6 +31,8 @@ export async function createDocumentLink(input: {
   followupsEnabled?: boolean;
   // Inserted in an email that is not sent yet: confirmed by confirmLinkSent
   draft?: boolean;
+  /** The seller's own link from the welcome tour: always personal, never counted. */
+  onboardingTest?: boolean;
 }) {
   const [document, settings, timeZone] = await Promise.all([
     prisma.document.findFirst({
@@ -52,7 +54,7 @@ export async function createDocumentLink(input: {
   const now = new Date();
   // Sent to someone (a contact, an email from the extension): never a shared link
   const defaults = linkDefaultsFor(document.docType, settings, now, timeZone, {
-    allowShared: !prospect && !input.source,
+    allowShared: !prospect && !input.source && !input.onboardingTest,
     kind: document.kind,
   });
   const autoSettings = input.requireEmail === undefined && input.expiresAt === undefined;
@@ -75,6 +77,7 @@ export async function createDocumentLink(input: {
       sentAt: input.draft ? null : now,
       draftAt: input.draft ? now : null,
       source: input.source ?? null,
+      isOnboardingTest: input.onboardingTest ?? false,
       prospects: prospect
         ? {
             create: {

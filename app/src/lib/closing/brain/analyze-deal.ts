@@ -51,6 +51,7 @@ export async function analyzeDeal(
     !loaded ||
     loaded.link.archivedAt ||
     loaded.link.shared ||
+    loaded.link.isOnboardingTest ||
     !ANALYZED_STATUSES.includes(loaded.link.dealStatus) ||
     expired
   ) {

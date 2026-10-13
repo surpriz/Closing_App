@@ -1,6 +1,7 @@
 import { PenLine, Send } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { AutopilotBanner } from "@/components/dashboard/autopilot-banner";
 import { NewLinkButton } from "@/components/dashboard/create-link-form";
@@ -56,6 +57,7 @@ import { getSellerPrefs } from "@/lib/closing/notify/preferences";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
 import { prisma } from "@/lib/db";
 import { formatInTimeZone, formatRelative } from "@/lib/format";
+import { shouldForceOnboarding } from "@/lib/onboarding";
 import { isManagerRole } from "@/lib/roles";
 import { requireWorkspace } from "@/lib/session";
 
@@ -68,8 +70,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
   // A seller's day is their own deals; the team view is /equipe
   const { user, organization, role, scope } = await requireWorkspace();
   const organizationId = organization.id;
-  // No forced tour: the first screen is the drop zone. Setting up the mailbox stays one click away.
-  const { mailClient } = await getSellerPrefs(user.id, organizationId);
+  const { mailClient, onboardingCompletedAt } = await getSellerPrefs(user.id, organizationId);
   const mine = { organizationId, ...sellerLinks(scope) };
   const now = new Date();
   const period = parsePeriod((await props.searchParams).p);
@@ -118,12 +119,14 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
       },
     }),
     prisma.link.count({ where: { ...mine, archivedAt: null, draftAt: null } }),
-    // Bots and the seller's own reads are flagged isBot
+    // Bots and the seller's own reads are flagged isBot; the tour's test link is not a prospect
     prisma.documentView.findFirst({
-      where: { link: mine, isBot: false },
+      where: { link: { ...mine, isOnboardingTest: false }, isBot: false },
       select: { id: true },
     }),
   ]);
+  // A fresh seller is walked through a first document once; anyone joining a workspace in use is not
+  if (shouldForceOnboarding({ onboardingCompletedAt, documentCount })) redirect("/bienvenue");
   const uploadPrefix = documentUploadPrefix(organizationId);
   const pitchPrefix = pitchUploadPrefix(organizationId);
 
@@ -154,7 +157,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
           <p className="text-sm text-muted-foreground">
             Vous envoyez depuis Gmail ou Outlook ?{" "}
             <Link
-              href="/bienvenue"
+              href="/bienvenue?etape=outil"
               className="text-foreground underline underline-offset-4"
             >
               Clozer peut créer le lien directement dans vos emails

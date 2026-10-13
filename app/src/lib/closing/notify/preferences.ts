@@ -51,6 +51,9 @@ export function upsertSellerPrefs(
   data: Partial<SellerPrefs> & {
     extensionSeenAt?: Date;
     onboardingCompletedAt?: Date;
+    onboardingStartedAt?: Date;
+    onboardingTestReadAt?: Date;
+    onboardingEmailsOff?: boolean;
     mailToolTipHiddenAt?: Date;
     mailClient?: string;
     bookingUrl?: string | null;

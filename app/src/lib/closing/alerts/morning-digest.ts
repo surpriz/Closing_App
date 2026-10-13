@@ -120,7 +120,10 @@ async function loadDigestData(
       orderBy: { createdAt: "asc" },
       select: { content: true, linkId: true, createdAt: true, link: linkLabel },
     }),
-    prisma.documentView.groupBy({ by: ["linkId"], where: { isBot: false, startedAt: { gte: since }, link: mine } }),
+    prisma.documentView.groupBy({
+      by: ["linkId"],
+      where: { isBot: false, startedAt: { gte: since }, link: { ...mine, isOnboardingTest: false } },
+    }),
     prisma.followup.count({ where: { status: { in: ["SENT", "DELIVERED"] }, sentAt: { gte: since }, link: mine } }),
     prisma.followup.count({ where: { status: "FAILED", updatedAt: { gte: since }, link: mine } }),
     prisma.prospect.count({ where: { unsubscribedAt: { gte: since }, link: mine } }),

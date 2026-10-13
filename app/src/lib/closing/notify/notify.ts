@@ -31,10 +31,12 @@ export async function notifySeller(input: {
     select: {
       createdById: true,
       organizationId: true,
+      isOnboardingTest: true,
       organization: { select: { settings: { select: { alertChannels: true, alertEmail: true } } } },
     },
   });
-  if (!link) return false;
+  // The seller's own test from the welcome tour: they are looking at it already
+  if (!link || link.isOnboardingTest) return false;
 
   const recipient = await resolveRecipient(link);
   const prefs = recipient ? await getSellerPrefs(recipient.id, link.organizationId) : null;

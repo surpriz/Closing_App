@@ -54,12 +54,36 @@ export function mailToolTip(
   return tool;
 }
 
-export const ONBOARDING_STEPS = ["mail", "install", "start"] as const;
+/**
+ * Value first, tools last: the seller drops a real document and opens it as
+ * their prospect would before anything about mailboxes or extensions.
+ */
+export const ONBOARDING_STEPS = ["value", "drop", "test", "daily"] as const;
 
 export type OnboardingStep = (typeof ONBOARDING_STEPS)[number];
 
 export const STEP_LABELS: Record<OnboardingStep, string> = {
-  mail: "Votre messagerie",
-  install: "L'outil",
-  start: "C'est parti",
+  value: "Ce que fait Clozer",
+  drop: "Votre document",
+  test: "Côté prospect",
+  daily: "Au quotidien",
 };
+
+/** Name of the link the seller opens during the tour. */
+export function testLinkName(documentName: string) {
+  return `Test · ${documentName}`.slice(0, 200);
+}
+
+/**
+ * During the tour the seller reads their own test link, often in the same
+ * browser: their view is flagged fromSeller (isBot too) and still counts here.
+ * A crawler is isBot without being the seller.
+ */
+export function isTestRead(view: { isBot: boolean; fromSeller: boolean }) {
+  return view.fromSeller || !view.isBot;
+}
+
+/** Forced once: a fresh seller who has not seen the tour, in a workspace with nothing in it yet. */
+export function shouldForceOnboarding(input: { onboardingCompletedAt: Date | null; documentCount: number }) {
+  return !input.onboardingCompletedAt && input.documentCount === 0;
+}

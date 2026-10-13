@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { OnboardingWizard } from "@/components/onboarding/onboarding-wizard";
+import { ToolSetup } from "@/components/onboarding/tool-setup";
 import { documentUploadPrefix } from "@/lib/blob";
 import { getSellerPrefs } from "@/lib/closing/notify/preferences";
 import { guessMailClient } from "@/lib/closing/share/compose";
@@ -18,30 +19,40 @@ export const metadata: Metadata = { title: "Prise en main" };
 // reachable from the account menu for whoever wants the tour again
 export default async function WelcomePage(props: PageProps<"/bienvenue">) {
   const { user, organization, role } = await requireWorkspace("/bienvenue");
-  const [prefs, tokens, documentCount, settings] = await Promise.all([
+  const [prefs, tokens, settings] = await Promise.all([
     getSellerPrefs(user.id, organization.id),
     prisma.extensionToken.findMany({
       where: { userId: user.id, organizationId: organization.id, revokedAt: null },
       select: { label: true },
     }),
-    prisma.document.count({ where: { organizationId: organization.id, archivedAt: null } }),
     getWorkspaceSettings(organization.id),
   ]);
-  const mailClient = parseMailClient(prefs.mailClient);
-  // ?etape=outil, from the share screen tip: straight to the setup, once the mailbox is confirmed
-  const toSetup = (await props.searchParams).etape === "outil" && mailClient;
+  const savedMailClient = parseMailClient(prefs.mailClient);
+  const firstName = user.name?.trim().split(/\s+/)[0] ?? null;
+  const connected = connectedClients(tokens);
+  const chromeStoreUrl = getEnv().EXTENSION_STORE_URL ?? null;
+
+  // Straight to plugging in the mailbox: share screen tip, settings, the tour's last step
+  if ((await props.searchParams).etape === "outil") {
+    return (
+      <ToolSetup
+        firstName={firstName}
+        initialMailClient={savedMailClient}
+        connected={connected}
+        account={{ email: user.email, workspace: organization.name }}
+        chromeStoreUrl={chromeStoreUrl}
+      />
+    );
+  }
 
   return (
     <OnboardingWizard
-      firstName={user.name?.trim().split(/\s+/)[0] ?? null}
-      account={{ email: user.email, workspace: organization.name }}
-      initialMailClient={mailClient ?? parseMailClient(guessMailClient(user.email))}
-      initialStep={toSetup ? "install" : "mail"}
-      connected={connectedClients(tokens)}
+      firstName={firstName}
+      initialMailClient={savedMailClient ?? parseMailClient(guessMailClient(user.email))}
+      connected={connected}
       askOffer={isManagerRole(role) && !settings.offerDescription?.trim()}
-      hasDocument={documentCount > 0}
       uploadPrefix={documentUploadPrefix(organization.id)}
-      chromeStoreUrl={getEnv().EXTENSION_STORE_URL ?? null}
+      chromeStoreUrl={chromeStoreUrl}
     />
   );
 }

@@ -37,6 +37,7 @@ model User {
   extensionTokens         ExtensionToken[]
   sellerAlerts            SellerAlert[]
   notificationPreferences NotificationPreference[]
+  onboardingEmails        OnboardingEmail[]
   helpMessages            HelpMessage[]
   helpFeedback            HelpFeedback[]
 
@@ -117,6 +118,7 @@ model Organization {
   suspendedReason String?
 
   notificationPreferences NotificationPreference[]
+  onboardingEmails        OnboardingEmail[]
   helpMessages            HelpMessage[]
   helpFeedback            HelpFeedback[]
 
@@ -612,6 +614,8 @@ model Link {
   // One link for many readers (a deck posted or forwarded): each reader gives their email and
   // becomes a lead the seller can turn into a personal link. Never a deal of its own.
   shared       Boolean   @default(false)
+  // Opened by the seller during the welcome tour to see the prospect side: never a deal, never counted
+  isOnboardingTest Boolean @default(false)
   // A reader of a shared link gets their own link at the gate: a deal like any other
   parentLinkId String?
   parentLink   Link?     @relation("SharedReaders", fields: [parentLinkId], references: [id], onDelete: SetNull)
@@ -910,6 +914,9 @@ model NotificationPreference {
   mailToolTipHiddenAt   DateTime? // "ne plus afficher" on the share screen tip about the extension / add-in
   mailClient            String? // gmail | outlook_web | outlook_desktop | other, picked during onboarding
   bookingUrl            String? // the seller's booking page (Calendly, Cal.com, HubSpot…), offered on their links
+  onboardingStartedAt   DateTime? // first time on the welcome tour
+  onboardingTestReadAt  DateTime? // the seller saw their own test link being read during the tour
+  onboardingEmailsOff   Boolean   @default(false) // unsubscribed from the getting-started emails
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1373,4 +1380,18 @@ model CompanyLookup {
   fetchedAt     DateTime @default(now())
 
   @@map("company_lookups")
+}
+
+// Getting-started emails already sent to a seller, one row per kind (welcome, no_document…)
+model OnboardingEmail {
+  id             String       @id @default(cuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  kind           String
+  sentAt         DateTime     @default(now())
+
+  @@unique([userId, organizationId, kind])
+  @@map("onboarding_emails")
 }

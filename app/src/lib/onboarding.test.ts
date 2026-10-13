@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { isToolConnected, mailToolTip, parseMailClient, toolFor } from "./onboarding";
+import {
+  isTestRead,
+  isToolConnected,
+  mailToolTip,
+  ONBOARDING_STEPS,
+  parseMailClient,
+  shouldForceOnboarding,
+  testLinkName,
+  toolFor,
+} from "./onboarding";
 
 describe("onboarding", () => {
   it("picks the tool for each mailbox", () => {
@@ -34,5 +43,28 @@ describe("onboarding", () => {
     expect(mailToolTip("other", none)).toBeNull();
     expect(mailToolTip(null, none)).toBe("unknown");
     expect(mailToolTip(null, { chrome: false, outlook: true })).toBeNull();
+  });
+
+  it("shows the value before the tools", () => {
+    expect(ONBOARDING_STEPS[0]).toBe("value");
+    expect(ONBOARDING_STEPS.at(-1)).toBe("daily");
+  });
+
+  it("counts the seller's own read of the test link, not a crawler's", () => {
+    expect(isTestRead({ isBot: true, fromSeller: true })).toBe(true);
+    expect(isTestRead({ isBot: false, fromSeller: false })).toBe(true);
+    expect(isTestRead({ isBot: true, fromSeller: false })).toBe(false);
+  });
+
+  it("forces the tour only on a fresh, empty workspace", () => {
+    expect(shouldForceOnboarding({ onboardingCompletedAt: null, documentCount: 0 })).toBe(true);
+    expect(shouldForceOnboarding({ onboardingCompletedAt: new Date(), documentCount: 0 })).toBe(false);
+    // Invited into a workspace already in use
+    expect(shouldForceOnboarding({ onboardingCompletedAt: null, documentCount: 3 })).toBe(false);
+  });
+
+  it("names the test link after the document", () => {
+    expect(testLinkName("Devis Acme.pdf")).toBe("Test · Devis Acme.pdf");
+    expect(testLinkName("x".repeat(300))).toHaveLength(200);
   });
 });

@@ -25,7 +25,7 @@ export function MailStep({
     <div className="space-y-8">
       <StepHeading
         title="Vous écrivez vos emails depuis…"
-        lead={`${firstName ? `Bienvenue, ${firstName}. ` : "Bienvenue sur Clozer. "}Clozer se branche sur votre messagerie pour remplacer vos pièces jointes par des liens, sans changer vos habitudes. Vous pourrez revoir ce guide depuis votre compte.`}
+        lead={`${firstName ? `${firstName}, c` : "C"}lozer peut se brancher sur votre messagerie : vous joignez le PDF comme d'habitude, il le remplace par un lien.`}
       />
       <div role="radiogroup" aria-label="Votre messagerie" className="grid gap-3 sm:grid-cols-2">
         {MAIL_CLIENTS.map((client) => {
