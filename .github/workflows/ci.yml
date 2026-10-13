@@ -67,6 +67,7 @@ jobs:
           name: chrome-extension
           path: extension/.output/*-chrome.zip
           if-no-files-found: error
+          include-hidden-files: true
 
   outlook:
     runs-on: ubuntu-latest
