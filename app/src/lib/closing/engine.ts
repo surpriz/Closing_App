@@ -10,6 +10,7 @@ import { readPendingDocuments } from "./documents/read-pages";
 import { refreshEngagementScore } from "./engagement/refresh-score";
 import { notExpired } from "./expiry";
 import { dispatchDueFollowups } from "./followups/dispatch";
+import { sendOnboardingEmails } from "./onboarding-emails";
 import { cancelExpiredFollowups, generateFollowupMessage } from "./followups/queue";
 import { purgeExpiredData } from "./retention/purge";
 import { scanAntiGhosting } from "./triggers/anti-ghosting";
@@ -67,6 +68,7 @@ export async function runClosingTick(now = new Date()) {
   // Scores first: the analysis reads them
   const dealsAnalyzed = await analyzePendingDeals(now, { includeQuiet: true });
   const digests = await sendMorningDigests(now);
+  const onboardingEmails = await sendOnboardingEmails(now);
   const webhooksRetried = await retryEngagementWebhooks(now);
   const draftsArchived = await archiveStaleDrafts(now);
   const purged = await purgeExpiredData(now);
@@ -86,6 +88,7 @@ export async function runClosingTick(now = new Date()) {
     documentsRead,
     dealsAnalyzed,
     digests,
+    onboardingEmails,
     webhooksRetried,
     draftsArchived,
     purged,

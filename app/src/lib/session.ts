@@ -5,7 +5,9 @@ import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
 
 import { auth } from "@/lib/auth";
+import { inBackground } from "@/lib/closing/background";
 import type { SellerScope } from "@/lib/closing/dashboard/queries";
+import { sendDueOnboardingEmail } from "@/lib/closing/onboarding-emails";
 import { prisma } from "@/lib/db";
 import { randomSlug } from "@/lib/ids";
 import { PLATFORM_ADMIN_ROLE, isPlatformAdminEmail } from "@/lib/platform-admin";
@@ -89,6 +91,7 @@ const resolveWorkspace = cache(async (): Promise<Resolved> => {
       settings: { create: {} },
     },
   });
+  inBackground("welcome-email", () => sendDueOnboardingEmail(user.id, organization.id, now));
 
   return {
     kind: "ok",
