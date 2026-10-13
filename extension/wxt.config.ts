@@ -10,6 +10,7 @@ export default defineConfig({
     return {
       name: mode === "production" ? "Clozer" : `Clozer (${mode})`,
       description: "Remplacez une pièce jointe PDF par un lien Clozer dans Gmail et Outlook, et sachez quand un prospect lit votre proposition.",
+      homepage_url: "https://www.clozer.club/support",
       // notifications + alarms + idle: "your prospect is reading right now", polled every 30 s
       permissions: ["storage", "notifications", "alarms", "idle"],
       host_permissions: [`${apiOrigin}/*`],
