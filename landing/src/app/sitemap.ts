@@ -11,41 +11,11 @@ const HOME_UPDATED_AT = new Date("2026-10-12");
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
-    {
-      url: `${BASE}/`,
-      lastModified: HOME_UPDATED_AT,
-      changeFrequency: "weekly",
-      priority: 1,
-    },
-    {
-      url: `${BASE}/cgu`,
-      lastModified: LEGAL_UPDATED_AT,
-      changeFrequency: "yearly",
-      priority: 0.3,
-    },
-    {
-      url: `${BASE}/confidentialite`,
-      lastModified: PRIVACY_UPDATED_AT,
-      changeFrequency: "yearly",
-      priority: 0.3,
-    },
-    {
-      url: `${BASE}/sous-traitants`,
-      lastModified: LEGAL_UPDATED_AT,
-      changeFrequency: "yearly",
-      priority: 0.3,
-    },
-    {
-      url: `${BASE}/mentions-legales`,
-      lastModified: LEGAL_UPDATED_AT,
-      changeFrequency: "yearly",
-      priority: 0.3,
-    },
-    {
-      url: `${BASE}/support`,
-      lastModified: SUPPORT_UPDATED_AT,
-      changeFrequency: "monthly",
-      priority: 0.4,
-    },
+    { url: `${BASE}/`, lastModified: HOME_UPDATED_AT, changeFrequency: "weekly", priority: 1 },
+    { url: `${BASE}/cgu`, lastModified: LEGAL_UPDATED_AT, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${BASE}/confidentialite`, lastModified: PRIVACY_UPDATED_AT, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${BASE}/sous-traitants`, lastModified: LEGAL_UPDATED_AT, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${BASE}/mentions-legales`, lastModified: LEGAL_UPDATED_AT, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${BASE}/support`, lastModified: SUPPORT_UPDATED_AT, changeFrequency: "monthly", priority: 0.4 },
   ];
 }
