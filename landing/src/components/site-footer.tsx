@@ -8,6 +8,7 @@ const LEGAL_LINKS = [
   { href: "/cgu", label: "CGU" },
   { href: "/sous-traitants", label: "Sous-traitants" },
   { href: "/mentions-legales", label: "Mentions légales" },
+  { href: "/support", label: "Support" },
 ];
 
 export function SiteFooter() {
@@ -17,11 +18,18 @@ export function SiteFooter() {
         <Logo />
         <div className="flex flex-wrap gap-x-6 gap-y-2">
           {LEGAL_LINKS.map((link) => (
-            <Link key={link.href} href={link.href} className="underline-offset-4 transition-colors hover:text-ink hover:underline">
+            <Link
+              key={link.href}
+              href={link.href}
+              className="underline-offset-4 transition-colors hover:text-ink hover:underline"
+            >
               {link.label}
             </Link>
           ))}
-          <a href={`mailto:${CONTACT_EMAIL}`} className="underline-offset-4 transition-colors hover:text-ink hover:underline">
+          <a
+            href={`mailto:${CONTACT_EMAIL}`}
+            className="underline-offset-4 transition-colors hover:text-ink hover:underline"
+          >
             {CONTACT_EMAIL}
           </a>
         </div>
