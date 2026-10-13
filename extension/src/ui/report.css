@@ -1,0 +1,119 @@
+/*
+ * Page-level report sheet shared by the popup and the Outlook task pane (the in-page panel
+ * has its own copy in styles.ts, scoped to its shadow root). Header strip above an ink rule,
+ * hairlines inside, near-square controls, ink for the one primary action.
+ */
+:root { color-scheme: light dark; }
+* { box-sizing: border-box; scrollbar-width: thin; scrollbar-color: var(--input) transparent; }
+::selection { background: var(--iron-3); color: var(--selection-ink); }
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font: 13px/1.45 var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+main { display: grid; }
+p { margin: 0; }
+h1, h2 { margin: 0; text-wrap: balance; }
+
+/* Report header strip: logo left, workspace right, ink rule under */
+.strip {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  height: 48px; padding: 0 16px; border-bottom: 1px solid var(--foreground);
+}
+.strip h1 { display: flex; }
+.logo { display: inline-flex; align-items: center; gap: 8px; color: var(--foreground); }
+.logo svg { display: block; flex: none; }
+.wordmark { font-weight: 700; font-size: 20px; line-height: 1; letter-spacing: -0.03em; font-stretch: 72%; }
+.workspace { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted-foreground); font-size: 12px; }
+.sheet { padding: 16px; display: grid; gap: 16px; }
+
+h2 { font-size: 13px; font-weight: 600; line-height: 1.3; }
+.muted { color: var(--muted-foreground); }
+.small { font-size: 12px; }
+.error {
+  color: var(--destructive); padding: 8px 10px; border-radius: var(--radius-lg);
+  background: color-mix(in oklch, var(--destructive) 10%, transparent);
+}
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+/* Buttons: ink stamps. Default is the outline, .primary the ink fill. */
+button {
+  min-height: 32px; padding: 0 12px; flex: none; white-space: nowrap;
+  font: 600 13px/1 var(--font-sans);
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in oklch, var(--foreground) 80%, transparent);
+  background: var(--card); color: var(--foreground);
+  cursor: pointer; transition: background-color 150ms ease-out;
+}
+button:hover:not(:disabled) { background: var(--muted); }
+button:active:not(:disabled) { transform: scale(0.98); }
+button:focus-visible { outline: none; border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 30%, transparent); }
+button:disabled { opacity: 0.5; cursor: default; }
+button.primary { background: var(--primary); color: var(--primary-foreground); border-color: transparent; }
+button.primary:hover:not(:disabled) { background: color-mix(in oklch, var(--primary) 85%, var(--card)); }
+button.wide { width: 100%; min-height: 36px; }
+button.link {
+  min-height: 0; justify-self: start; border: 0; padding: 2px 0 0; background: transparent;
+  font-weight: 400; font-size: 12px; color: var(--muted-foreground);
+  text-decoration: underline; text-underline-offset: 2px; text-decoration-color: var(--input);
+}
+button.link:hover:not(:disabled) { background: transparent; color: var(--foreground); text-decoration-color: currentColor; }
+
+input[type="search"] {
+  width: 100%; height: 32px; padding: 0 10px;
+  font: 13px var(--font-sans);
+  border: 1px solid var(--input); border-radius: var(--radius-lg);
+  background: var(--card); color: inherit; caret-color: var(--iron-2);
+}
+input[type="search"]::placeholder { color: var(--muted-foreground); }
+input[type="search"]:focus-visible { outline: none; border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 20%, transparent); }
+
+/* Field groups sit under a hairline, never in a box */
+fieldset { border: 0; border-top: 1px solid var(--border); margin: 0; padding: 10px 0 0; display: grid; gap: 10px; min-width: 0; }
+legend { float: left; width: 100%; padding: 0; margin: 0 0 2px; font-weight: 600; font-size: 12px; }
+legend + * { clear: both; }
+.choice { display: flex; gap: 8px; align-items: flex-start; cursor: pointer; }
+.choice input { margin: 2px 0 0; accent-color: var(--foreground); }
+.choice input:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.choice > span { display: grid; gap: 1px; }
+.choice strong { font-weight: 600; }
+.choice .muted { font-size: 12px; }
+
+/* Reading now: report rows between hairlines. The live dot is the one circle besides the logo's hot spot. */
+.readings-block { display: grid; gap: 8px; }
+.readings { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--foreground); border-bottom: 1px solid var(--foreground); }
+.readings li + li { border-top: 1px solid var(--border); }
+.reader {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px;
+  width: 100%; min-height: 0; padding: 10px 4px; border: 0; border-radius: 0; background: transparent;
+  text-align: left; font-weight: 400; line-height: 1.3;
+}
+.reader:hover:not(:disabled) { background: color-mix(in oklch, var(--muted) 60%, transparent); }
+.reader:focus-visible { border-color: transparent; box-shadow: inset 0 0 0 2px var(--ring); }
+.reader .who { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.field { font: 11px/1.3 var(--font-mono); color: var(--muted-foreground); white-space: nowrap; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--heat-hot); flex: none; animation: live 1.6s ease-in-out infinite; }
+@keyframes live { 50% { opacity: 0.35; } }
+
+/* Settings fold away under a hairline */
+details.settings { display: block; border-top: 1px solid var(--border); padding-top: 12px; }
+details.settings > * + * { margin-top: 12px; }
+details.settings > summary {
+  list-style: none; cursor: pointer; user-select: none; width: max-content;
+  display: flex; align-items: center; gap: 8px; color: var(--muted-foreground); font-size: 12px;
+}
+details.settings > summary:hover { color: var(--foreground); }
+details.settings > summary::-webkit-details-marker { display: none; }
+details.settings > summary::before {
+  content: ""; width: 5px; height: 5px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg); transition: transform 150ms var(--ease-out-soft);
+}
+details.settings[open] > summary::before { transform: rotate(45deg); }
+details.settings > summary:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; border-radius: var(--radius-sm); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}

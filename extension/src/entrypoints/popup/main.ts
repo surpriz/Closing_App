@@ -5,13 +5,19 @@ import { COPY } from "@/lib/copy";
 import { mailHost } from "@/lib/hosts";
 import { ask, type Account } from "@/lib/messages";
 import { getAskFirst, getLinkStyle, setAskFirst, setLinkStyle, type LinkStyle } from "@/lib/preferences";
-import { readerLine, type PulseReader } from "@/lib/pulse";
+import type { PulseReader } from "@/lib/pulse";
 import { h } from "@/ui/dom";
+import { logo } from "@/ui/marks";
+import { readerRows } from "@/ui/readers";
 
 const app = document.getElementById("app")!;
 
-function render(...children: (Node | string | null)[]) {
-  app.replaceChildren(h("h1", {}, "Clozer"), ...children.filter((c): c is Node | string => c !== null));
+// Report header strip (logo, workspace) above an ink rule, then the sheet
+function render(workspace: string | null, ...children: (Node | string | null)[]) {
+  app.replaceChildren(
+    h("header", { class: "strip" }, h("h1", {}, logo(20)), workspace ? h("span", { class: "workspace", title: workspace }, workspace) : null),
+    h("div", { class: "sheet" }, ...children.filter((c): c is Node | string => c !== null)),
+  );
 }
 
 const STYLES: { value: LinkStyle; label: string; hint: string }[] = [
@@ -71,17 +77,10 @@ async function readingNow() {
   const readers = await ask<PulseReader[]>({ type: "readers" }).catch(() => []);
   if (!readers.length) return h("p", { class: "muted" }, COPY.nobodyReading);
   return h(
-    "fieldset",
-    {},
-    h("legend", {}, COPY.readingNow),
-    ...readers.map((reader) =>
-      h(
-        "button",
-        { class: "reader", onclick: () => void browser.tabs.create({ url: `${API_ORIGIN}/links/${reader.linkId}` }) },
-        h("span", { class: "dot" }),
-        readerLine(reader),
-      ),
-    ),
+    "section",
+    { class: "readings-block" },
+    h("h2", {}, COPY.readingNow),
+    readerRows(readers, (reader) => void browser.tabs.create({ url: `${API_ORIGIN}/links/${reader.linkId}` })),
   );
 }
 
@@ -129,7 +128,7 @@ async function pausedOn(account: Account) {
 }
 
 async function show() {
-  render(h("p", { class: "muted" }, COPY.loading));
+  render(null, h("p", { class: "muted" }, COPY.loading));
   let account: Account | null = null;
   let error: string | null = null;
   try {
@@ -140,12 +139,13 @@ async function show() {
 
   if (!account) {
     render(
+      null,
       h("p", {}, COPY.pitch),
       error ? h("p", { class: "error" }, error) : null,
       h(
         "div",
         { class: "row" },
-        h("button", { class: "primary", onclick: () => void ask({ type: "connect" }).then(() => window.close()) }, COPY.connect),
+        h("button", { class: "primary wide", onclick: () => void ask({ type: "connect" }).then(() => window.close()) }, COPY.connect),
       ),
     );
     return;
@@ -153,13 +153,13 @@ async function show() {
 
   const notifications = account.notificationsEnabled !== false;
   render(
-    h("p", {}, COPY.connected(account.user.email)),
+    COPY.workspace(account.organization.name),
     await pausedOn(account),
     notifications ? await readingNow() : null,
     h(
       "div",
       { class: "row" },
-      h("button", { class: "primary", onclick: () => void browser.tabs.create({ url: `${API_ORIGIN}/dashboard` }) }, COPY.openApp),
+      h("button", { class: "primary wide", onclick: () => void browser.tabs.create({ url: `${API_ORIGIN}/dashboard` }) }, COPY.openApp),
     ),
     h(
       "details",
@@ -168,7 +168,7 @@ async function show() {
       notifications ? await callMomentsField() : null,
       await askFirstField(),
       await linkStyleField(),
-      h("p", { class: "muted" }, COPY.workspace(account.organization.name)),
+      h("p", { class: "muted small" }, COPY.connected(account.user.email)),
       disconnectField(),
     ),
   );

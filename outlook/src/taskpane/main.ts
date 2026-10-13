@@ -1,7 +1,9 @@
 import type { LinkStyle } from "@ext/link-html";
 import { COPY } from "@ext/copy";
-import { alertsToShow, readerLine, rememberSeen, type Pulse, type PulseAlert, type PulseReader } from "@ext/pulse";
+import { alertsToShow, rememberSeen, type Pulse, type PulseAlert, type PulseReader } from "@ext/pulse";
 import { h } from "@extui/dom";
+import { logo } from "@extui/marks";
+import { readerRows } from "@extui/readers";
 
 import { api, type Account, type DocumentSummary } from "../lib/api";
 import { isPdfAttachment, parseContext, type AttachmentInfo, type InsertedLink } from "../lib/compose";
@@ -42,7 +44,12 @@ const app = document.getElementById("app")!;
 
 function render() {
   const nodes = !getToken() ? connectView() : mainView();
-  app.replaceChildren(h("h1", {}, "Clozer"), ...nodes.filter((node): node is Node => node !== null));
+  // Report header strip (logo, workspace) above an ink rule, then the sheet
+  const workspace = getToken() && state.account ? COPY.workspace(state.account.organization.name) : null;
+  app.replaceChildren(
+    h("header", { class: "strip" }, h("h1", {}, logo(20)), workspace ? h("span", { class: "workspace", title: workspace }, workspace) : null),
+    h("div", { class: "sheet" }, ...nodes.filter((node): node is Node => node !== null)),
+  );
 }
 
 function statusView() {
@@ -53,7 +60,7 @@ function statusView() {
     { class: `status${status.kind === "error" ? " error" : ""}`, role: status.kind === "error" ? "alert" : "status" },
     h("strong", {}, status.title),
     status.detail ? h("span", { class: "small" }, status.detail) : null,
-    status.action ? h("div", { class: "row" }, h("button", { class: "primary", onclick: status.action.run }, status.action.label)) : null,
+    status.action ? h("div", { class: "row" }, h("button", { onclick: status.action.run }, status.action.label)) : null,
   );
 }
 
@@ -75,7 +82,7 @@ function connectView(): (Node | null)[] {
   return [
     h("p", {}, "Remplacez le PDF joint à un email par un lien Clozer, et voyez qui consulte vos propositions."),
     state.pairingError ? h("p", { class: "error", role: "alert" }, state.pairingError) : null,
-    h("button", { class: "primary", onclick: () => void connect() }, COPY.connect),
+    h("button", { class: "primary wide", onclick: () => void connect() }, COPY.connect),
   ];
 }
 
@@ -127,14 +134,15 @@ function attachmentsView(compose: Office.MessageCompose) {
     "fieldset",
     {},
     h("legend", {}, "PDF joints"),
-    ...pdfs.map((attachment) =>
+    // One ink action per group: the first PDF; the others are outlined
+    ...pdfs.map((attachment, index) =>
       h(
         "div",
         { class: "item" },
         h("span", { title: attachment.name }, attachment.name),
         h(
           "button",
-          { class: "primary", disabled: state.busy, onclick: () => void replaceInPane(compose, attachment) },
+          { class: index === 0 ? "primary" : "", disabled: state.busy, onclick: () => void replaceInPane(compose, attachment) },
           COPY.replaceWithLink,
         ),
       ),
@@ -245,17 +253,18 @@ function alertsView() {
   if (!state.alerts.length) return null;
   return h(
     "div",
-    { class: "row", style: "display:grid" },
+    { class: "alerts" },
+    // The pane keeps one ink action (the PDF swap): alert actions stay outline
     ...state.alerts.map((alert) =>
       h(
         "div",
-        { class: "alert", role: "status" },
-        h("strong", {}, alert.title),
-        h("span", { class: "small" }, alert.body),
+        { class: alert.priority === "ACTION" ? "alert action" : "alert", role: "status" },
+        h("strong", {}, h("span", { class: "dot", "aria-hidden": "true" }), alert.title),
+        h("span", { class: "small muted" }, alert.body),
         h(
           "div",
           { class: "row" },
-          alert.canMarkWon ? h("button", { class: "primary", onclick: () => void markWon(alert) }, "Marquer gagné") : null,
+          alert.canMarkWon ? h("button", { class: "", onclick: () => void markWon(alert) }, "Marquer gagné") : null,
           h("button", { onclick: () => openInBrowser(alert.url) }, "Ouvrir"),
           h("button", { class: "link", onclick: () => dismissAlert(alert.id) }, "OK"),
         ),
@@ -267,17 +276,10 @@ function alertsView() {
 function readersView() {
   if (!state.readers.length) return h("p", { class: "muted small" }, COPY.nobodyReading);
   return h(
-    "fieldset",
-    {},
-    h("legend", {}, COPY.readingNow),
-    ...state.readers.map((reader) =>
-      h(
-        "button",
-        { class: "reader", onclick: () => openInBrowser(`${APP_ORIGIN}/links/${reader.linkId}`) },
-        h("span", { class: "dot" }),
-        readerLine(reader),
-      ),
-    ),
+    "section",
+    { class: "readings-block" },
+    h("h2", {}, COPY.readingNow),
+    readerRows(state.readers, (reader) => openInBrowser(`${APP_ORIGIN}/links/${reader.linkId}`)),
   );
 }
 
@@ -311,7 +313,6 @@ function settingsView() {
     linkStyleView(),
     askFirstView(),
     account ? h("p", { class: "muted small" }, COPY.connected(account.user.email)) : null,
-    account ? h("p", { class: "muted small" }, COPY.workspace(account.organization.name)) : null,
     disconnectView(),
   );
 }

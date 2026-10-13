@@ -2,6 +2,7 @@ import type { MailAlert } from "@/lib/pulse";
 import { COPY } from "@/lib/copy";
 
 import { h } from "./dom";
+import { closeIcon, logoMark } from "./marks";
 import { getLayer } from "./widget";
 
 export type BannerHandlers = {
@@ -25,9 +26,14 @@ export function renderBanners(alerts: MailAlert[], handlers: BannerHandlers) {
       return h(
         "div",
         { class: action ? "banner action" : "banner", role: "status" },
-        h("span", { class: "dot", "aria-hidden": "true" }),
-        h("div", { class: "text" }, h("p", { class: "title" }, alert.title), h("p", { class: "muted" }, alert.body)),
-        h("button", { class: "close", type: "button", "aria-label": COPY.close, onclick: () => handlers.close(alert) }, "×"),
+        h("span", { class: "mark" }, logoMark(18)),
+        h(
+          "div",
+          { class: "text" },
+          h("p", { class: "title" }, h("span", { class: "dot", "aria-hidden": "true" }), alert.title),
+          h("p", { class: "muted" }, alert.body),
+        ),
+        h("button", { class: "close", type: "button", "aria-label": COPY.close, title: COPY.close, onclick: () => handlers.close(alert) }, closeIcon()),
         h(
           "div",
           { class: "row" },

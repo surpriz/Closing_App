@@ -63,9 +63,14 @@ export function pruneSnoozes(snoozed: Record<string, number>, now: number) {
   return Object.fromEntries(Object.entries(snoozed).filter(([, until]) => until > now));
 }
 
+/** Who is reading: "Acme · Léa", or the link's label alone. */
+export function readerWho(reader: PulseReader) {
+  return reader.name && reader.name !== reader.label ? `${reader.label} · ${reader.name}` : reader.label;
+}
+
 /** Popup line for one reader: "Acme · Léa, page 4". */
 export function readerLine(reader: PulseReader) {
-  const who = reader.name && reader.name !== reader.label ? `${reader.label} · ${reader.name}` : reader.label;
+  const who = readerWho(reader);
   return reader.currentPage ? `${who}, page ${reader.currentPage}` : who;
 }
 

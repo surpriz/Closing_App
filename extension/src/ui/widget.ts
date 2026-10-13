@@ -2,6 +2,8 @@ import type { DocumentSummary } from "@/lib/messages";
 import { COPY } from "@/lib/copy";
 
 import { h } from "./dom";
+import { loadInPageFonts } from "./fonts";
+import { logoMark } from "./marks";
 import { STYLES } from "./styles";
 
 let host: HTMLElement | null = null;
@@ -9,6 +11,7 @@ let layer: HTMLElement | null = null;
 
 export function getLayer() {
   if (host?.isConnected && layer) return layer;
+  loadInPageFonts();
   host = document.createElement("clozer-root");
   const shadow = host.attachShadow({ mode: "open" });
   shadow.append(h("style", {}, STYLES));
@@ -43,7 +46,7 @@ export class ComposeWidget {
   private version = 0;
 
   constructor(onButton: () => void) {
-    const fab = h("button", { class: "fab", type: "button", title: "Insérer un lien Clozer", "aria-label": "Insérer un lien Clozer", onclick: onButton }, "C");
+    const fab = h("button", { class: "fab", type: "button", title: "Insérer un lien Clozer", "aria-label": "Insérer un lien Clozer", onclick: onButton }, logoMark(18));
     this.box.append(this.panel, this.live, fab);
     this.box.addEventListener("keydown", (event) => {
       if (event.key === "Escape") this.hide();
@@ -101,6 +104,11 @@ export class ComposeWidget {
     this.panel.hidden = false;
   }
 
+  // The reticle tells the seller this panel is Clozer's, not the mail client's
+  private head(title: string, role?: string) {
+    return h("div", { class: "head" }, logoMark(14), h("p", role ? { class: "title", role } : { class: "title" }, title));
+  }
+
   private actions(actions: Action[]) {
     return h(
       "div",
@@ -112,7 +120,7 @@ export class ComposeWidget {
   message(title: string, text: string | (string | null)[] | null, actions: Action[] = []) {
     const lines = (Array.isArray(text) ? text : [text]).filter((line): line is string => !!line);
     this.live.textContent = lines.length ? `${title}. ${lines.join(" ")}` : title;
-    this.show(h("p", { class: "title" }, title), ...lines.map((line) => h("p", { class: "muted" }, line)), actions.length ? this.actions(actions) : null);
+    this.show(this.head(title), ...lines.map((line) => h("p", { class: "muted" }, line)), actions.length ? this.actions(actions) : null);
   }
 
   error(text: string, actions: Action[] = []) {
@@ -121,7 +129,7 @@ export class ComposeWidget {
 
   progress(title: string, percent: number | null) {
     const bar = h("div", { class: "bar" }, h("span", { style: `width: ${percent ?? 15}%` }));
-    this.show(h("p", { class: "title", role: "status" }, title), bar);
+    this.show(this.head(title, "status"), bar);
   }
 
   picker(handlers: PickerHandlers) {
@@ -156,7 +164,7 @@ export class ComposeWidget {
     });
 
     this.show(
-      h("p", { class: "title" }, COPY.insertDocument),
+      this.head(COPY.insertDocument),
       this.actions([
         { label: COPY.addPdf, run: () => file.click(), primary: true },
         { label: COPY.close, run: () => this.hide() },

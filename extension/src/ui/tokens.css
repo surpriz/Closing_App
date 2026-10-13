@@ -1,41 +1,72 @@
 /*
- * The app's palette (app/src/app/globals.css), same names, for the popup, the
- * in-page panel (shadow root, hence :host) and the Outlook pane. Ink on cold
- * paper; colour only where it means something: heat, success, trouble, action.
+ * Thermography report, the app's tokens (app/src/app/globals.css), same names, for the
+ * popup, the in-page panel (shadow root, hence :host) and the Outlook pane.
+ * Graphite ink on cool report paper, hairline rules, near-square corners. The ironbow
+ * scale (iron-0 cold → iron-4 white-hot) only paints heat data; chrome stays achromatic.
+ * Variables only: this file is also inlined as text into the shadow root.
  */
 :root, :host {
-  --background: oklch(0.982 0.004 255);
-  --foreground: oklch(0.235 0.045 258);
+  --background: oklch(0.972 0.003 260);
+  --foreground: oklch(0.215 0.008 265);
   --card: oklch(1 0 0);
-  --muted: oklch(0.955 0.008 255);
-  --muted-foreground: oklch(0.5 0.035 258);
-  --border: oklch(0.92 0.008 255);
-  --brand: oklch(0.52 0.17 262);
-  --brand-foreground: oklch(1 0 0);
-  --success: oklch(0.52 0.12 155);
-  --warning: oklch(0.6 0.13 70);
-  --destructive: oklch(0.55 0.19 22);
-  --heat-hot: oklch(0.63 0.2 33);
-  --heat-warm: oklch(0.76 0.14 70);
-  --heat-cold: oklch(0.72 0.06 255);
-  --radius: 8px;
+  --muted: oklch(0.945 0.004 260);
+  --muted-foreground: oklch(0.46 0.01 265);
+  --border: oklch(0.885 0.005 265);
+  --input: oklch(0.8 0.006 265);
+  --ring: oklch(0.215 0.008 265);
+  --primary: oklch(0.215 0.008 265);
+  --primary-foreground: oklch(1 0 0);
+  --success: oklch(0.5 0.12 155);
+  --warning: oklch(0.58 0.13 70);
+  --destructive: oklch(0.53 0.2 25);
+  --iron-0: oklch(0.2 0.09 293);
+  --iron-1: oklch(0.42 0.17 322);
+  --iron-2: oklch(0.62 0.2 33);
+  --iron-3: oklch(0.85 0.16 82);
+  --iron-4: oklch(0.97 0.04 95);
+  --heat-hot: var(--iron-2);
+  --heat-warm: var(--iron-3);
+  --heat-cold: oklch(0.36 0.12 293);
+  --selection-ink: oklch(0.215 0.008 265);
+
+  /* badges 2.4 · buttons 3.2 · inputs 4 · cards 6: nothing rounder */
+  --radius-sm: 2.4px;
+  --radius-md: 3.2px;
+  --radius-lg: 4px;
+  --radius-xl: 6px;
+
+  /* Shadows mean "this floats": only panels injected over the mailbox carry one */
+  --elevation-sm: 0 1px 2px oklch(0.215 0.008 265 / 0.06);
+  --elevation-md: 0 2px 4px oklch(0.215 0.008 265 / 0.05), 0 10px 28px -8px oklch(0.215 0.008 265 / 0.18);
+  /* Edge of a panel floating over the mailbox: a ruled specimen in light, a hairline at night */
+  --overlay-border: color-mix(in oklch, var(--foreground) 85%, transparent);
+
+  --font-sans: "Archivo Variable", "Clozer Archivo", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono Variable", "Clozer Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @media (prefers-color-scheme: dark) {
   :root, :host {
-    --background: oklch(0.17 0.02 258);
-    --foreground: oklch(0.94 0.008 255);
-    --card: oklch(0.205 0.024 258);
-    --muted: oklch(0.26 0.028 258);
-    --muted-foreground: oklch(0.72 0.025 258);
-    --border: oklch(0.29 0.03 258);
-    --brand: oklch(0.7 0.14 262);
-    --brand-foreground: oklch(0.17 0.02 258);
+    --background: oklch(0.165 0.006 265);
+    --foreground: oklch(0.95 0.003 260);
+    --card: oklch(0.2 0.007 265);
+    --muted: oklch(0.25 0.008 265);
+    --muted-foreground: oklch(0.72 0.008 265);
+    --border: oklch(0.3 0.008 265);
+    --input: oklch(0.38 0.008 265);
+    --ring: oklch(0.95 0.003 260);
+    --primary: oklch(0.95 0.003 260);
+    --primary-foreground: oklch(0.18 0.006 265);
     --success: oklch(0.74 0.13 155);
-    --warning: oklch(0.8 0.13 75);
-    --destructive: oklch(0.7 0.17 22);
-    --heat-hot: oklch(0.7 0.19 35);
-    --heat-warm: oklch(0.81 0.13 75);
-    --heat-cold: oklch(0.72 0.06 255);
+    --warning: oklch(0.82 0.14 80);
+    --destructive: oklch(0.7 0.17 25);
+    --iron-1: oklch(0.48 0.18 322);
+    --iron-2: oklch(0.68 0.19 35);
+    --iron-3: oklch(0.86 0.15 82);
+    --heat-cold: oklch(0.6 0.14 300);
+    --elevation-sm: 0 1px 2px oklch(0 0 0 / 0.35);
+    --elevation-md: 0 2px 4px oklch(0 0 0 / 0.3), 0 10px 28px -8px oklch(0 0 0 / 0.55);
+    --overlay-border: var(--border);
   }
 }
