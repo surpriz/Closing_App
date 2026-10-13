@@ -1,0 +1,752 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-13T08:06:40+00:00",
+  "title": "Design System: Clozer",
+  "extensions": {
+    "colorMeta": {
+      "graphite-ink": {
+        "role": "primary",
+        "displayName": "Graphite Ink",
+        "canonical": "oklch(0.215 0.008 265)",
+        "tonalRamp": [
+          "oklch(0.150 0.007 265)",
+          "oklch(0.264 0.008 265)",
+          "oklch(0.379 0.006 265)",
+          "oklch(0.493 0.005 265)",
+          "oklch(0.607 0.004 265)",
+          "oklch(0.721 0.003 265)",
+          "oklch(0.836 0.002 265)",
+          "oklch(0.950 0.002 265)"
+        ]
+      },
+      "report-paper": {
+        "role": "neutral",
+        "displayName": "Report Paper",
+        "canonical": "oklch(0.972 0.003 260)",
+        "tonalRamp": [
+          "oklch(0.150 0.001 260)",
+          "oklch(0.264 0.001 260)",
+          "oklch(0.379 0.001 260)",
+          "oklch(0.493 0.001 260)",
+          "oklch(0.607 0.002 260)",
+          "oklch(0.721 0.002 260)",
+          "oklch(0.836 0.003 260)",
+          "oklch(0.950 0.003 260)"
+        ]
+      },
+      "sheet-white": {
+        "role": "neutral",
+        "displayName": "Sheet White",
+        "canonical": "oklch(1 0 0)",
+        "tonalRamp": [
+          "oklch(0.150 0.000 0)",
+          "oklch(0.264 0.000 0)",
+          "oklch(0.379 0.000 0)",
+          "oklch(0.493 0.000 0)",
+          "oklch(0.607 0.000 0)",
+          "oklch(0.721 0.000 0)",
+          "oklch(0.836 0.000 0)",
+          "oklch(0.950 0.000 0)"
+        ]
+      },
+      "paper-tint": {
+        "role": "neutral",
+        "displayName": "Paper Tint",
+        "canonical": "oklch(0.945 0.004 260)",
+        "tonalRamp": [
+          "oklch(0.150 0.001 260)",
+          "oklch(0.264 0.001 260)",
+          "oklch(0.379 0.001 260)",
+          "oklch(0.493 0.002 260)",
+          "oklch(0.607 0.002 260)",
+          "oklch(0.721 0.003 260)",
+          "oklch(0.836 0.003 260)",
+          "oklch(0.950 0.004 260)"
+        ]
+      },
+      "soft-ink": {
+        "role": "neutral",
+        "displayName": "Soft Ink",
+        "canonical": "oklch(0.46 0.01 265)",
+        "tonalRamp": [
+          "oklch(0.150 0.006 265)",
+          "oklch(0.264 0.008 265)",
+          "oklch(0.379 0.009 265)",
+          "oklch(0.493 0.010 265)",
+          "oklch(0.607 0.008 265)",
+          "oklch(0.721 0.007 265)",
+          "oklch(0.836 0.005 265)",
+          "oklch(0.950 0.004 265)"
+        ]
+      },
+      "hairline": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "oklch(0.885 0.005 265)",
+        "tonalRamp": [
+          "oklch(0.150 0.001 265)",
+          "oklch(0.264 0.001 265)",
+          "oklch(0.379 0.002 265)",
+          "oklch(0.493 0.003 265)",
+          "oklch(0.607 0.003 265)",
+          "oklch(0.721 0.004 265)",
+          "oklch(0.836 0.005 265)",
+          "oklch(0.950 0.005 265)"
+        ]
+      },
+      "field-stroke": {
+        "role": "neutral",
+        "displayName": "Field Stroke",
+        "canonical": "oklch(0.8 0.006 265)",
+        "tonalRamp": [
+          "oklch(0.150 0.002 265)",
+          "oklch(0.264 0.002 265)",
+          "oklch(0.379 0.003 265)",
+          "oklch(0.493 0.004 265)",
+          "oklch(0.607 0.005 265)",
+          "oklch(0.721 0.005 265)",
+          "oklch(0.836 0.006 265)",
+          "oklch(0.950 0.005 265)"
+        ]
+      },
+      "iron-0": {
+        "role": "tertiary",
+        "displayName": "Cold Indigo",
+        "canonical": "oklch(0.2 0.09 293)",
+        "tonalRamp": [
+          "oklch(0.2 0.09 293)",
+          "oklch(0.31 0.13 307)",
+          "oklch(0.42 0.17 322)",
+          "oklch(0.52 0.19 358)",
+          "oklch(0.62 0.2 33)",
+          "oklch(0.74 0.18 58)",
+          "oklch(0.85 0.16 82)",
+          "oklch(0.97 0.04 95)"
+        ]
+      },
+      "iron-1": {
+        "role": "tertiary",
+        "displayName": "Violet Bloom",
+        "canonical": "oklch(0.42 0.17 322)",
+        "tonalRamp": [
+          "oklch(0.2 0.09 293)",
+          "oklch(0.31 0.13 307)",
+          "oklch(0.42 0.17 322)",
+          "oklch(0.52 0.19 358)",
+          "oklch(0.62 0.2 33)",
+          "oklch(0.74 0.18 58)",
+          "oklch(0.85 0.16 82)",
+          "oklch(0.97 0.04 95)"
+        ]
+      },
+      "iron-2": {
+        "role": "tertiary",
+        "displayName": "Red-Orange Hot",
+        "canonical": "oklch(0.62 0.2 33)",
+        "tonalRamp": [
+          "oklch(0.2 0.09 293)",
+          "oklch(0.31 0.13 307)",
+          "oklch(0.42 0.17 322)",
+          "oklch(0.52 0.19 358)",
+          "oklch(0.62 0.2 33)",
+          "oklch(0.74 0.18 58)",
+          "oklch(0.85 0.16 82)",
+          "oklch(0.97 0.04 95)"
+        ]
+      },
+      "iron-3": {
+        "role": "tertiary",
+        "displayName": "Sodium Yellow",
+        "canonical": "oklch(0.85 0.16 82)",
+        "tonalRamp": [
+          "oklch(0.2 0.09 293)",
+          "oklch(0.31 0.13 307)",
+          "oklch(0.42 0.17 322)",
+          "oklch(0.52 0.19 358)",
+          "oklch(0.62 0.2 33)",
+          "oklch(0.74 0.18 58)",
+          "oklch(0.85 0.16 82)",
+          "oklch(0.97 0.04 95)"
+        ]
+      },
+      "iron-4": {
+        "role": "tertiary",
+        "displayName": "White-Hot",
+        "canonical": "oklch(0.97 0.04 95)",
+        "tonalRamp": [
+          "oklch(0.2 0.09 293)",
+          "oklch(0.31 0.13 307)",
+          "oklch(0.42 0.17 322)",
+          "oklch(0.52 0.19 358)",
+          "oklch(0.62 0.2 33)",
+          "oklch(0.74 0.18 58)",
+          "oklch(0.85 0.16 82)",
+          "oklch(0.97 0.04 95)"
+        ]
+      },
+      "heat-cold": {
+        "role": "tertiary",
+        "displayName": "Cold Reading",
+        "canonical": "oklch(0.36 0.12 293)",
+        "tonalRamp": [
+          "oklch(0.150 0.090 293)",
+          "oklch(0.264 0.106 293)",
+          "oklch(0.379 0.117 293)",
+          "oklch(0.493 0.101 293)",
+          "oklch(0.607 0.084 293)",
+          "oklch(0.721 0.068 293)",
+          "oklch(0.836 0.051 293)",
+          "oklch(0.950 0.035 293)"
+        ]
+      },
+      "signed-green": {
+        "role": "status",
+        "displayName": "Signed Green",
+        "canonical": "oklch(0.5 0.12 155)",
+        "tonalRamp": [
+          "oklch(0.150 0.070 155)",
+          "oklch(0.264 0.086 155)",
+          "oklch(0.379 0.103 155)",
+          "oklch(0.493 0.119 155)",
+          "oklch(0.607 0.105 155)",
+          "oklch(0.721 0.088 155)",
+          "oklch(0.836 0.072 155)",
+          "oklch(0.950 0.055 155)"
+        ]
+      },
+      "caution-amber": {
+        "role": "status",
+        "displayName": "Caution Amber",
+        "canonical": "oklch(0.58 0.13 70)",
+        "tonalRamp": [
+          "oklch(0.150 0.063 70)",
+          "oklch(0.264 0.081 70)",
+          "oklch(0.379 0.099 70)",
+          "oklch(0.493 0.116 70)",
+          "oklch(0.607 0.126 70)",
+          "oklch(0.721 0.108 70)",
+          "oklch(0.836 0.090 70)",
+          "oklch(0.950 0.072 70)"
+        ]
+      },
+      "error-red": {
+        "role": "status",
+        "displayName": "Error Red",
+        "canonical": "oklch(0.53 0.2 25)",
+        "tonalRamp": [
+          "oklch(0.150 0.109 25)",
+          "oklch(0.264 0.136 25)",
+          "oklch(0.379 0.164 25)",
+          "oklch(0.493 0.191 25)",
+          "oklch(0.607 0.181 25)",
+          "oklch(0.721 0.154 25)",
+          "oklch(0.836 0.127 25)",
+          "oklch(0.950 0.099 25)"
+        ]
+      },
+      "night-background": {
+        "role": "neutral",
+        "displayName": "Graphite Night",
+        "canonical": "oklch(0.165 0.006 265)",
+        "tonalRamp": [
+          "oklch(0.150 0.006 265)",
+          "oklch(0.264 0.005 265)",
+          "oklch(0.379 0.004 265)",
+          "oklch(0.493 0.004 265)",
+          "oklch(0.607 0.003 265)",
+          "oklch(0.721 0.002 265)",
+          "oklch(0.836 0.002 265)",
+          "oklch(0.950 0.002 265)"
+        ]
+      },
+      "night-sheet": {
+        "role": "neutral",
+        "displayName": "Night Sheet",
+        "canonical": "oklch(0.2 0.007 265)",
+        "tonalRamp": [
+          "oklch(0.150 0.007 265)",
+          "oklch(0.264 0.006 265)",
+          "oklch(0.379 0.006 265)",
+          "oklch(0.493 0.005 265)",
+          "oklch(0.607 0.004 265)",
+          "oklch(0.721 0.003 265)",
+          "oklch(0.836 0.002 265)",
+          "oklch(0.950 0.002 265)"
+        ]
+      },
+      "night-raised": {
+        "role": "neutral",
+        "displayName": "Night Raised",
+        "canonical": "oklch(0.23 0.008 265)",
+        "tonalRamp": [
+          "oklch(0.150 0.007 265)",
+          "oklch(0.264 0.008 265)",
+          "oklch(0.379 0.007 265)",
+          "oklch(0.493 0.005 265)",
+          "oklch(0.607 0.004 265)",
+          "oklch(0.721 0.003 265)",
+          "oklch(0.836 0.002 265)",
+          "oklch(0.950 0.002 265)"
+        ]
+      },
+      "night-tint": {
+        "role": "neutral",
+        "displayName": "Night Tint",
+        "canonical": "oklch(0.25 0.008 265)",
+        "tonalRamp": [
+          "oklch(0.150 0.007 265)",
+          "oklch(0.264 0.008 265)",
+          "oklch(0.379 0.007 265)",
+          "oklch(0.493 0.006 265)",
+          "oklch(0.607 0.005 265)",
+          "oklch(0.721 0.003 265)",
+          "oklch(0.836 0.002 265)",
+          "oklch(0.950 0.002 265)"
+        ]
+      },
+      "night-ink": {
+        "role": "primary",
+        "displayName": "Night Ink",
+        "canonical": "oklch(0.95 0.003 260)",
+        "tonalRamp": [
+          "oklch(0.150 0.001 260)",
+          "oklch(0.264 0.001 260)",
+          "oklch(0.379 0.001 260)",
+          "oklch(0.493 0.001 260)",
+          "oklch(0.607 0.002 260)",
+          "oklch(0.721 0.002 260)",
+          "oklch(0.836 0.003 260)",
+          "oklch(0.950 0.003 260)"
+        ]
+      },
+      "night-soft-ink": {
+        "role": "neutral",
+        "displayName": "Night Soft Ink",
+        "canonical": "oklch(0.72 0.008 265)",
+        "tonalRamp": [
+          "oklch(0.150 0.003 265)",
+          "oklch(0.264 0.004 265)",
+          "oklch(0.379 0.005 265)",
+          "oklch(0.493 0.006 265)",
+          "oklch(0.607 0.007 265)",
+          "oklch(0.721 0.008 265)",
+          "oklch(0.836 0.007 265)",
+          "oklch(0.950 0.006 265)"
+        ]
+      },
+      "night-hairline": {
+        "role": "neutral",
+        "displayName": "Night Hairline",
+        "canonical": "oklch(0.3 0.008 265)",
+        "tonalRamp": [
+          "oklch(0.150 0.007 265)",
+          "oklch(0.264 0.008 265)",
+          "oklch(0.379 0.007 265)",
+          "oklch(0.493 0.006 265)",
+          "oklch(0.607 0.005 265)",
+          "oklch(0.721 0.004 265)",
+          "oklch(0.836 0.003 265)",
+          "oklch(0.950 0.002 265)"
+        ]
+      },
+      "night-field-stroke": {
+        "role": "neutral",
+        "displayName": "Night Field Stroke",
+        "canonical": "oklch(0.38 0.008 265)",
+        "tonalRamp": [
+          "oklch(0.150 0.006 265)",
+          "oklch(0.264 0.007 265)",
+          "oklch(0.379 0.008 265)",
+          "oklch(0.493 0.007 265)",
+          "oklch(0.607 0.006 265)",
+          "oklch(0.721 0.005 265)",
+          "oklch(0.836 0.004 265)",
+          "oklch(0.950 0.003 265)"
+        ]
+      },
+      "night-iron-1": {
+        "role": "tertiary",
+        "displayName": "Violet Bloom (night)",
+        "canonical": "oklch(0.48 0.18 322)",
+        "tonalRamp": [
+          "oklch(0.2 0.09 293)",
+          "oklch(0.31 0.13 307)",
+          "oklch(0.42 0.17 322)",
+          "oklch(0.52 0.19 358)",
+          "oklch(0.62 0.2 33)",
+          "oklch(0.74 0.18 58)",
+          "oklch(0.85 0.16 82)",
+          "oklch(0.97 0.04 95)"
+        ]
+      },
+      "night-iron-2": {
+        "role": "tertiary",
+        "displayName": "Red-Orange Hot (night)",
+        "canonical": "oklch(0.68 0.19 35)",
+        "tonalRamp": [
+          "oklch(0.2 0.09 293)",
+          "oklch(0.31 0.13 307)",
+          "oklch(0.42 0.17 322)",
+          "oklch(0.52 0.19 358)",
+          "oklch(0.62 0.2 33)",
+          "oklch(0.74 0.18 58)",
+          "oklch(0.85 0.16 82)",
+          "oklch(0.97 0.04 95)"
+        ]
+      },
+      "night-iron-3": {
+        "role": "tertiary",
+        "displayName": "Sodium Yellow (night)",
+        "canonical": "oklch(0.86 0.15 82)",
+        "tonalRamp": [
+          "oklch(0.2 0.09 293)",
+          "oklch(0.31 0.13 307)",
+          "oklch(0.42 0.17 322)",
+          "oklch(0.52 0.19 358)",
+          "oklch(0.62 0.2 33)",
+          "oklch(0.74 0.18 58)",
+          "oklch(0.85 0.16 82)",
+          "oklch(0.97 0.04 95)"
+        ]
+      },
+      "night-heat-cold": {
+        "role": "tertiary",
+        "displayName": "Cold Reading (night)",
+        "canonical": "oklch(0.6 0.14 300)",
+        "tonalRamp": [
+          "oklch(0.150 0.064 300)",
+          "oklch(0.264 0.084 300)",
+          "oklch(0.379 0.103 300)",
+          "oklch(0.493 0.122 300)",
+          "oklch(0.607 0.139 300)",
+          "oklch(0.721 0.120 300)",
+          "oklch(0.836 0.100 300)",
+          "oklch(0.950 0.081 300)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "The day's headline on Aujourd'hui and the onboarding opener; condensed."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Page h1; condensed."
+      },
+      "heading": {
+        "displayName": "Heading",
+        "purpose": "Section h2 inside the app."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Reading text and next-action lines."
+      },
+      "small": {
+        "displayName": "Small",
+        "purpose": "Metadata, row state, nav tabs."
+      },
+      "micro": {
+        "displayName": "Micro",
+        "purpose": "Phone tab-bar labels."
+      },
+      "report-field": {
+        "displayName": "Report Field",
+        "purpose": "Mono instrument values: report strip, page refs, score points, step counters."
+      },
+      "landing-display": {
+        "displayName": "Landing Display",
+        "purpose": "Hero and closing headline on clozer.club; condensed."
+      },
+      "landing-title": {
+        "displayName": "Landing Title",
+        "purpose": "Landing section h2; condensed."
+      },
+      "landing-lead": {
+        "displayName": "Landing Lead",
+        "purpose": "Section intros and the signup field."
+      },
+      "landing-body": {
+        "displayName": "Landing Body",
+        "purpose": "Landing reading text, 52 to 62ch."
+      }
+    },
+    "shadows": [
+      {
+        "name": "elevation-xs",
+        "value": "0 0 0 transparent",
+        "purpose": "Deliberately flat; components that request xs stay flat."
+      },
+      {
+        "name": "elevation-sm",
+        "value": "0 1px 2px oklch(0.215 0.008 265 / 0.06)",
+        "purpose": "Rare sheet lift."
+      },
+      {
+        "name": "elevation-md",
+        "value": "0 2px 4px oklch(0.215 0.008 265 / 0.05), 0 10px 28px -8px oklch(0.215 0.008 265 / 0.18)",
+        "purpose": "Menus, popovers, interactive card hover."
+      },
+      {
+        "name": "elevation-lg",
+        "value": "0 4px 8px oklch(0.215 0.008 265 / 0.06), 0 24px 56px -14px oklch(0.215 0.008 265 / 0.28)",
+        "purpose": "Dialogs and sheets."
+      },
+      {
+        "name": "elevation-md-dark",
+        "value": "0 2px 4px oklch(0 0 0 / 0.3), 0 10px 28px -8px oklch(0 0 0 / 0.55)",
+        "purpose": "Floating layers in the dark theme."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out-soft",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "The only easing (ease-out-expo on the landing)."
+      },
+      {
+        "name": "rise",
+        "value": "260ms ease-out-soft, translateY(4px) + fade, 40ms stagger up to 200ms",
+        "purpose": "List and step entrances."
+      },
+      {
+        "name": "heat-fill",
+        "value": "700ms ease-out-soft, scaleY from 0",
+        "purpose": "Gauge fill on load."
+      },
+      {
+        "name": "pop",
+        "value": "420ms ease-out-soft, scale 0.6 to 1.06 to 1",
+        "purpose": "Confirmations."
+      },
+      {
+        "name": "plate-layer",
+        "value": "opacity 1.4s ease-out-soft",
+        "purpose": "Thermal plate layers heating up."
+      },
+      {
+        "name": "reading-step",
+        "value": "520ms per page, 500ms start delay; reticle 0.7s",
+        "purpose": "Landing hero reading sequence; reduced motion shows the end state."
+      },
+      {
+        "name": "control",
+        "value": "150ms ease-out",
+        "purpose": "Button, input, nav state changes; press scale 0.98."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      }
+    ],
+    "textures": [
+      {
+        "name": "hatch",
+        "value": "repeating-linear-gradient(135deg, currentColor 0 1.5px, transparent 1.5px 6px)",
+        "purpose": "Overdue follow-ups only."
+      },
+      {
+        "name": "heat-scale",
+        "value": "linear-gradient(var(--iron-0), var(--iron-1) 30%, var(--iron-2) 58%, var(--iron-3) 82%, var(--iron-4))",
+        "purpose": "Calibrated legend and gauges."
+      }
+    ],
+    "themes": {
+      "app": "light + dark (.dark class)",
+      "landing": "light only"
+    },
+    "migrationStatus": {
+      "migrated": [
+        "landing",
+        "login",
+        "onboarding (bienvenue)",
+        "Aujourd'hui dashboard",
+        "app shell and nav",
+        "documents list and document page",
+        "deal page /links/[id]",
+        "team view",
+        "settings, help, admin",
+        "UI primitives",
+        "prospect viewer /v/[slug]",
+        "Chrome extension",
+        "Outlook add-in"
+      ],
+      "note": "All surfaces are on the thermography system. HeatBar removed; heat on rows is HeatStrip (per-page readings) or HeatGauge (score only)."
+    }
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Ink stamp for the one next action on a screen.",
+      "html": "<button class=\"ds-btn-primary\">Traiter <svg viewBox=\"0 0 16 16\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"square\" aria-hidden=\"true\"><path d=\"M2.5 8h10M8.5 4l4 4-4 4\"/></svg></button>",
+      "css": ".ds-btn-primary { font-family: var(--font-archivo, Archivo), ui-sans-serif, system-ui, sans-serif; display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 8px 0 12px; border: 1px solid transparent; border-radius: 3.2px; background: var(--primary, oklch(0.215 0.008 265)); color: var(--primary-foreground, oklch(1 0 0)); font-size: 14px; font-weight: 600; cursor: pointer; transition: background-color 150ms ease-out, box-shadow 150ms ease-out, transform 150ms ease-out; } .ds-btn-primary:hover { background: color-mix(in oklch, var(--primary, oklch(0.215 0.008 265)) 85%, transparent); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in oklch, var(--foreground, oklch(0.215 0.008 265)) 30%, transparent); } .ds-btn-primary:active { transform: scale(0.98); }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Secondary action: sheet white with an ink stroke.",
+      "html": "<button class=\"ds-btn-outline\">Copier le lien</button>",
+      "css": ".ds-btn-outline { font-family: var(--font-archivo, Archivo), ui-sans-serif, system-ui, sans-serif; height: 36px; padding: 0 12px; border: 1px solid color-mix(in oklch, var(--foreground, oklch(0.215 0.008 265)) 80%, transparent); border-radius: 3.2px; background: var(--card, oklch(1 0 0)); color: var(--foreground, oklch(0.215 0.008 265)); font-size: 14px; font-weight: 600; cursor: pointer; transition: background-color 150ms ease-out, box-shadow 150ms ease-out, transform 150ms ease-out; } .ds-btn-outline:hover { background: var(--muted, oklch(0.945 0.004 260)); } .ds-btn-outline:focus-visible { outline: none; border-color: var(--foreground, oklch(0.215 0.008 265)); box-shadow: 0 0 0 3px color-mix(in oklch, var(--foreground, oklch(0.215 0.008 265)) 30%, transparent); } .ds-btn-outline:active { transform: scale(0.98); }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost-hover",
+      "description": "Quiet action, tints paper on hover.",
+      "html": "<button class=\"ds-btn-ghost\">Plus tard</button>",
+      "css": ".ds-btn-ghost { font-family: var(--font-archivo, Archivo), ui-sans-serif, system-ui, sans-serif; height: 36px; padding: 0 12px; border: 1px solid transparent; border-radius: 3.2px; background: transparent; color: var(--foreground, oklch(0.215 0.008 265)); font-size: 14px; font-weight: 600; cursor: pointer; transition: background-color 150ms ease-out; } .ds-btn-ghost:hover { background: var(--muted, oklch(0.945 0.004 260)); } .ds-btn-ghost:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in oklch, var(--foreground, oklch(0.215 0.008 265)) 30%, transparent); }"
+    },
+    {
+      "name": "Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "App text field: field-stroke border, ink focus, hot caret.",
+      "html": "<input class=\"ds-input\" type=\"email\" placeholder=\"vous@entreprise.fr\" />",
+      "css": ".ds-input { font-family: var(--font-archivo, Archivo), ui-sans-serif, system-ui, sans-serif; height: 36px; width: 280px; padding: 4px 12px; border: 1px solid var(--input, oklch(0.8 0.006 265)); border-radius: 4px; background: var(--card, oklch(1 0 0)); color: var(--foreground, oklch(0.215 0.008 265)); font-size: 14px; caret-color: var(--iron-2, oklch(0.62 0.2 33)); outline: none; transition: border-color 150ms, box-shadow 150ms; } .ds-input::placeholder { color: var(--muted-foreground, oklch(0.46 0.01 265)); } .ds-input:focus-visible { border-color: var(--foreground, oklch(0.215 0.008 265)); box-shadow: 0 0 0 3px color-mix(in oklch, var(--foreground, oklch(0.215 0.008 265)) 20%, transparent); }"
+    },
+    {
+      "name": "Heat Badges",
+      "kind": "chip",
+      "refersTo": "badge-neutral",
+      "description": "Temperature tag: reading tint, ink text, square swatch beside the word.",
+      "html": "<span class=\"ds-heat ds-hot\">Chaud</span> <span class=\"ds-heat ds-warm\">Tiède</span> <span class=\"ds-heat ds-cold\">Froid</span>",
+      "css": ".ds-heat { font-family: var(--font-archivo, Archivo), ui-sans-serif, system-ui, sans-serif; display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 2px 6px; border-radius: 2.4px; font-size: 12px; font-weight: 500; color: var(--foreground, oklch(0.215 0.008 265)); } .ds-heat::before { content: ''; width: 8px; height: 8px; } .ds-hot { background: color-mix(in oklch, var(--iron-2, oklch(0.62 0.2 33)) 14%, transparent); } .ds-hot::before { background: var(--iron-2, oklch(0.62 0.2 33)); } .ds-warm { background: color-mix(in oklch, var(--iron-3, oklch(0.85 0.16 82)) 22%, transparent); } .ds-warm::before { background: var(--iron-3, oklch(0.85 0.16 82)); } .ds-cold { background: color-mix(in oklch, var(--heat-cold, oklch(0.36 0.12 293)) 12%, transparent); } .ds-cold::before { background: var(--heat-cold, oklch(0.36 0.12 293)); }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Ruled specimen: sheet white, 85% ink ring, 6px corners, flat at rest.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-title\">Lien prêt</div><p class=\"ds-card-desc\">Envoyez-le à votre prospect, la lecture remonte ici.</p></div>",
+      "css": ".ds-card { font-family: var(--font-archivo, Archivo), ui-sans-serif, system-ui, sans-serif; width: 300px; padding: 20px; border-radius: 6px; background: var(--card, oklch(1 0 0)); color: var(--foreground, oklch(0.215 0.008 265)); box-shadow: 0 0 0 1px color-mix(in oklch, var(--foreground, oklch(0.215 0.008 265)) 85%, transparent); transition: box-shadow 200ms; } .ds-card:hover { box-shadow: 0 0 0 1px color-mix(in oklch, var(--foreground, oklch(0.215 0.008 265)) 85%, transparent), 0 2px 4px oklch(0.215 0.008 265 / 0.05), 0 10px 28px -8px oklch(0.215 0.008 265 / 0.18); } .ds-card-title { font-size: 16px; font-weight: 600; } .ds-card-desc { margin: 4px 0 0; font-size: 14px; color: var(--muted-foreground, oklch(0.46 0.01 265)); }"
+    },
+    {
+      "name": "Report Strip Nav",
+      "kind": "nav",
+      "refersTo": "nav-tab-active",
+      "description": "Header tabs as report cells between hairlines; active cell sits on the ink rule.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-tab\" aria-current=\"page\" href=\"#\">Aujourd'hui</a><a class=\"ds-tab\" href=\"#\">Documents</a><a class=\"ds-tab\" href=\"#\">Réglages</a></nav>",
+      "css": ".ds-nav { font-family: var(--font-archivo, Archivo), ui-sans-serif, system-ui, sans-serif; display: flex; height: 56px; background: var(--background, oklch(0.972 0.003 260)); border-bottom: 1px solid var(--foreground, oklch(0.215 0.008 265)); border-left: 1px solid var(--border, oklch(0.885 0.005 265)); } .ds-tab { position: relative; display: flex; align-items: center; padding: 0 16px; border-right: 1px solid var(--border, oklch(0.885 0.005 265)); font-size: 13px; color: var(--muted-foreground, oklch(0.46 0.01 265)); text-decoration: none; transition: background-color 150ms, color 150ms; } .ds-tab:hover { background: var(--card, oklch(1 0 0)); color: var(--foreground, oklch(0.215 0.008 265)); } .ds-tab:focus-visible { outline: none; background: var(--muted, oklch(0.945 0.004 260)); } .ds-tab[aria-current] { background: var(--card, oklch(1 0 0)); color: var(--foreground, oklch(0.215 0.008 265)); font-weight: 600; } .ds-tab[aria-current]::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--foreground, oklch(0.215 0.008 265)); }"
+    },
+    {
+      "name": "Deal Row",
+      "kind": "custom",
+      "refersTo": "card",
+      "description": "Aujourd'hui report row: thermal strip, prospect, heat state, hottest page, next action.",
+      "html": "<ul class=\"ds-rows\"><li class=\"ds-row\"><span class=\"ds-strip\"><div class=\"ds-plate\"><span style=\"opacity:0.74;background:radial-gradient(75% 55% at 48% 34%, var(--iron-1, oklch(0.42 0.17 322)), transparent 72%)\"></span><span style=\"opacity:0.00;background:radial-gradient(52% 38% at 48% 34%, var(--iron-2, oklch(0.62 0.2 33)), transparent 72%)\"></span><span style=\"opacity:0.00;background:radial-gradient(34% 24% at 48% 34%, var(--iron-3, oklch(0.85 0.16 82)), transparent 72%)\"></span><span style=\"opacity:0.00;background:radial-gradient(16% 11% at 48% 34%, var(--iron-4, oklch(0.97 0.04 95)), transparent 72%)\"></span></div><div class=\"ds-plate\"><span style=\"opacity:1.00;background:radial-gradient(75% 55% at 40% 58%, var(--iron-1, oklch(0.42 0.17 322)), transparent 72%)\"></span><span style=\"opacity:0.38;background:radial-gradient(52% 38% at 40% 58%, var(--iron-2, oklch(0.62 0.2 33)), transparent 72%)\"></span><span style=\"opacity:0.00;background:radial-gradient(34% 24% at 40% 58%, var(--iron-3, oklch(0.85 0.16 82)), transparent 72%)\"></span><span style=\"opacity:0.00;background:radial-gradient(16% 11% at 40% 58%, var(--iron-4, oklch(0.97 0.04 95)), transparent 72%)\"></span></div><div class=\"ds-plate\"><span style=\"opacity:1.00;background:radial-gradient(75% 55% at 56% 46%, var(--iron-1, oklch(0.42 0.17 322)), transparent 72%)\"></span><span style=\"opacity:0.83;background:radial-gradient(52% 38% at 56% 46%, var(--iron-2, oklch(0.62 0.2 33)), transparent 72%)\"></span><span style=\"opacity:0.00;background:radial-gradient(34% 24% at 56% 46%, var(--iron-3, oklch(0.85 0.16 82)), transparent 72%)\"></span><span style=\"opacity:0.00;background:radial-gradient(16% 11% at 56% 46%, var(--iron-4, oklch(0.97 0.04 95)), transparent 72%)\"></span></div><div class=\"ds-plate\"><span style=\"opacity:1.00;background:radial-gradient(75% 55% at 50% 44%, var(--iron-1, oklch(0.42 0.17 322)), transparent 72%)\"></span><span style=\"opacity:1.00;background:radial-gradient(52% 38% at 50% 44%, var(--iron-2, oklch(0.62 0.2 33)), transparent 72%)\"></span><span style=\"opacity:1.00;background:radial-gradient(34% 24% at 50% 44%, var(--iron-3, oklch(0.85 0.16 82)), transparent 72%)\"></span><span style=\"opacity:1.00;background:radial-gradient(16% 11% at 50% 44%, var(--iron-4, oklch(0.97 0.04 95)), transparent 72%)\"></span><i class=\"ds-reticle\"></i></div><div class=\"ds-plate\"><span style=\"opacity:0.95;background:radial-gradient(75% 55% at 44% 62%, var(--iron-1, oklch(0.42 0.17 322)), transparent 72%)\"></span><span style=\"opacity:0.08;background:radial-gradient(52% 38% at 44% 62%, var(--iron-2, oklch(0.62 0.2 33)), transparent 72%)\"></span><span style=\"opacity:0.00;background:radial-gradient(34% 24% at 44% 62%, var(--iron-3, oklch(0.85 0.16 82)), transparent 72%)\"></span><span style=\"opacity:0.00;background:radial-gradient(16% 11% at 44% 62%, var(--iron-4, oklch(0.97 0.04 95)), transparent 72%)\"></span></div><div class=\"ds-plate\"><span style=\"opacity:0.00;background:radial-gradient(75% 55% at 52% 40%, var(--iron-1, oklch(0.42 0.17 322)), transparent 72%)\"></span><span style=\"opacity:0.00;background:radial-gradient(52% 38% at 52% 40%, var(--iron-2, oklch(0.62 0.2 33)), transparent 72%)\"></span><span style=\"opacity:0.00;background:radial-gradient(34% 24% at 52% 40%, var(--iron-3, oklch(0.85 0.16 82)), transparent 72%)\"></span><span style=\"opacity:0.00;background:radial-gradient(16% 11% at 52% 40%, var(--iron-4, oklch(0.97 0.04 95)), transparent 72%)\"></span></div></span><div><div class=\"ds-row-top\"><b>Atelier Morel</b><span class=\"ds-state\"><i></i>Chaud · lu il y a 2 h</span></div><p class=\"ds-meta\">Page 4 la plus lue · <b>3 min 38</b></p><p class=\"ds-act\"><svg viewBox=\"0 0 16 16\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"square\" aria-hidden=\"true\"><path d=\"M2.5 8h10M8.5 4l4 4-4 4\"/></svg><span>Relancer aujourd'hui</span></p></div></li></ul><p class=\"ds-note\">Exemple de démonstration</p>",
+      "css": ".ds-plate { position: relative; overflow: hidden; aspect-ratio: 3/4; width: 28px; background: var(--iron-0, oklch(0.2 0.09 293)); } .ds-plate span { position: absolute; inset: 0; transition: opacity 1.4s cubic-bezier(0.16, 1, 0.3, 1); } .ds-reticle { position: absolute; inset: 18%; border: 1px solid #fff; } .ds-rows { font-family: var(--font-archivo, Archivo), ui-sans-serif, system-ui, sans-serif; list-style: none; margin: 0; padding: 0; width: 560px; background: var(--card, oklch(1 0 0)); color: var(--foreground, oklch(0.215 0.008 265)); border-top: 1px solid var(--foreground, oklch(0.215 0.008 265)); border-bottom: 1px solid var(--foreground, oklch(0.215 0.008 265)); font-variant-numeric: tabular-nums; } .ds-row { display: grid; grid-template-columns: auto 1fr; gap: 12px 16px; padding: 16px; transition: background-color 150ms; } .ds-row:hover { background: color-mix(in oklch, var(--muted, oklch(0.945 0.004 260)) 60%, transparent); } .ds-strip { display: flex; gap: 1px; height: fit-content; } .ds-row-top { display: flex; justify-content: space-between; gap: 16px; font-size: 15px; } .ds-state { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted-foreground, oklch(0.46 0.01 265)); } .ds-state i { width: 8px; height: 8px; background: var(--iron-2, oklch(0.62 0.2 33)); } .ds-meta { margin: 6px 0 0; font-size: 13px; } .ds-act { display: flex; gap: 8px; align-items: center; margin: 6px 0 0; font-size: 15px; font-weight: 600; } .ds-note { font-family: var(--font-archivo, Archivo), ui-sans-serif, system-ui, sans-serif; font-size: 11px; color: var(--muted-foreground, oklch(0.46 0.01 265)); }"
+    },
+    {
+      "name": "Thermal Reading",
+      "kind": "custom",
+      "refersTo": "iron-0",
+      "description": "Example quote as thermal plates with reticle and calibrated scale.",
+      "html": "<figure class=\"ds-reading\"><div class=\"ds-plates\"><div class=\"ds-plate\"><span style=\"opacity:0.74;background:radial-gradient(75% 55% at 48% 34%, var(--iron-1, oklch(0.42 0.17 322)), transparent 72%)\"></span><span style=\"opacity:0.00;background:radial-gradient(52% 38% at 48% 34%, var(--iron-2, oklch(0.62 0.2 33)), transparent 72%)\"></span><span style=\"opacity:0.00;background:radial-gradient(34% 24% at 48% 34%, var(--iron-3, oklch(0.85 0.16 82)), transparent 72%)\"></span><span style=\"opacity:0.00;background:radial-gradient(16% 11% at 48% 34%, var(--iron-4, oklch(0.97 0.04 95)), transparent 72%)\"></span></div><div class=\"ds-plate\"><span style=\"opacity:1.00;background:radial-gradient(75% 55% at 40% 58%, var(--iron-1, oklch(0.42 0.17 322)), transparent 72%)\"></span><span style=\"opacity:0.38;background:radial-gradient(52% 38% at 40% 58%, var(--iron-2, oklch(0.62 0.2 33)), transparent 72%)\"></span><span style=\"opacity:0.00;background:radial-gradient(34% 24% at 40% 58%, var(--iron-3, oklch(0.85 0.16 82)), transparent 72%)\"></span><span style=\"opacity:0.00;background:radial-gradient(16% 11% at 40% 58%, var(--iron-4, oklch(0.97 0.04 95)), transparent 72%)\"></span></div><div class=\"ds-plate\"><span style=\"opacity:1.00;background:radial-gradient(75% 55% at 56% 46%, var(--iron-1, oklch(0.42 0.17 322)), transparent 72%)\"></span><span style=\"opacity:0.83;background:radial-gradient(52% 38% at 56% 46%, var(--iron-2, oklch(0.62 0.2 33)), transparent 72%)\"></span><span style=\"opacity:0.00;background:radial-gradient(34% 24% at 56% 46%, var(--iron-3, oklch(0.85 0.16 82)), transparent 72%)\"></span><span style=\"opacity:0.00;background:radial-gradient(16% 11% at 56% 46%, var(--iron-4, oklch(0.97 0.04 95)), transparent 72%)\"></span></div><div class=\"ds-plate\"><span style=\"opacity:1.00;background:radial-gradient(75% 55% at 50% 44%, var(--iron-1, oklch(0.42 0.17 322)), transparent 72%)\"></span><span style=\"opacity:1.00;background:radial-gradient(52% 38% at 50% 44%, var(--iron-2, oklch(0.62 0.2 33)), transparent 72%)\"></span><span style=\"opacity:1.00;background:radial-gradient(34% 24% at 50% 44%, var(--iron-3, oklch(0.85 0.16 82)), transparent 72%)\"></span><span style=\"opacity:1.00;background:radial-gradient(16% 11% at 50% 44%, var(--iron-4, oklch(0.97 0.04 95)), transparent 72%)\"></span><i class=\"ds-reticle\"></i></div><div class=\"ds-plate\"><span style=\"opacity:0.95;background:radial-gradient(75% 55% at 44% 62%, var(--iron-1, oklch(0.42 0.17 322)), transparent 72%)\"></span><span style=\"opacity:0.08;background:radial-gradient(52% 38% at 44% 62%, var(--iron-2, oklch(0.62 0.2 33)), transparent 72%)\"></span><span style=\"opacity:0.00;background:radial-gradient(34% 24% at 44% 62%, var(--iron-3, oklch(0.85 0.16 82)), transparent 72%)\"></span><span style=\"opacity:0.00;background:radial-gradient(16% 11% at 44% 62%, var(--iron-4, oklch(0.97 0.04 95)), transparent 72%)\"></span></div><div class=\"ds-plate\"><span style=\"opacity:0.00;background:radial-gradient(75% 55% at 52% 40%, var(--iron-1, oklch(0.42 0.17 322)), transparent 72%)\"></span><span style=\"opacity:0.00;background:radial-gradient(52% 38% at 52% 40%, var(--iron-2, oklch(0.62 0.2 33)), transparent 72%)\"></span><span style=\"opacity:0.00;background:radial-gradient(34% 24% at 52% 40%, var(--iron-3, oklch(0.85 0.16 82)), transparent 72%)\"></span><span style=\"opacity:0.00;background:radial-gradient(16% 11% at 52% 40%, var(--iron-4, oklch(0.97 0.04 95)), transparent 72%)\"></span></div></div><div class=\"ds-scale-row\"><span>Froid</span><span class=\"ds-scale\"></span><span>Chaud</span></div><figcaption>Exemple de démonstration</figcaption></figure>",
+      "css": ".ds-plate { position: relative; overflow: hidden; aspect-ratio: 3/4; width: 64px; background: var(--iron-0, oklch(0.2 0.09 293)); } .ds-plate span { position: absolute; inset: 0; transition: opacity 1.4s cubic-bezier(0.16, 1, 0.3, 1); } .ds-reticle { position: absolute; inset: 18%; border: 1px solid #fff; } .ds-reading { margin: 0; width: fit-content; border-top: 1px solid var(--foreground, oklch(0.215 0.008 265)); border-bottom: 1px solid var(--foreground, oklch(0.215 0.008 265)); background: var(--background, oklch(0.972 0.003 260)); } .ds-plates { display: flex; gap: 1px; background: var(--foreground, oklch(0.215 0.008 265)); } .ds-plates .ds-plate:hover span { opacity: 1 !important; } .ds-scale-row { font-family: var(--font-geist-mono, 'Geist Mono'), ui-monospace, Menlo, monospace; display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-top: 1px solid var(--foreground, oklch(0.215 0.008 265)); font-size: 11px; color: var(--muted-foreground, oklch(0.46 0.01 265)); } .ds-scale { flex: 1; height: 10px; background: linear-gradient(to right, var(--iron-0, oklch(0.2 0.09 293)), var(--iron-1, oklch(0.42 0.17 322)) 30%, var(--iron-2, oklch(0.62 0.2 33)) 58%, var(--iron-3, oklch(0.85 0.16 82)) 82%, var(--iron-4, oklch(0.97 0.04 95))); } .ds-reading figcaption { font-family: var(--font-archivo, Archivo), ui-sans-serif, system-ui, sans-serif; padding: 4px 12px; font-size: 11px; color: var(--muted-foreground, oklch(0.46 0.01 265)); }"
+    },
+    {
+      "name": "Signup Field",
+      "kind": "input",
+      "refersTo": "signup-submit",
+      "description": "Landing 'Client' field block: label row, email field, ink submit, Google row.",
+      "html": "<form class=\"ds-signup\" onsubmit=\"return false\"><label class=\"ds-su-label\" for=\"ds-su\"><span>Votre email pro</span><span class=\"ds-su-hint\">sans mot de passe</span></label><input id=\"ds-su\" class=\"ds-su-input\" type=\"email\" placeholder=\"vous@entreprise.fr\" /><button class=\"ds-su-submit\">Créer mon premier lien <svg viewBox=\"0 0 16 16\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"square\" aria-hidden=\"true\"><path d=\"M2.5 8h10M8.5 4l4 4-4 4\"/></svg></button><a class=\"ds-su-google\" href=\"#\">Continuer avec Google</a></form>",
+      "css": ".ds-signup { font-family: var(--font-archivo, Archivo), ui-sans-serif, system-ui, sans-serif; width: 416px; border: 1px solid var(--foreground, oklch(0.215 0.008 265)); background: var(--card, oklch(1 0 0)); color: var(--foreground, oklch(0.215 0.008 265)); } .ds-su-label { display: flex; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid var(--foreground, oklch(0.215 0.008 265)); font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; } .ds-su-hint { text-transform: none; letter-spacing: 0; color: var(--muted-foreground, oklch(0.46 0.01 265)); } .ds-su-input { display: block; box-sizing: border-box; width: 100%; height: 56px; padding: 0 16px; border: 0; border-bottom: 1px solid var(--foreground, oklch(0.215 0.008 265)); background: transparent; font: inherit; font-size: 19px; caret-color: var(--iron-2, oklch(0.62 0.2 33)); outline: none; } .ds-su-input:focus-visible { outline: 2px solid var(--iron-2, oklch(0.62 0.2 33)); outline-offset: -2px; } .ds-su-submit { display: flex; width: 100%; height: 64px; align-items: center; justify-content: space-between; padding: 0 16px; border: 0; background: var(--foreground, oklch(0.215 0.008 265)); color: var(--card, oklch(1 0 0)); font: inherit; font-size: 19px; font-weight: 600; cursor: pointer; transition: background-color 150ms; } .ds-su-submit svg { width: 20px; height: 20px; transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-su-submit:hover { background: color-mix(in oklch, var(--foreground, oklch(0.215 0.008 265)) 90%, transparent); } .ds-su-submit:hover svg { transform: translateX(4px); } .ds-su-submit:focus-visible { outline: 2px solid var(--iron-2, oklch(0.62 0.2 33)); outline-offset: 3px; } .ds-su-google { display: flex; align-items: center; height: 56px; padding: 0 16px; font-size: 16px; font-weight: 500; color: inherit; text-decoration: none; transition: background-color 150ms; } .ds-su-google:hover { background: var(--muted, oklch(0.945 0.004 260)); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Rapport de thermographie",
+    "overview": "**Creative North Star: \"Rapport de thermographie\"**\n\nEvery Clozer surface is a building-thermography report about a proposal. The page is cool white report paper (graphite night in the app's dark theme), written in graphite ink, divided by hairline rules into numbered fields. The document being tracked appears as a strip of thermal plates: each page of the quote seen through a camera, heating from deep indigo to white-hot where the prospect lingered. A calibrated scale bar sits beside the readings, a reticle marks the hottest page. Everything that is not heat data stays achromatic, so the one colour on screen is always a measurement.\n\nThe world has two registers built from one material. The landing (Persuade) is the full report: square corners, ink rules between sections, a huge condensed headline, a live reading of an example quote that heats over a few seconds. The seller app (Operate) is the same report folded into a working tool: the \"Rapport du jour\" header strip, a ranked list of deals as report rows each led by its thermal strip, near-square controls (2.4 to 6px) where the app needs affordances. Density is moderate; rows breathe (16px vertical) but there are no decorative panels, no KPI-card grid, no gradients outside heat.\n\nRejected by the direction contracts and absent from the build: the grey KPI-card dashboard, the split hero with a product screenshot and a row of feature cards.",
+    "keyCharacteristics": [
+      "Achromatic chrome: paper, sheet white, graphite ink, hairlines.",
+      "The ironbow scale (iron-0 to iron-4) paints heat data only: plates, scale bars, heat swatches, the logo's hot spot.",
+      "Archivo on its width axis: condensed (72%) for verdict headlines, normal width for everything else; Geist Mono for report fields.",
+      "Tabular digits everywhere (`font-variant-numeric: tabular-nums` on body).",
+      "Hairline grids and ink rules instead of boxes and shadows.",
+      "One texture, the diagonal hatch, reserved for overdue follow-ups."
+    ],
+    "rules": [
+      {
+        "name": "The Ironbow-Only-On-Heat Rule",
+        "body": "iron-0 to iron-4 and the heat tokens appear only where they encode reading heat (plates, scale bars, heat swatches and badges, live dot) plus three fixed brand touches: the logo's hot spot, the text caret, the selection highlight. Never on buttons, headings, backgrounds or icons.",
+        "section": "colors"
+      },
+      {
+        "name": "The Achromatic Chrome Rule",
+        "body": "Navigation, buttons, cards and type are graphite on paper. The primary action is ink, not a hue.",
+        "section": "colors"
+      },
+      {
+        "name": "The Word-Beside-Swatch Rule",
+        "body": "Temperature is never colour alone: every heat swatch sits next to its word (Chaud / Tiède / Froid, or \"Pas encore lu\") and often its score. Heat swatches are small squares (8 to 10px).",
+        "section": "colors"
+      },
+      {
+        "name": "The Condensed Verdict Rule",
+        "body": "Condensed width is for headlines that state a verdict (display and title roles), the wordmark, and large measured figures (a score, a segment name on the landing). Body, labels and buttons stay at normal width.",
+        "section": "typography"
+      },
+      {
+        "name": "The Role-Scale Rule",
+        "body": "Pick a role (display, title, heading, body, small, micro), never a pixel size. The scale exists so a page never picks a size again.",
+        "section": "typography"
+      },
+      {
+        "name": "The Instrument Digit Rule",
+        "body": "All digits are tabular. Values that read as instrument output (P.4, 3:38, +34, n° 0412, dates in the report strip) are set in Geist Mono.",
+        "section": "typography"
+      },
+      {
+        "name": "The Hairline Field Rule",
+        "body": "Ink rule = boundary of a block; hairline = separation inside it. Never box an item that a hairline can separate.",
+        "section": "layout"
+      },
+      {
+        "name": "The Paper-Flat Rule",
+        "body": "Surfaces lie flat at rest. A shadow means \"this floats\" (popover, dialog) or \"this responds to you\" (interactive card hover), nothing else.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Near-Square Rule",
+        "body": "No radius above 6px on new surfaces. Pills and fully-rounded controls do not belong to this world.",
+        "section": "shapes"
+      },
+      {
+        "name": "The One Texture Rule",
+        "body": "The diagonal hatch (135deg, 1.5px stroke, 6px period, in currentColor) marks an overdue follow-up and nothing else.",
+        "section": "shapes"
+      }
+    ],
+    "dos": [
+      "Do keep chrome achromatic: graphite ink on report paper and sheet white, with soft ink for secondary text.",
+      "Do show heat as a thermal plate strip, a heat scale, or a square swatch beside its word and score.",
+      "Do separate items with hairlines and bound blocks with a single ink rule.",
+      "Do set verdict headlines in condensed Archivo (display or title role) and instrument values in Geist Mono with tabular digits.",
+      "Do open a report screen with a mono report header strip that carries real fields (date, count, reference); a lone label is not a strip.",
+      "Do label any demonstration data \"Exemple de démonstration\".",
+      "Do keep radii at or under 6px in the app and at 0 on the landing.",
+      "Do give every animation a reduced-motion end state."
+    ],
+    "donts": [
+      "Don't put iron-0 to iron-4 or heat colours on buttons, headings, icons, backgrounds or illustrations.",
+      "Don't build the grey KPI-card dashboard or a hero split with a product screenshot and a row of feature cards.",
+      "Don't use the hatch for anything but an overdue follow-up.",
+      "Don't convey temperature by colour alone.",
+      "Don't use pills or fully rounded shapes; circles are reserved for the hot spot (logo dot, live-reading dot).",
+      "Don't lift resting surfaces with shadows; shadows mean floating or responding.",
+      "Don't place a small label above a section heading as a kicker; report metadata lives in the full-width header strip only."
+    ]
+  }
+}
