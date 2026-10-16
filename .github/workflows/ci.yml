@@ -60,7 +60,14 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
-      - run: npm run build
+      # Builds too. The zip is what gets uploaded to the Chrome Web Store.
+      - run: npm run zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chrome-extension
+          path: extension/.output/*-chrome.zip
+          if-no-files-found: error
+          include-hidden-files: true
 
   outlook:
     runs-on: ubuntu-latest
@@ -79,3 +86,4 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      - run: npm run validate

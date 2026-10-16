@@ -8,6 +8,7 @@ const LEGAL_LINKS = [
   { href: "/cgu", label: "CGU" },
   { href: "/sous-traitants", label: "Sous-traitants" },
   { href: "/mentions-legales", label: "Mentions légales" },
+  { href: "/support", label: "Support" },
 ];
 
 export function SiteFooter() {

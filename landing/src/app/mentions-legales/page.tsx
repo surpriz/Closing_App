@@ -8,18 +8,17 @@ export const metadata: Metadata = {
   description: "Éditeur et hébergeur du site Clozer.",
 };
 
-// TODO before publishing: fill in the company details (Kbis) and have the page reviewed
 export default function LegalNotice() {
   return (
-    <LegalPage title="Mentions légales" updatedAt="11 octobre 2026">
+    <LegalPage title="Mentions légales" updatedAt="16 octobre 2026">
       <h2>Éditeur</h2>
       <p>
-        [Raison sociale], [forme juridique] au capital de [montant] €<br />
-        Siège : [adresse]<br />
-        RCS [ville] [numéro SIREN] · TVA intracommunautaire [numéro]<br />
+        JAAP v2, SASU au capital de 500 €<br />
+        Siège : 155 chemin des Écureuils, 26450 Charols<br />
+        945 292 795 R.C.S. Romans · TVA intracommunautaire FR74945292795<br />
         Contact : <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
       </p>
-      <p>Directeur de la publication : [prénom nom], [fonction].</p>
+      <p>Directeur de la publication : Jérôme Laval, président.</p>
 
       <h2>Hébergeur</h2>
       <p>

@@ -11,7 +11,7 @@ npm test               # vitest (helpers + adapters on simplified DOM fixtures)
 npm run typecheck
 npm run build          # production -> .output/chrome-mv3 (app.clozer.club)
 npm run build:staging  # staging    -> .output/chrome-mv3-staging (staging.clozer.club)
-npm run zip            # Web Store upload
+npm run zip            # Web Store upload (listing copy: store/listing.md)
 ```
 
 To load a build by hand: `chrome://extensions` → Developer mode → Load unpacked → the `.output/...` folder. Branded Chrome ignores `--load-extension`, so scripted tests use Chrome for Testing.

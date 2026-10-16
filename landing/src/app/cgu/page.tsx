@@ -13,7 +13,7 @@ export default function Terms() {
   const mail = <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>;
 
   return (
-    <LegalPage title="Conditions d'utilisation" updatedAt="11 octobre 2026">
+    <LegalPage title="Conditions d'utilisation" updatedAt="16 octobre 2026">
       <p>
         Ces conditions encadrent l&apos;utilisation de Clozer, service édité par [raison sociale] (« Clozer »), par
         les professionnels qui créent un espace (« le Client ») et les personnes qu&apos;ils y invitent. Créer un
@@ -73,7 +73,7 @@ export default function Terms() {
       </p>
 
       <h2>8. Droit applicable</h2>
-      <p>Droit français. À défaut d&apos;accord amiable, tribunaux compétents de [ville du siège].</p>
+      <p>Droit français. À défaut d&apos;accord amiable, tribunaux compétents du ressort de Romans-sur-Isère.</p>
 
       <h2>Annexe : accord de traitement des données (article 28 du RGPD)</h2>
       <p>

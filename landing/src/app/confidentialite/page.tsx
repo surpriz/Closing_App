@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 // Keep in sync with the app: retention/purge.ts, tracking/request-context.ts, ai/provider.ts
 export default function Privacy() {
   return (
-    <LegalPage title="Confidentialité" updatedAt="11 octobre 2026">
+    <LegalPage title="Confidentialité" updatedAt="13 octobre 2026">
       <p>
         Clozer permet à un vendeur d&apos;envoyer une proposition commerciale sous forme de lien, de voir comment elle
         est consultée et de relancer au bon moment. Cette page explique ce que nous collectons, dans quel but, combien
@@ -68,10 +68,17 @@ export default function Privacy() {
 
       <h2>L&apos;extension Chrome et le complément Outlook</h2>
       <p>
-        Ils s&apos;activent seulement quand vous rédigez un email. Ils ne lisent pas le contenu de vos emails. Quand vous
-        leur demandez de remplacer un PDF par un lien, ils envoient à Clozer ce PDF ainsi que l&apos;adresse et le nom
-        du premier destinataire, pour créer le lien à son nom. Ils gardent un jeton de connexion, révocable à tout
-        moment dans les réglages de Clozer.
+        Ils n&apos;agissent que dans un email en cours de rédaction. Ils ne lisent pas vos emails reçus et
+        n&apos;envoient pas le texte de vos messages à Clozer. Quand un PDF est remplacé par un lien (après votre accord
+        dans Chrome, automatiquement dans Outlook sauf si vous activez « Me demander d&apos;abord »), ils envoient à
+        Clozer ce PDF ainsi que l&apos;adresse et le nom du premier destinataire, pour créer le lien à son nom. Dans
+        Outlook, à l&apos;envoi, le complément repère les liens Clozer présents dans l&apos;email pour les marquer comme
+        envoyés.
+      </p>
+      <p>
+        Ils interrogent Clozer régulièrement pour vous prévenir quand un prospect lit une de vos propositions. Ils
+        gardent un jeton de connexion, révocable à tout moment dans les réglages de Clozer. Rien n&apos;est revendu ni
+        utilisé pour de la publicité.
       </p>
 
       <h2>Intelligence artificielle</h2>

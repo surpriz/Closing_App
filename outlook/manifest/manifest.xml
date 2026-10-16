@@ -9,7 +9,7 @@
   <Description DefaultValue="Remplacez le PDF joint à un email par un lien Clozer, et voyez qui consulte vos propositions."/>
   <IconUrl DefaultValue="{{BASE}}/icons/64.png"/>
   <HighResolutionIconUrl DefaultValue="{{BASE}}/icons/128.png"/>
-  <SupportUrl DefaultValue="{{ORIGIN}}"/>
+  <SupportUrl DefaultValue="https://www.clozer.club/support"/>
   <AppDomains>
     <AppDomain>{{ORIGIN}}</AppDomain>
   </AppDomains>
