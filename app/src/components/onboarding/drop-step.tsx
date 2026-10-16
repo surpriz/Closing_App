@@ -23,6 +23,7 @@ export function DropStep({
         title={firstName ? `Bienvenue, ${firstName}. Déposez un document.` : "Bienvenue. Déposez un document."}
         lead="Le dernier que vous avez envoyé fait très bien l'affaire : personne ne le recevra pendant ce test. Dans une minute, vous le verrez chauffer comme votre prospect le lira."
       />
+      <p className="font-medium">Rien à installer. Tout se passe ici, dans votre navigateur.</p>
       <figure className="flex items-center gap-4">
         <span aria-hidden className="grid w-40 shrink-0 grid-cols-6 gap-px">
           {Array.from({ length: 6 }, (_, i) => (
