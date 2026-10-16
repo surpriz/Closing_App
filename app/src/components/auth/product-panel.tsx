@@ -15,7 +15,7 @@ export function ProductPanel() {
       className="hidden border-l border-foreground bg-card lg:flex lg:flex-col lg:justify-center lg:px-12 xl:px-20"
     >
       <div className="max-w-xl">
-        <p className="condensed text-title">Chaque matin, votre devis à la caméra thermique.</p>
+        <p className="condensed text-title">Chaque matin, vos documents à la caméra thermique.</p>
         <figure aria-hidden className="mt-10 border border-foreground">
           <div className="flex items-baseline justify-between border-b border-foreground px-4 py-2.5 text-small">
             <span className="font-semibold">Rapport du jour</span>

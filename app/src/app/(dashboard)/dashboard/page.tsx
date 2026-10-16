@@ -140,7 +140,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
             Bienvenue sur Clozer.
           </h1>
           <p className="max-w-xl text-body text-muted-foreground">
-            Déposez un devis ou une proposition : le lien à envoyer est prêt
+            Déposez un document (devis, facture, présentation…) : le lien à envoyer est prêt
             dans la seconde.
           </p>
         </div>

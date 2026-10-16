@@ -20,7 +20,7 @@ export function DropStep({
   return (
     <div className="space-y-8">
       <StepHeading
-        title={firstName ? `Bienvenue, ${firstName}. Déposez un devis.` : "Bienvenue. Déposez un devis."}
+        title={firstName ? `Bienvenue, ${firstName}. Déposez un document.` : "Bienvenue. Déposez un document."}
         lead="Le dernier que vous avez envoyé fait très bien l'affaire : personne ne le recevra pendant ce test. Dans une minute, vous le verrez chauffer comme votre prospect le lira."
       />
       <figure className="flex items-center gap-4">

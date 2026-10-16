@@ -264,7 +264,7 @@ function SourcePicker({
           <div className="space-y-1">
             <p className="text-heading">Déposez un document ou un lien ici</p>
             <p className="text-small text-muted-foreground">
-              Devis, présentation, proposition… en PDF, 25 Mo maximum
+              Devis, facture, présentation, doc technique… en PDF, 25 Mo maximum
             </p>
           </div>
         )}
@@ -440,7 +440,7 @@ export function UploadButton({ uploadPrefix, pitchUploadPrefix }: { uploadPrefix
           <DialogHeader>
             <DialogTitle className="text-heading">Ajouter un document ou un lien</DialogTitle>
             <DialogDescription>
-              Un PDF (devis, présentation, proposition…), une page web (Notion, Loom, Figma, Webflow, Google
+              Un PDF (devis, facture, présentation, doc technique…), une page web (Notion, Loom, Figma, Webflow, Google
               Slides…), ou une vidéo que vous enregistrez ici.
             </DialogDescription>
           </DialogHeader>

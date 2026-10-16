@@ -93,7 +93,7 @@ function content(
           { kind: "text", text: hello },
           {
             kind: "text",
-            text: "Déposez un devis, puis ouvrez le lien comme le ferait votre prospect. Vous verrez tout de suite ce que Clozer vous montre. Deux minutes.",
+            text: "Déposez un document (devis, facture, présentation, peu importe), puis ouvrez le lien comme le ferait votre prospect. Vous verrez tout de suite ce que Clozer vous montre. Deux minutes.",
           },
           { kind: "text", text: "Rien à installer, tout se fait dans votre navigateur." },
           { kind: "button", label: "C'est parti", href: `${data.appUrl}/bienvenue` },
@@ -102,7 +102,7 @@ function content(
     case "no_document":
       return {
         subject: "Votre premier document sur Clozer",
-        title: "Prenez le dernier devis que vous avez envoyé",
+        title: "Prenez le dernier document que vous avez envoyé",
         blocks: [
           { kind: "text", text: hello },
           {

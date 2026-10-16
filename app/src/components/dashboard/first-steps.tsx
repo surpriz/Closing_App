@@ -23,7 +23,7 @@ export function FirstSteps({
   const steps: Step[] = [
     {
       title: "Déposez un document",
-      description: "Un devis ou une présentation en PDF, ou un lien Notion, Loom, Figma… Le lien à envoyer est prêt aussitôt.",
+      description: "Un devis, une facture, une présentation ou un doc technique en PDF, ou un lien Notion, Loom, Figma… Le lien à envoyer est prêt aussitôt.",
       done: hasDocument,
     },
     {
