@@ -16,55 +16,85 @@ const base: TodayHeadlineInput = {
 describe("buildTodayHeadline", () => {
   it("leads with a fresh validation", () => {
     expect(
-      buildTodayHeadline({ ...base, freshValidations: ["Acme"], hotProspects: ["Lumen"] }),
-    ).toEqual({ headline: "Acme a validé.", hint: "Appelez Lumen en premier." });
+      buildTodayHeadline({
+        ...base,
+        freshValidations: ["Acme"],
+        hotProspects: ["Lumen"],
+      }),
+    ).toEqual({
+      headline: "Acme a validé.",
+      hint: "Appelez Lumen en premier.",
+    });
   });
 
   it("groups several validations", () => {
-    expect(buildTodayHeadline({ ...base, freshValidations: ["Acme", "Lumen", "Norda"] }).headline).toBe(
-      "Acme et 2 autres ont validé.",
-    );
+    expect(
+      buildTodayHeadline({
+        ...base,
+        freshValidations: ["Acme", "Lumen", "Norda"],
+      }).headline,
+    ).toBe("Acme et 2 autres ont validé.");
   });
 
   it("puts change requests before hot prospects", () => {
-    expect(buildTodayHeadline({ ...base, changeRequests: ["Acme"], hotProspects: ["Lumen"] })).toEqual({
+    expect(
+      buildTodayHeadline({
+        ...base,
+        changeRequests: ["Acme"],
+        hotProspects: ["Lumen"],
+      }),
+    ).toEqual({
       headline: "Acme demande un ajustement.",
       hint: "Répondez-lui aujourd'hui.",
     });
   });
 
   it("names the hottest prospect", () => {
-    expect(buildTodayHeadline({ ...base, hotProspects: ["Acme", "Lumen"] })).toEqual({
+    expect(
+      buildTodayHeadline({ ...base, hotProspects: ["Acme", "Lumen"] }),
+    ).toEqual({
       headline: "2 prospects sont chauds.",
       hint: "Appelez Acme en premier.",
     });
-    expect(buildTodayHeadline({ ...base, hotProspects: ["Acme"] }).headline).toBe("Acme est chaud.");
+    expect(
+      buildTodayHeadline({ ...base, hotProspects: ["Acme"] }).headline,
+    ).toBe("Acme est chaud.");
   });
 
   it("stays calm when prospects are only warm", () => {
-    expect(buildTodayHeadline({ ...base, warmCount: 3, nextFollowupLabel: "demain à 09:00" })).toEqual({
+    expect(
+      buildTodayHeadline({
+        ...base,
+        warmCount: 3,
+        nextFollowupLabel: "demain à 09:00",
+      }),
+    ).toEqual({
       headline: "3 prospects consultent vos documents.",
       hint: "Rien d'urgent. Prochaine relance demain à 09:00.",
     });
   });
 
   it("says when nothing has been opened yet", () => {
-    expect(buildTodayHeadline({ ...base, activeCount: 2, unopenedCount: 2 }).headline).toBe(
-      "Aucun lien n'a encore été ouvert.",
-    );
+    expect(
+      buildTodayHeadline({ ...base, activeCount: 2, unopenedCount: 2 })
+        .headline,
+    ).toBe("Aucun lien n'a encore été ouvert.");
   });
 
   it("invites to create a link when documents exist but none is sent", () => {
-    expect(buildTodayHeadline({ ...base, activeCount: 0, documentCount: 1 })).toEqual({
+    expect(
+      buildTodayHeadline({ ...base, activeCount: 0, documentCount: 1 }),
+    ).toEqual({
       headline: "Votre document est prêt.",
       hint: "Créez un lien pour l'envoyer à un prospect.",
     });
   });
 
   it("invites to import when there is no document at all", () => {
-    expect(buildTodayHeadline({ ...base, activeCount: 0, documentCount: 0 }).headline).toBe(
-      "Aucun document pour l'instant.",
-    );
+    expect(
+      buildTodayHeadline({ ...base, activeCount: 0, documentCount: 0 })
+        .headline,
+    ).toBe("Aucun document pour l'instant.");
   });
 
   it("falls back to a quiet day", () => {
@@ -84,13 +114,36 @@ describe("with the deal analysis", () => {
         aiFocus: { label: "Acme", headline: "Le DAF entre dans la boucle." },
         draftsToReview: 2,
       }),
-    ).toEqual({ headline: "Acme : le DAF entre dans la boucle.", hint: "2 relances attendent votre accord." });
+    ).toEqual({
+      headline: "Acme : le DAF entre dans la boucle.",
+      hint: "2 relances attendent votre accord.",
+    });
     expect(
-      buildTodayHeadline({ ...base, changeRequests: ["Lumen"], aiFocus: { label: "Acme", headline: "X." } }).headline,
+      buildTodayHeadline({
+        ...base,
+        changeRequests: ["Lumen"],
+        aiFocus: { label: "Acme", headline: "X." },
+      }).headline,
     ).toBe("Lumen demande un ajustement.");
   });
 
   it("points at drafts waiting on a quiet day", () => {
-    expect(buildTodayHeadline({ ...base, draftsToReview: 1 }).hint).toBe("Une relance attend votre accord.");
+    expect(buildTodayHeadline({ ...base, draftsToReview: 1 }).hint).toBe(
+      "Une relance attend votre accord.",
+    );
+  });
+
+  it("points to the link waiting since the drop instead of asking for a new one", () => {
+    expect(
+      buildTodayHeadline({
+        ...base,
+        activeCount: 0,
+        documentCount: 1,
+        linkReady: true,
+      }),
+    ).toEqual({
+      headline: "Votre lien est prêt.",
+      hint: "Copiez-le dans votre email à la place de la pièce jointe : vous saurez qui le lit.",
+    });
   });
 });

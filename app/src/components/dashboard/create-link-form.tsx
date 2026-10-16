@@ -15,9 +15,12 @@ import { Button } from "@/components/ui/button";
 export function NewLinkButton({
   documentId,
   variant = "default",
+  label = "Un lien pour un autre prospect",
 }: {
   documentId: string;
   variant?: "default" | "outline";
+  /** "Créer le lien" when the document has none yet. */
+  label?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -36,7 +39,7 @@ export function NewLinkButton({
       }
     >
       <Plus />
-      {pending ? "Création…" : "Nouveau lien prospect"}
+      {pending ? "Création…" : label}
     </Button>
   );
 }

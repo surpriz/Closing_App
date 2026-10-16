@@ -22,6 +22,8 @@ export type TodayHeadlineInput = {
   aiFocus?: { label: string; headline: string } | null;
   /** Follow-ups written and waiting for the seller's approval. */
   draftsToReview?: number;
+  /** A link was created on drop and waits to be sent. */
+  linkReady?: boolean;
 };
 
 export type TodayHeadline = { headline: string; hint: string };
@@ -92,6 +94,12 @@ export function buildTodayHeadline(input: TodayHeadlineInput): TodayHeadline {
   if (input.activeCount === 0) {
     if (input.documentCount === 0) {
       return { headline: "Aucun document pour l'instant.", hint: "Ajoutez un PDF ou un lien pour commencer." };
+    }
+    if (input.linkReady) {
+      return {
+        headline: "Votre lien est prêt.",
+        hint: "Copiez-le dans votre email à la place de la pièce jointe : vous saurez qui le lit.",
+      };
     }
     return {
       headline: input.documentCount === 1 ? "Votre document est prêt." : "Vos documents sont prêts.",

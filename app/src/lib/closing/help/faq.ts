@@ -119,12 +119,12 @@ export const FAQ: FaqSection[] = [
       {
         id: "un-lien-par-prospect",
         q: "Pourquoi un lien par prospect ?",
-        a: "Pour savoir qui lit. Chaque lien devient un deal, avec ses lectures, sa température et ses relances. Sur la page du document, « Nouveau lien prospect » en crée un de plus.",
+        a: "Pour savoir qui lit. Chaque lien devient un deal, avec ses lectures, sa température et ses relances. Sur la page du document, « Un lien pour un autre prospect » (« Créer le lien » tant que le document n'en a aucun) en crée un de plus.",
       },
       {
         id: "lien-partage",
         q: "Puis-je envoyer un même lien à beaucoup de monde ?",
-        a: "Oui, avec « Plusieurs personnes » sur l'écran de partage : c'est un lien partagé, pratique pour une plaquette, un post LinkedIn ou une signature. Chaque lecteur donne son email et reçoit son propre lien, suivi comme un deal ; ses relances attendent toujours votre feu vert.\n\nUn lien déjà lu ou attribué à un contact ne peut plus devenir partagé : créez-en un nouveau.",
+        a: "Oui, avec « Lien ouvert à tous » sur l'écran de partage : c'est un lien partagé, pratique pour une plaquette, un post LinkedIn ou une signature. Chaque lecteur donne son email et reçoit son propre lien, suivi comme un deal ; ses relances attendent toujours votre feu vert.\n\nUn lien déjà lu ou attribué à un contact ne peut plus devenir partagé : créez-en un nouveau.",
       },
       {
         id: "envoyer",
@@ -139,7 +139,7 @@ export const FAQ: FaqSection[] = [
       {
         id: "demander-email",
         q: "Comment savoir exactement qui lit ?",
-        a: "Activez « Demander son email avant de lire » dans les réglages du lien (ou pour tous les nouveaux liens dans Réglages → Réglages avancés → Vos liens). Sans cela, les lecteurs anonymes sont désignés par une lettre : une même lettre = un même navigateur.\n\nUtile surtout quand le document circule en interne chez le prospect.",
+        a: "Activez « Demander son email avant de lire » dans les réglages du lien (un lien « Pour un prospect » ne le demande pas par défaut : il a été fait pour une personne). Sans cela, les lecteurs anonymes sont désignés par une lettre : une même lettre = un même navigateur.\n\nUtile surtout quand le document circule en interne chez le prospect.",
       },
       {
         id: "expiration",
@@ -539,7 +539,7 @@ export const FAQ: FaqSection[] = [
       {
         id: "vos-liens",
         q: "Comment changer les réglages par défaut des nouveaux liens ?",
-        a: "Réglages → Réglages avancés → Vos liens : demander l'email du lecteur, expiration des devis et propositions, vocaux, préparer les relances. Chaque lien reste modifiable ensuite.",
+        a: "Réglages → Réglages avancés → Vos liens : expiration des devis et propositions, vocaux, préparer les relances. Chaque lien reste modifiable ensuite.",
         link: { href: "/settings#liens", label: "Réglages → Réglages avancés → Vos liens" },
       },
       {

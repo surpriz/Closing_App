@@ -58,7 +58,7 @@ describe("linkDefaultsFor", () => {
     const defaults = linkDefaultsFor(null, workspace, now, "Europe/Paris");
     expect(defaults).toEqual({
       shared: false,
-      requireEmail: true,
+      requireEmail: false,
       chatEnabled: true,
       voiceCommentsEnabled: false,
       followupsEnabled: true,
@@ -66,6 +66,11 @@ describe("linkDefaultsFor", () => {
       bookingEnabled: true,
       expiresAt: null,
     });
+  });
+
+  it("never asks a personal link's reader for their email, whatever the old workspace setting", () => {
+    expect(linkDefaultsFor("QUOTE", workspace, now, "Europe/Paris").requireEmail).toBe(false);
+    expect(linkDefaultsFor(null, workspace, now, "Europe/Paris", { kind: "VIDEO" }).requireEmail).toBe(false);
   });
 
   it("sets no deadline when the workspace turned it off", () => {

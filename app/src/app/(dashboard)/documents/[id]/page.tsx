@@ -58,6 +58,7 @@ import {
   VIDEO_SEGMENTS,
 } from "@/lib/closing/documents/video-segments";
 import { videoProvider } from "@/lib/closing/documents/web-link";
+import { buttonVariants } from "@/components/ui/button";
 import { prisma } from "@/lib/db";
 import {
   formatBytes,
@@ -132,6 +133,33 @@ export default async function DocumentDetailPage({
   });
 
   const linkIds = document.links.map((link) => link.id);
+  // Dropping the file made a link already: until one is sent, that is the one to send
+  const pendingLink =
+    document.links.length === 0
+      ? await prisma.link.findFirst({
+          where: {
+            documentId: document.id,
+            archivedAt: null,
+            draftAt: { not: null },
+            isOnboardingTest: false,
+          },
+          orderBy: { createdAt: "desc" },
+          select: { id: true },
+        })
+      : null;
+  const linkAction = pendingLink ? (
+    <Link
+      href={`/links/${pendingLink.id}`}
+      className={buttonVariants({ size: "lg" })}
+    >
+      Envoyer mon lien
+    </Link>
+  ) : (
+    <NewLinkButton
+      documentId={document.id}
+      label={document.links.length === 0 ? "Créer le lien" : undefined}
+    />
+  );
   const [analytics, origin, followups, alerts, furthest, insights, readings] =
     await Promise.all([
       getDocumentAnalytics(document.id),
@@ -351,7 +379,7 @@ export default async function DocumentDetailPage({
           }
           action={
             <>
-              <NewLinkButton documentId={document.id} />
+              {linkAction}
               {/* Deleting takes every seller's links down with it */}
               {isManagerRole(role) && (
                 <DeleteDocumentButton
@@ -433,9 +461,7 @@ export default async function DocumentDetailPage({
                     ? "Envoyez-le à la place du lien d'origine. Vous verrez qui l'ouvre, combien de temps il y passe, et Clozer relancera pour vous."
                     : "Envoyez-le à la place du PDF. Vous verrez qui l'ouvre, combien de temps il lit, et Clozer relancera pour vous."
               }
-              action={
-                <NewLinkButton documentId={document.id} variant="outline" />
-              }
+              action={pendingLink ? null : linkAction}
             />
           ) : (
             <DocumentLinks rows={prospectRows} video={isVideo} />

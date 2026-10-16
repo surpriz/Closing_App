@@ -1,11 +1,30 @@
 "use client";
 
-import { Check, ChevronDown, Copy, Eye, Mail, Sparkles, User, Users } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  Copy,
+  Eye,
+  Mail,
+  Sparkles,
+  User,
+  Users,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition, type ComponentProps, type FormEvent, type ReactNode } from "react";
+import {
+  useState,
+  useTransition,
+  type ComponentProps,
+  type FormEvent,
+  type ReactNode,
+} from "react";
 import { toast } from "sonner";
 
-import { markLinkSent, setLinkRecipient, setLinkShared } from "@/app/(dashboard)/links/actions";
+import {
+  markLinkSent,
+  setLinkRecipient,
+  setLinkShared,
+} from "@/app/(dashboard)/links/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { composeUrl, shareDraft } from "@/lib/closing/share/compose";
@@ -79,7 +98,13 @@ export function ShareReady({
   }
 
   function sendByEmail() {
-    const draft = shareDraft({ url, title, to: recipient?.email, firstName: recipient?.firstName, signature });
+    const draft = shareDraft({
+      url,
+      title,
+      to: recipient?.email,
+      firstName: recipient?.firstName,
+      signature,
+    });
     const target = composeUrl(mailClient, draft);
     if (!target) return void copy();
     if (target.startsWith("mailto:")) window.location.href = target;
@@ -122,14 +147,18 @@ export function ShareReady({
             <p className="max-w-xl text-body text-muted-foreground">
               {shared
                 ? "Postez-le, mettez-le en signature ou transférez-le : chaque lecteur donne son email et reçoit son propre lien, suivi comme un deal."
-                : "Envoyez-le comme vous voulez : vous saurez qui le lit, quelles pages, et quand relancer."}
+                : "Il l'ouvre et lit tout de suite, sans rien remplir. Vous saurez quelles pages, combien de temps, et quand relancer."}
             </p>
           )}
         </div>
-        <div className="flex gap-px border border-border bg-border" role="radiogroup" aria-label="Pour qui est ce lien">
+        <div
+          className="flex gap-px border border-border bg-border"
+          role="radiogroup"
+          aria-label="Pour qui est ce lien"
+        >
           {[
-            { value: false, label: "Une personne", icon: User },
-            { value: true, label: "Plusieurs personnes", icon: Users },
+            { value: false, label: "Pour un prospect", icon: User },
+            { value: true, label: "Lien ouvert à tous", icon: Users },
           ].map(({ value, label, icon: Icon }) => (
             <button
               key={label}
@@ -152,6 +181,42 @@ export function ShareReady({
         </div>
       </div>
 
+      {shared ? null : recipient ? (
+        <p className="text-small text-muted-foreground">
+          Pour <span className="text-foreground">{recipient.email}</span>
+        </p>
+      ) : (
+        <form onSubmit={saveRecipient} className="space-y-1.5">
+          <label htmlFor="share-who" className="text-small font-medium">
+            Pour qui est ce lien ?{" "}
+            <span className="font-normal text-muted-foreground">
+              (facultatif)
+            </span>
+          </label>
+          <div className="flex gap-2">
+            <Input
+              id="share-who"
+              value={who}
+              onChange={(e) => setWho(e.target.value)}
+              placeholder="Marie Dupont, Acme ou marie@acme.fr"
+              className="h-10"
+              disabled={pending}
+            />
+            <Button
+              type="submit"
+              variant="outline"
+              size="lg"
+              disabled={pending || !who.trim()}
+            >
+              Enregistrer
+            </Button>
+          </div>
+          <p className="text-micro text-muted-foreground">
+            Le deal portera ce nom. Avec un email, Clozer pourra le relancer.
+          </p>
+        </form>
+      )}
+
       <div className="flex flex-col gap-2 sm:flex-row">
         <button
           type="button"
@@ -171,30 +236,11 @@ export function ShareReady({
         </Button>
       </div>
 
-      {shared ? null : recipient ? (
-        <p className="text-small text-muted-foreground">
-          Pour <span className="text-foreground">{recipient.email}</span>
-        </p>
-      ) : (
-        <form onSubmit={saveRecipient} className="flex gap-2">
-          <Input
-            value={who}
-            onChange={(e) => setWho(e.target.value)}
-            placeholder="Pour qui ? Un email ou un nom (facultatif)"
-            aria-label="Pour qui"
-            className="h-10"
-            disabled={pending}
-          />
-          <Button type="submit" variant="outline" size="lg" disabled={pending || !who.trim()}>
-            OK
-          </Button>
-        </form>
-      )}
-
       {processing && (
         <p className="flex items-center gap-2 text-small text-muted-foreground">
           <Sparkles className="size-4 shrink-0 animate-pulse" aria-hidden />
-          Clozer lit votre document pour adapter les réglages. Vous pouvez déjà l&apos;envoyer.
+          Clozer lit votre document pour adapter les réglages. Vous pouvez déjà
+          l&apos;envoyer.
         </p>
       )}
       {notice && (
@@ -206,10 +252,14 @@ export function ShareReady({
 
       <div className="space-y-2 border-t border-border pt-4">
         <p className="text-body font-medium">
-          Mot d&apos;accueil <span className="font-normal text-muted-foreground">(facultatif)</span>
+          Mot d&apos;accueil{" "}
+          <span className="font-normal text-muted-foreground">
+            (facultatif)
+          </span>
         </p>
         <p className="text-small text-muted-foreground">
-          Une vidéo ou un vocal pour présenter le document : le prospect voit votre bulle dès l&apos;ouverture.
+          Une vidéo ou un vocal pour présenter le document : le prospect voit
+          votre bulle dès l&apos;ouverture.
         </p>
         {welcome}
       </div>
@@ -222,13 +272,22 @@ export function ShareReady({
           className="flex w-full flex-wrap items-center gap-x-1.5 gap-y-1 text-left text-small"
         >
           {summary.map((item) => (
-            <span key={item} className="rounded-sm bg-muted px-2 py-0.5 text-muted-foreground">
+            <span
+              key={item}
+              className="rounded-sm bg-muted px-2 py-0.5 text-muted-foreground"
+            >
               {item}
             </span>
           ))}
           <span className="inline-flex items-center gap-1 px-1 text-muted-foreground hover:text-foreground">
             Personnaliser
-            <ChevronDown className={cn("size-4 transition-transform", showSettings && "rotate-180")} aria-hidden />
+            <ChevronDown
+              className={cn(
+                "size-4 transition-transform",
+                showSettings && "rotate-180",
+              )}
+              aria-hidden
+            />
           </span>
         </button>
         {showSettings && <LinkSettingsPanel {...settings} />}

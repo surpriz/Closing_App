@@ -237,7 +237,7 @@ export async function markLinkSent(linkId: string) {
 export async function setLinkRecipient(linkId: string, raw: string): Promise<LinkFormState> {
   const link = await requireOwnedLink(linkId);
   // Its readers come through the gate: a named contact would be greeted to every one of them
-  if (link.shared) return { error: "Un lien partagé n'a pas de destinataire : passez-le en « Une personne »." };
+  if (link.shared) return { error: "Un lien partagé n'a pas de destinataire : passez-le en « Pour un prospect »." };
   const { email, label } = parseShareRecipient(raw);
   if (!email && !label) return { error: "Indiquez un email ou un nom." };
 
@@ -264,7 +264,7 @@ export async function saveAsWorkspaceDefaults(linkId: string) {
   const { organization, role } = await requireWorkspace();
   if (!isManagerRole(role)) return { error: "Seuls les admins changent les réglages par défaut." };
   // The forced email gate would become everyone's default
-  if (link.shared) return { error: "Faites-le depuis un lien « Une personne »." };
+  if (link.shared) return { error: "Faites-le depuis un lien « Pour un prospect »." };
 
   const current = await prisma.link.findUniqueOrThrow({
     where: { id: link.id },

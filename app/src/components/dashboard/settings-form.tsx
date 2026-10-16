@@ -528,16 +528,6 @@ export function SettingsForm({
             title="Vos liens"
             description="Ce que chaque nouveau lien propose d'office. Clozer l'ajuste au document (le décompte ne va que sur les devis et propositions), et tout reste modifiable lien par lien."
           >
-            <Row>
-              <label className="flex cursor-pointer items-center gap-2.5">
-                <Checkbox
-                  name="requireEmailByDefault"
-                  defaultChecked={initial.requireEmailByDefault}
-                  onCheckedChange={markDirty}
-                />
-                <span>Demander son email au lecteur avant d&apos;ouvrir</span>
-              </label>
-            </Row>
             <Row hint="Passé cette date, le prospect voit le document verrouillé et peut vous demander une prolongation.">
               <span>
                 Un devis ou une proposition expire après

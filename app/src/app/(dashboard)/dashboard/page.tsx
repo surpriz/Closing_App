@@ -4,6 +4,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { AutopilotBanner } from "@/components/dashboard/autopilot-banner";
+import { CopyButton } from "@/components/dashboard/copy-button";
 import { NewLinkButton } from "@/components/dashboard/create-link-form";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { FirstSteps } from "@/components/dashboard/first-steps";
@@ -20,9 +21,14 @@ import {
 } from "@/components/dashboard/today/funnel";
 import { LiveStrip } from "@/components/dashboard/today/live-strip";
 import { PeriodTabs } from "@/components/dashboard/today/period-tabs";
-import { TodoList, UnopenedDeals, type TodoRow } from "@/components/dashboard/today/todo-list";
+import {
+  TodoList,
+  UnopenedDeals,
+  type TodoRow,
+} from "@/components/dashboard/today/todo-list";
 import { buildTodayHeadline } from "@/components/dashboard/today-headline";
 import { UploadDropzone } from "@/components/dashboard/upload-dropzone";
+import { buttonVariants } from "@/components/ui/button";
 import { getAppOrigin } from "@/lib/app-origin";
 import { documentUploadPrefix, pitchUploadPrefix } from "@/lib/blob";
 import { dealAction } from "@/lib/closing/dashboard/deal-action";
@@ -69,7 +75,10 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
   // A seller's day is their own deals; the team view is /equipe
   const { user, organization, role, scope } = await requireWorkspace();
   const organizationId = organization.id;
-  const { mailClient, onboardingCompletedAt } = await getSellerPrefs(user.id, organizationId);
+  const { mailClient, onboardingCompletedAt } = await getSellerPrefs(
+    user.id,
+    organizationId,
+  );
   const mine = { organizationId, ...sellerLinks(scope) };
   const now = new Date();
   const period = parsePeriod((await props.searchParams).p);
@@ -91,6 +100,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
     sentAlone,
     linkCount,
     firstRead,
+    readyDraft,
   ] = await Promise.all([
     prisma.document.count({ where: { organizationId, archivedAt: null } }),
     prisma.document.findFirst({
@@ -123,9 +133,21 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
       where: { link: { ...mine, isOnboardingTest: false }, isBot: false },
       select: { id: true },
     }),
+    // The link created when the file was dropped, waiting to be sent: it is the one to send, not a new one
+    prisma.link.findFirst({
+      where: {
+        ...mine,
+        archivedAt: null,
+        draftAt: { not: null },
+        isOnboardingTest: false,
+      },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, slug: true, document: { select: { name: true } } },
+    }),
   ]);
   // A fresh seller is walked through a first document once; anyone joining a workspace in use is not
-  if (shouldForceOnboarding({ onboardingCompletedAt, documentCount })) redirect("/bienvenue");
+  if (shouldForceOnboarding({ onboardingCompletedAt, documentCount }))
+    redirect("/bienvenue");
   const uploadPrefix = documentUploadPrefix(organizationId);
   const pitchPrefix = pitchUploadPrefix(organizationId);
 
@@ -137,8 +159,8 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
             Bienvenue sur Clozer.
           </h1>
           <p className="max-w-xl text-body text-muted-foreground">
-            Déposez un document (devis, facture, présentation…) : le lien à envoyer est prêt
-            dans la seconde.
+            Déposez un document (devis, facture, présentation…) : le lien à
+            envoyer est prêt dans la seconde.
           </p>
         </div>
         <FirstSteps
@@ -168,6 +190,9 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
     );
   }
   const showFirstSteps = linkCount === 0 || !firstRead;
+  // A step is never ticked before the one it depends on: no "opened" before "sent"
+  const hasSentLink = linkCount > 0;
+  const draftUrl = readyDraft ? `${origin}/v/${readyDraft.slug}` : null;
 
   const readingLinks = new Set(live.readers.map((reader) => reader.linkId));
   const readings = await getPageReadings(
@@ -222,6 +247,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
       ? { label: focus.label, headline: focus.insightHeadline! }
       : null,
     draftsToReview: deals.reduce((sum, deal) => sum + deal.draftCount, 0),
+    linkReady: !hasSentLink && !!readyDraft,
   });
 
   const periodHint = PERIODS[period].hint;
@@ -254,12 +280,37 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
         {showFirstSteps && (
           <FirstSteps
             hasDocument
-            hasLink={linkCount > 0}
-            hasRead={!!firstRead}
+            hasLink={hasSentLink}
+            hasRead={hasSentLink && !!firstRead}
+            readyLink={
+              !hasSentLink && readyDraft ? readyDraft.document.name : null
+            }
             action={
-              linkCount === 0 &&
-              latestReadyDocument && (
-                <NewLinkButton documentId={latestReadyDocument.id} />
+              hasSentLink ? null : readyDraft && draftUrl ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <CopyButton
+                    value={draftUrl}
+                    label="Copier mon lien"
+                    variant="default"
+                    size="lg"
+                  />
+                  <Link
+                    href={`/links/${readyDraft.id}`}
+                    className={buttonVariants({
+                      variant: "outline",
+                      size: "lg",
+                    })}
+                  >
+                    Choisir pour qui, l&apos;envoyer par email
+                  </Link>
+                </div>
+              ) : (
+                latestReadyDocument && (
+                  <NewLinkButton
+                    documentId={latestReadyDocument.id}
+                    label="Créer le lien"
+                  />
+                )
               )
             }
           />
@@ -276,11 +327,13 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
               <EmptyState
                 title="Aucun deal en cours."
                 description={
-                  latestReadyDocument
-                    ? `Créez un lien pour « ${latestReadyDocument.name} » et envoyez-le à votre prospect. Il apparaîtra ici avec ce qu'il y a à faire.`
+                  showFirstSteps
+                    ? "Dès que votre lien est envoyé et ouvert, le deal apparaît ici avec ce qu'il y a à faire."
                     : "Ouvrez un document et créez un lien par prospect. Chacun apparaîtra ici avec ce qu'il y a à faire."
                 }
                 action={
+                  // The first steps above already carry the action while they are shown
+                  !showFirstSteps &&
                   latestReadyDocument && (
                     <NewLinkButton
                       documentId={latestReadyDocument.id}
@@ -304,9 +357,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
                     moins urgents.
                   </p>
                 )}
-                {waitingRows.length > 0 && (
-                  <UnopenedDeals rows={waitingRows} />
-                )}
+                {waitingRows.length > 0 && <UnopenedDeals rows={waitingRows} />}
               </>
             )}
           </section>

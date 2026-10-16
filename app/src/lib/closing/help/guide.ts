@@ -82,7 +82,7 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
   Si le document existait déjà, Clozer crée simplement un nouveau lien.
 
 ## Page d'un document (/documents/[id])
-- Bouton « Nouveau lien prospect » : un lien de plus pour un autre prospect.
+- Bouton « Un lien pour un autre prospect » (« Créer le lien » tant que le document n'en a aucun) : un lien de plus pour un autre prospect.
 - Onglet Prospects : un lien par prospect, avec son état, ses lectures, un interrupteur « Relances » par lien
   et le bouton copier.
 - Onglet Lecture : « Ce qui bloque » (sur tous les prospects de ce document), « Temps passé par page » (pages
@@ -108,14 +108,18 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
   leurs relances prévues sont annulées. Il est effacé pour de bon au bout de 30 jours.
 
 ## Écran de partage d'un lien
-- S'affiche juste après le dépôt ou « Nouveau lien prospect », tant que le lien n'est pas envoyé. « Votre lien
+- S'affiche juste après le dépôt ou « Un lien pour un autre prospect » (« Créer le lien » tant que le document n'en a aucun), tant que le lien n'est pas envoyé. « Votre lien
   est prêt ».
-- Choix « Une personne » ou « Plusieurs personnes ». Plusieurs personnes = lien partagé (plaquette, post
+- Choix « Pour un prospect » ou « Lien ouvert à tous ». Lien ouvert à tous = lien partagé (plaquette, post
   LinkedIn, signature) : chaque lecteur donne son email et reçoit son propre lien, suivi comme un deal ; ses
   relances attendent toujours votre feu vert. Un lien déjà lu ou attribué à un contact ne peut plus devenir
   partagé : créez-en un nouveau.
-- « Copier le lien » ou « Envoyer par email » : le lien devient un deal. Champ « Pour qui ? » : un email
-  ajoute le contact, un nom nomme juste le lien.
+- Champ « Pour qui est ce lien ? » en haut (facultatif) : un email ajoute le contact, un nom nomme juste le
+  lien (et le deal).
+- Un lien « Pour un prospect » s'ouvre directement, sans demander d'email au lecteur : il a été fait pour
+  lui. On peut quand même l'exiger lien par lien dans « Personnaliser ». Un lien transféré est repéré comme
+  un nouveau lecteur.
+- « Copier le lien » ou « Envoyer par email » : le lien devient un deal.
 - Aussi : « Personnaliser » (mot d'accueil) et « Voir ce que verra le prospect ». Pour un devis ou une
   proposition, une échéance peut être réglée d'office : le prospect voit un décompte.
 

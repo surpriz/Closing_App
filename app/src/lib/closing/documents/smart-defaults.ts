@@ -11,9 +11,12 @@ import { expiryInDays, showsCountdown } from "../expiry";
  * the workspace values until it is.
  * A video pitch is personal whatever its transcript sounds like: no shared
  * link, no deadline, a "Demander un devis" button (ctaEnabled) and a meeting.
+ * A personal link never asks for the email: it was made for one person, who
+ * should read straight away. A forwarded copy is still spotted as a new reader.
  */
 
 export type WorkspaceLinkDefaults = {
+  /** Kept for older settings; personal links no longer ask for the email. */
   requireEmailByDefault: boolean;
   chatEnabledByDefault: boolean;
   voiceCommentsByDefault: boolean;
@@ -59,7 +62,7 @@ export function linkDefaultsFor(
   if (kind === "VIDEO") {
     return {
       shared: false,
-      requireEmail: workspace.requireEmailByDefault,
+      requireEmail: false,
       chatEnabled: workspace.chatEnabledByDefault,
       voiceCommentsEnabled: false,
       followupsEnabled: workspace.followupsByDefault,
@@ -73,7 +76,7 @@ export function linkDefaultsFor(
   const shared = allowShared && known && SHARED_DOC_TYPES.includes(docType);
   return {
     shared: false,
-    requireEmail: workspace.requireEmailByDefault,
+    requireEmail: false,
     chatEnabled: workspace.chatEnabledByDefault,
     voiceCommentsEnabled: workspace.voiceCommentsByDefault,
     followupsEnabled: workspace.followupsByDefault,
