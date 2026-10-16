@@ -14,6 +14,8 @@ import { isPlatformAdminEmail } from "@/lib/platform-admin";
 import { isProspectingAllowed } from "@/lib/prospecting/flag";
 import { isManagerRole } from "@/lib/roles";
 import { requireWorkspace } from "@/lib/session";
+import { UploadButton } from "@/components/dashboard/upload-dropzone";
+import { documentUploadPrefix, pitchUploadPrefix } from "@/lib/blob";
 
 export default async function DashboardLayout({
   children,
@@ -75,6 +77,10 @@ export default async function DashboardLayout({
           </Link>
           <DashboardNav isManager={isManager} hasTeam={hasTeam} prospecting={isProspectingAllowed(user, organization.id)} />
           <div className="ml-auto flex items-center gap-2">
+            <UploadButton
+              uploadPrefix={documentUploadPrefix(organization.id)}
+              pitchUploadPrefix={pitchUploadPrefix(organization.id)}
+            />
             <CommandMenu entries={entries} />
             <HelpMenu />
             <UserMenu

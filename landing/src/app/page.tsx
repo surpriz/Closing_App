@@ -198,10 +198,8 @@ export default function Home() {
               </span>
             </Readout>
             <Readout label="Activité">Revenu 3 fois depuis hier</Readout>
-            <Readout label="À faire">
-              <span className="hatch inline-flex px-2 py-0.5 text-ink-soft">
-                <span className="bg-paper px-1 text-ink">Relance prévue hier</span>
-              </span>
+            <Readout label="Prochaine relance">
+              Prête · <span className="font-mono">jeu. 10:30</span>
             </Readout>
           </dl>
           </div>

@@ -11,7 +11,6 @@ import { HeatStrip } from "@/components/dashboard/heat-strip";
 import { TIER_LABELS } from "@/components/dashboard/labels";
 import { PageHeader } from "@/components/dashboard/page-header";
 import {
-  UploadButton,
   UploadDropzone,
 } from "@/components/dashboard/upload-dropzone";
 import { documentUploadPrefix, pitchUploadPrefix } from "@/lib/blob";
@@ -117,13 +116,7 @@ export default async function DocumentsPage() {
       />
       <PageHeader
         title="Documents"
-        description="Glissez un PDF ou collez un lien n'importe où sur la page pour l'ajouter."
-        action={
-          <UploadButton
-            uploadPrefix={uploadPrefix}
-            pitchUploadPrefix={pitchPrefix}
-          />
-        }
+        description="Glissez un PDF ou collez un lien n'importe où dans Clozer pour l'ajouter, ou utilisez « Ajouter un document » en haut."
       />
 
       <ul className="stagger divide-y divide-border border-y border-foreground bg-card">

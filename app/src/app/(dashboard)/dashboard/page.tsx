@@ -22,10 +22,7 @@ import { LiveStrip } from "@/components/dashboard/today/live-strip";
 import { PeriodTabs } from "@/components/dashboard/today/period-tabs";
 import { TodoList, UnopenedDeals, type TodoRow } from "@/components/dashboard/today/todo-list";
 import { buildTodayHeadline } from "@/components/dashboard/today-headline";
-import {
-  UploadButton,
-  UploadDropzone,
-} from "@/components/dashboard/upload-dropzone";
+import { UploadDropzone } from "@/components/dashboard/upload-dropzone";
 import { getAppOrigin } from "@/lib/app-origin";
 import { documentUploadPrefix, pitchUploadPrefix } from "@/lib/blob";
 import { dealAction } from "@/lib/closing/dashboard/deal-action";
@@ -245,12 +242,6 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
               {headline}
             </h1>
             <p className="text-body text-muted-foreground">{hint}</p>
-          </div>
-          <div className="shrink-0">
-            <UploadButton
-              uploadPrefix={uploadPrefix}
-              pitchUploadPrefix={pitchPrefix}
-            />
           </div>
         </div>
         <LiveStrip key={live.stamp} initial={live} />

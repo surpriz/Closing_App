@@ -285,13 +285,25 @@ function SourcePicker({
   );
 }
 
+// While the big drop zone is on screen it owns drops and pastes: the header button stands back,
+// so one file never gets imported twice
+let mountedDropzones = 0;
+
+export const OPEN_ADD_DOCUMENT_EVENT = "clozer:add-document";
+
+/** Opens the header's "add a document" dialog from anywhere in the dashboard. */
+export function openAddDocument() {
+  window.dispatchEvent(new Event(OPEN_ADD_DOCUMENT_EVENT));
+}
+
 /**
  * Pasting a link or a file anywhere on the page adds it, unless the seller is
  * typing in a field.
  */
-function usePasteToAdd(source: AddSource, enabled = true) {
+function usePasteToAdd(source: AddSource, enabled = true, yieldToDropzone = false) {
   const onPaste = useEffectEvent((event: ClipboardEvent) => {
     if (!enabled || source.busy || isTyping(event.target)) return;
+    if (yieldToDropzone && mountedDropzones > 0) return;
     const file = event.clipboardData?.files[0];
     if (file) {
       event.preventDefault();
@@ -365,6 +377,12 @@ export function UploadDropzone({
   const source = useAddSource(uploadPrefix, undefined, onCreated);
   const [recording, setRecording] = useState(false);
   usePasteToAdd(source, !recording);
+  useEffect(() => {
+    mountedDropzones += 1;
+    return () => {
+      mountedDropzones -= 1;
+    };
+  }, []);
   return (
     <>
       <SourcePicker source={source} onRecordVideo={pitchUploadPrefix ? () => setRecording(true) : undefined} />
@@ -377,8 +395,9 @@ export function UploadDropzone({
 }
 
 /**
- * Header button once documents exist. The whole window still accepts a
- * dropped file or link, with a veil to show where it lands.
+ * The app header's "add a document" button, on every dashboard page. The whole window accepts a
+ * dropped file or a pasted link, with a veil to show where it lands; page buttons open the same
+ * dialog through openAddDocument().
  */
 export function UploadButton({ uploadPrefix, pitchUploadPrefix }: { uploadPrefix: string } & PitchProps) {
   const [open, setOpen] = useState(false);
@@ -388,12 +407,18 @@ export function UploadButton({ uploadPrefix, pitchUploadPrefix }: { uploadPrefix
   const onDroppedFile = useEffectEvent((file: File) => void source.handleFile(file));
   const onDroppedUrl = useEffectEvent((url: string) => void source.handleUrl(url));
   // The dialog has its own drop zone and field
-  usePasteToAdd(source, !open && !recording);
+  usePasteToAdd(source, !open && !recording, true);
+
+  useEffect(() => {
+    const onOpen = () => setOpen(true);
+    window.addEventListener(OPEN_ADD_DOCUMENT_EVENT, onOpen);
+    return () => window.removeEventListener(OPEN_ADD_DOCUMENT_EVENT, onOpen);
+  }, []);
 
   useEffect(() => {
     let depth = 0;
     const onEnter = (e: globalThis.DragEvent) => {
-      if (!hasDroppable(e)) return;
+      if (!hasDroppable(e) || mountedDropzones > 0) return;
       depth += 1;
       setDragging(true);
     };
@@ -402,10 +427,10 @@ export function UploadButton({ uploadPrefix, pitchUploadPrefix }: { uploadPrefix
       if (depth === 0) setDragging(false);
     };
     const onOver = (e: globalThis.DragEvent) => {
-      if (hasDroppable(e)) e.preventDefault();
+      if (hasDroppable(e) && mountedDropzones === 0) e.preventDefault();
     };
     const onDrop = (e: globalThis.DragEvent) => {
-      if (!hasDroppable(e)) return;
+      if (!hasDroppable(e) || mountedDropzones > 0) return;
       e.preventDefault();
       depth = 0;
       setDragging(false);
@@ -428,13 +453,17 @@ export function UploadButton({ uploadPrefix, pitchUploadPrefix }: { uploadPrefix
   return (
     <>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger render={<Button size="lg" disabled={source.busy} />}>
+        <DialogTrigger
+          render={<Button disabled={source.busy} aria-label="Ajouter un document" className="max-sm:size-9 max-sm:px-0" />}
+        >
           <Plus />
-          {source.uploading
-            ? `Import, ${Math.round(source.progress ?? 0)} %`
-            : source.addingUrl
-              ? "Ajout du lien…"
-              : "Ajouter un document / lien"}
+          <span className="max-sm:sr-only">
+            {source.uploading
+              ? `Import, ${Math.round(source.progress ?? 0)} %`
+              : source.addingUrl
+                ? "Ajout du lien…"
+                : "Ajouter un document"}
+          </span>
         </DialogTrigger>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
