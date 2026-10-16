@@ -36,15 +36,15 @@ describe("dealLabel", () => {
   });
 
   it("never names a deal after its document", () => {
-    expect(dealLabel(link({ name: "Devis 2026.pdf" }))).toBe("Lien ab12cd");
-    expect(dealLabel(link({ name: "Devis 2026" }))).toBe("Lien ab12cd");
-    expect(dealLabel(link({ name: "Devis 2026 – Acme" }))).toBe("Lien ab12cd");
-    expect(dealLabel(link({ name: "Pitch vidéo du 12 octobre", document: { name: "Pitch vidéo du 12 octobre" } }))).toBe("Lien ab12cd");
+    expect(dealLabel(link({ name: "Devis 2026.pdf" }))).toBe("Sans destinataire");
+    expect(dealLabel(link({ name: "Devis 2026" }))).toBe("Sans destinataire");
+    expect(dealLabel(link({ name: "Devis 2026 – Acme" }))).toBe("Sans destinataire");
+    expect(dealLabel(link({ name: "Pitch vidéo du 12 octobre", document: { name: "Pitch vidéo du 12 octobre" } }))).toBe("Sans destinataire");
   });
 
   it("works without a document in the select", () => {
     expect(dealLabel(link({ name: "Relance printemps", document: undefined }))).toBe("Relance printemps");
-    expect(dealLabel(link({ document: undefined }))).toBe("Lien ab12cd");
+    expect(dealLabel(link({ document: undefined }))).toBe("Sans destinataire");
   });
 });
 

@@ -53,10 +53,30 @@ export async function createDocument(input: { pathname: string; name: string; sh
     name,
     sha256,
   });
-  const linkId = await draftLinkFor(document.id, { userId: user.id, organizationId: organization.id });
+  // The same file dropped again: its link still waiting to be sent, unnamed and never copied, is the one to send
+  const waiting = reused
+    ? await prisma.link.findFirst({
+        where: {
+          documentId: document.id,
+          organizationId: organization.id,
+          createdById: user.id,
+          archivedAt: null,
+          draftAt: { not: null },
+          // A copied one may already sit in someone's inbox: it is theirs
+          copiedAt: null,
+          isOnboardingTest: false,
+          shared: false,
+          prospects: { none: {} },
+        },
+        orderBy: { createdAt: "desc" },
+        select: { id: true },
+      })
+    : null;
+  const linkId =
+    waiting?.id ?? (await draftLinkFor(document.id, { userId: user.id, organizationId: organization.id }));
 
   revalidatePath("/documents");
-  return { id: document.id, linkId, reused };
+  return { id: document.id, linkId, reused, waiting: !!waiting };
 }
 
 export type CreateWebDocumentResult = { id: string; linkId: string } | { error: string };

@@ -609,6 +609,9 @@ model Link {
   source       String? // where the link was created: null = dashboard, "extension_gmail", "extension_outlook", "outlook_addin"
   // Inserted in an email from the extension, not sent yet: hidden from the seller, archived after 7 days
   draftAt      DateTime?
+  // The seller copied the draft's address: probably sent by hand, but not confirmed. Such a draft is
+  // never archived, and counts as sent only once opened or once the seller says so
+  copiedAt     DateTime?
   // Settings still come from the defaults: they follow the document type once the AI has read it
   autoSettings Boolean   @default(false)
   // One link for many readers (a deck posted or forwarded): each reader gives their email and

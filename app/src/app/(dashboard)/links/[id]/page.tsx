@@ -105,6 +105,7 @@ export default async function LinkDetailPage({
             // Remount when the server state moves: sent, contact added, settings tuned by the AI
             key={[
               !!link.draftAt,
+              !!link.copiedAt,
               link.prospects.length,
               link.expiresAt?.getTime(),
               link.ctaEnabled,
@@ -116,6 +117,7 @@ export default async function LinkDetailPage({
               company: mainProspect?.company,
             })}
             sent={!link.draftAt}
+            copied={!!link.copiedAt}
             recipient={
               mainProspect
                 ? {

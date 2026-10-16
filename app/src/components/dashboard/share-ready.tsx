@@ -7,7 +7,6 @@ import {
   Eye,
   Mail,
   Sparkles,
-  User,
   Users,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -21,6 +20,7 @@ import {
 import { toast } from "sonner";
 
 import {
+  markLinkCopied,
   markLinkSent,
   setLinkRecipient,
   setLinkShared,
@@ -41,6 +41,7 @@ export function ShareReady({
   url,
   title,
   sent,
+  copied: wasCopied = false,
   recipient,
   mailClient,
   signature,
@@ -56,6 +57,8 @@ export function ShareReady({
   /** Subject of the email, "Devis Acme". */
   title: string;
   sent: boolean;
+  /** Copied or handed to the mail client, not confirmed sent yet. */
+  copied?: boolean;
   recipient: { email: string; firstName: string | null } | null;
   mailClient: string | null;
   signature: string | null;
@@ -77,10 +80,11 @@ export function ShareReady({
   const [who, setWho] = useState("");
   const [pending, startTransition] = useTransition();
 
-  function confirmSent() {
+  // Copying is not sending: the link counts as sent once the prospect opens it, or once the seller says so
+  function noteCopied() {
     if (sent) return;
     startTransition(async () => {
-      await markLinkSent(linkId);
+      await markLinkCopied(linkId);
       router.refresh();
     });
   }
@@ -91,7 +95,7 @@ export function ShareReady({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
       toast.success("Lien copié. Collez-le dans votre message.");
-      confirmSent();
+      noteCopied();
     } catch {
       toast.error("Copie impossible : sélectionnez le lien à la main.");
     }
@@ -109,7 +113,14 @@ export function ShareReady({
     if (!target) return void copy();
     if (target.startsWith("mailto:")) window.location.href = target;
     else window.open(target, "_blank", "noopener");
-    confirmSent();
+    noteCopied();
+  }
+
+  function confirmSent() {
+    startTransition(async () => {
+      await markLinkSent(linkId);
+      router.refresh();
+    });
   }
 
   function switchMode(next: boolean) {
@@ -141,43 +152,28 @@ export function ShareReady({
               ? shared
                 ? "C'est en ligne. Chaque nouveau lecteur apparaît ici."
                 : "C'est parti. Vous serez prévenu dès qu'il l'ouvre."
-              : "Votre lien est prêt"}
+              : wasCopied
+                ? "Lien copié"
+                : "Votre lien est prêt"}
           </h2>
-          {!sent && (
+          {!sent && wasCopied && (
+            <div className="flex max-w-xl flex-wrap items-center gap-x-3 gap-y-2">
+              <p className="text-body text-muted-foreground">
+                Collez-le dans votre message et envoyez-le. Le suivi démarre dès qu&apos;il l&apos;ouvre.
+              </p>
+              <Button size="sm" variant="outline" disabled={pending} onClick={confirmSent}>
+                <Check />
+                C&apos;est envoyé
+              </Button>
+            </div>
+          )}
+          {!sent && !wasCopied && (
             <p className="max-w-xl text-body text-muted-foreground">
               {shared
                 ? "Postez-le, mettez-le en signature ou transférez-le : chaque lecteur donne son email et reçoit son propre lien, suivi comme un deal."
                 : "Il l'ouvre et lit tout de suite, sans rien remplir. Vous saurez quelles pages, combien de temps, et quand relancer."}
             </p>
           )}
-        </div>
-        <div
-          className="flex gap-px border border-border bg-border"
-          role="radiogroup"
-          aria-label="Pour qui est ce lien"
-        >
-          {[
-            { value: false, label: "Pour un prospect", icon: User },
-            { value: true, label: "Lien ouvert à tous", icon: Users },
-          ].map(({ value, label, icon: Icon }) => (
-            <button
-              key={label}
-              type="button"
-              role="radio"
-              aria-checked={shared === value}
-              disabled={pending}
-              onClick={() => switchMode(value)}
-              className={cn(
-                "flex items-center gap-1.5 bg-card px-2.5 py-1.5 text-small transition-colors disabled:opacity-60",
-                shared === value
-                  ? "font-semibold text-foreground shadow-[inset_0_-2px_0_var(--foreground)]"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
-              )}
-            >
-              <Icon className="size-4" aria-hidden />
-              {label}
-            </button>
-          ))}
         </div>
       </div>
 
@@ -302,6 +298,41 @@ export function ShareReady({
         <Eye className="size-4" aria-hidden />
         Voir ce que verra le prospect
       </a>
+
+      {/* The everyday case is one link for one person; broadcasting is the exception, one line away */}
+      {!sent && (
+        <p className="flex items-start gap-2 border-t border-border pt-4 text-small text-muted-foreground">
+          <Users className="mt-0.5 size-4 shrink-0" aria-hidden />
+          <span>
+            {shared ? (
+              <>
+                Lien ouvert à tous : chaque lecteur donne son email et reçoit son propre lien.{" "}
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => switchMode(false)}
+                  className="font-medium text-foreground underline underline-offset-4"
+                >
+                  Revenir à un lien pour une personne
+                </button>
+              </>
+            ) : (
+              <>
+                Vous voulez le diffuser largement (post, plaquette, signature) ?{" "}
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => switchMode(true)}
+                  className="font-medium text-foreground underline underline-offset-4"
+                >
+                  En faire un lien ouvert à tous
+                </button>
+                , chaque lecteur donnera son email.
+              </>
+            )}
+          </span>
+        </p>
+      )}
     </section>
   );
 }

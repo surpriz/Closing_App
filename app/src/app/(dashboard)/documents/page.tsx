@@ -10,9 +10,7 @@ import {
 import { HeatStrip } from "@/components/dashboard/heat-strip";
 import { TIER_LABELS } from "@/components/dashboard/labels";
 import { PageHeader } from "@/components/dashboard/page-header";
-import {
-  UploadDropzone,
-} from "@/components/dashboard/upload-dropzone";
+import { UploadDropzone } from "@/components/dashboard/upload-dropzone";
 import { documentUploadPrefix, pitchUploadPrefix } from "@/lib/blob";
 import { getDocumentPageReadings } from "@/lib/closing/dashboard/document-readings";
 import { pageHeat } from "@/lib/closing/dashboard/page-heat";
@@ -50,7 +48,7 @@ export default async function DocumentsPage() {
   });
   const documentIds = documents.map((d) => d.id);
 
-  const [viewStats, scores, readings] = await Promise.all([
+  const [viewStats, scores, readings, drafts] = await Promise.all([
     prisma.documentView.groupBy({
       by: ["documentId"],
       where: { documentId: { in: documentIds }, isBot: false },
@@ -67,8 +65,20 @@ export default async function DocumentsPage() {
       },
     }),
     getDocumentPageReadings(documentIds),
+    // Links made on drop and not sent yet: the document is not "unread", it has not gone out
+    prisma.link.groupBy({
+      by: ["documentId"],
+      where: {
+        documentId: { in: documentIds },
+        archivedAt: null,
+        draftAt: { not: null },
+        isOnboardingTest: false,
+      },
+      _count: { _all: true },
+    }),
   ]);
   const statsByDocument = new Map(viewStats.map((s) => [s.documentId, s]));
+  const draftDocuments = new Set(drafts.map((d) => d.documentId));
   // What is being read opens the list, most recent reading first; the rest keeps upload order
   const lastRead = (id: string) =>
     statsByDocument.get(id)?._max.lastSeenAt?.getTime() ?? 0;
@@ -166,7 +176,12 @@ export default async function DocumentsPage() {
                     <span className="flex shrink-0 items-center gap-1.5 text-small text-muted-foreground">
                       <StateMark
                         state={
-                          score ? TIER_LABELS[score.tier] : "Pas encore lu"
+                          score
+                            ? TIER_LABELS[score.tier]
+                            : document._count.links === 0 &&
+                                draftDocuments.has(document.id)
+                              ? "Lien prêt, pas encore envoyé"
+                              : "Pas encore lu"
                         }
                         tier={score?.tier ?? null}
                         strong={!!score}

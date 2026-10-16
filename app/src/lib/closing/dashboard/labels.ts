@@ -52,7 +52,8 @@ export function dealLabel(link: LabelledLink): string {
     prospect?.name?.trim() ||
     prospect?.email?.trim() ||
     customLinkName(link) ||
-    `Lien ${link.slug.slice(0, 6)}`
+    // Nobody named yet: the document shows on the line below
+    "Sans destinataire"
   );
 }
 

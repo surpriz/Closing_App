@@ -11,7 +11,7 @@ import { analyzeDeal } from "@/lib/closing/brain/analyze-deal";
 import { BOOKING_URL_ERROR, parseOptionalBookingUrl } from "@/lib/closing/booking/url";
 import { editableLinks } from "@/lib/closing/dashboard/queries";
 import { applyDealStatus } from "@/lib/closing/deals/status";
-import { confirmLinkSent } from "@/lib/closing/documents/create-link";
+import { confirmLinkSent, forgetDraftCopied, markDraftCopied } from "@/lib/closing/documents/create-link";
 import { linkDefaultsFor, SHARED_LINK_SETTINGS } from "@/lib/closing/documents/smart-defaults";
 import { getSellerPrefs, sellerTimezone } from "@/lib/closing/notify/preferences";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
@@ -230,6 +230,20 @@ export async function markLinkSent(linkId: string) {
   const { organization } = await requireWorkspace();
   const link = await requireOwnedLink(linkId);
   await confirmLinkSent({ organizationId: organization.id, linkId: link.id });
+  revalidateLink(link);
+}
+
+/** Copied, or handed to the mail client: maybe sent, not confirmed. */
+export async function markLinkCopied(linkId: string) {
+  const link = await requireOwnedLink(linkId);
+  await markDraftCopied(link.id);
+  revalidateLink(link);
+}
+
+/** "Pas encore" to "Avez-vous envoyé le lien ?": back to a ready link, no more question. */
+export async function markLinkNotSent(linkId: string) {
+  const link = await requireOwnedLink(linkId);
+  await forgetDraftCopied(link.id);
   revalidateLink(link);
 }
 

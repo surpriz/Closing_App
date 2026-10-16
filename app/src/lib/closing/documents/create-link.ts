@@ -266,10 +266,24 @@ export async function confirmDraftOnOpen(linkId: string, now = new Date()) {
   return updated.count > 0;
 }
 
-// Emails abandoned after the link was inserted
+// Copying the address, or opening the mail client with it, is not sending it: the draft stays a draft
+// (no "never opened" follow-up) until the prospect opens it or the seller says it went out
+export async function markDraftCopied(linkId: string, now = new Date()) {
+  await prisma.link.updateMany({
+    where: { id: linkId, draftAt: { not: null }, copiedAt: null },
+    data: { copiedAt: now },
+  });
+}
+
+// "Pas encore": the seller has not sent it after all, stop asking
+export async function forgetDraftCopied(linkId: string) {
+  await prisma.link.updateMany({ where: { id: linkId, draftAt: { not: null } }, data: { copiedAt: null } });
+}
+
+// Emails abandoned after the link was inserted. A copied link may be in a prospect's inbox: it stays
 export async function archiveStaleDrafts(now = new Date()) {
   const { count } = await prisma.link.updateMany({
-    where: { draftAt: { lte: new Date(now.getTime() - DRAFT_TTL_MS) }, archivedAt: null },
+    where: { draftAt: { lte: new Date(now.getTime() - DRAFT_TTL_MS) }, archivedAt: null, copiedAt: null },
     data: { archivedAt: now },
   });
   return count;

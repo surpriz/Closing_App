@@ -87,7 +87,7 @@ function useAddSource(uploadPrefix: string, onDone?: () => void, onCreated?: (ad
         onUploadProgress: ({ percentage }) => setProgress(percentage),
       });
 
-      const { id, linkId, reused } = await createDocument({
+      const { id, linkId, reused, waiting } = await createDocument({
         pathname: blob.pathname,
         name: file.name,
         sha256: await sha256Hex(file),
@@ -98,7 +98,8 @@ function useAddSource(uploadPrefix: string, onDone?: () => void, onCreated?: (ad
         onCreated({ documentId: id, linkId });
         return;
       }
-      if (reused) toast.success("Vous aviez déjà ce document : voici un nouveau lien.");
+      if (waiting) toast.success("Vous aviez déjà ce document : voici son lien, toujours prêt à envoyer.");
+      else if (reused) toast.success("Vous aviez déjà ce document : voici un nouveau lien.");
       router.push(`/links/${linkId}?new=1`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "L'import a échoué.");

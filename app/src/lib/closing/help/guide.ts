@@ -110,7 +110,8 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
 ## Écran de partage d'un lien
 - S'affiche juste après le dépôt ou « Un lien pour un autre prospect » (« Créer le lien » tant que le document n'en a aucun), tant que le lien n'est pas envoyé. « Votre lien
   est prêt ».
-- Choix « Pour un prospect » ou « Lien ouvert à tous ». Lien ouvert à tous = lien partagé (plaquette, post
+- Par défaut, un lien pour une personne. En bas de l'écran, « En faire un lien ouvert à tous » le rend
+  partagé. Lien ouvert à tous = lien partagé (plaquette, post
   LinkedIn, signature) : chaque lecteur donne son email et reçoit son propre lien, suivi comme un deal ; ses
   relances attendent toujours votre feu vert. Un lien déjà lu ou attribué à un contact ne peut plus devenir
   partagé : créez-en un nouveau.
@@ -119,7 +120,12 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
 - Un lien « Pour un prospect » s'ouvre directement, sans demander d'email au lecteur : il a été fait pour
   lui. On peut quand même l'exiger lien par lien dans « Personnaliser ». Un lien transféré est repéré comme
   un nouveau lecteur.
-- « Copier le lien » ou « Envoyer par email » : le lien devient un deal.
+- « Copier le lien » ou « Envoyer par email » ne valent pas envoi : le lien passe « Lien copié » et le suivi
+  démarre à la première ouverture, ou quand on clique « C'est envoyé ». Un lien copié jamais ouvert : au bout
+  de 2 jours, Aujourd'hui demande « Avez-vous envoyé ce lien ? ». Les relances « jamais ouvert » ne partent
+  qu'après un envoi confirmé, et jamais seules, même en pilote automatique.
+- Aujourd'hui, section « À envoyer » : tous les liens pas encore envoyés, avec leur document. Redéposer le même
+  fichier réutilise son lien en attente au lieu d'en créer un autre.
 - Aussi : « Personnaliser » (mot d'accueil) et « Voir ce que verra le prospect ». Pour un devis ou une
   proposition, une échéance peut être réglée d'office : le prospect voit un décompte.
 

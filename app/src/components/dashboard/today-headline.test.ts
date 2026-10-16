@@ -139,11 +139,19 @@ describe("with the deal analysis", () => {
         ...base,
         activeCount: 0,
         documentCount: 1,
-        linkReady: true,
+        readyLinks: { count: 1, documentName: "Devis Acme" },
       }),
     ).toEqual({
       headline: "Votre lien est prêt.",
-      hint: "Copiez-le dans votre email à la place de la pièce jointe : vous saurez qui le lit.",
+      hint: "« Devis Acme » attend d'être envoyé : copiez le lien dans votre email à la place de la pièce jointe.",
     });
+    expect(
+      buildTodayHeadline({
+        ...base,
+        activeCount: 0,
+        documentCount: 2,
+        readyLinks: { count: 2, documentName: "Devis Acme" },
+      }).headline,
+    ).toBe("2 liens prêts à envoyer.");
   });
 });

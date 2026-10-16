@@ -12,15 +12,15 @@ export function FirstSteps({
   hasDocument,
   hasLink,
   hasRead,
-  readyLink = null,
+  readyLinks = 0,
   action,
 }: {
   hasDocument: boolean;
   /** At least one link was sent. */
   hasLink: boolean;
   hasRead: boolean;
-  /** Name of the document whose link, made on drop, waits to be sent. */
-  readyLink?: string | null;
+  /** Links made on drop and waiting to be sent, listed under "À envoyer". */
+  readyLinks?: number;
   /** Button for the current step. */
   action?: React.ReactNode;
 }) {
@@ -32,9 +32,16 @@ export function FirstSteps({
       done: hasDocument,
     },
     {
-      title: readyLink ? "Envoyez votre lien" : "Envoyez le lien",
-      description: readyLink
-        ? `Le lien de « ${readyLink} » est déjà prêt. Collez-le dans votre email à la place de la pièce jointe : votre prospect le lit sans rien remplir.`
+      title:
+        readyLinks > 1
+          ? "Envoyez vos liens"
+          : readyLinks === 1
+            ? "Envoyez votre lien"
+            : "Envoyez le lien",
+      description: readyLinks
+        ? readyLinks > 1
+          ? "Ils sont prêts, dans « À envoyer » juste en dessous. Collez chacun dans votre email à la place de la pièce jointe : votre prospect lit sans rien remplir."
+          : "Il est prêt, dans « À envoyer » juste en dessous. Collez-le dans votre email à la place de la pièce jointe : votre prospect lit sans rien remplir."
         : "Copiez-le dans votre email à la place de la pièce jointe. Un lien par prospect : vous saurez qui lit.",
       done: hasLink,
     },

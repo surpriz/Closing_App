@@ -4,7 +4,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { AutopilotBanner } from "@/components/dashboard/autopilot-banner";
-import { CopyButton } from "@/components/dashboard/copy-button";
 import { NewLinkButton } from "@/components/dashboard/create-link-form";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { FirstSteps } from "@/components/dashboard/first-steps";
@@ -21,6 +20,10 @@ import {
 } from "@/components/dashboard/today/funnel";
 import { LiveStrip } from "@/components/dashboard/today/live-strip";
 import { PeriodTabs } from "@/components/dashboard/today/period-tabs";
+import {
+  ReadyLinks,
+  type ReadyLink,
+} from "@/components/dashboard/today/ready-links";
 import {
   TodoList,
   UnopenedDeals,
@@ -69,6 +72,7 @@ import { requireWorkspace } from "@/lib/session";
 export const metadata: Metadata = { title: "Aujourd'hui" };
 
 const TODO_LIMIT = 15;
+const ASK_IF_SENT_AFTER_MS = 2 * 24 * 60 * 60 * 1000;
 const FEED_LIMIT = 12;
 
 export default async function DashboardPage(props: PageProps<"/dashboard">) {
@@ -100,7 +104,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
     sentAlone,
     linkCount,
     firstRead,
-    readyDraft,
+    readyDrafts,
   ] = await Promise.all([
     prisma.document.count({ where: { organizationId, archivedAt: null } }),
     prisma.document.findFirst({
@@ -133,8 +137,8 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
       where: { link: { ...mine, isOnboardingTest: false }, isBot: false },
       select: { id: true },
     }),
-    // The link created when the file was dropped, waiting to be sent: it is the one to send, not a new one
-    prisma.link.findFirst({
+    // Links created when a file was dropped, not sent yet: those are the ones to send, not new ones
+    prisma.link.findMany({
       where: {
         ...mine,
         archivedAt: null,
@@ -142,7 +146,18 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
         isOnboardingTest: false,
       },
       orderBy: { createdAt: "desc" },
-      select: { id: true, slug: true, document: { select: { name: true } } },
+      take: 10,
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        copiedAt: true,
+        document: { select: { name: true, displayTitle: true, docType: true } },
+        prospects: {
+          take: 1,
+          select: { company: true, name: true, email: true },
+        },
+      },
     }),
   ]);
   // A fresh seller is walked through a first document once; anyone joining a workspace in use is not
@@ -192,7 +207,17 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
   const showFirstSteps = linkCount === 0 || !firstRead;
   // A step is never ticked before the one it depends on: no "opened" before "sent"
   const hasSentLink = linkCount > 0;
-  const draftUrl = readyDraft ? `${origin}/v/${readyDraft.slug}` : null;
+  // A copied link still unopened after two days: maybe it never left, ask instead of assuming
+  const readyLinks: ReadyLink[] = readyDrafts.map((draft) => ({
+    id: draft.id,
+    url: `${origin}/v/${draft.slug}`,
+    label: dealLabel(draft),
+    documentName: draft.document.name,
+    copied: !!draft.copiedAt,
+    askIfSent:
+      !!draft.copiedAt &&
+      now.getTime() - draft.copiedAt.getTime() > ASK_IF_SENT_AFTER_MS,
+  }));
 
   const readingLinks = new Set(live.readers.map((reader) => reader.linkId));
   const readings = await getPageReadings(
@@ -247,7 +272,9 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
       ? { label: focus.label, headline: focus.insightHeadline! }
       : null,
     draftsToReview: deals.reduce((sum, deal) => sum + deal.draftCount, 0),
-    linkReady: !hasSentLink && !!readyDraft,
+    readyLinks: readyLinks.length
+      ? { count: readyLinks.length, documentName: readyLinks[0].documentName }
+      : null,
   });
 
   const periodHint = PERIODS[period].hint;
@@ -282,28 +309,14 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
             hasDocument
             hasLink={hasSentLink}
             hasRead={hasSentLink && !!firstRead}
-            readyLink={
-              !hasSentLink && readyDraft ? readyDraft.document.name : null
-            }
+            readyLinks={hasSentLink ? 0 : readyLinks.length}
             action={
-              hasSentLink ? null : readyDraft && draftUrl ? (
-                <div className="flex flex-wrap items-center gap-2">
-                  <CopyButton
-                    value={draftUrl}
-                    label="Copier mon lien"
-                    variant="default"
-                    size="lg"
-                  />
-                  <Link
-                    href={`/links/${readyDraft.id}`}
-                    className={buttonVariants({
-                      variant: "outline",
-                      size: "lg",
-                    })}
-                  >
-                    Choisir pour qui, l&apos;envoyer par email
-                  </Link>
-                </div>
+              hasSentLink ? null : readyLinks.length > 0 ? (
+                <a href="#a-envoyer" className={buttonVariants({ size: "lg" })}>
+                  {readyLinks.length === 1
+                    ? "Voir mon lien à envoyer"
+                    : "Voir mes liens à envoyer"}
+                </a>
               ) : (
                 latestReadyDocument && (
                   <NewLinkButton
@@ -319,6 +332,12 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
 
       <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1fr)_18rem]">
         <div className="min-w-0 space-y-12">
+          {readyLinks.length > 0 && (
+            <section id="a-envoyer" className="scroll-mt-20">
+              <SectionTitle hint="pas encore envoyés">À envoyer</SectionTitle>
+              <ReadyLinks links={readyLinks} />
+            </section>
+          )}
           <section>
             <SectionTitle hint="du plus urgent au moins urgent">
               À traiter

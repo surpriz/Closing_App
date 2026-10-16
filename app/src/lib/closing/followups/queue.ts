@@ -167,8 +167,13 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
 
   // Autopilot only for messages that need no human eye; a rewrite asked by the seller is always reviewed
   // A shared link's reader typed their address: the seller reads what goes to it
+  // "Never opened" is never sent alone: only the seller knows whether the link really went out
   const autopilot =
-    settings?.autonomy === "AUTOPILOT" && !instruction && draft.issues.length === 0 && !link.parentLinkId;
+    settings?.autonomy === "AUTOPILOT" &&
+    !instruction &&
+    draft.issues.length === 0 &&
+    !link.parentLinkId &&
+    followup.trigger !== "ANTI_GHOSTING";
   let sendsAlone =
     autopilot &&
     (followup.trigger !== "AI_DECISION" ||
