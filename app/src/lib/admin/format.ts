@@ -24,6 +24,7 @@ export const ADMIN_ACTION_LABELS = {
   "user.reactivate": "Compte réactivé",
   "user.revoke_sessions": "Sessions révoquées",
   "user.impersonate": "Connexion en tant que",
+  "user.delete": "Compte supprimé",
   "organization.suspend": "Espace suspendu",
   "organization.reactivate": "Espace réactivé",
   "settings.signup_mode": "Mode d'inscription changé",

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { SelectionBar, UserCheckbox, UserSelection } from "@/components/admin/delete-users";
 import { AdminFilterBar } from "@/components/admin/filter-bar";
 import { AdminPagination } from "@/components/admin/pagination";
 import { UserStatusBadge } from "@/components/admin/status-badge";
@@ -17,6 +18,7 @@ import {
 } from "@/lib/admin/format";
 import { USER_FILTERS, loadBlockedEmails, statusOf, userStatusWhere } from "@/lib/admin/users";
 import { prisma } from "@/lib/db";
+import { isPlatformAdminEmail } from "@/lib/platform-admin";
 import { requirePlatformAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Utilisateurs" };
@@ -66,7 +68,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps<"/admin
   ]);
 
   return (
-    <>
+    <UserSelection>
       <AdminFilterBar
         title="Utilisateurs"
         q={q}
@@ -75,11 +77,16 @@ export default async function AdminUsersPage({ searchParams }: PageProps<"/admin
         options={filterOptions(USER_FILTERS)}
       />
 
+      <SelectionBar />
+
       <div className={ADMIN_CARD}>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="pl-4">Utilisateur</TableHead>
+              <TableHead className="w-10 pl-4">
+                <span className="sr-only">Sélection</span>
+              </TableHead>
+              <TableHead>Utilisateur</TableHead>
               <TableHead>Espaces</TableHead>
               <TableHead>Inscrit le</TableHead>
               <TableHead>Dernière activité</TableHead>
@@ -90,6 +97,9 @@ export default async function AdminUsersPage({ searchParams }: PageProps<"/admin
             {users.map((user) => (
               <TableRow key={user.id} className="relative">
                 <TableCell className="pl-4">
+                  {!isPlatformAdminEmail(user.email) && <UserCheckbox user={{ id: user.id, email: user.email }} />}
+                </TableCell>
+                <TableCell>
                   <Link
                     href={`/admin/users/${user.id}`}
                     className="font-semibold outline-none after:absolute after:inset-0 hover:underline focus-visible:after:ring-3 focus-visible:after:ring-ring/30 focus-visible:after:ring-inset"
@@ -112,7 +122,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps<"/admin
             ))}
             {users.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+                <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
                   Aucun utilisateur.
                 </TableCell>
               </TableRow>
@@ -122,6 +132,6 @@ export default async function AdminUsersPage({ searchParams }: PageProps<"/admin
       </div>
 
       <AdminPagination path="/admin/users" params={{ q, statut }} page={page} total={total} />
-    </>
+    </UserSelection>
   );
 }

@@ -8,6 +8,7 @@ import { z } from "zod";
 import { blockEmailAddress, revokeExtensionTokens } from "@/lib/admin/accounts";
 import { adminErrorMessage, parseReason, type AdminActionState } from "@/lib/admin/action-state";
 import { logAdminAction } from "@/lib/admin/audit";
+import { deleteUsersWithData } from "@/lib/admin/delete-users";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { isPlatformAdminEmail, isUserBlocked, normalizeEmail } from "@/lib/platform-admin";
@@ -118,6 +119,52 @@ export async function revokeUserSessions(userId: string): Promise<AdminActionSta
   await revokeExtensionTokens(userId);
   await logAdminAction({ actorId: admin.id, action: "user.revoke_sessions", targetType: "user", targetId: userId });
   refresh(userId);
+  return { ok: true };
+}
+
+/**
+ * For good: the accounts, the workspaces they leave empty and their documents
+ * (files included) in the ones that keep going.
+ */
+export async function deleteUsers(userIds: string[], formData: FormData): Promise<AdminActionState> {
+  const admin = await requirePlatformAdmin();
+  const parsed = parseReason(formData);
+  if ("error" in parsed) return parsed;
+  if (String(formData.get("confirm") ?? "").trim().toUpperCase() !== "SUPPRIMER") {
+    return { error: "Tapez SUPPRIMER pour confirmer." };
+  }
+  const ids = [...new Set(userIds)];
+  if (ids.length === 0) return { error: "Aucun compte sélectionné." };
+  if (ids.includes(admin.id)) return { error: "Vous ne pouvez pas supprimer votre propre compte." };
+
+  const users = await prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true, email: true } });
+  if (users.length !== ids.length) return { error: "Un des comptes n'existe plus, rechargez la page." };
+  if (users.some((user) => isPlatformAdminEmail(user.email))) return { error: "Le compte admin ne peut pas être supprimé." };
+
+  let result;
+  try {
+    result = await deleteUsersWithData(ids);
+  } catch (error) {
+    return { error: adminErrorMessage(error) };
+  }
+  if (result.ownerless) {
+    return { error: `« ${result.ownerless.join(" », « ")} » n'aurait plus de propriétaire : nommez-en un autre d'abord.` };
+  }
+
+  await Promise.all(
+    users.map((user) =>
+      logAdminAction({
+        actorId: admin.id,
+        action: "user.delete",
+        targetType: "user",
+        targetId: user.id,
+        reason: parsed.reason,
+        metadata: { email: user.email },
+      }),
+    ),
+  );
+  revalidatePath("/admin/users");
+  revalidatePath("/admin/workspaces");
   return { ok: true };
 }
 

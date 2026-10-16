@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import {
@@ -14,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { normalizeEmail, type UserStatus } from "@/lib/platform-admin";
 
+import { DeleteUsersDialog } from "./delete-users";
 import { ReasonDialog } from "./reason-dialog";
 import { report } from "./report";
 import { ADMIN_SELECT } from "./styles";
@@ -47,6 +49,7 @@ function BanDialog({ userId, email }: { userId: string; email: string }) {
 }
 
 export function UserActions({ userId, email, status }: { userId: string; email: string; status: UserStatus }) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
 
   return (
@@ -102,6 +105,7 @@ export function UserActions({ userId, email, status }: { userId: string; email: 
       >
         Déconnecter partout
       </Button>
+      <DeleteUsersDialog users={[{ id: userId, email }]} onDeleted={() => router.push("/admin/users")} />
     </div>
   );
 }
