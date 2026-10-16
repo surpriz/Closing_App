@@ -102,12 +102,13 @@ export function HelpWidget({ firstName }: { firstName: string | null }) {
     }
     wasOpen.current = true;
     inputRef.current?.focus();
-    // Full screen on phones: the page behind must not scroll
-    const phone = window.matchMedia("(max-width: 639px)").matches;
-    const overflow = document.body.style.overflow;
-    if (phone) document.body.style.overflow = "hidden";
+    // Full screen on phones: the page behind must not scroll. Never snapshot the
+    // current value: opened from the "?" menu, the menu's own scroll lock is still
+    // on and restoring it would freeze the page for good.
+    if (!window.matchMedia("(max-width: 639px)").matches) return;
+    document.body.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = overflow;
+      document.body.style.overflow = "";
     };
   }, [open]);
 
