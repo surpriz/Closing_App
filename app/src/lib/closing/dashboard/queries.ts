@@ -172,9 +172,10 @@ export async function getFunnelFacts(
     where: {
       organizationId,
       archivedAt: null,
-      draftAt: null,
-      // Both are ORs: spread side by side, one would replace the other
+      // ORs side by side would replace one another: each sits in the AND
       AND: [
+        // Sent, or copied by the seller: as far as they know it went out
+        { OR: [{ draftAt: null }, { copiedAt: { not: null } }] },
         since ? { OR: [{ sentAt: { gte: since } }, { sentAt: null, createdAt: { gte: since } }] } : {},
         owner ? sellerLinks(owner) : {},
       ],

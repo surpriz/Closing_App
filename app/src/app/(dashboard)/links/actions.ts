@@ -240,6 +240,17 @@ export async function markLinkCopied(linkId: string) {
   revalidateLink(link);
 }
 
+/** "Retirer" on a link never sent: a duplicate or a test, gone without leaving Aujourd'hui. */
+export async function discardDraftLink(linkId: string) {
+  const link = await requireOwnedLink(linkId);
+  await prisma.link.updateMany({
+    where: { id: link.id, draftAt: { not: null } },
+    data: { archivedAt: new Date() },
+  });
+  revalidateLink(link);
+  revalidatePath("/dashboard");
+}
+
 /** "Pas encore" to "Avez-vous envoyé le lien ?": back to a ready link, no more question. */
 export async function markLinkNotSent(linkId: string) {
   const link = await requireOwnedLink(linkId);

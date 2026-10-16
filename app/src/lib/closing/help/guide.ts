@@ -122,10 +122,12 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
   un nouveau lecteur.
 - « Copier le lien » ou « Envoyer par email » ne valent pas envoi : le lien passe « Lien copié » et le suivi
   démarre à la première ouverture, ou quand on clique « C'est envoyé ». Un lien copié jamais ouvert : au bout
-  de 2 jours, Aujourd'hui demande « Avez-vous envoyé ce lien ? ». Les relances « jamais ouvert » ne partent
+  de 2 jours, la ligne « liens pas encore ouverts » demande « L'avez-vous bien envoyé ? ». Les relances « jamais ouvert » ne partent
   qu'après un envoi confirmé, et jamais seules, même en pilote automatique.
-- Aujourd'hui, section « À envoyer » : tous les liens pas encore envoyés, avec leur document. Redéposer le même
-  fichier réutilise son lien en attente au lieu d'en créer un autre.
+- Aujourd'hui, section « À envoyer » : les liens jamais copiés ni envoyés, avec leur document, « Copier le
+  lien », « Pour qui » et « Retirer » (supprime un lien inutile, un doublon). Un lien copié quitte la section
+  et rejoint « liens pas encore ouverts » dans « À traiter ». Redéposer le même fichier réutilise son lien en
+  attente au lieu d'en créer un autre.
 - Aussi : « Personnaliser » (mot d'accueil) et « Voir ce que verra le prospect ». Pour un devis ou une
   proposition, une échéance peut être réglée d'office : le prospect voit un décompte.
 

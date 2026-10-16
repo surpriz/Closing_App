@@ -27,11 +27,11 @@ import {
 import {
   TodoList,
   UnopenedDeals,
+  type UnopenedRow,
   type TodoRow,
 } from "@/components/dashboard/today/todo-list";
 import { buildTodayHeadline } from "@/components/dashboard/today-headline";
 import { UploadDropzone } from "@/components/dashboard/upload-dropzone";
-import { buttonVariants } from "@/components/ui/button";
 import { getAppOrigin } from "@/lib/app-origin";
 import { documentUploadPrefix, pitchUploadPrefix } from "@/lib/blob";
 import { dealAction } from "@/lib/closing/dashboard/deal-action";
@@ -102,8 +102,6 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
     origin,
     settings,
     sentAlone,
-    linkCount,
-    firstRead,
     readyDrafts,
   ] = await Promise.all([
     prisma.document.count({ where: { organizationId, archivedAt: null } }),
@@ -130,12 +128,6 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
         approvedAt: null,
         sentAt: { gte: new Date(now.getTime() - 24 * 60 * 60 * 1000) },
       },
-    }),
-    prisma.link.count({ where: { ...mine, archivedAt: null, draftAt: null } }),
-    // Bots and the seller's own reads are flagged isBot; the tour's test link is not a prospect
-    prisma.documentView.findFirst({
-      where: { link: { ...mine, isOnboardingTest: false }, isBot: false },
-      select: { id: true },
     }),
     // Links created when a file was dropped, not sent yet: those are the ones to send, not new ones
     prisma.link.findMany({
@@ -204,20 +196,26 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
       </div>
     );
   }
-  const showFirstSteps = linkCount === 0 || !firstRead;
-  // A step is never ticked before the one it depends on: no "opened" before "sent"
-  const hasSentLink = linkCount > 0;
-  // A copied link still unopened after two days: maybe it never left, ask instead of assuming
-  const readyLinks: ReadyLink[] = readyDrafts.map((draft) => ({
-    id: draft.id,
-    url: `${origin}/v/${draft.slug}`,
-    label: dealLabel(draft),
-    documentName: draft.document.name,
-    copied: !!draft.copiedAt,
-    askIfSent:
-      !!draft.copiedAt &&
-      now.getTime() - draft.copiedAt.getTime() > ASK_IF_SENT_AFTER_MS,
-  }));
+  // Never copied: still to send. Copied: gone out as far as the seller sees, it waits for its first
+  // opening with the other unopened links, and after two days Clozer asks whether it really left
+  const readyLinks: ReadyLink[] = readyDrafts
+    .filter((draft) => !draft.copiedAt)
+    .map((draft) => ({
+      id: draft.id,
+      url: `${origin}/v/${draft.slug}`,
+      label: dealLabel(draft),
+      documentName: draft.document.name,
+    }));
+  const copiedRows: UnopenedRow[] = readyDrafts
+    .filter((draft) => draft.copiedAt)
+    .map((draft) => ({
+      id: draft.id,
+      url: `${origin}/v/${draft.slug}`,
+      label: dealLabel(draft),
+      documentName: dealDocumentMeta(draft),
+      askIfSent:
+        now.getTime() - draft.copiedAt!.getTime() > ASK_IF_SENT_AFTER_MS,
+    }));
 
   const readingLinks = new Set(live.readers.map((reader) => reader.linkId));
   const readings = await getPageReadings(
@@ -236,7 +234,15 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
   // Links nobody opened yet have nothing to read off: one folded line, not a page of rows
   const isWaiting = (row: TodoRow) => !row.opened && row.dealStatus === "OPEN";
   const activeRows = rows.filter((row) => !isWaiting(row));
-  const waitingRows = rows.filter(isWaiting);
+  const waitingRows: UnopenedRow[] = [
+    ...copiedRows,
+    ...rows.filter(isWaiting).map((row) => ({
+      id: row.id,
+      label: row.label,
+      documentName: row.documentName,
+      url: row.url,
+    })),
+  ];
   const distribution = buildHeatDistribution(
     rows.map((row) => ({ opened: row.opened, tier: row.tier })),
   );
@@ -304,37 +310,15 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
             canPause={isManagerRole(role)}
           />
         )}
-        {showFirstSteps && (
-          <FirstSteps
-            hasDocument
-            hasLink={hasSentLink}
-            hasRead={hasSentLink && !!firstRead}
-            readyLinks={hasSentLink ? 0 : readyLinks.length}
-            action={
-              hasSentLink ? null : readyLinks.length > 0 ? (
-                <a href="#a-envoyer" className={buttonVariants({ size: "lg" })}>
-                  {readyLinks.length === 1
-                    ? "Voir mon lien à envoyer"
-                    : "Voir mes liens à envoyer"}
-                </a>
-              ) : (
-                latestReadyDocument && (
-                  <NewLinkButton
-                    documentId={latestReadyDocument.id}
-                    label="Créer le lien"
-                  />
-                )
-              )
-            }
-          />
-        )}
       </section>
 
       <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1fr)_18rem]">
         <div className="min-w-0 space-y-12">
           {readyLinks.length > 0 && (
             <section id="a-envoyer" className="scroll-mt-20">
-              <SectionTitle hint="pas encore envoyés">À envoyer</SectionTitle>
+              <SectionTitle hint="pas encore copiés ni envoyés">
+                À envoyer
+              </SectionTitle>
               <ReadyLinks links={readyLinks} />
             </section>
           )}
@@ -342,21 +326,18 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
             <SectionTitle hint="du plus urgent au moins urgent">
               À traiter
             </SectionTitle>
-            {rows.length === 0 ? (
+            {rows.length === 0 && copiedRows.length === 0 ? (
               <EmptyState
                 title="Aucun deal en cours."
-                description={
-                  showFirstSteps
-                    ? "Dès que votre lien est envoyé et ouvert, le deal apparaît ici avec ce qu'il y a à faire."
-                    : "Ouvrez un document et créez un lien par prospect. Chacun apparaîtra ici avec ce qu'il y a à faire."
-                }
+                description="Dès qu'un lien envoyé est ouvert, le deal apparaît ici avec ce qu'il y a à faire."
                 action={
-                  // The first steps above already carry the action while they are shown
-                  !showFirstSteps &&
+                  // "À envoyer" above already carries the action when a link is waiting
+                  readyLinks.length === 0 &&
                   latestReadyDocument && (
                     <NewLinkButton
                       documentId={latestReadyDocument.id}
                       variant="outline"
+                      label="Créer un lien"
                     />
                   )
                 }
