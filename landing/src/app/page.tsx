@@ -8,26 +8,48 @@ import { ThermalReading } from "@/components/thermal-reading";
 
 const STEPS = [
   {
-    title: "Partagez votre proposition",
-    body: "Un PDF, une page web (Notion, Loom, Figma…) ou un pitch vidéo enregistré en trois minutes. Depuis Gmail ou Outlook avec l'extension, ou depuis Clozer.",
-    measure: "PDF · page web · vidéo",
+    title: "Déposez votre document",
+    body: "Un PDF, une page web (Notion, Loom, Figma…) ou un pitch vidéo de trois minutes. Clozer reconnaît s'il s'agit d'un devis, d'une facture, d'une présentation ou d'un CV, et lit chaque page en conséquence : sur un CV, « Tarifs » devient votre taux journalier.",
+    measure: "10 types reconnus",
   },
   {
-    title: "Un lien par prospect",
-    body: "Il remplace la pièce jointe. Chaque personne a le sien : vous savez qui lit, qui regarde, et qui ne fait rien.",
+    title: "Envoyez le lien",
+    body: "Copiez-le dans votre email, sur WhatsApp ou LinkedIn, ou laissez l'extension Gmail et Outlook remplacer la pièce jointe pour vous. Un lien par destinataire : vous savez qui lit, et qui ne fait rien.",
     measure: "1 lien = 1 lecteur",
   },
   {
-    title: "Relancez au bon moment",
-    body: "Clozer suit la lecture, vous dit qui relancer aujourd'hui et prépare le message. Vous le relisez, il part.",
+    title: "Laissez Clozer relancer",
+    body: "Il voit qui lit quoi, écrit la relance et propose le jour et l'heure d'envoi. Vous validez d'un clic.",
     measure: "Relance validée par vous",
   },
+];
+
+const SEND_WAYS = [
+  {
+    name: "Le lien",
+    status: "Disponible",
+    available: true,
+    body: "Déposez le document : le lien est prêt dans la seconde. Collez-le où vous écrivez déjà à vos clients, email, WhatsApp, LinkedIn, SMS. Votre client l'ouvre dans son navigateur, sur ordinateur comme sur téléphone, sans rien installer.",
+  },
+  {
+    name: "Depuis Gmail ou Outlook",
+    status: "Bientôt",
+    available: false,
+    body: "Joignez votre PDF comme d'habitude. Au moment d'envoyer, l'extension le remplace par un lien Clozer, et vous prévient en haut de votre boîte quand il est lu. L'extension Chrome (Gmail et Outlook dans le navigateur) est en cours de validation par Google ; le complément pour Outlook installé suit.",
+  },
+];
+
+// Example follow-up, labelled as such.
+const FOLLOWUP_STEPS = [
+  { label: "Ce qui a été lu", value: "Tarifs relus 3 fois, Planning survolé" },
+  { label: "Ce qui coince", value: "Le prix, d'après le temps passé sur l'échéancier" },
+  { label: "Envoi proposé", value: "Jeudi 22 oct., 10:30, heure du prospect" },
 ];
 
 const READINGS = [
   {
     title: "Page par page",
-    body: "Pages lues, temps passé sur chacune, retours sur les tarifs, nombre de lecteurs. Pour une vidéo, les passages regardés et où le prospect a décroché. Vous voyez si le devis circule en interne.",
+    body: "Pages lues, temps passé sur chacune, retours sur les tarifs, nombre de lecteurs. Pour une vidéo, les passages regardés et où le prospect a décroché. Vous voyez si le document circule en interne.",
   },
   {
     title: "En direct",
@@ -40,10 +62,6 @@ const READINGS = [
   {
     title: "Une lecture de chaque deal",
     body: "Où en est le prospect, ce qui coince, quoi faire et quand. Chaque affirmation renvoie à un fait mesuré, sinon elle est écartée.",
-  },
-  {
-    title: "Des relances prêtes",
-    body: "Écrites à partir de votre offre et de ce qui a été lu, envoyées aux heures de bureau du prospect. Vous validez chacune, ou vous laissez partir seules les plus simples.",
   },
   {
     title: "Le prospect répond dans le document",
@@ -70,7 +88,7 @@ const SEGMENTS = [
   {
     name: "Solo",
     who: "Indépendants, artisans, consultants, agences de quelques personnes.",
-    body: "Vos devis, vos relances, rien à installer. Connexion avec Google ou votre email, premier lien en quelques minutes.",
+    body: "Devis, factures, présentations : un lien par client, les relances écrites pour vous. Connexion avec Google ou votre email, premier lien en quelques minutes.",
     offer: "Gratuit pendant la bêta",
     action: { label: "Créer mon compte", href: APP_URL },
   },
@@ -92,7 +110,7 @@ const SEGMENTS = [
 
 const BETA_INCLUDES = [
   "PDF, pages web et pitchs vidéo",
-  "Extension Gmail et Outlook",
+  "Extension Gmail et Outlook dès sa sortie",
   "Suivi page par page, alertes en direct",
   "Lecture des deals, relances préparées",
   "Rendez-vous, assistant et vocaux du prospect",
@@ -105,11 +123,11 @@ const FAQ = [
   },
   {
     q: "Les relances partent-elles toutes seules ?",
-    a: "Pas par défaut. Clozer prépare la relance, vous la relisez et la validez. Vous pouvez ensuite le laisser envoyer seul les messages simples quand il est sûr de lui ; les cas délicats vous attendent toujours.",
+    a: "Par défaut, Clozer écrit la relance et propose le jour et l'heure d'envoi ; vous la relisez et la validez d'un clic. Vous pouvez ensuite le laisser envoyer seul les messages simples quand il est sûr de lui. Les cas délicats (une objection, une question du prospect) vous attendent toujours.",
   },
   {
     q: "Quels documents puis-je envoyer ?",
-    a: "Trois sortes. Un PDF (devis, proposition, présentation) : vous voyez la lecture page par page. Une page web (Notion, Loom, Figma, Google Slides, Webflow…) : l'ouverture et le temps passé, et une vue lecture si le site refuse de s'afficher dans Clozer. Un pitch vidéo enregistré dans Clozer, jusqu'à trois minutes : vous savez jusqu'où il a été regardé.",
+    a: "Tout ce que vous envoyez à un client ou un prospect. Un PDF, quel qu'il soit : devis, facture, proposition, présentation, document technique, contrat, CV, plaquette, étude de cas. Clozer reconnaît le type et vous montre la lecture page par page. Une page web (Notion, Loom, Figma, Google Slides, Webflow…) : l'ouverture et le temps passé, et une vue lecture si le site refuse de s'afficher dans Clozer. Un pitch vidéo enregistré dans Clozer, jusqu'à trois minutes : vous savez jusqu'où il a été regardé.",
   },
   {
     q: "Mes propres ouvertures faussent-elles les chiffres ?",
@@ -117,7 +135,11 @@ const FAQ = [
   },
   {
     q: "Faut-il installer quelque chose ?",
-    a: "Pas pour commencer : vous vous connectez avec Google ou votre email, sans mot de passe, et le prospect lit dans son navigateur, sur ordinateur comme sur téléphone. Si vous envoyez depuis Gmail ou Outlook, l'extension Chrome ou le complément Outlook remplace la pièce jointe par le lien, sans quitter votre email.",
+    a: "Non. Vous vous connectez avec Google ou votre email, sans mot de passe, vous copiez le lien et votre client le lit dans son navigateur, sur ordinateur comme sur téléphone. L'extension pour Gmail et Outlook est un raccourci en plus, pas une obligation.",
+  },
+  {
+    q: "Quand l'extension Gmail et Outlook sera-t-elle disponible ?",
+    a: "L'extension Chrome, qui marche dans Gmail et dans Outlook ouvert dans le navigateur, est en cours de validation par Google. Le complément pour Outlook installé sur Windows et Mac suit. Créez votre compte dès maintenant : vous serez prévenu à sa sortie, et vos liens existants continueront de fonctionner.",
   },
   {
     q: "Le prospect peut-il me répondre ?",
@@ -137,21 +159,22 @@ export default function Home() {
         <section>
           <p className={`${WRAP} flex flex-wrap gap-x-6 gap-y-1 border-b border-rule py-3 font-mono text-micro text-ink-soft`}>
             <span>Rapport de lecture n° 0412</span>
-            <span>Devis « Refonte du site » · Atelier Morel</span>
+            <span>Atelier Morel</span>
             <span className="font-sans font-medium text-ink">Exemple de démonstration</span>
           </p>
           <div className={`${WRAP} grid gap-10 pt-10 pb-12 md:pt-14 lg:grid-cols-[minmax(0,1fr)_26rem] lg:items-end lg:gap-16`}>
             <div>
               <h1 className="condensed max-w-[12ch] text-display font-extrabold">
-                Voyez où votre devis{" "}
+                Voyez où votre document{" "}
                 <span className="relative inline-block">
                   chauffe.
                   <HeatScale orientation="horizontal" className="absolute inset-x-0 -bottom-2 sm:-bottom-3" />
                 </span>
               </h1>
-              <p className="mt-10 max-w-[52ch] text-lead text-ink-soft">
-                Envoyez votre proposition en lien suivi. Clozer mesure la lecture page par page, vous dit qui relancer
-                aujourd&apos;hui et prépare le message.
+              <p className="mt-10 max-w-[54ch] text-lead text-ink-soft">
+                Devis, facture, présentation, doc technique, contrat : envoyez un lien à la place de la pièce jointe.
+                Clozer mesure la lecture page par page, vous dit qui relancer, écrit la relance et propose l&apos;heure
+                d&apos;envoi.
               </p>
             </div>
             <div>
@@ -190,7 +213,7 @@ export default function Home() {
             <div>
               <h2 className="condensed text-title font-bold">Après l&apos;envoi, le silence.</h2>
               <p className="mt-6 max-w-[56ch] text-lead text-ink-soft">
-                Le devis est parti. A-t-il été ouvert ? Lu jusqu&apos;aux tarifs ? Transmis au décideur ? Vous relancez
+                Le document est parti. A-t-il été ouvert ? Lu jusqu&apos;aux tarifs ? Transmis au décideur ? Vous relancez
                 à l&apos;aveugle : trop tôt, vous agacez ; trop tard, le prospect a signé ailleurs.
               </p>
               <p className="mt-4 max-w-[56ch] text-lead">
@@ -212,10 +235,35 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Two ways to send: the link today, the mailbox extension soon. */}
+        <section id="envoi" className="scroll-mt-14 border-b border-ink bg-sheet">
+          <div className={`${WRAP} py-20 md:py-28`}>
+            <h2 className="condensed max-w-[20ch] text-title font-bold">Deux façons d&apos;envoyer. Aucune à apprendre.</h2>
+            <div className="mt-14 grid border-t border-ink md:grid-cols-2">
+              {SEND_WAYS.map((way) => (
+                <article
+                  key={way.name}
+                  className="border-b border-rule py-8 md:border-b-0 md:px-8 md:first:border-r md:first:pl-0 md:last:pr-0"
+                >
+                  <div className="flex items-baseline justify-between gap-4">
+                    <h3 className="condensed text-[2rem] leading-none font-extrabold tracking-[-0.03em]">{way.name}</h3>
+                    <span
+                      className={`px-2 py-0.5 text-small font-semibold ${way.available ? "bg-ink text-sheet" : "border border-ink"}`}
+                    >
+                      {way.status}
+                    </span>
+                  </div>
+                  <p className="mt-4 max-w-[58ch] text-body text-ink-soft">{way.body}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* How it works: the protocol, three rows. */}
         <section id="comment" className="scroll-mt-14 border-b border-ink">
           <div className={`${WRAP} py-20 md:py-28`}>
-            <h2 className="condensed max-w-[18ch] text-title font-bold">Trois gestes, une fois par proposition.</h2>
+            <h2 className="condensed max-w-[18ch] text-title font-bold">Trois gestes, une fois par document.</h2>
             <ol className="mt-14 border-t border-ink">
               {STEPS.map((step, index) => (
                 <li
@@ -229,6 +277,52 @@ export default function Home() {
                 </li>
               ))}
             </ol>
+          </div>
+        </section>
+
+        {/* Follow-ups: written, timed and guarded by Clozer, approved by the seller. */}
+        <section id="relances" className="scroll-mt-14 border-b border-ink">
+          <div className={`${WRAP} grid gap-14 py-20 md:py-28 lg:grid-cols-[minmax(0,6fr)_minmax(0,6fr)] lg:gap-20`}>
+            <div>
+              <h2 className="condensed max-w-[16ch] text-title font-bold">Les relances s&apos;écrivent et se programment seules.</h2>
+              <p className="mt-6 max-w-[54ch] text-lead text-ink-soft">
+                Clozer part de ce que votre client a vraiment lu et de votre offre. Il écrit une relance qui répond à
+                ce qui coince, et choisit le moment : un jour ouvré, en heures de bureau, dans le fuseau de votre
+                client.
+              </p>
+              <p className="mt-4 max-w-[54ch] text-lead">
+                Vous validez d&apos;un clic, ou vous laissez partir seules les relances simples. Les cas délicats
+                vous attendent toujours.
+              </p>
+            </div>
+            <figure className="border border-ink bg-sheet lg:self-start">
+              <figcaption className="sr-only">
+                Exemple de relance préparée par Clozer, avec l&apos;envoi proposé jeudi à 10 h 30, heure du prospect.
+              </figcaption>
+              <div aria-hidden>
+                <p className="flex items-baseline justify-between gap-4 border-b border-ink px-5 py-3 text-small">
+                  <span className="font-semibold">Relance préparée · Marie Dupont</span>
+                  <span className="text-ink-soft">à valider</span>
+                </p>
+                <dl className="divide-y divide-rule border-b border-ink px-5">
+                  {FOLLOWUP_STEPS.map((step) => (
+                    <div key={step.label} className="grid gap-1 py-3 text-small sm:grid-cols-[9rem_minmax(0,1fr)]">
+                      <dt className="text-ink-soft">{step.label}</dt>
+                      <dd className="font-medium">{step.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+                <p className="px-5 py-4 text-body">
+                  « Bonjour Marie, pour faciliter la décision, je peux vous proposer un paiement en trois fois. Un
+                  créneau jeudi pour en parler ? »
+                </p>
+                <div className="flex gap-2 px-5 pb-5 text-small font-semibold">
+                  <span className="bg-ink px-3 py-2 text-sheet">Valider l&apos;envoi</span>
+                  <span className="border border-ink px-3 py-2">Modifier</span>
+                </div>
+              </div>
+              <p className="border-t border-rule px-5 py-2 text-micro text-ink-soft">Exemple de démonstration</p>
+            </figure>
           </div>
         </section>
 
@@ -343,7 +437,7 @@ export default function Home() {
         {/* Close: the same field, once more. */}
         <section>
           <div className={`${WRAP} grid gap-10 py-20 md:py-28 lg:grid-cols-[minmax(0,1fr)_26rem] lg:items-end lg:gap-16`}>
-            <h2 className="condensed max-w-[14ch] text-display font-extrabold">Votre prochain devis part avec un lien suivi.</h2>
+            <h2 className="condensed max-w-[14ch] text-display font-extrabold">Votre prochain document part avec un lien suivi.</h2>
             <SignupForm id="email-final" />
           </div>
         </section>
@@ -379,14 +473,13 @@ function ProspectSheet() {
   return (
     <figure className="mt-10 border border-ink bg-paper">
       <figcaption className="sr-only">
-        Exemple de fiche prospect : Marie Dupont, chaude, 86 sur 100, avec le détail du score et une relance prête à
-        valider.
+        Exemple de fiche prospect : Marie Dupont, chaude, 86 sur 100, avec le détail du score.
       </figcaption>
       <div aria-hidden>
         <div className="flex items-start justify-between gap-4 border-b border-ink p-5">
           <div>
             <p className="text-lead font-semibold">Marie Dupont</p>
-            <p className="text-small text-ink-soft">Atelier Morel · devis « Refonte du site »</p>
+            <p className="text-small text-ink-soft">Atelier Morel · proposition « Refonte du site »</p>
           </div>
           <div className="text-right">
             <p className="condensed text-[2.75rem] leading-none font-extrabold">86</p>
@@ -398,7 +491,7 @@ function ProspectSheet() {
             <ThermalPlate key={i} heat={heat} seed={i} className="aspect-[3/4]" />
           ))}
         </div>
-        <ul className="divide-y divide-rule border-b border-ink px-5">
+        <ul className="divide-y divide-rule px-5">
           {SCORE_REASONS.map((reason) => (
             <li key={reason.label} className="flex items-baseline gap-4 py-2.5 text-small">
               <span className="w-8 font-mono">{reason.points}</span>
@@ -406,19 +499,6 @@ function ProspectSheet() {
             </li>
           ))}
         </ul>
-        <div className="p-5">
-          <p className="flex items-baseline justify-between text-small font-semibold">
-            Relance prête <span className="font-normal text-ink-soft">à valider</span>
-          </p>
-          <p className="mt-2 text-small text-ink-soft">
-            « Bonjour Marie, pour faciliter la décision, je peux vous proposer un paiement en trois fois. Un créneau
-            jeudi pour en parler ? »
-          </p>
-          <div className="mt-4 flex gap-2 text-small font-semibold">
-            <span className="bg-ink px-3 py-2 text-sheet">Valider l&apos;envoi</span>
-            <span className="border border-ink px-3 py-2">Modifier</span>
-          </div>
-        </div>
       </div>
       <p className="border-t border-rule px-5 py-2 text-micro text-ink-soft">Exemple de démonstration</p>
     </figure>

@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 
 import { BRAND } from "@/components/brand-colors";
 
-export const alt = "Clozer — savoir qui lit vraiment votre devis";
+export const alt = "Clozer · Sachez qui lit vos documents, relancez au bon moment";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -45,7 +45,7 @@ export default function OpengraphImage() {
             clozer
           </div>
           <div style={{ fontSize: 84, fontWeight: 800, lineHeight: 0.95, letterSpacing: -3, maxWidth: 900 }}>
-            Voyez où votre devis chauffe.
+            Voyez où votre document chauffe.
           </div>
         </div>
         <div style={{ display: "flex", gap: 2, background: BRAND.ink, borderTop: `2px solid ${BRAND.ink}`, height: 230 }}>

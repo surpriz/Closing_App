@@ -18,13 +18,13 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.clozer.club"),
-  title: "Clozer — savoir qui lit vraiment votre devis",
+  title: "Clozer · Sachez qui lit vos documents, relancez au bon moment",
   description:
-    "Envoyez votre proposition en lien suivi : pages lues, temps passé, retour sur les tarifs. Clozer vous dit qui relancer, et prépare le message.",
+    "Devis, factures, présentations, docs techniques : envoyez un lien suivi au lieu de la pièce jointe. Clozer voit les pages lues, vous dit qui relancer et écrit la relance.",
   openGraph: {
-    title: "Clozer — savoir qui lit vraiment votre devis",
+    title: "Clozer · Sachez qui lit vos documents, relancez au bon moment",
     description:
-      "Envoyez votre proposition en lien suivi. Clozer vous dit qui relancer, et prépare le message.",
+      "Devis, factures, présentations : envoyez un lien suivi. Clozer vous dit qui relancer et écrit la relance.",
     url: "https://www.clozer.club",
     siteName: "Clozer",
     locale: "fr_FR",
@@ -32,9 +32,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Clozer — savoir qui lit vraiment votre devis",
+    title: "Clozer · Sachez qui lit vos documents, relancez au bon moment",
     description:
-      "Envoyez votre proposition en lien suivi. Clozer vous dit qui relancer, et prépare le message.",
+      "Devis, factures, présentations : envoyez un lien suivi. Clozer vous dit qui relancer et écrit la relance.",
   },
   // "./" resolves against each route's own path, so the legal pages get their own canonical.
   alternates: { canonical: "./" },

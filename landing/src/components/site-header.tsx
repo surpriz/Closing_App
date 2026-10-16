@@ -7,7 +7,7 @@ import { MobileMenu } from "./mobile-menu";
 
 const NAV = [
   { href: "/#comment", label: "Comment ça marche" },
-  { href: "/#releves", label: "Ce que vous voyez" },
+  { href: "/#relances", label: "Relances" },
   { href: "/#pour-qui", label: "Pour qui" },
   { href: "/#faq", label: "Questions" },
 ];
