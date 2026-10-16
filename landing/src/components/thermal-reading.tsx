@@ -58,6 +58,21 @@ const DOCUMENTS = [
       { title: "RIB", time: "0:15", heat: 0.3 },
     ],
   },
+  {
+    // A recorded pitch: each plate is 30 seconds of the video, the figure is how many times it was watched.
+    tab: "Vidéo",
+    name: "Pitch vidéo « Audit SEO » · 3:00",
+    video: true,
+    hottest: 3,
+    pages: [
+      { title: "Bonjour", at: "0:00", time: "1×", heat: 0.3 },
+      { title: "Le constat", at: "0:30", time: "1×", heat: 0.42 },
+      { title: "Démo", at: "1:00", time: "2×", heat: 0.78 },
+      { title: "Résultats", at: "1:30", time: "3×", heat: 1 },
+      { title: "Tarif", at: "2:00", time: "1×", heat: 0.55 },
+      { title: "Prochaine étape", at: "2:30", time: "—", heat: 0 },
+    ],
+  },
 ];
 const STEP_MS = 520;
 
@@ -83,11 +98,15 @@ export function ThermalReading() {
 
   const done = read >= pages.length;
   const hot = pages[doc.hottest];
+  const video = "video" in doc;
 
   return (
     <figure className="border-y border-ink">
       <figcaption className="sr-only">
-        Exemple : lecture de « {doc.name} ». La page la plus lue est « {hot.title} », {hot.time}.
+        Exemple : lecture de « {doc.name} ».{" "}
+        {video
+          ? `Le passage le plus regardé est « ${hot.title} », vu ${hot.time.replace("×", " fois")}. Le prospect a décroché avant la fin.`
+          : `La page la plus lue est « ${hot.title} », ${hot.time}.`}
       </figcaption>
       <div className="mx-auto flex max-w-[90rem] flex-wrap items-stretch justify-between gap-x-6 border-b border-ink px-5 sm:px-8">
         <div role="tablist" aria-label="Type de document" className="-ml-px flex flex-wrap">
@@ -115,7 +134,7 @@ export function ThermalReading() {
       <div className="mx-auto grid max-w-[90rem] grid-cols-3 gap-px bg-ink sm:grid-cols-6 lg:grid-cols-[repeat(6,minmax(0,1fr))_3.5rem]">
         {pages.map((page, i) => (
           <div key={`${docIndex}-${page.title}`} className="relative bg-paper">
-            <ThermalPlate heat={read >= i ? page.heat : 0} seed={i} className="aspect-[3/4] w-full">
+            <ThermalPlate heat={read >= i ? page.heat : 0} seed={i} frame={video} className="aspect-[3/4] w-full">
               {i === doc.hottest && (
                 <span
                   aria-hidden
@@ -128,7 +147,8 @@ export function ThermalReading() {
               )}
               <span className="absolute inset-x-0 bottom-0 flex items-baseline justify-between gap-2 px-2.5 py-2 font-mono text-micro text-sheet">
                 <span className="truncate">
-                  {i === doc.hottest && done ? "Sp1 " : ""}P.{i + 1}
+                  {i === doc.hottest && done ? "Sp1 " : ""}
+                  {"at" in page ? page.at : `P.${i + 1}`}
                   <span className="max-sm:hidden"> {page.title}</span>
                 </span>
                 <span>{page.time}</span>
