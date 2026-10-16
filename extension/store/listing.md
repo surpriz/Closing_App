@@ -24,11 +24,18 @@ Pendant que le prospect lit, l'extension vous prévient : c'est le bon moment po
 Il faut un compte Clozer (https://app.clozer.club). L'extension ne lit pas vos emails reçus et n'envoie pas le texte de vos messages : seulement le PDF que vous remplacez et le premier destinataire.
 ```
 
-**Visuels** (à produire)
+**Visuels** (`store/images/`)
 
-- Icône 128×128 : `public/icon/128.png`
-- Au moins une capture 1280×800 : compose Gmail avec la proposition de remplacement, puis le lien inséré
-- Petite vignette promo 440×280
+- Icône 128×128 : `images/icon-128.png` (copie de `public/icon/128.png`)
+- Petite image promo 440×280 : `images/promo-440x280.png`
+- Image promo haut de page 1400×560 : `images/marquee-1400x560.png`
+- Captures 1280×800, 1 à 5, vraies captures de l'extension : `./fit-screenshot.sh capture.png` met n'importe quelle capture macOS au bon format (1280×800, PNG sans alpha)
+  1. Compose Gmail avec le PDF joint et la proposition Clozer
+  2. Le lien inséré au-dessus de la signature, pièce jointe retirée
+  3. La notification « en train de lire »
+  4. Le relevé de lecture dans l'app
+
+**Langues** : listing en français tant que l'extension n'est qu'en français. Pour l'anglais, ajouter `default_locale` et `_locales/{fr,en}` à l'extension : le dashboard propose alors une fiche (texte et captures) par langue.
 
 ## Privacy practices
 
