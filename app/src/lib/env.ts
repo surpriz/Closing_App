@@ -20,7 +20,8 @@ const serverEnvSchema = z.object({
   FOLLOWUP_EMAIL_FROM: z.string().optional(),
   FOLLOWUP_EMAIL_REPLY_TO: z.string().optional(),
 
-  AI_PROVIDER: z.enum(["openai", "anthropic"]).default("openai"),
+  // Never fatal: see resolveAiProvider. The raw value is normalised once the keys are known (below)
+  AI_PROVIDER: z.string().optional(),
   OPENAI_API_KEY: z.string().optional(),
   ANTHROPIC_API_KEY: z.string().optional(),
   AI_MODEL_FOLLOWUP: z.string().optional(),

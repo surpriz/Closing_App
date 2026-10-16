@@ -2,6 +2,7 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenAI } from "@ai-sdk/openai";
 
 import type { AiProvider } from "../types";
+import { resolveAiProvider } from "./provider-choice";
 
 /** `help` answers the users themselves about Clozer; `chat` answers prospects. */
 export type AiPurpose = "followup" | "chat" | "classify" | "analyze" | "help";
@@ -46,7 +47,7 @@ const MODEL_ENV: Record<AiPurpose, string | undefined> = {
 export const THINKING_ROOM_TOKENS = 4000;
 
 export function getLanguageModel(purpose: AiPurpose) {
-  const provider: AiProvider = process.env.AI_PROVIDER === "anthropic" ? "anthropic" : "openai";
+  const provider: AiProvider = resolveAiProvider(process.env);
   const modelId = MODEL_ENV[purpose] || DEFAULT_MODELS[provider][purpose];
 
   if (provider === "anthropic") {
