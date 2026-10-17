@@ -1,0 +1,55 @@
+{
+  "invitation": {
+    "subject": "{inviter} invited you to Clozer",
+    "preheader": "Join the {workspace} team",
+    "body": "You'll join the “{workspace}” workspace: your proposals, who reads them, and when to follow up.",
+    "button": "Join the team",
+    "footer": "Link valid for 7 days. Not expecting this? Ignore this email."
+  },
+  "magicLink": {
+    "subject": "Your sign-in link",
+    "button": "Sign in",
+    "expires": "This link expires in 5 minutes.",
+    "textLine": "Sign in: {url}",
+    "refusalSubject": "Signing in to Clozer"
+  },
+  "onboarding": {
+    "helloName": "Hi {name},",
+    "hello": "Hi,",
+    "footer": "Stop getting these getting-started tips",
+    "welcome": {
+      "subject": "Welcome to Clozer",
+      "title": "Just one thing to do",
+      "body": "Drop in a document (quote, invoice, deck, anything), then open the link the way your prospect would. You'll see right away what Clozer shows you. Two minutes.",
+      "noInstall": "Nothing to install, it all happens in your browser.",
+      "button": "Let's go"
+    },
+    "noDocument": {
+      "subject": "Your first document on Clozer",
+      "title": "Take the last document you sent",
+      "body": "Even an old one. Drop it into Clozer and open the link: you'll see exactly what your prospect will see, and what you'll learn from their read.",
+      "example": "No document at hand? An example is waiting for you.",
+      "button": "Try it now"
+    },
+    "notSent": {
+      "subject": "Your link is ready, it hasn't gone out yet",
+      "title": "Your link is waiting for its prospect",
+      "body": "Paste it into your next email, instead of the attachment. As soon as your prospect opens it, you'll know.",
+      "button": "Get my link"
+    },
+    "firstRead": {
+      "someone": "A prospect",
+      "subject": "{label} opened your document",
+      "body": "Your first link was read. On the deal page: the pages read, the time spent, and what Clozer makes of it.",
+      "followup": "If a follow-up would help, Clozer writes it for you. It waits in “Follow-ups to review”, nothing goes out without you.",
+      "button": "See what they read"
+    }
+  },
+  "outlookConnected": {
+    "subject": "Outlook connected to your Clozer account",
+    "intro": "An Outlook was just connected to your Clozer account ({when}).",
+    "ifYou": "If that was you, nothing to do.",
+    "otherwise": "Otherwise, revoke it right away in Settings › Chrome and Outlook: {url}",
+    "otherwiseHtml": "Otherwise, revoke it right away in <a>Settings › Chrome and Outlook</a>."
+  }
+}

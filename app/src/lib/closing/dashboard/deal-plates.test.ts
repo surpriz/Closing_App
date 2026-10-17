@@ -18,7 +18,7 @@ describe("dealPlates", () => {
       ],
       documentPages: doc(4, [3]),
       numPages: 4,
-      video: false,
+      video: false, locale: "fr",
       livePages: [3],
     });
     expect(result.plates.map((p) => p.label)).toEqual([
@@ -55,7 +55,7 @@ describe("dealPlates", () => {
       pages: [{ pageNumber: 26, totalDurationMs: 9_000, viewCount: 1 }],
       documentPages: doc(26, [25]),
       numPages: 26,
-      video: false,
+      video: false, locale: "fr",
     });
     expect(result.pagesPerPlate).toBe(3);
     expect(result.plates).toHaveLength(9);
@@ -75,7 +75,7 @@ describe("dealPlates", () => {
       pages: [],
       documentPages: doc(10),
       numPages: 10,
-      video: true,
+      video: true, locale: "fr",
     });
     expect(result.plates[2].label).toBe("20–30 %");
     expect(result.hottest).toBeNull();

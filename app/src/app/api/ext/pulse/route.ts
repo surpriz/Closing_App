@@ -2,7 +2,7 @@ import { getPublicAppUrl } from "@/lib/app-origin";
 import { dealLabel, linkLabelSelect } from "@/lib/closing/dashboard/labels";
 import { getWorkspaceLiveState } from "@/lib/closing/live";
 import { extensionNotice } from "@/lib/closing/notify/extension-notice";
-import { upsertSellerPrefs } from "@/lib/closing/notify/preferences";
+import { sellerTimezone, upsertSellerPrefs } from "@/lib/closing/notify/preferences";
 import { prisma } from "@/lib/db";
 import { withExtensionAuth } from "@/lib/extension-auth";
 import { extensionRemoteConfig } from "@/lib/extension-config";
@@ -34,7 +34,7 @@ export const GET = withExtensionAuth(async (request, { user, organization }) => 
     prisma.member.findFirst({ where: { userId: user.id, organizationId: organization.id }, select: { role: true } }),
     prisma.notificationPreference.findUnique({
       where: { userId_organizationId: { userId: user.id, organizationId: organization.id } },
-      select: { extensionSeenAt: true },
+      select: { extensionSeenAt: true, timezone: true },
     }),
   ]);
   const owner = { userId: user.id, isOwner: isOwnerRole(member?.role ?? "") };
@@ -66,6 +66,7 @@ export const GET = withExtensionAuth(async (request, { user, organization }) => 
   }
 
   const appUrl = getPublicAppUrl();
+  const timezone = sellerTimezone({ timezone: prefs?.timezone ?? null });
   return Response.json({
     enabled: true,
     readers: live.readers.map((reader) => ({
@@ -85,7 +86,7 @@ export const GET = withExtensionAuth(async (request, { user, organization }) => 
       createdAt: alert.createdAt.toISOString(),
       // Signed and not closed yet: the extension offers "Marquer gagné" right on the alert
       canMarkWon: alert.type === "PROSPECT_VALIDATED" && alert.link.dealStatus === "VALIDATED",
-      ...extensionNotice(alert.type, dealLabel(alert.link), alert.link.document.name, (alert.payload ?? {}) as object),
+      ...extensionNotice(alert.type, dealLabel(alert.link), alert.link.document.name, (alert.payload ?? {}) as object, user.locale, timezone),
     })),
     next: (alerts.at(-1)?.createdAt ?? since).toISOString(),
   });

@@ -3,6 +3,7 @@
 import { upload } from "@vercel/blob/client";
 import { Mic, RotateCcw, Square, Video } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -27,13 +28,6 @@ export type CapsuleTarget = {
   uploadPrefix: string;
 };
 
-const RECORDER_ERRORS: Record<RecorderError, string> = {
-  denied: "Accès à la caméra ou au micro refusé. Autorisez-le dans la barre d'adresse puis réessayez.",
-  missing: "Aucune caméra ou aucun micro trouvé.",
-  unsupported: "Ce navigateur ne sait pas enregistrer. Essayez Chrome, Edge, Firefox ou Safari récent.",
-  failed: "L'enregistrement n'a pas marché, réessayez.",
-};
-
 export function CapsuleRecorderDialog({
   open,
   onOpenChange,
@@ -45,25 +39,20 @@ export function CapsuleRecorderDialog({
   target: CapsuleTarget;
   initialHook: string;
 }) {
+  const t = useTranslations("documents.capsule");
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           {target.pageNumber === WELCOME_PAGE ? (
             <>
-              <DialogTitle>{target.linkId ? "Mot d'accueil pour ce prospect" : "Mot d'accueil"}</DialogTitle>
-              <DialogDescription>
-                Jusqu&apos;à {CAPSULE_MAX_MS / 1000} secondes pour présenter le document de vive voix. Le prospect voit
-                votre bulle dès l&apos;ouverture, sur toutes les pages.
-              </DialogDescription>
+              <DialogTitle>{target.linkId ? t("welcomeTitleProspect") : t("welcomeTitle")}</DialogTitle>
+              <DialogDescription>{t("welcomeDescription", { seconds: CAPSULE_MAX_MS / 1000 })}</DialogDescription>
             </>
           ) : (
             <>
-              <DialogTitle>Capsule de la page {target.pageNumber}</DialogTitle>
-              <DialogDescription>
-                {CAPSULE_MAX_MS / 1000} secondes pour expliquer cette page de vive voix. Le prospect la voit apparaître
-                dans une bulle quand il arrive ici.
-              </DialogDescription>
+              <DialogTitle>{t("pageTitle", { page: target.pageNumber })}</DialogTitle>
+              <DialogDescription>{t("pageDescription", { seconds: CAPSULE_MAX_MS / 1000 })}</DialogDescription>
             </>
           )}
         </DialogHeader>
@@ -77,6 +66,7 @@ export function CapsuleRecorderDialog({
 }
 
 function Recorder({ target, initialHook, onDone }: { target: CapsuleTarget; initialHook: string; onDone: () => void }) {
+  const t = useTranslations("documents.capsule");
   const { documentId, linkId, pageNumber, uploadPrefix } = target;
   const [kind, setKind] = useState<CapsuleKind>("VIDEO");
   const [hook, setHook] = useState(initialHook);
@@ -123,18 +113,18 @@ function Recorder({ target, initialHook, onDone }: { target: CapsuleTarget; init
         setProgress(null);
         return;
       }
-      toast.success(pageNumber === WELCOME_PAGE ? "Mot d'accueil enregistré" : "Capsule enregistrée");
+      toast.success(pageNumber === WELCOME_PAGE ? t("savedWelcome") : t("savedCapsule"));
       router.refresh();
       onDone();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "L'envoi a échoué.");
+      toast.error(error instanceof Error ? error.message : t("sendFailed"));
       setProgress(null);
     }
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-px border border-border bg-border" role="radiogroup" aria-label="Type de capsule">
+      <div className="flex gap-px border border-border bg-border" role="radiogroup" aria-label={t("kindAria")}>
         {(["VIDEO", "AUDIO"] as const).map((option) => (
           <button
             key={option}
@@ -151,7 +141,7 @@ function Recorder({ target, initialHook, onDone }: { target: CapsuleTarget; init
             )}
           >
             {option === "VIDEO" ? <Video className="size-4" /> : <Mic className="size-4" />}
-            {option === "VIDEO" ? "Vidéo" : "Audio seul"}
+            {option === "VIDEO" ? t("video") : t("audioOnly")}
           </button>
         ))}
       </div>
@@ -172,23 +162,23 @@ function Recorder({ target, initialHook, onDone }: { target: CapsuleTarget; init
         {recorder.status === "recording" && (
           <span className="absolute top-3 flex items-center gap-1.5 rounded-sm bg-destructive px-2 py-0.5 font-mono text-micro font-medium text-white">
             <span aria-hidden className="size-1.5 animate-pulse rounded-full bg-white motion-reduce:animate-none" />
-            {remainingS} s
+            {t("secondsLeft", { seconds: remainingS })}
           </span>
         )}
       </div>
 
-      {recorder.error && <p className="text-small text-destructive">{RECORDER_ERRORS[recorder.error]}</p>}
+      {recorder.error && <p className="text-small text-destructive">{t(`errors.${recorder.error satisfies RecorderError}`)}</p>}
 
       <label className="block space-y-1.5">
-        <span className="text-small font-medium">Phrase d&apos;accroche (facultatif)</span>
+        <span className="text-small font-medium">{t("hookLabel")}</span>
         <Input
           value={hook}
           maxLength={CAPSULE_HOOK_MAX}
           onChange={(event) => setHook(event.target.value)}
           placeholder={
             pageNumber === WELCOME_PAGE
-              ? "En 1 minute, je vous présente cette proposition"
-              : "Sur cette partie, laisse-moi t'expliquer pourquoi…"
+              ? t("hookPlaceholderWelcome")
+              : t("hookPlaceholderPage")
           }
         />
       </label>
@@ -196,20 +186,20 @@ function Recorder({ target, initialHook, onDone }: { target: CapsuleTarget; init
       <DialogFooter>
         {recorder.status === "recording" ? (
           <Button variant="destructive" onClick={recorder.stop}>
-            <Square /> Arrêter
+            <Square /> {t("stop")}
           </Button>
         ) : recorder.status === "recorded" ? (
           <>
             <Button variant="outline" disabled={progress !== null} onClick={recorder.reset}>
-              <RotateCcw /> Recommencer
+              <RotateCcw /> {t("restart")}
             </Button>
             <Button disabled={progress !== null} onClick={save}>
-              {progress === null ? "Enregistrer" : `Envoi… ${Math.round(progress)} %`}
+              {progress === null ? t("save") : t("sending", { percent: Math.round(progress) })}
             </Button>
           </>
         ) : (
           <Button disabled={recorder.status === "requesting"} onClick={recorder.start}>
-            {kind === "VIDEO" ? <Video /> : <Mic />} {recorder.status === "requesting" ? "Autorisation…" : "Démarrer"}
+            {kind === "VIDEO" ? <Video /> : <Mic />} {recorder.status === "requesting" ? t("requesting") : t("start")}
           </Button>
         )}
       </DialogFooter>

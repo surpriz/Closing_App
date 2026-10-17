@@ -1,9 +1,12 @@
+import { useTranslations } from "next-intl";
+
 import { Skeleton } from "@/components/ui/skeleton";
 
 /** The report's frame while the reading loads: strip, name, next action, the band of pages. */
 export default function Loading() {
+  const t = useTranslations("deal.loading");
   return (
-    <div className="space-y-10" aria-busy aria-label="Chargement">
+    <div className="space-y-10" aria-busy aria-label={t("ariaLabel")}>
       <div className="space-y-5">
         <Skeleton className="h-4 w-32" />
         <Skeleton className="h-3 w-full max-w-md" />

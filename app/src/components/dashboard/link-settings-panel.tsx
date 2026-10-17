@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Fragment, useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -18,52 +19,54 @@ import { ExpiryControl } from "./expiry-control";
 
 export type LinkSwitches = Record<LinkSwitch, boolean>;
 
+type PanelT = ReturnType<typeof useTranslations<"deal.linkSettingsPanel">>;
+
 type Item = { key: LinkSwitch; label: string; hint?: string; pdfOnly?: boolean; personalOnly?: boolean };
 
-const GROUPS: { title: string; items: Item[] }[] = [
+const item = (t: PanelT, key: LinkSwitch, extra: Partial<Item> = {}): Item => ({
+  key,
+  label: t(key),
+  hint: t(`${key}Hint`),
+  ...extra,
+});
+
+const groups = (t: PanelT): { id: "access" | "prospect" | "tracking"; title: string; items: Item[] }[] => [
   {
-    title: "Accès",
+    id: "access",
+    title: t("groupAccess"),
+    items: [item(t, "requireEmail", { personalOnly: true })],
+  },
+  {
+    id: "prospect",
+    title: t("groupProspect"),
     items: [
-      {
-        key: "requireEmail",
-        label: "Demander son email avant de lire",
-        hint: "Vous savez qui lit, même si le lien circule.",
-        personalOnly: true,
-      },
+      item(t, "ctaEnabled"),
+      item(t, "bookingEnabled"),
+      item(t, "chatEnabled"),
+      item(t, "voiceCommentsEnabled", { pdfOnly: true }),
     ],
   },
   {
-    title: "Ce que le prospect peut faire",
-    items: [
-      { key: "ctaEnabled", label: "Valider ou demander un ajustement", hint: "Deux boutons en bas du document." },
-      { key: "bookingEnabled", label: "Prendre rendez-vous", hint: "Votre agenda, à côté des autres boutons." },
-      { key: "chatEnabled", label: "Poser ses questions à l'assistant", hint: "Il répond à partir du document et vous transmet le reste." },
-      { key: "voiceCommentsEnabled", label: "Laisser un vocal sur une page", hint: "Vous recevez l'audio et sa transcription.", pdfOnly: true },
-    ],
-  },
-  {
-    title: "Suivi",
-    items: [
-      { key: "followupsEnabled", label: "Relances préparées par Clozer", hint: "Coupé : le deal reste suivi, sans relance." },
-    ],
+    id: "tracking",
+    title: t("groupTracking"),
+    items: [item(t, "followupsEnabled")],
   },
 ];
-
-const VIDEO_CTA = { label: "Demander un devis", hint: "Un bouton sous la vidéo." };
 
 /** Booking page of this link, saved on blur. Empty = the seller's own page. */
 function BookingUrlField({ linkId, url, fallback }: { linkId: string; url: string; fallback: string | null }) {
   const [saved, setSaved] = useState(url);
+  const t = useTranslations("deal.linkSettingsPanel");
 
   return (
     <div className="space-y-1.5 px-4 py-3 text-small">
-      <label htmlFor="link-booking-url">Lien de l&apos;agenda</label>
+      <label htmlFor="link-booking-url">{t("bookingLabel")}</label>
       <Input
         id="link-booking-url"
         type="text"
         inputMode="url"
         defaultValue={url}
-        placeholder={fallback ?? "https://calendly.com/vous/30min"}
+        placeholder={fallback ?? t("bookingPlaceholder")}
         onBlur={async (e) => {
           const next = e.target.value.trim();
           if (next === saved) return;
@@ -78,8 +81,8 @@ function BookingUrlField({ linkId, url, fallback }: { linkId: string; url: strin
       />
       <span className="block text-muted-foreground">
         {fallback
-          ? "Vide : votre agenda, réglé dans Réglages. Collez un autre lien pour ce prospect seulement."
-          : "Aucun agenda dans vos réglages : collez un lien pour proposer un rendez-vous sur ce lien."}
+          ? t("bookingFallback")
+          : t("bookingNone")}
       </span>
     </div>
   );
@@ -109,6 +112,8 @@ export function LinkSettingsPanel({
 }) {
   const [values, setValues] = useState(initial);
   const [pending, startTransition] = useTransition();
+  const t = useTranslations("deal.linkSettingsPanel");
+  const videoCta = { label: t("videoCta"), hint: t("videoCtaHint") };
 
   function flip(key: LinkSwitch, value: boolean) {
     setValues((current) => ({ ...current, [key]: value }));
@@ -118,7 +123,7 @@ export function LinkSettingsPanel({
         if ("error" in result) throw new Error(result.error);
       } catch {
         setValues((current) => ({ ...current, [key]: !value }));
-        toast.error("Réglage non enregistré, réessayez.");
+        toast.error(t("saveFailed"));
       }
     });
   }
@@ -127,20 +132,20 @@ export function LinkSettingsPanel({
     startTransition(async () => {
       const result = await saveAsWorkspaceDefaults(linkId);
       if (result.error) toast.error(result.error);
-      else toast.success("Vos prochains liens partiront avec ces réglages.");
+      else toast.success(t("defaultsSaved"));
     });
   }
 
   return (
     <div className="space-y-6">
-      {GROUPS.map((group) => (
-        <section key={group.title} className="space-y-2">
+      {groups(t).map((group) => (
+        <section key={group.id} className="space-y-2">
           <h3 className="text-small font-medium text-muted-foreground">{group.title}</h3>
           <div className="divide-y divide-border rounded-lg border border-border bg-card">
             {group.items
               .filter((item) => (kind === "FILE" || !item.pdfOnly) && !(shared && item.personalOnly))
               // Under a video pitch, the buttons are "Demander un devis"
-              .map((item) => (kind === "VIDEO" && item.key === "ctaEnabled" ? { ...item, ...VIDEO_CTA } : item))
+              .map((item) => (kind === "VIDEO" && item.key === "ctaEnabled" ? { ...item, ...videoCta } : item))
               .map((item) => (
                 <Fragment key={item.key}>
                   <label className="flex cursor-pointer items-start justify-between gap-4 px-4 py-3">
@@ -155,7 +160,7 @@ export function LinkSettingsPanel({
                   )}
                 </Fragment>
               ))}
-            {group.title === "Accès" && (
+            {group.id === "access" && (
               <div id="expiration" className="scroll-mt-20">
                 <ExpiryControl linkId={linkId} expiresAt={expiresAt} requests={requests} canEdit />
               </div>
@@ -165,13 +170,12 @@ export function LinkSettingsPanel({
       ))}
       {shared && (
         <p className="text-small text-muted-foreground">
-          Chaque lecteur donne son email et reçoit son propre lien, avec ces réglages. Ses relances attendent
-          toujours votre feu vert : son adresse a été tapée, pas donnée par vous.
+          {t("sharedNote")}
         </p>
       )}
       {canSaveDefaults && !shared && (
         <Button type="button" variant="ghost" size="sm" disabled={pending} onClick={keepAsDefaults}>
-          Garder ces réglages pour mes prochains liens
+          {t("keepDefaults")}
         </Button>
       )}
     </div>

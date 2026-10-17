@@ -1,13 +1,17 @@
+import { pickUiLocale, type UiLocale } from "@/i18n/locale";
+import { getTranslator } from "@/i18n/messages";
 import { inBackground } from "@/lib/closing/background";
 import { prisma } from "@/lib/db";
 import { hashExtensionToken, parseBearer } from "@/lib/extension-tokens";
 import { isUserBlocked } from "@/lib/platform-admin";
+import { toUiLocale } from "@/lib/seller-locale";
 
 const TOUCH_EVERY_MS = 60 * 60 * 1000;
 
 export type ExtensionCaller = {
   tokenId: string;
-  user: { id: string; name: string; email: string };
+  /** locale: the seller's, for every message the extension shows. */
+  user: { id: string; name: string; email: string; locale: UiLocale };
   organization: { id: string; name: string };
 };
 
@@ -24,7 +28,7 @@ export async function authenticateExtension(request: Request): Promise<Extension
       revokedAt: true,
       lastUsedAt: true,
       organizationId: true,
-      user: { select: { id: true, name: true, email: true, banned: true, banExpires: true } },
+      user: { select: { id: true, name: true, email: true, locale: true, banned: true, banExpires: true } },
       organization: { select: { id: true, name: true, suspendedAt: true } },
     },
   });
@@ -44,9 +48,19 @@ export async function authenticateExtension(request: Request): Promise<Extension
   }
 
   const { id, name, email } = row.user;
-  return { tokenId: row.id, user: { id, name, email }, organization: { id: row.organization.id, name: row.organization.name } };
+  return {
+    tokenId: row.id,
+    user: { id, name, email, locale: toUiLocale(row.user.locale) },
+    organization: { id: row.organization.id, name: row.organization.name },
+  };
 }
 
+/** Language of a request with no seller behind it: the extensions send Accept-Language. */
+export function requestUiLocale(request: Request) {
+  return pickUiLocale(request.headers.get("accept-language"));
+}
+
+/** `message` is shown as is by the extensions: pass it translated. */
 export function extError(status: number, error: string, message?: string) {
   return Response.json({ error, message: message ?? error }, { status });
 }
@@ -57,7 +71,9 @@ export function withExtensionAuth<Ctx>(
 ) {
   return async (request: Request, ctx: Ctx) => {
     const caller = await authenticateExtension(request);
-    if (!caller) return extError(401, "unauthorized", "Reconnectez l'extension Clozer.");
+    if (!caller) {
+      return extError(401, "unauthorized", getTranslator(requestUiLocale(request))("server.ext.unauthorized"));
+    }
     return handler(request, caller, ctx);
   };
 }

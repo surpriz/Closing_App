@@ -1,4 +1,7 @@
+import { DEFAULT_UI_LOCALE } from "@/i18n/locale";
 import { prisma } from "@/lib/db";
+import { toUiLocale } from "@/lib/seller-locale";
+import { getNamespaceTranslator } from "@/lib/server-translator";
 
 import { generateFollowupMessage, queueFollowup } from "../followups/queue";
 import { defaultTimezone, getWorkspaceSettings, resolveFollowupSettings } from "../settings";
@@ -17,12 +20,18 @@ export type ActResult = { ok: true; followupId: string } | { ok: false; reasons:
  * analysis recommended; the policy still applies.
  */
 export async function actOnInsight(insightId: string, { force = false, now = new Date() } = {}): Promise<ActResult> {
-  const row = await prisma.dealInsight.findUnique({ where: { id: insightId } });
-  if (!row) return { ok: false, reasons: ["Analyse introuvable."] };
+  const row = await prisma.dealInsight.findUnique({
+    where: { id: insightId },
+    include: { link: { select: { createdBy: { select: { locale: true } } } } },
+  });
+  if (!row) return { ok: false, reasons: [getNamespaceTranslator(DEFAULT_UI_LOCALE, "server.followups.act")("insightNotFound")] };
+  // Reasons go back to the seller who sent the link
+  const locale = toUiLocale(row.link.createdBy?.locale);
+  const t = getNamespaceTranslator(locale, "server.followups.act");
   const insight = toStoredInsight(row);
   const action = insight.recommendedAction;
 
-  if (!force && action.type !== "send_followup") return { ok: false, reasons: ["L'analyse ne conseille pas d'écrire."] };
+  if (!force && action.type !== "send_followup") return { ok: false, reasons: [t("notRecommended")] };
 
   const link = await prisma.link.findUnique({
     where: { id: row.linkId },
@@ -46,7 +55,7 @@ export async function actOnInsight(insightId: string, { force = false, now = new
       },
     },
   });
-  if (!link) return { ok: false, reasons: ["Lien introuvable."] };
+  if (!link) return { ok: false, reasons: [t("linkNotFound")] };
 
   const workspace = await getWorkspaceSettings(link.organizationId);
   const resolved = resolveFollowupSettings(link, workspace);
@@ -56,6 +65,7 @@ export async function actOnInsight(insightId: string, { force = false, now = new
 
   const decision = decideFollowup({
     now,
+    locale,
     timing: force && action.type !== "send_followup" ? "now" : action.timing,
     channel: action.channel,
     deal: {
@@ -101,7 +111,7 @@ export async function actOnInsight(insightId: string, { force = false, now = new
   // One AI follow-up in flight per deal: the newest reading replaces the older draft (a cold email one too)
   await prisma.followup.updateMany({
     where: { linkId: link.id, trigger: { in: ["AI_DECISION", "WARM_READ"] }, status: { in: [...UNAPPROVED] } },
-    data: { status: "CANCELLED", cancelledAt: now, error: "Remplacée par une analyse plus récente" },
+    data: { status: "CANCELLED", cancelledAt: now, error: t("replaced") },
   });
 
   const brief: Insight["followupBrief"] = insight.followupBrief ?? {
@@ -117,18 +127,19 @@ export async function actOnInsight(insightId: string, { force = false, now = new
     channel: decision.channel,
     scheduledFor: decision.scheduledFor,
     timezone,
-    locale: prospect.locale ?? "fr",
+    // Unknown prospect language: the seller's, not French by default
+    locale: prospect.locale ?? locale,
     dedupeKey: `ai:${link.id}:${insightId}:${force ? "seller" : "auto"}`,
     context: { insightId, brief },
   });
-  if (!followupId) return { ok: false, reasons: ["Une relance existe déjà pour cette analyse."] };
+  if (!followupId) return { ok: false, reasons: [t("alreadyExists")] };
 
   await prisma.followup.update({
     where: { id: followupId },
     data: {
       insightId,
       confidence: insight.confidence,
-      rationale: force && action.type !== "send_followup" ? `Préparée à votre demande. ${insight.headline}` : action.why,
+      rationale: force && action.type !== "send_followup" ? t("preparedOnRequest", { headline: insight.headline }) : action.why,
     },
   });
   await generateFollowupMessage(followupId);

@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronRight } from "lucide-react";
+import { useTranslations } from "next-intl";
 import {
   createContext,
   useCallback,
@@ -73,6 +74,7 @@ export function AdvancedSettingsProvider({
 }
 
 export function AdvancedSettingsToggle() {
+  const t = useTranslations("settings.advanced");
   const { open, setOpen } = useAdvancedSettings();
   return (
     <Button
@@ -87,7 +89,7 @@ export function AdvancedSettingsToggle() {
       <ChevronRight
         className={cn("transition-transform", open && "rotate-90")}
       />
-      {open ? "Masquer les réglages avancés" : "Réglages avancés"}
+      {open ? t("hide") : t("show")}
     </Button>
   );
 }
@@ -118,6 +120,7 @@ export function SettingsNav({
   essential: { id: string; label: string }[];
   advanced: { id: string; label: string }[];
 }) {
+  const t = useTranslations("settings.advanced");
   const { open, setOpen } = useAdvancedSettings();
   const link = useCallback(
     (section: { id: string; label: string }, isAdvanced: boolean) => (
@@ -135,7 +138,7 @@ export function SettingsNav({
   );
 
   return (
-    <nav aria-label="Sections des réglages" className="hidden lg:block">
+    <nav aria-label={t("navLabel")} className="hidden lg:block">
       <ul className="sticky top-24 border-l border-border text-small">
         {essential.map((section) => link(section, false))}
         <li className="mt-3 border-t border-border pt-3 pb-1 pl-3 text-micro font-medium tracking-wide text-muted-foreground uppercase">
@@ -144,7 +147,7 @@ export function SettingsNav({
             onClick={() => setOpen(!open)}
             className="outline-none hover:text-foreground focus-visible:underline"
           >
-            Avancés
+            {t("navAdvanced")}
           </button>
         </li>
         {advanced.map((section) => link(section, true))}

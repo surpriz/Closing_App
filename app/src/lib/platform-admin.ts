@@ -41,25 +41,7 @@ export const SIGNUP_REFUSAL_CODES: Record<SignupRefusal, string> = {
   closed: "SIGNUP_CLOSED",
 };
 
-export const BANNED_USER_MESSAGE = "Votre compte est désactivé. Contactez le support si vous pensez que c'est une erreur.";
-
-// Codes Better Auth puts in ?error= when a magic link fails, as the login page shows them
-const LOGIN_ERROR_MESSAGES: Record<string, string> = {
-  SIGNUP_BLOCKED: "Ce compte n'est pas disponible.",
-  SIGNUP_CLOSED: "Les inscriptions sont sur invitation pour le moment.",
-  BANNED_USER: BANNED_USER_MESSAGE,
-  INVALID_TOKEN: "Ce lien de connexion a expiré ou a déjà servi. Demandez-en un nouveau.",
-  EXPIRED_TOKEN: "Ce lien de connexion a expiré. Demandez-en un nouveau.",
-};
-
-export function signupRefusalMessage(refusal: SignupRefusal) {
-  return LOGIN_ERROR_MESSAGES[SIGNUP_REFUSAL_CODES[refusal]];
-}
-
-export function loginErrorMessage(code: string | undefined) {
-  if (!code) return null;
-  return LOGIN_ERROR_MESSAGES[code] ?? "La connexion n'a pas abouti. Demandez un nouveau lien.";
-}
+// Messages for these codes, per language: login-messages.ts (server only)
 
 type BanState = { banned?: boolean | null; banExpires?: Date | null };
 

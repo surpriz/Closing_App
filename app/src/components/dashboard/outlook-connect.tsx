@@ -1,6 +1,7 @@
 "use client";
 
 import { Check } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 
 import { claimOutlookPairing } from "@/app/extension/actions";
@@ -16,6 +17,7 @@ export function OutlookConnect({
   /** Replaces the "back to Outlook, close this tab" line once connected. */
   doneHint?: React.ReactNode;
 }) {
+  const t = useTranslations("settings.outlookConnect");
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -35,11 +37,10 @@ export function OutlookConnect({
       <div className="space-y-4 rounded-xl bg-card p-6 ring-1 ring-foreground/85">
         <p className="flex items-center gap-2 text-heading">
           <Check className="size-4 text-success" aria-hidden />
-          Outlook connecté
+          {t("doneTitle")}
         </p>
         <p className="text-body text-muted-foreground">
-          {doneHint ??
-            "Revenez dans Outlook. Joignez un PDF à un email : Clozer le remplace aussitôt par un lien. Vous pouvez fermer cet onglet."}
+          {doneHint ?? t("doneHint")}
         </p>
       </div>
     );
@@ -48,10 +49,14 @@ export function OutlookConnect({
   return (
     <form onSubmit={submit} className="space-y-4 rounded-xl bg-card p-6 ring-1 ring-foreground/85">
       <p className="text-body">
-        Outlook créera les liens dans l&apos;espace <strong>{account.workspace}</strong>, au nom de {account.email}.
+        {t.rich("account", {
+          workspace: account.workspace,
+          email: account.email,
+          b: (chunks) => <strong>{chunks}</strong>,
+        })}
       </p>
       <div className="space-y-2">
-        <Label htmlFor="outlook-code">Code affiché dans Outlook</Label>
+        <Label htmlFor="outlook-code">{t("codeLabel")}</Label>
         <Input
           id="outlook-code"
           value={code}
@@ -63,8 +68,7 @@ export function OutlookConnect({
           autoFocus
         />
         <p className="text-small text-muted-foreground">
-          Le code s&apos;affiche dans le volet Clozer de votre Outlook. Ne saisissez jamais un code envoyé par quelqu&apos;un
-          d&apos;autre.
+          {t("codeHint")}
         </p>
       </div>
       {error && (
@@ -73,7 +77,7 @@ export function OutlookConnect({
         </p>
       )}
       <Button type="submit" disabled={pending || !code.trim()}>
-        {pending ? "Connexion…" : "Connecter Outlook"}
+        {pending ? t("connecting") : t("connect")}
       </Button>
     </form>
   );

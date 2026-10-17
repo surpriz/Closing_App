@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import type { DealStatus, ProspectRole } from "@/generated/prisma/enums";
@@ -73,7 +74,7 @@ export async function archiveLink(linkId: string) {
   // A shared link's readers lose access with it
   const readers = await prisma.link.findMany({ where: { parentLinkId: link.id, archivedAt: null }, select: { id: true } });
   await prisma.link.updateMany({ where: { id: { in: [link.id, ...readers.map((r) => r.id)] } }, data: { archivedAt: now } });
-  for (const id of [link.id, ...readers.map((r) => r.id)]) await cancelOpenFollowups(id, "Lien archivé");
+  for (const id of [link.id, ...readers.map((r) => r.id)]) await cancelOpenFollowups(id, "archived");
   revalidateLink(link);
   redirect(`/documents/${link.documentId}`);
 }
@@ -108,7 +109,7 @@ export async function setLinkExpiry(linkId: string, expiresAt: string | null): P
   const now = new Date();
   const date = expiresAt ? new Date(expiresAt) : null;
   const error = date && expiryError(date, now);
-  if (error) return { error };
+  if (error) return { error: (await getTranslations("deal.actions"))(error) };
   const told = await applyExpiryChange(link, date, now);
   revalidateLink(link);
   return { ok: true, told };
@@ -117,7 +118,10 @@ export async function setLinkExpiry(linkId: string, expiresAt: string | null): P
 /** "+3 j", "+7 j", "+14 j": from the current deadline, or from now once it has passed. */
 export async function extendLink(linkId: string, days: number): Promise<ExpiryChangeResult> {
   const link = await requireOwnedLink(linkId);
-  if (!(EXTENSION_DAYS as readonly number[]).includes(days)) return { error: "Durée invalide." };
+  if (!(EXTENSION_DAYS as readonly number[]).includes(days)) {
+    const t = await getTranslations("deal.actions");
+    return { error: t("invalidDuration") };
+  }
   const now = new Date();
   const told = await applyExpiryChange(link, extendExpiry(link.expiresAt, now, days), now);
   revalidateLink(link);
@@ -139,7 +143,10 @@ export async function setLinkSwitch(linkId: string, key: LinkSwitch, value: bool
   const link = await requireOwnedLink(linkId);
   const field = z.enum(LINK_SWITCHES).parse(key);
   // The email is how each reader of a shared link gets their own link
-  if (link.shared && field === "requireEmail" && !value) return { error: "Un lien partagé demande toujours l'email." };
+  if (link.shared && field === "requireEmail" && !value) {
+    const t = await getTranslations("deal.actions");
+    return { error: t("sharedNeedsEmail") };
+  }
   await prisma.link.update({
     where: { id: link.id },
     // Per-link rule overrides belong to the rule engine the analysis replaced: back to the defaults
@@ -154,7 +161,7 @@ export async function setLinkSwitch(linkId: string, key: LinkSwitch, value: bool
     },
   });
   if (field === "followupsEnabled" && !value) {
-    await cancelOpenFollowups(link.id, "Relances désactivées sur ce lien");
+    await cancelOpenFollowups(link.id, "followupsOff");
   }
   revalidateLink(link);
   return { ok: true };
@@ -173,7 +180,10 @@ export async function setLinkBookingUrl(linkId: string, value: string) {
 export async function renameLink(linkId: string, name: string) {
   const link = await requireOwnedLink(linkId);
   const parsed = z.string().trim().max(120).safeParse(name);
-  if (!parsed.success) return { error: "Nom trop long." };
+  if (!parsed.success) {
+    const t = await getTranslations("deal.actions");
+    return { error: t("nameTooLong") };
+  }
   await prisma.link.update({ where: { id: link.id }, data: { name: parsed.data || null } });
   revalidateLink(link);
   return { ok: true };
@@ -194,7 +204,8 @@ export async function setLinkShared(linkId: string, shared: boolean) {
       prisma.link.findUniqueOrThrow({ where: { id: link.id }, select: { dealStatus: true } }),
     ]);
     if (named > 0 || read > 0 || current.dealStatus !== "OPEN") {
-      return { error: "Ce lien est déjà pour un contact : créez un nouveau lien pour le partager." };
+      const t = await getTranslations("deal.actions");
+      return { error: t("alreadyForContact") };
     }
   }
 
@@ -261,13 +272,14 @@ export async function markLinkNotSent(linkId: string) {
 /** The "Pour qui ?" field: an address adds the contact, a name only labels the link. */
 export async function setLinkRecipient(linkId: string, raw: string): Promise<LinkFormState> {
   const link = await requireOwnedLink(linkId);
+  const t = await getTranslations("deal.actions");
   // Its readers come through the gate: a named contact would be greeted to every one of them
-  if (link.shared) return { error: "Un lien partagé n'a pas de destinataire : passez-le en « Pour un prospect »." };
+  if (link.shared) return { error: t("sharedNoRecipient") };
   const { email, label } = parseShareRecipient(raw);
-  if (!email && !label) return { error: "Indiquez un email ou un nom." };
+  if (!email && !label) return { error: t("emailOrName") };
 
   const prospect = email ? prospectFromRecipient({ email, displayName: label }) : null;
-  if (email && !prospect) return { error: "Cet email n'est pas valide." };
+  if (email && !prospect) return { error: t("invalidEmail") };
   if (prospect) {
     await prisma.prospect.upsert({
       where: { linkId_email: { linkId: link.id, email: prospect.email } },
@@ -287,9 +299,10 @@ export async function setLinkRecipient(linkId: string, raw: string): Promise<Lin
 export async function saveAsWorkspaceDefaults(linkId: string) {
   const link = await requireOwnedLink(linkId);
   const { organization, role } = await requireWorkspace();
-  if (!isManagerRole(role)) return { error: "Seuls les admins changent les réglages par défaut." };
+  const t = await getTranslations("deal.actions");
+  if (!isManagerRole(role)) return { error: t("adminsOnlyDefaults") };
   // The forced email gate would become everyone's default
-  if (link.shared) return { error: "Faites-le depuis un lien « Pour un prospect »." };
+  if (link.shared) return { error: t("fromPersonalLink") };
 
   const current = await prisma.link.findUniqueOrThrow({
     where: { id: link.id },
@@ -315,7 +328,10 @@ export async function saveAsWorkspaceDefaults(linkId: string) {
   return { ok: true };
 }
 
-const prospectSchema = z
+type ActionsT = Awaited<ReturnType<typeof getTranslations<"deal.actions">>>;
+
+const prospectSchema = (t: ActionsT) =>
+  z
   .object({
     email: z.email().max(254).optional(),
     name: z.string().trim().max(120).transform((v) => v || null),
@@ -324,13 +340,13 @@ const prospectSchema = z
       .string()
       .transform((v) => v.replace(/[\s.\-()]/g, ""))
       .refine((v) => v === "" || /^\+[1-9]\d{6,14}$/.test(v), {
-        message: "Numéro au format international, ex : +33612345678",
+        message: t("phoneFormat"),
       })
       .transform((v) => v || null),
     whatsappOptIn: checkbox,
   })
   .refine((p) => !p.whatsappOptIn || p.phone, {
-    message: "Ajoutez un numéro pour activer WhatsApp.",
+    message: t("whatsappNeedsPhone"),
   });
 
 // Creates a contact on the link (prospectId null) or updates an existing one
@@ -341,8 +357,9 @@ export async function saveProspect(
   formData: FormData,
 ): Promise<LinkFormState> {
   const link = await requireOwnedLink(linkId);
+  const t = await getTranslations("deal.actions");
 
-  const parsed = prospectSchema.safeParse({
+  const parsed = prospectSchema(t).safeParse({
     email: prospectId ? undefined : String(formData.get("email") ?? "").trim().toLowerCase(),
     name: String(formData.get("name") ?? ""),
     company: String(formData.get("company") ?? ""),
@@ -350,7 +367,7 @@ export async function saveProspect(
     whatsappOptIn: formData.get("whatsappOptIn") ?? undefined,
   });
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Contact invalide." };
+    return { error: parsed.error.issues[0]?.message ?? t("invalidContact") };
   }
   const { email, name, company, phone, whatsappOptIn } = parsed.data;
 
@@ -359,7 +376,7 @@ export async function saveProspect(
       where: { id: prospectId, linkId: link.id },
       select: { id: true, whatsappOptInAt: true },
     });
-    if (!existing) return { error: "Contact introuvable." };
+    if (!existing) return { error: t("contactNotFound") };
 
     await prisma.prospect.update({
       where: { id: existing.id },
@@ -371,7 +388,7 @@ export async function saveProspect(
       },
     });
   } else {
-    if (!email) return { error: "Email requis." };
+    if (!email) return { error: t("emailRequired") };
     try {
       await prisma.prospect.create({
         data: {
@@ -384,7 +401,7 @@ export async function saveProspect(
         },
       });
     } catch (error) {
-      if (isUniqueViolation(error)) return { error: "Ce contact existe déjà sur ce lien." };
+      if (isUniqueViolation(error)) return { error: t("contactExists") };
       throw error;
     }
   }
@@ -400,13 +417,15 @@ const optionalText = (max: number) =>
     .max(max)
     .transform((v) => v || null);
 
-const optionalDate = z
-  .string()
-  .trim()
-  .transform((v) => (v === "" ? null : new Date(`${v}T12:00:00Z`)))
-  .refine((v) => v === null || !Number.isNaN(v.getTime()), { message: "Date invalide." });
+const optionalDate = (t: ActionsT) =>
+  z
+    .string()
+    .trim()
+    .transform((v) => (v === "" ? null : new Date(`${v}T12:00:00Z`)))
+    .refine((v) => v === null || !Number.isNaN(v.getTime()), { message: t("invalidDate") });
 
-const dealContextSchema = z.object({
+const dealContextSchema = (t: ActionsT) =>
+  z.object({
   dealAmount: z
     .string()
     .trim()
@@ -414,7 +433,7 @@ const dealContextSchema = z.object({
     .transform((v) => (v === "" ? null : Math.round(Number(v) * 100)))
     .pipe(z.number().int().min(0).max(2_000_000_000).nullable()),
   dealCurrency: z.enum(["EUR", "USD", "GBP", "CHF", "CAD"]),
-  decisionDeadline: optionalDate,
+  decisionDeadline: optionalDate(t),
   decisionMakerName: optionalText(120),
   decisionMakerRole: optionalText(120),
   sellerNotes: optionalText(2000),
@@ -423,7 +442,8 @@ const dealContextSchema = z.object({
 // What the seller knows about the deal and the prospect can't see: amount, deadline, decision maker, notes
 export async function saveDealContext(linkId: string, _prev: LinkFormState, formData: FormData): Promise<LinkFormState> {
   const link = await requireOwnedLink(linkId);
-  const parsed = dealContextSchema.safeParse({
+  const t = await getTranslations("deal.actions");
+  const parsed = dealContextSchema(t).safeParse({
     dealAmount: String(formData.get("dealAmount") ?? ""),
     dealCurrency: String(formData.get("dealCurrency") ?? "EUR"),
     decisionDeadline: String(formData.get("decisionDeadline") ?? ""),
@@ -431,7 +451,7 @@ export async function saveDealContext(linkId: string, _prev: LinkFormState, form
     decisionMakerRole: String(formData.get("decisionMakerRole") ?? ""),
     sellerNotes: String(formData.get("sellerNotes") ?? ""),
   });
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Contexte invalide." };
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? t("invalidContext") };
 
   const { dealAmount, ...rest } = parsed.data;
   // Consent to be named in prospecting messages: dated when first given, removed at once
@@ -457,14 +477,15 @@ export async function saveDealContext(linkId: string, _prev: LinkFormState, form
   return { ok: true };
 }
 
-const sellerActivitySchema = z.object({
+const sellerActivitySchema = (t: ActionsT) =>
+  z.object({
   type: z.enum(["CALL", "EMAIL_REPLY_RECEIVED", "MEETING", "NOTE"]),
   note: optionalText(1000),
   occurredAt: z
     .string()
     .trim()
     .transform((v) => (v === "" ? new Date() : new Date(v)))
-    .refine((v) => !Number.isNaN(v.getTime()), { message: "Date invalide." }),
+    .refine((v) => !Number.isNaN(v.getTime()), { message: t("invalidDate") }),
 });
 
 // Calls, replies and meetings happen outside Clozer: without them the advice would be blind
@@ -475,13 +496,14 @@ export async function logSellerActivity(
 ): Promise<LinkFormState> {
   const link = await requireOwnedLink(linkId);
   const { user } = await requireWorkspace();
-  const parsed = sellerActivitySchema.safeParse({
+  const t = await getTranslations("deal.actions");
+  const parsed = sellerActivitySchema(t).safeParse({
     type: String(formData.get("type") ?? ""),
     note: String(formData.get("note") ?? ""),
     occurredAt: String(formData.get("occurredAt") ?? ""),
   });
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Échange invalide." };
-  if (parsed.data.occurredAt.getTime() > Date.now() + 60_000) return { error: "Cette date est dans le futur." };
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? t("invalidExchange") };
+  if (parsed.data.occurredAt.getTime() > Date.now() + 60_000) return { error: t("futureDate") };
 
   await prisma.sellerActivity.create({ data: { linkId: link.id, userId: user.id, ...parsed.data } });
   inBackground("brain", () => analyzeDeal(link.id, "SELLER_UPDATE"));
@@ -494,10 +516,11 @@ export async function snoozeDeal(linkId: string, until: string | null) {
   const link = await requireOwnedLink(linkId);
   const date = until ? new Date(`${until}T08:00:00Z`) : null;
   if (date && (Number.isNaN(date.getTime()) || date.getTime() < Date.now())) {
-    return { error: "Choisissez une date à venir." };
+    const t = await getTranslations("deal.actions");
+    return { error: t("pickFutureDate") };
   }
   await prisma.link.update({ where: { id: link.id }, data: { snoozedUntil: date } });
-  if (date) await cancelOpenFollowups(link.id, "Deal mis en pause par le vendeur");
+  if (date) await cancelOpenFollowups(link.id, "paused");
   revalidateLink(link);
   return { ok: true };
 }
@@ -509,15 +532,16 @@ export async function reanalyzeDeal(linkId: string) {
     where: { linkId: link.id, model: { not: null }, createdAt: { gte: new Date(Date.now() - 2 * 60 * 1000) } },
     select: { id: true },
   });
-  if (recent) return { error: "Analyse toute fraîche, réessayez dans deux minutes." };
+  const t = await getTranslations("deal.actions");
+  if (recent) return { error: t("analysisTooFresh") };
 
   const outcome = await analyzeDeal(link.id, "MANUAL", { force: true });
   revalidateLink(link);
   const errors: Partial<Record<typeof outcome, string>> = {
-    no_ai: "Aucune IA n'est configurée.",
-    budget: "Quota d'analyses du jour atteint.",
-    failed: "L'analyse a échoué, réessayez dans un moment.",
-    skipped: "Ce deal n'est plus en cours.",
+    no_ai: t("noAi"),
+    budget: t("budget"),
+    failed: t("analysisFailed"),
+    skipped: t("dealClosed"),
   };
   return errors[outcome] ? { error: errors[outcome] } : { ok: true };
 }
@@ -531,9 +555,10 @@ export async function prepareFollowupFromInsight(linkId: string) {
     orderBy: { createdAt: "desc" },
     select: { id: true },
   });
-  if (!insight) return { error: "Analysez d'abord ce deal." };
+  const t = await getTranslations("deal.actions");
+  if (!insight) return { error: t("analyzeFirst") };
 
   const result = await actOnInsight(insight.id, { force: true });
   revalidateLink(link);
-  return result.ok ? { ok: true } : { error: result.reasons.join(" ") || "Impossible de préparer une relance." };
+  return result.ok ? { ok: true } : { error: result.reasons.join(" ") || t("cannotPrepare") };
 }

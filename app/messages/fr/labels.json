@@ -1,0 +1,191 @@
+{
+  "dealStatus": {
+    "OPEN": "En cours",
+    "VALIDATED": "Validé",
+    "CHANGE_REQUESTED": "Ajustement demandé",
+    "WON": "Gagné",
+    "LOST": "Perdu"
+  },
+  "tag": {
+    "PRICING": "Tarifs",
+    "TERMS": "Conditions",
+    "TIMELINE": "Planning",
+    "SCOPE": "Périmètre",
+    "TEAM": "Équipe",
+    "CASE_STUDY": "Références",
+    "OTHER": "Autre"
+  },
+  "tier": {
+    "HOT": "Chaud",
+    "WARM": "Tiède",
+    "COLD": "Froid"
+  },
+  "followupStatus": {
+    "PENDING": "Rédaction…",
+    "DRAFT": "À valider",
+    "GENERATED": "Planifiée",
+    "SCHEDULED": "Planifiée",
+    "SENT": "Envoyée",
+    "DELIVERED": "Délivrée",
+    "FAILED": "Échec",
+    "CANCELLED": "Annulée",
+    "SKIPPED": "Ignorée"
+  },
+  "followupTrigger": {
+    "HOT_PRICING": "Après lecture des tarifs",
+    "ANTI_GHOSTING": "Lien pas encore ouvert",
+    "MANUAL": "Relance manuelle",
+    "AI_DECISION": "Conseillée par l'analyse",
+    "EXPIRY_REMINDER": "Rappel avant expiration",
+    "WARM_READ": "Après un clic de cold email"
+  },
+  "sellerActivity": {
+    "CALL": "Appel",
+    "EMAIL_REPLY_RECEIVED": "Réponse reçue",
+    "MEETING": "Rendez-vous",
+    "NOTE": "Note",
+    "MANUAL_SEND": "Message envoyé"
+  },
+  "channel": {
+    "EMAIL": "Email",
+    "WHATSAPP": "WhatsApp"
+  },
+  "alertChannel": {
+    "EMAIL": "Email",
+    "SLACK": "Slack",
+    "WEBHOOK": "Webhook",
+    "EXTENSION": "Extension"
+  },
+  "alertType": {
+    "MULTI_VIEWER": "Lecture à plusieurs",
+    "REOPENED_AFTER_INACTIVITY": "Réouverture après inactivité",
+    "DRAFT_READY": "Relance prête à valider",
+    "PROSPECT_VALIDATED": "Proposition validée",
+    "CHANGE_REQUESTED": "Ajustement demandé",
+    "QUOTE_REQUESTED": "Devis demandé",
+    "PROSPECT_QUESTION": "Question du prospect",
+    "VOICE_COMMENT": "Commentaire vocal",
+    "CALL_MOMENT": "Moment d'appeler",
+    "COMMITTEE_LIVE": "Comité en lecture",
+    "NEW_READER": "Nouveau lecteur",
+    "DECISION_MAKER_DETECTED": "Décideur en lecture",
+    "LINK_EXTENSION_REQUESTED": "Demande de prolongation",
+    "LINK_EXPIRING": "Lien bientôt expiré",
+    "MEETING_BOOKED": "Rendez-vous pris"
+  },
+  "prospectRole": {
+    "DECISION_MAKER": "Décideur",
+    "FINANCE": "Finance / achats",
+    "TECHNICAL": "Technique",
+    "CHAMPION": "Champion",
+    "INFLUENCER": "Influenceur",
+    "OTHER": "Autre"
+  },
+  "readerOrigin": {
+    "initial": "Destinataire",
+    "forwarded_internal": "Transféré en interne",
+    "external": "Hors de l'entreprise",
+    "anonymous": "Sans email"
+  },
+  "scoreReason": {
+    "deal_validated": "Proposition validée",
+    "deal_lost": "Deal perdu",
+    "recent_activity_24h": "Lu dans les dernières 24 h",
+    "recent_activity_3d": "Lu ces 3 derniers jours",
+    "recent_activity_7d": "Lu cette semaine",
+    "reading_time": "Temps de lecture",
+    "first_visit": "Première visite",
+    "repeat_visits": "Visites répétées",
+    "multiple_viewers": "Plusieurs lecteurs",
+    "pricing_focus": "Longue lecture des tarifs",
+    "pricing_interest": "Lecture des tarifs",
+    "read_to_end": "Lu jusqu'au bout",
+    "read_halfway": "Lu à moitié",
+    "watched_to_end": "Vidéo vue jusqu'au bout",
+    "watched_halfway": "Vidéo vue à moitié",
+    "change_requested": "Ajustement demandé",
+    "quote_requested": "A demandé un devis",
+    "meeting_clicked": "A ouvert votre agenda",
+    "meeting_booked": "Rendez-vous pris"
+  },
+  "stage": {
+    "NOT_ENGAGED": "Pas encore engagé",
+    "DISCOVERING": "Découvre l'offre",
+    "EVALUATING": "Évalue",
+    "NEGOTIATING": "Négocie",
+    "DECIDING": "Proche de la décision",
+    "STALLED": "Au point mort",
+    "LIKELY_LOST": "Probablement perdu"
+  },
+  "momentum": {
+    "RISING": "en hausse",
+    "STEADY": "stable",
+    "COOLING": "en baisse"
+  },
+  "friction": {
+    "PRICE": "Prix",
+    "SCOPE": "Périmètre",
+    "TIMING": "Calendrier",
+    "DECISION_MAKER": "Décideur",
+    "COMPETITION": "Concurrence",
+    "TRUST": "Confiance",
+    "STALLED_AT_SECTION": "Bloque sur une partie",
+    "OTHER": "Autre"
+  },
+  "insightAction": {
+    "send_followup": "Relancer par écrit",
+    "call": "Appeler",
+    "reply_to_request": "Répondre à sa demande",
+    "involve_decision_maker": "Faire entrer le décideur dans la boucle",
+    "wait": "Attendre",
+    "close_lost": "Classer le deal"
+  },
+  "timing": {
+    "now": "maintenant",
+    "next_business_morning": "demain matin",
+    "in_2_business_days": "d'ici 2 jours ouvrés",
+    "in_1_week": "dans une semaine",
+    "before_deadline": "avant l'échéance"
+  },
+  "followupGoal": {
+    "gentle_reminder": "Petit rappel",
+    "clarify_pricing": "Clarifier le budget",
+    "propose_call": "Proposer un échange",
+    "address_objection": "Lever une objection",
+    "share_case_study": "Partager une référence",
+    "involve_decision_maker": "Impliquer le décideur",
+    "reactivate": "Relancer la discussion"
+  },
+  "role": {
+    "owner": "Propriétaire",
+    "admin": "Admin",
+    "member": "Membre"
+  },
+  "teamHealth": {
+    "hot": "Ça avance",
+    "at_risk": "Ça glisse",
+    "dead": "À classer",
+    "steady": "Suit son cours"
+  },
+  "teamHealthHint": {
+    "hot": "à suivre de près",
+    "at_risk": "en train de refroidir",
+    "dead": "à relancer une dernière fois ou à classer"
+  },
+  "healthSignal": {
+    "reading_now": "Lit en ce moment",
+    "change_requested": "Ajustement demandé",
+    "tier_hot": "Température chaude",
+    "ai_priority": "Prioritaire selon l'analyse",
+    "pricing_focus": "Longue lecture des tarifs",
+    "cooling": "Intérêt en baisse",
+    "quiet": "Plus lu depuis {days} j",
+    "unopened": "Pas ouvert depuis {days} j",
+    "ai_likely_lost": "Probablement perdu selon l'analyse",
+    "ai_stalled": "Au point mort selon l'analyse",
+    "ai_close_lost": "L'analyse conseille de le classer",
+    "never_opened": "Jamais ouvert en {days} j",
+    "silent": "Plus lu depuis {days} j",
+    "deadline_passed": "Échéance passée ({date})"
+  }
+}

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { editableLinks } from "@/lib/closing/dashboard/queries";
@@ -55,7 +56,7 @@ function assertTestTools() {
 export async function toggleLinkFollowups(linkId: string, enabled: boolean) {
   const link = await requireOwnedLink(linkId);
   await prisma.link.update({ where: { id: link.id }, data: { followupsEnabled: enabled } });
-  if (!enabled) await cancelOpenFollowups(link.id, "Relances désactivées sur ce lien");
+  if (!enabled) await cancelOpenFollowups(link.id, "followupsOff");
   revalidatePath(`/documents/${link.documentId}`);
 }
 
@@ -70,47 +71,50 @@ export async function sendFollowupNow(followupId: string) {
 
 export async function cancelFollowup(followupId: string) {
   const followup = await requireOwnedFollowup(followupId);
+  const t = await getTranslations("deal.followupActions");
   await prisma.followup.updateMany({
     where: { id: followup.id, status: { in: [...OPEN_FOLLOWUP_STATUSES] } },
-    data: { status: "CANCELLED", cancelledAt: new Date(), error: "Annulée par le vendeur" },
+    data: { status: "CANCELLED", cancelledAt: new Date(), error: t("cancelledBySeller") },
   });
   revalidateFollowup(followup);
 }
 
-const draftSchema = z.object({
+const draftSchema = (emptyMessage: string) =>
+  z.object({
   subject: z
     .string()
     .trim()
     .max(200)
     .transform((v) => v || null),
-  body: z.string().trim().min(1, "Le message est vide.").max(4000),
+  body: z.string().trim().min(1, emptyMessage).max(4000),
 });
 
 export async function saveFollowupDraft(followupId: string, draft: { subject: string; body: string }) {
   const followup = await requireOwnedFollowup(followupId);
-  const parsed = draftSchema.safeParse(draft);
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Message invalide." };
+  const t = await getTranslations("deal.followupActions");
+  const parsed = draftSchema(t("emptyMessage")).safeParse(draft);
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? t("invalidMessage") };
   const ok = await updateFollowupDraft(followup.id, parsed.data);
   revalidateFollowup(followup);
-  return ok ? { ok: true } : { error: "Cette relance ne peut plus être modifiée." };
+  return ok ? { ok: true } : { error: t("cannotEdit") };
 }
-
-const EXPIRED_LINK_ERROR = "Le lien a expiré : prolongez-le avant de relancer.";
 
 export async function approveFollowup(followupId: string) {
   const followup = await requireOwnedFollowup(followupId);
-  if (isLinkExpired(followup.link, new Date())) return { error: EXPIRED_LINK_ERROR };
+  const t = await getTranslations("deal.followupActions");
+  if (isLinkExpired(followup.link, new Date())) return { error: t("expiredLink") };
   const ok = await approve(followup.id, followup.userId);
   revalidateFollowup(followup);
-  return ok ? { ok: true } : { error: "Cette relance n'est plus à valider." };
+  return ok ? { ok: true } : { error: t("notToApprove") };
 }
 
 export async function markFollowupSentByMe(followupId: string) {
   const followup = await requireOwnedFollowup(followupId);
-  if (isLinkExpired(followup.link, new Date())) return { error: EXPIRED_LINK_ERROR };
+  const t = await getTranslations("deal.followupActions");
+  if (isLinkExpired(followup.link, new Date())) return { error: t("expiredLink") };
   const ok = await markFollowupSentManually(followup.id, followup.userId);
   revalidateFollowup(followup);
-  return ok ? { ok: true } : { error: "Cette relance est déjà partie ou annulée." };
+  return ok ? { ok: true } : { error: t("alreadyGone") };
 }
 
 export async function regenerateFollowup(followupId: string, instruction: string) {
@@ -118,7 +122,8 @@ export async function regenerateFollowup(followupId: string, instruction: string
   const cleaned = instruction.trim().slice(0, 300) || null;
   const ok = await regenerate(followup.id, cleaned);
   revalidateFollowup(followup);
-  return ok ? { ok: true } : { error: "Cette relance ne peut plus être réécrite." };
+  const t = await getTranslations("deal.followupActions");
+  return ok ? { ok: true } : { error: t("cannotRewrite") };
 }
 
 // Testing helpers (local dev, staging): run the engine without waiting for the

@@ -1,6 +1,7 @@
 "use client";
 
 import type { PDFDocumentLoadingTask, PDFDocumentProxy } from "pdfjs-dist";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { Skeleton } from "@/components/ui/skeleton";
@@ -8,6 +9,7 @@ import { PdfPage, type PageSize } from "@/components/viewer/pdf-viewer";
 
 /** The seller's own view of a PDF document. Same rendering as the prospect's, without tracking. */
 export function DocumentPreview({ fileUrl }: { fileUrl: string }) {
+  const t = useTranslations("documents.preview");
   const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null);
   const [sizes, setSizes] = useState<PageSize[]>([]);
   const [failed, setFailed] = useState(false);
@@ -46,9 +48,9 @@ export function DocumentPreview({ fileUrl }: { fileUrl: string }) {
   if (failed) {
     return (
       <p className="border-y border-border py-12 text-center text-body text-muted-foreground">
-        Impossible d&apos;afficher le PDF ici.{" "}
+        {t("cantDisplay")}{" "}
         <a href={fileUrl} target="_blank" rel="noreferrer" className="text-foreground underline underline-offset-4">
-          Ouvrir dans un nouvel onglet
+          {t("openNewTab")}
         </a>
       </p>
     );
@@ -56,9 +58,9 @@ export function DocumentPreview({ fileUrl }: { fileUrl: string }) {
 
   if (!pdf) {
     return (
-      <div className="mx-auto max-w-3xl space-y-2" aria-busy aria-label="Chargement du PDF">
+      <div className="mx-auto max-w-3xl space-y-2" aria-busy aria-label={t("loadingLabel")}>
         <Skeleton className="aspect-[1/1.414] w-full rounded-none" />
-        <p className="text-center text-small text-muted-foreground">Chargement du PDF…</p>
+        <p className="text-center text-small text-muted-foreground">{t("loading")}</p>
       </div>
     );
   }

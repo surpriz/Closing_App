@@ -8,6 +8,7 @@ import {
   ONBOARDING_EMAIL_KINDS,
   type OnboardingEmailKind,
 } from "@/lib/onboarding-emails";
+import { toUiLocale } from "@/lib/seller-locale";
 
 import { customLinkName, linkLabelSelect } from "./dashboard/labels";
 
@@ -39,7 +40,7 @@ export async function sendDueOnboardingEmail(userId: string, organizationId: str
   const [member, prefs, sentRows, firstDocument, sentLink, firstRead] = await Promise.all([
     prisma.member.findFirst({
       where: { userId, organizationId },
-      select: { createdAt: true, user: { select: { email: true, name: true } } },
+      select: { createdAt: true, user: { select: { email: true, name: true, locale: true } } },
     }),
     prisma.notificationPreference.findUnique({
       where: { userId_organizationId: { userId, organizationId } },
@@ -89,6 +90,7 @@ export async function sendDueOnboardingEmail(userId: string, organizationId: str
   const email = buildOnboardingEmail(kind, {
     appUrl,
     firstName: member.user.name?.trim().split(/\s+/)[0] || null,
+    locale: toUiLocale(member.user.locale),
     deal: link
       ? {
           label: link.prospects[0]?.company || link.prospects[0]?.name || customLinkName(link),

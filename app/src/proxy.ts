@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { LOCALE_COOKIE, LOCALE_COOKIE_MAX_AGE, isUiLocale } from "@/i18n/locale";
+
 import {
   VISITOR_COOKIE,
   VISITOR_COOKIE_MAX_AGE,
@@ -15,6 +17,18 @@ const EXT_CORS = {
 };
 
 export function proxy(request: NextRequest) {
+  // The landing site links here with ?lang=en|fr: remember it before sign-up, then drop it from the URL.
+  const lang = request.nextUrl.searchParams.get("lang");
+  if (lang !== null && !request.nextUrl.pathname.startsWith("/api/")) {
+    const url = request.nextUrl.clone();
+    url.searchParams.delete("lang");
+    const response = NextResponse.redirect(url);
+    if (isUiLocale(lang)) {
+      response.cookies.set(LOCALE_COOKIE, lang, { maxAge: LOCALE_COOKIE_MAX_AGE, path: "/", sameSite: "lax" });
+    }
+    return response;
+  }
+
   if (request.nextUrl.pathname.startsWith("/api/ext/")) {
     if (request.method === "OPTIONS") return new NextResponse(null, { status: 204, headers: EXT_CORS });
     const response = NextResponse.next();
@@ -40,5 +54,10 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/v/:path*", "/api/ext/:path*"],
+  matcher: [
+    "/v/:path*",
+    "/api/ext/:path*",
+    // Pages reached with ?lang= from the landing site
+    { source: "/((?!api|_next|.*\\..*).*)", has: [{ type: "query", key: "lang" }] },
+  ],
 };

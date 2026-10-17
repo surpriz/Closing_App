@@ -1,5 +1,6 @@
 import { BellRing, CalendarCheck, CalendarDays, Check, Eye, Hourglass, MessageSquare, Receipt, Send } from "lucide-react";
 import Link from "next/link";
+import { useLocale } from "next-intl";
 
 import type { FeedItem, FeedKind } from "@/lib/closing/dashboard/feed";
 import { formatDate, formatRelative } from "@/lib/format";
@@ -20,6 +21,7 @@ const ICONS: Record<FeedKind, React.ReactNode> = {
 const STRONG: FeedKind[] = ["validated", "change", "quote", "extension", "meeting"];
 
 export function ActivityFeed({ items, now }: { items: FeedItem[]; now: Date }) {
+  const locale = useLocale();
   return (
     <ol className="space-y-4">
       {items.map((item) => (
@@ -38,7 +40,7 @@ export function ActivityFeed({ items, now }: { items: FeedItem[]; now: Date }) {
               <p className="border-l-2 border-border pl-2.5 text-pretty text-muted-foreground">{item.quote}</p>
             )}
             <p className="text-small text-muted-foreground">
-              <time title={formatDate(item.at)}>{formatRelative(item.at, now)}</time>
+              <time title={formatDate(item.at, locale)}>{formatRelative(item.at, locale, now)}</time>
               {item.context && <span> · {item.context}</span>}
             </p>
           </div>

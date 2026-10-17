@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { ACTIVE_WORKSPACE } from "@/lib/closing/active-workspace";
 import { prisma } from "@/lib/db";
+import { toUiLocale } from "@/lib/seller-locale";
 
 import { getLanguageModel, getTranscriptionModel, THINKING_ROOM_TOKENS } from "../ai/provider";
 import { recordAiUsage } from "../ai/usage";
@@ -14,7 +15,7 @@ import {
   buildPageReadingPrompt,
   chunkPages,
   cleanPageReadings,
-  DOC_CLASSIFY_SYSTEM_PROMPT,
+  docClassifySystemPrompt,
   mergePageTags,
   PAGE_TAGS,
   pageReadingSystemPrompt,
@@ -45,12 +46,16 @@ const CLASSIFY_CHARS = 4000;
 type Llm = NonNullable<ReturnType<typeof getLanguageModel>>;
 
 /** Quote, résumé, deck…: decides what the page tags mean and how deals are read. Null on failure. */
-async function classifyDocument(llm: Llm, document: { name: string; organizationId: string }, text: string) {
+async function classifyDocument(
+  llm: Llm,
+  document: { name: string; organizationId: string; owner: { locale: string } | null },
+  text: string,
+) {
   const startedAt = Date.now();
   try {
     const { output, usage } = await generateText({
       model: llm.model,
-      system: DOC_CLASSIFY_SYSTEM_PROMPT,
+      system: docClassifySystemPrompt(toUiLocale(document.owner?.locale)),
       prompt: `Document title: ${document.name}\n<document>\n${text.slice(0, CLASSIFY_CHARS)}\n</document>`,
       output: Output.object({ schema: classifySchema }),
       maxOutputTokens: THINKING_ROOM_TOKENS + 200,
@@ -96,6 +101,7 @@ export async function readDocumentPages(documentId: string): Promise<ReadPagesOu
       kind: true,
       status: true,
       organizationId: true,
+      owner: { select: { locale: true } },
       aiAttempts: true,
       docType: true,
       docTypeSource: true,

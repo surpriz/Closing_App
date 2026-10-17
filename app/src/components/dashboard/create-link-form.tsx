@@ -1,6 +1,7 @@
 "use client";
 
 import { Plus } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { toast } from "sonner";
@@ -15,7 +16,7 @@ import { Button } from "@/components/ui/button";
 export function NewLinkButton({
   documentId,
   variant = "default",
-  label = "Un lien pour un autre prospect",
+  label,
 }: {
   documentId: string;
   variant?: "default" | "outline";
@@ -23,6 +24,7 @@ export function NewLinkButton({
   label?: string;
 }) {
   const router = useRouter();
+  const t = useTranslations("deal.newLinkButton");
   const [pending, startTransition] = useTransition();
 
   return (
@@ -39,7 +41,7 @@ export function NewLinkButton({
       }
     >
       <Plus />
-      {pending ? "Création…" : label}
+      {pending ? t("creating") : (label ?? t("defaultLabel"))}
     </Button>
   );
 }

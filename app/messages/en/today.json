@@ -1,0 +1,228 @@
+{
+  "page": {
+    "metaTitle": "Today",
+    "welcomeTitle": "Welcome to Clozer.",
+    "welcomeBody": "Drop a document (quote, invoice, deck…): the link to send is ready in a second.",
+    "mailClientQuestion": "Sending from Gmail or Outlook?",
+    "mailClientLink": "Clozer can create the link right inside your emails",
+    "reportTitle": "Today's report",
+    "dealsInProgress": "{count, plural, one {# open deal} other {# open deals}}",
+    "toSend": "To send",
+    "toSendHint": "not copied or sent yet",
+    "toHandle": "To do",
+    "toHandleHint": "most urgent first",
+    "emptyTitle": "No open deals.",
+    "emptyDescription": "As soon as a link you sent is opened, the deal shows up here with what to do next.",
+    "createLink": "Create a link",
+    "moreDeals": "And {count} more open deals, less urgent.",
+    "sends": "Your sends",
+    "sendsHint": "where your sent links stand, {period}",
+    "openDeals": "Open deals",
+    "openDealsHint": "right now",
+    "draftsTitle": "Follow-ups to approve",
+    "draftsHint": "nothing goes out without you",
+    "feedTitle": "What happened",
+    "feedEmpty": "Reads, your prospects' replies and sent follow-ups will show up here.",
+    "upcomingTitle": "Upcoming follow-ups",
+    "prospectTime": "{time}, prospect's time",
+    "stateUnopened": "Not opened yet",
+    "stateOpened": "Opened",
+    "noRecipient": "No recipient"
+  },
+  "period": {
+    "7d": {
+      "label": "7 days",
+      "hint": "over 7 days"
+    },
+    "30d": {
+      "label": "30 days",
+      "hint": "over 30 days"
+    },
+    "all": {
+      "label": "All",
+      "hint": "since the start"
+    },
+    "nav": "Period"
+  },
+  "headline": {
+    "drafts": "{count, plural, one {A follow-up is waiting for your OK.} other {# follow-ups are waiting for your OK.}}",
+    "callFirst": "Call {name} first.",
+    "validatedOne": "{name} approved.",
+    "validatedMany": "{name} and {others, plural, one {# other} other {# others}} approved.",
+    "validatedHint": "Plan the next step while it's hot.",
+    "changeOne": "{name} is asking for changes.",
+    "changeMany": "{count} prospects are asking for changes.",
+    "changeOneHint": "Reply to them today.",
+    "changeManyHint": "Start with {name}.",
+    "aiFocus": "{label}: {headline}",
+    "startThere": "Start there.",
+    "hotOne": "{name} is hot.",
+    "hotMany": "{count} prospects are hot.",
+    "hotOneHint": "Now's the time to call.",
+    "noDocument": "No documents yet.",
+    "noDocumentHint": "Add a PDF or a link to get started.",
+    "readyOne": "Your link is ready.",
+    "readyOneHint": "“{name}” is waiting to be sent: paste the link into your email instead of the attachment.",
+    "readyMany": "{count} links ready to send.",
+    "readyManyHint": "Paste each one into your email instead of the attachment: you'll know who reads what.",
+    "documentReadyOne": "Your document is ready.",
+    "documentReadyMany": "Your documents are ready.",
+    "createLinkHint": "Create a link to send it to a prospect.",
+    "nextFollowup": "Next follow-up {when}.",
+    "autoFollowups": "Clozer prepares follow-ups when they're needed.",
+    "warmOne": "A prospect is looking at your document.",
+    "warmMany": "{count} prospects are looking at your documents.",
+    "nothingUrgent": "Nothing urgent. {hint}",
+    "unopenedOne": "Your link hasn't been opened yet.",
+    "unopenedAll": "No link has been opened yet.",
+    "quietDay": "Nothing urgent today."
+  },
+  "todo": {
+    "readingNow": "right now",
+    "readAgo": "read {when}",
+    "hottestPage": "Page {page} read most · <b>{duration}</b>",
+    "aiAnalysis": "AI analysis",
+    "handle": "Open",
+    "unopenedCount": "{count, plural, one {# link not opened yet} other {# links not opened yet}}",
+    "unopenedHint": "· you'll hear as soon as one is read"
+  },
+  "readyLinks": {
+    "copiedToast": "Link copied. Paste it into your message: you'll hear as soon as it's opened.",
+    "copyError": "Couldn't copy: open the link to copy it by hand.",
+    "for": "For: <who>{label}</who>",
+    "copied": "Copied",
+    "copyLink": "Copy link",
+    "forWhom": "Who for",
+    "remove": "Remove",
+    "sentQuestion": "Did you send it?",
+    "yes": "Yes",
+    "notYet": "Not yet"
+  },
+  "liveStrip": {
+    "reading": "Reading now",
+    "page": ", page {page}"
+  },
+  "funnel": {
+    "steps": {
+      "sent": "sent",
+      "opened": "opened",
+      "deep": "read closely",
+      "validated": "approved"
+    },
+    "hints": {
+      "sent": "Links created in the period.",
+      "opened": "At least one read, bots aside.",
+      "deep": "Half the PDF with at least 30 s of reading, a minute on a web link, or a long read of the pricing.",
+      "validated": "“Approve & sign” clicked, or deal marked approved or won."
+    },
+    "heat": {
+      "HOT": "hot",
+      "WARM": "warm",
+      "COLD": "cold",
+      "unopened": "not opened yet"
+    },
+    "noOpenDeals": "No open deals."
+  },
+  "autopilot": {
+    "mode": "Autopilot.",
+    "none": "No follow-up went out on its own in the last 24 h.",
+    "sent": "{count, plural, one {# follow-up went out on its own in the last 24 h.} other {# follow-ups went out on their own in the last 24 h.}}",
+    "pausedToast": "Everything goes through you again",
+    "pause": "Approve everything myself"
+  },
+  "nextAction": {
+    "aiWait": "Nothing to do for now, Clozer is watching.",
+    "aiCloseLost": "Deal probably lost: close it?",
+    "aiAdvice": "{verb} {timing}.",
+    "aiAdviceNoTiming": "{verb}.",
+    "closeWon": "Approved by the prospect: confirm the sale.",
+    "callNow": "Reading right now: call now.",
+    "replyQuote": "Quote requested: send it.",
+    "reply": "Change request waiting: reply.",
+    "reviewDraft": "Follow-up ready: review and approve it.",
+    "meetingBooked": "Meeting booked {when}: get ready for it.",
+    "meetingAhead": "Meeting on {date}: get ready for it.",
+    "meetingPast": "Meeting done: note how it went.",
+    "inTouch": "Contact logged {when}, give them some time.",
+    "snoozed": "Paused until {date}.",
+    "callPricing": "Long read of the pricing: call.",
+    "call": "Read closely: call today.",
+    "followupPlanned": "Auto follow-up {when}.",
+    "followupPlannedUnopened": "Not opened yet. Auto follow-up {when}.",
+    "nudgeOpened": "No reads for {days} days: follow up.",
+    "nudgeUnopened": "Not opened for {days} days, auto follow-ups off: follow up.",
+    "sentToday": "Sent today, give it time.",
+    "notOpenedYet": "Not opened yet.",
+    "waitWarm": "Steady reading, nothing to do for now.",
+    "wait": "Nothing to do for now."
+  },
+  "dealCta": {
+    "sendQuote": "Send the quote",
+    "reply": "Reply",
+    "seeRequest": "See the request",
+    "reviewFollowup": "Review the follow-up",
+    "seePlanned": "See the planned follow-up",
+    "logMeeting": "Log the meeting",
+    "seeReady": "See the ready follow-up",
+    "copyLink": "Copy link",
+    "call": "Call",
+    "logCall": "Log the call",
+    "followUpByEmail": "Follow up by email"
+  },
+  "feed": {
+    "openedDocument": "opened the document",
+    "readFor": "read for {duration}",
+    "readForPricing": "read for {duration}, {pricing} of it on pricing",
+    "action": {
+      "VALIDATE_SIGN": "approved the proposal",
+      "REQUEST_EXTENSION": "is asking for an extension",
+      "MEETING_BOOKED": "booked a meeting",
+      "MEETING_CLICK": "opened your calendar",
+      "REQUEST_QUOTE": "is asking for a quote",
+      "REQUEST_CHANGE": "is asking for changes"
+    },
+    "alert": {
+      "callMomentReason": "is being read right now ({reason})",
+      "callMoment": "is being read right now",
+      "prospectValidated": "was approved",
+      "changeRequested": "has a change request",
+      "quoteRequested": "led to a quote request",
+      "prospectQuestion": "has a question waiting for your answer",
+      "voiceComment": "left you a voice comment",
+      "meetingBooked": "led to a meeting",
+      "multiViewerCount": "is being read by {count} people at once",
+      "multiViewer": "is being read by several people",
+      "draftReady": "has a follow-up ready to approve",
+      "extensionRequested": "expired: the prospect is asking for an extension",
+      "linkExpiring": "expires in less than 24 h",
+      "committeeLive": "is being read by {count} people at once (committee)",
+      "committeeLiveSeveral": "is being read by several people at once (committee)",
+      "decisionMaker": "is being read by a decision-maker",
+      "forwardedInternal": "was shared internally",
+      "newReader": "has a new reader",
+      "reopenedDays": "was reopened after {days} quiet days",
+      "reopened": "was reopened after a quiet spell"
+    },
+    "followup": "got a follow-up by {channel}",
+    "followupAntiGhosting": "got a follow-up by {channel} (link not opened yet)",
+    "followupExpiry": "got a follow-up by {channel} (expiry reminder)"
+  },
+  "frictions": {
+    "stops": "{count} of {total} prospects stop at page {page}: the rest goes unread.",
+    "stopsAbout": "{count} of {total} prospects stop at page {page} ({about}): the rest goes unread.",
+    "allFinished": "All {count} prospects who opened it read to the end.",
+    "aiFriction": "The analysis sees {friction} as a blocker on {count} deals.",
+    "names": {
+      "PRICE": "price",
+      "SCOPE": "scope",
+      "TIMING": "timing",
+      "DECISION_MAKER": "the decision-maker",
+      "COMPETITION": "competition",
+      "TRUST": "trust",
+      "STALLED_AT_SECTION": "a part of the document"
+    }
+  },
+  "readers": {
+    "unidentified": "Unidentified reader {letter}"
+  }
+}

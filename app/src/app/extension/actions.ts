@@ -2,6 +2,7 @@
 
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 
 import { getPublicAppUrl } from "@/lib/app-origin";
 import { inBackground } from "@/lib/closing/background";
@@ -11,10 +12,11 @@ import { prisma } from "@/lib/db";
 import { isEmailConfigured, sendEmail } from "@/lib/email";
 import { normalizeUserCode, outlookConnectedEmail } from "@/lib/extension-pairing";
 import { generateExtensionToken, hashExtensionToken, OUTLOOK_TOKEN_LABEL, tokenHint } from "@/lib/extension-tokens";
+import { toUiLocale } from "@/lib/seller-locale";
 import { requireWorkspace } from "@/lib/session";
 
-function browserLabel(userAgent: string) {
-  const browser = /Edg\//.test(userAgent) ? "Edge" : /Chrome\//.test(userAgent) ? "Chrome" : "Navigateur";
+function browserLabel(userAgent: string, fallback: string) {
+  const browser = /Edg\//.test(userAgent) ? "Edge" : /Chrome\//.test(userAgent) ? "Chrome" : fallback;
   const os = /Mac OS X/.test(userAgent)
     ? "macOS"
     : /Windows/.test(userAgent)
@@ -39,7 +41,9 @@ async function createToken(userId: string, organizationId: string, label: string
 // The plain token is returned once, handed to the extension, and never stored
 export async function connectExtension() {
   const { user, organization } = await requireWorkspace();
-  const created = await createToken(user.id, organization.id, browserLabel((await headers()).get("user-agent") ?? ""));
+  const t = await getTranslations("auth.extension");
+  const label = browserLabel((await headers()).get("user-agent") ?? "", t("browser"));
+  const created = await createToken(user.id, organization.id, label);
   revalidatePath("/settings");
   return created;
 }
@@ -48,12 +52,13 @@ export async function connectExtension() {
 // on the pairing row until the add-in polls for it.
 export async function claimOutlookPairing(input: string): Promise<{ ok: true } | { ok: false; message: string }> {
   const { user, organization } = await requireWorkspace();
+  const t = await getTranslations("auth.extension");
   const code = normalizeUserCode(input);
   const pairing = code
     ? await prisma.extensionPairing.findUnique({ where: { userCode: code }, select: { id: true, expiresAt: true, tokenCiphertext: true } })
     : null;
   if (!pairing || pairing.expiresAt < new Date() || pairing.tokenCiphertext) {
-    return { ok: false, message: "Code inconnu ou expiré. Vérifiez le code affiché dans Outlook." };
+    return { ok: false, message: t("unknownCode") };
   }
 
   const { id, token } = await createToken(user.id, organization.id, OUTLOOK_TOKEN_LABEL);
@@ -63,15 +68,15 @@ export async function claimOutlookPairing(input: string): Promise<{ ok: true } |
   });
   if (count === 0) {
     await prisma.extensionToken.update({ where: { id }, data: { revokedAt: new Date() } });
-    return { ok: false, message: "Ce code vient d'être utilisé. Recommencez depuis Outlook." };
+    return { ok: false, message: t("codeUsed") };
   }
 
   if (isEmailConfigured()) {
-    const email = outlookConnectedEmail({ at: new Date(), settingsUrl: `${getPublicAppUrl()}/settings#extension` });
+    const email = outlookConnectedEmail({ at: new Date(), settingsUrl: `${getPublicAppUrl()}/settings#extension`, locale: toUiLocale(user.locale) });
     inBackground("outlook-connected-email", () => sendEmail({ to: user.email, ...email }));
   }
   revalidatePath("/settings");
-  revalidatePath("/bienvenue");
+  revalidatePath("/welcome");
   return { ok: true };
 }
 

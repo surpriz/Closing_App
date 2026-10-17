@@ -2,20 +2,17 @@
 
 import { Paperclip, X } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
-import { hideMailToolTip } from "@/app/bienvenue/actions";
+import { hideMailToolTip } from "@/app/welcome/actions";
 import { buttonVariants } from "@/components/ui/button";
 import type { MailToolTipKind } from "@/lib/onboarding";
 
-const COPY: Record<MailToolTipKind, (mailbox: string) => string> = {
-  chrome: (mailbox) =>
-    `La prochaine fois, joignez simplement le PDF dans ${mailbox} : l'extension Chrome met le lien à sa place, toute seule.`,
-  outlook_addin: () =>
-    "La prochaine fois, joignez simplement le PDF dans Outlook : le complément Clozer met le lien à sa place, tout seul.",
-  unknown: () =>
-    "Vous envoyez depuis Gmail ou Outlook ? Joignez simplement le PDF : Clozer peut mettre le lien à sa place, tout seul.",
-};
+const COPY_KEY = { chrome: "chrome", outlook_addin: "outlookAddin", unknown: "unknown" } as const satisfies Record<
+  MailToolTipKind,
+  string
+>;
 
 /**
  * Under the share screen, while the seller still copies links by hand: the
@@ -32,6 +29,7 @@ export function MailToolTip({
   /** Replaces the link to the setup step, e.g. when the extension only needs connecting. */
   action?: React.ReactNode;
 }) {
+  const t = useTranslations("onboarding.mailToolTip");
   const [hidden, setHidden] = useState(false);
   if (hidden) return null;
 
@@ -39,17 +37,17 @@ export function MailToolTip({
     <aside className="flex items-start gap-3 border-y border-border bg-card px-4 py-3">
       <Paperclip className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
       <div className="min-w-0 flex-1 space-y-2">
-        <p className="text-body">{COPY[tool](mailbox)}</p>
+        <p className="text-body">{t(COPY_KEY[tool], { mailbox })}</p>
         {action ?? (
-          <Link href="/bienvenue?etape=outil" className={buttonVariants({ variant: "outline", size: "sm" })}>
-            {tool === "unknown" ? "Voir comment" : "Installer, 2 minutes"}
+          <Link href="/welcome?step=tool" className={buttonVariants({ variant: "outline", size: "sm" })}>
+            {tool === "unknown" ? t("seeHow") : t("install")}
           </Link>
         )}
       </div>
       <button
         type="button"
-        aria-label="Ne plus afficher"
-        title="Ne plus afficher"
+        aria-label={t("hide")}
+        title={t("hide")}
         onClick={() => {
           setHidden(true);
           void hideMailToolTip();

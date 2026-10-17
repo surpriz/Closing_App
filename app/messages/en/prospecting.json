@@ -1,0 +1,151 @@
+{
+  "metaTitle": "Prospecting",
+  "page": {
+    "title": "Prospecting",
+    "description": "Decision makers who look like your customers. You pick who to reveal.",
+    "coverage": "Covers French companies for now.",
+    "target": "Your target",
+    "targetUndefined": "not set",
+    "departement": "dept. {code}",
+    "search": "Search",
+    "runRunning": "running…",
+    "runFailed": "failed: {error}",
+    "unknownError": "unknown error",
+    "runDone": "{created, plural, one {# new suggestion} other {# new suggestions}} out of {found} found",
+    "providers": "Providers",
+    "providersHint": "on your current target",
+    "suggestions": "Suggestions",
+    "empty": "Run a search to see contacts."
+  },
+  "actions": {
+    "fieldTooLong": "One of the fields is too long or has too many values.",
+    "noCompanyRecognized": "Clozer didn't recognize any company among your prospects. Enter your target by hand.",
+    "noProfessionalSends": "No quote or deck sent to a work email yet.",
+    "providerNotConfigured": "This provider isn't configured.",
+    "targetNotSearchable": "Add at least one industry and some job titles or levels.",
+    "searchRunning": "A search is already running.",
+    "alreadyHandled": "This suggestion has already been handled.",
+    "waitReveal": "Wait for the reveal to finish.",
+    "concurrentChoice": "Another choice is in progress. Try again.",
+    "allAlreadyHandled": "These suggestions have already been handled.",
+    "dailyLimitReached": "Daily reveal limit reached. Pick it up tomorrow.",
+    "dailyLimitPartial": "Daily limit reached: {left, plural, one {# contact not revealed} other {# contacts not revealed}}.",
+    "contactNotReady": "This contact isn't ready.",
+    "doNotContact": "This person doesn't want to be contacted.",
+    "linkBeingCreated": "The link is being created.",
+    "documentNotFound": "Document not found.",
+    "linkArchived": "The link was archived. Start over to create a new one.",
+    "linkNotFound": "Link not found."
+  },
+  "labels": {
+    "provider": {
+      "MOCK": "Demo"
+    },
+    "status": {
+      "SUGGESTED": "To review",
+      "ACCEPTED": "Accepted",
+      "REVEALING": "Revealing…",
+      "READY": "Ready",
+      "INVALID": "Unavailable",
+      "REJECTED": "Dismissed"
+    },
+    "invalid": {
+      "NOT_FOUND": "Email not found",
+      "UNVERIFIED": "Email not verified",
+      "PERSONAL": "Personal email, dismissed",
+      "DUPLICATE": "Already in your prospects",
+      "OPTED_OUT": "Doesn't want to be contacted"
+    }
+  },
+  "runControls": {
+    "started": "Search started",
+    "noProvider": "No provider configured (APOLLO_API_KEY, LEMLIST_API_KEY).",
+    "searchWith": "Search with {provider}",
+    "compare": "Compare on the same target"
+  },
+  "providerCompare": {
+    "label": "Provider comparison on your target",
+    "provider": "Provider",
+    "found": "Suggested",
+    "decisionMakers": "Decision makers",
+    "verifiedCompany": "Company confirmed",
+    "validEmails": "Valid emails",
+    "credits": "Credits",
+    "perDelivered": "Per contact delivered",
+    "percent": "{value}%"
+  },
+  "suggestions": {
+    "contact": "Contact",
+    "viewLinkedin": "View LinkedIn profile",
+    "searchLinkedin": "Search on LinkedIn",
+    "sectorConfirmed": "Industry confirmed",
+    "otherNaf": "Other NAF code",
+    "via": "via {provider}",
+    "reveal": "Reveal",
+    "reject": "Dismiss",
+    "thisPerson": "This person"
+  },
+  "optOut": {
+    "done": "This person will never be suggested again",
+    "trigger": "Stop suggesting",
+    "title": "{name} doesn't want to be contacted?",
+    "description": "Clozer will never suggest this person again, to you or anyone else, and erases what it knew about them. Links already created for them won't send anything anymore. This is final.",
+    "cancel": "Cancel",
+    "saving": "Saving…",
+    "confirm": "Never suggest again"
+  },
+  "outreach": {
+    "sent": "You're off: the deal shows up in your Today",
+    "copied": "Message copied",
+    "copyFailed": "Couldn't copy: select the text by hand.",
+    "viewMessage": "View message",
+    "createLink": "Create a link",
+    "title": "First message",
+    "description": "You send it from your own inbox. Clozer never follows up on its own with a contact who doesn't know you.",
+    "noDocument": "First add a document in <link>Documents</link>.",
+    "documentLabel": "Document to share",
+    "drafting": "Drafting…",
+    "showMessage": "Show message",
+    "createAndDraft": "Create the link and draft",
+    "to": "To:",
+    "subject": "Subject:",
+    "messageLabel": "Message to send",
+    "copy": "Copy message",
+    "openMail": "Open in my email app",
+    "markSent": "I sent it"
+  },
+  "targetForm": {
+    "saved": "Target saved",
+    "deducing": "Analyzing your deals…",
+    "deduce": "Infer from my deals",
+    "evidence": "Suggested from {recognized, plural, one {# recognized company} other {# recognized companies}} out of {domains}",
+    "evidenceWon": ", {won} won",
+    "evidenceConfidence": " · {level, select, good {high} medium {medium} other {low}} confidence",
+    "evidenceEnd": ". Check it, then save.",
+    "keywordsLabel": "Industry, in your words",
+    "keywordsPlaceholder": "web agency, design studio",
+    "nafLabel": "NAF codes",
+    "jobTitlesLabel": "Target job titles",
+    "jobTitlesPlaceholder": "Sales Director, CEO",
+    "seniorityLegend": "Level",
+    "seniority": {
+      "owner": "Owner",
+      "founder": "Founder",
+      "c_suite": "C-suite",
+      "partner": "Partner",
+      "vp": "VP",
+      "head": "Head of",
+      "director": "Director",
+      "manager": "Manager"
+    },
+    "excludedLabel": "Domains to exclude",
+    "excludedPlaceholder": "current-client.com",
+    "headcountLegend": "Headcount",
+    "headcountRange": "{min}-{max} employees",
+    "headcountOpen": "{min}+ employees",
+    "regionsLegend": "Regions",
+    "departementsLabel": "Départements",
+    "saving": "Saving…",
+    "save": "Save target"
+  }
+}

@@ -3,6 +3,7 @@ import {
   SUPPORTED_LOCALES,
   type SupportedLocale,
 } from "@/lib/closing/constants";
+import { matchLocale } from "@/i18n/locale";
 
 import type { ChatKind } from "../chat/kind";
 
@@ -667,23 +668,7 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
 
 // Picks the best supported locale from an Accept-Language header
 export function pickLocale(acceptLanguage: string | null): SupportedLocale {
-  if (!acceptLanguage) return DEFAULT_LOCALE;
-
-  const candidates = acceptLanguage
-    .split(",")
-    .map((part) => {
-      const [tag, ...params] = part.trim().split(";");
-      const q = params.find((p) => p.trim().startsWith("q="));
-      return { base: tag.toLowerCase().split("-")[0], q: q ? Number(q.split("=")[1]) : 1 };
-    })
-    .sort((a, b) => b.q - a.q);
-
-  for (const { base } of candidates) {
-    if ((SUPPORTED_LOCALES as readonly string[]).includes(base)) {
-      return base as SupportedLocale;
-    }
-  }
-  return DEFAULT_LOCALE;
+  return matchLocale(acceptLanguage, SUPPORTED_LOCALES, DEFAULT_LOCALE);
 }
 
 export function getViewerLabels(locale: SupportedLocale): ViewerLabels {

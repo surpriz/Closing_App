@@ -13,6 +13,7 @@ import {
   User,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -31,31 +32,30 @@ export type CommandEntry = {
 // `help` opens the help assistant instead of navigating
 type Item = CommandEntry | { kind: "page"; href: string; label: string; hint?: string; help?: true };
 
-const PAGES: Item[] = [
-  { kind: "page", href: "/dashboard", label: "Aujourd'hui" },
-  { kind: "page", href: "/documents", label: "Documents" },
-  { kind: "page", href: "/comment-ca-marche", label: "Comment ça marche" },
-  { kind: "page", href: "/settings", label: "Réglages" },
-  { kind: "page", href: "/bienvenue", label: "Prise en main" },
-  { kind: "page", href: "/faq", label: "Questions fréquentes", hint: "FAQ" },
-  { kind: "page", href: "#aide", label: "Poser une question", hint: "Aide, suggestions, bugs", help: true },
+type PageKey = "today" | "documents" | "howItWorks" | "settings" | "onboarding" | "faq" | "ask";
+
+// Labels and hints are in "nav.commandMenu.pages"
+const PAGES: { href: string; key: PageKey; hint?: "faqHint" | "askHint"; help?: true }[] = [
+  { href: "/dashboard", key: "today" },
+  { href: "/documents", key: "documents" },
+  { href: "/how-it-works", key: "howItWorks" },
+  { href: "/settings", key: "settings" },
+  { href: "/welcome", key: "onboarding" },
+  { href: "/faq", key: "faq", hint: "faqHint" },
+  { href: "#aide", key: "ask", hint: "askHint", help: true },
 ];
 
 const PAGE_ICONS: Record<string, typeof Sun> = {
   "/dashboard": Sun,
   "/documents": FileText,
-  "/comment-ca-marche": Brain,
+  "/how-it-works": Brain,
   "/settings": Settings2,
-  "/bienvenue": Compass,
+  "/welcome": Compass,
   "/faq": CircleHelp,
   "#aide": LifeBuoy,
 };
 
-const GROUPS = [
-  { kind: "deal", title: "Prospects" },
-  { kind: "document", title: "Documents" },
-  { kind: "page", title: "Aller à" },
-] as const;
+const GROUPS = ["deal", "document", "page"] as const;
 
 const fold = (text: string) =>
   text
@@ -69,6 +69,18 @@ export function CommandMenu({ entries }: { entries: CommandEntry[] }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
+  const t = useTranslations("nav.commandMenu");
+  const pages = useMemo<Item[]>(
+    () =>
+      PAGES.map(({ href, key, hint, help }) => ({
+        kind: "page" as const,
+        href,
+        label: t(`pages.${key}`),
+        ...(hint && { hint: t(`pages.${hint}`) }),
+        ...(help && { help }),
+      })),
+    [t],
+  );
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -83,13 +95,13 @@ export function CommandMenu({ entries }: { entries: CommandEntry[] }) {
 
   const results = useMemo(() => {
     const q = fold(query.trim());
-    const all: Item[] = [...entries, ...PAGES];
+    const all: Item[] = [...entries, ...pages];
     const matched = q
       ? all.filter((item) => fold(`${item.label} ${item.hint ?? ""}`).includes(q))
-      : [...entries.slice(0, 6), ...PAGES];
+      : [...entries.slice(0, 6), ...pages];
     // Group order, so arrow keys follow what is on screen
-    return GROUPS.flatMap((group) => matched.filter((item) => item.kind === group.kind).slice(0, 8));
-  }, [entries, query]);
+    return GROUPS.flatMap((group) => matched.filter((item) => item.kind === group).slice(0, 8));
+  }, [entries, pages, query]);
 
   function go(item: Item | undefined) {
     if (!item) return;
@@ -114,12 +126,12 @@ export function CommandMenu({ entries }: { entries: CommandEntry[] }) {
         className="hidden h-8 w-56 items-center gap-2 rounded-md border border-input bg-card px-2.5 text-small text-muted-foreground transition-colors duration-150 outline-none hover:border-foreground/50 hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/30 md:flex"
       >
         <Search className="size-3.5" aria-hidden />
-        <span className="flex-1 text-left">Rechercher…</span>
+        <span className="flex-1 text-left">{t("searchTrigger")}</span>
         <Kbd>⌘K</Kbd>
       </button>
       <button
         type="button"
-        aria-label="Rechercher"
+        aria-label={t("search")}
         onClick={() => setOpen(true)}
         className="flex size-9 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors duration-150 hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/30 md:hidden"
       >
@@ -131,7 +143,7 @@ export function CommandMenu({ entries }: { entries: CommandEntry[] }) {
           showCloseButton={false}
           className="top-[15vh] translate-y-0 gap-0 overflow-hidden p-0 sm:max-w-lg"
         >
-          <DialogTitle className="sr-only">Rechercher</DialogTitle>
+          <DialogTitle className="sr-only">{t("search")}</DialogTitle>
           <div className="flex items-center gap-2 border-b border-foreground px-4">
             <Search className="size-4 text-muted-foreground" aria-hidden />
             <input
@@ -153,8 +165,8 @@ export function CommandMenu({ entries }: { entries: CommandEntry[] }) {
                   go(results[active]);
                 }
               }}
-              placeholder="Un prospect, une société, un document…"
-              aria-label="Rechercher"
+              placeholder={t("placeholder")}
+              aria-label={t("search")}
               aria-controls="command-results"
               aria-activedescendant={results[active] ? `command-${active}` : undefined}
               role="combobox"
@@ -164,17 +176,17 @@ export function CommandMenu({ entries }: { entries: CommandEntry[] }) {
           </div>
           <div id="command-results" role="listbox" className="max-h-[min(60vh,24rem)] overflow-y-auto p-2">
             {results.length === 0 && (
-              <p className="px-3 py-8 text-center text-small text-muted-foreground">Rien ne correspond.</p>
+              <p className="px-3 py-8 text-center text-small text-muted-foreground">{t("noMatch")}</p>
             )}
             {GROUPS.map((group) => {
               const items = results
                 .map((item, index) => ({ item, index }))
-                .filter(({ item }) => item.kind === group.kind);
+                .filter(({ item }) => item.kind === group);
               if (items.length === 0) return null;
               return (
-                <div key={group.kind} className="pb-1">
+                <div key={group} className="pb-1">
                   <p className="px-3 pt-2 pb-1 text-micro font-medium tracking-wide text-muted-foreground uppercase">
-                    {group.title}
+                    {t(`groups.${group}`)}
                   </p>
                   {items.map(({ item, index }) => {
                     const Icon =

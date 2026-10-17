@@ -1,6 +1,7 @@
 "use client";
 
 import { RefreshCw } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import { useOptimistic, useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -14,12 +15,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { docTypeLabel, tagLabels } from "@/components/dashboard/document/doc-type-labels";
 import { PageCapsuleControl, type CapsuleSummary } from "@/components/dashboard/page-capsule";
 import type { PageTag, PageTagSource } from "@/generated/prisma/enums";
 import { cn } from "@/lib/utils";
 import { segmentLabel } from "@/lib/closing/documents/video-segments";
 
-import { DOC_TYPE_LABELS, DOC_TYPES, tagLabels, type DocType } from "@/lib/closing/documents/doc-types";
+import { DOC_TYPES, type DocType } from "@/lib/closing/documents/doc-types";
 
 const EDITABLE_TAGS: PageTag[] = ["PRICING", "TERMS", "TIMELINE", "SCOPE", "TEAM", "CASE_STUDY"];
 
@@ -56,7 +58,9 @@ export function DocumentPages({
   /** Three readings failed: only the button retries now. */
   aiGaveUp: boolean;
 }) {
-  const labels = tagLabels(docType);
+  const t = useTranslations("documents.content");
+  const td = useTranslations("documents");
+  const labels = tagLabels(td, docType);
 
   return (
     <div className="space-y-4">
@@ -65,19 +69,19 @@ export function DocumentPages({
         <p className="max-w-2xl text-body text-muted-foreground">
           {video
             ? aiRead
-              ? "Ce que vous dites dans chaque passage de la vidéo, lu par l'IA depuis la transcription. Les étiquettes disent à Clozer quand vous parlez tarifs, planning… Corrigez-les si besoin."
+              ? t("videoRead")
               : aiAvailable && !aiGaveUp
-                ? "Transcription et lecture de la vidéo en cours (une minute environ). Rechargez la page pour voir chaque passage."
-                : "Pas de transcription pour cette vidéo : le suivi du visionnage marche, l'assistant n'a rien pour répondre."
+                ? t("videoProcessing")
+                : t("videoNoTranscript")
             : aiRead
-              ? "Résumé de chaque page, lu par l'IA. Les étiquettes disent à Clozer où sont les tarifs, le planning… Corrigez-les si besoin : votre choix ne sera plus touché."
+              ? t("pagesRead")
               : aiAvailable && aiGaveUp
-                ? "L'IA n'a pas réussi à lire ce document. Réessayez avec « Relire les pages »."
+                ? t("aiGaveUp")
                 : aiAvailable
-                  ? "L'IA est en train de lire les pages (une minute environ). Rechargez la page pour voir les résumés."
-                  : "Étiquettes repérées par mots-clés. Corrigez-les si besoin : votre choix ne sera plus touché."}
+                  ? t("aiReading")
+                  : t("keywordTags")}
         </p>
-        {aiAvailable && <RereadButton documentId={documentId} label="Relire les pages" done="Pages relues" />}
+        {aiAvailable && <RereadButton documentId={documentId} label={t("rereadPages")} done={t("pagesReread")} />}
       </div>
       <ul className="divide-y divide-border border-y border-foreground bg-card">
         {pages.map((page) => (
@@ -97,6 +101,7 @@ export function DocumentPages({
 }
 
 function RereadButton({ documentId, label, done }: { documentId: string; label: string; done: string }) {
+  const t = useTranslations("documents.content");
   const [pending, startTransition] = useTransition();
   return (
     <Button
@@ -111,7 +116,7 @@ function RereadButton({ documentId, label, done }: { documentId: string; label: 
         })
       }
     >
-      <RefreshCw className={cn(pending && "animate-spin")} /> {pending ? "Lecture…" : label}
+      <RefreshCw className={cn(pending && "animate-spin")} /> {pending ? t("rereading") : label}
     </Button>
   );
 }
@@ -129,6 +134,7 @@ export function WebPageReading({
   page: { summary: string | null; keyFacts: string[] } | null;
   aiAvailable: boolean;
 }) {
+  const t = useTranslations("documents.content");
   return (
     <div className="max-w-2xl space-y-3">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -139,15 +145,13 @@ export function WebPageReading({
             <p className="text-small text-muted-foreground">{page.keyFacts.join(" · ")}</p>
           )}
           {!page && (
-            <p className="text-body text-muted-foreground">
-              Clozer n&apos;a pas pu lire le texte de cette page (contenu affiché par le navigateur, ou accès privé).
-            </p>
+            <p className="text-body text-muted-foreground">{t("webNoText")}</p>
           )}
           {page && !page.summary && aiAvailable && (
-            <p className="text-body text-muted-foreground">L&apos;IA lit la page, rechargez dans une minute.</p>
+            <p className="text-body text-muted-foreground">{t("webAiReading")}</p>
           )}
         </div>
-        <RereadButton documentId={documentId} label="Relire la page" done="Page relue" />
+        <RereadButton documentId={documentId} label={t("rereadPage")} done={t("pageReread")} />
       </div>
     </div>
   );
@@ -166,11 +170,13 @@ function PageRow({
   capsuleUploadPrefix: string;
   video: boolean;
 }) {
+  const t = useTranslations("documents.content");
+  const locale = useLocale();
   const [tags, setTags] = useState(page.tags);
   const [pending, startTransition] = useTransition();
 
   const toggle = (tag: PageTag) => {
-    const next = tags.includes(tag) ? tags.filter((t) => t !== tag) : [...tags, tag];
+    const next = tags.includes(tag) ? tags.filter((other) => other !== tag) : [...tags, tag];
     setTags(next);
     startTransition(async () => {
       const result = await setPageTags(documentId, page.pageNumber, next);
@@ -184,7 +190,7 @@ function PageRow({
   return (
     <li className={cn("grid gap-x-4 gap-y-2 px-3 py-3 sm:px-4", video ? "sm:grid-cols-[5.5rem_minmax(0,1fr)]" : "sm:grid-cols-[3rem_minmax(0,1fr)]")}>
       <span className="font-mono text-small text-muted-foreground">
-        {video ? segmentLabel(page.pageNumber) : `p.${page.pageNumber}`}
+        {video ? segmentLabel(page.pageNumber, undefined, locale) : t("pageShort", { page: page.pageNumber })}
       </span>
       <div className="min-w-0 space-y-2">
         {page.summary && <p className="text-body">{page.summary}</p>}
@@ -212,7 +218,7 @@ function PageRow({
               </button>
             );
           })}
-          {page.tagSource === "MANUAL" && <span className="text-small text-muted-foreground">corrigé par vous</span>}
+          {page.tagSource === "MANUAL" && <span className="text-small text-muted-foreground">{t("correctedByYou")}</span>}
         </div>
         {/* Recorded before the welcome message: kept on its page, no new ones */}
         {page.capsule && (
@@ -229,6 +235,7 @@ function PageRow({
 
 /** What the page holds beyond its text, in the seller's words. */
 export function SellerDescriptionForm({ documentId, initial }: { documentId: string; initial: string }) {
+  const t = useTranslations("documents.content");
   const [value, setValue] = useState(initial);
   const [pending, startTransition] = useTransition();
 
@@ -240,30 +247,24 @@ export function SellerDescriptionForm({ documentId, initial }: { documentId: str
         startTransition(async () => {
           const result = await saveSellerDescription(documentId, value);
           if (result.error) toast.error(result.error);
-          else toast.success("Description enregistrée");
+          else toast.success(t("descriptionSaved"));
         });
       }}
     >
-      <p className="text-body text-muted-foreground">
-        Ce que Clozer ne voit pas sur la page (vidéo, contenu derrière un clic) : dites en quelques lignes ce
-        qu&apos;elle présente (offre, prix, options, planning). L&apos;IA s&apos;en servira pour comprendre vos deals
-        et écrire les relances.
-      </p>
+      <p className="text-body text-muted-foreground">{t("descriptionIntro")}</p>
       <Textarea
-        aria-label="Ce que présente la page"
+        aria-label={t("descriptionAria")}
         rows={5}
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        placeholder="Présentation de l'offre Growth : audit, refonte, 3 mois d'accompagnement. 14 500 € HT, paiement en 3 fois possible."
+        placeholder={t("descriptionPlaceholder")}
       />
       <Button type="submit" size="sm" variant="outline" disabled={pending || value === initial}>
-        {pending ? "Enregistrement…" : "Enregistrer"}
+        {pending ? t("saving") : t("save")}
       </Button>
     </form>
   );
 }
-
-const TYPE_ITEMS = DOC_TYPES.map((value) => ({ value, label: DOC_TYPE_LABELS[value] }));
 
 /** The AI guesses the type; the seller corrects it. It changes the tag names and how the assistant talks. */
 export function DocumentTypeSelect({
@@ -275,13 +276,16 @@ export function DocumentTypeSelect({
   docType: string | null;
   setBySeller: boolean;
 }) {
+  const t = useTranslations("documents.content");
+  const td = useTranslations("documents");
+  const typeItems = DOC_TYPES.map((value) => ({ value, label: docTypeLabel(td, value) }));
   const [optimistic, setOptimistic] = useOptimistic(docType);
   const [pending, startTransition] = useTransition();
 
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
       <Select
-        items={TYPE_ITEMS}
+        items={typeItems}
         value={optimistic ?? null}
         disabled={pending}
         onValueChange={(value) => {
@@ -290,28 +294,29 @@ export function DocumentTypeSelect({
             setOptimistic(value);
             const result = await setDocumentType(documentId, value);
             if (result.error) toast.error(result.error);
-            else toast.success(`Type « ${DOC_TYPE_LABELS[value as DocType]} » enregistré`);
+            else toast.success(t("typeSaved", { type: docTypeLabel(td, value as DocType) }));
           });
         }}
       >
-        <SelectTrigger aria-label="Type de document" className="h-9 min-w-52 bg-card">
-          <SelectValue placeholder="Type non détecté" />
+        <SelectTrigger aria-label={t("typeAria")} className="h-9 min-w-52 bg-card">
+          <SelectValue placeholder={t("typePlaceholder")} />
         </SelectTrigger>
         <SelectContent>
-          {TYPE_ITEMS.map((item) => (
+          {typeItems.map((item) => (
             <SelectItem key={item.value} value={item.value}>
               {item.label}
             </SelectItem>
           ))}
         </SelectContent>
       </Select>
-      <span className="text-small text-muted-foreground">{setBySeller ? "choisi par vous" : "deviné par l'IA"}</span>
+      <span className="text-small text-muted-foreground">{setBySeller ? t("typeBySeller") : t("typeByAi")}</span>
     </div>
   );
 }
 
 /** What the document leaves out, for the assistant that answers prospects. */
 export function AssistantNotesForm({ documentId, initial }: { documentId: string; initial: string }) {
+  const t = useTranslations("documents.content");
   const [value, setValue] = useState(initial);
   const [saved, setSaved] = useState(initial);
   const [pending, startTransition] = useTransition();
@@ -326,26 +331,22 @@ export function AssistantNotesForm({ documentId, initial }: { documentId: string
           if (result.error) toast.error(result.error);
           else {
             setSaved(value);
-            toast.success("Infos enregistrées");
+            toast.success(t("notesSaved"));
           }
         });
       }}
     >
-      <p className="text-body text-muted-foreground">
-        Ce que le document ne dit pas et que l&apos;assistant peut répondre au prospect : précisions techniques,
-        hypothèses, ce qui est hors périmètre, options. S&apos;ajoute à ce que vous avez écrit dans les réglages.
-        Rien de confidentiel : le prospect peut tout obtenir en posant la question.
-      </p>
+      <p className="text-body text-muted-foreground">{t("notesIntro")}</p>
       <Textarea
-        aria-label="Infos pour l'assistant"
+        aria-label={t("notesAria")}
         rows={5}
         maxLength={4000}
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        placeholder="Le site WordPress n'est pas couvert par l'audit. Les estimations sont en jours-homme, à 650 € HT le jour. Démarrage possible sous 2 semaines."
+        placeholder={t("notesPlaceholder")}
       />
       <Button type="submit" size="sm" variant="outline" disabled={pending || value === saved}>
-        {pending ? "Enregistrement…" : "Enregistrer"}
+        {pending ? t("saving") : t("save")}
       </Button>
     </form>
   );

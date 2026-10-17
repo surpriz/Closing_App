@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useOptimistic, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -7,16 +8,14 @@ import { updateDealStatus } from "@/app/(dashboard)/links/actions";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { DealStatus } from "@/generated/prisma/enums";
 
-import { DEAL_STATUS_LABELS } from "./labels";
-
-const ITEMS = (Object.keys(DEAL_STATUS_LABELS) as DealStatus[]).map((value) => ({
-  value,
-  label: DEAL_STATUS_LABELS[value],
-}));
+const STATUSES: DealStatus[] = ["OPEN", "VALIDATED", "CHANGE_REQUESTED", "WON", "LOST"];
 
 export function DealStatusSelect({ linkId, status }: { linkId: string; status: DealStatus }) {
   const [optimistic, setOptimistic] = useOptimistic(status);
   const [pending, startTransition] = useTransition();
+  const t = useTranslations("deal.dealStatusSelect");
+  const tl = useTranslations("labels");
+  const ITEMS = STATUSES.map((value) => ({ value, label: tl(`dealStatus.${value}`) }));
 
   return (
     <Select
@@ -32,16 +31,16 @@ export function DealStatusSelect({ linkId, status }: { linkId: string; status: D
             await updateDealStatus(linkId, next);
             toast.success(
               next === "OPEN"
-                ? "Deal rouvert"
-                : `Statut « ${DEAL_STATUS_LABELS[next]} », relances en attente annulées`,
+                ? t("reopened")
+                : t("changed", { status: tl(`dealStatus.${next}`) }),
             );
           } catch {
-            toast.error("Modification impossible");
+            toast.error(t("failed"));
           }
         });
       }}
     >
-      <SelectTrigger aria-label="Statut du deal" className="h-9 min-w-44 bg-card">
+      <SelectTrigger aria-label={t("ariaLabel")} className="h-9 min-w-44 bg-card">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>

@@ -1,10 +1,11 @@
-import { PROSPECT_ROLE_LABELS } from "@/components/dashboard/labels";
+import type { UiLocale } from "@/i18n/locale";
+import { getNamespaceTranslator } from "@/lib/server-translator";
 
 import type { Person, ReaderMap, ReaderOrigin } from "./reader-map";
 import { isDecisionRole } from "./roles";
 
 /**
- * What the reader map says when a session starts. Pure.
+ * What the reader map says when a session starts. Pure; `reason` is written in the seller's language.
  *
  * - COMMITTEE_LIVE: enough people read at the same time, a decision meeting.
  * - DECISION_MAKER_DETECTED: finance or an executive reads, and it is not a
@@ -38,20 +39,35 @@ export const decisionMakerKey = (linkId: string, prospectId: string) => `decisio
 
 const ownerOf = (map: ReaderMap, viewId: string) => map.persons.find((p) => p.viewIds.includes(viewId)) ?? null;
 
-function roleText(person: Person) {
+const readersT = (locale: UiLocale) => getNamespaceTranslator(locale, "alerts.readers");
+
+function roleText(person: Person, locale: UiLocale) {
   if (!person.role) return "";
-  return `${PROSPECT_ROLE_LABELS[person.role.role]}, ${person.role.source === "seller" ? "tagué" : "détecté"}`;
+  const role = getNamespaceTranslator(locale, "labels")(`prospectRole.${person.role.role}`);
+  return readersT(locale)(person.role.source === "seller" ? "roleTagged" : "roleDetected", { role });
 }
 
-export function detectCommittee(map: ReaderMap, linkId: string, threshold: number, now: Date): ReaderAlert | null {
+export function detectCommittee(
+  map: ReaderMap,
+  linkId: string,
+  threshold: number,
+  now: Date,
+  locale: UiLocale,
+): ReaderAlert | null {
+  const t = readersT(locale);
   const live = map.persons.filter((p) => p.liveRecent);
   if (live.length < threshold) return null;
   const decisionMakers = live.filter((p) => isDecisionRole(p.role?.role)).map((p) => p.label);
-  const among = decisionMakers.length === 0 ? "" : decisionMakers.length === 1 ? ", dont un décideur" : `, dont ${decisionMakers.length} décideurs`;
+  const among =
+    decisionMakers.length === 0
+      ? ""
+      : decisionMakers.length === 1
+        ? t("amongOne")
+        : t("amongMany", { count: decisionMakers.length });
   return {
     type: "COMMITTEE_LIVE",
     dedupeKey: committeeKey(linkId, now),
-    reason: `${live.length} personnes lisent en même temps${among} : le comité regarde votre proposition`,
+    reason: t("committee", { count: live.length, among }),
     personKey: null,
     liveViewers: live.length,
     decisionMakers,
@@ -69,17 +85,20 @@ function isClone(person: Person, map: ReaderMap) {
   );
 }
 
-export function detectNewReader(map: ReaderMap, linkId: string, viewId: string): ReaderAlert | null {
+export function detectNewReader(map: ReaderMap, linkId: string, viewId: string, locale: UiLocale): ReaderAlert | null {
+  const t = readersT(locale);
   const person = ownerOf(map, viewId);
   if (!person || person.origin === "initial" || map.persons.length < 2) return null;
 
   let reason: string;
-  if (person.origin === "forwarded_internal") reason = `Repartagé en interne : ${person.label} lit votre proposition`;
-  else if (person.origin === "external") reason = `${person.label}${person.domain ? ` (${person.domain})` : ""} lit votre proposition`;
+  if (person.origin === "forwarded_internal") reason = t("forwardedInternal", { name: person.label });
+  else if (person.origin === "external") {
+    reason = t("external", { name: person.label, domain: person.domain ? ` (${person.domain})` : "" });
+  }
   else {
     // Without a network we cannot tell a new person from a cleared cookie
     if (person.ipHashes.length === 0 || isClone(person, map)) return null;
-    reason = "Nouveau lecteur probable (autre appareil)";
+    reason = t("probableNew");
   }
 
   return {
@@ -93,17 +112,18 @@ export function detectNewReader(map: ReaderMap, linkId: string, viewId: string):
   };
 }
 
-export function detectDecisionMaker(map: ReaderMap, linkId: string, viewId: string): ReaderAlert | null {
+export function detectDecisionMaker(map: ReaderMap, linkId: string, viewId: string, locale: UiLocale): ReaderAlert | null {
+  const t = readersT(locale);
   const person = ownerOf(map, viewId);
   if (!person?.prospectId || !isDecisionRole(person.role?.role)) return null;
   // The seller already talks to the recipients: only someone the proposal reached matters
   if (person.origin === "initial") return null;
 
-  const forwarded = person.origin === "forwarded_internal" ? ", à qui la proposition a été repartagée," : "";
+  const forwarded = person.origin === "forwarded_internal" ? t("forwarded") : "";
   return {
     type: "DECISION_MAKER_DETECTED",
     dedupeKey: decisionMakerKey(linkId, person.prospectId),
-    reason: `${person.label} (${roleText(person)})${forwarded} lit votre proposition`,
+    reason: t("decisionMaker", { name: person.label, role: roleText(person, locale), forwarded }),
     personKey: person.key,
     readerName: person.label,
     readerOrigin: person.origin,
@@ -114,7 +134,10 @@ export function detectDecisionMaker(map: ReaderMap, linkId: string, viewId: stri
 const RANK: Record<ReaderAlertType, number> = { DECISION_MAKER_DETECTED: 0, COMMITTEE_LIVE: 1, NEW_READER: 2 };
 
 /** The one alert to push now, and the ones to store silently. */
-export function pickReaderAlert(candidates: ReaderAlert[]): { notify: ReaderAlert | null; silent: ReaderAlert[] } {
+export function pickReaderAlert(
+  candidates: ReaderAlert[],
+  locale: UiLocale,
+): { notify: ReaderAlert | null; silent: ReaderAlert[] } {
   const sorted = [...candidates].sort((a, b) => RANK[a.type] - RANK[b.type]);
   const [winner, ...rest] = sorted;
   if (!winner) return { notify: null, silent: [] };
@@ -122,7 +145,11 @@ export function pickReaderAlert(candidates: ReaderAlert[]): { notify: ReaderAler
   const committee = rest.find((a) => a.type === "COMMITTEE_LIVE");
   const notify =
     winner.type === "DECISION_MAKER_DETECTED" && committee
-      ? { ...winner, reason: `${winner.reason}, avec ${committee.liveViewers! - 1} autres personnes en ce moment`, liveViewers: committee.liveViewers }
+      ? {
+          ...winner,
+          reason: readersT(locale)("withOthers", { reason: winner.reason, count: committee.liveViewers! - 1 }),
+          liveViewers: committee.liveViewers,
+        }
       : winner;
   return { notify, silent: rest };
 }

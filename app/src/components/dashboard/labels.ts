@@ -1,251 +1,32 @@
-import type {
-  DealStatus,
-  EngagementTier,
-  FollowupChannel,
-  FollowupStatus,
-  FollowupTrigger,
-  PageTag,
-  ProspectRole,
-  SellerActivityType,
-  SellerAlertChannel,
-  SellerAlertType,
-} from "@/generated/prisma/enums";
-import type { DealHealth, HealthSignal } from "@/lib/closing/dashboard/team";
+import type { useTranslations } from "next-intl";
 
-export const DEAL_STATUS_LABELS: Record<DealStatus, string> = {
-  OPEN: "En cours",
-  VALIDATED: "Validé",
-  CHANGE_REQUESTED: "Ajustement demandé",
-  WON: "Gagné",
-  LOST: "Perdu",
-};
+import { INTL_LOCALE, type UiLocale } from "@/i18n/locale";
+import type { HealthSignal } from "@/lib/closing/dashboard/team";
 
-export const TAG_LABELS: Record<PageTag, string> = {
-  PRICING: "Tarifs",
-  TERMS: "Conditions",
-  TIMELINE: "Planning",
-  SCOPE: "Périmètre",
-  TEAM: "Équipe",
-  CASE_STUDY: "Références",
-  OTHER: "Autre",
-};
+// Enum labels live in messages/{en,fr}/labels.json, keyed by the enum value:
+// t(`dealStatus.${status}`) with t = useTranslations("labels") / getTranslations("labels").
+// Keys coming from the AI (scoreReason, stage, friction…) may be unknown: check t.has() first.
 
-export const TIER_LABELS: Record<EngagementTier, string> = {
-  HOT: "Chaud",
-  WARM: "Tiède",
-  COLD: "Froid",
-};
+export type LabelsT = ReturnType<typeof useTranslations<"labels">>;
 
-export const FOLLOWUP_STATUS_LABELS: Record<FollowupStatus, string> = {
-  PENDING: "Rédaction…",
-  DRAFT: "À valider",
-  GENERATED: "Planifiée",
-  SCHEDULED: "Planifiée",
-  SENT: "Envoyée",
-  DELIVERED: "Délivrée",
-  FAILED: "Échec",
-  CANCELLED: "Annulée",
-  SKIPPED: "Ignorée",
-};
-
-export const FOLLOWUP_TRIGGER_LABELS: Record<FollowupTrigger, string> = {
-  HOT_PRICING: "Après lecture des tarifs",
-  ANTI_GHOSTING: "Lien pas encore ouvert",
-  MANUAL: "Relance manuelle",
-  AI_DECISION: "Conseillée par l'analyse",
-  EXPIRY_REMINDER: "Rappel avant expiration",
-  WARM_READ: "Après un clic de cold email",
-};
-
-export const SELLER_ACTIVITY_LABELS: Record<SellerActivityType, string> = {
-  CALL: "Appel",
-  EMAIL_REPLY_RECEIVED: "Réponse reçue",
-  MEETING: "Rendez-vous",
-  NOTE: "Note",
-  MANUAL_SEND: "Message envoyé",
-};
-
-export const CHANNEL_LABELS: Record<FollowupChannel, string> = {
-  EMAIL: "Email",
-  WHATSAPP: "WhatsApp",
-};
-
-export const ALERT_CHANNEL_LABELS: Record<SellerAlertChannel, string> = {
-  EMAIL: "Email",
-  SLACK: "Slack",
-  WEBHOOK: "Webhook",
-  EXTENSION: "Extension",
-};
-
-export const ALERT_TYPE_LABELS: Record<SellerAlertType, string> = {
-  MULTI_VIEWER: "Lecture à plusieurs",
-  REOPENED_AFTER_INACTIVITY: "Réouverture après inactivité",
-  DRAFT_READY: "Relance prête à valider",
-  PROSPECT_VALIDATED: "Proposition validée",
-  CHANGE_REQUESTED: "Ajustement demandé",
-  QUOTE_REQUESTED: "Devis demandé",
-  PROSPECT_QUESTION: "Question du prospect",
-  VOICE_COMMENT: "Commentaire vocal",
-  CALL_MOMENT: "Moment d'appeler",
-  COMMITTEE_LIVE: "Comité en lecture",
-  NEW_READER: "Nouveau lecteur",
-  DECISION_MAKER_DETECTED: "Décideur en lecture",
-  LINK_EXTENSION_REQUESTED: "Demande de prolongation",
-  LINK_EXPIRING: "Lien bientôt expiré",
-  MEETING_BOOKED: "Rendez-vous pris",
-};
-
-export const PROSPECT_ROLE_LABELS: Record<ProspectRole, string> = {
-  DECISION_MAKER: "Décideur",
-  FINANCE: "Finance / achats",
-  TECHNICAL: "Technique",
-  CHAMPION: "Champion",
-  INFLUENCER: "Influenceur",
-  OTHER: "Autre",
-};
-
-export const READER_ORIGIN_LABELS = {
-  initial: "Destinataire",
-  forwarded_internal: "Transféré en interne",
-  external: "Hors de l'entreprise",
-  anonymous: "Sans email",
-} as const;
-
-export const SCORE_REASON_LABELS: Record<string, string> = {
-  deal_validated: "Proposition validée",
-  deal_lost: "Deal perdu",
-  recent_activity_24h: "Lu dans les dernières 24 h",
-  recent_activity_3d: "Lu ces 3 derniers jours",
-  recent_activity_7d: "Lu cette semaine",
-  reading_time: "Temps de lecture",
-  first_visit: "Première visite",
-  repeat_visits: "Visites répétées",
-  multiple_viewers: "Plusieurs lecteurs",
-  pricing_focus: "Longue lecture des tarifs",
-  pricing_interest: "Lecture des tarifs",
-  read_to_end: "Lu jusqu'au bout",
-  read_halfway: "Lu à moitié",
-  watched_to_end: "Vidéo vue jusqu'au bout",
-  watched_halfway: "Vidéo vue à moitié",
-  change_requested: "Ajustement demandé",
-  quote_requested: "A demandé un devis",
-  meeting_clicked: "A ouvert votre agenda",
-  meeting_booked: "Rendez-vous pris",
-};
-
-export const STAGE_LABELS: Record<string, string> = {
-  NOT_ENGAGED: "Pas encore engagé",
-  DISCOVERING: "Découvre l'offre",
-  EVALUATING: "Évalue",
-  NEGOTIATING: "Négocie",
-  DECIDING: "Proche de la décision",
-  STALLED: "Au point mort",
-  LIKELY_LOST: "Probablement perdu",
-};
-
-export const MOMENTUM_LABELS: Record<string, string> = {
-  RISING: "en hausse",
-  STEADY: "stable",
-  COOLING: "en baisse",
-};
-
-export const FRICTION_LABELS: Record<string, string> = {
-  PRICE: "Prix",
-  SCOPE: "Périmètre",
-  TIMING: "Calendrier",
-  DECISION_MAKER: "Décideur",
-  COMPETITION: "Concurrence",
-  TRUST: "Confiance",
-  STALLED_AT_SECTION: "Bloque sur une partie",
-  OTHER: "Autre",
-};
-
-export const INSIGHT_ACTION_LABELS: Record<string, string> = {
-  send_followup: "Relancer par écrit",
-  call: "Appeler",
-  reply_to_request: "Répondre à sa demande",
-  involve_decision_maker: "Faire entrer le décideur dans la boucle",
-  wait: "Attendre",
-  close_lost: "Classer le deal",
-};
-
-export const TIMING_LABELS: Record<string, string> = {
-  now: "maintenant",
-  next_business_morning: "demain matin",
-  in_2_business_days: "d'ici 2 jours ouvrés",
-  in_1_week: "dans une semaine",
-  before_deadline: "avant l'échéance",
-};
-
-export const FOLLOWUP_GOAL_LABELS: Record<string, string> = {
-  gentle_reminder: "Petit rappel",
-  clarify_pricing: "Clarifier le budget",
-  propose_call: "Proposer un échange",
-  address_objection: "Lever une objection",
-  share_case_study: "Partager une référence",
-  involve_decision_maker: "Impliquer le décideur",
-  reactivate: "Relancer la discussion",
-};
-
-export const ROLE_LABELS = {
-  owner: "Propriétaire",
-  admin: "Admin",
-  member: "Membre",
-} as const;
-
-export const roleLabel = (role: string) =>
-  ROLE_LABELS[role as keyof typeof ROLE_LABELS] ?? role;
-
-const dayFormat = new Intl.DateTimeFormat("fr-FR", {
-  day: "numeric",
-  month: "short",
-});
+/** Workspace role, or the raw value when it is not one of ours. */
+export function roleLabel(t: LabelsT, role: string) {
+  return role === "owner" || role === "admin" || role === "member" ? t(`role.${role}`) : role;
+}
 
 /** Why a deal sits in its column on the team page. */
-/** Where a deal stands for the team: lifecycle words, so the temperature keeps its own. */
-export const TEAM_HEALTH_LABELS: Record<DealHealth, string> = {
-  hot: "Ça avance",
-  at_risk: "Ça glisse",
-  dead: "À classer",
-  steady: "Suit son cours",
-};
-
-export const TEAM_HEALTH_HINTS: Record<DealHealth, string> = {
-  hot: "à suivre de près",
-  at_risk: "en train de refroidir",
-  dead: "à relancer une dernière fois ou à classer",
-  steady: "",
-};
-
-export function describeHealthSignal(signal: HealthSignal) {
+export function describeHealthSignal(t: LabelsT, locale: UiLocale, signal: HealthSignal) {
   switch (signal.code) {
-    case "reading_now":
-      return "Lit en ce moment";
-    case "change_requested":
-      return "Ajustement demandé";
-    case "tier_hot":
-      return "Température chaude";
-    case "ai_priority":
-      return "Prioritaire selon l'analyse";
-    case "pricing_focus":
-      return "Longue lecture des tarifs";
-    case "cooling":
-      return "Intérêt en baisse";
     case "quiet":
-      return `Plus lu depuis ${signal.days} j`;
     case "unopened":
-      return `Pas ouvert depuis ${signal.days} j`;
-    case "ai_likely_lost":
-      return "Probablement perdu selon l'analyse";
-    case "ai_stalled":
-      return "Au point mort selon l'analyse";
-    case "ai_close_lost":
-      return "L'analyse conseille de le classer";
     case "never_opened":
-      return `Jamais ouvert en ${signal.days} j`;
     case "silent":
-      return `Plus lu depuis ${signal.days} j`;
+      return t(`healthSignal.${signal.code}`, { days: signal.days });
     case "deadline_passed":
-      return `Échéance passée (${dayFormat.format(signal.date)})`;
+      return t("healthSignal.deadline_passed", {
+        date: new Intl.DateTimeFormat(INTL_LOCALE[locale], { day: "numeric", month: "short" }).format(signal.date),
+      });
+    default:
+      return t(`healthSignal.${signal.code}`);
   }
 }

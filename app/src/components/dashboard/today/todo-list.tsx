@@ -1,5 +1,6 @@
 import { ArrowRight, ChevronDown, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 
 import { buttonVariants } from "@/components/ui/button";
 import type { EngagementTier } from "@/generated/prisma/enums";
@@ -63,14 +64,16 @@ export function TodoList({
   /** The deal the page title already quotes: its AI line is left out here. */
   headlineDealId?: string | null;
 }) {
+  const t = useTranslations();
+  const locale = useLocale();
   return (
     <ul className="stagger divide-y divide-border border-y border-foreground bg-card">
       {rows.map((row, index) => {
         const read =
           row.action.kind === "call_now"
-            ? "en ce moment"
+            ? t("today.todo.readingNow")
             : row.lastActivityAt
-              ? `lu ${formatRelative(row.lastActivityAt, now)}`
+              ? t("today.todo.readAgo", { when: formatRelative(row.lastActivityAt, locale, now) })
               : null;
         const urgent = isUrgent(row.action);
         const meta = [
@@ -121,10 +124,11 @@ export function TodoList({
                 <p className="flex flex-wrap gap-x-2 text-small text-muted-foreground">
                   {row.heat?.hottest && (
                     <span className="text-foreground">
-                      Page {row.heat.hottest.page} la plus lue ·{" "}
-                      <span className="font-medium">
-                        {formatSeconds(row.heat.hottest.seconds)}
-                      </span>
+                      {t.rich("today.todo.hottestPage", {
+                        page: row.heat.hottest.page,
+                        duration: formatSeconds(row.heat.hottest.seconds),
+                        b: (chunks) => <span className="font-medium">{chunks}</span>,
+                      })}
                     </span>
                   )}
                   {meta && <span className="truncate">{meta}</span>}
@@ -141,7 +145,7 @@ export function TodoList({
                 ) : (
                   <ArrowRight className="mt-1 size-4 shrink-0" aria-hidden />
                 )}
-                <span>{describeNextAction(row.action, now)}</span>
+                <span>{describeNextAction(row.action, now, { t, locale })}</span>
               </p>
               {row.insightHeadline && row.id !== headlineDealId && (
                 <p
@@ -150,7 +154,7 @@ export function TodoList({
                 >
                   <Sparkles
                     className="mt-0.5 size-3.5 shrink-0"
-                    aria-label="Analyse IA"
+                    aria-label={t("today.todo.aiAnalysis")}
                   />
                   <span className="line-clamp-2">
                     {tidyEllipsis(row.insightHeadline)}
@@ -169,7 +173,7 @@ export function TodoList({
                   href={`/links/${row.id}`}
                   className={buttonVariants({ size: "sm" })}
                 >
-                  Traiter
+                  {t("today.todo.handle")}
                   <ArrowRight data-icon="inline-end" />
                 </Link>
               )}
@@ -195,17 +199,17 @@ export type UnopenedRow = {
  * It opens on its own when one of them needs an answer.
  */
 export function UnopenedDeals({ rows }: { rows: UnopenedRow[] }) {
+  const t = useTranslations("today.todo");
   const asking = rows.some((row) => row.askIfSent);
   return (
     <details open={asking} className="group mt-4 border-y border-border">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-3 text-body [&::-webkit-details-marker]:hidden">
         <span>
           <span className="font-semibold">
-            {rows.length} lien{rows.length > 1 ? "s" : ""} pas encore ouvert
-            {rows.length > 1 ? "s" : ""}
+            {t("unopenedCount", { count: rows.length })}
           </span>{" "}
           <span className="text-muted-foreground">
-            · vous êtes prévenu dès que l&apos;un est lu
+            {t("unopenedHint")}
           </span>
         </span>
         <ChevronDown

@@ -1,6 +1,8 @@
 import { ArrowLeft, Hourglass } from "lucide-react";
 import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 
+import { INTL_LOCALE } from "@/i18n/locale";
 import { formatClock } from "@/lib/closing/dashboard/deal-plates";
 import { formatRelative } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -9,14 +11,7 @@ import { ArchiveLinkButton } from "../archive-link-button";
 import { CopyButton } from "../copy-button";
 import { DealStatusSelect } from "../deal-status-select";
 import { HeatDot, HeatPill } from "../heat";
-import { DEAL_STATUS_LABELS } from "../labels";
 import type { Deal } from "./load-deal";
-
-const reportDate = new Intl.DateTimeFormat("fr-FR", {
-  day: "numeric",
-  month: "short",
-  year: "numeric",
-});
 
 /**
  * Top of the prospect's report: the reading's reference fields, the prospect
@@ -34,6 +29,14 @@ export function DealHeader({ deal }: { deal: Deal }) {
     seller,
     score,
   } = deal;
+  const t = useTranslations("deal.dealHeader");
+  const tl = useTranslations("labels");
+  const locale = useLocale();
+  const reportDate = new Intl.DateTimeFormat(INTL_LOCALE[locale], {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
   const expired = !!link.expiresAt && link.expiresAt <= now;
 
   return (
@@ -47,24 +50,30 @@ export function DealHeader({ deal }: { deal: Deal }) {
       </Link>
 
       <p className="flex flex-wrap gap-x-6 gap-y-1 border-b border-border pb-2 font-mono text-micro text-muted-foreground">
-        <span className="text-foreground">Rapport de lecture</span>
+        <span className="text-foreground">{t("report")}</span>
         <span>
           {link.draftAt
-            ? "Pas encore envoyé"
-            : `Envoyé le ${reportDate.format(link.sentAt ?? link.createdAt)}`}
+            ? t("notSent")
+            : t("sentOn", {
+                date: reportDate.format(link.sentAt ?? link.createdAt),
+              })}
         </span>
-        <span>
-          {analytics.viewCount} lecture{analytics.viewCount > 1 ? "s" : ""}
-        </span>
+        <span>{t("reads", { count: analytics.viewCount })}</span>
         {analytics.totalDurationMs > 0 && (
-          <span>{formatClock(analytics.totalDurationMs / 1000)} au total</span>
+          <span>
+            {t("total", {
+              time: formatClock(analytics.totalDurationMs / 1000),
+            })}
+          </span>
         )}
         {deal.readingNow ? (
-          <span className="text-foreground">En lecture</span>
+          <span className="text-foreground">{t("readingNow")}</span>
         ) : (
           analytics.lastActivityAt && (
             <span>
-              Dernière lecture {formatRelative(analytics.lastActivityAt, now)}
+              {t("lastRead", {
+                when: formatRelative(analytics.lastActivityAt, locale, now),
+              })}
             </span>
           )
         )}
@@ -96,8 +105,9 @@ export function DealHeader({ deal }: { deal: Deal }) {
                 href={`/links/${link.parentLink.id}`}
                 className="text-muted-foreground hover:text-foreground hover:underline"
               >
-                via le lien partagé
-                {link.parentLink.name ? ` « ${link.parentLink.name} »` : ""}
+                {link.parentLink.name
+                  ? t("viaSharedNamed", { name: link.parentLink.name })
+                  : t("viaShared")}
               </Link>
             )}
           </div>
@@ -123,8 +133,12 @@ export function DealHeader({ deal }: { deal: Deal }) {
               >
                 <Hourglass className="size-3.5" aria-hidden />
                 {expired
-                  ? `Expiré ${formatRelative(link.expiresAt, now)}`
-                  : `Expire ${formatRelative(link.expiresAt, now)}`}
+                  ? t("expiredAgo", {
+                      when: formatRelative(link.expiresAt, locale, now),
+                    })
+                  : t("expiresIn", {
+                      when: formatRelative(link.expiresAt, locale, now),
+                    })}
               </a>
             )}
           </div>
@@ -138,16 +152,16 @@ export function DealHeader({ deal }: { deal: Deal }) {
           </div>
         ) : (
           <span className="text-small text-muted-foreground">
-            {DEAL_STATUS_LABELS[link.dealStatus]}
+            {tl(`dealStatus.${link.dealStatus}`)}
           </span>
         )}
       </div>
 
       {!canEdit && (
         <p className="bg-muted px-4 py-3 text-small text-muted-foreground">
-          Deal de {seller?.name || seller?.email || "un autre commercial"}. Vous
-          pouvez le consulter, seuls son commercial et les admins peuvent le
-          modifier.
+          {t("readOnly", {
+            seller: seller?.name || seller?.email || t("anotherSeller"),
+          })}
         </p>
       )}
       {expired && (
@@ -156,8 +170,7 @@ export function DealHeader({ deal }: { deal: Deal }) {
           className="flex items-center gap-2 bg-destructive/10 px-4 py-3 text-small text-destructive hover:underline"
         >
           <Hourglass className="size-4 shrink-0" aria-hidden />
-          Ce lien a expiré : le prospect ne peut plus l&apos;ouvrir.
-          Prolongez-le pour le réactiver.
+          {t("expiredBanner")}
         </a>
       )}
     </header>

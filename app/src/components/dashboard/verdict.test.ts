@@ -1,11 +1,12 @@
+import { createTranslator } from "next-intl";
 import { describe, expect, it } from "vitest";
+
+import { MESSAGES } from "@/i18n/messages";
 
 import { dealVerdict } from "./verdict";
 
-const labels = {
-  tier: { HOT: "Chaud", WARM: "Tiède", COLD: "Froid" } as const,
-  reason: { recent_read: "Lu dans les dernières 24 h", repeat_visits: "Visites répétées", pricing_focus: "Tarifs lus" },
-};
+const labels = createTranslator({ locale: "fr", messages: MESSAGES.fr });
+const en = createTranslator({ locale: "en", messages: MESSAGES.en });
 
 describe("dealVerdict", () => {
   it("lets the AI reading speak when there is one", () => {
@@ -13,7 +14,7 @@ describe("dealVerdict", () => {
       dealVerdict(
         {
           insight: { headline: "Le prospect a tout lu et ouvert votre agenda.", summary: "Signal d'intérêt concret." },
-          score: { tier: "WARM", score: 46, reasons: [{ code: "recent_read", weight: 25 }] },
+          score: { tier: "WARM", score: 46, reasons: [{ code: "recent_activity_24h", weight: 25 }] },
           opened: true,
         },
         labels,
@@ -38,7 +39,7 @@ describe("dealVerdict", () => {
             score: 46,
             reasons: [
               { code: "pricing_focus", weight: 7 },
-              { code: "recent_read", weight: 25 },
+              { code: "recent_activity_24h", weight: 25 },
               { code: "repeat_visits", weight: 12 },
             ],
           },
@@ -47,6 +48,9 @@ describe("dealVerdict", () => {
         labels,
       ),
     ).toEqual({ headline: "Tiède : lu dans les dernières 24 h, visites répétées.", detail: null });
+    expect(dealVerdict({ insight: null, score: { tier: "COLD", score: 0, reasons: [] }, opened: true }, en).headline).toBe(
+      "Cold: no recent read.",
+    );
   });
 
   it("keeps a code it has no label for", () => {

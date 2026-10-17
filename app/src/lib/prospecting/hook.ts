@@ -100,7 +100,7 @@ export async function draftOutreach(input: {
       });
       const body = output.body.includes(input.proposalUrl) ? output.body : `${output.body}\n\n${input.proposalUrl}`;
       const draft = { subject: output.subject.trim() || templateOutreach(prompt).subject, body };
-      issues = lintFollowup(draft, { channel: "EMAIL", proposalUrl: input.proposalUrl, sourceText }).map((i) => i.message);
+      issues = lintFollowup(draft, { channel: "EMAIL", proposalUrl: input.proposalUrl, sourceText, locale: "fr" }).map((i) => i.message);
       if (issues.length === 0) return { ...draft, aiProvider: llm.provider };
     } catch (error) {
       console.error("[prospecting:hook] AI generation failed, using template", error);

@@ -41,10 +41,24 @@ describe("outlookConnectedEmail", () => {
     const email = outlookConnectedEmail({
       at: new Date("2026-10-09T13:05:00Z"),
       settingsUrl: "https://app.clozer.club/settings#extension",
+      locale: "fr",
     });
     expect(email.text).toContain("9 octobre 2026");
     expect(email.text).toContain("15:05");
     expect(email.text).toContain("https://app.clozer.club/settings#extension");
     expect(email.html).toContain('href="https://app.clozer.club/settings#extension"');
+  });
+
+  it("writes in English with the seller's time zone", () => {
+    const email = outlookConnectedEmail({
+      at: new Date("2026-10-09T13:05:00Z"),
+      settingsUrl: "https://app.clozer.club/settings#extension",
+      locale: "en",
+      timeZone: "America/New_York",
+    });
+    expect(email.subject).toBe("Outlook connected to your Clozer account");
+    expect(email.text).toContain("October 9, 2026");
+    expect(email.text).toContain("9:05");
+    expect(email.html).toContain('<a href="https://app.clozer.club/settings#extension">Settings › Chrome and Outlook</a>');
   });
 });

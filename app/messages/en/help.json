@@ -1,0 +1,81 @@
+{
+  "howItWorks": {
+    "metaTitle": "How it works",
+    "title": "How Clozer thinks",
+    "description": "What happens behind every link you send, and why you have almost nothing to do.",
+    "faq": "FAQ",
+    "replayTour": "Replay the tour",
+    "intro": "Clozer sees how your prospect reads your document, understands where the deal stands the way a seasoned salesperson would, and gets the right follow-up ready at the right time. You approve, and you call the ones who are ready.",
+    "journeyHint": "what happens when you send a link",
+    "journeyTitle": "A deal's journey",
+    "steps": {
+      "read": {
+        "title": "You drop in a document",
+        "body": "Clozer reads it once and for all. It recognizes its type (quote, proposal, deck, résumé…), summarizes each page and spots where the price, timeline, scope or your references are. It also notes the exact facts: “$12,000 excl. tax”, “8 weeks”, “paid in 3 installments”."
+      },
+      "open": {
+        "title": "Your prospect opens their link",
+        "body": "They see your document as usual. Clozer notes, page by page, how long they spend, when, on which device, and whether other people open it. Automatic previews (Slack, LinkedIn) and your own reads don't count. If you're on Clozer at that moment, you watch them read live."
+      },
+      "analyze": {
+        "title": "They close it: Clozer reads the deal",
+        "body": "A few minutes after they read, Clozer rebuilds the deal's story as dated facts (“Sunday 9 pm, on mobile, 3 min on pricing, stops at page 9”) and an AI reads it the way a seasoned salesperson would: where the deal stands, what's blocking (price, decision-maker, timing…), what to do next. Every conclusion cites the facts behind it; anything unproven is dropped."
+      },
+      "write": {
+        "title": "If a follow-up is needed, Clozer writes it",
+        "body": "In your name, with your offer and the real numbers from the document, on the angle that matters to this prospect. For example: “If budget is the snag, we can spread the payments. Got 15 minutes to talk?” Never “I saw you looked at the pricing”: the prospect must never feel watched."
+      },
+      "timing": {
+        "title": "It picks the right time",
+        "body": "Never right after a read (that would feel like surveillance), always during the prospect's business hours, 3 follow-ups a month at most, and nothing right after a conversation you logged."
+      },
+      "approve": {
+        "title": "You approve, or it sends on its own",
+        "body": "By default, the follow-up waits for you: an email lets you know, and you'll find it in “Follow-ups to approve” on the dashboard and on the prospect's page. You reread it, tweak it or have it rewritten, then approve. On Autopilot, only safe follow-ups go out on their own. The prospect's replies land in your inbox."
+      },
+      "watch": {
+        "title": "And it keeps watching",
+        "body": "3 days of silence, 7 days: it rereads the deal and adjusts what's next. Link never opened: a gentle reminder after a few days. The prospect clicks “Approve” or “Ask for a change”: everything stops and you're notified. You got them on the phone: log the call in one click, Clozer takes it into account."
+      }
+    },
+    "indicatorsTitle": "Two indicators, two questions",
+    "temperatureTitle": "Temperature (out of 100)",
+    "temperatureBody": "<b>How much they read.</b> Computed without AI: recent reading, time spent, repeat visits, several readers, pricing read, read to the end. Every point has its reason, shown on the deal page.",
+    "aiReadTitle": "AI read (and its confidence)",
+    "aiReadBody": "<b>What it means.</b> The AI interprets: a prospect can be “hot” (lots of reads) with a cautious AI read (short reads, too early to tell). Confidence says how sure the AI is: low when there are few signals.",
+    "rulesTitle": "The rules it always follows",
+    "rules": {
+      "noHint": "Never a hint that you see what they read: a check blocks any sentence that would give it away.",
+      "noInvented": "Never a number or date that isn't in your document: a check verifies every amount.",
+      "cap": "3 follow-ups a month per contact at most, a few days apart.",
+      "timing": "Never in the hours after a read, always during the prospect's business hours.",
+      "single": "Only one follow-up in the works per deal: a newer analysis replaces the old one.",
+      "privateNotes": "Your private notes on a deal feed the analysis, never the writing of a message."
+    },
+    "youTitle": "What you do",
+    "you1": "Describe your offer once, in <link>Settings</link> (optional: Clozer works it out from your first document).",
+    "you2": "Drop in a document and create one link per prospect.",
+    "you3": "Approve the suggested follow-ups, and call when Clozer tells you to.",
+    "you4": "Log your calls and replies in one click on the prospect's page.",
+    "underTheHoodTitle": "Under the hood",
+    "underTheHood1": "Two AI models from Anthropic. Claude Haiku, the fast one, reads documents and runs a second check before any automatic send. Claude Sonnet, the more thoughtful one, analyzes each deal and writes the follow-ups.",
+    "underTheHood2": "No email address or IP address is sent to the AI: readers go by a letter (reader A, reader B…). An analysis only reruns when something new has happened.",
+    "notYetTitle": "What's not there yet",
+    "notYet1": "Follow-ups go out from Clozer's address, with your email as the reply-to.",
+    "notYet2": "Clozer can't see email replies yet: log them on the prospect's page.",
+    "notYet3": "WhatsApp follow-ups are coming soon."
+  },
+  "faq": {
+    "metaTitle": "FAQ",
+    "title": "Frequently asked questions",
+    "description": "Everything people ask us about Clozer: documents, links, follow-ups, team, data. Question missing? The assistant answers you.",
+    "ask": "Ask a question",
+    "searchPlaceholder": "Search: follow-up, Outlook, expiry…",
+    "searchAria": "Search the questions",
+    "themesAria": "Topics",
+    "noMatch": "No question matches “{query}”.",
+    "noMatchHint": "The help assistant answers you right away.",
+    "notFoundTitle": "Didn't find it?",
+    "notFoundBody": "Ask the assistant, or send an idea or a bug to the team."
+  }
+}

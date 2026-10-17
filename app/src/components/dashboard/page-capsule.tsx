@@ -2,6 +2,7 @@
 
 import { Pencil, Play, Trash2, Video } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -39,6 +40,7 @@ export function PageCapsuleControl({
   /** A page capsule from before the welcome message: it can go, not be re-recorded. */
   legacy?: boolean;
 }) {
+  const t = useTranslations("documents.pageCapsule");
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
@@ -50,7 +52,7 @@ export function PageCapsuleControl({
     return (
       <>
         <Button size="xs" variant="outline" onClick={() => setOpen(true)}>
-          <Video /> {addLabel ?? (inherited ? "Capsule pour ce prospect" : "Ajouter une capsule")}
+          <Video /> {addLabel ?? (inherited ? t("forProspect") : t("add"))}
         </Button>
         {dialog}
       </>
@@ -62,7 +64,7 @@ export function PageCapsuleControl({
       const result = await deleteCapsule(capsule.id);
       if ("error" in result) toast.error(result.error);
       else {
-        toast.success(target.linkId ? "Version perso retirée, celle du document reprend." : "Supprimé");
+        toast.success(target.linkId ? t("removedPersonal") : t("removed"));
         router.refresh();
       }
     });
@@ -71,19 +73,20 @@ export function PageCapsuleControl({
     <div className="flex flex-wrap items-center gap-3 border border-border bg-card p-2">
       <CapsulePreview capsule={capsule} />
       <div className="min-w-0 flex-1 space-y-0.5">
-        <p className="truncate text-body">{capsule.hookText ?? <span className="text-muted-foreground">Sans phrase d&apos;accroche</span>}</p>
+        <p className="truncate text-body">{capsule.hookText ?? <span className="text-muted-foreground">{t("noHook")}</span>}</p>
         <p className="text-small text-muted-foreground">
-          {capsule.kind === "VIDEO" ? "Vidéo" : "Audio"} · {Math.round(capsule.durationMs / 1000)} s ·{" "}
-          {capsule.plays === 0 ? "pas encore regardée" : `regardée ${capsule.plays} fois`}
+          {capsule.kind === "VIDEO" ? t("video") : t("audio")} ·{" "}
+          {t("duration", { seconds: Math.round(capsule.durationMs / 1000) })} ·{" "}
+          {capsule.plays === 0 ? t("notWatched") : t("watched", { count: capsule.plays })}
         </p>
       </div>
       <div className="flex gap-1">
         {!legacy && (
           <Button size="xs" variant="ghost" onClick={() => setOpen(true)}>
-            <Pencil /> Remplacer
+            <Pencil /> {t("replace")}
           </Button>
         )}
-        <Button size="xs" variant="ghost" disabled={pending} onClick={remove} aria-label="Supprimer la capsule">
+        <Button size="xs" variant="ghost" disabled={pending} onClick={remove} aria-label={t("deleteAria")}>
           <Trash2 />
         </Button>
       </div>
@@ -103,6 +106,7 @@ function CapsulePreview({ capsule }: { capsule: CapsuleSummary }) {
  * duration: show the first frame and play on click instead.
  */
 function VideoThumb({ src }: { src: string }) {
+  const t = useTranslations("documents.pageCapsule");
   const ref = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
   const toggle = () => {
@@ -115,7 +119,7 @@ function VideoThumb({ src }: { src: string }) {
     <button
       type="button"
       onClick={toggle}
-      aria-label={playing ? "Mettre en pause" : "Lire la capsule"}
+      aria-label={playing ? t("pause") : t("play")}
       className="relative aspect-[4/3] w-24 shrink-0 overflow-hidden bg-black"
     >
       <video

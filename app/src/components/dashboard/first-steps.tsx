@@ -1,4 +1,5 @@
 import { Check } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { cn } from "@/lib/utils";
 
@@ -24,31 +25,25 @@ export function FirstSteps({
   /** Button for the current step. */
   action?: React.ReactNode;
 }) {
+  const t = useTranslations("onboarding.firstSteps");
   const steps: Step[] = [
     {
-      title: "Déposez un document",
-      description:
-        "Un devis, une facture, une présentation ou un doc technique en PDF, ou un lien Notion, Loom, Figma… Le lien à envoyer est prêt aussitôt.",
+      title: t("dropTitle"),
+      description: t("dropBody"),
       done: hasDocument,
     },
     {
-      title:
-        readyLinks > 1
-          ? "Envoyez vos liens"
-          : readyLinks === 1
-            ? "Envoyez votre lien"
-            : "Envoyez le lien",
+      title: readyLinks > 1 ? t("sendMany") : readyLinks === 1 ? t("sendOne") : t("send"),
       description: readyLinks
         ? readyLinks > 1
-          ? "Ils sont prêts, dans « À envoyer » juste en dessous. Collez chacun dans votre email à la place de la pièce jointe : votre prospect lit sans rien remplir."
-          : "Il est prêt, dans « À envoyer » juste en dessous. Collez-le dans votre email à la place de la pièce jointe : votre prospect lit sans rien remplir."
-        : "Copiez-le dans votre email à la place de la pièce jointe. Un lien par prospect : vous saurez qui lit.",
+          ? t("sendManyBody")
+          : t("sendOneBody")
+        : t("sendBody"),
       done: hasLink,
     },
     {
-      title: "Le prospect l'ouvre",
-      description:
-        "Vous êtes prévenu, et vous voyez ici les pages lues et quand relancer. Pour tester, ouvrez-le dans une fenêtre privée : vos propres lectures ne comptent pas.",
+      title: t("readTitle"),
+      description: t("readBody"),
       done: hasRead,
     },
   ];
@@ -57,11 +52,11 @@ export function FirstSteps({
 
   return (
     <section
-      aria-label="Premiers pas"
+      aria-label={t("title")}
       className="border-y border-foreground bg-card"
     >
       <div className="flex items-center justify-between gap-4 border-b border-foreground px-4 py-3">
-        <p className="font-semibold">Premiers pas</p>
+        <p className="font-semibold">{t("title")}</p>
         <div className="flex items-center gap-3 text-small text-muted-foreground">
           <span className="font-mono tabular-nums">
             {doneCount}/{steps.length}
@@ -103,7 +98,7 @@ export function FirstSteps({
                   <Check
                     className="size-4"
                     strokeWidth={2.5}
-                    aria-label="Fait"
+                    aria-label={t("done")}
                   />
                 ) : (
                   index + 1

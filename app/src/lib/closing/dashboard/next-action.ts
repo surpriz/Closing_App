@@ -1,6 +1,9 @@
+import { INTL_LOCALE } from "@/i18n/locale";
 import { formatRelative } from "@/lib/format";
 
 import { DAY_MS } from "../constants";
+
+import { maybeT, type DashboardI18n } from "./i18n";
 
 /**
  * What the seller should do about one open deal, from what the prospect did.
@@ -53,7 +56,7 @@ export type NextAction =
   | { kind: "meeting_booked"; at: Date; meetingAt: Date | null }
   | { kind: "snoozed"; until: Date }
   /** What the deal analysis recommends, when it is current. */
-  | { kind: "ai_advice"; text: string; urgent: boolean };
+  | { kind: "ai_advice"; adviceType: string; timing: string; urgent: boolean };
 
 /** Most urgent first. */
 const URGENCY: NextAction["kind"][] = [
@@ -96,17 +99,24 @@ const FACTUAL: NextAction["kind"][] = [
 export function withAiAdvice(
   action: NextAction,
   advice: { type: string; timing: string; priority: number } | null,
-  labels: { action: Record<string, string>; timing: Record<string, string> },
 ): NextAction {
   if (!advice || FACTUAL.includes(action.kind)) return action;
-  const verb = labels.action[advice.type] ?? advice.type;
-  const text =
-    advice.type === "wait"
-      ? "Rien à faire pour l'instant, Clozer surveille."
-      : advice.type === "close_lost"
-        ? "Deal sans doute perdu : à classer ?"
-        : `${verb} ${labels.timing[advice.timing] ?? ""}.`.replace(" .", ".");
-  return { kind: "ai_advice", text, urgent: advice.priority >= 4 && advice.type !== "wait" };
+  return {
+    kind: "ai_advice",
+    adviceType: advice.type,
+    timing: advice.timing,
+    urgent: advice.priority >= 4 && advice.type !== "wait",
+  };
+}
+
+function describeAiAdvice(action: Extract<NextAction, { kind: "ai_advice" }>, { t }: DashboardI18n) {
+  if (action.adviceType === "wait") return t("today.nextAction.aiWait");
+  if (action.adviceType === "close_lost") return t("today.nextAction.aiCloseLost");
+  const verb = maybeT(t, `labels.insightAction.${action.adviceType}`, action.adviceType);
+  const timingKey = `labels.timing.${action.timing}`;
+  return t.has(timingKey as never)
+    ? t("today.nextAction.aiAdvice", { verb, timing: t(timingKey as never) })
+    : t("today.nextAction.aiAdviceNoTiming", { verb });
 }
 
 /** A prospect who read and went quiet this long needs a word from the seller. */
@@ -169,38 +179,49 @@ export function computeNextAction(input: NextActionInput): NextAction {
   return { kind: "wait", days: quietDays, opened: true, tier: input.tier };
 }
 
-export function describeNextAction(action: NextAction, now: Date): string {
+export function describeNextAction(action: NextAction, now: Date, i18n: DashboardI18n): string {
+  const { t, locale } = i18n;
+  const dayMonth = (date: Date) =>
+    new Intl.DateTimeFormat(INTL_LOCALE[locale], { day: "numeric", month: "long" }).format(date);
   switch (action.kind) {
     case "close_won":
-      return "Validé par le prospect : confirmez la vente.";
+      return t("today.nextAction.closeWon");
     case "call_now":
-      return "Lecture en cours : appelez maintenant.";
+      return t("today.nextAction.callNow");
     case "reply":
-      return action.quote ? "Devis demandé : envoyez-le." : "Demande d'ajustement en attente : répondez.";
+      return action.quote ? t("today.nextAction.replyQuote") : t("today.nextAction.reply");
     case "review_draft":
-      return "Relance prête : relisez-la et validez.";
+      return t("today.nextAction.reviewDraft");
     case "meeting_booked":
-      if (!action.meetingAt) return `Rendez-vous pris ${formatRelative(action.at, now)} : préparez l'échange.`;
+      if (!action.meetingAt) {
+        return t("today.nextAction.meetingBooked", { when: formatRelative(action.at, locale, now) });
+      }
       return action.meetingAt > now
-        ? `Rendez-vous le ${new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long" }).format(action.meetingAt)} : préparez l'échange.`
-        : "Rendez-vous passé : notez comment il s'est passé.";
+        ? t("today.nextAction.meetingAhead", { date: dayMonth(action.meetingAt) })
+        : t("today.nextAction.meetingPast");
     case "in_touch":
-      return `Échange noté ${formatRelative(action.at, now)}, laissez-lui le temps.`;
+      return t("today.nextAction.inTouch", { when: formatRelative(action.at, locale, now) });
     case "ai_advice":
-      return action.text;
+      return describeAiAdvice(action, i18n);
     case "snoozed":
-      return `En pause jusqu'au ${new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long" }).format(action.until)}.`;
+      return t("today.nextAction.snoozed", { date: dayMonth(action.until) });
     case "call":
-      return action.pricing ? "Longue lecture des tarifs : appelez." : "Lu de près : appelez aujourd'hui.";
-    case "followup_planned":
-      return `${action.opened ? "" : "Pas encore ouvert. "}Relance auto ${formatRelative(action.at, now)}.`;
+      return action.pricing ? t("today.nextAction.callPricing") : t("today.nextAction.call");
+    case "followup_planned": {
+      const when = formatRelative(action.at, locale, now);
+      return action.opened
+        ? t("today.nextAction.followupPlanned", { when })
+        : t("today.nextAction.followupPlannedUnopened", { when });
+    }
     case "nudge":
       return action.opened
-        ? `Plus de lecture depuis ${action.days} jours : relancez.`
-        : `Pas ouvert depuis ${action.days} jours, relances auto coupées : relancez.`;
+        ? t("today.nextAction.nudgeOpened", { days: action.days })
+        : t("today.nextAction.nudgeUnopened", { days: action.days });
     case "wait":
-      if (!action.opened) return action.days === 0 ? "Envoyé aujourd'hui, laissez venir." : "Pas encore ouvert.";
-      return action.tier === "WARM" ? "Lecture régulière, rien à faire pour l'instant." : "Rien à faire pour l'instant.";
+      if (!action.opened) {
+        return action.days === 0 ? t("today.nextAction.sentToday") : t("today.nextAction.notOpenedYet");
+      }
+      return action.tier === "WARM" ? t("today.nextAction.waitWarm") : t("today.nextAction.wait");
   }
 }
 

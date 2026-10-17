@@ -1,21 +1,22 @@
+import type { UiLocale } from "@/i18n/locale";
+import { getTranslator } from "@/i18n/messages";
 import { renderEmail } from "@/lib/email-layout";
 
 /** The email a teammate gets when a manager invites them to the workspace. Pure. */
-export function buildInvitationEmail(input: { inviterName: string; workspaceName: string; url: string }) {
-  const subject = `${input.inviterName} vous invite sur Clozer`;
+export function buildInvitationEmail(input: { inviterName: string; workspaceName: string; url: string; locale: UiLocale }) {
+  const t = getTranslator(input.locale);
+  const subject = t("emails.invitation.subject", { inviter: input.inviterName });
   return {
     subject,
     ...renderEmail({
-      preheader: `Rejoignez l'équipe ${input.workspaceName}`,
+      locale: input.locale,
+      preheader: t("emails.invitation.preheader", { workspace: input.workspaceName }),
       title: subject,
       blocks: [
-        {
-          kind: "text",
-          text: `Vous rejoindrez l'espace « ${input.workspaceName} » : vos propositions, qui les lit, et quand relancer.`,
-        },
-        { kind: "button", label: "Rejoindre l'équipe", href: input.url },
+        { kind: "text", text: t("emails.invitation.body", { workspace: input.workspaceName }) },
+        { kind: "button", label: t("emails.invitation.button"), href: input.url },
       ],
-      footer: { text: "Lien valable 7 jours. Pas attendu ? Ignorez cet email." },
+      footer: { text: t("emails.invitation.footer") },
     }),
   };
 }

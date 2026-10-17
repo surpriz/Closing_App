@@ -1,3 +1,6 @@
+import type { UiLocale } from "@/i18n/locale";
+import { getNamespaceTranslator } from "@/lib/server-translator";
+
 import { DAY_MS } from "../constants";
 import { nextBusinessSlot, type BusinessHours } from "../scheduling/business-hours";
 import type { FOLLOWUP_GOALS, TIMINGS } from "./schema";
@@ -16,6 +19,8 @@ const DAYS_BEFORE_DEADLINE = 3;
 
 export type FollowupPolicyInput = {
   now: Date;
+  /** The seller's: they read the reasons when a follow-up is refused. */
+  locale: UiLocale;
   timing: (typeof TIMINGS)[number];
   channel: "EMAIL" | "WHATSAPP" | "PHONE" | null;
   deal: {
@@ -62,29 +67,30 @@ export type FollowupDecision =
 
 export function decideFollowup(input: FollowupPolicyInput): FollowupDecision {
   const { now, deal, prospect, history, settings } = input;
+  const t = getNamespaceTranslator(input.locale, "server.followups.policy");
   const reasons: string[] = [];
 
-  if (deal.archived || !["OPEN", "CHANGE_REQUESTED"].includes(deal.dealStatus)) reasons.push("Le deal n'est plus en cours.");
-  if (!deal.followupsEnabled) reasons.push("Les relances sont coupées sur ce lien.");
-  if (deal.snoozedUntil && deal.snoozedUntil > now) reasons.push("Le deal est en pause.");
-  if (deal.meetingBooked) reasons.push("Le prospect a pris rendez-vous : plus de relance automatique.");
-  if (deal.quoteRequested) reasons.push("Le prospect a demandé un devis : à vous de lui répondre, plus de relance automatique.");
-  if (!prospect) reasons.push("Aucun contact à qui écrire.");
-  else if (prospect.unsubscribed) reasons.push("Le contact s'est désinscrit.");
-  if (history.approvedPending) reasons.push("Une relance validée attend déjà son envoi.");
-  if (deal.expiresAt && deal.expiresAt <= now) reasons.push("Le lien a expiré : prolongez-le avant de relancer.");
-  if (history.expiryReminderOpen) reasons.push("Un rappel d'échéance est déjà prévu.");
+  if (deal.archived || !["OPEN", "CHANGE_REQUESTED"].includes(deal.dealStatus)) reasons.push(t("notActive"));
+  if (!deal.followupsEnabled) reasons.push(t("followupsOff"));
+  if (deal.snoozedUntil && deal.snoozedUntil > now) reasons.push(t("snoozed"));
+  if (deal.meetingBooked) reasons.push(t("meetingBooked"));
+  if (deal.quoteRequested) reasons.push(t("quoteRequested"));
+  if (!prospect) reasons.push(t("noContact"));
+  else if (prospect.unsubscribed) reasons.push(t("unsubscribed"));
+  if (history.approvedPending) reasons.push(t("approvedPending"));
+  if (deal.expiresAt && deal.expiresAt <= now) reasons.push(t("expired"));
+  if (history.expiryReminderOpen) reasons.push(t("expiryReminderOpen"));
 
   const sentLast30 = history.sentAt.filter((at) => now.getTime() - at.getTime() < 30 * DAY_MS).length;
   if (sentLast30 >= settings.maxFollowupsPer30Days) {
-    reasons.push(`Déjà ${sentLast30} relances en 30 jours, le maximum réglé.`);
+    reasons.push(t("maxReached", { count: sentLast30 }));
   }
   if (history.lastSellerContactAt && now.getTime() - history.lastSellerContactAt.getTime() < SELLER_CONTACT_QUIET_MS) {
-    reasons.push("Vous avez échangé avec lui il y a moins de 48 h.");
+    reasons.push(t("recentContact"));
   }
 
   const channel = pickChannel(input);
-  if (!channel) reasons.push("Aucun canal d'envoi disponible.");
+  if (!channel) reasons.push(t("noChannel"));
   if (reasons.length > 0 || !prospect || !channel) return { allowed: false, reasons };
 
   // Never right after a read (it would give the tracking away), never too close to the last one
@@ -123,7 +129,7 @@ export function decideFollowup(input: FollowupPolicyInput): FollowupDecision {
   }
   const scheduledFor = target < earliest ? slot(earliest, "asap") : target;
   if (deal.expiresAt && scheduledFor >= deal.expiresAt) {
-    return { allowed: false, reasons: ["L'envoi tomberait après l'expiration du lien."] };
+    return { allowed: false, reasons: [t("afterExpiry")] };
   }
 
   return { allowed: true, scheduledFor, channel };

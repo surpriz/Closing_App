@@ -1,5 +1,8 @@
 import { createHash, randomBytes, randomInt } from "node:crypto";
 
+import { INTL_LOCALE, type UiLocale } from "@/i18n/locale";
+import { getNamespaceTranslator } from "@/lib/server-translator";
+
 // Device-style pairing for the Outlook add-in (see ExtensionPairing in the schema)
 export const PAIRING_TTL_MS = 10 * 60 * 1000;
 
@@ -33,19 +36,28 @@ export function hashPollSecret(secret: string) {
 
 // Sent to the seller each time an Outlook gets a token, so a pairing they didn't
 // make (someone talked them into typing a code) can be revoked right away
-export function outlookConnectedEmail({ at, settingsUrl }: { at: Date; settingsUrl: string }) {
-  const when = new Intl.DateTimeFormat("fr-FR", {
+export function outlookConnectedEmail({
+  at,
+  settingsUrl,
+  locale,
+  timeZone = "Europe/Paris",
+}: {
+  at: Date;
+  settingsUrl: string;
+  locale: UiLocale;
+  /** The seller's, when known. */
+  timeZone?: string;
+}) {
+  const t = getNamespaceTranslator(locale, "emails.outlookConnected");
+  const when = new Intl.DateTimeFormat(INTL_LOCALE[locale], {
     dateStyle: "long",
     timeStyle: "short",
-    timeZone: "Europe/Paris",
+    timeZone,
   }).format(at);
-  const text =
-    `Un Outlook vient d'être connecté à votre compte Clozer (${when}).\n\n` +
-    `Si c'est vous, rien à faire.\n\n` +
-    `Sinon, révoquez-le tout de suite dans Réglages › Chrome et Outlook : ${settingsUrl}`;
+  const text = `${t("intro", { when })}\n\n${t("ifYou")}\n\n${t("otherwise", { url: settingsUrl })}`;
   const html =
-    `<p>Un Outlook vient d'être connecté à votre compte Clozer (${when}).</p>` +
-    `<p>Si c'est vous, rien à faire.</p>` +
-    `<p>Sinon, révoquez-le tout de suite dans <a href="${settingsUrl}">Réglages › Chrome et Outlook</a>.</p>`;
-  return { subject: "Outlook connecté à votre compte Clozer", text, html };
+    `<p>${t("intro", { when })}</p>` +
+    `<p>${t("ifYou")}</p>` +
+    `<p>${t.markup("otherwiseHtml", { a: (chunks) => `<a href="${settingsUrl}">${chunks}</a>` })}</p>`;
+  return { subject: t("subject"), text, html };
 }

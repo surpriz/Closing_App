@@ -1,3 +1,5 @@
+import { useTranslations } from "next-intl";
+
 import { HeatScale, ThermalPlate } from "@/components/brand/thermal-plate";
 import {
   Tooltip,
@@ -37,27 +39,32 @@ export function ThermalBand({
     ...plates.plates.map((plate) => plate.seconds),
   );
   const hottest = plates.plates.find((plate) => plate.hottest);
-  const unit = video ? "passage" : "page";
+  const t = useTranslations("deal.thermalBand");
 
   return (
     <section aria-labelledby="lecture-titre" className="space-y-4">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-foreground pb-2">
         <h2 id="lecture-titre" className="text-heading">
-          {video ? "Lecture passage par passage" : "Lecture page par page"}
+          {video ? t("titleVideo") : t("title")}
         </h2>
         <p className="font-mono text-micro text-muted-foreground">
           {hottest && plates.hottest ? (
             <>
               <span className="text-foreground">
-                {video ? hottest.label : `P.${plates.hottest.page}`}{" "}
-                {video ? "le plus regardé" : "la plus lue"}
+                {video
+                  ? t("hottestVideo", { label: hottest.label })
+                  : t("hottestPage", { page: plates.hottest.page })}
               </span>{" "}
               · {formatClock(plates.hottest.seconds)}
             </>
           ) : opened ? (
-            `Aucun temps mesuré par ${unit}`
+            video ? (
+              t("noTimeVideo")
+            ) : (
+              t("noTimePage")
+            )
           ) : (
-            "Pas encore ouvert"
+            t("notOpened")
           )}
         </p>
       </div>
@@ -89,17 +96,19 @@ export function ThermalBand({
             {formatClock(maxSeconds)}
           </span>
           <span>
-            {formatClock(plates.totalSeconds)} sur{" "}
-            {video ? "la vidéo" : "les pages"}
+            {t(video ? "totalVideo" : "totalPages", {
+              time: formatClock(plates.totalSeconds),
+            })}
           </span>
           {plates.pagesPerPlate > 1 && (
-            <span>{plates.pagesPerPlate} pages par plaque</span>
+            <span>
+              {t("pagesPerPlate", { count: plates.pagesPerPlate })}
+            </span>
           )}
         </div>
       ) : (
         <p className="text-small text-muted-foreground">
-          {video ? "Les passages chaufferont" : "Les pages chaufferont"} ici dès
-          la première lecture.
+          {video ? t("emptyVideo") : t("emptyPages")}
         </p>
       )}
 
@@ -117,17 +126,20 @@ function Plate({
   opened: boolean;
   video: boolean;
 }) {
+  const t = useTranslations("deal.thermalBand");
   const what = video
-    ? `Passage ${plate.label}`
+    ? t("segment", { label: plate.label })
     : plate.from === plate.to
-      ? `Page ${plate.from}`
-      : `Pages ${plate.from} à ${plate.to}`;
+      ? t("page", { page: plate.from })
+      : t("pages", { from: plate.from, to: plate.to });
   const description = [
     what,
-    opened ? `${formatDuration(plate.seconds * 1000)} de lecture` : null,
-    plate.pricing ? "tarifs" : null,
-    plate.hottest ? (video ? "le plus regardé" : "la plus lue") : null,
-    plate.live ? "lue en ce moment" : null,
+    opened
+      ? t("readTime", { time: formatDuration(plate.seconds * 1000) })
+      : null,
+    plate.pricing ? t("pricing") : null,
+    plate.hottest ? (video ? t("mostWatched") : t("mostRead")) : null,
+    plate.live ? t("liveNow") : null,
   ]
     .filter(Boolean)
     .join(", ");
@@ -172,7 +184,7 @@ function Plate({
       </span>
       {plate.pricing && (
         <span aria-hidden className="block text-micro text-muted-foreground">
-          Tarifs
+          {t("pricingTag")}
         </span>
       )}
       <span className="sr-only">{description}</span>
@@ -183,7 +195,9 @@ function Plate({
   const details = [
     plate.summary,
     opened && plate.avgSeconds !== null && plate.seconds > 0
-      ? `${formatDuration(plate.avgSeconds * 1000)} par ${video ? "visionnage" : "lecture"} en moyenne`
+      ? t(video ? "avgPerView" : "avgPerRead", {
+          time: formatDuration(plate.avgSeconds * 1000),
+        })
       : null,
   ].filter(Boolean);
   if (details.length === 0) return <div>{sheet}</div>;

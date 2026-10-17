@@ -1,0 +1,228 @@
+{
+  "page": {
+    "metaTitle": "Aujourd'hui",
+    "welcomeTitle": "Bienvenue sur Clozer.",
+    "welcomeBody": "Déposez un document (devis, facture, présentation…) : le lien à envoyer est prêt dans la seconde.",
+    "mailClientQuestion": "Vous envoyez depuis Gmail ou Outlook ?",
+    "mailClientLink": "Clozer peut créer le lien directement dans vos emails",
+    "reportTitle": "Rapport du jour",
+    "dealsInProgress": "{count, plural, one {# deal en cours} other {# deals en cours}}",
+    "toSend": "À envoyer",
+    "toSendHint": "pas encore copiés ni envoyés",
+    "toHandle": "À traiter",
+    "toHandleHint": "du plus urgent au moins urgent",
+    "emptyTitle": "Aucun deal en cours.",
+    "emptyDescription": "Dès qu'un lien envoyé est ouvert, le deal apparaît ici avec ce qu'il y a à faire.",
+    "createLink": "Créer un lien",
+    "moreDeals": "Et {count} autres deals en cours, moins urgents.",
+    "sends": "Vos envois",
+    "sendsHint": "où en sont les liens envoyés, {period}",
+    "openDeals": "Deals en cours",
+    "openDealsHint": "en ce moment",
+    "draftsTitle": "Relances à valider",
+    "draftsHint": "rien ne part sans vous",
+    "feedTitle": "Ce qui s'est passé",
+    "feedEmpty": "Les lectures, les réponses de vos prospects et les relances envoyées s'afficheront ici.",
+    "upcomingTitle": "Relances à venir",
+    "prospectTime": "{time}, heure du prospect",
+    "stateUnopened": "Pas encore ouvert",
+    "stateOpened": "Ouvert",
+    "noRecipient": "Sans destinataire"
+  },
+  "period": {
+    "7d": {
+      "label": "7 jours",
+      "hint": "sur 7 jours"
+    },
+    "30d": {
+      "label": "30 jours",
+      "hint": "sur 30 jours"
+    },
+    "all": {
+      "label": "Tout",
+      "hint": "depuis le début"
+    },
+    "nav": "Période"
+  },
+  "headline": {
+    "drafts": "{count, plural, one {Une relance attend votre accord.} other {# relances attendent votre accord.}}",
+    "callFirst": "Appelez {name} en premier.",
+    "validatedOne": "{name} a validé.",
+    "validatedMany": "{name} et {others, plural, one {# autre} other {# autres}} ont validé.",
+    "validatedHint": "Préparez la suite pendant que c'est chaud.",
+    "changeOne": "{name} demande un ajustement.",
+    "changeMany": "{count} prospects demandent un ajustement.",
+    "changeOneHint": "Répondez-lui aujourd'hui.",
+    "changeManyHint": "Commencez par {name}.",
+    "aiFocus": "{label} : {headline}",
+    "startThere": "Commencez par là.",
+    "hotOne": "{name} est chaud.",
+    "hotMany": "{count} prospects sont chauds.",
+    "hotOneHint": "C'est le moment d'appeler.",
+    "noDocument": "Aucun document pour l'instant.",
+    "noDocumentHint": "Ajoutez un PDF ou un lien pour commencer.",
+    "readyOne": "Votre lien est prêt.",
+    "readyOneHint": "« {name} » attend d'être envoyé : copiez le lien dans votre email à la place de la pièce jointe.",
+    "readyMany": "{count} liens prêts à envoyer.",
+    "readyManyHint": "Copiez chacun dans votre email à la place de la pièce jointe : vous saurez qui lit quoi.",
+    "documentReadyOne": "Votre document est prêt.",
+    "documentReadyMany": "Vos documents sont prêts.",
+    "createLinkHint": "Créez un lien pour l'envoyer à un prospect.",
+    "nextFollowup": "Prochaine relance {when}.",
+    "autoFollowups": "Clozer prépare les relances quand il le faut.",
+    "warmOne": "Un prospect consulte votre document.",
+    "warmMany": "{count} prospects consultent vos documents.",
+    "nothingUrgent": "Rien d'urgent. {hint}",
+    "unopenedOne": "Votre lien n'a pas encore été ouvert.",
+    "unopenedAll": "Aucun lien n'a encore été ouvert.",
+    "quietDay": "Rien d'urgent aujourd'hui."
+  },
+  "todo": {
+    "readingNow": "en ce moment",
+    "readAgo": "lu {when}",
+    "hottestPage": "Page {page} la plus lue · <b>{duration}</b>",
+    "aiAnalysis": "Analyse IA",
+    "handle": "Traiter",
+    "unopenedCount": "{count, plural, one {# lien pas encore ouvert} other {# liens pas encore ouverts}}",
+    "unopenedHint": "· vous êtes prévenu dès que l'un est lu"
+  },
+  "readyLinks": {
+    "copiedToast": "Lien copié. Collez-le dans votre message : vous serez prévenu dès qu'il est ouvert.",
+    "copyError": "Copie impossible : ouvrez le lien pour le copier à la main.",
+    "for": "Pour : <who>{label}</who>",
+    "copied": "Copié",
+    "copyLink": "Copier le lien",
+    "forWhom": "Pour qui",
+    "remove": "Retirer",
+    "sentQuestion": "L'avez-vous bien envoyé ?",
+    "yes": "Oui",
+    "notYet": "Pas encore"
+  },
+  "liveStrip": {
+    "reading": "En train de lire",
+    "page": ", page {page}"
+  },
+  "funnel": {
+    "steps": {
+      "sent": "{count, plural, =1 {envoyé} other {envoyés}}",
+      "opened": "{count, plural, =1 {ouvert} other {ouverts}}",
+      "deep": "{count, plural, =1 {lu attentivement} other {lus attentivement}}",
+      "validated": "{count, plural, =1 {validé} other {validés}}"
+    },
+    "hints": {
+      "sent": "Liens créés sur la période.",
+      "opened": "Au moins une lecture, hors robots.",
+      "deep": "La moitié du PDF avec au moins 30 s de lecture, une minute sur un lien web, ou une longue lecture des tarifs.",
+      "validated": "« Valider & signer » cliqué, ou deal marqué validé ou gagné."
+    },
+    "heat": {
+      "HOT": "{count, plural, =1 {chaud} other {chauds}}",
+      "WARM": "{count, plural, =1 {tiède} other {tièdes}}",
+      "COLD": "{count, plural, =1 {froid} other {froids}}",
+      "unopened": "{count, plural, =1 {pas encore ouvert} other {pas encore ouverts}}"
+    },
+    "noOpenDeals": "Aucun deal en cours."
+  },
+  "autopilot": {
+    "mode": "Mode automatique.",
+    "none": "Aucune relance n'est partie seule depuis 24 h.",
+    "sent": "{count, plural, one {# relance est partie seule depuis 24 h.} other {# relances sont parties seules depuis 24 h.}}",
+    "pausedToast": "Tout passe à nouveau par vous",
+    "pause": "Tout valider moi-même"
+  },
+  "nextAction": {
+    "aiWait": "Rien à faire pour l'instant, Clozer surveille.",
+    "aiCloseLost": "Deal sans doute perdu : à classer ?",
+    "aiAdvice": "{verb} {timing}.",
+    "aiAdviceNoTiming": "{verb}.",
+    "closeWon": "Validé par le prospect : confirmez la vente.",
+    "callNow": "Lecture en cours : appelez maintenant.",
+    "replyQuote": "Devis demandé : envoyez-le.",
+    "reply": "Demande d'ajustement en attente : répondez.",
+    "reviewDraft": "Relance prête : relisez-la et validez.",
+    "meetingBooked": "Rendez-vous pris {when} : préparez l'échange.",
+    "meetingAhead": "Rendez-vous le {date} : préparez l'échange.",
+    "meetingPast": "Rendez-vous passé : notez comment il s'est passé.",
+    "inTouch": "Échange noté {when}, laissez-lui le temps.",
+    "snoozed": "En pause jusqu'au {date}.",
+    "callPricing": "Longue lecture des tarifs : appelez.",
+    "call": "Lu de près : appelez aujourd'hui.",
+    "followupPlanned": "Relance auto {when}.",
+    "followupPlannedUnopened": "Pas encore ouvert. Relance auto {when}.",
+    "nudgeOpened": "Plus de lecture depuis {days} jours : relancez.",
+    "nudgeUnopened": "Pas ouvert depuis {days} jours, relances auto coupées : relancez.",
+    "sentToday": "Envoyé aujourd'hui, laissez venir.",
+    "notOpenedYet": "Pas encore ouvert.",
+    "waitWarm": "Lecture régulière, rien à faire pour l'instant.",
+    "wait": "Rien à faire pour l'instant."
+  },
+  "dealCta": {
+    "sendQuote": "Envoyer le devis",
+    "reply": "Répondre",
+    "seeRequest": "Voir sa demande",
+    "reviewFollowup": "Relire la relance",
+    "seePlanned": "Voir la relance prévue",
+    "logMeeting": "Noter l'échange",
+    "seeReady": "Voir la relance prête",
+    "copyLink": "Copier le lien",
+    "call": "Appeler",
+    "logCall": "Noter l'appel",
+    "followUpByEmail": "Relancer par email"
+  },
+  "feed": {
+    "openedDocument": "a ouvert le document",
+    "readFor": "a lu pendant {duration}",
+    "readForPricing": "a lu pendant {duration}, dont {pricing} sur les tarifs",
+    "action": {
+      "VALIDATE_SIGN": "a validé la proposition",
+      "REQUEST_EXTENSION": "demande une prolongation",
+      "MEETING_BOOKED": "a pris rendez-vous",
+      "MEETING_CLICK": "a ouvert votre agenda",
+      "REQUEST_QUOTE": "demande un devis",
+      "REQUEST_CHANGE": "demande un ajustement"
+    },
+    "alert": {
+      "callMomentReason": "est lu en ce moment ({reason})",
+      "callMoment": "est lu en ce moment",
+      "prospectValidated": "a été validé",
+      "changeRequested": "fait l'objet d'une demande d'ajustement",
+      "quoteRequested": "a débouché sur une demande de devis",
+      "prospectQuestion": "a une question en attente de votre réponse",
+      "voiceComment": "vous a laissé un commentaire vocal",
+      "meetingBooked": "a débouché sur un rendez-vous",
+      "multiViewerCount": "est lu par {count} personnes en même temps",
+      "multiViewer": "est lu à plusieurs",
+      "draftReady": "a une relance prête à valider",
+      "extensionRequested": "a expiré : le prospect demande une prolongation",
+      "linkExpiring": "expire dans moins de 24 h",
+      "committeeLive": "est lu par {count} personnes en même temps (comité)",
+      "committeeLiveSeveral": "est lu par plusieurs personnes en même temps (comité)",
+      "decisionMaker": "est lu par un décideur",
+      "forwardedInternal": "a été repartagé en interne",
+      "newReader": "a un nouveau lecteur",
+      "reopenedDays": "a été rouvert après {days} jours de silence",
+      "reopened": "a été rouvert après un silence"
+    },
+    "followup": "a reçu une relance {channel}",
+    "followupAntiGhosting": "a reçu une relance {channel} (lien pas encore ouvert)",
+    "followupExpiry": "a reçu une relance {channel} (rappel d'échéance)"
+  },
+  "frictions": {
+    "stops": "{count} prospects sur {total} s'arrêtent à la page {page} : la suite n'est pas lue.",
+    "stopsAbout": "{count} prospects sur {total} s'arrêtent à la page {page} ({about}) : la suite n'est pas lue.",
+    "allFinished": "Les {count} prospects qui ont ouvert sont allés jusqu'au bout.",
+    "aiFriction": "L'analyse voit {friction} comme un frein sur {count} deals.",
+    "names": {
+      "PRICE": "le prix",
+      "SCOPE": "le périmètre",
+      "TIMING": "le calendrier",
+      "DECISION_MAKER": "le décideur",
+      "COMPETITION": "la concurrence",
+      "TRUST": "la confiance",
+      "STALLED_AT_SECTION": "une partie du document"
+    }
+  },
+  "readers": {
+    "unidentified": "Lecteur non identifié {letter}"
+  }
+}

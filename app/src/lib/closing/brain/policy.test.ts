@@ -9,6 +9,7 @@ const HOUR = 60 * 60 * 1000;
 
 const base = (overrides: Partial<FollowupPolicyInput> = {}): FollowupPolicyInput => ({
   now,
+  locale: "fr",
   timing: "now",
   channel: "EMAIL",
   deal: {

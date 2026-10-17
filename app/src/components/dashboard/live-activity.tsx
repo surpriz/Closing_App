@@ -1,16 +1,14 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
+
 import { segmentLabel } from "@/lib/closing/documents/video-segments";
 import type { LinkLiveState } from "@/lib/closing/live";
 
 import { LiveDot } from "./heat";
 import { useLivePoll } from "./use-live-poll";
 
-const DEVICE_LABELS: Record<string, string> = {
-  mobile: "sur mobile",
-  tablet: "sur tablette",
-  desktop: "sur ordinateur",
-};
+const DEVICES = new Set(["mobile", "tablet", "desktop"]);
 
 /**
  * Shows who is reading the link right now, and re-renders the server page as
@@ -30,6 +28,8 @@ export function LiveActivity({
   video?: boolean;
 }) {
   const { readers } = useLivePoll(`/api/links/${linkId}/live`, initial);
+  const t = useTranslations("common.liveActivity");
+  const locale = useLocale();
 
   // Nothing to say while nobody reads: the poll above still refreshes the page
   if (readers.length === 0) return null;
@@ -41,20 +41,22 @@ export function LiveActivity({
     >
       <span className="flex items-center gap-2.5 text-body font-medium">
         <LiveDot />
-        {readers.length === 1 ? "En train de lire" : `${readers.length} lecteurs en ce moment`}
+        {readers.length === 1 ? t("readingOne") : t("readingMany", { count: readers.length })}
       </span>
       <ul className="flex flex-wrap gap-x-6 gap-y-1 text-small">
         {readers.map((reader) => (
           <li key={reader.viewId}>
-            <span className="font-medium">{reader.name ?? "Lecteur anonyme"}</span>
+            <span className="font-medium">{reader.name ?? t("anonymous")}</span>
             <span className="text-muted-foreground">
               {[
                 pageCount && reader.currentPage
                   ? video
-                    ? `vers ${segmentLabel(reader.currentPage, pageCount)} de la vidéo`
-                    : `page ${reader.currentPage} sur ${pageCount}`
+                    ? t("videoAt", { segment: segmentLabel(reader.currentPage, pageCount, locale) })
+                    : t("page", { page: reader.currentPage, total: pageCount })
                   : null,
-                reader.deviceType ? DEVICE_LABELS[reader.deviceType] : null,
+                reader.deviceType && DEVICES.has(reader.deviceType)
+                  ? t(`device.${reader.deviceType as "mobile" | "tablet" | "desktop"}`)
+                  : null,
               ]
                 .filter(Boolean)
                 .map((part) => `, ${part}`)

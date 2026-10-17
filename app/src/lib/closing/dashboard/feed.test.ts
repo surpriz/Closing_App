@@ -1,6 +1,12 @@
+import { createTranslator } from "next-intl";
 import { describe, expect, it } from "vitest";
 
-import { buildFeed, feedContext, type FeedSource } from "./feed";
+import { MESSAGES } from "@/i18n/messages";
+
+import { buildFeed as build, feedContext, type FeedSource } from "./feed";
+
+const t = createTranslator({ locale: "fr", messages: MESSAGES.fr });
+const buildFeed = (source: FeedSource, limit: number) => build(source, limit, t);
 
 const at = (minutes: number) => new Date(Date.UTC(2026, 9, 4, 10, minutes));
 const empty: FeedSource = { views: [], actions: [], alerts: [], followups: [] };
@@ -51,6 +57,8 @@ describe("buildFeed", () => {
       10,
     );
     expect(glance.what).toBe("a ouvert le document");
+    const en = createTranslator({ locale: "en", messages: MESSAGES.en });
+    expect(build({ ...empty, views: [view] }, 1, en)[0].what).toBe("read for 4 min 5 s, 1 min 30 s of it on pricing");
     expect(short.what).toBe("a lu pendant 1 min");
   });
 

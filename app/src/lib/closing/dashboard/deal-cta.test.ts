@@ -1,6 +1,13 @@
+import { createTranslator } from "next-intl";
 import { describe, expect, it } from "vitest";
 
-import { dealCta, type DealCtaContext } from "./deal-cta";
+import { MESSAGES } from "@/i18n/messages";
+
+import { dealCta as build, type DealCtaContext } from "./deal-cta";
+import type { NextAction } from "./next-action";
+
+const t = createTranslator({ locale: "fr", messages: MESSAGES.fr });
+const dealCta = (action: NextAction, context: DealCtaContext) => build(action, context, t);
 
 const ctx: DealCtaContext = {
   email: "anne@acme.fr",
@@ -50,12 +57,15 @@ describe("dealCta", () => {
     });
     expect(dealCta(nudge, ctx)).toMatchObject({ label: "Relancer par email" });
     expect(dealCta(nudge, { ...ctx, email: null })).toBeNull();
+    const en = createTranslator({ locale: "en", messages: MESSAGES.en });
+    expect(build(nudge, ctx, en)).toMatchObject({ label: "Follow up by email" });
   });
 
   it("follows the analysis' recommended action", () => {
     const advice = {
       kind: "ai_advice",
-      text: "Appeler maintenant.",
+      adviceType: "call",
+      timing: "now",
       urgent: true,
     } as const;
     expect(dealCta(advice, { ...ctx, aiActionType: "call" })).toMatchObject({

@@ -12,7 +12,7 @@ export async function acceptInvitation(invitationId: string): Promise<Invitation
   try {
     await auth.api.acceptInvitation({ body: { invitationId }, headers: await headers() });
   } catch (error) {
-    return { error: teamErrorMessage(error) };
+    return { error: await teamErrorMessage(error) };
   }
   redirect("/dashboard");
 }
@@ -22,7 +22,7 @@ export async function rejectInvitation(invitationId: string): Promise<Invitation
   try {
     await auth.api.rejectInvitation({ body: { invitationId }, headers: await headers() });
   } catch (error) {
-    return { error: teamErrorMessage(error) };
+    return { error: await teamErrorMessage(error) };
   }
   redirect("/dashboard");
 }

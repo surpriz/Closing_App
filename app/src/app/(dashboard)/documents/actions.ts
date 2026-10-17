@@ -3,8 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { redirect } from "next/navigation";
+import { getLocale, getTranslations } from "next-intl/server";
 import { z } from "zod";
 
+import { INTL_LOCALE } from "@/i18n/locale";
 import { getAppOrigin } from "@/lib/app-origin";
 import { deletePrivateBlob, headPrivateBlob, pitchUploadPrefix } from "@/lib/blob";
 import { inBackground } from "@/lib/closing/background";
@@ -85,7 +87,7 @@ export type CreateWebDocumentResult = { id: string; linkId: string } | { error: 
 export async function createWebDocument(input: { url: string }): Promise<CreateWebDocumentResult> {
   const { user, organization } = await requireWorkspace();
   const url = parseWebUrl(String(input.url ?? "").slice(0, 2048));
-  if (!url) return { error: "Ce lien n'est pas valide." };
+  if (!url) return { error: (await getTranslations("documents.actions"))("invalidLink") };
 
   const { name, embedUrl } = await inspectWebLink(url, await getAppOrigin());
   const document = await prisma.document.create({
@@ -116,7 +118,6 @@ const createVideoSchema = z.object({
   name: z.string().trim().max(200).optional(),
 });
 
-const pitchDateFormat = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long" });
 
 /** An extra file of the pitch (already checked to be under the workspace prefix) of the right kind, or null. */
 async function checkedPitchFile(
@@ -139,24 +140,25 @@ export async function createVideoDocument(
   input: z.input<typeof createVideoSchema>,
 ): Promise<{ id: string; linkId: string } | { error: string }> {
   const { user, organization } = await requireWorkspace();
+  const [t, locale] = await Promise.all([getTranslations("documents.actions"), getLocale()]);
   const parsed = createVideoSchema.safeParse(input);
-  if (!parsed.success) return { error: "Enregistrement invalide." };
+  if (!parsed.success) return { error: t("invalidRecording") };
   const { videoPathname, durationMs } = parsed.data;
   const prefix = pitchUploadPrefix(organization.id);
   // Only this workspace's own uploads, three distinct files: nothing else is ever read, kept or deleted
   const paths = [videoPathname, parsed.data.audioPathname, parsed.data.posterPathname].filter((p): p is string => !!p);
   if (paths.some((p) => !p.startsWith(prefix)) || new Set(paths).size !== paths.length) {
-    return { error: "Enregistrement invalide." };
+    return { error: t("invalidRecording") };
   }
 
   // Fresh uploads only: a file another document uses is never taken over
   const taken = await prisma.document.count({
     where: { OR: [{ blobPathname: { in: paths } }, { audioPathname: { in: paths } }, { posterPathname: { in: paths } }] },
   });
-  if (taken > 0) return { error: "Enregistrement invalide." };
+  if (taken > 0) return { error: t("invalidRecording") };
 
   const video = await headPrivateBlob(videoPathname).catch(() => null);
-  if (!video) return { error: "L'envoi n'a pas abouti, réessayez." };
+  if (!video) return { error: t("uploadFailed") };
   const contentType = baseMime(video.contentType);
   const mediaError = validateMedia({ use: "pitch", kind: "VIDEO", contentType, size: video.size, durationMs });
   if (mediaError) {
@@ -164,10 +166,10 @@ export async function createVideoDocument(
     return {
       error:
         mediaError === "too_long"
-          ? `La vidéo dépasse ${PITCH_MAX_MS / 60_000} minutes.`
+          ? t("videoTooLong", { minutes: PITCH_MAX_MS / 60_000 })
           : mediaError === "too_large"
-            ? "La vidéo est trop lourde."
-            : "Ce format de vidéo n'est pas pris en charge.",
+            ? t("videoTooLarge")
+            : t("videoUnsupported"),
     };
   }
 
@@ -185,7 +187,12 @@ export async function createVideoDocument(
       organizationId: organization.id,
       ownerId: user.id,
       kind: "VIDEO",
-      name: parsed.data.name || `Pitch vidéo du ${pitchDateFormat.format(new Date())}`,
+      // Seller's UI language: the seller can rename it, but the prospect sees this name too
+      name:
+        parsed.data.name ||
+        t("pitchName", {
+          date: new Intl.DateTimeFormat(INTL_LOCALE[locale], { day: "numeric", month: "long" }).format(new Date()),
+        }),
       blobUrl: video.url,
       blobPathname: video.pathname,
       contentType,
@@ -212,7 +219,7 @@ export async function createVideoDocument(
 export async function createQuickLink(documentId: string): Promise<{ linkId: string } | { error: string }> {
   const { user, organization } = await requireWorkspace();
   const link = await createDocumentLink({ userId: user.id, organizationId: organization.id, documentId, draft: true });
-  return link ? { linkId: link.id } : { error: "Document introuvable." };
+  return link ? { linkId: link.id } : { error: (await getTranslations("documents.actions"))("notFound") };
 }
 
 // Soft delete: the document and its links disappear from the app and stop opening
@@ -233,7 +240,7 @@ export async function archiveDocument(documentId: string) {
     prisma.document.update({ where: { id: document.id }, data: { archivedAt: now } }),
   ]);
   for (const link of document.links) {
-    await cancelOpenFollowups(link.id, "Document supprimé");
+    await cancelOpenFollowups(link.id, "documentDeleted");
   }
 
   revalidatePath("/documents");
@@ -257,7 +264,7 @@ const pageTagsSchema = z.array(z.enum(PAGE_TAGS)).max(PAGE_TAGS.length);
 export async function setPageTags(documentId: string, pageNumber: number, tags: string[]) {
   const document = await requireOwnedDocument(documentId);
   const parsed = pageTagsSchema.safeParse([...new Set(tags)]);
-  if (!parsed.success) return { error: "Étiquettes invalides." };
+  if (!parsed.success) return { error: (await getTranslations("documents.actions"))("invalidTags") };
   await prisma.documentPage.update({
     where: { documentId_pageNumber: { documentId: document.id, pageNumber } },
     data: { tags: parsed.data, tagSource: "MANUAL" },
@@ -276,7 +283,7 @@ const sellerDescriptionSchema = z
 export async function saveSellerDescription(documentId: string, description: string) {
   const document = await requireOwnedDocument(documentId);
   const parsed = sellerDescriptionSchema.safeParse(description);
-  if (!parsed.success) return { error: "Description trop longue." };
+  if (!parsed.success) return { error: (await getTranslations("documents.actions"))("descriptionTooLong") };
   await prisma.document.update({ where: { id: document.id }, data: { sellerDescription: parsed.data } });
   revalidatePath(`/documents/${document.id}`);
   return { ok: true };
@@ -288,7 +295,7 @@ const docTypeSchema = z.enum(DOC_TYPES);
 export async function setDocumentType(documentId: string, docType: string) {
   const document = await requireOwnedDocument(documentId);
   const parsed = docTypeSchema.safeParse(docType);
-  if (!parsed.success) return { error: "Type de document inconnu." };
+  if (!parsed.success) return { error: (await getTranslations("documents.actions"))("unknownType") };
   await prisma.document.update({
     where: { id: document.id },
     data: { docType: parsed.data, docTypeSource: "MANUAL" },
@@ -308,7 +315,7 @@ const assistantNotesSchema = z
 export async function saveAssistantNotes(documentId: string, notes: string) {
   const document = await requireOwnedDocument(documentId);
   const parsed = assistantNotesSchema.safeParse(notes);
-  if (!parsed.success) return { error: "Texte trop long (4 000 caractères au plus)." };
+  if (!parsed.success) return { error: (await getTranslations("documents.actions"))("notesTooLong") };
   await prisma.document.update({ where: { id: document.id }, data: { assistantNotes: parsed.data } });
   revalidatePath(`/documents/${document.id}`);
   return { ok: true };
@@ -316,20 +323,21 @@ export async function saveAssistantNotes(documentId: string, notes: string) {
 
 export async function rereadDocument(documentId: string) {
   const document = await requireOwnedDocument(documentId);
+  const t = await getTranslations("documents.actions");
   let outcome;
   if (document.kind === "URL") {
     // The page may have changed since: fetch it again, then the AI reads it
     outcome = await processWebDocument(document.id);
-    if (outcome === "no_text") return { error: "Impossible de lire le texte de cette page. Décrivez-la plutôt." };
+    if (outcome === "no_text") return { error: t("noText") };
     if (outcome === "unreachable") {
-      return { error: "La page ne répond pas pour l'instant. Ce qui avait été lu est conservé." };
+      return { error: t("unreachable") };
     }
   } else {
     await prisma.document.update({ where: { id: document.id }, data: { aiProcessedAt: null, aiAttempts: 0 } });
     outcome = await readDocumentPages(document.id);
   }
   revalidatePath(`/documents/${document.id}`);
-  if (outcome === "no_ai") return { error: "Aucune IA n'est configurée." };
-  if (outcome === "failed") return { error: "La lecture a échoué, réessayez dans un moment." };
+  if (outcome === "no_ai") return { error: t("noAi") };
+  if (outcome === "failed") return { error: t("readFailed") };
   return { ok: true };
 }

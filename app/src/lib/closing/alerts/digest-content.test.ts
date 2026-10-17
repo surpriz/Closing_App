@@ -4,6 +4,7 @@ import { buildDigest, digestSubject, isDigestDue, sinceLabel, type DigestData } 
 
 const empty: DigestData = {
   appUrl: "https://app.clozer.club",
+  locale: "fr",
   sinceLabel: "hier",
   todo: [],
   actions: [],
@@ -80,6 +81,20 @@ describe("buildDigest", () => {
       "Clozer a relancé 1 prospect pour vous",
     );
   });
+
+  it("writes in English for an English-speaking seller", () => {
+    const digest = buildDigest({
+      ...empty,
+      locale: "en",
+      sinceLabel: "Friday",
+      drafts: 2,
+      counts: { readers: 1, followupsSent: 2, followupsFailed: 0, unsubscribed: 0 },
+    })!;
+    expect(digest.subject).toBe("2 follow-ups are waiting for your OK");
+    expect(digest.text).toContain("SINCE FRIDAY");
+    expect(digest.text).toContain("1 prospect read your proposal, 2 follow-ups sent.");
+    expect(digest.html).toContain('<html lang="en">');
+  });
 });
 
 describe("isDigestDue", () => {
@@ -104,7 +119,8 @@ describe("isDigestDue", () => {
 describe("sinceLabel", () => {
   it("says hier after one day and the weekday after a weekend", () => {
     const monday = new Date(Date.UTC(2026, 9, 12, 6));
-    expect(sinceLabel(new Date(Date.UTC(2026, 9, 11, 6)), monday, "Europe/Paris")).toBe("hier");
-    expect(sinceLabel(new Date(Date.UTC(2026, 9, 9, 6)), monday, "Europe/Paris")).toBe("vendredi");
+    expect(sinceLabel(new Date(Date.UTC(2026, 9, 11, 6)), monday, "Europe/Paris", "fr")).toBe("hier");
+    expect(sinceLabel(new Date(Date.UTC(2026, 9, 9, 6)), monday, "Europe/Paris", "fr")).toBe("vendredi");
+    expect(sinceLabel(new Date(Date.UTC(2026, 9, 9, 6)), monday, "Europe/Paris", "en")).toBe("Friday");
   });
 });

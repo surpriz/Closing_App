@@ -1,9 +1,12 @@
 import { generateText, Output } from "ai";
 import { z } from "zod";
 
+import type { UiLocale } from "@/i18n/locale";
 import { prisma } from "@/lib/db";
+import { toUiLocale } from "@/lib/seller-locale";
 
 import { getLanguageModel, THINKING_ROOM_TOKENS } from "../ai/provider";
+import { sellerLanguageName } from "../ai/seller-language";
 import { recordAiUsage } from "../ai/usage";
 
 /**
@@ -18,7 +21,8 @@ const offerSchema = z.object({
   valueProps: z.string().nullable(),
 });
 
-const SYSTEM = `From a commercial document (proposal, quote, résumé, deck) sent by a seller, describe in French, in the seller's own terms:
+// The settings are read by the seller: their language, not the document's
+const system = (locale: UiLocale) => `From a commercial document (proposal, quote, résumé, deck) sent by a seller, describe in ${sellerLanguageName(locale)}, in the seller's own terms:
 - offerDescription: what the seller sells, in one or two sentences;
 - targetCustomer: who it is for, one sentence, or null if the document doesn't say;
 - valueProps: why a customer would pick them (results, experience, guarantees stated in the document), one or two sentences, or null.
@@ -32,6 +36,7 @@ export async function inferOfferFromDocument(documentId: string) {
     select: {
       name: true,
       organizationId: true,
+      owner: { select: { locale: true } },
       organization: { select: { settings: true } },
       pages: { select: { summary: true, text: true }, orderBy: { pageNumber: "asc" } },
     },
@@ -54,7 +59,7 @@ export async function inferOfferFromDocument(documentId: string) {
   try {
     const { output, usage } = await generateText({
       model: llm.model,
-      system: SYSTEM,
+      system: system(toUiLocale(document.owner?.locale)),
       prompt: `Document title: ${document.name}\n<document>\n${content}\n</document>`,
       output: Output.object({ schema: offerSchema }),
       maxOutputTokens: THINKING_ROOM_TOKENS + 400,

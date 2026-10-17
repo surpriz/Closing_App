@@ -7,6 +7,7 @@ const ctx: GuardContext = {
   channel: "EMAIL",
   proposalUrl: url,
   sourceText: "Total : 12 000,00 € HT. Acompte de 30 %. Option B à 1 500 €. Offre valable jusqu'au 15 novembre.",
+  locale: "fr",
 };
 const codes = (body: string, subject: string | null = "Un point ?", context = ctx) =>
   lintFollowup({ subject, body }, context).map((issue) => issue.code);
@@ -14,6 +15,13 @@ const codes = (body: string, subject: string | null = "Un point ?", context = ct
 const ok = `Bonjour Anne,\n\nSi l'enveloppe coince, on peut moduler certaines options. On en parle 15 minutes ?\n\n${url}\n\nJérôme`;
 
 describe("lintFollowup", () => {
+  it("explains the issues in the seller's language", () => {
+    const [fr] = lintFollowup({ subject: null, body: "Bonjour" }, ctx);
+    const [en] = lintFollowup({ subject: null, body: "Hello" }, { ...ctx, locale: "en" });
+    expect(fr.message).toBe("Le lien de la proposition manque.");
+    expect(en.message).toBe("The proposal link is missing.");
+  });
+
   it("passes a clean message", () => {
     expect(codes(ok)).toEqual([]);
   });

@@ -1,6 +1,7 @@
 "use client";
 
 import { Check, ChevronRight } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import {
@@ -20,6 +21,7 @@ export function ExtensionConnect({
   extensionIds: string[];
   account: { email: string; workspace: string };
 }) {
+  const t = useTranslations("settings.extensionConnect");
   const [status, setStatus] = useState<"idle" | "pending" | "done" | "missing">(
     "idle",
   );
@@ -46,8 +48,7 @@ export function ExtensionConnect({
   if (!nonce) {
     return (
       <p className="text-body text-muted-foreground">
-        Ouvrez l&apos;extension Clozer dans Chrome et cliquez sur « Connecter
-        Clozer » pour arriver ici.
+        {t("noNonce")}
       </p>
     );
   }
@@ -57,11 +58,10 @@ export function ExtensionConnect({
       <div className="space-y-4 rounded-xl bg-card p-6 ring-1 ring-foreground/85">
         <p className="flex items-center gap-2 text-heading">
           <Check className="size-4 text-success" aria-hidden />
-          Clozer est connecté à Chrome
+          {t("doneTitle")}
         </p>
         <p className="text-body text-muted-foreground">
-          Revenez dans Gmail ou Outlook : joignez un PDF, le lien se fait tout
-          seul. Vous pouvez fermer cet onglet.
+          {t("doneHint")}
         </p>
         {connectedId && <NotificationCheck extensionId={connectedId} />}
       </div>
@@ -71,18 +71,19 @@ export function ExtensionConnect({
   return (
     <div className="space-y-4 rounded-xl bg-card p-6 ring-1 ring-foreground/85">
       <p className="text-body">
-        L&apos;extension créera les liens dans l&apos;espace{" "}
-        <strong>{account.workspace}</strong>, au nom de {account.email}.
+        {t.rich("account", {
+          workspace: account.workspace,
+          email: account.email,
+          b: (chunks) => <strong>{chunks}</strong>,
+        })}
       </p>
       {status === "missing" && (
         <p role="alert" className="text-small text-destructive">
-          L&apos;extension n&apos;a pas répondu. Vérifiez qu&apos;elle est
-          installée dans ce navigateur, puis réessayez depuis son bouton «
-          Connecter Clozer ».
+          {t("missing")}
         </p>
       )}
       <Button onClick={connect} disabled={status === "pending"}>
-        {status === "pending" ? "Connexion…" : "Connecter Clozer"}
+        {status === "pending" ? t("connecting") : t("connect")}
       </Button>
     </div>
   );
@@ -94,6 +95,7 @@ export function ExtensionConnect({
  * two steps, with emails turned on meanwhile.
  */
 function NotificationCheck({ extensionId }: { extensionId: string }) {
+  const t = useTranslations("settings.extensionConnect");
   const [resent, setResent] = useState(false);
   const isMac =
     typeof navigator !== "undefined" && /Mac/.test(navigator.userAgent);
@@ -111,44 +113,39 @@ function NotificationCheck({ extensionId }: { extensionId: string }) {
     <details className="group border-t border-border pt-4" onToggle={missed}>
       <summary className="flex cursor-pointer list-none items-center gap-1.5 text-small text-muted-foreground outline-none hover:text-foreground focus-visible:underline [&::-webkit-details-marker]:hidden">
         <ChevronRight className="size-4 transition-transform group-open:rotate-90" />
-        Je n&apos;ai pas vu la notification « Clozer est prêt »
+        {t("notificationMissed")}
       </summary>
       <div className="mt-3 space-y-3">
         <p className="text-body">
-          Votre ordinateur bloque sans doute les notifications de Chrome. Deux
-          clics pour les autoriser :
+          {t("notificationBlocked")}
         </p>
         {isMac ? (
           <ol className="list-decimal space-y-1 pl-5 text-body text-muted-foreground">
             <li>
-              Ouvrez{" "}
-              <a
-                className="underline"
-                href="x-apple.systempreferences:com.apple.Notifications-Settings.extension"
-              >
-                Réglages Système › Notifications
-              </a>
-              .
+              {t.rich("macOpen", {
+                link: (chunks) => (
+                  <a
+                    className="underline"
+                    href="x-apple.systempreferences:com.apple.Notifications-Settings.extension"
+                  >
+                    {chunks}
+                  </a>
+                ),
+              })}
             </li>
-            <li>
-              Choisissez Google Chrome, activez « Autoriser les notifications ».
-            </li>
+            <li>{t("macAllow")}</li>
           </ol>
         ) : (
           <ol className="list-decimal space-y-1 pl-5 text-body text-muted-foreground">
-            <li>Ouvrez Paramètres › Système › Notifications.</li>
-            <li>Activez les notifications de Google Chrome.</li>
+            <li>{t("windowsOpen")}</li>
+            <li>{t("windowsAllow")}</li>
           </ol>
         )}
         <p className="text-small text-muted-foreground">
-          En attendant, les alertes s&apos;affichent dans un bandeau en haut de
-          Gmail ou Outlook, et vous les recevez aussi par email (modifiable dans
-          Réglages › Être prévenu).
+          {t("meanwhile")}
         </p>
         <Button variant="outline" onClick={resend}>
-          {resent
-            ? "Renvoyée, vous la voyez ?"
-            : "Renvoyer une notification de test"}
+          {resent ? t("resent") : t("resend")}
         </Button>
       </div>
     </details>

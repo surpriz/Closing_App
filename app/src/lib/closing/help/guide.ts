@@ -1,8 +1,12 @@
 /**
  * What the help assistant knows about Clozer, for logged-in users. Written
  * from the app's own screens: update it with every feature that changes
- * what a user sees or can do. French, like the dashboard.
+ * what a user sees or can do. French; the English version is guide.en.ts.
  */
+import type { UiLocale } from "@/i18n/locale";
+
+import { HELP_GUIDE_EN } from "./guide.en";
+
 export const HELP_GUIDE = `## Ce qu'est Clozer
 - Clozer remplace la pièce jointe par un lien suivi. Le vendeur dépose un document (devis, proposition,
   présentation en PDF, page web ou pitch vidéo), crée un lien par prospect et l'envoie.
@@ -13,12 +17,12 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
 - Les lectures du vendeur connecté à Clozer ne comptent pas, ni les robots ni les aperçus automatiques (Slack,
   LinkedIn).
 - Navigation principale (onglets en haut, barre en bas sur téléphone) : Aujourd'hui (/dashboard), Documents
-  (/documents), Réglages (/settings). Équipe (/equipe) s'ajoute pour les propriétaires et admins dès que
-  l'espace a un deuxième membre (sinon : Réglages → Équipe → « Inviter un commercial », et /equipe reste
-  accessible par son adresse). Prospection (/prospection) n'existe que pour les espaces où elle est activée.
+  (/documents), Réglages (/settings). Équipe (/team) s'ajoute pour les propriétaires et admins dès que
+  l'espace a un deuxième membre (sinon : Réglages → Équipe → « Inviter un commercial », et /team reste
+  accessible par son adresse). Prospection (/prospecting) n'existe que pour les espaces où elle est activée.
 - Bouton « ? » en haut à droite : Poser une question (l'assistant d'aide, aussi pour les suggestions et les
-  bugs), Comment ça marche (/comment-ca-marche), Questions fréquentes (/faq), Revoir la prise en main
-  (/bienvenue).
+  bugs), Comment ça marche (/how-it-works), Questions fréquentes (/faq), Revoir la prise en main
+  (/welcome).
 - Menu du compte (avatar en haut à droite) : Données et confidentialité (/settings#donnees), choix du thème,
   Se déconnecter.
 
@@ -280,7 +284,7 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
   documents, invite et retire des membres.
 - Propriétaire : comme un admin, plus les liens sans commercial attitré, la possibilité de nommer un autre
   propriétaire et de supprimer l'espace.
-- Page Équipe (/equipe) : chiffres En cours, Ça avance, Ça glisse, À classer, Pipeline ; tableau « Par
+- Page Équipe (/team) : chiffres En cours, Ça avance, Ça glisse, À classer, Pipeline ; tableau « Par
   commercial » (cliquez pour filtrer) ; colonnes Ça avance (à suivre de près), Ça glisse (en train de
   refroidir), À classer (à relancer une dernière fois ou à classer). Ces mots décrivent la vie du deal ; la
   température (Chaud, Tiède, Froid) reste celle du dashboard.
@@ -338,6 +342,11 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
 ## Raccourcis
 - Cmd+K (Ctrl+K sur Windows) ou « Rechercher… » en haut : aller à un prospect, une société, un document ou une
   page (Aujourd'hui, Documents, Comment ça marche, Réglages, Prise en main), ou « Poser une question ».
-- Revoir la prise en main (/bienvenue) : depuis le bouton « ? » ou Comment ça marche. Trois étapes : Votre
+- Revoir la prise en main (/welcome) : depuis le bouton « ? » ou Comment ça marche. Trois étapes : Votre
   messagerie, L'outil (extension, complément ou rien), C'est parti (offre, premier document).
 `;
+
+/** The guide in the user's language, for the help assistant. */
+export function getGuide(locale: UiLocale): string {
+  return locale === "en" ? HELP_GUIDE_EN : HELP_GUIDE;
+}

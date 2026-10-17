@@ -4,7 +4,9 @@ import { generateText, Output } from "ai";
 
 import type { InsightTrigger } from "@/generated/prisma/enums";
 import { ACTIVE_WORKSPACE } from "@/lib/closing/active-workspace";
+import type { UiLocale } from "@/i18n/locale";
 import { prisma } from "@/lib/db";
+import { getNamespaceTranslator } from "@/lib/server-translator";
 
 import { getLanguageModel } from "../ai/provider";
 import { recordAiUsage } from "../ai/usage";
@@ -13,7 +15,7 @@ import { isLinkExpired, notExpired } from "../expiry";
 import { actOnInsight } from "./act";
 import { canAnalyze } from "./budget";
 import { buildDealStory, type DealStory } from "./facts";
-import { ANALYZER_SYSTEM_PROMPT, buildAnalyzerPrompt } from "./prompts";
+import { analyzerSystemPrompt, buildAnalyzerPrompt } from "./prompts";
 import { loadDealForAnalysis } from "./queries";
 import { insightSchema, type Insight } from "./schema";
 import { validateInsight } from "./validate";
@@ -74,7 +76,7 @@ export async function analyzeDeal(
 
   // Never opened: no behaviour to read, the rules handle timing
   if (!story.opened) {
-    await saveInsight(loaded.link.organizationId, linkId, trigger, inputHash, story, notEngagedInsight(story, loaded.facts.deal.sentAt ?? loaded.facts.deal.createdAt, now), null);
+    await saveInsight(loaded.link.organizationId, linkId, trigger, inputHash, story, notEngagedInsight(story, loaded.facts.deal.sentAt ?? loaded.facts.deal.createdAt, now, loaded.locale), null);
     await clearDirty(linkId);
     return "rules";
   }
@@ -95,8 +97,8 @@ export async function analyzeDeal(
   try {
     const { output, usage } = await generateText({
       model: llm.model,
-      system: ANALYZER_SYSTEM_PROMPT,
-      prompt: buildAnalyzerPrompt(loaded.profile, loaded.deal, story.facts),
+      system: analyzerSystemPrompt(loaded.locale),
+      prompt: buildAnalyzerPrompt(loaded.profile, loaded.deal, story.facts, loaded.locale),
       output: Output.object({ schema: insightSchema }),
       // Sonnet 5.5 thinks before answering and that counts here: leave room
       maxOutputTokens: 8000,
@@ -142,16 +144,16 @@ export async function analyzeDeal(
   }
 }
 
-function notEngagedInsight(story: DealStory, sentAt: Date, now: Date): Insight {
+function notEngagedInsight(story: DealStory, sentAt: Date, now: Date, locale: UiLocale): Insight {
+  const t = getNamespaceTranslator(locale, "server.insight.notEngaged");
   const days = Math.floor((now.getTime() - sentAt.getTime()) / DAY_MS);
   return {
     stage: "NOT_ENGAGED",
     momentum: "STEADY",
     confidence: 100,
     priority: days >= 3 ? 3 : 1,
-    headline: "Pas encore ouvert.",
-    summary:
-      "Le prospect n'a pas encore ouvert la proposition. Rien à analyser tant qu'il ne l'a pas lue : les relances de rappel s'en occupent.",
+    headline: t("headline"),
+    summary: t("summary"),
     signals: [],
     frictions: [],
     risks: [],
@@ -161,7 +163,7 @@ function notEngagedInsight(story: DealStory, sentAt: Date, now: Date): Insight {
       timing: "in_2_business_days",
       recipient: null,
       prospectId: story.mainProspectId,
-      why: "Aucune lecture pour l'instant.",
+      why: t("why"),
       factIds: story.facts.filter((f) => f.kind === "QUIET").map((f) => f.id),
     },
     followupBrief: null,

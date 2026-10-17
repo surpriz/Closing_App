@@ -1,12 +1,14 @@
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 import { PERIODS, type PeriodKey } from "@/lib/closing/dashboard/period";
 import { cn } from "@/lib/utils";
 
 /** Plain links: the period lives in the URL and survives live refreshes. */
 export function PeriodTabs({ current }: { current: PeriodKey }) {
+  const t = useTranslations("today.period");
   return (
-    <nav aria-label="Période" className="flex border border-border text-small">
+    <nav aria-label={t("nav")} className="flex border border-border text-small">
       {(Object.keys(PERIODS) as PeriodKey[]).map((key) => (
         <Link
           key={key}
@@ -18,7 +20,7 @@ export function PeriodTabs({ current }: { current: PeriodKey }) {
             key === current && "bg-foreground font-medium text-background hover:text-background",
           )}
         >
-          {PERIODS[key].label}
+          {t(`${key}.label`)}
         </Link>
       ))}
     </nav>

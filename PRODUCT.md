@@ -32,12 +32,12 @@ Clozer turns a proposal (PDF, web page or video) into one tracked link per prosp
 
 ## Capabilities and Constraints
 - Stack: Next.js app (`app/`), separate marketing site (`landing/`, www.clozer.club), WXT extension (`extension/`), Office.js add-in (`outlook/`). Tailwind v4, shadcn on Base UI.
-- Seller-side UI is French only.
+- Seller-side UI is French and English (next-intl, `app/messages/{fr,en}`), picked per seller (`User.locale`). Emails, alerts and AI notes to the seller follow it; prospect-facing pages and messages follow the prospect's language.
 - Temperature (hot / warm / cold) is the product's core signal.
 - Pricing: free during the beta. No billing yet. Segment offers exist in intent only; no prices or plan names are decided.
 
 ## Brand Commitments
-- Name: Clozer. Voice: direct, plain French, short sentences, no corporate filler.
+- Name: Clozer. Voice: direct, plain, short sentences, no corporate filler. French addresses the seller as "vous"; English uses a plain, direct "you".
 - The previous visual identity ("Encre & température") is being replaced; no visual element is binding.
 - The result must not feel like a SaaS template, cold/corporate, gimmicky, or dense.
 

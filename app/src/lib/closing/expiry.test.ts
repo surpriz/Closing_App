@@ -91,10 +91,10 @@ describe("setting a date", () => {
   });
 
   it("refuses a past date or one more than a year ahead", () => {
-    expect(expiryError(new Date(now.getTime() - 1), now)).toBe("Choisissez une date à venir.");
-    expect(expiryError(new Date(now.getTime() + 400 * DAY), now)).toBe("Un an maximum.");
+    expect(expiryError(new Date(now.getTime() - 1), now)).toBe("expiryPast");
+    expect(expiryError(new Date(now.getTime() + 400 * DAY), now)).toBe("expiryTooFar");
     expect(expiryError(new Date(now.getTime() + DAY), now)).toBeNull();
-    expect(expiryError(new Date("nope"), now)).toBe("Choisissez une date à venir.");
+    expect(expiryError(new Date("nope"), now)).toBe("expiryPast");
   });
 
   it("reactivates only a link that was locked and opens again", () => {

@@ -14,6 +14,7 @@ import {
   Receipt,
   Send,
 } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 
 import { formatDate, formatRelative } from "@/lib/format";
 
@@ -57,8 +58,10 @@ const ICONS: Record<TimelineItem["kind"], React.ReactNode> = {
 };
 
 export function ActivityTimeline({ items }: { items: TimelineItem[] }) {
+  const t = useTranslations("deal.activityTimeline");
+  const locale = useLocale();
   if (items.length === 0) {
-    return <p className="text-small text-muted-foreground">Aucune activité.</p>;
+    return <p className="text-small text-muted-foreground">{t("empty")}</p>;
   }
 
   return (
@@ -77,9 +80,9 @@ export function ActivityTimeline({ items }: { items: TimelineItem[] }) {
             </span>
             <time
               className="text-micro text-muted-foreground"
-              title={formatDate(item.at)}
+              title={formatDate(item.at, locale)}
             >
-              {formatRelative(item.at)}
+              {formatRelative(item.at, locale)}
             </time>
           </div>
           {item.detail && (

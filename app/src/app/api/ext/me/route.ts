@@ -4,7 +4,7 @@ import { withExtensionAuth } from "@/lib/extension-auth";
 
 export const GET = withExtensionAuth(async (_request, { user, organization }) =>
   Response.json({
-    user: { name: user.name, email: user.email },
+    user: { name: user.name, email: user.email, locale: user.locale },
     organization,
     appOrigin: getPublicAppUrl(),
     ...extensionRemoteConfig(),

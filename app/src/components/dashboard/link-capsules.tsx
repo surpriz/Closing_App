@@ -1,3 +1,5 @@
+import { useTranslations } from "next-intl";
+
 import { PageCapsuleControl, type CapsuleSummary } from "@/components/dashboard/page-capsule";
 
 export type LinkCapsuleRow = CapsuleSummary & { pageNumber: number; forLink: boolean };
@@ -21,6 +23,7 @@ export function LinkCapsules({
   canEdit: boolean;
   uploadPrefix: string;
 }) {
+  const t = useTranslations("deal.linkCapsules");
   const byPage = new Map(capsules.map((c) => [c.pageNumber, c]));
   const target = (pageNumber: number) => ({ documentId, linkId, pageNumber, uploadPrefix });
   const withCapsule = pages.filter((p) => byPage.has(p.pageNumber));
@@ -35,17 +38,17 @@ export function LinkCapsules({
               <span className="font-mono text-small text-muted-foreground">P.{page.pageNumber}</span>
               <div className="min-w-0 space-y-2">
                 <p className="text-small text-muted-foreground">
-                  {capsule.forLink ? "Enregistrée pour ce prospect" : "Capsule du document, vue par tous les prospects"}
+                  {capsule.forLink ? t("forLink") : t("documentCapsule")}
                 </p>
                 {canEdit && capsule.forLink ? (
                   <PageCapsuleControl target={target(page.pageNumber)} capsule={capsule} legacy />
                 ) : (
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="text-body">
-                      {capsule.hookText ?? "Sans phrase d'accroche"}
+                      {capsule.hookText ?? t("noHook")}
                       <span className="text-muted-foreground">
                         {" "}
-                        · {capsule.plays === 0 ? "pas encore regardée ici" : `regardée ${capsule.plays} fois ici`}
+                        · {capsule.plays === 0 ? t("notWatched") : t("watched", { count: capsule.plays })}
                       </span>
                     </p>
                   </div>

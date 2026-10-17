@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { WELCOME_PAGE } from "@/lib/closing/capsules/resolve";
 
 import { PageCapsuleControl, type CapsuleSummary } from "./page-capsule";
@@ -23,27 +25,28 @@ export function WelcomeMessage({
   linkWelcome: CapsuleSummary | null;
   uploadPrefix: string;
 }) {
+  const t = useTranslations("onboarding.welcomeMessage");
   const forDocument = { documentId, linkId: null, pageNumber: WELCOME_PAGE, uploadPrefix };
   const forLink = linkId ? { documentId, linkId, pageNumber: WELCOME_PAGE, uploadPrefix } : null;
 
   if (forLink && linkWelcome) {
     return (
       <div className="space-y-1.5">
-        <p className="text-small text-muted-foreground">Version pour ce prospect, à la place de celle du document</p>
+        <p className="text-small text-muted-foreground">{t("linkVersion")}</p>
         <PageCapsuleControl target={forLink} capsule={linkWelcome} />
       </div>
     );
   }
 
   if (!documentWelcome) {
-    return <PageCapsuleControl target={forDocument} capsule={null} addLabel="Enregistrer un mot d'accueil" />;
+    return <PageCapsuleControl target={forDocument} capsule={null} addLabel={t("record")} />;
   }
 
   return (
     <div className="space-y-2">
       <PageCapsuleControl target={forDocument} capsule={documentWelcome} />
       {forLink && (
-        <PageCapsuleControl target={forLink} capsule={documentWelcome} inherited addLabel="Version perso pour ce prospect" />
+        <PageCapsuleControl target={forLink} capsule={documentWelcome} inherited addLabel={t("personal")} />
       )}
     </div>
   );

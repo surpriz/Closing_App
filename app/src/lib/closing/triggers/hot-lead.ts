@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { toUiLocale } from "@/lib/seller-locale";
 
 import { DAY_MS, LIVE_VIEW_WINDOW_MS } from "../constants";
 import { detectCallMoment, type CallMomentFacts } from "../notify/call-moment";
@@ -23,7 +24,8 @@ async function alreadySignaled(linkId: string, now: Date) {
 }
 
 async function signal(linkId: string, viewId: string, facts: CallMomentFacts, now: Date) {
-  const moment = detectCallMoment(facts);
+  const link = await prisma.link.findUnique({ where: { id: linkId }, select: { createdBy: { select: { locale: true } } } });
+  const moment = detectCallMoment(facts, toUiLocale(link?.createdBy?.locale));
   if (!moment) return;
   await notifySeller({
     linkId,

@@ -1,6 +1,7 @@
 "use client";
 
 import { Check, Copy } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -18,13 +19,14 @@ export function CopyButton({
   size?: "sm" | "default" | "lg";
 }) {
   const [copied, setCopied] = useState(false);
+  const t = useTranslations("common.copyButton");
 
   return (
     <Button
       type="button"
       variant={variant}
       size={label ? (size ?? "default") : "icon-xs"}
-      aria-label={label ? undefined : "Copier le lien"}
+      aria-label={label ? undefined : t("copyLink")}
       onClick={async () => {
         await navigator.clipboard.writeText(value);
         setCopied(true);
@@ -32,7 +34,7 @@ export function CopyButton({
       }}
     >
       {copied ? <Check /> : <Copy />}
-      {label && (copied ? "Copié" : label)}
+      {label && (copied ? t("copied") : label)}
     </Button>
   );
 }

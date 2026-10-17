@@ -1,0 +1,218 @@
+{
+  "common": {
+    "someone": "A prospect",
+    "doc": "“{name}”",
+    "quote": "“{text}”",
+    "lineQuote": ": “{text}”",
+    "viewDeal": "View the deal",
+    "reply": "Reply",
+    "dealLine": "The deal: {url}",
+    "footer": "Manage my notifications"
+  },
+  "message": {
+    "linkExtensionRequested": {
+      "body": "The link to {doc} has expired. {who} is asking to reopen it.",
+      "button": "Extend the link",
+      "email": "Their email: {email}",
+      "subject": "{who} is asking for more time",
+      "line": "{who} is asking for more time on {doc}, which has expired"
+    },
+    "linkExpiring": {
+      "subject": "{who}'s link expires tomorrow",
+      "lineDate": "{doc} ({who}) expires on {date}",
+      "lineSoon": "{doc} ({who}) expires in less than 24 hours",
+      "bodyDate": "{doc} will no longer be available to {who} after {date}. Extend it or follow up before then.",
+      "bodyTomorrow": "{doc} will no longer be available to {who} after tomorrow. Extend it or follow up before then."
+    },
+    "prospectValidated": {
+      "body": "{who} just clicked “Accept & sign” on {doc}. The page told them you'd get back to them quickly.",
+      "subject": "{who} approved your proposal",
+      "line": "{who} approved {doc}"
+    },
+    "meetingBooked": {
+      "bodyDate": "{who} just booked a meeting from {doc}, for {date}. Automatic follow-ups on this deal are stopped.",
+      "body": "{who} just booked a meeting from {doc}. Automatic follow-ups on this deal are stopped.",
+      "noDate": "The date and time are in your calendar.",
+      "subjectDate": "{who} booked a meeting for {date}",
+      "subject": "{who} booked a meeting",
+      "lineDate": "{who} booked a meeting for {date} from {doc}",
+      "line": "{who} booked a meeting from {doc}"
+    },
+    "changeRequested": {
+      "body": "{who} is asking for a change on {doc}.",
+      "subject": "{who} is asking for a change",
+      "line": "{who} is asking for a change on {doc}"
+    },
+    "quoteRequested": {
+      "body": "{who} looked at {doc} and is asking for a quote. Automatic follow-ups on this deal are stopped.",
+      "subject": "{who} is asking for a quote",
+      "line": "{who} is asking for a quote after {doc}"
+    },
+    "prospectQuestion": {
+      "body": "{who} asked a question about {doc}. The assistant couldn't answer and told them you'd get back to them.",
+      "dealAndChat": "The deal and the conversation: {url}",
+      "subject": "{who} has a question about your proposal",
+      "line": "{who} has a question about {doc}"
+    },
+    "voiceComment": {
+      "bodyPage": "{who} recorded a voice comment on page {page} of {doc}.",
+      "body": "{who} recorded a voice comment on {doc}.",
+      "noTranscript": "No transcript this time, listen to it on the deal page.",
+      "listen": "Listen to it: {url}",
+      "subject": "{who} left you a voice message",
+      "linePage": "{who} left a voice note on page {page} of {doc}",
+      "line": "{who} left a voice note on {doc}"
+    },
+    "draftReady": {
+      "subject": "Follow-up to review: {who}",
+      "line": "A follow-up for {who} ({doc}) is waiting for your OK",
+      "body": "A follow-up for {who} ({doc}) is ready. Read it and approve it: nothing goes out without you.",
+      "button": "Review the follow-up"
+    },
+    "readers": {
+      "reasonFallback": "Someone new is reading your proposal",
+      "subjectCommittee": "{who}: {count} people are reading your proposal",
+      "subjectCommitteeMany": "{who}: several people are reading your proposal",
+      "subjectDecisionMaker": "A decision-maker at {who} is reading your proposal",
+      "subjectForwarded": "{who} reshared your proposal",
+      "subjectNewReader": "New reader on your proposal",
+      "hintCommittee": "The committee is looking, now's the time to call.",
+      "hint": "Now's the time to get back in touch.",
+      "line": "{who} · {doc}: {reason}. {hint}",
+      "body": "{reason} ({doc}).",
+      "button": "See who's reading"
+    },
+    "hot": {
+      "reasonMulti": "{count} people reading at the same time",
+      "reasonMultiMany": "Several people reading at the same time",
+      "reasonBack": "Back after {days} days without reading",
+      "reasonBackSome": "Back after a few days without reading",
+      "subject": "{who} is reading your proposal right now",
+      "line": "{who} is reading {doc} right now. {reason}, now's the time to call.",
+      "body": "{who} is reading {doc} right now. {reason}.",
+      "goodMoment": "It's a good time to call.",
+      "button": "Watch the live read"
+    }
+  },
+  "notice": {
+    "on": "On {doc}.",
+    "linkExtensionRequested": {
+      "title": "{who} wants more time",
+      "body": "{doc} has expired. Extend it in one click."
+    },
+    "linkExpiring": {
+      "title": "Expiring soon: {who}",
+      "bodyDate": "{doc} expires on {date}. Extend or follow up.",
+      "bodyTomorrow": "{doc} expires tomorrow. Extend or follow up."
+    },
+    "prospectQuestion": {
+      "title": "{who} has a question"
+    },
+    "voiceComment": {
+      "title": "{who} left a voice note",
+      "bodyPage": "Page {page} of {doc}."
+    },
+    "prospectValidated": {
+      "title": "{who} approved",
+      "body": "{doc} is approved. Get back to this prospect quickly."
+    },
+    "meetingBooked": {
+      "title": "{who} booked a meeting",
+      "bodyDate": "Meeting on {date}, from {doc}.",
+      "body": "From {doc}. The date is in your calendar."
+    },
+    "changeRequested": {
+      "title": "{who} is asking for a change"
+    },
+    "quoteRequested": {
+      "title": "{who} is asking for a quote",
+      "bodyAfter": "After {doc}."
+    },
+    "draftReady": {
+      "title": "Follow-up to review",
+      "body": "A follow-up for {who} is waiting for your OK."
+    },
+    "committeeLive": {
+      "title": "Committee reading at {who}",
+      "reasonFallback": "Several people are reading"
+    },
+    "decisionMaker": {
+      "title": "Decision-maker reading: {who}",
+      "reasonFallback": "A decision-maker is reading your proposal"
+    },
+    "newReader": {
+      "title": "New reader at {who}",
+      "reasonFallback": "Someone new is reading your proposal"
+    },
+    "hot": {
+      "title": "{who} is reading your proposal",
+      "reasonMulti": "{count} people reading at the same time",
+      "reasonMultiMany": "Several people reading at the same time",
+      "reasonBack": "Back after {days} days",
+      "reasonBackSome": "Back after a few days"
+    },
+    "callNow": "{reason}. Now's the time to call.",
+    "reason": "{reason}."
+  },
+  "digest": {
+    "subjectTodo": "This morning: {count, plural, one {# prospect} other {# prospects}} to contact",
+    "subjectActions": "{count, plural, one {# prospect reply} other {# prospect replies}} since {since}",
+    "subjectExpiring": "{count, plural, one {# link expires} other {# links expire}} soon",
+    "subjectAutoSent": "Clozer followed up with {count, plural, one {# prospect} other {# prospects}} for you",
+    "subjectDrafts": "{count, plural, one {# follow-up is} other {# follow-ups are}} waiting for your OK",
+    "todoHeading": "To do today",
+    "actionsHeading": "Replies since {since}",
+    "action": {
+      "validated": "{label} approved",
+      "change": "{label} is asking for a change",
+      "quote": "{label} is asking for a quote",
+      "extension": "{label} is asking for more time",
+      "meeting": "{label} booked a meeting",
+      "question": "{label} asked a question"
+    },
+    "quote": "“{text}”",
+    "expiringHeading": "Expiring soon",
+    "expiringDetail": "Locks on {when}. Extend or follow up before then.",
+    "facts": {
+      "readers": "{count, plural, one {# prospect read} other {# prospects read}} your proposal",
+      "followupsSent": "{count, plural, one {# follow-up sent} other {# follow-ups sent}}",
+      "followupsFailed": "{count, plural, one {# follow-up failed} other {# follow-ups failed}}",
+      "unsubscribed": "{count, plural, one {# unsubscribe} other {# unsubscribes}}"
+    },
+    "sinceHeading": "Since {since}",
+    "autoSentHeading": "Sent on their own",
+    "whatsapp": "WhatsApp message",
+    "draftsLine": "{count, plural, one {# follow-up is} other {# follow-ups are}} waiting for your OK.",
+    "reviewButton": "Review them",
+    "openButton": "Open Clozer",
+    "footer": "Adjust or turn off this summary",
+    "yesterday": "yesterday"
+  },
+  "readerMap": {
+    "unidentifiedReader": "Unidentified reader {letter}",
+    "unidentified": "Unidentified reader",
+    "network": "Unidentified network {n}",
+    "personal": "Personal addresses",
+    "unknownNetwork": "Unknown network"
+  },
+  "readers": {
+    "roleTagged": "{role}, tagged",
+    "roleDetected": "{role}, detected",
+    "committee": "{count} people reading at the same time{among}: the committee is looking at your proposal",
+    "amongOne": ", including a decision-maker",
+    "amongMany": ", including {count} decision-makers",
+    "forwardedInternal": "Reshared internally: {name} is reading your proposal",
+    "external": "{name}{domain} is reading your proposal",
+    "probableNew": "Probably a new reader (another device)",
+    "decisionMaker": "{name} ({role}){forwarded} is reading your proposal",
+    "forwarded": ", who the proposal was reshared with,",
+    "withOthers": "{reason}, with {count} other people right now"
+  },
+  "callMoment": {
+    "multiViewer": "{count} people reading at the same time",
+    "reopened": "Back after {days} days without reading",
+    "pricing": "Lingering on the pricing",
+    "firstOpen": "Opening your proposal for the first time",
+    "hotDeal": "Hot deal, reading it again"
+  }
+}

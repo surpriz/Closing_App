@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronRight } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -62,8 +63,6 @@ type Props = {
   canEditWorkspace: boolean;
 };
 
-const LOCKED_NOTE = "Réglé par un administrateur de l'espace.";
-
 const DIGEST_HOURS = [6, 7, 8, 9, 10];
 
 const QUOTE_EXPIRY_CHOICES = [7, 15, 30];
@@ -82,13 +81,14 @@ function Section({
   locked?: boolean;
   children: React.ReactNode;
 }) {
+  const t = useTranslations("settings.form");
   return (
     <section id={id} className="scroll-mt-24 space-y-3">
       <div className="space-y-1">
         <h2 className="text-heading">{title}</h2>
         <p className="text-body text-muted-foreground">{description}</p>
         {locked && (
-          <p className="text-small text-muted-foreground">{LOCKED_NOTE}</p>
+          <p className="text-small text-muted-foreground">{t("lockedNote")}</p>
         )}
       </div>
       <fieldset
@@ -164,6 +164,7 @@ export function SettingsForm({
   providers,
   canEditWorkspace,
 }: Props) {
+  const t = useTranslations("settings.form");
   const locked = !canEditWorkspace;
   const [state, formAction, pending] = useActionState<SettingsState, FormData>(
     saveWorkspaceSettings,
@@ -183,9 +184,9 @@ export function SettingsForm({
   }, []);
 
   useEffect(() => {
-    if (state?.ok) toast.success("Réglages enregistrés");
+    if (state?.ok) toast.success(t("saved"));
     if (state?.error) toast.error(state.error);
-  }, [state]);
+  }, [state, t]);
 
   return (
     <form
@@ -200,17 +201,15 @@ export function SettingsForm({
         <Section
           id="pilote"
           locked={locked}
-          title="Pilote automatique"
+          title={t("pilot.title")}
           description={
             providers.ai
-              ? "Clozer lit chaque deal comme un closer expérimenté : qui lit quoi, ce qui coince, quand relancer. Il prépare les relances tout seul."
-              : "Les relances sont préparées à partir de règles simples tant qu'aucune IA n'est configurée."
+              ? t("pilot.descriptionAi")
+              : t("pilot.descriptionNoAi")
           }
         >
-          <Row hint="Dans tous les cas : 3 relances par mois et par contact au maximum, jamais juste après une lecture, toujours aux heures de bureau du prospect, et jamais d'allusion au fait que vous voyez ce qu'il lit.">
-            <span className="mb-1 block">
-              Quand Clozer a préparé une relance
-            </span>
+          <Row hint={t("pilot.hint")}>
+            <span className="mb-1 block">{t("pilot.question")}</span>
             <div className="flex flex-col gap-1.5">
               <label className="flex cursor-pointer items-start gap-2.5">
                 <input
@@ -221,11 +220,9 @@ export function SettingsForm({
                   className="mt-2.5 accent-foreground"
                 />
                 <span>
-                  Je la relis et je valide
+                  {t("pilot.copilot")}
                   <span className="block text-small text-muted-foreground">
-                    Recommandé pour commencer. Vous recevez un email, et la
-                    relance vous attend sur le tableau de bord (« Relances à
-                    valider ») et sur la fiche du prospect, rubrique Relances.
+                    {t("pilot.copilotHint")}
                   </span>
                 </span>
               </label>
@@ -238,11 +235,9 @@ export function SettingsForm({
                   className="mt-2.5 accent-foreground"
                 />
                 <span>
-                  Elle part seule quand Clozer est sûr de lui
+                  {t("pilot.autopilot")}
                   <span className="block text-small text-muted-foreground">
-                    Les cas délicats (objection, message du prospect, doute)
-                    attendent quand même votre accord. Un récapitulatif vous
-                    arrive chaque matin.
+                    {t("pilot.autopilotHint")}
                   </span>
                 </span>
               </label>
@@ -252,14 +247,14 @@ export function SettingsForm({
 
         <Section
           id="alertes"
-          title="Être prévenu"
-          description="Seulement quand ça vaut le coup : un prospect qui répond, un bon moment pour appeler, et un point chaque matin. Ces réglages ne concernent que vous."
+          title={t("alerts.title")}
+          description={t("alerts.description")}
         >
-          <Row hint="Validation, demande d'ajustement ou rendez-vous pris : c'est rare, et le prospect attend votre retour.">
+          <Row hint={t("alerts.actionsHint")}>
             <ChannelBox
               name="emailActions"
               value="on"
-              label="Un email dès qu'un prospect valide, demande un ajustement ou prend rendez-vous"
+              label={t("alerts.actionsLabel")}
               defaultChecked={notifications.emailActions}
               onChange={markDirty}
             />
@@ -268,39 +263,38 @@ export function SettingsForm({
             hint={
               notifications.extensionConnected.chrome ||
               notifications.extensionConnected.outlook
-                ? `${
-                    notifications.extensionConnected.chrome &&
-                    notifications.extensionConnected.outlook
-                      ? "Chrome et Outlook connectés."
-                      : notifications.extensionConnected.chrome
-                        ? "Chrome connecté."
-                        : "Outlook connecté."
-                  } Une alerte arrive quand un prospect ouvre votre proposition pour la première fois, revient après un silence, s'attarde sur les tarifs ou la lit à plusieurs. Jamais le soir ni le week-end, 4 par heure au plus.`
-                : "Rien de connecté : installez Chrome ou Outlook plus bas (Réglages avancés) pour être prévenu pendant la lecture."
+                ? t("alerts.callConnected", {
+                    which:
+                      notifications.extensionConnected.chrome &&
+                      notifications.extensionConnected.outlook
+                        ? "both"
+                        : notifications.extensionConnected.chrome
+                          ? "chrome"
+                          : "outlook",
+                  })
+                : t("alerts.callNothingConnected")
             }
           >
-            <span className="mb-1 block">
-              Quand c&apos;est le moment d&apos;appeler
-            </span>
+            <span className="mb-1 block">{t("alerts.callQuestion")}</span>
             <div className="flex flex-col gap-1.5">
               <ChannelBox
                 name="extensionCallMoments"
                 value="on"
-                label="Notification dans Chrome, alerte dans le volet Outlook"
+                label={t("alerts.callExtension")}
                 defaultChecked={notifications.extensionCallMoments}
                 onChange={markDirty}
               />
               <ChannelBox
                 name="emailCallMoments"
                 value="on"
-                label="Un email aussi"
-                note="si l'extension n'est pas ouverte"
+                label={t("alerts.callEmail")}
+                note={t("alerts.callEmailNote")}
                 defaultChecked={notifications.emailCallMoments}
                 onChange={markDirty}
               />
             </div>
           </Row>
-          <Row hint="Qui recontacter aujourd'hui et pourquoi, puis les réponses et lectures de la veille. Du lundi au vendredi, rien s'il n'y a rien à dire.">
+          <Row hint={t("alerts.digestHint")}>
             <label className="flex cursor-pointer items-center gap-2.5">
               <Checkbox
                 name="morningDigest"
@@ -309,7 +303,7 @@ export function SettingsForm({
                 onCheckedChange={markDirty}
               />
               <span>
-                Un compte rendu chaque matin à
+                {t("alerts.digestLabel")}
                 <select
                   name="digestHour"
                   defaultValue={String(notifications.digestHour)}
@@ -317,7 +311,7 @@ export function SettingsForm({
                 >
                   {DIGEST_HOURS.map((hour) => (
                     <option key={hour} value={hour}>
-                      {hour} h
+                      {t("alerts.digestHour", { hour })}
                     </option>
                   ))}
                 </select>
@@ -329,10 +323,8 @@ export function SettingsForm({
             disabled={locked}
             className="min-w-0 divide-y divide-border disabled:opacity-60"
           >
-            <Row hint={locked ? LOCKED_NOTE : undefined}>
-              <span className="mb-1 block">
-                Pour toute l&apos;équipe, prévenir aussi sur
-              </span>
+            <Row hint={locked ? t("lockedNote") : undefined}>
+              <span className="mb-1 block">{t("alerts.teamChannels")}</span>
               <div className="flex flex-wrap gap-x-6 gap-y-2">
                 <ChannelBox
                   name="alertChannels"
@@ -344,33 +336,31 @@ export function SettingsForm({
                 <ChannelBox
                   name="alertChannels"
                   value="WEBHOOK"
-                  label="Outil externe"
+                  label={t("alerts.externalTool")}
                   defaultChecked={initial.alertChannels.includes("WEBHOOK")}
                   onChange={markDirty}
                 />
               </div>
             </Row>
             <div className="space-y-1.5 px-5 py-4">
-              <Label htmlFor="alertEmail">
-                Mettre en copie des emails d&apos;alerte
-              </Label>
+              <Label htmlFor="alertEmail">{t("alerts.ccLabel")}</Label>
               <Input
                 id="alertEmail"
                 name="alertEmail"
                 type="email"
                 defaultValue={initial.alertEmail}
-                placeholder="Facultatif, ex. direction commerciale"
+                placeholder={t("alerts.ccPlaceholder")}
               />
             </div>
             <details className="group px-5 py-4">
               <summary className="flex cursor-pointer list-none items-center gap-1.5 text-body font-medium outline-none focus-visible:underline [&::-webkit-details-marker]:hidden">
                 <ChevronRight className="size-4 transition-transform group-open:rotate-90" />
-                Brancher Slack ou un outil externe
+                {t("alerts.connectSummary")}
               </summary>
               <div className="mt-4 space-y-5">
                 <div className="space-y-1.5">
                   <Label htmlFor="slackWebhookUrl">
-                    Adresse du webhook Slack
+                    {t("alerts.slackLabel")}
                   </Label>
                   <Input
                     id="slackWebhookUrl"
@@ -378,7 +368,7 @@ export function SettingsForm({
                     type="url"
                     placeholder={
                       initial.slackConfigured
-                        ? "Déjà branché, laissez vide pour le garder"
+                        ? t("alerts.slackConfiguredPlaceholder")
                         : "https://hooks.slack.com/services/…"
                     }
                   />
@@ -388,13 +378,13 @@ export function SettingsForm({
                         name="removeSlack"
                         onCheckedChange={markDirty}
                       />{" "}
-                      Débrancher Slack
+                      {t("alerts.removeSlack")}
                     </label>
                   )}
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="outboundWebhookUrl">
-                    Webhook (CRM, Zapier, Make…)
+                    {t("alerts.webhookLabel")}
                   </Label>
                   <Input
                     id="outboundWebhookUrl"
@@ -405,18 +395,18 @@ export function SettingsForm({
                   />
                   {initial.webhookSecret && (
                     <p className="text-small text-muted-foreground">
-                      Chaque envoi est signé (HMAC SHA-256, en-tête{" "}
-                      <code>X-Closing-Signature</code>) avec le secret{" "}
+                      {t.rich("alerts.webhookSigned", {
+                        code: (chunks) => <code>{chunks}</code>,
+                      })}{" "}
                       <code className="break-all text-foreground">
                         {initial.webhookSecret}
                       </code>
                     </p>
                   )}
                   <p className="text-small text-muted-foreground">
-                    Smart Link : <code>reader.opened</code> part dès qu&apos;un prospect venu
-                    d&apos;un cold email se met à lire, avec son email. Dans Zapier ou Make,
-                    branchez-le sur « mettre le lead en pause » de Lemlist ou Instantly.{" "}
-                    <code>reader.hot</code> suit quand il dépasse le seuil chaud.
+                    {t.rich("alerts.smartLink", {
+                      code: (chunks) => <code>{chunks}</code>,
+                    })}
                   </p>
                 </div>
               </div>
@@ -426,11 +416,11 @@ export function SettingsForm({
 
         <Section
           id="agenda"
-          title="Votre agenda"
-          description="Votre page de prise de rendez-vous : vos prospects réservent un créneau depuis vos liens. Ce réglage ne concerne que vous."
+          title={t("agenda.title")}
+          description={t("agenda.description")}
         >
           <div className="space-y-1.5 px-5 py-4">
-            <Label htmlFor="bookingUrl">Lien de prise de rendez-vous</Label>
+            <Label htmlFor="bookingUrl">{t("agenda.label")}</Label>
             <Input
               id="bookingUrl"
               name="bookingUrl"
@@ -438,13 +428,10 @@ export function SettingsForm({
               inputMode="url"
               autoComplete="url"
               defaultValue={notifications.bookingUrl}
-              placeholder="https://calendly.com/vous/30min"
+              placeholder={t("agenda.placeholder")}
             />
             <p className="text-small text-muted-foreground">
-              Calendly et Cal.com s&apos;affichent dans la page du prospect,
-              avec son nom et son email déjà remplis. HubSpot, Google Agenda,
-              Microsoft Bookings et les autres s&apos;ouvrent dans un nouvel
-              onglet. Vide : pas de bouton « Prendre rendez-vous ».
+              {t("agenda.hint")}
             </p>
           </div>
         </Section>
@@ -458,57 +445,59 @@ export function SettingsForm({
           <Section
             id="offre"
             locked={locked}
-            title="Votre offre"
+            title={t("offer.title")}
             description={
               initial.offerInferredFrom
-                ? `Pré-rempli par Clozer à partir de « ${initial.offerInferredFrom} ». Corrigez si besoin et enregistrez : vos relances n'en seront que plus justes.`
-                : "Facultatif. Sans rien ici, Clozer se base sur vos documents ; il pré-remplit cette partie à la lecture du premier."
+                ? t("offer.descriptionInferred", {
+                    document: initial.offerInferredFrom,
+                  })
+                : t("offer.description")
             }
           >
             <div className="space-y-1.5 px-5 py-4">
-              <Label htmlFor="offerDescription">Ce que vous vendez</Label>
+              <Label htmlFor="offerDescription">{t("offer.whatLabel")}</Label>
               <Textarea
                 id="offerDescription"
                 name="offerDescription"
                 rows={3}
                 defaultValue={initial.offerDescription}
-                placeholder="Refonte de sites e-commerce Shopify, de l'audit à la mise en ligne, en 8 à 12 semaines."
+                placeholder={t("offer.whatPlaceholder")}
               />
             </div>
             <div className="space-y-1.5 px-5 py-4">
-              <Label htmlFor="targetCustomer">Vos clients</Label>
+              <Label htmlFor="targetCustomer">{t("offer.customersLabel")}</Label>
               <Input
                 id="targetCustomer"
                 name="targetCustomer"
                 defaultValue={initial.targetCustomer}
-                placeholder="Marques DTC de 2 à 20 M€ de CA, décision par le fondateur ou le directeur e-commerce"
+                placeholder={t("offer.customersPlaceholder")}
               />
             </div>
             <div className="space-y-1.5 px-5 py-4">
-              <Label htmlFor="valueProps">Pourquoi ils vous choisissent</Label>
+              <Label htmlFor="valueProps">{t("offer.whyLabel")}</Label>
               <Textarea
                 id="valueProps"
                 name="valueProps"
                 rows={2}
                 defaultValue={initial.valueProps}
-                placeholder="Prix forfaitaire, taux de conversion +18 % en moyenne, une équipe dédiée"
+                placeholder={t("offer.whyPlaceholder")}
               />
             </div>
             <div className="space-y-1.5 px-5 py-4">
               <Label htmlFor="commonObjections">
-                Les objections que vous entendez souvent
+                {t("offer.objectionsLabel")}
               </Label>
               <Textarea
                 id="commonObjections"
                 name="commonObjections"
                 rows={2}
                 defaultValue={initial.commonObjections}
-                placeholder="Trop cher par rapport à un freelance, peur de perdre le SEO, pas le bon moment"
+                placeholder={t("offer.objectionsPlaceholder")}
               />
             </div>
             <Row>
               <label htmlFor="avgSalesCycleDays">
-                Un deal se signe en général en
+                {t("offer.cycleBefore")}
               </label>
               <Inline
                 id="avgSalesCycleDays"
@@ -518,19 +507,19 @@ export function SettingsForm({
                 max={730}
                 defaultValue={initial.avgSalesCycleDays}
               />
-              jours
+              {t("offer.cycleAfter")}
             </Row>
           </Section>
 
           <Section
             id="liens"
             locked={locked}
-            title="Vos liens"
-            description="Ce que chaque nouveau lien propose d'office. Clozer l'ajuste au document (le décompte ne va que sur les devis et propositions), et tout reste modifiable lien par lien."
+            title={t("links.title")}
+            description={t("links.description")}
           >
-            <Row hint="Passé cette date, le prospect voit le document verrouillé et peut vous demander une prolongation.">
+            <Row hint={t("links.expiryHint")}>
               <span>
-                Un devis ou une proposition expire après
+                {t("links.expiryLabel")}
                 <select
                   name="quoteExpiryDays"
                   defaultValue={initial.quoteExpiryDays?.toString() ?? ""}
@@ -538,10 +527,10 @@ export function SettingsForm({
                 >
                   {QUOTE_EXPIRY_CHOICES.map((days) => (
                     <option key={days} value={days}>
-                      {days} jours
+                      {t("links.expiryDays", { days })}
                     </option>
                   ))}
-                  <option value="">jamais</option>
+                  <option value="">{t("links.expiryNever")}</option>
                 </select>
               </span>
             </Row>
@@ -552,9 +541,7 @@ export function SettingsForm({
                   defaultChecked={initial.voiceCommentsByDefault}
                   onCheckedChange={markDirty}
                 />
-                <span>
-                  Laisser le prospect enregistrer un vocal sur une page
-                </span>
+                <span>{t("links.voiceComments")}</span>
               </label>
             </Row>
             <Row>
@@ -564,7 +551,7 @@ export function SettingsForm({
                   defaultChecked={initial.followupsByDefault}
                   onCheckedChange={markDirty}
                 />
-                <span>Préparer les relances</span>
+                <span>{t("links.followups")}</span>
               </label>
             </Row>
           </Section>
@@ -572,26 +559,26 @@ export function SettingsForm({
           <Section
             id="assistant"
             locked={locked}
-            title="Assistant prospect"
+            title={t("assistant.title")}
             description={
               providers.ai
-                ? "Sur vos documents, il répond aux questions du prospect quand vous n'êtes pas là. Il s'appuie sur le document et sur ce que vous écrivez ici, jamais sur un prix ou une condition inventés. Ce qu'il ne sait pas, il vous le transmet aussitôt."
-                : "Aucune IA n'est configurée : l'assistant reste masqué pour l'instant."
+                ? t("assistant.descriptionAi")
+                : t("assistant.descriptionNoAi")
             }
           >
-            <Row hint="Réglable ensuite lien par lien.">
+            <Row hint={t("assistant.enableHint")}>
               <label className="flex cursor-pointer items-center gap-2.5">
                 <Checkbox
                   name="chatEnabledByDefault"
                   defaultChecked={initial.chatEnabledByDefault}
                   onCheckedChange={markDirty}
                 />
-                <span>Activer l&apos;assistant sur les nouveaux liens</span>
+                <span>{t("assistant.enableLabel")}</span>
               </label>
             </Row>
             <div className="space-y-1.5 px-5 py-4">
               <Label htmlFor="assistantKnowledge">
-                Ce que l&apos;assistant doit savoir
+                {t("assistant.knowledgeLabel")}
               </Label>
               <Textarea
                 id="assistantKnowledge"
@@ -599,14 +586,10 @@ export function SettingsForm({
                 rows={6}
                 maxLength={4000}
                 defaultValue={initial.assistantKnowledge}
-                placeholder={
-                  "Paiement : 30 % à la commande, le solde à la livraison.\nGarantie : 12 mois, support par email sous 24 h ouvrées.\nNos outils : Shopify, Klaviyo. Pas de développement mobile natif."
-                }
+                placeholder={t("assistant.knowledgePlaceholder")}
               />
               <p className="text-small text-muted-foreground">
-                Valable pour tous vos documents : modalités, garanties, SAV,
-                questions fréquentes, précisions techniques. Le prospect peut
-                tout obtenir en posant la question : rien de confidentiel ici.
+                {t("assistant.knowledgeHint")}
               </p>
             </div>
           </Section>
@@ -614,37 +597,37 @@ export function SettingsForm({
           <Section
             id="messages"
             locked={locked}
-            title="Vos messages"
-            description="Les relances sont écrites en votre nom : comment vous signez, et sur quel ton."
+            title={t("messages.title")}
+            description={t("messages.description")}
           >
             <div className="grid gap-4 px-5 py-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="senderName">Signé par</Label>
+                <Label htmlFor="senderName">{t("messages.senderLabel")}</Label>
                 <Input
                   id="senderName"
                   name="senderName"
                   defaultValue={initial.senderName}
-                  placeholder="Jérôme"
+                  placeholder={t("messages.senderPlaceholder")}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="aiTone">Ton</Label>
+                <Label htmlFor="aiTone">{t("messages.toneLabel")}</Label>
                 <Input
                   id="aiTone"
                   name="aiTone"
                   defaultValue={initial.aiTone}
-                  placeholder="direct, vouvoiement, sans jargon"
+                  placeholder={t("messages.tonePlaceholder")}
                 />
               </div>
             </div>
             <div className="space-y-1.5 px-5 py-4">
-              <Label htmlFor="senderSignature">Signature</Label>
+              <Label htmlFor="senderSignature">{t("messages.signatureLabel")}</Label>
               <Textarea
                 id="senderSignature"
                 name="senderSignature"
                 rows={3}
                 defaultValue={initial.senderSignature}
-                placeholder={"Jérôme Laval\nStudio Nova, 06 12 34 56 78"}
+                placeholder={t("messages.signaturePlaceholder")}
               />
             </div>
           </Section>
@@ -660,7 +643,7 @@ export function SettingsForm({
         )}
         aria-hidden={!(dirty || pending)}
       >
-        <span className="text-body">Modifications non enregistrées</span>
+        <span className="text-body">{t("unsaved")}</span>
         <Button
           type="submit"
           variant="secondary"
@@ -668,7 +651,7 @@ export function SettingsForm({
           disabled={pending}
           tabIndex={dirty || pending ? 0 : -1}
         >
-          {pending ? "Enregistrement…" : "Enregistrer les réglages"}
+          {pending ? t("saving") : t("save")}
         </Button>
       </div>
     </form>

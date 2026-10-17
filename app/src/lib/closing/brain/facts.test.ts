@@ -38,6 +38,7 @@ function view(
 
 const base = (overrides: Partial<DealFactsInput> = {}): DealFactsInput => ({
   now: at(10),
+  locale: "fr",
   defaultTimezone: "Europe/Paris",
   businessHours: { start: 9, end: 18, days: [1, 2, 3, 4, 5] },
   deal: {
@@ -64,6 +65,14 @@ describe("buildDealStory", () => {
     expect(story.facts.map((f) => f.id)).toEqual(story.facts.map((_, i) => `F${i + 1}`));
     expect(story.facts[0]).toMatchObject({ kind: "SENT" });
     expect(story.facts[0].text).toContain("« Devis Refonte » envoyée (4 pages)");
+  });
+
+  it("writes the facts in the seller's language", () => {
+    const story = buildDealStory(base({ locale: "en", views: [view("v1", at(1, 19), [[1, 20_000], [3, 180_000]])] }));
+    expect(story.facts[0].text).toBe("[D+0] Proposal “Devis Refonte” sent (4 pages)");
+    const session = story.facts.find((f) => f.kind === "SESSION")!;
+    expect(session.text).toContain("[D+1 Tue 21:00 local time, desktop, Reader A]");
+    expect(session.text).toContain("Pricing p.3 3 min (≈3× the reading time)");
   });
 
   it("describes a session with local time, tagged pages and attention", () => {

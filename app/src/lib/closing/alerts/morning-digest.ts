@@ -1,7 +1,10 @@
+import { INTL_LOCALE, type UiLocale } from "@/i18n/locale";
+import { getTranslator } from "@/i18n/messages";
 import { getPublicAppUrl } from "@/lib/app-origin";
 import { prisma } from "@/lib/db";
 import { isEmailConfigured, sendEmail } from "@/lib/email";
 import { isOwnerRole } from "@/lib/roles";
+import { toUiLocale } from "@/lib/seller-locale";
 
 import { DAY_MS } from "../constants";
 import { dealAction } from "../dashboard/deal-action";
@@ -38,6 +41,7 @@ export async function sendMorningDigests(now = new Date()) {
       user: {
         select: {
           email: true,
+          locale: true,
           notificationPreferences: { select: { organizationId: true, morningDigest: true, digestHour: true, timezone: true, lastDigestAt: true, digestClaimedAt: true } },
         },
       },
@@ -78,6 +82,7 @@ export async function sendMorningDigests(now = new Date()) {
         since,
         now,
         prefs.timezone,
+        toUiLocale(member.user.locale),
       );
       const digest = buildDigest(data);
       if (digest) {
@@ -101,8 +106,10 @@ async function loadDigestData(
   since: Date,
   now: Date,
   timezone: string,
+  locale: UiLocale,
 ): Promise<DigestData> {
   const appUrl = getPublicAppUrl();
+  const i18n = { t: getTranslator(locale), locale };
   const mine = { organizationId, ...sellerLinks(scope) };
 
   const linkLabel = { select: linkLabelSelect } as const;
@@ -158,13 +165,14 @@ async function loadDigestData(
     .map((row) => ({
       label: dealLabel(row.deal),
       documentName: row.deal.document.name,
-      why: row.insightHeadline ?? describeNextAction(row.action, now),
+      why: row.insightHeadline ?? describeNextAction(row.action, now, i18n),
       url: `${appUrl}/links/${row.deal.id}`,
     }));
 
   return {
     appUrl,
-    sinceLabel: sinceLabel(since, now, timezone),
+    locale,
+    sinceLabel: sinceLabel(since, now, timezone, locale),
     todo,
     actions: [
       ...actions.map((a) => ({
@@ -203,7 +211,7 @@ async function loadDigestData(
     expiring: expiring.map((link) => ({
       label: dealLabel(link),
       documentName: link.document.name,
-      when: formatDeadline(link.expiresAt!, "fr-FR", timezone),
+      when: formatDeadline(link.expiresAt!, INTL_LOCALE[locale], timezone),
       url: `${appUrl}/links/${link.id}#expiration`,
     })),
   };

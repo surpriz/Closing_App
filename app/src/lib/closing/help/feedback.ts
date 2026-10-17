@@ -6,7 +6,10 @@ import { getEnv } from "@/lib/env";
 
 import { pageLabel } from "./context";
 
-/** What the help assistant sends the Clozer team: stored, then emailed to HELP_INBOX_EMAIL when set. */
+/**
+ * What the help assistant sends the Clozer team: stored, then emailed to HELP_INBOX_EMAIL when set.
+ * Read by the team, not the seller: stays in French.
+ */
 
 export const FEEDBACK_KINDS = ["SUGGESTION", "BUG", "QUESTION", "OTHER"] as const satisfies readonly HelpFeedbackKind[];
 
@@ -52,7 +55,7 @@ export function feedbackEmail(input: FeedbackInput): EmailContent & { subject: s
     blocks.push({ kind: "text", text: recent.map((text) => `« ${text} »`).join("\n\n") });
   }
   const subject = `[Clozer ${label}] ${input.summary.slice(0, 80)}`;
-  return { subject, preheader: `${label} de ${who}`, title: `${label} de ${input.user.name ?? input.user.email}`, blocks };
+  return { subject, locale: "fr", preheader: `${label} de ${who}`, title: `${label} de ${input.user.name ?? input.user.email}`, blocks };
 }
 
 export async function saveFeedback(input: FeedbackInput & { organizationId: string; userId: string }) {

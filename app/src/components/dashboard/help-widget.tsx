@@ -4,6 +4,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { ArrowUp, Check, LifeBuoy, Loader2, X } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
 import { Bubble, textOf } from "@/components/chat/bubble";
@@ -34,6 +35,8 @@ function wasSent(message: ChatUIMessage) {
 /** The users' own assistant: how Clozer works, advice, and a line to the team. */
 export function HelpWidget({ firstName }: { firstName: string | null }) {
   const pathname = usePathname();
+  const t = useTranslations("nav.helpWidget");
+  const locale = useLocale();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const listRef = useRef<HTMLDivElement>(null);
@@ -87,8 +90,8 @@ export function HelpWidget({ firstName }: { firstName: string | null }) {
   const waiting = busy && (last?.role === "user" || (last && !textOf(last)));
   // Screen readers hear each finished answer once, not every streamed word
   const announcement =
-    status === "ready" && last?.role === "assistant" ? textOf(last) || (wasSent(last) ? "Transmis à l'équipe Clozer." : "") : "";
-  const suggestions = helpSuggestions(pathname);
+    status === "ready" && last?.role === "assistant" ? textOf(last) || (wasSent(last) ? t("sentAnnouncement") : "") : "";
+  const suggestions = helpSuggestions(pathname, locale);
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
@@ -133,12 +136,12 @@ export function HelpWidget({ firstName }: { firstName: string | null }) {
       <button
         type="button"
         data-help-corner
-        aria-label="Poser une question à l'aide Clozer"
+        aria-label={t("launcherAria")}
         onClick={openPanel}
         className="fixed right-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-40 flex h-11 items-center gap-2 border border-foreground bg-card px-3.5 text-small font-semibold shadow-md transition-colors outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/30 sm:bottom-4"
       >
         <LifeBuoy className="size-4" aria-hidden />
-        Aide
+        {t("launcher")}
       </button>
     );
   }
@@ -146,7 +149,7 @@ export function HelpWidget({ firstName }: { firstName: string | null }) {
   return (
     <section
       role="dialog"
-      aria-label="Aide Clozer"
+      aria-label={t("title")}
       onKeyDown={(event) => event.key === "Escape" && setOpen(false)}
       className="fixed inset-0 z-50 flex animate-rise flex-col bg-card sm:inset-auto sm:right-4 sm:bottom-4 sm:z-40 sm:h-[min(620px,calc(100dvh-2rem))] sm:w-[380px] sm:rounded-xl sm:shadow-lg sm:ring-1 sm:ring-foreground/85"
     >
@@ -155,10 +158,10 @@ export function HelpWidget({ firstName }: { firstName: string | null }) {
           <LifeBuoy className="size-5" aria-hidden />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-body font-semibold">Aide Clozer</p>
-          <p className="truncate text-small text-muted-foreground">Questions, conseils, idées, bugs</p>
+          <p className="truncate text-body font-semibold">{t("title")}</p>
+          <p className="truncate text-small text-muted-foreground">{t("subtitle")}</p>
         </div>
-        <Button variant="ghost" size="icon" onClick={() => setOpen(false)} aria-label="Fermer">
+        <Button variant="ghost" size="icon" onClick={() => setOpen(false)} aria-label={t("close")}>
           <X />
         </Button>
       </header>
@@ -168,7 +171,7 @@ export function HelpWidget({ firstName }: { firstName: string | null }) {
       </p>
       <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-4">
         <Bubble role="assistant">
-          {`Bonjour${firstName ? ` ${firstName}` : ""} ! Une question sur Clozer, un conseil, un bug à signaler ou une idée ? Je suis là pour ça.`}
+          {firstName ? t("greeting", { name: firstName }) : t("greetingNoName")}
         </Bubble>
 
         {messages.length === 0 && (
@@ -197,7 +200,7 @@ export function HelpWidget({ firstName }: { firstName: string | null }) {
               {sent && (
                 <p className="flex items-center gap-1.5 pl-1 text-small text-muted-foreground">
                   <Check className="size-3.5" aria-hidden />
-                  Transmis à l&apos;équipe Clozer
+                  {t("sent")}
                 </p>
               )}
             </div>
@@ -208,7 +211,7 @@ export function HelpWidget({ firstName }: { firstName: string | null }) {
           <Bubble role="assistant">
             <span className="flex items-center gap-2 text-muted-foreground">
               <Loader2 className="size-4 animate-spin" aria-hidden />
-              Rédaction…
+              {t("writing")}
             </span>
           </Bubble>
         )}
@@ -216,8 +219,8 @@ export function HelpWidget({ firstName }: { firstName: string | null }) {
         {error && (
           <p role="alert" className="text-center text-small text-destructive">
             {LIMIT_ERRORS.test(error.message)
-              ? "Vous avez posé beaucoup de questions d'un coup. Réessayez un peu plus tard."
-              : "L'assistant est indisponible, réessayez dans un instant."}
+              ? t("quota")
+              : t("unavailable")}
           </p>
         )}
       </div>
@@ -235,18 +238,18 @@ export function HelpWidget({ firstName }: { firstName: string | null }) {
             rows={1}
             value={input}
             maxLength={HELP_MESSAGE_MAX}
-            placeholder="Votre question ou votre idée…"
-            aria-label="Votre question ou votre idée"
+            placeholder={t("placeholder")}
+            aria-label={t("inputAria")}
             onChange={(event) => setInput(event.target.value)}
             onKeyDown={onKeyDown}
             className="max-h-32 min-h-10 resize-none"
           />
-          <Button type="submit" size="icon-lg" disabled={busy || !input.trim()} aria-label="Envoyer">
+          <Button type="submit" size="icon-lg" disabled={busy || !input.trim()} aria-label={t("send")}>
             <ArrowUp />
           </Button>
         </div>
         <p className="pt-2 text-center text-micro text-muted-foreground">
-          Réponses automatiques, l&apos;assistant peut se tromper. Rien n&apos;est transmis sans votre accord.
+          {t("disclaimer")}
         </p>
       </form>
     </section>

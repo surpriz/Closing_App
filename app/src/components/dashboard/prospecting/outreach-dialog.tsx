@@ -2,6 +2,7 @@
 
 import { Link2, Mail } from "lucide-react";
 import NextLink from "next/link";
+import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -9,7 +10,7 @@ import {
   createOutreachLinkAction,
   markOutreachSentAction,
   type OutreachResult,
-} from "@/app/(dashboard)/prospection/actions";
+} from "@/app/(dashboard)/prospecting/actions";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -32,6 +33,7 @@ type Props = {
 type Ready = Exclude<OutreachResult, { error: string }>;
 
 export function OutreachDialog({ suggestionId, documents, hasLink }: Props) {
+  const t = useTranslations("prospecting.outreach");
   const [open, setOpen] = useState(false);
   const [documentId, setDocumentId] = useState(documents[0]?.id ?? "");
   const [result, setResult] = useState<Ready | null>(null);
@@ -54,7 +56,7 @@ export function OutreachDialog({ suggestionId, documents, hasLink }: Props) {
       const outcome = await markOutreachSentAction(linkId);
       if ("error" in outcome) toast.error(outcome.error);
       else {
-        toast.success("C'est parti : le deal apparaît dans votre journée");
+        toast.success(t("sent"));
         setResult((current) => current && { ...current, draft: false });
         setOpen(false);
       }
@@ -69,20 +71,20 @@ export function OutreachDialog({ suggestionId, documents, hasLink }: Props) {
   const copy = () =>
     navigator.clipboard
       .writeText(body)
-      .then(() => toast.success("Message copié"))
-      .catch(() => toast.error("Copie impossible : sélectionnez le texte à la main."));
+      .then(() => toast.success(t("copied")))
+      .catch(() => toast.error(t("copyFailed")));
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={<Button size="sm" />}>
         <Link2 aria-hidden />
-        {hasLink ? "Voir le message" : "Créer un lien"}
+        {hasLink ? t("viewMessage") : t("createLink")}
       </DialogTrigger>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>Premier message</DialogTitle>
+          <DialogTitle>{t("title")}</DialogTitle>
           <DialogDescription>
-            Vous l&apos;envoyez depuis votre boîte mail. Clozer ne relance pas tout seul un contact qui ne vous connaît pas.
+            {t("description")}
           </DialogDescription>
         </DialogHeader>
 
@@ -90,11 +92,17 @@ export function OutreachDialog({ suggestionId, documents, hasLink }: Props) {
           <div className="space-y-3">
             {documents.length === 0 ? (
               <p className="text-small text-muted-foreground">
-                Ajoutez d&apos;abord un document dans <NextLink href="/documents" className="underline">Documents</NextLink>.
+                {t.rich("noDocument", {
+                  link: (chunks) => (
+                    <NextLink href="/documents" className="underline">
+                      {chunks}
+                    </NextLink>
+                  ),
+                })}
               </p>
             ) : (
               <div className="space-y-1.5">
-                <Label htmlFor={`doc-${suggestionId}`}>Document à partager</Label>
+                <Label htmlFor={`doc-${suggestionId}`}>{t("documentLabel")}</Label>
                 <select
                   id={`doc-${suggestionId}`}
                   value={documentId}
@@ -111,35 +119,35 @@ export function OutreachDialog({ suggestionId, documents, hasLink }: Props) {
               </div>
             )}
             <Button onClick={prepare} disabled={pending || (!hasLink && !documentId)}>
-              {pending ? "Rédaction…" : hasLink ? "Afficher le message" : "Créer le lien et rédiger"}
+              {pending ? t("drafting") : hasLink ? t("showMessage") : t("createAndDraft")}
             </Button>
           </div>
         ) : (
           <div className="space-y-3">
             <p className="text-small">
-              <span className="text-muted-foreground">À :</span> {result.email}
+              <span className="text-muted-foreground">{t("to")}</span> {result.email}
               <br />
-              <span className="text-muted-foreground">Objet :</span> {result.subject}
+              <span className="text-muted-foreground">{t("subject")}</span> {result.subject}
             </p>
             <Textarea
-              aria-label="Message à envoyer"
+              aria-label={t("messageLabel")}
               value={body}
               onChange={(event) => setBody(event.target.value)}
               rows={12}
             />
             <DialogFooter>
               <Button variant="outline" onClick={copy}>
-                Copier le message
+                {t("copy")}
               </Button>
               {mailtoFits && (
                 <Button variant="outline" render={<a href={mailto} />} nativeButton={false}>
                   <Mail aria-hidden />
-                  Ouvrir dans ma messagerie
+                  {t("openMail")}
                 </Button>
               )}
               {result.draft && (
                 <Button disabled={pending} onClick={() => markSent(result.linkId)}>
-                  Je l&apos;ai envoyé
+                  {t("markSent")}
                 </Button>
               )}
             </DialogFooter>

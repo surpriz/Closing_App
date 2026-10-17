@@ -1,0 +1,62 @@
+{
+  "loading": "Loading",
+  "error": {
+    "title": "This page couldn't load.",
+    "description": "Usually a brief network drop. Try again; if it keeps happening, reload the page.",
+    "retry": "Try again"
+  },
+  "notFound": {
+    "title": "This page no longer exists.",
+    "description": "The document or link may have been archived.",
+    "back": "Back to documents"
+  },
+  "copyButton": {
+    "copyLink": "Copy link",
+    "copied": "Copied"
+  },
+  "liveActivity": {
+    "readingOne": "Reading now",
+    "readingMany": "{count} readers right now",
+    "anonymous": "Anonymous reader",
+    "videoAt": "around {segment} of the video",
+    "page": "page {page} of {total}",
+    "device": {
+      "mobile": "on mobile",
+      "tablet": "on tablet",
+      "desktop": "on desktop"
+    }
+  },
+  "temperature": {
+    "toWarm": "{count, plural, one {# more point to turn warm.} other {# more points to turn warm.}}",
+    "toHot": "{count, plural, one {# more point to turn hot.} other {# more points to turn hot.}}",
+    "intense": "Intense reading.",
+    "guideTitle": "How the temperature is worked out",
+    "guideIntro": "A score out of 100 that measures how interested the prospect is in this document. Cold below {warm}, warm up to {warmMax}, hot from {hot}. It drops on its own if the prospect doesn't come back, and goes to 100 when the proposal is approved or the deal won.",
+    "rows": {
+      "recentRead": "Recent read",
+      "recentReadRule": "25 if read in the last 24 h, 15 within 3 days, 5 within 7 days",
+      "readTime": "Reading time",
+      "readTimeRule": "1 point every 12 seconds, up to 25",
+      "visits": "Visits",
+      "visitsRule": "5 for the first, 12 for the second, 20 from three on",
+      "readers": "Several readers",
+      "readersRule": "10 with two people, 15 from three on: the document is getting around",
+      "pricing": "Pricing page",
+      "pricingRule": "7 from {third} s on it, 15 from {full} s",
+      "progress": "Progress",
+      "progressRule": "4 if read halfway, 10 if read to the end",
+      "change": "Changes requested",
+      "changeRule": "10 points",
+      "meeting": "Meeting",
+      "meetingRule": "5 if they open your calendar, 25 if they book a slot"
+    }
+  },
+  "verdict": {
+    "notOpened": "Not opened yet.",
+    "notOpenedDetail": "The verdict comes with the first read.",
+    "opened": "Opened.",
+    "openedDetail": "The verdict comes as soon as Clozer has read this deal.",
+    "noRecentRead": "no recent read",
+    "headline": "{tier}: {why}."
+  }
+}

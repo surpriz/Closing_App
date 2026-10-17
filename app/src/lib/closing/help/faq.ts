@@ -3,7 +3,12 @@
  * assistant so both answer the same way. Written from the app's own screens,
  * like guide.ts: update both when a feature changes what a user sees or does.
  * Answers are plain text; a blank line starts a new paragraph.
+ * English lives in faq.en.ts with the same ids; pick one with getFaq(locale).
  */
+
+import type { UiLocale } from "@/i18n/locale";
+
+import { FAQ_EN } from "./faq.en";
 
 export type FaqItem = {
   /** Anchor on /faq: stable, a link may point to it. */
@@ -24,7 +29,7 @@ export const FAQ: FaqSection[] = [
         id: "cest-quoi",
         q: "Qu'est-ce que Clozer fait, concrètement ?",
         a: "Clozer remplace la pièce jointe par un lien suivi. Vous déposez un document (devis, proposition, présentation, page web ou pitch vidéo), vous créez un lien par prospect et vous l'envoyez.\n\nClozer voit comment le prospect lit, comprend où en est le deal et prépare la bonne relance au bon moment. Vous validez, et vous appelez ceux qui sont prêts.",
-        link: { href: "/comment-ca-marche", label: "Comment ça marche" },
+        link: { href: "/how-it-works", label: "Comment ça marche" },
       },
       {
         id: "par-ou-commencer",
@@ -46,7 +51,7 @@ export const FAQ: FaqSection[] = [
         id: "prise-en-main",
         q: "Comment revoir la prise en main ?",
         a: "Bouton « ? » en haut à droite → Revoir la prise en main, ou depuis la page Comment ça marche. Trois étapes : votre messagerie, l'outil adapté (extension, complément ou rien), puis c'est parti.",
-        link: { href: "/bienvenue", label: "Revoir la prise en main" },
+        link: { href: "/welcome", label: "Revoir la prise en main" },
       },
       {
         id: "recherche",
@@ -572,14 +577,25 @@ export const FAQ: FaqSection[] = [
   },
 ];
 
+/** The FAQ in the user's language. Section and question ids are the same in both. */
+export function getFaq(locale: UiLocale): FaqSection[] {
+  return locale === "en" ? FAQ_EN : FAQ;
+}
+
 /** Pure: the FAQ as plain text, for the help assistant. */
-export function faqAsText(sections: FaqSection[] = FAQ) {
+export function faqAsText(sections: FaqSection[] = FAQ, locale: UiLocale = "fr") {
+  const answer = locale === "en" ? "A" : "R";
   return sections
     .map(
       (section) =>
-        `## ${section.title}\n` + section.items.map((item) => `Q: ${item.q}\nR: ${item.a}`).join("\n\n"),
+        `## ${section.title}\n` + section.items.map((item) => `Q: ${item.q}\n${answer}: ${item.a}`).join("\n\n"),
     )
     .join("\n\n");
+}
+
+/** The FAQ as plain text in the user's language, for the help assistant. */
+export function getFaqText(locale: UiLocale) {
+  return faqAsText(getFaq(locale), locale);
 }
 
 const fold = (text: string) =>

@@ -2,6 +2,7 @@ import { ArrowLeft, ExternalLink } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getLocale, getTranslations } from "next-intl/server";
 
 import { AutoRefresh } from "@/components/dashboard/auto-refresh";
 import { NewLinkButton } from "@/components/dashboard/create-link-form";
@@ -18,6 +19,7 @@ import {
   DocumentLinks,
   type ProspectLinkRow,
 } from "@/components/dashboard/document/document-links";
+import { tagLabels } from "@/components/dashboard/document/doc-type-labels";
 import { DocumentPreviewSection } from "@/components/dashboard/document/document-preview-section";
 import { ReadingFields } from "@/components/dashboard/document/reading-fields";
 import { ReportStrip } from "@/components/dashboard/document/reading-bits";
@@ -28,7 +30,6 @@ import {
   type FollowupItem,
 } from "@/components/dashboard/followup-item";
 import { FollowupsPanel } from "@/components/dashboard/followups-panel";
-import { DEAL_STATUS_LABELS, TIER_LABELS } from "@/components/dashboard/labels";
 import {
   PageHeader,
   SectionTitle,
@@ -52,7 +53,6 @@ import { pageHeat } from "@/lib/closing/dashboard/page-heat";
 import { getPageReadings } from "@/lib/closing/dashboard/queries";
 import { showsReadingDetail } from "@/lib/closing/dashboard/reading-detail";
 import { labelReaders } from "@/lib/closing/dashboard/readers";
-import { tagLabels } from "@/lib/closing/documents/doc-types";
 import {
   segmentLabel,
   VIDEO_SEGMENTS,
@@ -78,7 +78,10 @@ export async function generateMetadata({
     where: { id, organizationId: organization.id },
     select: { name: true },
   });
-  return { title: document?.name ?? "Document" };
+  return {
+    title:
+      document?.name ?? (await getTranslations("documents.detail"))("fallbackTitle"),
+  };
 }
 
 export default async function DocumentDetailPage({
@@ -86,6 +89,13 @@ export default async function DocumentDetailPage({
 }: PageProps<"/documents/[id]">) {
   const { id } = await params;
   const { organization, role } = await requireWorkspace();
+  const [t, td, tl, tApp, locale] = await Promise.all([
+    getTranslations("documents.detail"),
+    getTranslations("documents"),
+    getTranslations("labels"),
+    getTranslations(),
+    getLocale(),
+  ]);
 
   const document = await prisma.document.findFirst({
     where: { id, organizationId: organization.id },
@@ -152,12 +162,12 @@ export default async function DocumentDetailPage({
       href={`/links/${pendingLink.id}`}
       className={buttonVariants({ size: "lg" })}
     >
-      Envoyer mon lien
+      {t("sendMyLink")}
     </Link>
   ) : (
     <NewLinkButton
       documentId={document.id}
-      label={document.links.length === 0 ? "Créer le lien" : undefined}
+      label={document.links.length === 0 ? t("createLink") : undefined}
     />
   );
   const [analytics, origin, followups, alerts, furthest, insights, readings] =
@@ -222,7 +232,7 @@ export default async function DocumentDetailPage({
       furthestPage: furthestByLink.get(id) ?? null,
     })),
     aiFrictions: [...latestFrictions.values()],
-  });
+  }, tApp);
 
   const statsByPage = new Map(analytics.pages.map((p) => [p.pageNumber, p]));
   const chartData: PageTimeDatum[] = document.pages.map((page) => {
@@ -262,7 +272,9 @@ export default async function DocumentDetailPage({
   const isWeb = document.kind === "URL";
   const isVideo = document.kind === "VIDEO";
   const pageName = (n: number) =>
-    isVideo ? `passage ${segmentLabel(n)}` : `page ${n}`;
+    isVideo
+      ? t("segmentName", { segment: segmentLabel(n, undefined, locale) })
+      : t("pageName", { page: n });
   const webHost = document.externalUrl
     ? new URL(document.externalUrl).hostname.replace(/^www\./, "")
     : null;
@@ -294,16 +306,17 @@ export default async function DocumentDetailPage({
       contact:
         [prospect?.company ? prospect.name : null, prospect?.email]
           .filter(Boolean)
-          .join(" · ") || `Créé ${formatRelative(link.createdAt, now)}`,
+          .join(" · ") ||
+        t("createdAgo", { when: formatRelative(link.createdAt, locale, now) }),
       state: link.shared
-        ? "Lien partagé"
+        ? t("sharedLink")
         : link.dealStatus !== "OPEN"
-          ? DEAL_STATUS_LABELS[link.dealStatus]
+          ? tl(`dealStatus.${link.dealStatus}`)
           : expired
-            ? "Expiré"
+            ? t("expired")
             : score
-              ? TIER_LABELS[score.tier]
-              : "Pas encore ouvert",
+              ? tl(`tier.${score.tier}`)
+              : t("notOpened"),
       // The swatch shows a temperature only when the state is one
       tier:
         !link.shared && link.dealStatus === "OPEN" && !expired
@@ -319,13 +332,15 @@ export default async function DocumentDetailPage({
   });
 
   const kindField = isWeb
-    ? `Lien web${webHost ? `, ${webHost}` : ""}`
+    ? webHost
+      ? t("webLinkHost", { host: webHost })
+      : t("webLink")
     : isVideo
-      ? `Pitch vidéo, ${formatDuration(document.durationMs ?? 0)}`
+      ? t("videoPitch", { duration: formatDuration(document.durationMs ?? 0) })
       : [
           "PDF",
-          document.numPages ? `${document.numPages} pages` : null,
-          formatBytes(document.sizeBytes),
+          document.numPages ? t("pdfPages", { count: document.numPages }) : null,
+          formatBytes(document.sizeBytes, locale),
         ]
           .filter(Boolean)
           .join(", ");
@@ -339,14 +354,17 @@ export default async function DocumentDetailPage({
           href="/documents"
           className="inline-flex items-center gap-1 text-small text-muted-foreground hover:text-foreground"
         >
-          <ArrowLeft className="size-4" aria-hidden /> Documents
+          <ArrowLeft className="size-4" aria-hidden /> {t("back")}
         </Link>
         <ReportStrip
           fields={[
-            "Fiche document",
+            t("reportTitle"),
             kindField,
-            `${isWeb ? "ajouté" : isVideo ? "enregistré" : "importé"} le ${formatDate(document.createdAt)}`,
-            `${document.links.length} lien${document.links.length > 1 ? "s" : ""} prospect`,
+            t("addedOn", {
+              kind: isWeb ? "web" : isVideo ? "video" : "file",
+              date: formatDate(document.createdAt, locale),
+            }),
+            t("prospectLinks", { count: document.links.length }),
           ]}
         />
         <PageHeader
@@ -354,8 +372,9 @@ export default async function DocumentDetailPage({
           description={
             document.status === "FAILED" ? (
               <span className="text-destructive">
-                L&apos;analyse a échoué :{" "}
-                {document.processingError ?? "erreur inconnue"}
+                {t("analysisFailed", {
+                  error: document.processingError ?? t("unknownError"),
+                })}
               </span>
             ) : isWeb && document.externalUrl ? (
               <a
@@ -364,7 +383,7 @@ export default async function DocumentDetailPage({
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 underline underline-offset-4 hover:text-foreground"
               >
-                Ouvrir {webHost}
+                {t("openHost", { host: webHost ?? "" })}
                 <ExternalLink className="size-3.5" aria-hidden />
               </a>
             ) : !ready && !isVideo ? (
@@ -373,7 +392,7 @@ export default async function DocumentDetailPage({
                   aria-hidden
                   className="size-1.5 animate-pulse bg-foreground motion-reduce:animate-none"
                 />
-                Analyse du document en cours, quelques secondes…
+                {t("analyzing")}
               </span>
             ) : undefined
           }
@@ -396,25 +415,26 @@ export default async function DocumentDetailPage({
             video={isVideo}
             fields={[
               {
-                label: analytics.viewCount === 1 ? "Lecture" : "Lectures",
+                label: t("fieldReads", { count: analytics.viewCount }),
                 value: String(analytics.viewCount),
               },
               {
-                label:
-                  analytics.uniqueVisitors === 1
-                    ? "Lecteur"
-                    : "Lecteurs différents",
+                label: t("fieldReaders", { count: analytics.uniqueVisitors }),
                 value: String(analytics.uniqueVisitors),
               },
               {
-                label: "Temps de lecture",
+                label: t("fieldReadingTime"),
                 value: formatDuration(analytics.totalDurationMs),
               },
               ...(analytics.lastActivityAt
                 ? [
                     {
-                      label: "Dernière lecture",
-                      value: formatRelative(analytics.lastActivityAt, now),
+                      label: t("fieldLastRead"),
+                      value: formatRelative(
+                        analytics.lastActivityAt,
+                        locale,
+                        now,
+                      ),
                     },
                   ]
                 : []),
@@ -429,19 +449,19 @@ export default async function DocumentDetailPage({
           className="w-full justify-start gap-6 overflow-x-auto border-b border-border pb-px"
         >
           <TabsTrigger value="prospects" className="flex-none px-0 text-body">
-            Prospects{" "}
+            {t("tabProspects")}{" "}
             <span className="font-mono text-small text-muted-foreground">
               {document.links.length}
             </span>
           </TabsTrigger>
           <TabsTrigger value="reading" className="flex-none px-0 text-body">
-            Lecture
+            {t("tabReading")}
           </TabsTrigger>
           <TabsTrigger value="content" className="flex-none px-0 text-body">
-            Le document
+            {t("tabContent")}
           </TabsTrigger>
           <TabsTrigger value="followups" className="flex-none px-0 text-body">
-            Relances
+            {t("tabFollowups")}
             {pendingFollowups > 0 && (
               <span className="font-mono text-small text-muted-foreground">
                 {pendingFollowups}
@@ -453,13 +473,13 @@ export default async function DocumentDetailPage({
         <TabsContent value="prospects">
           {document.links.length === 0 ? (
             <EmptyState
-              title="Créez un lien pour chaque prospect."
+              title={t("emptyTitle")}
               description={
                 isVideo
-                  ? "Envoyez-le à la place d'un lien Loom. Vous verrez qui la regarde, jusqu'où, et Clozer relancera pour vous."
+                  ? t("emptyVideo")
                   : isWeb
-                    ? "Envoyez-le à la place du lien d'origine. Vous verrez qui l'ouvre, combien de temps il y passe, et Clozer relancera pour vous."
-                    : "Envoyez-le à la place du PDF. Vous verrez qui l'ouvre, combien de temps il lit, et Clozer relancera pour vous."
+                    ? t("emptyWeb")
+                    : t("emptyPdf")
               }
               action={pendingLink ? null : linkAction}
             />
@@ -472,8 +492,8 @@ export default async function DocumentDetailPage({
           {/* A video pitch already is the seller speaking */}
           {!isVideo && (
             <section>
-              <SectionTitle hint="vu par le prospect dès l'ouverture, sur tous les liens">
-                Mot d&apos;accueil
+              <SectionTitle hint={t("welcomeHint")}>
+                {t("welcomeTitle")}
               </SectionTitle>
               <WelcomeMessage
                 documentId={document.id}
@@ -495,8 +515,8 @@ export default async function DocumentDetailPage({
             </section>
           )}
           <section>
-            <SectionTitle hint="décide du vocabulaire des étiquettes et de l'assistant">
-              Type de document
+            <SectionTitle hint={t("docTypeHint")}>
+              {t("docTypeTitle")}
             </SectionTitle>
             <DocumentTypeSelect
               documentId={document.id}
@@ -505,8 +525,8 @@ export default async function DocumentDetailPage({
             />
           </section>
           <section>
-            <SectionTitle hint="pour répondre aux questions du prospect">
-              Infos pour l&apos;assistant
+            <SectionTitle hint={t("assistantHint")}>
+              {t("assistantTitle")}
             </SectionTitle>
             <AssistantNotesForm
               documentId={document.id}
@@ -516,12 +536,10 @@ export default async function DocumentDetailPage({
           <section>
             <SectionTitle
               hint={
-                isVideo
-                  ? "passage par passage, ce que Clozer a compris"
-                  : "page par page, ce que Clozer a compris"
+                isVideo ? t("contentHintVideo") : t("contentHintPages")
               }
             >
-              Contenu
+              {t("contentTitle")}
             </SectionTitle>
             {isWeb ? (
               <div className="space-y-6">
@@ -538,9 +556,7 @@ export default async function DocumentDetailPage({
               </div>
             ) : document.pages.length === 0 ? (
               <p className="border-y border-border py-12 text-center text-body text-muted-foreground">
-                {ready
-                  ? "Aucune page détectée."
-                  : "Analyse du document en cours…"}
+                {ready ? t("noPages") : t("analyzingShort")}
               </p>
             ) : (
               <DocumentPages
@@ -573,8 +589,8 @@ export default async function DocumentDetailPage({
             )}
           </section>
           <section>
-            <SectionTitle hint="tel que vos prospects le voient">
-              Aperçu
+            <SectionTitle hint={t("previewHint")}>
+              {t("previewTitle")}
             </SectionTitle>
             <DocumentPreviewSection document={document} ready={ready} />
           </section>
@@ -583,8 +599,8 @@ export default async function DocumentDetailPage({
         <TabsContent value="reading" className="space-y-10">
           {frictions.length > 0 && (
             <section>
-              <SectionTitle hint="sur tous les prospects de ce document">
-                Ce qui bloque
+              <SectionTitle hint={t("frictionsHint")}>
+                {t("frictionsTitle")}
               </SectionTitle>
               <ul className="divide-y divide-border border-b border-border text-body">
                 {frictions.map((line) => (
@@ -598,21 +614,19 @@ export default async function DocumentDetailPage({
           {isWeb ? (
             <p className="max-w-2xl text-body text-muted-foreground">
               {videoProvider(document.embedUrl) === "loom"
-                ? "Pour une vidéo Loom, Clozer mesure le temps passé sur la page, pas la part de la vidéo regardée."
+                ? t("trackingLoom")
                 : videoProvider(document.embedUrl)
-                  ? "Pour une vidéo, Clozer mesure le temps passé et la part réellement regardée (les passages sautés ne comptent pas)."
+                  ? t("trackingVideo")
                   : document.embedUrl
-                    ? "Pour un lien web, Clozer mesure le temps passé sur la page, sans détail page par page."
+                    ? t("trackingEmbed")
                     : document.readerHtml
-                      ? "Ce site refuse l'affichage intégré : vos prospects lisent l'article dans Clozer. Clozer mesure le temps passé et jusqu'où ils l'ont lu."
-                      : "Ce site s'ouvre dans un nouvel onglet : Clozer voit quand le prospect l'ouvre, et estime le temps passé dessus d'après son retour sur le lien."}
+                      ? t("trackingReader")
+                      : t("trackingNewTab")}
             </p>
           ) : (
             <section>
-              <SectionTitle hint="toutes lectures confondues">
-                {isVideo
-                  ? "Temps passé sur chaque passage de la vidéo"
-                  : "Temps passé par page"}
+              <SectionTitle hint={t("timeHint")}>
+                {isVideo ? t("timeTitleVideo") : t("timeTitlePages")}
               </SectionTitle>
               {chartData.length > 0 && showsDetail ? (
                 <Surface className="p-4">
@@ -621,38 +635,39 @@ export default async function DocumentDetailPage({
               ) : (
                 <p className="border-y border-border py-12 text-center text-body text-muted-foreground">
                   {chartData.length > 0
-                    ? "Pas encore assez de lecture pour le détail par page."
+                    ? t("notEnoughReading")
                     : ready
-                      ? "Aucune page détectée."
-                      : "Analyse du document en cours…"}
+                      ? t("noPages")
+                      : t("analyzingShort")}
                 </p>
               )}
               {taggedPages.length > 0 && (
                 <p className="mt-3 text-small text-muted-foreground">
-                  Repéré automatiquement :{" "}
-                  {taggedPages
-                    .map(
-                      (page) =>
-                        `${pageName(page.pageNumber)} (${page.tags.map((t) => tagLabels(document.docType)[t].toLowerCase()).join(", ")})`,
-                    )
-                    .join(", ")}
+                  {t("autoTagged", {
+                    list: taggedPages
+                      .map(
+                        (page) =>
+                          `${pageName(page.pageNumber)} (${page.tags.map((tag) => tagLabels(td, document.docType)[tag].toLowerCase()).join(", ")})`,
+                      )
+                      .join(", "),
+                  })}
                 </p>
               )}
             </section>
           )}
 
           <section>
-            <SectionTitle>Dernières lectures</SectionTitle>
+            <SectionTitle>{t("recentTitle")}</SectionTitle>
             {analytics.recentViews.length === 0 ? (
               <p className="text-body text-muted-foreground">
-                Personne n&apos;a encore ouvert ce document. Les lectures
-                s&apos;afficheront ici.
+                {t("recentEmpty")}
               </p>
             ) : (
               <RecentReads
                 rows={analytics.recentViews.map((view) => ({
                   id: view.id,
-                  reader: readerLabels.get(view.id)?.name ?? "Lecteur",
+                  reader:
+                    readerLabels.get(view.id)?.name ?? t("fallbackReader"),
                   deal: dealLabel(view.link),
                   where: [
                     [view.city, view.country].filter(Boolean).join(", ") ||
@@ -664,18 +679,14 @@ export default async function DocumentDetailPage({
                     .filter(Boolean)
                     .join(" · "),
                   duration: formatDuration(view.totalDurationMs),
-                  when: formatRelative(view.lastSeenAt, now),
-                  at: formatDate(view.lastSeenAt),
+                  when: formatRelative(view.lastSeenAt, locale, now),
+                  at: formatDate(view.lastSeenAt, locale),
                 }))}
               />
             )}
             {anonymousReaders && (
               <p className="mt-3 max-w-2xl text-small text-muted-foreground">
-                Ces lecteurs n&apos;ont pas donné leur email. Une même lettre,
-                c&apos;est un même navigateur ; deux lettres, souvent deux
-                personnes (ou la même sur deux appareils). Pour savoir
-                exactement qui lit, activez « Demander l&apos;email avant
-                lecture » dans les réglages du lien.
+                {t("anonymousNote")}
               </p>
             )}
           </section>
@@ -684,9 +695,7 @@ export default async function DocumentDetailPage({
         <TabsContent value="followups" className="space-y-10">
           <section className="space-y-4">
             <p className="max-w-2xl text-body text-muted-foreground">
-              Les relances de tous les prospects de ce document. Clozer en écrit
-              une quand il juge que c&apos;est le bon moment ; vous la relisez
-              ici ou sur la fiche du prospect, puis vous la validez.
+              {t("followupsIntro")}
             </p>
             <Surface className="p-4">
               <FollowupsPanel followups={followupItems} showLink />
@@ -695,7 +704,7 @@ export default async function DocumentDetailPage({
 
           {alerts.length > 0 && (
             <section>
-              <SectionTitle>Alertes</SectionTitle>
+              <SectionTitle>{t("alertsTitle")}</SectionTitle>
               <DocumentAlerts
                 now={now}
                 alerts={alerts.map((alert) => ({

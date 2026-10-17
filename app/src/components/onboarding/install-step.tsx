@@ -2,6 +2,7 @@
 
 import { Check, Download, ExternalLink, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useSyncExternalStore, useTransition } from "react";
 
 import { OutlookConnect } from "@/components/dashboard/outlook-connect";
@@ -37,12 +38,13 @@ function Connected({ children }: { children: React.ReactNode }) {
 
 // The extension can't be seen from this page: its token in the database is the only proof
 function CheckAgain() {
+  const t = useTranslations("onboarding.install");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   return (
     <Button variant="outline" size="sm" disabled={pending} onClick={() => startTransition(() => router.refresh())}>
       <RefreshCw className={pending ? "animate-spin" : undefined} />
-      C&apos;est fait, vérifier
+      {t("checkAgain")}
     </Button>
   );
 }
@@ -50,6 +52,7 @@ function CheckAgain() {
 const noSubscribe = () => () => {};
 
 function ChromeInstall({ mailClient, connected, chromeStoreUrl }: Props) {
+  const t = useTranslations("onboarding.install");
   const mailbox = mailClient === "gmail" ? "Gmail" : "Outlook";
   // Assume a capable browser on the server, the page is mostly opened from one
   const canInstall = useSyncExternalStore(
@@ -60,20 +63,20 @@ function ChromeInstall({ mailClient, connected, chromeStoreUrl }: Props) {
   return (
     <div className="space-y-8">
       <StepHeading
-        title="Ajoutez l'extension Clozer"
-        lead={`Elle fonctionne dans ${mailbox}, sur Chrome ou Edge. Vous joignez un PDF comme d'habitude, elle le remplace par un lien Clozer et vous prévient quand votre prospect le lit.`}
+        title={t("chromeTitle")}
+        lead={t("chromeLead", { mailbox })}
       />
       {connected.chrome ? (
-        <Connected>Extension connectée. Vous pouvez continuer.</Connected>
+        <Connected>{t("chromeConnected")}</Connected>
       ) : (
         <Instructions
           items={[
             {
               text: chromeStoreUrl
                 ? canInstall
-                  ? "Installez-la depuis le Chrome Web Store."
-                  : "Ouvrez cette page dans Chrome ou Edge, sur ordinateur, puis installez-la depuis le Chrome Web Store."
-                : "Elle arrive très bientôt sur le Chrome Web Store. En attendant, créez vos liens depuis Clozer et collez-les dans vos emails : on vous montre comment juste après.",
+                  ? t("installFromStore")
+                  : t("openInChrome")
+                : t("comingSoon"),
               extra: chromeStoreUrl && canInstall && (
                 <a
                   href={chromeStoreUrl}
@@ -81,16 +84,16 @@ function ChromeInstall({ mailClient, connected, chromeStoreUrl }: Props) {
                   rel="noreferrer"
                   className={buttonVariants({ variant: "default" })}
                 >
-                  Ajouter à Chrome
+                  {t("addToChrome")}
                   <ExternalLink />
                 </a>
               ),
             },
             {
-              text: "Épinglez-la dans la barre du navigateur (icône puzzle), cliquez sur Clozer puis sur « Connecter Clozer ».",
+              text: t("pin"),
             },
             {
-              text: `Ouvrez ${mailbox}, écrivez un email et joignez un PDF : Clozer le remplace aussitôt par un lien.`,
+              text: t("tryIt", { mailbox }),
               extra: <CheckAgain />,
             },
           ]}
@@ -101,19 +104,20 @@ function ChromeInstall({ mailClient, connected, chromeStoreUrl }: Props) {
 }
 
 function OutlookInstall({ connected, account }: Props) {
+  const t = useTranslations("onboarding.install");
   return (
     <div className="space-y-8">
       <StepHeading
-        title="Ajoutez Clozer à Outlook"
-        lead="Un complément pour Outlook sur Windows ou Mac. Il remplace vos PDF joints par des liens Clozer et vous montre qui lit, sans quitter Outlook."
+        title={t("outlookTitle")}
+        lead={t("outlookLead")}
       />
       {connected.outlook ? (
-        <Connected>Outlook est connecté. Vous pouvez continuer.</Connected>
+        <Connected>{t("outlookConnected")}</Connected>
       ) : (
         <Instructions
           items={[
             {
-              text: "Téléchargez le fichier du complément.",
+              text: t("download"),
               extra: (
                 <OutlookManifestLink className={buttonVariants({ variant: "outline" })}>
                   <Download />
@@ -122,57 +126,49 @@ function OutlookInstall({ connected, account }: Props) {
               ),
             },
             {
-              text: (
-                <>
-                  Dans Outlook : <strong>Compléments › Mes compléments › Ajouter à partir d&apos;un fichier</strong>, puis
-                  choisissez ce fichier. Sur l&apos;Outlook classique pour Windows, c&apos;est dans{" "}
-                  <strong>Accueil › Obtenir des compléments</strong>.
-                </>
-              ),
+              text: t.rich("addFromFile", { b: (chunks) => <strong>{chunks}</strong> }),
             },
-            { text: "Ouvrez un nouvel email et cliquez sur « Clozer » dans le ruban : un code s'affiche." },
+            { text: t("openEmail") },
             {
-              text: "Saisissez ce code ici.",
+              text: t("enterCode"),
               extra: (
                 <OutlookConnect
                   account={account}
-                  doneHint="Joignez un PDF à un email dans Outlook : Clozer le remplace aussitôt par un lien."
+                  doneHint={t("outlookDone")}
                 />
               ),
             },
           ]}
         />
       )}
-      <p className="text-small text-muted-foreground">
-        Vous ne pouvez pas installer de complément ? Votre service informatique peut le déployer pour toute
-        l&apos;équipe depuis le centre d&apos;administration Microsoft 365, avec le même fichier.
-      </p>
+      <p className="text-small text-muted-foreground">{t("itDeploy")}</p>
     </div>
   );
 }
 
 function ManualSend({ onChangeMailClient }: Pick<Props, "onChangeMailClient">) {
+  const t = useTranslations("onboarding.install");
   return (
     <div className="space-y-8">
       <StepHeading
-        title="Pas d'outil à installer"
-        lead="Clozer marche avec n'importe quelle messagerie : il suffit de coller le lien à la place de la pièce jointe."
+        title={t("manualTitle")}
+        lead={t("manualLead")}
       />
       <Instructions
         items={[
-          { text: "Déposez votre PDF dans Clozer : le lien à envoyer est prêt aussitôt." },
-          { text: "Copiez-le dans votre email, à la place de la pièce jointe. Ou cliquez sur « Envoyer par email »." },
-          {
-            text: "Pour tester, ouvrez-le dans une fenêtre privée : vos propres lectures ne comptent pas.",
-          },
+          { text: t("manual1") },
+          { text: t("manual2") },
+          { text: t("manual3") },
         ]}
       />
       <p className="text-small text-muted-foreground">
-        Vous utilisez aussi Gmail ou Outlook ?{" "}
-        <button type="button" onClick={onChangeMailClient} className="underline underline-offset-4">
-          Changez votre réponse
-        </button>{" "}
-        : Clozer peut créer les liens pour vous.
+        {t.rich("alsoUse", {
+          change: (chunks) => (
+            <button type="button" onClick={onChangeMailClient} className="underline underline-offset-4">
+              {chunks}
+            </button>
+          ),
+        })}
       </p>
     </div>
   );

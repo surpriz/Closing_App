@@ -13,6 +13,10 @@ describe("shareDraft", () => {
   it("adds the signature when there is one", () => {
     expect(shareDraft({ url: "u", title: "t", signature: "Paul\nAcme" }).body).toBe("Bonjour,\n\nVoici t :\nu\n\nPaul\nAcme");
   });
+
+  it("writes in the seller's language", () => {
+    expect(shareDraft({ url: "u", title: "the quote", firstName: "Mary", locale: "en" }).body).toBe("Hi Mary,\n\nHere is the quote:\nu");
+  });
 });
 
 describe("composeUrl", () => {

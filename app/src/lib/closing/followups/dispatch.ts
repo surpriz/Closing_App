@@ -3,6 +3,8 @@ import { getPublicAppUrl } from "@/lib/app-origin";
 import { ACTIVE_WORKSPACE } from "@/lib/closing/active-workspace";
 import { prisma } from "@/lib/db";
 import { isEmailConfigured } from "@/lib/email";
+import { toUiLocale } from "@/lib/seller-locale";
+import { getNamespaceTranslator } from "@/lib/server-translator";
 
 import { isWhatsAppConfigured, sendWhatsApp } from "../channels/whatsapp";
 import { isLinkExpired, REMINDER_MIN_SEND_LEAD_MS } from "../expiry";
@@ -34,7 +36,7 @@ export async function sendFollowup(
     where: { id: followupId },
     include: {
       prospect: true,
-      link: { include: { createdBy: { select: { email: true } } } },
+      link: { include: { createdBy: { select: { email: true, locale: true } } } },
     },
   });
   const statuses: FollowupStatus[] = approvedById ? [...SENDABLE, "DRAFT"] : SENDABLE;
@@ -43,36 +45,38 @@ export async function sendFollowup(
   }
 
   const { link, prospect } = followup;
+  // Reasons are stored on the follow-up and shown to the seller
+  const t = getNamespaceTranslator(toUiLocale(link.createdBy?.locale), "server.followups.dispatch");
 
   if (link.archivedAt || !link.followupsEnabled) {
-    await finish(followup.id, "CANCELLED", "Relances désactivées sur ce lien");
+    await finish(followup.id, "CANCELLED", t("followupsOff"));
     return "cancelled";
   }
   if (link.dealStatus !== "OPEN") {
-    await finish(followup.id, "CANCELLED", "Le prospect a déjà répondu sur la proposition");
+    await finish(followup.id, "CANCELLED", t("prospectReplied"));
     return "cancelled";
   }
   if (link.snoozedUntil && link.snoozedUntil > new Date()) {
-    await finish(followup.id, "CANCELLED", "Deal mis en pause par le vendeur");
+    await finish(followup.id, "CANCELLED", t("paused"));
     return "cancelled";
   }
   // Even an approved one: the prospect is now in the seller's calendar
   if (link.meetingBookedAt) {
-    await finish(followup.id, "CANCELLED", "Rendez-vous pris par le prospect");
+    await finish(followup.id, "CANCELLED", t("meetingBooked"));
     return "cancelled";
   }
   if (link.quoteRequestedAt) {
-    await finish(followup.id, "CANCELLED", "Devis demandé par le prospect");
+    await finish(followup.id, "CANCELLED", t("quoteRequested"));
     return "cancelled";
   }
   const now = new Date();
   // Even a message the seller approved: the link it carries no longer opens
   if (isLinkExpired(link, now)) {
-    await finish(followup.id, "CANCELLED", "Lien expiré");
+    await finish(followup.id, "CANCELLED", t("linkExpired"));
     return "cancelled";
   }
   if (prospect.unsubscribedAt) {
-    await finish(followup.id, "SKIPPED", "Prospect désinscrit");
+    await finish(followup.id, "SKIPPED", t("unsubscribed"));
     return "skipped";
   }
   // A message the seller approved stands: they saw the situation when they did
@@ -81,12 +85,12 @@ export async function sendFollowup(
     // The body quotes the date it was written for
     const writtenFor = (followup.context as { expiresAt?: string } | null)?.expiresAt;
     if (writtenFor !== link.expiresAt?.toISOString()) {
-      await finish(followup.id, "CANCELLED", "Échéance modifiée");
+      await finish(followup.id, "CANCELLED", t("deadlineChanged"));
       return "cancelled";
     }
     const left = (link.expiresAt?.getTime() ?? Infinity) - now.getTime();
     if (!sellerApproved && left < REMINDER_MIN_SEND_LEAD_MS) {
-      await finish(followup.id, "CANCELLED", "Trop proche de l'échéance");
+      await finish(followup.id, "CANCELLED", t("tooClose"));
       return "cancelled";
     }
   }
@@ -95,7 +99,7 @@ export async function sendFollowup(
       where: { linkId: link.id, isBot: false, startedAt: { gte: followup.createdAt } },
     });
     if (openedSince > 0) {
-      await finish(followup.id, "CANCELLED", "Le prospect a ouvert la proposition entre-temps");
+      await finish(followup.id, "CANCELLED", t("openedMeanwhile"));
       return "cancelled";
     }
   }
@@ -113,7 +117,7 @@ export async function sendFollowup(
         })
       : 0;
     if (readSince > 0) {
-      await finish(followup.id, "CANCELLED", "La situation a changé depuis l'analyse");
+      await finish(followup.id, "CANCELLED", t("situationChanged"));
       await prisma.link.update({ where: { id: link.id }, data: { brainDirtyAt: new Date() } });
       return "cancelled";
     }
@@ -136,19 +140,20 @@ export async function sendFollowup(
     let providerMessageId: string | null = null;
 
     if (followup.channel === "EMAIL") {
-      if (!isEmailConfigured()) throw new Error("Aucun service d'email configuré");
+      if (!isEmailConfigured()) throw new Error(t("noEmail"));
       const result = await sendProspectEmail({
         prospect,
         locale: followup.locale,
-        subject: followup.subject ?? "Suite à notre proposition",
+        // Prospect-facing: their language
+        subject: followup.subject ?? (followup.locale.toLowerCase().startsWith("fr") ? "Suite à notre proposition" : "Following up on our proposal"),
         body: followup.body,
         replyTo: link.createdBy?.email,
       });
       providerMessageId = result.id;
     } else {
-      if (!isWhatsAppConfigured()) throw new Error("WhatsApp (Twilio) non configuré");
+      if (!isWhatsAppConfigured()) throw new Error(t("noWhatsApp"));
       if (!prospect.phoneE164 || !prospect.whatsappOptInAt) {
-        throw new Error("Pas de numéro WhatsApp avec consentement");
+        throw new Error(t("noWhatsAppConsent"));
       }
       const result = await sendWhatsApp({
         to: prospect.phoneE164,
@@ -167,7 +172,7 @@ export async function sendFollowup(
     });
     return "sent";
   } catch (error) {
-    await finish(followup.id, "FAILED", error instanceof Error ? error.message : "Envoi impossible");
+    await finish(followup.id, "FAILED", error instanceof Error ? error.message : t("sendFailed"));
     return "failed";
   }
 }

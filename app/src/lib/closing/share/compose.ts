@@ -1,3 +1,5 @@
+import type { UiLocale } from "@/i18n/locale";
+
 import { buildMailto } from "../followups/mailto";
 
 /**
@@ -7,15 +9,23 @@ import { buildMailto } from "../followups/mailto";
 
 export type Draft = { to: string; subject: string; body: string };
 
+// Inline, not in the messages: this runs in client components and must not pull them in
+const DRAFT_COPY: Record<UiLocale, { hello: (name: string | null) => string; intro: (title: string) => string }> = {
+  fr: { hello: (name) => (name ? `Bonjour ${name},` : "Bonjour,"), intro: (title) => `Voici ${title} :` },
+  en: { hello: (name) => (name ? `Hi ${name},` : "Hi,"), intro: (title) => `Here is ${title}:` },
+};
+
 export function shareDraft(input: {
   url: string;
   title: string;
   to?: string | null;
   firstName?: string | null;
   signature?: string | null;
+  /** The seller's: they send it from their own mailbox. */
+  locale?: UiLocale;
 }): Draft {
-  const hello = input.firstName ? `Bonjour ${input.firstName},` : "Bonjour,";
-  const body = [hello, "", `Voici ${input.title} :`, input.url, "", input.signature?.trim() || ""].join("\n").trimEnd();
+  const copy = DRAFT_COPY[input.locale ?? "fr"];
+  const body = [copy.hello(input.firstName ?? null), "", copy.intro(input.title), input.url, "", input.signature?.trim() || ""].join("\n").trimEnd();
   return { to: input.to ?? "", subject: input.title, body };
 }
 

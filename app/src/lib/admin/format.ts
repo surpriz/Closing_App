@@ -72,3 +72,7 @@ export function auditDetail(metadata: unknown): string | null {
   if ("days" in data && data.days === null) return "jusqu'à réactivation";
   return null;
 }
+
+// The platform admin stays in French
+const ROLE_LABELS: Record<string, string> = { owner: "Propriétaire", admin: "Admin", member: "Membre" };
+export const adminRoleLabel = (role: string) => ROLE_LABELS[role] ?? role;

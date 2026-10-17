@@ -4,6 +4,8 @@ import { APIError, createAuthMiddleware, getSessionFromCtx } from "better-auth/a
 import { nextCookies } from "better-auth/next-js";
 import { admin, magicLink, organization } from "better-auth/plugins";
 
+import { DEFAULT_UI_LOCALE, LOCALE_COOKIE, resolveUiLocale, type UiLocale } from "@/i18n/locale";
+import { getTranslator } from "@/i18n/messages";
 import { getPublicAppUrl } from "@/lib/app-origin";
 import { prisma } from "@/lib/db";
 import {
@@ -11,9 +13,10 @@ import {
   rememberDevMagicLink,
 } from "@/lib/dev-magic-links";
 import { isEmailConfigured, sendEmail } from "@/lib/email";
+import { escapeHtml } from "@/lib/email-layout";
 import { buildInvitationEmail } from "@/lib/invitation-email";
+import { bannedUserMessage, signupRefusalMessage } from "@/lib/login-messages";
 import {
-  BANNED_USER_MESSAGE,
   PLATFORM_ADMIN_ROLE,
   SIGNUP_REFUSAL_CODES,
   type SignupRefusal,
@@ -22,8 +25,8 @@ import {
   isUserBlocked,
   normalizeEmail,
   parseSignupMode,
-  signupRefusalMessage,
 } from "@/lib/platform-admin";
+import { getSellerLocale, toUiLocale } from "@/lib/seller-locale";
 
 export const googleEnabled =
   !!process.env.GOOGLE_CLIENT_ID && !!process.env.GOOGLE_CLIENT_SECRET;
@@ -50,26 +53,42 @@ async function signupRefusal(email: string) {
 }
 
 // The code lets the magic link verify redirect to /login?error= instead of showing raw JSON
-function signupError(refusal: SignupRefusal) {
-  return APIError.from("FORBIDDEN", { code: SIGNUP_REFUSAL_CODES[refusal], message: signupRefusalMessage(refusal) });
+/** Language of a request made before sign-in: the cookie set by the switcher, else the browser. */
+export function requestLocale(headers: Headers | null | undefined) {
+  const cookie = headers?.get("cookie")?.match(new RegExp(`(?:^|;\\s*)${LOCALE_COOKIE}=([^;]+)`))?.[1];
+  return resolveUiLocale({ cookie, acceptLanguage: headers?.get("accept-language") });
+}
+
+function signupError(refusal: SignupRefusal, locale: UiLocale) {
+  return APIError.from("FORBIDDEN", { code: SIGNUP_REFUSAL_CODES[refusal], message: signupRefusalMessage(refusal, locale) });
 }
 
 // Why this email gets no sign-in link. Told by email, never on the login form:
 // the form answers the same for everyone so nobody can probe who has an account
-async function magicLinkRefusal(email: string) {
+// Also gives the language to write in: the account's, else the requester's
+async function magicLinkRefusal(email: string, headers: Headers | null | undefined) {
   const user = await prisma.user.findFirst({
     where: { email: { equals: normalizeEmail(email), mode: "insensitive" } },
-    select: { banned: true, banExpires: true },
+    select: { banned: true, banExpires: true, locale: true },
   });
-  if (user) return isUserBlocked(user) ? BANNED_USER_MESSAGE : null;
+  if (user) {
+    const locale = toUiLocale(user.locale);
+    return { locale, refusal: isUserBlocked(user) ? bannedUserMessage(locale) : null };
+  }
+  const locale = requestLocale(headers);
   const refusal = await signupRefusal(email);
-  return refusal && signupRefusalMessage(refusal);
+  return { locale, refusal: refusal && signupRefusalMessage(refusal, locale) };
 }
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, { provider: "postgresql" }),
   // Tokens written before this was on stay readable and get encrypted on the next sign-in
   account: { encryptOAuthTokens: true },
+  user: {
+    additionalFields: {
+      locale: { type: "string", required: false, defaultValue: "en", input: false },
+    },
+  },
   socialProviders: googleEnabled
     ? {
         google: {
@@ -81,10 +100,12 @@ export const auth = betterAuth({
   databaseHooks: {
     user: {
       create: {
-        before: async (user) => {
+        before: async (user, ctx) => {
           const refusal = await signupRefusal(user.email);
-          if (refusal) throw signupError(refusal);
-          if (isPlatformAdminEmail(user.email)) return { data: { ...user, role: PLATFORM_ADMIN_ROLE } };
+          const locale = requestLocale(ctx?.headers ?? ctx?.request?.headers);
+          if (refusal) throw signupError(refusal, locale);
+          const role = isPlatformAdminEmail(user.email) ? { role: PLATFORM_ADMIN_ROLE } : {};
+          return { data: { ...user, ...role, locale } };
         },
       },
     },
@@ -125,17 +146,20 @@ export const auth = betterAuth({
           return;
         }
 
+        // The invitee has no account yet: written in the inviter's language
         const { subject, html, text } = buildInvitationEmail({
           inviterName: inviter.user.name || inviter.user.email,
           workspaceName: organization.name,
           url,
+          locale: await getSellerLocale(inviter.user.id),
         });
         await sendEmail({ to: email, subject, html, text });
       },
     }),
     magicLink({
-      sendMagicLink: async ({ email, url }) => {
-        const refusal = await magicLinkRefusal(email);
+      sendMagicLink: async ({ email, url }, ctx) => {
+        const { locale, refusal } = await magicLinkRefusal(email, ctx?.headers ?? ctx?.request?.headers);
+        const t = getTranslator(locale);
         if (refusal) {
           if (devMagicLinksEnabled()) {
             console.info(`[auth] no magic link for ${email}: ${refusal}`);
@@ -143,8 +167,8 @@ export const auth = betterAuth({
           }
           await sendEmail({
             to: email,
-            subject: "Connexion à Clozer",
-            html: `<p>${refusal}</p>`,
+            subject: t("emails.magicLink.refusalSubject"),
+            html: `<p>${escapeHtml(refusal)}</p>`,
             text: refusal,
           });
           return;
@@ -158,16 +182,17 @@ export const auth = betterAuth({
 
         await sendEmail({
           to: email,
-          subject: "Votre lien de connexion",
-          html: `<p><a href="${url}">Se connecter</a></p><p>Ce lien expire dans 5 minutes.</p>`,
-          text: `Se connecter : ${url}`,
+          subject: t("emails.magicLink.subject"),
+          html: `<p><a href="${url}">${escapeHtml(t("emails.magicLink.button"))}</a></p><p>${escapeHtml(t("emails.magicLink.expires"))}</p>`,
+          text: t("emails.magicLink.textLine", { url }),
         });
       },
     }),
     admin({
       adminRoles: [PLATFORM_ADMIN_ROLE],
       impersonationSessionDuration: 60 * 60,
-      bannedUserMessage: BANNED_USER_MESSAGE,
+      // Fixed at boot, so one language; the login page shows its own text for BANNED_USER
+      bannedUserMessage: bannedUserMessage(DEFAULT_UI_LOCALE),
     }),
     // must stay last so cookies set in server actions are forwarded
     nextCookies(),

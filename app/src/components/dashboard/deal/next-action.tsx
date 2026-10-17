@@ -1,4 +1,5 @@
 import { ArrowRight, Mail, Phone } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 
 import { buttonVariants } from "@/components/ui/button";
 import type { StoredInsight } from "@/lib/closing/brain/latest";
@@ -14,7 +15,6 @@ import { cn } from "@/lib/utils";
 import { CopyButton } from "../copy-button";
 import { Sources } from "../deal-verdict";
 import { LiveDot } from "../heat";
-import { FOLLOWUP_GOAL_LABELS } from "../labels";
 import { MarkWonButton } from "../mark-won-button";
 import { PrepareFollowupButton } from "../prepare-followup-button";
 
@@ -44,6 +44,10 @@ export function DealNextAction({
   signature: { by: string; at: Date } | null;
   now: Date;
 }) {
+  const t = useTranslations("deal.nextAction");
+  const tl = useTranslations("labels");
+  const tRoot = useTranslations();
+  const locale = useLocale();
   const urgent = isUrgent(action);
   const aiAction = insight?.recommendedAction ?? null;
   const showsRecipient =
@@ -55,8 +59,11 @@ export function DealNextAction({
   const facts = new Map((insight?.facts ?? []).map((fact) => [fact.id, fact]));
   const sentence =
     action.kind === "close_won" && signature
-      ? `${signature.by} a validé ${formatRelative(signature.at, now)}. Confirmez la vente pour arrêter les relances.`
-      : describeNextAction(action, now);
+      ? t("signed", {
+          by: signature.by,
+          when: formatRelative(signature.at, locale, now),
+        })
+      : describeNextAction(action, now, { t: tRoot, locale });
 
   return (
     <div className="flex flex-col gap-4 border-y border-foreground py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
@@ -87,10 +94,13 @@ export function DealNextAction({
         )}
         {brief && action.kind === "ai_advice" && (
           <p className="pl-7.5 text-small">
-            <span className="font-medium">
-              {FOLLOWUP_GOAL_LABELS[brief.goal] ?? brief.goal}
-            </span>{" "}
-            : {brief.angle}
+            {t.rich("brief", {
+              goal: tl.has(`followupGoal.${brief.goal}` as never)
+                ? tl(`followupGoal.${brief.goal}` as never)
+                : brief.goal,
+              angle: brief.angle,
+              b: (chunks) => <span className="font-medium">{chunks}</span>,
+            })}
             {brief.topics.length > 0 && (
               <span className="text-muted-foreground">
                 {" "}

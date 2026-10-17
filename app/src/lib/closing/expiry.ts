@@ -87,9 +87,10 @@ export function extendExpiry(current: Date | null, now: Date, days: number) {
   return new Date(from.getTime() + days * DAY_MS);
 }
 
+/** Why a chosen deadline is refused, as a deal.actions message key. */
 export function expiryError(date: Date, now: Date) {
-  if (Number.isNaN(date.getTime()) || date.getTime() <= now.getTime()) return "Choisissez une date à venir.";
-  if (date.getTime() > now.getTime() + MAX_EXPIRY_DAYS * DAY_MS) return "Un an maximum.";
+  if (Number.isNaN(date.getTime()) || date.getTime() <= now.getTime()) return "expiryPast" as const;
+  if (date.getTime() > now.getTime() + MAX_EXPIRY_DAYS * DAY_MS) return "expiryTooFar" as const;
   return null;
 }
 

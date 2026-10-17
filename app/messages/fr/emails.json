@@ -1,0 +1,55 @@
+{
+  "invitation": {
+    "subject": "{inviter} vous invite sur Clozer",
+    "preheader": "Rejoignez l'équipe {workspace}",
+    "body": "Vous rejoindrez l'espace « {workspace} » : vos propositions, qui les lit, et quand relancer.",
+    "button": "Rejoindre l'équipe",
+    "footer": "Lien valable 7 jours. Pas attendu ? Ignorez cet email."
+  },
+  "magicLink": {
+    "subject": "Votre lien de connexion",
+    "button": "Se connecter",
+    "expires": "Ce lien expire dans 5 minutes.",
+    "textLine": "Se connecter : {url}",
+    "refusalSubject": "Connexion à Clozer"
+  },
+  "onboarding": {
+    "helloName": "Bonjour {name},",
+    "hello": "Bonjour,",
+    "footer": "Ne plus recevoir ces conseils de démarrage",
+    "welcome": {
+      "subject": "Bienvenue sur Clozer",
+      "title": "Une seule chose à faire",
+      "body": "Déposez un document (devis, facture, présentation, peu importe), puis ouvrez le lien comme le ferait votre prospect. Vous verrez tout de suite ce que Clozer vous montre. Deux minutes.",
+      "noInstall": "Rien à installer, tout se fait dans votre navigateur.",
+      "button": "C'est parti"
+    },
+    "noDocument": {
+      "subject": "Votre premier document sur Clozer",
+      "title": "Prenez le dernier document que vous avez envoyé",
+      "body": "Même un vieux. Déposez-le dans Clozer et ouvrez le lien : vous verrez exactement ce que votre prospect verra, et ce que vous saurez de sa lecture.",
+      "example": "Pas de document sous la main ? Un exemple vous attend.",
+      "button": "Essayer maintenant"
+    },
+    "notSent": {
+      "subject": "Votre lien est prêt, il n'est pas encore parti",
+      "title": "Votre lien attend son prospect",
+      "body": "Copiez-le dans votre prochain email, à la place de la pièce jointe. Dès que votre prospect l'ouvre, vous le savez.",
+      "button": "Récupérer mon lien"
+    },
+    "firstRead": {
+      "someone": "Un prospect",
+      "subject": "{label} a ouvert votre document",
+      "body": "Votre premier lien a été lu. Sur la page du deal : les pages lues, le temps passé, et ce que Clozer en conclut.",
+      "followup": "Si une relance est utile, Clozer l'écrit pour vous. Elle vous attend dans « Relances à valider », rien ne part sans vous.",
+      "button": "Voir ce qu'il a lu"
+    }
+  },
+  "outlookConnected": {
+    "subject": "Outlook connecté à votre compte Clozer",
+    "intro": "Un Outlook vient d'être connecté à votre compte Clozer ({when}).",
+    "ifYou": "Si c'est vous, rien à faire.",
+    "otherwise": "Sinon, révoquez-le tout de suite dans Réglages › Chrome et Outlook : {url}",
+    "otherwiseHtml": "Sinon, révoquez-le tout de suite dans <a>Réglages › Chrome et Outlook</a>."
+  }
+}

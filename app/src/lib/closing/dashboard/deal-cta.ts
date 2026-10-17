@@ -1,3 +1,4 @@
+import type { AppT } from "./i18n";
 import type { NextAction } from "./next-action";
 
 /**
@@ -33,60 +34,61 @@ export const DEAL_ANCHORS = {
 export function dealCta(
   action: NextAction,
   ctx: DealCtaContext,
+  t: AppT,
 ): DealCta | null {
   switch (action.kind) {
     case "close_won":
       return { kind: "mark_won" };
     case "call_now":
     case "call":
-      return callCta(ctx);
+      return callCta(ctx, t);
     case "reply":
       return ctx.email
         ? {
             kind: "href",
-            label: action.quote ? "Envoyer le devis" : "Répondre",
+            label: action.quote ? t("today.dealCta.sendQuote") : t("today.dealCta.reply"),
             href: `mailto:${ctx.email}`,
           }
         : {
             kind: "href",
-            label: "Voir sa demande",
+            label: t("today.dealCta.seeRequest"),
             href: DEAL_ANCHORS.activity,
           };
     case "review_draft":
       return {
         kind: "href",
-        label: "Relire la relance",
+        label: t("today.dealCta.reviewFollowup"),
         href: DEAL_ANCHORS.followups,
       };
     case "nudge":
-      return writeCta(ctx);
+      return writeCta(ctx, t);
     case "followup_planned":
       return {
         kind: "href",
-        label: "Voir la relance prévue",
+        label: t("today.dealCta.seePlanned"),
         href: DEAL_ANCHORS.followups,
       };
     case "meeting_booked":
-      return { kind: "href", label: "Noter l'échange", href: DEAL_ANCHORS.log };
+      return { kind: "href", label: t("today.dealCta.logMeeting"), href: DEAL_ANCHORS.log };
     case "ai_advice":
       if (ctx.draftWaiting)
         return {
           kind: "href",
-          label: "Voir la relance prête",
+          label: t("today.dealCta.seeReady"),
           href: DEAL_ANCHORS.followups,
         };
       switch (ctx.aiActionType) {
         case "call":
-          return callCta(ctx);
+          return callCta(ctx, t);
         case "send_followup":
         case "involve_decision_maker":
-          return writeCta(ctx);
+          return writeCta(ctx, t);
         case "reply_to_request":
           return ctx.email
-            ? { kind: "href", label: "Répondre", href: `mailto:${ctx.email}` }
+            ? { kind: "href", label: t("today.dealCta.reply"), href: `mailto:${ctx.email}` }
             : {
                 kind: "href",
-                label: "Voir sa demande",
+                label: t("today.dealCta.seeRequest"),
                 href: DEAL_ANCHORS.activity,
               };
         default:
@@ -96,31 +98,31 @@ export function dealCta(
       // Nobody opened it yet: the useful gesture is sending the link again
       return action.opened
         ? null
-        : { kind: "copy_link", label: "Copier le lien" };
+        : { kind: "copy_link", label: t("today.dealCta.copyLink") };
     case "in_touch":
     case "snoozed":
       return null;
   }
 }
 
-function callCta(ctx: DealCtaContext): DealCta {
+function callCta(ctx: DealCtaContext, t: AppT): DealCta {
   return ctx.phone
-    ? { kind: "href", label: "Appeler", href: `tel:${ctx.phone}` }
-    : { kind: "href", label: "Noter l'appel", href: DEAL_ANCHORS.log };
+    ? { kind: "href", label: t("today.dealCta.call"), href: `tel:${ctx.phone}` }
+    : { kind: "href", label: t("today.dealCta.logCall"), href: DEAL_ANCHORS.log };
 }
 
-function writeCta(ctx: DealCtaContext): DealCta | null {
+function writeCta(ctx: DealCtaContext, t: AppT): DealCta | null {
   if (ctx.draftWaiting)
     return {
       kind: "href",
-      label: "Voir la relance prête",
+      label: t("today.dealCta.seeReady"),
       href: DEAL_ANCHORS.followups,
     };
   if (ctx.canPrepareFollowup) return { kind: "prepare_followup" };
   if (ctx.email)
     return {
       kind: "href",
-      label: "Relancer par email",
+      label: t("today.dealCta.followUpByEmail"),
       href: `mailto:${ctx.email}`,
     };
   return null;

@@ -17,7 +17,11 @@ type ViewForLabel = {
 
 export type ReaderLabel = { name: string; identified: boolean };
 
-export function labelReaders(views: ViewForLabel[]): Map<string, ReaderLabel> {
+/** `unidentified` names a reader with no email, e.g. `(letter) => t("today.readers.unidentified", { letter })`. */
+export function labelReaders(
+  views: ViewForLabel[],
+  unidentified: (letter: string) => string = (letter) => `Lecteur non identifié ${letter}`,
+): Map<string, ReaderLabel> {
   const letters = new Map<string, string>();
   const perLink = new Map<string, number>();
   const labels = new Map<string, ReaderLabel>();
@@ -36,7 +40,7 @@ export function labelReaders(views: ViewForLabel[]): Map<string, ReaderLabel> {
       perLink.set(view.linkId, index + 1);
       letters.set(key, letter);
     }
-    labels.set(view.id, { name: `Lecteur non identifié ${letter}`, identified: false });
+    labels.set(view.id, { name: unidentified(letter), identified: false });
   }
   return labels;
 }

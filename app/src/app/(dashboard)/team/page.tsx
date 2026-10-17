@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getLocale, getTranslations } from "next-intl/server";
 
 import { AutoRefresh } from "@/components/dashboard/auto-refresh";
 import { EmptyState } from "@/components/dashboard/empty-state";
@@ -10,10 +11,6 @@ import {
 import { DealColumn } from "@/components/dashboard/team/deal-column";
 import { formatMoney, sumMoney } from "@/components/dashboard/team/money";
 import { SellerTable } from "@/components/dashboard/team/seller-table";
-import {
-  TEAM_HEALTH_HINTS,
-  TEAM_HEALTH_LABELS,
-} from "@/components/dashboard/labels";
 import { buttonVariants } from "@/components/ui/button";
 import { compareDeals } from "@/lib/closing/dashboard/rank";
 import {
@@ -22,7 +19,10 @@ import {
 } from "@/lib/closing/dashboard/team-queries";
 import { requireManager } from "@/lib/session";
 
-export const metadata: Metadata = { title: "Équipe" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("team");
+  return { title: t("metaTitle") };
+}
 
 const COLUMN_LIMIT = 15;
 const REFRESH_MS = 60_000;
@@ -31,15 +31,20 @@ const REFRESH_MS = 60_000;
 const byAmount = (a: TeamDealRow, b: TeamDealRow) =>
   (b.amountCents ?? -1) - (a.amountCents ?? -1) || compareDeals(a, b);
 
-export default async function TeamPage(props: PageProps<"/equipe">) {
-  const { organization } = await requireManager("/equipe");
+export default async function TeamPage(props: PageProps<"/team">) {
+  const { organization } = await requireManager("/team");
+  const [t, tl, locale] = await Promise.all([
+    getTranslations("team.page"),
+    getTranslations("labels"),
+    getLocale(),
+  ]);
   const now = new Date();
   const board = await getTeamBoard(organization.id, now);
 
   const names = new Map(
     board.sellers.map((seller) => [seller.id, seller.name]),
   );
-  const param = (await props.searchParams).vendeur;
+  const param = (await props.searchParams).seller;
   const selected = typeof param === "string" && names.has(param) ? param : null;
   const rows = selected
     ? board.rows.filter((row) => row.sellerId === selected)
@@ -53,8 +58,14 @@ export default async function TeamPage(props: PageProps<"/equipe">) {
     .filter((row) => row.health === "at_risk")
     .sort(compareDeals);
   const dead = rows.filter((row) => row.health === "dead").sort(byAmount);
-  const pipeline = formatMoney(sumMoney(summaries.map((s) => s.pipeline)));
-  const deadAmount = formatMoney(sumMoney(summaries.map((s) => s.deadAmount)));
+  const pipeline = formatMoney(
+    sumMoney(summaries.map((s) => s.pipeline)),
+    locale,
+  );
+  const deadAmount = formatMoney(
+    sumMoney(summaries.map((s) => s.deadAmount)),
+    locale,
+  );
   // The seller is in the page title: no need to repeat it on every deal
   const dealNames = selected || board.sellers.length < 2 ? null : names;
 
@@ -62,26 +73,24 @@ export default async function TeamPage(props: PageProps<"/equipe">) {
     <div className="space-y-10">
       <AutoRefresh intervalMs={REFRESH_MS} />
       <PageHeader
-        title={selected ? names.get(selected) : "Équipe"}
+        title={selected ? names.get(selected) : t("title")}
         description={
-          selected
-            ? "Ses deals en cours : ce qui avance, ce qui glisse, ce qui est à classer."
-            : "Les deals en cours de toute l'équipe : ce qui avance, ce qui glisse, ce qui est à classer."
+          selected ? t("descriptionSeller") : t("descriptionTeam")
         }
         action={
           selected ? (
             <Link
-              href="/equipe"
+              href="/team"
               className={buttonVariants({ variant: "outline" })}
             >
-              Toute l&apos;équipe
+              {t("allTeam")}
             </Link>
           ) : board.sellers.length < 2 ? (
             <Link
               href="/settings#equipe"
               className={buttonVariants({ variant: "outline" })}
             >
-              Inviter un commercial
+              {t("invite")}
             </Link>
           ) : null
         }
@@ -89,37 +98,37 @@ export default async function TeamPage(props: PageProps<"/equipe">) {
 
       {board.rows.length === 0 ? (
         <EmptyState
-          title="Aucun deal en cours dans l'équipe."
-          description="Dès qu'un commercial envoie une proposition, elle apparaît ici avec sa température."
+          title={t("emptyTitle")}
+          description={t("emptyDescription")}
         />
       ) : (
         <>
           {/* The team's report line: fields, not a row of KPI boxes. */}
           <dl className="flex flex-wrap gap-x-8 gap-y-2 border-y border-foreground py-3 text-body">
-            <ReportField label="En cours" value={rows.length} />
+            <ReportField label={t("open")} value={rows.length} />
             <ReportField
-              label={TEAM_HEALTH_LABELS.hot}
+              label={tl("teamHealth.hot")}
               value={hot.length}
               swatch="bg-success"
             />
             <ReportField
-              label={TEAM_HEALTH_LABELS.at_risk}
+              label={tl("teamHealth.at_risk")}
               value={atRisk.length}
               swatch="bg-warning"
             />
             <ReportField
-              label={TEAM_HEALTH_LABELS.dead}
+              label={tl("teamHealth.dead")}
               value={
                 deadAmount ? `${dead.length} · ${deadAmount}` : dead.length
               }
             />
-            <ReportField label="Pipeline" value={pipeline ?? "–"} />
+            <ReportField label={t("pipeline")} value={pipeline ?? "–"} />
           </dl>
 
           {board.sellers.length > 1 && (
             <section>
-              <SectionTitle hint="cliquez pour ne voir que ses deals">
-                Par commercial
+              <SectionTitle hint={t("bySellerHint")}>
+                {t("bySeller")}
               </SectionTitle>
               <SellerTable
                 summaries={summaries}
@@ -131,27 +140,27 @@ export default async function TeamPage(props: PageProps<"/equipe">) {
 
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
             <DealColumn
-              title={TEAM_HEALTH_LABELS.hot}
-              hint={TEAM_HEALTH_HINTS.hot}
-              empty="Rien n'avance pour l'instant."
+              title={tl("teamHealth.hot")}
+              hint={tl("teamHealthHint.hot")}
+              empty={t("emptyHot")}
               rows={hot}
               names={dealNames}
               now={now}
               limit={COLUMN_LIMIT}
             />
             <DealColumn
-              title={TEAM_HEALTH_LABELS.at_risk}
-              hint={TEAM_HEALTH_HINTS.at_risk}
-              empty="Rien ne glisse."
+              title={tl("teamHealth.at_risk")}
+              hint={tl("teamHealthHint.at_risk")}
+              empty={t("emptyAtRisk")}
               rows={atRisk}
               names={dealNames}
               now={now}
               limit={COLUMN_LIMIT}
             />
             <DealColumn
-              title={TEAM_HEALTH_LABELS.dead}
-              hint={TEAM_HEALTH_HINTS.dead}
-              empty="Rien à classer."
+              title={tl("teamHealth.dead")}
+              hint={tl("teamHealthHint.dead")}
+              empty={t("emptyDead")}
               rows={dead}
               names={dealNames}
               now={now}
@@ -161,8 +170,7 @@ export default async function TeamPage(props: PageProps<"/equipe">) {
 
           {board.capped && (
             <p className="text-small text-muted-foreground">
-              Seuls les 500 deals en cours les plus récents sont comptés : il y
-              a sans doute plus de deals à classer.
+              {t("capped")}
             </p>
           )}
         </>

@@ -2,6 +2,7 @@
 
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -9,13 +10,12 @@ import {
   completeOnboarding,
   createOnboardingTestLink,
   startOnboarding,
-} from "@/app/bienvenue/actions";
+} from "@/app/welcome/actions";
 import { Logo } from "@/components/brand/logo";
 import type { AddedSource } from "@/components/dashboard/upload-dropzone";
 import { Button } from "@/components/ui/button";
 import {
   ONBOARDING_STEPS,
-  STEP_LABELS,
   type MailClient,
 } from "@/lib/onboarding";
 import { cn } from "@/lib/utils";
@@ -41,6 +41,8 @@ export function OnboardingWizard({
   uploadPrefix: string;
   chromeStoreUrl: string | null;
 }) {
+  const t = useTranslations("onboarding.wizard");
+  const tSteps = useTranslations("onboarding.steps");
   const router = useRouter();
   const [index, setIndex] = useState(0);
   const [added, setAdded] = useState<AddedSource | null>(null);
@@ -95,7 +97,7 @@ export function OnboardingWizard({
               disabled={leaving}
               onClick={() => leave("/dashboard")}
             >
-              Passer
+              {t("skip")}
             </Button>
           )}
         </div>
@@ -104,7 +106,7 @@ export function OnboardingWizard({
       {/* One continuous sheet: the steps live in the margin column, the work on the page. */}
       <main className="mx-auto grid w-full max-w-5xl flex-1 grid-cols-1 px-4 sm:px-6 md:grid-cols-[12rem_minmax(0,1fr)]">
         <nav
-          aria-label="Étapes"
+          aria-label={t("stepsAria")}
           className="border-foreground py-5 md:border-r md:py-12 md:pr-6"
         >
           <ol className="flex gap-4 md:sticky md:top-12 md:flex-col md:gap-0">
@@ -125,7 +127,7 @@ export function OnboardingWizard({
                   {i + 1}/{ONBOARDING_STEPS.length}
                 </span>
                 <span className={cn(i !== index && "max-md:hidden")}>
-                  {STEP_LABELS[key]}
+                  {tSteps(key)}
                 </span>
               </li>
             ))}
@@ -160,7 +162,7 @@ export function OnboardingWizard({
               {index > 0 && (
                 <Button variant="ghost" onClick={() => go(index - 1)}>
                   <ArrowLeft />
-                  Retour
+                  {t("back")}
                 </Button>
               )}
               {step === "drop" && added && (
@@ -170,7 +172,7 @@ export function OnboardingWizard({
                   className="ml-auto"
                   onClick={() => go(index + 1)}
                 >
-                  Continuer avec ce document
+                  {t("continueWithDocument")}
                   <ArrowRight />
                 </Button>
               )}
@@ -181,7 +183,7 @@ export function OnboardingWizard({
                   className="ml-auto"
                   onClick={() => go(index + 1)}
                 >
-                  {testRead ? "Continuer" : "Passer cette étape"}
+                  {testRead ? t("continue") : t("skipStep")}
                   <ArrowRight />
                 </Button>
               )}
@@ -194,7 +196,7 @@ export function OnboardingWizard({
                       disabled={leaving}
                       onClick={() => leave("/dashboard")}
                     >
-                      Tableau de bord
+                      {t("dashboard")}
                     </Button>
                   )}
                   <Button
@@ -206,9 +208,7 @@ export function OnboardingWizard({
                       )
                     }
                   >
-                    {added
-                      ? "Envoyer mon document à un prospect"
-                      : "Aller à mon tableau de bord"}
+                    {added ? t("sendToProspect") : t("goToDashboard")}
                     <ArrowRight />
                   </Button>
                 </div>

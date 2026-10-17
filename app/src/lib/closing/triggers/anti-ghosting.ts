@@ -1,5 +1,6 @@
 import { ACTIVE_WORKSPACE } from "@/lib/closing/active-workspace";
 import { prisma } from "@/lib/db";
+import { toUiLocale } from "@/lib/seller-locale";
 
 import { DAY_MS } from "../constants";
 import { notExpired } from "../expiry";
@@ -29,6 +30,7 @@ export async function scanAntiGhosting(now = new Date()) {
     include: {
       prospects: { where: { unsubscribedAt: null } },
       organization: { include: { settings: true } },
+      createdBy: { select: { locale: true } },
     },
     take: 200,
   });
@@ -64,7 +66,8 @@ export async function scanAntiGhosting(now = new Date()) {
           channel,
           scheduledFor,
           timezone,
-          locale: prospect.locale ?? "fr",
+          // Unknown prospect language: the seller's, not French by default
+          locale: prospect.locale ?? toUiLocale(link.createdBy?.locale),
           dedupeKey: `anti_ghosting:${step}:${prospect.id}:${channel}`,
           context: { step, daysSinceSent },
         });

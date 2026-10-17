@@ -1,9 +1,11 @@
+import { useTranslations } from "next-intl";
+
 import type { EngagementTier } from "@/generated/prisma/enums";
 import type { EngagementReason } from "@/lib/closing/types";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-import { SCORE_REASON_LABELS, TIER_LABELS } from "./labels";
+import type { LabelsT } from "./labels";
 
 /** Temperature is the only colour in the interface: three readings of the ironbow scale. */
 export const HEAT_BG: Record<EngagementTier, string> = {
@@ -12,10 +14,10 @@ export const HEAT_BG: Record<EngagementTier, string> = {
   COLD: "bg-heat-cold",
 };
 
-export function scoreReasons(reasons: unknown) {
+export function scoreReasons(tl: LabelsT, reasons: unknown) {
   if (!Array.isArray(reasons)) return [];
   return (reasons as EngagementReason[]).map((r) => ({
-    label: `${SCORE_REASON_LABELS[r.code] ?? r.code}${r.detail ? ` (${r.detail})` : ""}`,
+    label: `${tl.has(`scoreReason.${r.code}` as never) ? tl(`scoreReason.${r.code}` as never) : r.code}${r.detail ? ` (${r.detail})` : ""}`,
     weight: r.weight,
   }));
 }
@@ -57,11 +59,12 @@ export function HeatDot({
   reasons?: unknown;
   className?: string;
 }) {
-  const lines = scoreReasons(reasons);
+  const tl = useTranslations("labels");
+  const lines = scoreReasons(tl, reasons);
   const label = (
     <span className={cn("inline-flex items-center gap-1.5 text-small", className)}>
       <span className={cn("size-2", HEAT_BG[tier])} />
-      {TIER_LABELS[tier]}
+      {tl(`tier.${tier}`)}
       <span className="text-muted-foreground tabular-nums">{score}</span>
     </span>
   );
@@ -90,6 +93,8 @@ export function HeatDot({
 
 /** The temperature as a small tag: swatch + word, "Pas encore lu" without a score. */
 export function HeatPill({ tier, className }: { tier: EngagementTier | null; className?: string }) {
+  const tl = useTranslations("labels");
+  const t = useTranslations("deal.heat");
   return (
     <span
       className={cn(
@@ -98,7 +103,7 @@ export function HeatPill({ tier, className }: { tier: EngagementTier | null; cla
       )}
     >
       <span className={cn("size-2", tier ? HEAT_BG[tier] : "bg-foreground/20")} aria-hidden />
-      {tier ? TIER_LABELS[tier] : "Pas encore lu"}
+      {tier ? tl(`tier.${tier}`) : t("notRead")}
     </span>
   );
 }

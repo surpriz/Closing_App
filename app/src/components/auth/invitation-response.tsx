@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ export function InvitationResponse({
   accept: () => Promise<Result>;
   reject: () => Promise<Result>;
 }) {
+  const t = useTranslations("auth.invitation");
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -30,10 +32,10 @@ export function InvitationResponse({
     <div className="space-y-3">
       <div className="flex flex-wrap gap-2">
         <Button disabled={pending} onClick={() => run(accept)}>
-          Rejoindre l&apos;équipe
+          {t("join")}
         </Button>
         <Button variant="ghost" disabled={pending} onClick={() => run(reject)}>
-          Refuser
+          {t("decline")}
         </Button>
       </div>
       {error && (
@@ -47,6 +49,7 @@ export function InvitationResponse({
 
 /** Signed in with the wrong address: sign out, then back to the invitation. */
 export function SwitchAccountButton({ next }: { next: string }) {
+  const t = useTranslations("auth.invitation");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
@@ -62,7 +65,7 @@ export function SwitchAccountButton({ next }: { next: string }) {
         })
       }
     >
-      Changer de compte
+      {t("switchAccount")}
     </Button>
   );
 }

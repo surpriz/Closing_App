@@ -8,19 +8,27 @@ import { canHelp } from "@/lib/closing/brain/budget";
 import { toModelMessages, toUIMessages } from "@/lib/closing/chat/messages";
 import { HELP_MESSAGE_MAX } from "@/lib/closing/help/constants";
 import { formatHelpContext, loadHelpContext } from "@/lib/closing/help/context";
-import { faqAsText } from "@/lib/closing/help/faq";
+import { getFaqText } from "@/lib/closing/help/faq";
 import { FEEDBACK_KINDS, saveFeedback } from "@/lib/closing/help/feedback";
-import { HELP_GUIDE } from "@/lib/closing/help/guide";
+import { getGuide } from "@/lib/closing/help/guide";
 import { buildHelpInstructions } from "@/lib/closing/help/prompts";
 import { canSendFeedback, countRecentHelpQuestions, loadHelpHistory } from "@/lib/closing/help/queries";
 import { decideHelpQuota } from "@/lib/closing/help/quota";
+import { type UiLocale } from "@/i18n/locale";
 import { prisma } from "@/lib/db";
+import { toUiLocale } from "@/lib/seller-locale";
 import { getWorkspace } from "@/lib/session";
 
 export const maxDuration = 60;
 
-/** The guide and the FAQ page, so the assistant and /faq never disagree. Same for everyone: cached. */
-const KNOWLEDGE = `${HELP_GUIDE}\n## Questions fréquentes (page /faq)\n${faqAsText()}\n`;
+const FAQ_HEADING: Record<UiLocale, string> = {
+  fr: "## Questions fréquentes (page /faq)",
+  en: "## Frequently asked questions (page /faq)",
+};
+
+/** The guide and the FAQ page, so the assistant and /faq never disagree. Same for everyone of a language: cached. */
+const knowledge = (locale: UiLocale) => `${getGuide(locale)}\n${FAQ_HEADING[locale]}\n${getFaqText(locale)}\n`;
+const KNOWLEDGE: Record<UiLocale, string> = { en: knowledge("en"), fr: knowledge("fr") };
 
 /** Messages shown when the panel opens: the whole current conversation, not just what the model gets. */
 const SHOWN_HISTORY_MAX = 50;
@@ -51,6 +59,7 @@ export async function POST(request: Request) {
   const { text } = parsed.data;
   const pathname = parsed.data.pathname ?? null;
   const { user, organization, role } = workspace;
+  const locale = toUiLocale(user.locale);
 
   const llm = getLanguageModel("help");
   if (!llm) return Response.json({ error: "unavailable" }, { status: 503 });
@@ -80,7 +89,11 @@ export async function POST(request: Request) {
   const startedAt = Date.now();
   const result = streamText({
     model: llm.model,
-    instructions: buildHelpInstructions({ guide: KNOWLEDGE, contextText: formatHelpContext(state, pathname) }),
+    instructions: buildHelpInstructions({
+      guide: KNOWLEDGE[locale],
+      contextText: formatHelpContext(state, pathname, locale),
+      locale,
+    }),
     messages: [...toModelMessages(history), { role: "user", content: text }],
     tools: {
       send_to_team: tool({

@@ -1,4 +1,6 @@
+import type { UiLocale } from "@/i18n/locale";
 import { renderEmail, type EmailBlock } from "@/lib/email-layout";
+import { getNamespaceTranslator, type ServerT } from "@/lib/server-translator";
 
 /**
  * Getting-started emails: one idea each, sent once, only while still true.
@@ -65,16 +67,21 @@ export type OnboardingEmailData = {
   firstName: string | null;
   /** first_read: the deal that was opened. */
   deal?: { label: string | null; url: string };
+  locale: UiLocale;
 };
 
+type EmailT = ServerT<"emails.onboarding">;
+
 export function buildOnboardingEmail(kind: OnboardingEmailKind, data: OnboardingEmailData) {
-  const hello = data.firstName ? `Bonjour ${data.firstName},` : "Bonjour,";
-  const { subject, title, blocks } = content(kind, data, hello);
+  const tt = getNamespaceTranslator(data.locale, "emails.onboarding");
+  const hello = data.firstName ? tt("helloName", { name: data.firstName }) : tt("hello");
+  const { subject, title, blocks } = content(kind, data, hello, tt);
   const { html, text } = renderEmail({
+    locale: data.locale,
     preheader: blocks.find((block) => block.kind === "text")?.text,
     title,
     blocks,
-    footer: { text: "Ne plus recevoir ces conseils de démarrage", href: `${data.appUrl}/bienvenue/emails` },
+    footer: { text: tt("footer"), href: `${data.appUrl}/welcome/emails` },
   });
   return { subject, html, text };
 }
@@ -83,65 +90,51 @@ function content(
   kind: OnboardingEmailKind,
   data: OnboardingEmailData,
   hello: string,
+  t: EmailT,
 ): { subject: string; title: string; blocks: EmailBlock[] } {
   switch (kind) {
     case "welcome":
       return {
-        subject: "Bienvenue sur Clozer",
-        title: "Une seule chose à faire",
+        subject: t("welcome.subject"),
+        title: t("welcome.title"),
         blocks: [
           { kind: "text", text: hello },
-          {
-            kind: "text",
-            text: "Déposez un document (devis, facture, présentation, peu importe), puis ouvrez le lien comme le ferait votre prospect. Vous verrez tout de suite ce que Clozer vous montre. Deux minutes.",
-          },
-          { kind: "text", text: "Rien à installer, tout se fait dans votre navigateur." },
-          { kind: "button", label: "C'est parti", href: `${data.appUrl}/bienvenue` },
+          { kind: "text", text: t("welcome.body") },
+          { kind: "text", text: t("welcome.noInstall") },
+          { kind: "button", label: t("welcome.button"), href: `${data.appUrl}/welcome` },
         ],
       };
     case "no_document":
       return {
-        subject: "Votre premier document sur Clozer",
-        title: "Prenez le dernier document que vous avez envoyé",
+        subject: t("noDocument.subject"),
+        title: t("noDocument.title"),
         blocks: [
           { kind: "text", text: hello },
-          {
-            kind: "text",
-            text: "Même un vieux. Déposez-le dans Clozer et ouvrez le lien : vous verrez exactement ce que votre prospect verra, et ce que vous saurez de sa lecture.",
-          },
-          { kind: "text", text: "Pas de document sous la main ? Un exemple vous attend." },
-          { kind: "button", label: "Essayer maintenant", href: `${data.appUrl}/bienvenue` },
+          { kind: "text", text: t("noDocument.body") },
+          { kind: "text", text: t("noDocument.example") },
+          { kind: "button", label: t("noDocument.button"), href: `${data.appUrl}/welcome` },
         ],
       };
     case "not_sent":
       return {
-        subject: "Votre lien est prêt, il n'est pas encore parti",
-        title: "Votre lien attend son prospect",
+        subject: t("notSent.subject"),
+        title: t("notSent.title"),
         blocks: [
           { kind: "text", text: hello },
-          {
-            kind: "text",
-            text: "Copiez-le dans votre prochain email, à la place de la pièce jointe. Dès que votre prospect l'ouvre, vous le savez.",
-          },
-          { kind: "button", label: "Récupérer mon lien", href: `${data.appUrl}/dashboard` },
+          { kind: "text", text: t("notSent.body") },
+          { kind: "button", label: t("notSent.button"), href: `${data.appUrl}/dashboard` },
         ],
       };
     case "first_read": {
-      const label = data.deal?.label ?? "Un prospect";
+      const label = data.deal?.label ?? t("firstRead.someone");
       return {
-        subject: `${label} a ouvert votre document`,
-        title: `${label} a ouvert votre document`,
+        subject: t("firstRead.subject", { label }),
+        title: t("firstRead.subject", { label }),
         blocks: [
           { kind: "text", text: hello },
-          {
-            kind: "text",
-            text: "Votre premier lien a été lu. Sur la page du deal : les pages lues, le temps passé, et ce que Clozer en conclut.",
-          },
-          {
-            kind: "text",
-            text: "Si une relance est utile, Clozer l'écrit pour vous. Elle vous attend dans « Relances à valider », rien ne part sans vous.",
-          },
-          { kind: "button", label: "Voir ce qu'il a lu", href: data.deal?.url ?? `${data.appUrl}/dashboard` },
+          { kind: "text", text: t("firstRead.body") },
+          { kind: "text", text: t("firstRead.followup") },
+          { kind: "button", label: t("firstRead.button"), href: data.deal?.url ?? `${data.appUrl}/dashboard` },
         ],
       };
     }

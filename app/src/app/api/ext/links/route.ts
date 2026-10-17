@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { getTranslator } from "@/i18n/messages";
 import { getPublicAppUrl } from "@/lib/app-origin";
 import { createDocumentLink } from "@/lib/closing/documents/create-link";
 import { prospectFromRecipient } from "@/lib/closing/prospects/from-recipient";
@@ -30,7 +31,7 @@ export const POST = withExtensionAuth(async (request, { user, organization }) =>
     draft: true,
     source: source === "gmail" ? "extension_gmail" : source === "outlook" ? "extension_outlook" : "outlook_addin",
   });
-  if (!link) return extError(404, "not_found", "Document introuvable.");
+  if (!link) return extError(404, "not_found", getTranslator(user.locale)("server.ext.documentNotFound"));
 
   revalidatePath(`/documents/${documentId}`);
   const appUrl = getPublicAppUrl();
@@ -42,7 +43,7 @@ export const POST = withExtensionAuth(async (request, { user, organization }) =>
         title: link.title,
         url: `${appUrl}/v/${link.slug}`,
         // What the prospect will meet, and where to change it or add a welcome message
-        summary: settingsSummary(link, new Date()),
+        summary: settingsSummary(link, new Date(), user.locale),
         manageUrl: `${appUrl}/links/${link.id}?new=1`,
       },
     },

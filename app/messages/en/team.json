@@ -1,0 +1,78 @@
+{
+  "metaTitle": "Team",
+  "page": {
+    "title": "Team",
+    "descriptionSeller": "Their open deals: what's moving, what's slipping, what to close out.",
+    "descriptionTeam": "The whole team's open deals: what's moving, what's slipping, what to close out.",
+    "allTeam": "Whole team",
+    "invite": "Invite a salesperson",
+    "emptyTitle": "No open deals on the team.",
+    "emptyDescription": "As soon as a salesperson sends a proposal, it shows up here with its temperature.",
+    "open": "Open",
+    "pipeline": "Pipeline",
+    "bySeller": "By salesperson",
+    "bySellerHint": "click to see only their deals",
+    "emptyHot": "Nothing moving for now.",
+    "emptyAtRisk": "Nothing slipping.",
+    "emptyDead": "Nothing to close out.",
+    "capped": "Only the 500 most recent open deals are counted: there are probably more deals to close out."
+  },
+  "column": {
+    "formerMember": "Former member",
+    "readAgo": "read {when}",
+    "neverOpened": "never opened",
+    "notRead": "Not read yet",
+    "aiAnalysis": "AI analysis",
+    "waiting": "{count, plural, =1 {# link not opened yet} other {# links not opened yet}}",
+    "andMore": "And {count} more."
+  },
+  "table": {
+    "seller": "Salesperson",
+    "open": "Open",
+    "pipeline": "Pipeline",
+    "deadAmount": "Amount to close out",
+    "formerMember": "Former member"
+  },
+  "settings": {
+    "title": "Team",
+    "intro": "Each salesperson follows their own deals. Admins see the whole team on the Team page and manage the workspace.",
+    "you": "(you)",
+    "roleChanged": "{name} is now {role}",
+    "roleAria": "{name}'s role",
+    "remove": "Remove",
+    "removeTitle": "Remove {name} from the team?",
+    "removeDescription": "Their deals stay in the workspace and go to the owner. Their Chrome extension is signed out.",
+    "cancel": "Cancel",
+    "removing": "Removing…",
+    "removed": "{name} was removed",
+    "invitationCancelled": "Invitation canceled",
+    "invitationSent": "Invitation sent",
+    "emailPlaceholder": "name@company.com",
+    "emailAria": "Email",
+    "roleSelectAria": "Role",
+    "sending": "Sending…",
+    "invite": "Invite",
+    "devLink": "No email locally, link to open:",
+    "invited": "Invited as {role}, pending until {date}"
+  },
+  "actions": {
+    "invalidEmail": "Invalid email address.",
+    "invalidInvitation": "Invalid invitation.",
+    "inviteFailed": "Couldn't send the invitation. Try again.",
+    "unknownRole": "Unknown role.",
+    "memberGone": "This member is no longer on the team.",
+    "fallback": "That didn't work. Try again.",
+    "errors": {
+      "USER_IS_ALREADY_A_MEMBER_OF_THIS_ORGANIZATION": "This person is already on the team.",
+      "YOU_ARE_NOT_ALLOWED_TO_INVITE_USERS_TO_THIS_ORGANIZATION": "Only admins can invite.",
+      "YOU_ARE_NOT_ALLOWED_TO_INVITE_USER_WITH_THIS_ROLE": "Only the owner can give this role.",
+      "YOU_ARE_NOT_ALLOWED_TO_UPDATE_THIS_MEMBER": "You can't change this member.",
+      "YOU_ARE_NOT_ALLOWED_TO_DELETE_THIS_MEMBER": "You can't remove this member.",
+      "YOU_CANNOT_LEAVE_THE_ORGANIZATION_AS_THE_ONLY_OWNER": "The workspace must keep at least one owner.",
+      "YOU_CANNOT_LEAVE_THE_ORGANIZATION_WITHOUT_AN_OWNER": "The workspace must keep at least one owner.",
+      "YOU_ARE_NOT_ALLOWED_TO_CANCEL_THIS_INVITATION": "You can't cancel this invitation.",
+      "MEMBER_NOT_FOUND": "This member is no longer on the team.",
+      "INVITATION_NOT_FOUND": "This invitation is no longer valid."
+    }
+  }
+}

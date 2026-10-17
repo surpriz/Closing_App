@@ -1,6 +1,7 @@
 import { getPublicAppUrl } from "@/lib/app-origin";
 import { prisma } from "@/lib/db";
 import { isEmailConfigured } from "@/lib/email";
+import { toUiLocale } from "@/lib/seller-locale";
 
 import { formatDeadline } from "./expiry";
 import { reactivatedEmail } from "./i18n/reactivated-email";
@@ -24,7 +25,7 @@ export async function notifyReactivated(linkId: string, since: Date) {
       slug: true,
       expiresAt: true,
       document: { select: { name: true } },
-      createdBy: { select: { email: true, name: true } },
+      createdBy: { select: { email: true, name: true, locale: true } },
       organization: { select: { settings: { select: { senderName: true } } } },
       actions: {
         where: {
@@ -47,7 +48,8 @@ export async function notifyReactivated(linkId: string, since: Date) {
 
   let told = 0;
   for (const prospect of prospects.values()) {
-    const locale = prospect.locale ?? "fr";
+    // Unknown prospect language: the seller's, not French by default
+    const locale = prospect.locale ?? toUiLocale(link.createdBy?.locale);
     const deadline = link.expiresAt
       ? formatDeadline(link.expiresAt, locale, prospect.timezone ?? defaultTimezone(), { showZone: !prospect.timezone })
       : null;

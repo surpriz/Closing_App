@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 import { CopyButton } from "@/components/dashboard/copy-button";
 import { HeatStrip } from "@/components/dashboard/heat-strip";
@@ -28,6 +29,7 @@ export type ProspectLinkRow = {
 
 /** One link per prospect, each led by its pages at the thermal camera. */
 export function DocumentLinks({ rows, video }: { rows: ProspectLinkRow[]; video: boolean }) {
+  const t = useTranslations("documents.links");
   return (
     <ul className="stagger divide-y divide-border border-y border-foreground bg-card">
       {rows.map((row) => (
@@ -47,7 +49,7 @@ export function DocumentLinks({ rows, video }: { rows: ProspectLinkRow[]; video:
               <span className="flex shrink-0 items-center gap-1.5 text-small text-muted-foreground">
                 <StateMark state={row.state} tier={row.tier} signed={row.signed} strong={row.strong} />
                 <span>
-                  · <span className="font-mono">{row.views}</span> {row.views === 1 ? "lecture" : "lectures"}
+                  · <span className="font-mono">{row.views}</span> {t("reads", { count: row.views })}
                 </span>
               </span>
             </div>
@@ -58,7 +60,7 @@ export function DocumentLinks({ rows, video }: { rows: ProspectLinkRow[]; video:
           </div>
           <div className="relative z-10 flex items-center gap-3">
             <label className="flex items-center gap-2 text-small text-muted-foreground">
-              <span className="hidden md:inline">Relances</span>
+              <span className="hidden md:inline">{t("followups")}</span>
               <LinkFollowupsToggle linkId={row.id} enabled={row.followupsEnabled} />
             </label>
             <CopyButton value={row.url} />

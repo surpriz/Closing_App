@@ -3,7 +3,11 @@ import { getPublicAppUrl } from "@/lib/app-origin";
 import { decryptSecret } from "@/lib/crypto";
 import { prisma } from "@/lib/db";
 import { isEmailConfigured, sendEmail } from "@/lib/email";
+import { DEFAULT_UI_LOCALE, INTL_LOCALE, type UiLocale } from "@/i18n/locale";
+import { getTranslator } from "@/i18n/messages";
 import { renderEmail, type EmailBlock } from "@/lib/email-layout";
+import { getSellerLocale } from "@/lib/seller-locale";
+import { getNamespaceTranslator, type ServerT } from "@/lib/server-translator";
 
 import { escapeSlackText, postSignedWebhook, postSlackMessage } from "../channels/webhooks";
 import { formatDeadline } from "../expiry";
@@ -78,16 +82,24 @@ type AlertMessage = {
   url: string;
 };
 
-export function alertWho(link: LinkForAlert, payload: AlertPayload) {
+export function alertWho(link: LinkForAlert, payload: AlertPayload, locale: UiLocale) {
   const prospect = link.prospects[0];
-  return prospect?.company ?? payload.prospectName ?? prospect?.name ?? link.name ?? payload.prospectEmail ?? prospect?.email ?? "Un prospect";
+  return (
+    prospect?.company ??
+    payload.prospectName ??
+    prospect?.name ??
+    link.name ??
+    payload.prospectEmail ??
+    prospect?.email ??
+    getTranslator(locale)("alerts.common.someone")
+  );
 }
 
-function replyButton(link: LinkForAlert, payload: AlertPayload): EmailBlock | null {
+function replyButton(link: LinkForAlert, payload: AlertPayload, t: ServerT<"alerts">): EmailBlock | null {
   if (!payload.prospectEmail) return null;
   return {
     kind: "button",
-    label: "Lui répondre",
+    label: t("common.reply"),
     href: `mailto:${payload.prospectEmail}?subject=${encodeURIComponent(`Re: ${link.document.name}`)}`,
   };
 }
@@ -97,130 +109,148 @@ export function alertMessage(
   link: LinkForAlert,
   payload: AlertPayload,
   timezone = "Europe/Paris",
+  locale: UiLocale = DEFAULT_UI_LOCALE,
 ): AlertMessage {
+  const t = getNamespaceTranslator(locale, "alerts");
   const appUrl = getPublicAppUrl();
-  const who = alertWho(link, payload);
-  const doc = `« ${link.document.name} »`;
+  const who = alertWho(link, payload, locale);
+  const doc = t("common.doc", { name: link.document.name });
   const linkUrl = `${appUrl}/links/${link.id}`;
-  const deadline = payload.expiresAt ? formatDeadline(new Date(payload.expiresAt), "fr-FR", timezone) : null;
+  const date = (iso: string) => formatDeadline(new Date(iso), INTL_LOCALE[locale], timezone);
+  const deadline = payload.expiresAt ? date(payload.expiresAt) : null;
+  const lineQuote = (text: string | null | undefined) => (text ? t("common.lineQuote", { text: text.slice(0, 200) }) : "");
+  const viewDeal: EmailBlock = { kind: "button", label: t("common.viewDeal"), href: linkUrl };
 
   switch (type) {
     case "LINK_EXTENSION_REQUESTED": {
       const url = `${linkUrl}#expiration`;
       const blocks: EmailBlock[] = [
-        { kind: "text", text: `Le lien vers ${doc} a expiré. ${who} demande à pouvoir le rouvrir.` },
-        { kind: "button", label: "Prolonger le lien", href: url },
+        { kind: "text", text: t("message.linkExtensionRequested.body", { doc, who }) },
+        { kind: "button", label: t("message.linkExtensionRequested.button"), href: url },
       ];
-      if (payload.prospectEmail) blocks.push({ kind: "text", text: `Son email : ${payload.prospectEmail}` });
+      if (payload.prospectEmail) {
+        blocks.push({ kind: "text", text: t("message.linkExtensionRequested.email", { email: payload.prospectEmail }) });
+      }
       return {
-        subject: `${who} demande une prolongation`,
-        line: `${who} demande une prolongation de ${doc}, qui a expiré`,
+        subject: t("message.linkExtensionRequested.subject", { who }),
+        line: t("message.linkExtensionRequested.line", { who, doc }),
         blocks,
         url,
       };
     }
     case "LINK_EXPIRING": {
       const url = `${linkUrl}#expiration`;
-      const when = deadline ? `le ${deadline}` : "dans moins de 24 h";
       return {
-        subject: `Le lien de ${who} expire demain`,
-        line: `${doc} (${who}) expire ${when}`,
+        subject: t("message.linkExpiring.subject", { who }),
+        line: deadline
+          ? t("message.linkExpiring.lineDate", { doc, who, date: deadline })
+          : t("message.linkExpiring.lineSoon", { doc, who }),
         blocks: [
-          { kind: "text", text: `${doc} ne sera plus accessible à ${who} après ${deadline ? `le ${deadline}` : "demain"}. Prolongez-le ou relancez d'ici là.` },
-          { kind: "button", label: "Voir le deal", href: url },
+          {
+            kind: "text",
+            text: deadline
+              ? t("message.linkExpiring.bodyDate", { doc, who, date: deadline })
+              : t("message.linkExpiring.bodyTomorrow", { doc, who }),
+          },
+          { ...viewDeal, href: url },
         ],
         url,
       };
     }
     case "PROSPECT_VALIDATED": {
-      const blocks: EmailBlock[] = [
-        { kind: "text", text: `${who} vient de cliquer sur « Valider & signer » sur ${doc}. La page lui a annoncé un retour rapide de votre part.` },
-      ];
+      const blocks: EmailBlock[] = [{ kind: "text", text: t("message.prospectValidated.body", { who, doc }) }];
       if (payload.message) blocks.push({ kind: "quote", text: payload.message });
-      blocks.push({ kind: "button", label: "Voir le deal", href: linkUrl });
-      return { subject: `${who} a validé votre proposition`, line: `${who} a validé ${doc}`, blocks, url: linkUrl };
+      blocks.push(viewDeal);
+      return {
+        subject: t("message.prospectValidated.subject", { who }),
+        line: t("message.prospectValidated.line", { who, doc }),
+        blocks,
+        url: linkUrl,
+      };
     }
     case "MEETING_BOOKED": {
-      const when = payload.meetingAt ? formatDeadline(new Date(payload.meetingAt), "fr-FR", timezone) : null;
+      const when = payload.meetingAt ? date(payload.meetingAt) : null;
       const blocks: EmailBlock[] = [
         {
           kind: "text",
-          text: `${who} vient de réserver un rendez-vous depuis ${doc}${when ? `, pour le ${when}` : ""}. Les relances automatiques de ce deal sont arrêtées.`,
+          text: when
+            ? t("message.meetingBooked.bodyDate", { who, doc, date: when })
+            : t("message.meetingBooked.body", { who, doc }),
         },
       ];
-      if (!when) blocks.push({ kind: "text", text: "La date et l'heure sont dans votre agenda." });
-      const reply = replyButton(link, payload);
+      if (!when) blocks.push({ kind: "text", text: t("message.meetingBooked.noDate") });
+      const reply = replyButton(link, payload, t);
       if (reply) blocks.push(reply);
-      blocks.push({ kind: "button", label: "Voir le deal", href: linkUrl });
+      blocks.push(viewDeal);
       return {
-        subject: `${who} a pris rendez-vous${when ? ` le ${when}` : ""}`,
-        line: `${who} a pris rendez-vous${when ? ` pour le ${when}` : ""} depuis ${doc}`,
+        subject: when ? t("message.meetingBooked.subjectDate", { who, date: when }) : t("message.meetingBooked.subject", { who }),
+        line: when
+          ? t("message.meetingBooked.lineDate", { who, date: when, doc })
+          : t("message.meetingBooked.line", { who, doc }),
         blocks,
         url: linkUrl,
       };
     }
     case "CHANGE_REQUESTED": {
-      const blocks: EmailBlock[] = [{ kind: "text", text: `${who} demande un ajustement sur ${doc}.` }];
+      const blocks: EmailBlock[] = [{ kind: "text", text: t("message.changeRequested.body", { who, doc }) }];
       if (payload.message) blocks.push({ kind: "quote", text: payload.message });
-      const reply = replyButton(link, payload);
+      const reply = replyButton(link, payload, t);
       if (reply) blocks.push(reply);
-      blocks.push({ kind: "text", text: `Le deal : ${linkUrl}` });
+      blocks.push({ kind: "text", text: t("common.dealLine", { url: linkUrl }) });
       return {
-        subject: `${who} demande un ajustement`,
-        line: `${who} demande un ajustement sur ${doc}${payload.message ? ` : « ${payload.message.slice(0, 200)} »` : ""}`,
+        subject: t("message.changeRequested.subject", { who }),
+        line: `${t("message.changeRequested.line", { who, doc })}${lineQuote(payload.message)}`,
         blocks,
         url: linkUrl,
       };
     }
     case "QUOTE_REQUESTED": {
-      const blocks: EmailBlock[] = [
-        { kind: "text", text: `${who} a regardé ${doc} et demande un devis. Les relances automatiques de ce deal sont arrêtées.` },
-      ];
+      const blocks: EmailBlock[] = [{ kind: "text", text: t("message.quoteRequested.body", { who, doc }) }];
       if (payload.message) blocks.push({ kind: "quote", text: payload.message });
-      const reply = replyButton(link, payload);
+      const reply = replyButton(link, payload, t);
       if (reply) blocks.push(reply);
-      blocks.push({ kind: "text", text: `Le deal : ${linkUrl}` });
+      blocks.push({ kind: "text", text: t("common.dealLine", { url: linkUrl }) });
       return {
-        subject: `${who} demande un devis`,
-        line: `${who} demande un devis après ${doc}${payload.message ? ` : « ${payload.message.slice(0, 200)} »` : ""}`,
+        subject: t("message.quoteRequested.subject", { who }),
+        line: `${t("message.quoteRequested.line", { who, doc })}${lineQuote(payload.message)}`,
         blocks,
         url: linkUrl,
       };
     }
     case "PROSPECT_QUESTION": {
-      const blocks: EmailBlock[] = [
-        {
-          kind: "text",
-          text: `${who} a posé une question sur ${doc}. L'assistant n'a pas pu répondre et lui a dit que vous reviendriez vers lui.`,
-        },
-      ];
+      const blocks: EmailBlock[] = [{ kind: "text", text: t("message.prospectQuestion.body", { who, doc }) }];
       if (payload.question) blocks.push({ kind: "quote", text: payload.question });
-      const reply = replyButton(link, payload);
+      const reply = replyButton(link, payload, t);
       if (reply) blocks.push(reply);
       const url = `${linkUrl}#questions`;
-      blocks.push({ kind: "text", text: `Le deal et la conversation : ${url}` });
+      blocks.push({ kind: "text", text: t("message.prospectQuestion.dealAndChat", { url }) });
       return {
-        subject: `${who} a une question sur votre proposition`,
-        line: `${who} a une question sur ${doc}${payload.question ? ` : « ${payload.question.slice(0, 200)} »` : ""}`,
+        subject: t("message.prospectQuestion.subject", { who }),
+        line: `${t("message.prospectQuestion.line", { who, doc })}${lineQuote(payload.question)}`,
         blocks,
         url,
       };
     }
     case "VOICE_COMMENT": {
-      const page = payload.pageNumber ? `la page ${payload.pageNumber} de ` : "";
-      const blocks: EmailBlock[] = [{ kind: "text", text: `${who} a enregistré un commentaire vocal sur ${page}${doc}.` }];
+      const page = payload.pageNumber;
+      const blocks: EmailBlock[] = [
+        {
+          kind: "text",
+          text: page ? t("message.voiceComment.bodyPage", { who, page, doc }) : t("message.voiceComment.body", { who, doc }),
+        },
+      ];
       blocks.push(
         payload.transcript
           ? { kind: "quote", text: payload.transcript }
-          : { kind: "text", text: "Pas de transcription cette fois, écoutez-le sur la page du deal." },
+          : { kind: "text", text: t("message.voiceComment.noTranscript") },
       );
-      const reply = replyButton(link, payload);
+      const reply = replyButton(link, payload, t);
       if (reply) blocks.push(reply);
       const url = `${linkUrl}#vocaux`;
-      blocks.push({ kind: "text", text: `L'écouter : ${url}` });
+      blocks.push({ kind: "text", text: t("message.voiceComment.listen", { url }) });
       return {
-        subject: `${who} vous a laissé un message vocal`,
-        line: `${who} a laissé un vocal sur ${page}${doc}${payload.transcript ? ` : « ${payload.transcript.slice(0, 200)} »` : ""}`,
+        subject: t("message.voiceComment.subject", { who }),
+        line: `${page ? t("message.voiceComment.linePage", { who, page, doc }) : t("message.voiceComment.line", { who, doc })}${lineQuote(payload.transcript)}`,
         blocks,
         url,
       };
@@ -228,11 +258,11 @@ export function alertMessage(
     case "DRAFT_READY": {
       const url = `${linkUrl}#relances`;
       return {
-        subject: `Relance à valider : ${who}`,
-        line: `Une relance pour ${who} (${doc}) attend votre accord`,
+        subject: t("message.draftReady.subject", { who }),
+        line: t("message.draftReady.line", { who, doc }),
         blocks: [
-          { kind: "text", text: `Une relance pour ${who} (${doc}) est prête. Relisez-la et validez-la : rien ne part sans vous.` },
-          { kind: "button", label: "Relire la relance", href: url },
+          { kind: "text", text: t("message.draftReady.body", { who, doc }) },
+          { kind: "button", label: t("message.draftReady.button"), href: url },
         ],
         url,
       };
@@ -241,23 +271,25 @@ export function alertMessage(
     case "DECISION_MAKER_DETECTED":
     case "NEW_READER": {
       const url = `${linkUrl}#qui-lit`;
-      const reason = payload.reason ?? "Quelqu'un de nouveau lit votre proposition";
+      const reason = payload.reason ?? t("message.readers.reasonFallback");
       const subject =
         type === "COMMITTEE_LIVE"
-          ? `${who} : ${payload.liveViewers ?? "plusieurs"} personnes lisent votre proposition`
+          ? payload.liveViewers
+            ? t("message.readers.subjectCommittee", { who, count: payload.liveViewers })
+            : t("message.readers.subjectCommitteeMany", { who })
           : type === "DECISION_MAKER_DETECTED"
-            ? `Un décideur de ${who} lit votre proposition`
+            ? t("message.readers.subjectDecisionMaker", { who })
             : payload.readerOrigin === "forwarded_internal"
-              ? `${who} a repartagé votre proposition`
-              : "Nouveau lecteur sur votre proposition";
-      const hint = type === "COMMITTEE_LIVE" ? "Le comité regarde, c'est le moment d'appeler." : "C'est le moment de reprendre contact.";
+              ? t("message.readers.subjectForwarded", { who })
+              : t("message.readers.subjectNewReader");
+      const hint = type === "COMMITTEE_LIVE" ? t("message.readers.hintCommittee") : t("message.readers.hint");
       return {
         subject,
-        line: `${who} · ${doc} : ${reason}. ${hint}`,
+        line: t("message.readers.line", { who, doc, reason, hint }),
         blocks: [
-          { kind: "text", text: `${reason} (${doc}).` },
+          { kind: "text", text: t("message.readers.body", { reason, doc }) },
           { kind: "text", text: hint },
-          { kind: "button", label: "Voir qui lit", href: url },
+          { kind: "button", label: t("message.readers.button"), href: url },
         ],
         url,
       };
@@ -267,15 +299,19 @@ export function alertMessage(
       const reason =
         payload.reason ??
         (type === "MULTI_VIEWER"
-          ? `${payload.liveViewers ?? "Plusieurs"} personnes lisent en même temps`
-          : `Revient après ${payload.inactiveDays ?? "quelques"} jours sans lecture`);
+          ? payload.liveViewers
+            ? t("message.hot.reasonMulti", { count: payload.liveViewers })
+            : t("message.hot.reasonMultiMany")
+          : payload.inactiveDays
+            ? t("message.hot.reasonBack", { days: payload.inactiveDays })
+            : t("message.hot.reasonBackSome"));
       return {
-        subject: `${who} lit votre proposition en ce moment`,
-        line: `${who} lit ${doc} en ce moment. ${reason}, c'est le moment d'appeler.`,
+        subject: t("message.hot.subject", { who }),
+        line: t("message.hot.line", { who, doc, reason }),
         blocks: [
-          { kind: "text", text: `${who} lit ${doc} en ce moment. ${reason}.` },
-          { kind: "text", text: "C'est un bon moment pour appeler." },
-          { kind: "button", label: "Voir la lecture en direct", href: linkUrl },
+          { kind: "text", text: t("message.hot.body", { who, doc, reason }) },
+          { kind: "text", text: t("message.hot.goodMoment") },
+          { kind: "button", label: t("message.hot.button"), href: linkUrl },
         ],
         url: linkUrl,
       };
@@ -321,7 +357,8 @@ export async function createAndDeliverAlert(input: AlertDelivery) {
     throw error;
   }
 
-  const message = alertMessage(input.type, link, input.payload, input.timezone);
+  const locale = await getSellerLocale(input.userId);
+  const message = alertMessage(input.type, link, input.payload, input.timezone, locale);
   const pushed = input.channels.filter((c) => c !== "EXTENSION");
   const errors: string[] = [];
 
@@ -334,10 +371,11 @@ export async function createAndDeliverAlert(input: AlertDelivery) {
         );
         if (!recipients.length) throw new Error("aucun email d'alerte");
         const { html, text } = renderEmail({
+          locale,
           preheader: message.line,
           title: message.subject,
           blocks: message.blocks,
-          footer: { text: "Régler mes notifications", href: `${getPublicAppUrl()}/settings#alertes` },
+          footer: { text: getTranslator(locale)("alerts.common.footer"), href: `${getPublicAppUrl()}/settings#alertes` },
         });
         for (const to of recipients) {
           await sendEmail({

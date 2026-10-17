@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import type { ComponentProps } from "react";
 
 import { LinkSettingsDialog } from "../link-settings-form";
@@ -24,12 +25,9 @@ export function DealSettings({
   /** Page capsules recorded before the welcome message, null when there are none. */
   capsules: React.ReactNode;
 }) {
+  const t = useTranslations("deal.dealSettings");
   return (
-    <DealSection
-      id="reglages"
-      title="Réglages du lien"
-      hint="ce que voit le prospect"
-    >
+    <DealSection id="reglages" title={t("title")} hint={t("hint")}>
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-border py-3">
         <p className="text-small text-muted-foreground">
           {summary.join(" · ")}
@@ -39,8 +37,8 @@ export function DealSettings({
       {welcome && (
         <DealFold
           id="mot-accueil"
-          title="Mot d'accueil"
-          hint="le prospect le voit dès l'ouverture"
+          title={t("welcomeTitle")}
+          hint={t("welcomeHint")}
         >
           {welcome}
         </DealFold>
@@ -48,8 +46,8 @@ export function DealSettings({
       {capsules && (
         <DealFold
           id="capsules"
-          title="Capsules par page"
-          hint="enregistrées avant le mot d'accueil"
+          title={t("capsulesTitle")}
+          hint={t("capsulesHint")}
         >
           {capsules}
         </DealFold>

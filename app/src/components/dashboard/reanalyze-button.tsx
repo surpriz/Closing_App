@@ -1,6 +1,7 @@
 "use client";
 
 import { RefreshCw } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useTransition } from "react";
 import { toast } from "sonner";
 
@@ -8,8 +9,9 @@ import { reanalyzeDeal } from "@/app/(dashboard)/links/actions";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-export function ReanalyzeButton({ linkId, label = "Réanalyser" }: { linkId: string; label?: string }) {
+export function ReanalyzeButton({ linkId, label }: { linkId: string; label?: string }) {
   const [pending, startTransition] = useTransition();
+  const t = useTranslations("deal.reanalyzeButton");
 
   return (
     <Button
@@ -20,11 +22,11 @@ export function ReanalyzeButton({ linkId, label = "Réanalyser" }: { linkId: str
         startTransition(async () => {
           const result = await reanalyzeDeal(linkId);
           if (result.error) toast.error(result.error);
-          else toast.success("Analyse à jour");
+          else toast.success(t("done"));
         })
       }
     >
-      <RefreshCw className={cn(pending && "animate-spin")} /> {pending ? "Analyse…" : label}
+      <RefreshCw className={cn(pending && "animate-spin")} /> {pending ? t("analyzing") : (label ?? t("label"))}
     </Button>
   );
 }

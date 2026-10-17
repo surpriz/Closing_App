@@ -7,7 +7,7 @@ const base = { shared: false, requireEmail: true, expiresAt: null, ctaEnabled: t
 
 describe("settingsSummary", () => {
   it("sums up a personal quote", () => {
-    expect(settingsSummary({ ...base, expiresAt: new Date("2026-10-25T09:00:00Z") }, now)).toEqual([
+    expect(settingsSummary({ ...base, expiresAt: new Date("2026-10-25T09:00:00Z") }, now, "fr")).toEqual([
       "Email demandé",
       "Expire dans 15 j",
       "Validation en ligne",
@@ -16,10 +16,20 @@ describe("settingsSummary", () => {
   });
 
   it("says a shared link gives each reader their own link and reviewed follow-ups", () => {
-    expect(settingsSummary({ ...base, shared: true, ctaEnabled: false }, now)).toEqual([
+    expect(settingsSummary({ ...base, shared: true, ctaEnabled: false }, now, "fr")).toEqual([
       "Un lien par lecteur",
       "Sans expiration",
       "Relances à valider",
+    ]);
+  });
+
+  it("speaks English too", () => {
+    expect(settingsSummary({ ...base, chatEnabled: true }, now, "en")).toEqual([
+      "Email required",
+      "No expiry",
+      "Online approval",
+      "AI assistant",
+      "Auto follow-ups",
     ]);
   });
 });

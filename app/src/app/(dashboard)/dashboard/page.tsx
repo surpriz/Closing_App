@@ -2,16 +2,12 @@ import { PenLine, Send } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getLocale, getTranslations } from "next-intl/server";
 
 import { AutopilotBanner } from "@/components/dashboard/autopilot-banner";
 import { NewLinkButton } from "@/components/dashboard/create-link-form";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { FirstSteps } from "@/components/dashboard/first-steps";
-import {
-  CHANNEL_LABELS,
-  DEAL_STATUS_LABELS,
-  TIER_LABELS,
-} from "@/components/dashboard/labels";
 import { SectionTitle } from "@/components/dashboard/page-header";
 import { ActivityFeed } from "@/components/dashboard/today/activity-feed";
 import {
@@ -32,6 +28,7 @@ import {
 } from "@/components/dashboard/today/todo-list";
 import { buildTodayHeadline } from "@/components/dashboard/today-headline";
 import { UploadDropzone } from "@/components/dashboard/upload-dropzone";
+import { INTL_LOCALE, type UiLocale } from "@/i18n/locale";
 import { getAppOrigin } from "@/lib/app-origin";
 import { documentUploadPrefix, pitchUploadPrefix } from "@/lib/blob";
 import { dealAction } from "@/lib/closing/dashboard/deal-action";
@@ -41,12 +38,9 @@ import {
   buildHeatDistribution,
 } from "@/lib/closing/dashboard/funnel";
 import { dealDocumentMeta, dealLabel } from "@/lib/closing/dashboard/labels";
-import {
-  parsePeriod,
-  periodStart,
-  PERIODS,
-} from "@/lib/closing/dashboard/period";
+import { parsePeriod, periodStart } from "@/lib/closing/dashboard/period";
 import { pageHeat } from "@/lib/closing/dashboard/page-heat";
+import type { AppT } from "@/lib/closing/dashboard/i18n";
 import { compareDeals } from "@/lib/closing/dashboard/rank";
 import {
   getFeedSource,
@@ -69,14 +63,17 @@ import { shouldForceOnboarding } from "@/lib/onboarding";
 import { isManagerRole } from "@/lib/roles";
 import { requireWorkspace } from "@/lib/session";
 
-export const metadata: Metadata = { title: "Aujourd'hui" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("today.page");
+  return { title: t("metaTitle") };
+}
 
 const TODO_LIMIT = 15;
 const ASK_IF_SENT_AFTER_MS = 2 * 24 * 60 * 60 * 1000;
 const FEED_LIMIT = 12;
 
 export default async function DashboardPage(props: PageProps<"/dashboard">) {
-  // A seller's day is their own deals; the team view is /equipe
+  // A seller's day is their own deals; the team view is /team
   const { user, organization, role, scope } = await requireWorkspace();
   const organizationId = organization.id;
   const { mailClient, onboardingCompletedAt } = await getSellerPrefs(
@@ -85,6 +82,8 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
   );
   const mine = { organizationId, ...sellerLinks(scope) };
   const now = new Date();
+  const [t, locale] = await Promise.all([getTranslations(), getLocale()]);
+  const noRecipient = t("today.page.noRecipient");
   const period = parsePeriod((await props.searchParams).p);
   catchUpInBackground({ organizationId });
   const since = periodStart(period, now);
@@ -154,7 +153,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
   ]);
   // A fresh seller is walked through a first document once; anyone joining a workspace in use is not
   if (shouldForceOnboarding({ onboardingCompletedAt, documentCount }))
-    redirect("/bienvenue");
+    redirect("/welcome");
   const uploadPrefix = documentUploadPrefix(organizationId);
   const pitchPrefix = pitchUploadPrefix(organizationId);
 
@@ -163,11 +162,10 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
       <div className="space-y-8">
         <div className="space-y-3">
           <h1 className="condensed max-w-2xl text-display">
-            Bienvenue sur Clozer.
+            {t("today.page.welcomeTitle")}
           </h1>
           <p className="max-w-xl text-body text-muted-foreground">
-            Déposez un document (devis, facture, présentation…) : le lien à
-            envoyer est prêt dans la seconde.
+            {t("today.page.welcomeBody")}
           </p>
         </div>
         <FirstSteps
@@ -183,12 +181,12 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
         />
         {!mailClient && (
           <p className="text-sm text-muted-foreground">
-            Vous envoyez depuis Gmail ou Outlook ?{" "}
+            {t("today.page.mailClientQuestion")}{" "}
             <Link
-              href="/bienvenue?etape=outil"
+              href="/welcome?step=tool"
               className="text-foreground underline underline-offset-4"
             >
-              Clozer peut créer le lien directement dans vos emails
+              {t("today.page.mailClientLink")}
             </Link>
             .
           </p>
@@ -203,7 +201,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
     .map((draft) => ({
       id: draft.id,
       url: `${origin}/v/${draft.slug}`,
-      label: dealLabel(draft),
+      label: dealLabel(draft, noRecipient),
       documentName: draft.document.name,
     }));
   const copiedRows: UnopenedRow[] = readyDrafts
@@ -211,7 +209,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
     .map((draft) => ({
       id: draft.id,
       url: `${origin}/v/${draft.slug}`,
-      label: dealLabel(draft),
+      label: dealLabel(draft, noRecipient),
       documentName: dealDocumentMeta(draft),
       askIfSent:
         now.getTime() - draft.copiedAt!.getTime() > ASK_IF_SENT_AFTER_MS,
@@ -228,6 +226,8 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
         readingNow: readingLinks.has(deal.id),
         origin,
         pages: readings.get(deal.id) ?? null,
+        t,
+        noRecipient,
       }),
     )
     .sort(compareDeals);
@@ -247,13 +247,13 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
     rows.map((row) => ({ opened: row.opened, tier: row.tier })),
   );
   const funnel = buildFunnel(funnelFacts);
-  const feed = buildFeed(feedSource, FEED_LIMIT);
+  const feed = buildFeed(feedSource, FEED_LIMIT, t);
 
   // The deal the day's headline is about: its AI line is not repeated in the list
   const focus =
     rows.find((row) => (row.aiPriority ?? 0) >= 4 && row.insightHeadline) ??
     null;
-  const { headline, hint } = buildTodayHeadline({
+  const { headline, hint } = buildTodayHeadline(t, {
     // "Hot" by the score alone, unless the analysis reads the deal as calm
     hotProspects: rows
       .filter(
@@ -272,7 +272,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
     documentCount,
     unopenedCount: distribution.unopened,
     nextFollowupLabel: upcomingFollowups[0]
-      ? formatRelative(upcomingFollowups[0].scheduledFor, now)
+      ? formatRelative(upcomingFollowups[0].scheduledFor, locale, now)
       : null,
     aiFocus: focus
       ? { label: focus.label, headline: focus.insightHeadline! }
@@ -283,17 +283,15 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
       : null,
   });
 
-  const periodHint = PERIODS[period].hint;
+  const periodHint = t(`today.period.${period}.hint`);
 
   return (
     <div className="space-y-10">
       <section className="space-y-6">
         <p className="flex flex-wrap gap-x-6 gap-y-1 border-b border-border pb-2 font-mono text-micro text-muted-foreground">
-          <span className="text-foreground">Rapport du jour</span>
-          <span>{reportDate(now)}</span>
-          <span>
-            {deals.length} deal{deals.length > 1 ? "s" : ""} en cours
-          </span>
+          <span className="text-foreground">{t("today.page.reportTitle")}</span>
+          <span>{reportDate(now, locale)}</span>
+          <span>{t("today.page.dealsInProgress", { count: deals.length })}</span>
         </p>
         <div className="flex flex-col-reverse gap-6 sm:flex-row sm:items-end sm:justify-between">
           <div className="max-w-3xl space-y-3">
@@ -316,20 +314,20 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
         <div className="min-w-0 space-y-12">
           {readyLinks.length > 0 && (
             <section id="a-envoyer" className="scroll-mt-20">
-              <SectionTitle hint="pas encore copiés ni envoyés">
-                À envoyer
+              <SectionTitle hint={t("today.page.toSendHint")}>
+                {t("today.page.toSend")}
               </SectionTitle>
               <ReadyLinks links={readyLinks} />
             </section>
           )}
           <section>
-            <SectionTitle hint="du plus urgent au moins urgent">
-              À traiter
+            <SectionTitle hint={t("today.page.toHandleHint")}>
+              {t("today.page.toHandle")}
             </SectionTitle>
             {rows.length === 0 && copiedRows.length === 0 ? (
               <EmptyState
-                title="Aucun deal en cours."
-                description="Dès qu'un lien envoyé est ouvert, le deal apparaît ici avec ce qu'il y a à faire."
+                title={t("today.page.emptyTitle")}
+                description={t("today.page.emptyDescription")}
                 action={
                   // "À envoyer" above already carries the action when a link is waiting
                   readyLinks.length === 0 &&
@@ -337,7 +335,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
                     <NewLinkButton
                       documentId={latestReadyDocument.id}
                       variant="outline"
-                      label="Créer un lien"
+                      label={t("today.page.createLink")}
                     />
                   )
                 }
@@ -353,8 +351,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
                 )}
                 {activeRows.length > TODO_LIMIT && (
                   <p className="mt-3 text-small text-muted-foreground">
-                    Et {activeRows.length - TODO_LIMIT} autres deals en cours,
-                    moins urgents.
+                    {t("today.page.moreDeals", { count: activeRows.length - TODO_LIMIT })}
                   </p>
                 )}
                 {waitingRows.length > 0 && <UnopenedDeals rows={waitingRows} />}
@@ -364,10 +361,10 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
 
           <section>
             <SectionTitle
-              hint={`où en sont les liens envoyés, ${periodHint}`}
+              hint={t("today.page.sendsHint", { period: periodHint })}
               action={<PeriodTabs current={period} />}
             >
-              Vos envois
+              {t("today.page.sends")}
             </SectionTitle>
             <FunnelStrip funnel={funnel} />
           </section>
@@ -375,14 +372,14 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
 
         <aside className="space-y-10">
           <section>
-            <SectionTitle hint="en ce moment">Deals en cours</SectionTitle>
+            <SectionTitle hint={t("today.page.openDealsHint")}>{t("today.page.openDeals")}</SectionTitle>
             <HeatDistributionBar distribution={distribution} />
           </section>
 
           {drafts.length > 0 && (
             <section>
-              <SectionTitle hint="rien ne part sans vous">
-                Relances à valider
+              <SectionTitle hint={t("today.page.draftsHint")}>
+                {t("today.page.draftsTitle")}
               </SectionTitle>
               <ul className="space-y-3 text-sm">
                 {drafts.map((draft) => (
@@ -398,7 +395,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
                           draft.prospect.email}
                       </Link>
                       <p className="truncate text-muted-foreground">
-                        {CHANNEL_LABELS[draft.channel]}
+                        {t(`labels.channel.${draft.channel}`)}
                         {draft.subject ? ` : ${draft.subject}` : ""}
                       </p>
                     </div>
@@ -410,12 +407,11 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
 
           <section>
             <SectionTitle hint={periodHint}>
-              Ce qui s&apos;est passé
+              {t("today.page.feedTitle")}
             </SectionTitle>
             {feed.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                Les lectures, les réponses de vos prospects et les relances
-                envoyées s&apos;afficheront ici.
+                {t("today.page.feedEmpty")}
               </p>
             ) : (
               <ActivityFeed items={feed} now={now} />
@@ -424,7 +420,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
 
           {upcomingFollowups.length > 0 && (
             <section>
-              <SectionTitle>Relances à venir</SectionTitle>
+              <SectionTitle>{t("today.page.upcomingTitle")}</SectionTitle>
               <ul className="space-y-3 text-sm">
                 {upcomingFollowups.map((followup) => (
                   <li key={followup.id} className="flex gap-3">
@@ -440,10 +436,12 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
                       </Link>
                       <p
                         className="text-muted-foreground"
-                        title={`${formatInTimeZone(followup.scheduledFor, followup.timezone)}, heure du prospect`}
+                        title={t("today.page.prospectTime", {
+                          time: formatInTimeZone(followup.scheduledFor, followup.timezone, locale),
+                        })}
                       >
-                        {CHANNEL_LABELS[followup.channel]}{" "}
-                        {formatRelative(followup.scheduledFor, now)}
+                        {t(`labels.channel.${followup.channel}`)}{" "}
+                        {formatRelative(followup.scheduledFor, locale, now)}
                       </p>
                     </div>
                   </li>
@@ -464,10 +462,14 @@ function toTodoRow(
     readingNow,
     origin,
     pages,
+    t,
+    noRecipient,
   }: {
     now: Date;
     readingNow: boolean;
     origin: string;
+    t: AppT;
+    noRecipient: string;
     /** Reading time per page, null when the link was never opened. */
     pages: { pageNumber: number; durationMs: number }[] | null;
   },
@@ -483,13 +485,13 @@ function toTodoRow(
     id: deal.id,
     dealStatus: deal.dealStatus,
     opened: deal.opened,
-    label: dealLabel(deal),
+    label: dealLabel(deal, noRecipient),
     company: prospect?.company ?? null,
     contact: prospect ? (prospect.name ?? prospect.email) : null,
     documentName: dealDocumentMeta(deal),
     tier,
     score,
-    state: dealState(deal.dealStatus, deal.opened, tier),
+    state: dealState(t, deal.dealStatus, deal.opened, tier),
     lastActivityAt: deal.lastActivityAt,
     action,
     insightHeadline,
@@ -500,8 +502,8 @@ function toTodoRow(
 }
 
 // Sellers are in France for now; the date only labels the report.
-function reportDate(now: Date) {
-  return new Intl.DateTimeFormat("fr-FR", {
+function reportDate(now: Date, locale: UiLocale) {
+  return new Intl.DateTimeFormat(INTL_LOCALE[locale], {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -510,11 +512,12 @@ function reportDate(now: Date) {
 }
 
 function dealState(
+  t: AppT,
   dealStatus: TodoRow["dealStatus"],
   opened: boolean,
   tier: TodoRow["tier"],
 ) {
-  if (dealStatus !== "OPEN") return DEAL_STATUS_LABELS[dealStatus];
-  if (!opened) return "Pas encore ouvert";
-  return tier ? TIER_LABELS[tier] : "Ouvert";
+  if (dealStatus !== "OPEN") return t(`labels.dealStatus.${dealStatus}`);
+  if (!opened) return t("today.page.stateUnopened");
+  return tier ? t(`labels.tier.${tier}`) : t("today.page.stateOpened");
 }

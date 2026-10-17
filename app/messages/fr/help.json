@@ -1,0 +1,81 @@
+{
+  "howItWorks": {
+    "metaTitle": "Comment ça marche",
+    "title": "Comment Clozer pense",
+    "description": "Ce qui se passe derrière chaque lien que vous envoyez, et pourquoi vous n'avez presque rien à faire.",
+    "faq": "Questions fréquentes",
+    "replayTour": "Revoir la prise en main",
+    "intro": "Clozer voit comment votre prospect lit votre document, comprend où en est le deal comme le ferait un commercial expérimenté, et prépare la bonne relance au bon moment. Vous validez et vous appelez ceux qui sont prêts.",
+    "journeyHint": "ce qui se passe quand vous envoyez un lien",
+    "journeyTitle": "Le parcours d'un deal",
+    "steps": {
+      "read": {
+        "title": "Vous déposez un document",
+        "body": "Clozer le lit une fois pour toutes. Il reconnaît son type (devis, proposition, présentation, CV…), résume chaque page et repère où sont le prix, le planning, le périmètre ou vos références. Il note aussi les faits précis : « 12 000 € HT », « 8 semaines », « paiement en 3 fois »."
+      },
+      "open": {
+        "title": "Votre prospect ouvre son lien",
+        "body": "Il voit votre document normalement. Clozer note, page par page, combien de temps il y passe, quand, sur quel appareil, et si d'autres personnes l'ouvrent. Les aperçus automatiques (Slack, LinkedIn) et vos propres lectures ne comptent pas. Si vous êtes sur Clozer à ce moment-là, vous le voyez lire en direct."
+      },
+      "analyze": {
+        "title": "Il referme : Clozer lit le deal",
+        "body": "Quelques minutes après sa lecture, Clozer reconstitue l'histoire du deal en faits datés (« dimanche 21 h, sur mobile, 3 min sur les tarifs, s'arrête page 9 ») et une IA l'interprète comme le ferait un commercial expérimenté : où en est le deal, ce qui coince (prix, décideur, timing…), ce qu'il faut faire. Chaque conclusion cite les faits qui la justifient ; ce qui n'est pas prouvé est écarté."
+      },
+      "write": {
+        "title": "S'il faut relancer, Clozer écrit le message",
+        "body": "En votre nom, avec votre offre et les vrais chiffres du document, sur l'angle qui compte pour ce prospect. Par exemple : « Si l'enveloppe coince, on peut étaler le paiement, on en parle 15 minutes ? ». Jamais « j'ai vu que vous avez regardé les prix » : le prospect ne doit pas se sentir observé."
+      },
+      "timing": {
+        "title": "Il choisit le bon moment",
+        "body": "Jamais juste après une lecture (ça sentirait la surveillance), toujours aux heures de bureau du prospect, 3 relances par mois au maximum, et rien juste après un échange que vous avez noté."
+      },
+      "approve": {
+        "title": "Vous validez, ou il envoie seul",
+        "body": "Par défaut, la relance vous attend : un email vous prévient, vous la retrouvez dans « Relances à valider » sur le tableau de bord et sur la fiche du prospect. Vous la relisez, la retouchez ou la faites réécrire, puis vous validez. En mode automatique, seules les relances sûres partent seules. Les réponses du prospect arrivent dans votre boîte mail."
+      },
+      "watch": {
+        "title": "Et il continue de surveiller",
+        "body": "Silence de 3 jours, de 7 jours : il relit le deal et adapte la suite. Lien jamais ouvert : un rappel discret après quelques jours. Le prospect clique « Valider » ou « Demander un ajustement » : tout s'arrête et vous êtes prévenu. Vous l'avez eu au téléphone : notez l'échange en un clic, Clozer en tient compte."
+      }
+    },
+    "indicatorsTitle": "Deux indicateurs, deux questions",
+    "temperatureTitle": "Température (sur 100)",
+    "temperatureBody": "<b>Combien il lit.</b> Calculée sans IA : lecture récente, temps passé, visites répétées, plusieurs lecteurs, tarifs lus, lecture jusqu'au bout. Chaque point a sa raison, affichée sur la fiche.",
+    "aiReadTitle": "Lecture IA (et sa fiabilité)",
+    "aiReadBody": "<b>Ce que ça veut dire.</b> L'IA interprète : un prospect peut être « chaud » (beaucoup de lectures) avec une lecture IA prudente (lectures courtes, trop tôt pour conclure). La fiabilité dit à quel point l'IA est sûre d'elle : faible quand il y a peu de signaux.",
+    "rulesTitle": "Les règles qu'il respecte toujours",
+    "rules": {
+      "noHint": "Jamais d'allusion au fait que vous voyez ce qu'il lit : un contrôle bloque toute phrase qui le laisserait deviner.",
+      "noInvented": "Jamais un chiffre ou une date absents de votre document : un contrôle vérifie chaque montant.",
+      "cap": "3 relances par mois et par contact au maximum, espacées de quelques jours.",
+      "timing": "Jamais dans les heures qui suivent une lecture, toujours aux heures de bureau du prospect.",
+      "single": "Une seule relance en préparation par deal : une analyse plus récente remplace l'ancienne.",
+      "privateNotes": "Vos notes privées sur un deal servent à l'analyse, jamais à la rédaction d'un message."
+    },
+    "youTitle": "Ce que vous faites, vous",
+    "you1": "Décrire votre offre une fois, dans les <link>Réglages</link> (facultatif : Clozer la devine à partir de votre premier document).",
+    "you2": "Déposer un document et créer un lien par prospect.",
+    "you3": "Valider les relances proposées, et appeler quand Clozer vous le dit.",
+    "you4": "Noter vos appels et réponses reçues, en un clic sur la fiche du prospect.",
+    "underTheHoodTitle": "Sous le capot",
+    "underTheHood1": "Deux modèles d'IA d'Anthropic. Claude Haiku, rapide, lit les documents et fait un second contrôle avant tout envoi automatique. Claude Sonnet, plus réfléchi, analyse chaque deal et rédige les relances.",
+    "underTheHood2": "Aucune adresse email ni adresse IP n'est envoyée à l'IA : les lecteurs sont désignés par une lettre (lecteur A, lecteur B…). Une analyse n'est relancée que s'il s'est passé quelque chose de nouveau.",
+    "notYetTitle": "Ce qui n'est pas encore là",
+    "notYet1": "Les relances partent de l'adresse de Clozer, avec votre email en adresse de réponse.",
+    "notYet2": "Clozer ne voit pas encore les réponses reçues par email : notez-les sur la fiche du prospect.",
+    "notYet3": "Les relances WhatsApp arrivent bientôt."
+  },
+  "faq": {
+    "metaTitle": "Questions fréquentes",
+    "title": "Questions fréquentes",
+    "description": "Tout ce qu'on nous demande sur Clozer : documents, liens, relances, équipe, données. Une question manque ? L'assistant vous répond.",
+    "ask": "Poser une question",
+    "searchPlaceholder": "Rechercher : relance, Outlook, expiration…",
+    "searchAria": "Rechercher dans les questions",
+    "themesAria": "Thèmes",
+    "noMatch": "Aucune question ne correspond à « {query} ».",
+    "noMatchHint": "L'assistant d'aide vous répond tout de suite.",
+    "notFoundTitle": "Vous n'avez pas trouvé ?",
+    "notFoundBody": "Posez la question à l'assistant, ou envoyez une idée ou un bug à l'équipe."
+  }
+}

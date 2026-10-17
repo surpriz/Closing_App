@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useActionState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 
@@ -30,51 +31,52 @@ export function ProspectForm({ linkId, prospect }: Props) {
     null,
   );
   const prefix = prospect?.id ?? "new";
+  const t = useTranslations("deal.prospectForm");
 
   useEffect(() => {
     if (state?.error) toast.error(state.error);
     if (state?.ok) {
-      toast.success(prospect ? "Contact mis à jour" : "Contact ajouté");
+      toast.success(prospect ? t("updated") : t("added"));
       if (!prospect) formRef.current?.reset();
     }
-  }, [state, prospect]);
+  }, [state, prospect, t]);
 
   return (
     <form ref={formRef} action={formAction} className="space-y-3 pt-3">
       {!prospect && (
         <div className="space-y-1.5">
-          <Label htmlFor={`${prefix}-email`}>Email</Label>
+          <Label htmlFor={`${prefix}-email`}>{t("email")}</Label>
           <Input id={`${prefix}-email`} name="email" type="email" required />
         </div>
       )}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <Label htmlFor={`${prefix}-name`}>Nom</Label>
+          <Label htmlFor={`${prefix}-name`}>{t("name")}</Label>
           <Input id={`${prefix}-name`} name="name" defaultValue={prospect?.name ?? ""} />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor={`${prefix}-company`}>Entreprise</Label>
+          <Label htmlFor={`${prefix}-company`}>{t("company")}</Label>
           <Input id={`${prefix}-company`} name="company" defaultValue={prospect?.company ?? ""} />
         </div>
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor={`${prefix}-phone`}>Téléphone mobile</Label>
+        <Label htmlFor={`${prefix}-phone`}>{t("phone")}</Label>
         <Input
           id={`${prefix}-phone`}
           name="phone"
           type="tel"
           defaultValue={prospect?.phoneE164 ?? ""}
-          placeholder="+33612345678"
+          placeholder={t("phonePlaceholder")}
         />
       </div>
       <FormCheckbox
         name="whatsappOptIn"
-        label="Accepte d'être contacté sur WhatsApp"
-        hint="Obligatoire pour les relances WhatsApp : cochez seulement si le prospect l'a accepté."
+        label={t("whatsapp")}
+        hint={t("whatsappHint")}
         defaultChecked={prospect?.whatsappOptIn ?? false}
       />
       <Button type="submit" size="sm" variant={prospect ? "outline" : "default"} disabled={pending}>
-        {pending ? "Enregistrement…" : prospect ? "Enregistrer" : "Ajouter le contact"}
+        {pending ? t("saving") : prospect ? t("save") : t("add")}
       </Button>
     </form>
   );

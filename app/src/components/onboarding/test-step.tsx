@@ -1,10 +1,11 @@
 "use client";
 
 import { Check, Copy, ExternalLink, Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useEffectEvent, useState } from "react";
 import { toast } from "sonner";
 
-import { onboardingTestStatus, type TestLinkStatus } from "@/app/bienvenue/actions";
+import { onboardingTestStatus, type TestLinkStatus } from "@/app/welcome/actions";
 import { ThermalPlate } from "@/components/brand/thermal-plate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -20,6 +21,7 @@ export function TestStep({
   testLink: { linkId: string; url: string } | null;
   onRead: () => void;
 }) {
+  const t = useTranslations("onboarding.test");
   const status = useTestStatus(testLink?.linkId ?? null);
   const read = status?.read ?? null;
   const notifyRead = useEffectEvent(onRead);
@@ -31,14 +33,14 @@ export function TestStep({
   return (
     <div className="space-y-8">
       <StepHeading
-        title="Ouvrez-le comme votre prospect"
-        lead="Voici le lien que votre prospect recevra. Ouvrez-le et feuilletez quelques pages, puis revenez ici."
+        title={t("title")}
+        lead={t("lead")}
       />
 
       {!testLink || !status?.ready ? (
         <p className="flex items-center gap-2 text-body text-muted-foreground">
           <Loader2 className="size-4 animate-spin" aria-hidden />
-          On prépare votre document…
+          {t("preparing")}
         </p>
       ) : (
         <div className="space-y-3">
@@ -50,7 +52,7 @@ export function TestStep({
               className={cn(buttonVariants({ size: "lg", variant: read ? "outline" : "default" }))}
             >
               <ExternalLink />
-              Ouvrir comme mon prospect
+              {t("openAsProspect")}
             </a>
             <Button
               size="lg"
@@ -58,15 +60,15 @@ export function TestStep({
               onClick={() =>
                 void navigator.clipboard
                   .writeText(testLink.url)
-                  .then(() => toast.success("Lien copié. Ouvrez-le sur votre téléphone, par exemple."))
+                  .then(() => toast.success(t("copied")))
               }
             >
               <Copy />
-              Copier le lien
+              {t("copyLink")}
             </Button>
           </div>
           <p className="text-small text-muted-foreground">
-            Ce lien de test ne compte pas dans vos statistiques et ne déclenche aucune relance.
+            {t("notCounted")}
           </p>
         </div>
       )}
@@ -75,7 +77,7 @@ export function TestStep({
         <figure className="animate-rise border border-foreground">
           <figcaption className="flex items-center gap-2 border-b border-foreground px-4 py-3 font-semibold">
             <Check className="size-4 text-success" aria-hidden />
-            Votre document vient d&apos;être ouvert.
+            {t("opened")}
           </figcaption>
           <div className="grid grid-cols-6 gap-1 p-4 sm:grid-cols-8">
             {Array.from({ length: Math.min(8, Math.max(1, read.pages)) }, (_, i) => (
@@ -84,13 +86,10 @@ export function TestStep({
           </div>
           <div className="space-y-1 border-t border-border px-4 py-3">
             <p className="text-body">
-              {read.pages > 1 ? `Lu jusqu'à la page ${read.pages}` : "Première page ouverte"}
-              {read.seconds > 0 && `, ${formatSeconds(read.seconds)} de lecture`}.
+              {read.pages > 1 ? t("readUpTo", { page: read.pages }) : t("firstPage")}
+              {read.seconds > 0 && t("readTime", { duration: formatSeconds(read.seconds) })}.
             </p>
-            <p className="text-body text-muted-foreground">
-              C&apos;est ce que vous verrez quand votre prospect l&apos;ouvrira, en direct. Et Clozer vous dira quand
-              le relancer.
-            </p>
+            <p className="text-body text-muted-foreground">{t("liveHint")}</p>
           </div>
         </figure>
       ) : (
@@ -98,7 +97,7 @@ export function TestStep({
         status?.ready && (
           <p className="flex items-center gap-2 text-small text-muted-foreground">
             <span className="size-2 animate-pulse bg-iron-2" aria-hidden />
-            En attente de votre lecture…
+            {t("waiting")}
           </p>
         )
       )}

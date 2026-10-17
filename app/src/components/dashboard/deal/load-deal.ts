@@ -1,24 +1,18 @@
+import { getLocale, getTranslations } from "next-intl/server";
+
 import type { TimelineItem } from "@/components/dashboard/activity-timeline";
 import type { TranscriptConversation } from "@/components/dashboard/chat-transcript";
 import {
   toFollowupItem,
   type FollowupItem,
 } from "@/components/dashboard/followup-item";
-import {
-  ALERT_TYPE_LABELS,
-  CHANNEL_LABELS,
-  DEAL_STATUS_LABELS,
-  FOLLOWUP_TRIGGER_LABELS,
-  INSIGHT_ACTION_LABELS,
-  SELLER_ACTIVITY_LABELS,
-  TIER_LABELS,
-  TIMING_LABELS,
-} from "@/components/dashboard/labels";
+import type { LabelsT } from "@/components/dashboard/labels";
 import type { LinkCapsuleRow } from "@/components/dashboard/link-capsules";
 import type { PageTimeDatum } from "@/components/dashboard/page-time-chart";
 import type { SharedReader } from "@/components/dashboard/shared-readers";
 import type { VoiceCommentItem } from "@/components/dashboard/voice-comments";
 import type { ViewSignalType } from "@/generated/prisma/enums";
+import type { UiLocale } from "@/i18n/locale";
 import { getAppOrigin } from "@/lib/app-origin";
 import { sellerBookingUrl } from "@/lib/closing/booking/link-booking";
 import { getLatestInsight } from "@/lib/closing/brain/latest";
@@ -47,10 +41,7 @@ import {
 import { labelReaders } from "@/lib/closing/dashboard/readers";
 import { showsReadingDetail } from "@/lib/closing/dashboard/reading-detail";
 import { videoProvider } from "@/lib/closing/documents/web-link";
-import {
-  reachedLabel,
-  VIDEO_SEGMENTS,
-} from "@/lib/closing/documents/video-segments";
+import { VIDEO_SEGMENTS } from "@/lib/closing/documents/video-segments";
 import { hasReason } from "@/lib/closing/engagement/reasons";
 import { freshEngagementScore } from "@/lib/closing/engagement/refresh-score";
 import { getLinkLiveState } from "@/lib/closing/live";
@@ -66,6 +57,7 @@ import { isManagerRole } from "@/lib/roles";
 import type { requireWorkspace } from "@/lib/session";
 
 type Workspace = Awaited<ReturnType<typeof requireWorkspace>>;
+type LoadDealT = Awaited<ReturnType<typeof getTranslations<"deal.loadDeal">>>;
 
 /**
  * Everything the deal page shows about one link, read and shaped on the
@@ -77,6 +69,12 @@ export async function loadDeal(
   justCreated: boolean,
 ) {
   const { organization } = workspace;
+  const [t, tl, tRoot, locale] = await Promise.all([
+    getTranslations("deal.loadDeal"),
+    getTranslations("labels"),
+    getTranslations(),
+    getLocale(),
+  ]);
 
   const link = await prisma.link.findFirst({
     where: { id, organizationId: organization.id, archivedAt: null },
@@ -180,7 +178,7 @@ export async function loadDeal(
       take: 20,
     }),
     getLatestInsight(link.id),
-    getReaderMap(link.id),
+    getReaderMap(link.id, undefined, locale),
     // The seller testing their own link is left out
     prisma.chatMessage.findMany({
       where: { linkId: link.id, view: { fromSeller: false } },
@@ -256,7 +254,7 @@ export async function loadDeal(
     : null;
 
   const mainProspect = link.prospects[0];
-  const title = dealLabel(link);
+  const title = dealLabel(link, tRoot("today.page.noRecipient"));
   const url = `${origin}/v/${link.slug}`;
   const now = new Date();
 
@@ -358,7 +356,6 @@ export async function loadDeal(
           priority: insight.priority,
         }
       : null,
-    { action: INSIGHT_ACTION_LABELS, timing: TIMING_LABELS },
   );
   const aiAvailable = getLanguageModel("analyze") !== null;
   const draftWaiting = followups.some(
@@ -368,14 +365,18 @@ export async function loadDeal(
   );
   // A link that left the open states (won, lost) has nothing left to push
   const cta = openStatus
-    ? dealCta(nextAction, {
+    ? dealCta(
+        nextAction,
+        {
         email: mainProspect?.email ?? null,
         phone: mainProspect?.phoneE164 ?? null,
         draftWaiting,
         canPrepareFollowup: aiAvailable && !!insight?.byAi,
         aiActionType:
           insightCurrent && insight ? insight.recommendedAction.type : null,
-      })
+        },
+        tRoot,
+      )
     : null;
   const recipientName = (() => {
     const name = insightRecipient
@@ -404,6 +405,7 @@ export async function loadDeal(
           })),
           numPages: isVideo ? VIDEO_SEGMENTS : link.document.numPages,
           video: isVideo,
+          locale,
           livePages: live.readers
             .map((reader) => reader.currentPage)
             .filter((page): page is number => !!page),
@@ -417,7 +419,7 @@ export async function loadDeal(
         row.view.prospect?.name ??
         row.view.prospect?.email ??
         row.view.email ??
-        "Lecteur anonyme",
+        t("anonymousReader"),
       messages: [],
     };
     conversation.messages.push(row);
@@ -430,7 +432,10 @@ export async function loadDeal(
     email: string | null;
     prospect: { name: string | null; email: string } | null;
   }) =>
-    view.prospect?.name ?? view.prospect?.email ?? view.email ?? "Le prospect";
+    view.prospect?.name ??
+    view.prospect?.email ??
+    view.email ??
+    t("theProspect");
   const voiceComments: VoiceCommentItem[] = voiceRows.map((row) => ({
     ...row,
     reader: readerName(row.view),
@@ -477,7 +482,9 @@ export async function loadDeal(
   const latestBooking = actions.find(
     (action) => action.type === "MEETING_BOOKED",
   );
-  const readerLabels = labelReaders(analytics.recentViews);
+  const readerLabels = labelReaders(analytics.recentViews, (letter) =>
+    tRoot("today.readers.unidentified", { letter }),
+  );
   const isEmbeddedVideo =
     link.document.kind === "URL" &&
     videoProvider(link.document.embedUrl) !== null;
@@ -486,24 +493,30 @@ export async function loadDeal(
       id: `created-${link.id}`,
       at: link.createdAt,
       kind: "created" as const,
-      title: "Lien créé",
+      title: t("linkCreated"),
     },
     ...analytics.recentViews.map((view) => ({
       id: `view-${view.id}`,
       at: view.startedAt,
       kind: "view" as const,
-      title: `Lecture par ${readerLabels.get(view.id)?.name ?? "un lecteur"}`,
+      title: t("readBy", {
+        name: readerLabels.get(view.id)?.name ?? t("aReader"),
+      }),
       detail: [
         formatDuration(view.totalDurationMs),
         link.document.kind === "URL"
           ? null
           : link.document.kind === "VIDEO"
-            ? `regardé ${reachedLabel(view.maxPageReached)}`
-            : `jusqu'à la page ${view.maxPageReached}`,
+            ? reachedDetail(t, view.maxPageReached)
+            : t("upToPage", { page: view.maxPageReached }),
         link.document.kind === "URL"
-          ? depthDetail(view.pageViews[0]?.maxScrollDepth ?? 0, isEmbeddedVideo)
+          ? depthDetail(
+              t,
+              view.pageViews[0]?.maxScrollDepth ?? 0,
+              isEmbeddedVideo,
+            )
           : null,
-        ...signalDetails(view.signals),
+        ...signalDetails(t, view.signals),
         [view.deviceType, view.browser].filter(Boolean).join(" "),
         view.timezone,
       ]
@@ -514,28 +527,35 @@ export async function loadDeal(
       id: `action-${action.id}`,
       at: action.createdAt,
       kind: ACTION_KIND[action.type],
-      title: `${action.signerName ?? action.prospect?.name ?? action.prospect?.email ?? "Le prospect"} ${
+      title: t(
         action.type === "VALIDATE_SIGN"
           ? action.signerName
-            ? "a signé « Bon pour accord »"
-            : "a validé la proposition"
+            ? "actionSigned"
+            : "actionValidated"
           : action.type === "REQUEST_EXTENSION"
-            ? "demande une prolongation"
+            ? "actionExtension"
             : action.type === "MEETING_BOOKED"
-              ? "a pris rendez-vous dans votre agenda"
+              ? "actionMeeting"
               : action.type === "MEETING_CLICK"
-                ? "a ouvert votre agenda"
+                ? "actionMeetingClick"
                 : action.type === "REQUEST_QUOTE"
-                  ? "demande un devis"
-                  : "demande un ajustement"
-      }`,
+                  ? "actionQuote"
+                  : "actionChange",
+        {
+          name:
+            action.signerName ??
+            action.prospect?.name ??
+            action.prospect?.email ??
+            t("theProspect"),
+        },
+      ),
       detail: action.message
-        ? `« ${action.message} »`
+        ? t("quoted", { text: action.message })
         : action.id === latestBooking?.id && link.meetingAt
-          ? `Rendez-vous le ${formatDate(link.meetingAt)}`
+          ? t("meetingOn", { date: formatDate(link.meetingAt, locale) })
           : action.signerName && action.prospect?.email
             ? // The gate takes the reader's word: nothing proves they own that mailbox
-              `Nom saisi par le signataire, lien ouvert avec l'email ${action.prospect.email} (non vérifié)`
+              t("signerUnverified", { email: action.prospect.email })
             : null,
     })),
     ...chatRows
@@ -544,15 +564,17 @@ export async function loadDeal(
         id: `question-${row.id}`,
         at: row.createdAt,
         kind: "question" as const,
-        title: `${readerName(row.view)} a une question pour vous`,
-        detail: `« ${row.content} »`,
+        title: t("question", { name: readerName(row.view) }),
+        detail: t("quoted", { text: row.content }),
       })),
     ...voiceComments.map((comment) => ({
       id: `voice-${comment.id}`,
       at: comment.createdAt,
       kind: "voice" as const,
-      title: `${comment.reader} a laissé un vocal page ${comment.pageNumber}`,
-      detail: comment.transcript ? `« ${comment.transcript} »` : null,
+      title: t("voice", { name: comment.reader, page: comment.pageNumber }),
+      detail: comment.transcript
+        ? t("quoted", { text: comment.transcript })
+        : null,
     })),
     ...capsulePlays.map((play) => ({
       id: `capsule-${play.id}`,
@@ -560,8 +582,11 @@ export async function loadDeal(
       kind: "capsule" as const,
       title:
         play.pageNumber === WELCOME_PAGE
-          ? `${readerName(play.view)} a regardé votre mot d'accueil`
-          : `${readerName(play.view)} a regardé votre capsule page ${play.pageNumber}`,
+          ? t("watchedWelcome", { name: readerName(play.view) })
+          : t("watchedCapsule", {
+              name: readerName(play.view),
+              page: play.pageNumber,
+            }),
     })),
     ...followups
       .filter((f) => f.sentAt && f.status === "SENT")
@@ -569,14 +594,21 @@ export async function loadDeal(
         id: `followup-${f.id}`,
         at: f.sentAt!,
         kind: "followup" as const,
-        title: `Relance envoyée (${FOLLOWUP_TRIGGER_LABELS[f.trigger].toLowerCase()})`,
-        detail: `${CHANNEL_LABELS[f.channel]} à ${f.prospect.name ?? f.prospect.email}`,
+        title: t("followupSent", {
+          trigger: tl(`followupTrigger.${f.trigger}`).toLowerCase(),
+        }),
+        detail: t("followupDetail", {
+          channel: tl(`channel.${f.channel}`),
+          recipient: f.prospect.name ?? f.prospect.email,
+        }),
       })),
     ...sellerActivities.map((activity) => ({
       id: `seller-${activity.id}`,
       at: activity.occurredAt,
       kind: "seller" as const,
-      title: `${SELLER_ACTIVITY_LABELS[activity.type]} (noté par vous)`,
+      title: t("sellerNoted", {
+        activity: tl(`sellerActivity.${activity.type}`),
+      }),
       detail: activity.note,
     })),
     ...alerts.map((alert) => {
@@ -589,13 +621,15 @@ export async function loadDeal(
         id: `alert-${alert.id}`,
         at: alert.createdAt,
         kind: "alert" as const,
-        title: `Alerte : ${ALERT_TYPE_LABELS[alert.type].toLowerCase()}`,
+        title: t("alert", {
+          type: tl(`alertType.${alert.type}`).toLowerCase(),
+        }),
         detail: payload.reason
           ? payload.reason
           : payload.liveViewers
-            ? `${payload.liveViewers} lecteurs en même temps`
+            ? t("liveViewers", { count: payload.liveViewers })
             : payload.inactiveDays
-              ? `après ${payload.inactiveDays} jours sans lecture`
+              ? t("inactive", { days: payload.inactiveDays })
               : null,
       };
     }),
@@ -614,6 +648,7 @@ export async function loadDeal(
         link.document.id,
         link.hotPricingThresholdSec ?? settings.hotPricingThresholdSec,
         now,
+        { t, tl, locale },
       )
     : [];
   // What the title does not already say
@@ -677,6 +712,7 @@ async function loadSharedReaders(
   documentId: string,
   thresholdSec: number,
   now: Date,
+  { t, tl, locale }: { t: LoadDealT; tl: LabelsT; locale: UiLocale },
 ): Promise<SharedReader[]> {
   const links = await prisma.link.findMany({
     where: { parentLinkId: linkId, archivedAt: null },
@@ -719,37 +755,48 @@ async function loadSharedReaders(
       hot: reader.hot,
       time:
         reader.pricingMs >= thresholdSec * 1000
-          ? `${formatDuration(reader.pricingMs)} sur le tarif`
+          ? t("pricingTime", { time: formatDuration(reader.pricingMs) })
           : reader.readingMs > 0
-            ? `${formatDuration(reader.readingMs)} de lecture`
+            ? t("readingTime", { time: formatDuration(reader.readingMs) })
             : null,
-      label: prospect?.name ?? prospect?.email ?? "Lecteur",
+      label: prospect?.name ?? prospect?.email ?? t("readerFallback"),
       detail: [
         prospect?.name ? prospect.email : null,
         prospect?.company,
-        `lu ${formatRelative(reader.lastActivityAt, now)}`,
+        t("readAgo", {
+          when: formatRelative(reader.lastActivityAt, locale, now),
+        }),
       ]
         .filter(Boolean)
         .join(" · "),
       state:
         reader.dealStatus !== "OPEN"
-          ? DEAL_STATUS_LABELS[reader.dealStatus]
+          ? tl(`dealStatus.${reader.dealStatus}`)
           : reader.engagementScore
-            ? TIER_LABELS[reader.engagementScore.tier]
-            : "Ouvert",
+            ? tl(`tier.${reader.engagementScore.tier}`)
+            : t("open"),
     };
   });
 }
 
+/** How far into a video pitch: "jusqu'au bout", or the share of it watched. */
+function reachedDetail(t: LoadDealT, maxSegment: number) {
+  if (maxSegment >= VIDEO_SEGMENTS) return t("watchedToEnd");
+  return t("watchedPercent", {
+    percent: Math.round((maxSegment * 100) / VIDEO_SEGMENTS),
+  });
+}
+
 /** How far into a web page: the share of its video watched, or of its article read in Clozer. */
-function depthDetail(depth: number, video: boolean) {
+function depthDetail(t: LoadDealT, depth: number, video: boolean) {
   const percent = Math.round(depth * 100);
-  if (video) return `${percent} % de la vidéo vue`;
-  return percent > 0 ? `article lu à ${percent} %` : null;
+  if (video) return t("videoWatched", { percent });
+  return percent > 0 ? t("articleRead", { percent }) : null;
 }
 
 /** What the reader did around the content, for a line of the timeline. */
 function signalDetails(
+  t: LoadDealT,
   signals: { type: ViewSignalType; valueMs: number | null }[],
 ) {
   const details: string[] = [];
@@ -760,13 +807,13 @@ function signalDetails(
     );
     details.push(
       awayMs > 0
-        ? `site ouvert, ≈ ${formatDuration(awayMs)} dessus`
-        : "site ouvert dans un onglet",
+        ? t("siteOpenFor", { time: formatDuration(awayMs) })
+        : t("siteOpened"),
     );
   }
   if (signals.some((s) => s.type === "DOWNLOAD"))
-    details.push("PDF téléchargé");
+    details.push(t("pdfDownloaded"));
   if (signals.some((s) => s.type === "EXIT_PROMPT_OPENED"))
-    details.push("a ouvert l'assistant en partant");
+    details.push(t("exitAssistant"));
   return details;
 }

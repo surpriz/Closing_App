@@ -1,6 +1,7 @@
 "use client";
 
 import { Trophy } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useTransition } from "react";
 import { toast } from "sonner";
 
@@ -10,6 +11,7 @@ import { Button } from "@/components/ui/button";
 /** The prospect signed: one click records the sale and stops every follow-up. */
 export function MarkWonButton({ linkId, size = "sm" }: { linkId: string; size?: "sm" | "lg" }) {
   const [pending, startTransition] = useTransition();
+  const t = useTranslations("deal.markWonButton");
 
   return (
     <Button
@@ -20,15 +22,15 @@ export function MarkWonButton({ linkId, size = "sm" }: { linkId: string; size?: 
         startTransition(async () => {
           try {
             await updateDealStatus(linkId, "WON");
-            toast.success("Deal gagné, bravo.");
+            toast.success(t("won"));
           } catch {
-            toast.error("Impossible de mettre à jour le deal.");
+            toast.error(t("failed"));
           }
         })
       }
     >
       <Trophy />
-      Marquer gagné
+      {t("label")}
     </Button>
   );
 }

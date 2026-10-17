@@ -1,4 +1,6 @@
+import { INTL_LOCALE, type UiLocale } from "@/i18n/locale";
 import { renderEmail, type EmailBlock } from "@/lib/email-layout";
+import { getNamespaceTranslator } from "@/lib/server-translator";
 
 import { DAY_MS } from "../constants";
 import { getLocalParts } from "../scheduling/business-hours";
@@ -11,6 +13,8 @@ import { getLocalParts } from "../scheduling/business-hours";
 
 export type DigestData = {
   appUrl: string;
+  /** The seller's language. */
+  locale: UiLocale;
   /** "hier", "vendredi"… how the period is named in the email. */
   sinceLabel: string;
   todo: { label: string; documentName: string; why: string; url: string }[];
@@ -32,19 +36,17 @@ export type DigestData = {
 /** Beyond this, the list stops being a to-do list. */
 export const DIGEST_TODO_MAX = 5;
 
-function plural(n: number, one: string, many: string) {
-  return `${n} ${n > 1 ? many : one}`;
-}
-
 export function digestSubject(data: DigestData) {
-  if (data.todo.length) return `Ce matin : ${plural(data.todo.length, "prospect", "prospects")} à recontacter`;
-  if (data.actions.length) return `${plural(data.actions.length, "réponse", "réponses")} de prospects depuis ${data.sinceLabel}`;
-  if (data.expiring?.length) return `${plural(data.expiring.length, "lien expire", "liens expirent")} bientôt`;
-  if (data.autoSent.length) return `Clozer a relancé ${plural(data.autoSent.length, "prospect", "prospects")} pour vous`;
-  return `${plural(data.drafts, "relance attend", "relances attendent")} votre accord`;
+  const t = getNamespaceTranslator(data.locale, "alerts.digest");
+  if (data.todo.length) return t("subjectTodo", { count: data.todo.length });
+  if (data.actions.length) return t("subjectActions", { count: data.actions.length, since: data.sinceLabel });
+  if (data.expiring?.length) return t("subjectExpiring", { count: data.expiring.length });
+  if (data.autoSent.length) return t("subjectAutoSent", { count: data.autoSent.length });
+  return t("subjectDrafts", { count: data.drafts });
 }
 
 export function buildDigest(data: DigestData) {
+  const t = getNamespaceTranslator(data.locale, "alerts.digest");
   const todo = data.todo.slice(0, DIGEST_TODO_MAX);
   const expiring = data.expiring ?? [];
   if (!todo.length && !data.actions.length && !expiring.length && !data.autoSent.length && !data.drafts) return null;
@@ -52,7 +54,7 @@ export function buildDigest(data: DigestData) {
   const blocks: EmailBlock[] = [];
 
   if (todo.length) {
-    blocks.push({ kind: "heading", text: "À faire aujourd'hui" });
+    blocks.push({ kind: "heading", text: t("todoHeading") });
     blocks.push({
       kind: "list",
       items: todo.map((row) => ({ text: `${row.label} · ${row.documentName}`, detail: row.why, href: row.url })),
@@ -60,72 +62,64 @@ export function buildDigest(data: DigestData) {
   }
 
   if (data.actions.length) {
-    blocks.push({ kind: "heading", text: `Réponses depuis ${data.sinceLabel}` });
+    blocks.push({ kind: "heading", text: t("actionsHeading", { since: data.sinceLabel }) });
     blocks.push({
       kind: "list",
       items: data.actions.map((a) => ({
-        text:
-          a.kind === "validated"
-            ? `${a.label} a validé`
-            : a.kind === "change"
-              ? `${a.label} demande un ajustement`
-              : a.kind === "quote"
-                ? `${a.label} demande un devis`
-                : a.kind === "extension"
-                  ? `${a.label} demande une prolongation`
-                  : a.kind === "meeting"
-                    ? `${a.label} a pris rendez-vous`
-                    : `${a.label} a posé une question`,
-        detail: a.message ? `« ${a.message.length > 180 ? `${a.message.slice(0, 177)}…` : a.message} »` : undefined,
+        text: t(`action.${a.kind}`, { label: a.label }),
+        detail: a.message
+          ? t("quote", { text: a.message.length > 180 ? `${a.message.slice(0, 177)}…` : a.message })
+          : undefined,
         href: a.url,
       })),
     });
   }
 
   if (expiring.length) {
-    blocks.push({ kind: "heading", text: "Expirent bientôt" });
+    blocks.push({ kind: "heading", text: t("expiringHeading") });
     blocks.push({
       kind: "list",
       items: expiring.map((row) => ({
         text: `${row.label} · ${row.documentName}`,
-        detail: `Se verrouille le ${row.when}. Prolongez ou relancez d'ici là.`,
+        detail: t("expiringDetail", { when: row.when }),
         href: row.url,
       })),
     });
   }
 
   const facts = [
-    data.counts.readers && `${plural(data.counts.readers, "prospect a lu", "prospects ont lu")} votre proposition`,
-    data.counts.followupsSent && `${plural(data.counts.followupsSent, "relance partie", "relances parties")}`,
-    data.counts.followupsFailed && `${plural(data.counts.followupsFailed, "relance en échec", "relances en échec")}`,
-    data.counts.unsubscribed && `${plural(data.counts.unsubscribed, "désinscription", "désinscriptions")}`,
+    data.counts.readers && t("facts.readers", { count: data.counts.readers }),
+    data.counts.followupsSent && t("facts.followupsSent", { count: data.counts.followupsSent }),
+    data.counts.followupsFailed && t("facts.followupsFailed", { count: data.counts.followupsFailed }),
+    data.counts.unsubscribed && t("facts.unsubscribed", { count: data.counts.unsubscribed }),
   ].filter((fact): fact is string => !!fact);
   if (facts.length) {
-    blocks.push({ kind: "heading", text: `Depuis ${data.sinceLabel}` });
+    blocks.push({ kind: "heading", text: t("sinceHeading", { since: data.sinceLabel }) });
     blocks.push({ kind: "text", text: `${facts.join(", ")}.` });
   }
 
   if (data.autoSent.length) {
-    blocks.push({ kind: "heading", text: "Parties toutes seules" });
+    blocks.push({ kind: "heading", text: t("autoSentHeading") });
     blocks.push({
       kind: "list",
-      items: data.autoSent.map((f) => ({ text: f.label, detail: f.subject ?? "Message WhatsApp", href: f.url })),
+      items: data.autoSent.map((f) => ({ text: f.label, detail: f.subject ?? t("whatsapp"), href: f.url })),
     });
   }
 
   if (data.drafts) {
-    blocks.push({ kind: "text", text: `${plural(data.drafts, "relance attend", "relances attendent")} votre accord.` });
-    blocks.push({ kind: "button", label: "Les relire", href: `${data.appUrl}/dashboard` });
+    blocks.push({ kind: "text", text: t("draftsLine", { count: data.drafts }) });
+    blocks.push({ kind: "button", label: t("reviewButton"), href: `${data.appUrl}/dashboard` });
   } else {
-    blocks.push({ kind: "button", label: "Ouvrir Clozer", href: `${data.appUrl}/dashboard` });
+    blocks.push({ kind: "button", label: t("openButton"), href: `${data.appUrl}/dashboard` });
   }
 
   const subject = digestSubject({ ...data, todo });
   const { html, text } = renderEmail({
+    locale: data.locale,
     preheader: todo.map((row) => row.label).join(", ") || undefined,
     title: subject,
     blocks,
-    footer: { text: "Régler ou couper ce compte rendu", href: `${data.appUrl}/settings#alertes` },
+    footer: { text: t("footer"), href: `${data.appUrl}/settings#alertes` },
   });
   return { subject, html, text };
 }
@@ -134,7 +128,6 @@ export function buildDigest(data: DigestData) {
 export const MAX_LOOKBACK_MS = 7 * DAY_MS;
 /** Past digestHour + this, today's digest is skipped (seller turned it on in the afternoon). */
 const SEND_WINDOW_HOURS = 4;
-const WEEKDAY_NAMES = ["", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];
 
 function localDay(date: Date, timezone: string) {
   const p = getLocalParts(date, timezone);
@@ -154,9 +147,9 @@ export function isDigestDue(
   return !lastDigestAt || localDay(lastDigestAt, prefs.timezone) !== localDay(now, prefs.timezone);
 }
 
-/** "hier" on a normal day, the weekday name after a weekend or a gap. */
-export function sinceLabel(since: Date, now: Date, timezone: string) {
+/** "hier" on a normal day, the weekday name after a weekend or a gap ("vendredi", "Friday"). */
+export function sinceLabel(since: Date, now: Date, timezone: string, locale: UiLocale) {
   const days = Math.round((now.getTime() - since.getTime()) / DAY_MS);
-  if (days <= 1) return "hier";
-  return WEEKDAY_NAMES[getLocalParts(since, timezone).weekday];
+  if (days <= 1) return getNamespaceTranslator(locale, "alerts.digest")("yesterday");
+  return new Intl.DateTimeFormat(INTL_LOCALE[locale], { weekday: "long", timeZone: timezone }).format(since);
 }

@@ -1,6 +1,10 @@
 import type { FollowupChannel, FollowupTrigger, PageTag } from "@/generated/prisma/enums";
 import { getPublicAppUrl } from "@/lib/app-origin";
+import { DEFAULT_UI_LOCALE, UI_LOCALES, type UiLocale } from "@/i18n/locale";
+import { MESSAGES, type Messages } from "@/i18n/messages";
 import { prisma } from "@/lib/db";
+import { toUiLocale } from "@/lib/seller-locale";
+import { getNamespaceTranslator } from "@/lib/server-translator";
 
 import { draftFollowup } from "../ai/generate-followup";
 import { reviewFollowupWithLlm } from "../ai/guard-llm";
@@ -54,7 +58,7 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
       prospect: true,
       link: {
         include: {
-          createdBy: { select: { name: true } },
+          createdBy: { select: { name: true, locale: true } },
           organization: { include: { settings: true } },
           document: {
             select: {
@@ -88,6 +92,9 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
   const instruction = regenerateInstruction ?? followup.regenerateInstruction;
 
   const { link, prospect } = followup;
+  // Issues and reasons are for the seller; the message itself follows the prospect's locale
+  const sellerLocale = toUiLocale(link.createdBy?.locale);
+  const t = getNamespaceTranslator(sellerLocale, "server.followups");
   const settings = link.organization.settings;
   const pages = link.document.pages;
   const context = (followup.context ?? {}) as { brief?: FollowupPromptInput["brief"]; readTags?: PageTag[] };
@@ -97,7 +104,7 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
   if (isLinkExpired(link, now)) {
     await prisma.followup.updateMany({
       where: { id: followupId, status: "PENDING" },
-      data: { status: "CANCELLED", cancelledAt: now, error: "Lien expiré" },
+      data: { status: "CANCELLED", cancelledAt: now, error: t("dispatch.linkExpired") },
     });
     return;
   }
@@ -162,6 +169,7 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
       organizationId: link.organizationId,
       linkId: link.id,
       sourceText,
+      sellerLocale,
     },
   );
 
@@ -191,7 +199,12 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
   // Nobody reads it before it leaves: a second, model-based check
   const issues = [...draft.issues];
   if (sendsAlone && draft.aiProvider !== "template") {
-    const review = await reviewFollowupWithLlm(draft, { sourceText, organizationId: link.organizationId, linkId: link.id });
+    const review = await reviewFollowupWithLlm(draft, {
+      sourceText,
+      organizationId: link.organizationId,
+      linkId: link.id,
+      locale: sellerLocale,
+    });
     if (!review.ok) {
       sendsAlone = false;
       issues.push(...review.issues);
@@ -207,7 +220,7 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
       aiProvider: draft.aiProvider,
       aiModel: draft.aiModel,
       regenerateInstruction: instruction ?? null,
-      error: issues.length ? `À relire : ${issues.join(" ")}` : null,
+      error: issues.length ? t("queue.toReview", { issues: issues.join(" ") }) : null,
       status: sendsAlone ? "GENERATED" : "DRAFT",
     },
   });
@@ -217,20 +230,50 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
 }
 
 /** Every follow-up still waiting on a link that has expired: it would point to a locked page. */
-export function cancelExpiredFollowups(now = new Date()) {
-  return prisma.followup.updateMany({
-    where: { status: { in: [...OPEN_FOLLOWUP_STATUSES] }, link: { expiresAt: { lte: now } } },
-    data: { status: "CANCELLED", cancelledAt: now, error: "Lien expiré" },
+// One update per seller language: the reason is shown to them
+export async function cancelExpiredFollowups(now = new Date()) {
+  const where = { status: { in: [...OPEN_FOLLOWUP_STATUSES] }, link: { expiresAt: { lte: now } } };
+  const reason = (locale: UiLocale) => getNamespaceTranslator(locale, "server.followups.dispatch")("linkExpired");
+  let count = 0;
+  // In turn, the catch-all last: it must only get what the others left
+  for (const locale of UI_LOCALES) {
+    const result = await prisma.followup.updateMany({
+      where: { ...where, link: { ...where.link, createdBy: { locale } } },
+      data: { status: "CANCELLED", cancelledAt: now, error: reason(locale) },
+    });
+    count += result.count;
+  }
+  // No seller left, or a language not handled: the default
+  const rest = await prisma.followup.updateMany({
+    where,
+    data: { status: "CANCELLED", cancelledAt: now, error: reason(DEFAULT_UI_LOCALE) },
   });
+  return { count: count + rest.count };
 }
 
-export function cancelOpenFollowups(linkId: string, reason: string, triggers?: FollowupTrigger[]) {
+type CancelReasonKey = keyof Messages["server"]["followups"]["dispatch"];
+
+function isCancelReasonKey(reason: string): reason is CancelReasonKey {
+  return reason in MESSAGES.en.server.followups.dispatch;
+}
+
+/**
+ * `reason` is shown to the seller on the cancelled follow-ups: pass a key of
+ * server.followups.dispatch ("archived", "paused"…) to get it in the language of the
+ * seller who sent the link. Any other string is stored as is.
+ */
+export async function cancelOpenFollowups(linkId: string, reason: CancelReasonKey | (string & {}), triggers?: FollowupTrigger[]) {
+  let error: string = reason;
+  if (isCancelReasonKey(reason)) {
+    const link = await prisma.link.findUnique({ where: { id: linkId }, select: { createdBy: { select: { locale: true } } } });
+    error = getNamespaceTranslator(toUiLocale(link?.createdBy?.locale), "server.followups.dispatch")(reason);
+  }
   return prisma.followup.updateMany({
     where: {
       linkId,
       status: { in: [...OPEN_FOLLOWUP_STATUSES] },
       ...(triggers ? { trigger: { in: triggers } } : {}),
     },
-    data: { status: "CANCELLED", cancelledAt: new Date(), error: reason },
+    data: { status: "CANCELLED", cancelledAt: new Date(), error },
   });
 }

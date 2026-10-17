@@ -1,6 +1,12 @@
+import { createTranslator } from "next-intl";
 import { describe, expect, it } from "vitest";
 
-import { buildDocumentFrictions, type DocumentFrictionInput } from "./frictions";
+import { MESSAGES } from "@/i18n/messages";
+
+import { buildDocumentFrictions as build, type DocumentFrictionInput } from "./frictions";
+
+const t = createTranslator({ locale: "fr", messages: MESSAGES.fr });
+const buildDocumentFrictions = (input: DocumentFrictionInput) => build(input, t);
 
 const base: DocumentFrictionInput = {
   numPages: 10,
@@ -37,6 +43,10 @@ describe("buildDocumentFrictions", () => {
     expect(lines).toEqual([
       "L'analyse voit le prix comme un frein sur 2 deals.",
       "L'analyse voit le calendrier comme un frein sur 2 deals.",
+    ]);
+    const en = createTranslator({ locale: "en", messages: MESSAGES.en });
+    expect(build({ ...base, aiFrictions: [["PRICE"], ["PRICE"]] }, en)).toEqual([
+      "The analysis sees price as a blocker on 2 deals.",
     ]);
   });
 });

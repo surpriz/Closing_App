@@ -1,21 +1,35 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import { LoginForm } from "@/components/auth/login-form";
 import { ProductPanel } from "@/components/auth/product-panel";
+import { LocaleSwitcher } from "@/components/locale-switcher";
 import { googleEnabled } from "@/lib/auth";
 import { devMagicLinksEnabled } from "@/lib/dev-magic-links";
 import { safeNextPath } from "@/lib/next-path";
-import { loginErrorMessage } from "@/lib/platform-admin";
 import { getSession } from "@/lib/session";
 
-export const metadata: Metadata = { title: "Connexion" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("auth.login");
+  return { title: t("metaTitle") };
+}
+
+// Codes Better Auth puts in ?error= when a magic link fails
+const LOGIN_ERROR_CODES = ["SIGNUP_BLOCKED", "SIGNUP_CLOSED", "BANNED_USER", "INVALID_TOKEN", "EXPIRED_TOKEN"] as const;
+type LoginErrorCode = (typeof LOGIN_ERROR_CODES)[number];
 
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const params = await searchParams;
   const next = safeNextPath(params.next) ?? "/dashboard";
   // A magic link that failed comes back here with ?error=
-  const error = loginErrorMessage(typeof params.error === "string" ? params.error : undefined);
+  const t = await getTranslations("auth.login.errors");
+  const code = typeof params.error === "string" ? params.error : undefined;
+  const error = !code
+    ? null
+    : LOGIN_ERROR_CODES.includes(code as LoginErrorCode)
+      ? t(code as LoginErrorCode)
+      : t("fallback");
   const session = await getSession();
   if (session) redirect(next);
 
@@ -25,7 +39,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
 
   return (
     <main className="grid flex-1 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-      <div className="flex items-center justify-center px-5 py-14 sm:px-8">
+      <div className="relative flex items-center justify-center px-5 py-14 sm:px-8">
         <LoginForm
           devMode={devMagicLinksEnabled()}
           next={next}
@@ -34,6 +48,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
           initialEmail={error ? "" : email}
           autoStart={error ? null : provider ?? (email ? "email" : null)}
         />
+        <LocaleSwitcher className="absolute right-5 bottom-5 sm:right-8" />
       </div>
       <ProductPanel />
     </main>

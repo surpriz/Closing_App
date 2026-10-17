@@ -1,5 +1,5 @@
 /**
- * The welcome tour at /bienvenue. Pure, and safe to import from client components.
+ * The welcome tour at /welcome. Pure, and safe to import from client components.
  */
 
 /** Same limit as the offer field in the settings. */
@@ -8,13 +8,6 @@ export const OFFER_DESCRIPTION_MAX = 1500;
 export const MAIL_CLIENTS = ["gmail", "outlook_web", "outlook_desktop", "other"] as const;
 
 export type MailClient = (typeof MAIL_CLIENTS)[number];
-
-export const MAIL_CLIENT_LABELS: Record<MailClient, { title: string; hint: string }> = {
-  gmail: { title: "Gmail", hint: "Dans Chrome ou Edge" },
-  outlook_web: { title: "Outlook dans le navigateur", hint: "outlook.office.com, outlook.live.com" },
-  outlook_desktop: { title: "Outlook installé", hint: "L'application sur Windows ou Mac" },
-  other: { title: "Autre messagerie", hint: "Apple Mail, Thunderbird, téléphone…" },
-};
 
 export function parseMailClient(value: unknown): MailClient | null {
   return MAIL_CLIENTS.includes(value as MailClient) ? (value as MailClient) : null;
@@ -122,12 +115,6 @@ export function isExtensionNudgeSnoozed(hiddenAt: Date | null, now: Date) {
 export const ONBOARDING_STEPS = ["drop", "test", "daily"] as const;
 
 export type OnboardingStep = (typeof ONBOARDING_STEPS)[number];
-
-export const STEP_LABELS: Record<OnboardingStep, string> = {
-  drop: "Votre document",
-  test: "Côté prospect",
-  daily: "Au quotidien",
-};
 
 /** Name of the link the seller opens during the tour. */
 export function testLinkName(documentName: string) {

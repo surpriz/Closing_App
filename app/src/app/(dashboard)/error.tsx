@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect } from "react";
 
 import { EmptyState } from "@/components/dashboard/empty-state";
@@ -12,17 +13,18 @@ export default function DashboardError({
   error: Error & { digest?: string };
   retry: () => void;
 }) {
+  const t = useTranslations("common.error");
   useEffect(() => {
     console.error(error);
   }, [error]);
 
   return (
     <EmptyState
-      title="Cette page n'a pas pu se charger."
-      description="Souvent une coupure réseau passagère. Réessayez ; si ça persiste, rechargez la page."
+      title={t("title")}
+      description={t("description")}
       action={
         <Button variant="outline" onClick={() => retry()}>
-          Réessayer
+          {t("retry")}
         </Button>
       }
     />

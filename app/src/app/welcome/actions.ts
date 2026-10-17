@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 
 import { getAppOrigin } from "@/lib/app-origin";
 import { createDocumentLink } from "@/lib/closing/documents/create-link";
@@ -71,7 +72,8 @@ export async function createOnboardingTestLink(
     where: { id: String(documentId), organizationId: organization.id, archivedAt: null },
     select: { id: true, name: true },
   });
-  if (!document) return { error: "Document introuvable." };
+  const t = await getTranslations("onboarding");
+  if (!document) return { error: t("documentNotFound") };
 
   const link = await createDocumentLink({
     userId: user.id,
@@ -83,7 +85,7 @@ export async function createOnboardingTestLink(
     draft: true,
     onboardingTest: true,
   });
-  if (!link) return { error: "Document introuvable." };
+  if (!link) return { error: t("documentNotFound") };
   return { linkId: link.id, url: `${await getAppOrigin()}/v/${link.slug}` };
 }
 

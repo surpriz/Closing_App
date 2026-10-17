@@ -1,6 +1,7 @@
 import { Check, Globe, Mail, Monitor, MoreHorizontal, type LucideIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 
-import { MAIL_CLIENT_LABELS, MAIL_CLIENTS, type MailClient } from "@/lib/onboarding";
+import { MAIL_CLIENTS, type MailClient } from "@/lib/onboarding";
 import { cn } from "@/lib/utils";
 
 import { StepHeading } from "./parts";
@@ -21,13 +22,15 @@ export function MailStep({
   value: MailClient | null;
   onChange: (value: MailClient) => void;
 }) {
+  const t = useTranslations("onboarding.mailStep");
+  const tClients = useTranslations("onboarding.mailClients");
   return (
     <div className="space-y-8">
       <StepHeading
-        title="Vous écrivez vos emails depuis…"
-        lead={`${firstName ? `${firstName}, c` : "C"}lozer peut se brancher sur votre messagerie : vous joignez le PDF comme d'habitude, il le remplace par un lien.`}
+        title={t("title")}
+        lead={firstName ? t("leadWithName", { firstName }) : t("lead")}
       />
-      <div role="radiogroup" aria-label="Votre messagerie" className="grid gap-px border-y border-foreground bg-border sm:grid-cols-2">
+      <div role="radiogroup" aria-label={t("mailboxAria")} className="grid gap-px border-y border-foreground bg-border sm:grid-cols-2">
         {MAIL_CLIENTS.map((client) => {
           const Icon = ICONS[client];
           const selected = value === client;
@@ -45,8 +48,8 @@ export function MailStep({
             >
               <Icon className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden />
               <span className="min-w-0 flex-1 space-y-0.5">
-                <span className="block text-body font-semibold">{MAIL_CLIENT_LABELS[client].title}</span>
-                <span className="block text-small text-muted-foreground">{MAIL_CLIENT_LABELS[client].hint}</span>
+                <span className="block text-body font-semibold">{tClients(`${client}.title`)}</span>
+                <span className="block text-small text-muted-foreground">{tClients(`${client}.hint`)}</span>
               </span>
               {selected && <Check className="mt-0.5 size-4 shrink-0" aria-hidden />}
             </button>

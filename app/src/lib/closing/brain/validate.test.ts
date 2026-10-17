@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import type { DealStory } from "./facts";
-import { ANALYZER_SYSTEM_PROMPT, buildAnalyzerPrompt } from "./prompts";
+import { analyzerSystemPrompt, buildAnalyzerPrompt } from "./prompts";
+
+const ANALYZER_SYSTEM_PROMPT = analyzerSystemPrompt("fr");
 import type { RawInsight } from "./schema";
 import { validateInsight } from "./validate";
 
@@ -126,7 +128,13 @@ describe("analyzer prompt", () => {
       followupBudget: { sentLast30Days: 1, max: 3 },
     },
     story.facts,
+    "fr",
   );
+
+  it("asks for the seller's language", () => {
+    expect(ANALYZER_SYSTEM_PROMPT).toContain('in French, plain and direct, addressing the salesperson as "vous"');
+    expect(analyzerSystemPrompt("en")).toContain('in English, plain and direct, addressing the salesperson as "you"');
+  });
 
   it("puts the workspace profile before the deal, for prompt caching", () => {
     expect(prompt.indexOf("Refonte Shopify")).toBeLessThan(prompt.indexOf("## This deal"));

@@ -2,6 +2,7 @@
 
 import { Check, Copy } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -17,7 +18,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 export type ReadyLink = {
   id: string;
   url: string;
-  /** Who it is for, or "Sans destinataire". */
+  /** Who it is for, or "Sans destinataire" (today.page.noRecipient). */
   label: string;
   documentName: string;
 };
@@ -40,22 +41,19 @@ function ReadyLinkRow({ link }: { link: ReadyLink }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [copied, setCopied] = useState(false);
+  const t = useTranslations("today.readyLinks");
 
   async function copy() {
     try {
       await navigator.clipboard.writeText(link.url);
       setCopied(true);
-      toast.success(
-        "Lien copié. Collez-le dans votre message : vous serez prévenu dès qu'il est ouvert.",
-      );
+      toast.success(t("copiedToast"));
       startTransition(async () => {
         await markLinkCopied(link.id);
         router.refresh();
       });
     } catch {
-      toast.error(
-        "Copie impossible : ouvrez le lien pour le copier à la main.",
-      );
+      toast.error(t("copyError"));
     }
   }
 
@@ -71,22 +69,25 @@ function ReadyLinkRow({ link }: { link: ReadyLink }) {
       <div className="min-w-0 flex-1">
         <p className="truncate font-semibold">{link.documentName}</p>
         <p className="truncate text-small text-muted-foreground">
-          Pour : <span className="text-foreground">{link.label}</span>
+          {t.rich("for", {
+            label: link.label,
+            who: (chunks) => <span className="text-foreground">{chunks}</span>,
+          })}
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <Button size="sm" disabled={pending} onClick={() => void copy()}>
           {copied ? <Check /> : <Copy />}
-          {copied ? "Copié" : "Copier le lien"}
+          {copied ? t("copied") : t("copyLink")}
         </Button>
         <Link
           href={`/links/${link.id}`}
           className={buttonVariants({ size: "sm", variant: "outline" })}
         >
-          Pour qui
+          {t("forWhom")}
         </Link>
         <Button size="sm" variant="ghost" disabled={pending} onClick={discard}>
-          Retirer
+          {t("remove")}
         </Button>
       </div>
     </li>
@@ -97,6 +98,7 @@ function ReadyLinkRow({ link }: { link: ReadyLink }) {
 export function SentQuestion({ linkId }: { linkId: string }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const t = useTranslations("today.readyLinks");
 
   function answer(sent: boolean) {
     startTransition(async () => {
@@ -108,10 +110,10 @@ export function SentQuestion({ linkId }: { linkId: string }) {
   return (
     <span className="relative z-10 flex flex-wrap items-center gap-2">
       <span className="text-small font-medium">
-        L&apos;avez-vous bien envoyé ?
+        {t("sentQuestion")}
       </span>
       <Button size="xs" disabled={pending} onClick={() => answer(true)}>
-        Oui
+        {t("yes")}
       </Button>
       <Button
         size="xs"
@@ -119,7 +121,7 @@ export function SentQuestion({ linkId }: { linkId: string }) {
         disabled={pending}
         onClick={() => answer(false)}
       >
-        Pas encore
+        {t("notYet")}
       </Button>
     </span>
   );

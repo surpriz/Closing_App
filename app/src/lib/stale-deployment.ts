@@ -7,4 +7,8 @@ export function isStaleDeployment(error: unknown) {
   return /Server Action ".*" was not found on the server|failed-to-find-server-action/.test(error.message);
 }
 
+/**
+ * @deprecated French only: translate `server.staleDeployment` instead
+ * (`useTranslations("server")("staleDeployment")` in a component).
+ */
 export const STALE_DEPLOYMENT_MESSAGE = "Une nouvelle version de Clozer vient d'être mise en ligne. Rechargez la page pour continuer.";

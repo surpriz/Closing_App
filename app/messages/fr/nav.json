@@ -1,0 +1,73 @@
+{
+  "layout": {
+    "homeAria": "Clozer, aujourd'hui"
+  },
+  "dashboardNav": {
+    "mainNav": "Navigation principale",
+    "today": "Aujourd'hui",
+    "team": "Équipe",
+    "documents": "Documents",
+    "prospecting": "Prospection",
+    "settings": "Réglages"
+  },
+  "userMenu": {
+    "account": "Mon compte",
+    "privacy": "Données et confidentialité",
+    "admin": "Admin",
+    "language": "Langue",
+    "signOut": "Se déconnecter"
+  },
+  "theme": {
+    "appearance": "Apparence",
+    "light": "Clair",
+    "dark": "Sombre",
+    "system": "Système"
+  },
+  "helpMenu": {
+    "label": "Aide",
+    "ask": "Poser une question",
+    "howItWorks": "Comment ça marche",
+    "faq": "Questions fréquentes",
+    "replayTour": "Revoir la prise en main"
+  },
+  "commandMenu": {
+    "searchTrigger": "Rechercher…",
+    "search": "Rechercher",
+    "placeholder": "Un prospect, une société, un document…",
+    "noMatch": "Rien ne correspond.",
+    "groups": {
+      "deal": "Prospects",
+      "document": "Documents",
+      "page": "Aller à"
+    },
+    "pages": {
+      "today": "Aujourd'hui",
+      "documents": "Documents",
+      "howItWorks": "Comment ça marche",
+      "settings": "Réglages",
+      "onboarding": "Prise en main",
+      "faq": "Questions fréquentes",
+      "faqHint": "FAQ",
+      "ask": "Poser une question",
+      "askHint": "Aide, suggestions, bugs"
+    }
+  },
+  "helpWidget": {
+    "launcherAria": "Poser une question à l'aide Clozer",
+    "launcher": "Aide",
+    "title": "Aide Clozer",
+    "subtitle": "Questions, conseils, idées, bugs",
+    "close": "Fermer",
+    "greeting": "Bonjour {name} ! Une question sur Clozer, un conseil, un bug à signaler ou une idée ? Je suis là pour ça.",
+    "greetingNoName": "Bonjour ! Une question sur Clozer, un conseil, un bug à signaler ou une idée ? Je suis là pour ça.",
+    "sent": "Transmis à l'équipe Clozer",
+    "sentAnnouncement": "Transmis à l'équipe Clozer.",
+    "writing": "Rédaction…",
+    "quota": "Vous avez posé beaucoup de questions d'un coup. Réessayez un peu plus tard.",
+    "unavailable": "L'assistant est indisponible, réessayez dans un instant.",
+    "placeholder": "Votre question ou votre idée…",
+    "inputAria": "Votre question ou votre idée",
+    "send": "Envoyer",
+    "disclaimer": "Réponses automatiques, l'assistant peut se tromper. Rien n'est transmis sans votre accord."
+  }
+}

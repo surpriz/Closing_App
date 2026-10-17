@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 
 import { ImpersonationBanner } from "@/components/admin/impersonation-banner";
@@ -25,6 +26,8 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { user, organization, role, scope } = await requireWorkspace();
+  const t = await getTranslations();
+  const noRecipient = t("today.page.noRecipient");
   const isManager = isManagerRole(role);
 
   const [links, documents, memberCount] = await Promise.all([
@@ -53,7 +56,7 @@ export default async function DashboardLayout({
   const entries: CommandEntry[] = [
     ...links.map((link) => {
       const contact = link.prospects[0];
-      const label = dealLabel(link);
+      const label = dealLabel(link, noRecipient);
       const who = contact?.name ?? contact?.email;
       return {
         kind: "deal" as const,
@@ -72,7 +75,7 @@ export default async function DashboardLayout({
         <div className="mx-auto flex h-14 max-w-7xl items-stretch gap-6 px-4 sm:px-6">
           <Link
             href="/dashboard"
-            aria-label="Clozer, aujourd'hui"
+            aria-label={t("nav.layout.homeAria")}
             className="flex items-center outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
           >
             <Logo />

@@ -1,3 +1,5 @@
+import { useLocale, useTranslations } from "next-intl";
+
 import type { VoiceCommentStatus } from "@/generated/prisma/enums";
 import { formatDate, formatRelative } from "@/lib/format";
 
@@ -13,6 +15,8 @@ export type VoiceCommentItem = {
 
 /** Voice comments the prospect left on the pages, newest first. */
 export function VoiceComments({ comments }: { comments: VoiceCommentItem[] }) {
+  const t = useTranslations("deal.voiceComments");
+  const locale = useLocale();
   return (
     <ul className="divide-y divide-border">
       {comments.map((comment) => (
@@ -22,19 +26,22 @@ export function VoiceComments({ comments }: { comments: VoiceCommentItem[] }) {
               <span className="font-medium">{comment.reader}</span>
               <span className="text-small text-muted-foreground">
                 {" "}
-                · page {comment.pageNumber} · {Math.max(1, Math.round(comment.durationMs / 1000))} s
+                {t("meta", {
+                  page: comment.pageNumber,
+                  seconds: Math.max(1, Math.round(comment.durationMs / 1000)),
+                })}
               </span>
             </span>
-            <time className="font-mono text-micro text-muted-foreground" title={formatDate(comment.createdAt)}>
-              {formatRelative(comment.createdAt)}
+            <time className="font-mono text-micro text-muted-foreground" title={formatDate(comment.createdAt, locale)}>
+              {formatRelative(comment.createdAt, locale)}
             </time>
           </div>
           <audio controls preload="none" src={`/api/voice-comments/${comment.id}/audio`} className="h-9 w-full max-w-md" />
           {comment.status === "TRANSCRIBED" && comment.transcript ? (
-            <p className="text-body">« {comment.transcript} »</p>
+            <p className="text-body">{t("transcript", { text: comment.transcript })}</p>
           ) : (
             <p className="text-small text-muted-foreground">
-              {comment.status === "PENDING" ? "Transcription en cours…" : "Pas de transcription, écoutez-le."}
+              {comment.status === "PENDING" ? t("pending") : t("noTranscript")}
             </p>
           )}
         </li>

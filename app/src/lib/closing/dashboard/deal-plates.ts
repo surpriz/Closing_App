@@ -1,3 +1,5 @@
+import type { UiLocale } from "@/i18n/locale";
+
 import { segmentLabel } from "../documents/video-segments";
 
 import { pageHeat, type PageHeat } from "./page-heat";
@@ -50,6 +52,7 @@ export function dealPlates(input: {
   }[];
   numPages: number | null;
   video: boolean;
+  locale: UiLocale;
   /** Pages open right now. */
   livePages?: number[];
 }): DealPlates {
@@ -90,7 +93,7 @@ export function dealPlates(input: {
       index,
       from,
       to,
-      label: plateLabel(from, to, input.video),
+      label: plateLabel(from, to, input.video, input.locale),
       seconds: Math.round(ms / 1000),
       avgSeconds:
         single && single.viewCount > 0
@@ -112,9 +115,9 @@ export function dealPlates(input: {
   };
 }
 
-function plateLabel(from: number, to: number, video: boolean) {
+function plateLabel(from: number, to: number, video: boolean, locale: UiLocale) {
   // A video pitch is ten pages, one per tenth: never folded
-  if (video) return segmentLabel(from);
+  if (video) return segmentLabel(from, undefined, locale);
   return from === to ? `P.${from}` : `P.${from}–${to}`;
 }
 

@@ -3,6 +3,8 @@
  * Inline styles only, one column, works in Gmail and Outlook. Pure.
  */
 
+import type { UiLocale } from "@/i18n/locale";
+
 export type EmailBlock =
   | { kind: "text"; text: string }
   | { kind: "quote"; text: string }
@@ -11,6 +13,8 @@ export type EmailBlock =
   | { kind: "button"; label: string; href: string };
 
 export type EmailContent = {
+  /** The reader's language: sets `<html lang>` and the label/link separator. */
+  locale: UiLocale;
   /** Shown by mail clients next to the subject. */
   preheader?: string;
   title: string;
@@ -63,7 +67,12 @@ function blockHtml(block: EmailBlock) {
   }
 }
 
-function blockText(block: EmailBlock) {
+/** French puts a space before the colon. */
+function colon(locale: UiLocale) {
+  return locale === "fr" ? " : " : ": ";
+}
+
+function blockText(block: EmailBlock, locale: UiLocale) {
   switch (block.kind) {
     case "text":
       return block.text;
@@ -79,7 +88,7 @@ function blockText(block: EmailBlock) {
         .map((item) => [`- ${item.text}`, item.detail && `  ${item.detail}`, item.href && `  ${item.href}`].filter(Boolean).join("\n"))
         .join("\n");
     case "button":
-      return `${block.label} : ${block.href}`;
+      return `${block.label}${colon(locale)}${block.href}`;
   }
 }
 
@@ -95,11 +104,11 @@ export function renderEmail(content: EmailContent) {
     ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0">${escapeHtml(content.preheader)}</div>`
     : "";
 
-  const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"></head><body style="margin:0;padding:0;background:#f5f5f4">${preheader}<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f4"><tr><td align="center" style="padding:24px 12px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border:1px solid ${LINE};border-radius:12px"><tr><td style="padding:24px 28px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"><p style="margin:0 0 18px;font-size:13px;font-weight:700;color:${BRAND}">Clozer</p><h1 style="margin:0 0 16px;font-size:20px;line-height:27px;color:${INK}">${escapeHtml(content.title)}</h1>${content.blocks
+  const html = `<!doctype html><html lang="${content.locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"></head><body style="margin:0;padding:0;background:#f5f5f4">${preheader}<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f4"><tr><td align="center" style="padding:24px 12px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border:1px solid ${LINE};border-radius:12px"><tr><td style="padding:24px 28px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"><p style="margin:0 0 18px;font-size:13px;font-weight:700;color:${BRAND}">Clozer</p><h1 style="margin:0 0 16px;font-size:20px;line-height:27px;color:${INK}">${escapeHtml(content.title)}</h1>${content.blocks
     .map(blockHtml)
     .join("")}${footer}</td></tr></table></td></tr></table></body></html>`;
 
-  const text = [content.title, "", ...content.blocks.map(blockText).flatMap((t) => [t, ""]), content.footer ? `${content.footer.text}${content.footer.href ? ` : ${content.footer.href}` : ""}` : ""]
+  const text = [content.title, "", ...content.blocks.map((block) => blockText(block, content.locale)).flatMap((t) => [t, ""]), content.footer ? `${content.footer.text}${content.footer.href ? `${colon(content.locale)}${content.footer.href}` : ""}` : ""]
     .join("\n")
     .trim();
 

@@ -1,11 +1,11 @@
 import { ChevronRight } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import type { EngagementTier } from "@/generated/prisma/enums";
 import { ENGAGEMENT_TIER_THRESHOLDS } from "@/lib/closing/constants";
 import { cn } from "@/lib/utils";
 
 import { HEAT_BG } from "./heat";
-import { TIER_LABELS } from "./labels";
 
 const { WARM, HOT } = ENGAGEMENT_TIER_THRESHOLDS;
 
@@ -15,14 +15,16 @@ const SEGMENTS: { tier: EngagementTier; from: number; to: number }[] = [
   { tier: "HOT", from: HOT, to: 100 },
 ];
 
-function nextStep(score: number) {
-  if (score < WARM) return `Encore ${WARM - score} point${WARM - score > 1 ? "s" : ""} pour passer tiède.`;
-  if (score < HOT) return `Encore ${HOT - score} point${HOT - score > 1 ? "s" : ""} pour passer chaud.`;
-  return "Lecture intense.";
+function nextStep(t: ReturnType<typeof useTranslations<"common.temperature">>, score: number) {
+  if (score < WARM) return t("toWarm", { count: WARM - score });
+  if (score < HOT) return t("toHot", { count: HOT - score });
+  return t("intense");
 }
 
 /** Three-band scale with a marker at the score, and what the next band takes. */
 export function TemperatureGauge({ tier, score }: { tier: EngagementTier; score: number }) {
+  const t = useTranslations("common.temperature");
+  const tl = useTranslations("labels");
   return (
     <div className="space-y-2">
       <div className="relative pt-1">
@@ -44,11 +46,11 @@ export function TemperatureGauge({ tier, score }: { tier: EngagementTier; score:
       <div className="flex text-small text-muted-foreground">
         {SEGMENTS.map((segment) => (
           <span key={segment.tier} style={{ flexGrow: segment.to - segment.from }} className="basis-0">
-            {TIER_LABELS[segment.tier]}
+            {tl(`tier.${segment.tier}`)}
           </span>
         ))}
       </div>
-      <p className="text-small text-muted-foreground">{nextStep(score)}</p>
+      <p className="text-small text-muted-foreground">{nextStep(t, score)}</p>
     </div>
   );
 }
@@ -66,36 +68,33 @@ export function ScoreGuide({
   hasPricing: boolean;
   pricingThresholdSec: number;
 }) {
+  const t = useTranslations("common.temperature");
   const rows: [string, string][] = [
-    ["Lecture récente", "25 si lu dans les dernières 24 h, 15 sur 3 jours, 5 sur 7 jours"],
-    ["Temps de lecture", "1 point toutes les 12 secondes, jusqu'à 25"],
-    ["Visites", "5 pour la première, 12 pour la deuxième, 20 à partir de trois"],
-    ["Plusieurs lecteurs", "10 à deux personnes, 15 à partir de trois : le document circule"],
+    [t("rows.recentRead"), t("rows.recentReadRule")],
+    [t("rows.readTime"), t("rows.readTimeRule")],
+    [t("rows.visits"), t("rows.visitsRule")],
+    [t("rows.readers"), t("rows.readersRule")],
     ...(hasPricing
       ? ([
           [
-            "Page de tarifs",
-            `7 à partir de ${Math.round(pricingThresholdSec / 3)} s dessus, 15 à partir de ${pricingThresholdSec} s`,
+            t("rows.pricing"),
+            t("rows.pricingRule", { third: Math.round(pricingThresholdSec / 3), full: pricingThresholdSec }),
           ],
         ] as [string, string][])
       : []),
-    ...(hasPages ? ([["Progression", "4 si lu à moitié, 10 si lu jusqu'au bout"]] as [string, string][]) : []),
-    ["Ajustement demandé", "10 points"],
-    ["Rendez-vous", "5 s'il ouvre votre agenda, 25 s'il réserve un créneau"],
+    ...(hasPages ? ([[t("rows.progress"), t("rows.progressRule")]] as [string, string][]) : []),
+    [t("rows.change"), t("rows.changeRule")],
+    [t("rows.meeting"), t("rows.meetingRule")],
   ];
 
   return (
     <details className="group text-small">
       <summary className="inline-flex cursor-pointer list-none items-center gap-1 text-muted-foreground outline-none hover:text-foreground focus-visible:underline [&::-webkit-details-marker]:hidden">
         <ChevronRight className="size-3.5 transition-transform group-open:rotate-90" />
-        Comment la température est calculée
+        {t("guideTitle")}
       </summary>
       <div className="mt-3 space-y-3">
-        <p className="text-muted-foreground">
-          Un score sur 100 qui mesure l&apos;intérêt du prospect pour ce document. Froid en dessous de {WARM}, tiède
-          jusqu&apos;à {HOT - 1}, chaud à partir de {HOT}. Il baisse tout seul si le prospect ne revient pas, et
-          passe à 100 quand la proposition est validée ou le deal gagné.
-        </p>
+        <p className="text-muted-foreground">{t("guideIntro", { warm: WARM, warmMax: HOT - 1, hot: HOT })}</p>
         <dl className="grid gap-x-6 gap-y-1.5 sm:grid-cols-[10rem_minmax(0,1fr)]">
           {rows.map(([label, rule]) => (
             <div key={label} className="contents">

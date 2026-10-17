@@ -1,9 +1,12 @@
+import { useTranslations } from "next-intl";
+
 import { Skeleton } from "@/components/ui/skeleton";
 
 /** The report's shape while it loads: header strip, headline, deal rows led by their thermal strip. */
 export default function Loading() {
+  const t = useTranslations("common");
   return (
-    <div className="space-y-10" aria-busy aria-label="Chargement">
+    <div className="space-y-10" aria-busy aria-label={t("loading")}>
       <div className="space-y-6">
         <div className="flex gap-6 border-b border-border pb-2">
           <Skeleton className="h-3 w-24" />

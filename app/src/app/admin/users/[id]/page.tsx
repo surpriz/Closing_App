@@ -7,9 +7,8 @@ import { AuditList } from "@/components/admin/audit-list";
 import { AdminSection } from "@/components/admin/section";
 import { UserStatusBadge, WorkspaceStatusBadge } from "@/components/admin/status-badge";
 import { UserActions } from "@/components/admin/user-actions";
-import { roleLabel } from "@/components/dashboard/labels";
 import { loadAuditEntries } from "@/lib/admin/audit";
-import { adminDate, adminDateTime } from "@/lib/admin/format";
+import { adminDate, adminDateTime, adminRoleLabel } from "@/lib/admin/format";
 import { prisma } from "@/lib/db";
 import { isPlatformAdminEmail, normalizeEmail, userStatus } from "@/lib/platform-admin";
 import { requirePlatformAdmin } from "@/lib/session";
@@ -73,7 +72,7 @@ export default async function AdminUserPage({ params }: PageProps<"/admin/users/
                 {member.organization.name}
               </Link>
               <span className="flex items-center gap-3 text-muted-foreground">
-                {roleLabel(member.role)}
+                {adminRoleLabel(member.role)}
                 <WorkspaceStatusBadge suspended={member.organization.suspendedAt !== null} />
               </span>
             </li>

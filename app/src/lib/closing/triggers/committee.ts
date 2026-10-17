@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { toUiLocale } from "@/lib/seller-locale";
 
 import { DAY_MS } from "../constants";
 import { getReaderMap } from "../committee/queries";
@@ -20,19 +21,32 @@ export async function evaluateReaders(viewId: string, now = new Date()) {
     select: {
       linkId: true,
       isBot: true,
-      link: { select: { organizationId: true, dealStatus: true, archivedAt: true, shared: true } },
+      link: {
+        select: {
+          organizationId: true,
+          dealStatus: true,
+          archivedAt: true,
+          shared: true,
+          createdBy: { select: { locale: true } },
+        },
+      },
     },
   });
   // Many readers is the point of a shared link, not a committee
   if (!view || view.isBot || view.link.archivedAt || view.link.shared) return false;
   if (view.link.dealStatus === "WON" || view.link.dealStatus === "LOST") return false;
 
-  const [settings, map] = await Promise.all([getWorkspaceSettings(view.link.organizationId), getReaderMap(view.linkId, now)]);
+  // The reasons are stored on the alert and read by the seller who sent the link
+  const locale = toUiLocale(view.link.createdBy?.locale);
+  const [settings, map] = await Promise.all([
+    getWorkspaceSettings(view.link.organizationId),
+    getReaderMap(view.linkId, now, locale),
+  ]);
 
   const candidates = [
-    detectDecisionMaker(map, view.linkId, viewId),
-    detectCommittee(map, view.linkId, settings.committeeThreshold, now),
-    detectNewReader(map, view.linkId, viewId),
+    detectDecisionMaker(map, view.linkId, viewId, locale),
+    detectCommittee(map, view.linkId, settings.committeeThreshold, now, locale),
+    detectNewReader(map, view.linkId, viewId, locale),
   ].filter((a): a is ReaderAlert => a !== null);
   if (candidates.length === 0) return false;
 
@@ -41,7 +55,10 @@ export async function evaluateReaders(viewId: string, now = new Date()) {
     select: { dedupeKey: true },
   });
   const done = new Set(existing.map((a) => a.dedupeKey));
-  const { notify, silent } = pickReaderAlert(candidates.filter((a) => !done.has(a.dedupeKey)));
+  const { notify, silent } = pickReaderAlert(
+    candidates.filter((a) => !done.has(a.dedupeKey)),
+    locale,
+  );
   if (!notify) return false;
 
   const viral =

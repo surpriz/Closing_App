@@ -1,13 +1,14 @@
 "use client";
 
 import { Scale, Search } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useTransition } from "react";
 import { toast } from "sonner";
 
-import { startSearchAction } from "@/app/(dashboard)/prospection/actions";
+import { startSearchAction } from "@/app/(dashboard)/prospecting/actions";
 import { Button } from "@/components/ui/button";
 
-import { PROVIDER_LABELS } from "./labels";
+import { providerLabel } from "./labels";
 
 type Props = {
   providers: string[];
@@ -15,17 +16,19 @@ type Props = {
 };
 
 export function RunControls({ providers, disabled }: Props) {
+  const t = useTranslations("prospecting.runControls");
+  const tl = useTranslations("prospecting.labels");
   const [pending, startTransition] = useTransition();
 
   const start = (selected: string[]) =>
     startTransition(async () => {
       const result = await startSearchAction(selected);
       if ("error" in result) toast.error(result.error);
-      else toast.success("Recherche lancée");
+      else toast.success(t("started"));
     });
 
   if (providers.length === 0) {
-    return <p className="text-small text-muted-foreground">Aucun fournisseur configuré (APOLLO_API_KEY, LEMLIST_API_KEY).</p>;
+    return <p className="text-small text-muted-foreground">{t("noProvider")}</p>;
   }
 
   return (
@@ -38,13 +41,13 @@ export function RunControls({ providers, disabled }: Props) {
           onClick={() => start([provider])}
         >
           <Search aria-hidden />
-          Chercher avec {PROVIDER_LABELS[provider] ?? provider}
+          {t("searchWith", { provider: providerLabel(tl, provider) })}
         </Button>
       ))}
       {providers.length > 1 && (
         <Button variant="ghost" disabled={disabled || pending} onClick={() => start(providers)}>
           <Scale aria-hidden />
-          Comparer sur la même cible
+          {t("compare")}
         </Button>
       )}
     </div>

@@ -44,8 +44,11 @@ export function customLinkName(link: Pick<LabelledLink, "name" | "document" | "p
   return generated.some((value) => fold(value) === fold(name) || fold(value) === fold(base)) ? null : name;
 }
 
-/** How a deal is named everywhere: the person first, never the document. */
-export function dealLabel(link: LabelledLink): string {
+/**
+ * How a deal is named everywhere: the person first, never the document.
+ * `noRecipient` is the translated "today.page.noRecipient", for a link nobody is named on yet.
+ */
+export function dealLabel(link: LabelledLink, noRecipient = "Sans destinataire"): string {
   const prospect = link.prospects[0];
   return (
     prospect?.company?.trim() ||
@@ -53,7 +56,7 @@ export function dealLabel(link: LabelledLink): string {
     prospect?.email?.trim() ||
     customLinkName(link) ||
     // Nobody named yet: the document shows on the line below
-    "Sans destinataire"
+    noRecipient
   );
 }
 
@@ -61,5 +64,5 @@ export function dealLabel(link: LabelledLink): string {
 export function dealDocumentMeta(link: LabelledLink): string | null {
   const name = link.document?.name;
   if (!name) return null;
-  return fold(name) === fold(dealLabel(link)) ? null : name;
+  return fold(name) === fold(dealLabel(link, "")) ? null : name;
 }

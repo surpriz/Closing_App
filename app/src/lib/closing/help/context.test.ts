@@ -23,6 +23,7 @@ describe("pageLabel", () => {
   it("knows deal pages and settings", () => {
     expect(pageLabel("/links/xyz")).toMatch(/deal page/);
     expect(pageLabel("/settings")).toBe("Réglages");
+    expect(pageLabel("/settings", "en")).toBe("Settings");
   });
 
   it("returns null for unknown or missing paths", () => {
@@ -33,7 +34,7 @@ describe("pageLabel", () => {
 
 describe("formatHelpContext", () => {
   it("states where the user is and how far they got", () => {
-    const text = formatHelpContext(state, "/documents");
+    const text = formatHelpContext(state, "/documents", "fr");
     expect(text).toContain("first name: Camille");
     expect(text).toContain("role: member");
     expect(text).toContain("welcome tour finished: no");
@@ -44,7 +45,7 @@ describe("formatHelpContext", () => {
   });
 
   it("names managers and autopilot", () => {
-    const text = formatHelpContext({ ...state, role: "owner", autopilot: true }, null);
+    const text = formatHelpContext({ ...state, role: "owner", autopilot: true }, null, "fr");
     expect(text).toContain("role: owner");
     expect(text).toContain("follow-up mode: autopilot");
     expect(text).toContain("<current_page>unknown</current_page>");

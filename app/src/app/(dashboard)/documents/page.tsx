@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getLocale, getTranslations } from "next-intl/server";
 
 import { DeleteDocumentButton } from "@/components/dashboard/delete-document-button";
 import {
@@ -8,7 +9,6 @@ import {
   StateMark,
 } from "@/components/dashboard/document/reading-bits";
 import { HeatStrip } from "@/components/dashboard/heat-strip";
-import { TIER_LABELS } from "@/components/dashboard/labels";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { UploadDropzone } from "@/components/dashboard/upload-dropzone";
 import { documentUploadPrefix, pitchUploadPrefix } from "@/lib/blob";
@@ -19,10 +19,9 @@ import { prisma } from "@/lib/db";
 import { formatDuration, formatRelative } from "@/lib/format";
 import { requireWorkspace } from "@/lib/session";
 
-export const metadata: Metadata = { title: "Documents" };
-
-function plural(count: number, one: string, many: string) {
-  return `${count} ${count === 1 ? one : many}`;
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("documents");
+  return { title: t("metaTitle") };
 }
 
 function hostOf(url: string | null) {
@@ -36,6 +35,11 @@ function hostOf(url: string | null) {
 
 export default async function DocumentsPage() {
   const { organization } = await requireWorkspace();
+  const [t, tl, locale] = await Promise.all([
+    getTranslations("documents.list"),
+    getTranslations("labels"),
+    getLocale(),
+  ]);
 
   const documents = await prisma.document.findMany({
     where: { organizationId: organization.id, archivedAt: null },
@@ -99,10 +103,7 @@ export default async function DocumentsPage() {
   if (documents.length === 0) {
     return (
       <div className="space-y-8">
-        <PageHeader
-          title="Documents"
-          description="Ajoutez un PDF ou collez un lien (Notion, Loom, Figma…), puis créez un lien par prospect."
-        />
+        <PageHeader title={t("title")} description={t("emptyDescription")} />
         <UploadDropzone
           uploadPrefix={uploadPrefix}
           pitchUploadPrefix={pitchPrefix}
@@ -118,16 +119,13 @@ export default async function DocumentsPage() {
     <div className="space-y-6">
       <ReportStrip
         fields={[
-          "Relevé des documents",
-          plural(documents.length, "document", "documents"),
-          plural(linkTotal, "lien envoyé", "liens envoyés"),
-          plural(readTotal, "lecture", "lectures"),
+          t("reportTitle"),
+          t("documentCount", { count: documents.length }),
+          t("sentLinkCount", { count: linkTotal }),
+          t("readCount", { count: readTotal }),
         ]}
       />
-      <PageHeader
-        title="Documents"
-        description="Glissez un PDF ou collez un lien n'importe où dans Clozer pour l'ajouter, ou utilisez « Ajouter un document » en haut."
-      />
+      <PageHeader title={t("title")} description={t("description")} />
 
       <ul className="stagger divide-y divide-border border-y border-foreground bg-card">
         {ordered.map((document) => {
@@ -145,16 +143,20 @@ export default async function DocumentsPage() {
             document.status === "PROCESSING" || document.status === "UPLOADED";
           const meta = [
             document.kind === "URL"
-              ? `Lien web, ${hostOf(document.externalUrl) ?? "page externe"}`
+              ? t("webLink", {
+                  host: hostOf(document.externalUrl) ?? t("externalPage"),
+                })
               : null,
             isVideo
-              ? `Pitch vidéo, ${formatDuration(document.durationMs ?? 0)}`
+              ? t("videoPitch", {
+                  duration: formatDuration(document.durationMs ?? 0),
+                })
               : null,
             document.numPages && !isVideo
-              ? plural(document.numPages, "page", "pages")
+              ? t("pageCount", { count: document.numPages })
               : null,
-            plural(document._count.links, "prospect", "prospects"),
-            plural(reads, "lecture", "lectures"),
+            t("prospectCount", { count: document._count.links }),
+            t("readCount", { count: reads }),
           ]
             .filter(Boolean)
             .join(" · ");
@@ -177,17 +179,21 @@ export default async function DocumentsPage() {
                       <StateMark
                         state={
                           score
-                            ? TIER_LABELS[score.tier]
+                            ? tl(`tier.${score.tier}`)
                             : document._count.links === 0 &&
                                 draftDocuments.has(document.id)
-                              ? "Lien prêt, pas encore envoyé"
-                              : "Pas encore lu"
+                              ? t("linkReady")
+                              : t("notRead")
                         }
                         tier={score?.tier ?? null}
                         strong={!!score}
                       />
                       {lastRead && (
-                        <span>· lu {formatRelative(lastRead, now)}</span>
+                        <span>
+                          {t("readAgo", {
+                            when: formatRelative(lastRead, locale, now),
+                          })}
+                        </span>
                       )}
                     </span>
                   )}
@@ -199,12 +205,11 @@ export default async function DocumentsPage() {
                         className="size-1.5 animate-pulse bg-foreground motion-reduce:animate-none"
                         aria-hidden
                       />
-                      Analyse en cours…
+                      {t("processing")}
                     </span>
                   ) : document.status === "FAILED" ? (
                     <span className="text-destructive">
-                      L&apos;analyse a échoué. Ouvrez le document pour voir
-                      pourquoi.
+                      {t("failed")}
                     </span>
                   ) : (
                     <>

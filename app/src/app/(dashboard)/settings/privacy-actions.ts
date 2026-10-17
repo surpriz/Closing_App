@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { countProspectData, eraseProspectData } from "@/lib/privacy/prospect";
@@ -13,22 +14,29 @@ export type ProspectLookup = Awaited<ReturnType<typeof countProspectData>>;
 export type LookupState = { result?: ProspectLookup; error?: string } | null;
 export type PrivacyActionState = { ok?: boolean; error?: string } | null;
 
-const emailSchema = z.email("Adresse email invalide.");
+const emailSchema = z.email();
+
+// Either word works: the page may have been shown in the other language
+const CONFIRM_WORDS = ["SUPPRIMER", "DELETE"];
 
 export async function lookupProspect(_prev: LookupState, formData: FormData): Promise<LookupState> {
   const { organization } = await requireManager();
   const parsed = emailSchema.safeParse(String(formData.get("email") ?? "").trim());
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message };
+  if (!parsed.success) {
+    const t = await getTranslations("settings.privacyActions");
+    return { error: t("invalidEmail") };
+  }
   return { result: await countProspectData(organization.id, parsed.data) };
 }
 
 export async function eraseProspect(email: string): Promise<PrivacyActionState> {
   const { organization } = await requireManager();
+  const t = await getTranslations("settings.privacyActions");
   const parsed = emailSchema.safeParse(email);
-  if (!parsed.success) return { error: "Adresse email invalide." };
+  if (!parsed.success) return { error: t("invalidEmail") };
 
   const result = await eraseProspectData(organization.id, parsed.data);
-  if (!result.erased) return { error: "Rien à supprimer pour cette adresse." };
+  if (!result.erased) return { error: t("nothingToErase") };
   revalidatePath("/dashboard");
   revalidatePath("/links");
   return { ok: true };
@@ -36,9 +44,10 @@ export async function eraseProspect(email: string): Promise<PrivacyActionState> 
 
 export async function deleteWorkspaceAction(_prev: PrivacyActionState, formData: FormData): Promise<PrivacyActionState> {
   const { organization, role } = await requireWorkspace();
-  if (!isOwnerRole(role)) return { error: "Seul un propriétaire peut supprimer l'espace." };
+  const t = await getTranslations("settings.privacyActions");
+  if (!isOwnerRole(role)) return { error: t("ownerOnly") };
   if (String(formData.get("confirm") ?? "").trim() !== organization.name) {
-    return { error: "Tapez le nom exact de l'espace pour confirmer." };
+    return { error: t("typeWorkspaceName") };
   }
 
   await deleteWorkspace(organization.id);
@@ -47,16 +56,17 @@ export async function deleteWorkspaceAction(_prev: PrivacyActionState, formData:
 
 export async function deleteAccountAction(_prev: PrivacyActionState, formData: FormData): Promise<PrivacyActionState> {
   const { user } = await requireWorkspace();
-  if (String(formData.get("confirm") ?? "").trim().toUpperCase() !== "SUPPRIMER") {
-    return { error: "Tapez SUPPRIMER pour confirmer." };
+  const t = await getTranslations("settings");
+  if (!CONFIRM_WORDS.includes(String(formData.get("confirm") ?? "").trim().toUpperCase())) {
+    return { error: t("privacyActions.typeConfirmWord", { word: t("privacy.deleteAccountConfirmWord") }) };
   }
 
   const blocker = await accountDeletionBlocker(user.id);
   if (blocker?.kind === "sole_member") {
-    return { error: `Vous êtes seul dans « ${blocker.workspace} » : supprimez l'espace à la place.` };
+    return { error: t("privacyActions.soleMember", { workspace: blocker.workspace }) };
   }
   if (blocker?.kind === "last_owner") {
-    return { error: `Nommez un autre propriétaire de « ${blocker.workspace} » avant de partir.` };
+    return { error: t("privacyActions.lastOwner", { workspace: blocker.workspace }) };
   }
 
   await deleteAccount(user.id);

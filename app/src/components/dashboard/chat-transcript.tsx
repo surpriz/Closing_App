@@ -1,4 +1,5 @@
 import { ChevronRight, Forward, TriangleAlert } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 
 import { CHAT_FLAG_LABELS, type ChatFlag } from "@/lib/closing/chat/lint";
 import { formatDate, formatRelative } from "@/lib/format";
@@ -21,6 +22,8 @@ export type TranscriptConversation = {
 
 /** What prospects asked the assistant on this link, one conversation per browser. */
 export function ChatTranscript({ conversations }: { conversations: TranscriptConversation[] }) {
+  const t = useTranslations("deal.chatTranscript");
+  const locale = useLocale();
   return (
     <div className="divide-y divide-border">
       {conversations.map((conversation, index) => {
@@ -33,9 +36,9 @@ export function ChatTranscript({ conversations }: { conversations: TranscriptCon
               <span className="min-w-0 text-body">
                 <span className="font-medium">{conversation.reader}</span>
                 <span className="block text-small text-muted-foreground">
-                  {questions.length} {questions.length === 1 ? "question" : "questions"}
-                  {forwarded > 0 && `, dont ${forwarded} pour vous`}
-                  {last && ` · ${formatRelative(last.createdAt)}`}
+                  {t("questions", { count: questions.length })}
+                  {forwarded > 0 && t("forYou", { count: forwarded })}
+                  {last && ` · ${formatRelative(last.createdAt, locale)}`}
                 </span>
               </span>
               <ChevronRight className="mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90" />
@@ -47,17 +50,17 @@ export function ChatTranscript({ conversations }: { conversations: TranscriptCon
                   key={message.id}
                   className={cn("text-body", message.role === "USER" ? "font-medium" : "border-l border-foreground/30 pl-3 text-muted-foreground")}
                 >
-                  <p className="whitespace-pre-wrap" title={formatDate(message.createdAt)}>
-                    {message.content || "(pas de réponse)"}
+                  <p className="whitespace-pre-wrap" title={formatDate(message.createdAt, locale)}>
+                    {message.content || t("noAnswer")}
                   </p>
                   {message.escalated && (
                     <p className="mt-0.5 flex items-center gap-1 text-small font-normal text-foreground">
-                      <Forward className="size-3" aria-hidden /> Transmise : l&apos;assistant a dit que vous répondriez
+                      <Forward className="size-3" aria-hidden /> {t("forwarded")}
                     </p>
                   )}
                   {message.flags.length > 0 && (
                     <p className="mt-0.5 flex items-center gap-1 text-small text-warning-foreground dark:text-warning">
-                      <TriangleAlert className="size-3" aria-hidden /> À vérifier :{" "}
+                      <TriangleAlert className="size-3" aria-hidden /> {t("toCheck")}{" "}
                       {message.flags.map((flag) => CHAT_FLAG_LABELS[flag as ChatFlag] ?? flag).join(", ")}
                     </p>
                   )}

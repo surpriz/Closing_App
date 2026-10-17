@@ -112,7 +112,7 @@ export async function requireWorkspace(next?: string) {
   const resolved = await resolveWorkspace();
   if (resolved.kind === "invited") redirect(`/invitation/${resolved.invitationId}`);
   if (resolved.kind === "signed_out") redirect(next ? `/login?next=${encodeURIComponent(next)}` : "/login");
-  if (resolved.kind === "suspended") redirect("/suspendu");
+  if (resolved.kind === "suspended") redirect("/suspended");
   return resolved.workspace;
 }
 

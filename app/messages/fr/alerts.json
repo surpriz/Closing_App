@@ -1,0 +1,218 @@
+{
+  "common": {
+    "someone": "Un prospect",
+    "doc": "« {name} »",
+    "quote": "« {text} »",
+    "lineQuote": " : « {text} »",
+    "viewDeal": "Voir le deal",
+    "reply": "Lui répondre",
+    "dealLine": "Le deal : {url}",
+    "footer": "Régler mes notifications"
+  },
+  "message": {
+    "linkExtensionRequested": {
+      "body": "Le lien vers {doc} a expiré. {who} demande à pouvoir le rouvrir.",
+      "button": "Prolonger le lien",
+      "email": "Son email : {email}",
+      "subject": "{who} demande une prolongation",
+      "line": "{who} demande une prolongation de {doc}, qui a expiré"
+    },
+    "linkExpiring": {
+      "subject": "Le lien de {who} expire demain",
+      "lineDate": "{doc} ({who}) expire le {date}",
+      "lineSoon": "{doc} ({who}) expire dans moins de 24 h",
+      "bodyDate": "{doc} ne sera plus accessible à {who} après le {date}. Prolongez-le ou relancez d'ici là.",
+      "bodyTomorrow": "{doc} ne sera plus accessible à {who} après demain. Prolongez-le ou relancez d'ici là."
+    },
+    "prospectValidated": {
+      "body": "{who} vient de cliquer sur « Valider & signer » sur {doc}. La page lui a annoncé un retour rapide de votre part.",
+      "subject": "{who} a validé votre proposition",
+      "line": "{who} a validé {doc}"
+    },
+    "meetingBooked": {
+      "bodyDate": "{who} vient de réserver un rendez-vous depuis {doc}, pour le {date}. Les relances automatiques de ce deal sont arrêtées.",
+      "body": "{who} vient de réserver un rendez-vous depuis {doc}. Les relances automatiques de ce deal sont arrêtées.",
+      "noDate": "La date et l'heure sont dans votre agenda.",
+      "subjectDate": "{who} a pris rendez-vous le {date}",
+      "subject": "{who} a pris rendez-vous",
+      "lineDate": "{who} a pris rendez-vous pour le {date} depuis {doc}",
+      "line": "{who} a pris rendez-vous depuis {doc}"
+    },
+    "changeRequested": {
+      "body": "{who} demande un ajustement sur {doc}.",
+      "subject": "{who} demande un ajustement",
+      "line": "{who} demande un ajustement sur {doc}"
+    },
+    "quoteRequested": {
+      "body": "{who} a regardé {doc} et demande un devis. Les relances automatiques de ce deal sont arrêtées.",
+      "subject": "{who} demande un devis",
+      "line": "{who} demande un devis après {doc}"
+    },
+    "prospectQuestion": {
+      "body": "{who} a posé une question sur {doc}. L'assistant n'a pas pu répondre et lui a dit que vous reviendriez vers lui.",
+      "dealAndChat": "Le deal et la conversation : {url}",
+      "subject": "{who} a une question sur votre proposition",
+      "line": "{who} a une question sur {doc}"
+    },
+    "voiceComment": {
+      "bodyPage": "{who} a enregistré un commentaire vocal sur la page {page} de {doc}.",
+      "body": "{who} a enregistré un commentaire vocal sur {doc}.",
+      "noTranscript": "Pas de transcription cette fois, écoutez-le sur la page du deal.",
+      "listen": "L'écouter : {url}",
+      "subject": "{who} vous a laissé un message vocal",
+      "linePage": "{who} a laissé un vocal sur la page {page} de {doc}",
+      "line": "{who} a laissé un vocal sur {doc}"
+    },
+    "draftReady": {
+      "subject": "Relance à valider : {who}",
+      "line": "Une relance pour {who} ({doc}) attend votre accord",
+      "body": "Une relance pour {who} ({doc}) est prête. Relisez-la et validez-la : rien ne part sans vous.",
+      "button": "Relire la relance"
+    },
+    "readers": {
+      "reasonFallback": "Quelqu'un de nouveau lit votre proposition",
+      "subjectCommittee": "{who} : {count} personnes lisent votre proposition",
+      "subjectCommitteeMany": "{who} : plusieurs personnes lisent votre proposition",
+      "subjectDecisionMaker": "Un décideur de {who} lit votre proposition",
+      "subjectForwarded": "{who} a repartagé votre proposition",
+      "subjectNewReader": "Nouveau lecteur sur votre proposition",
+      "hintCommittee": "Le comité regarde, c'est le moment d'appeler.",
+      "hint": "C'est le moment de reprendre contact.",
+      "line": "{who} · {doc} : {reason}. {hint}",
+      "body": "{reason} ({doc}).",
+      "button": "Voir qui lit"
+    },
+    "hot": {
+      "reasonMulti": "{count} personnes lisent en même temps",
+      "reasonMultiMany": "Plusieurs personnes lisent en même temps",
+      "reasonBack": "Revient après {days} jours sans lecture",
+      "reasonBackSome": "Revient après quelques jours sans lecture",
+      "subject": "{who} lit votre proposition en ce moment",
+      "line": "{who} lit {doc} en ce moment. {reason}, c'est le moment d'appeler.",
+      "body": "{who} lit {doc} en ce moment. {reason}.",
+      "goodMoment": "C'est un bon moment pour appeler.",
+      "button": "Voir la lecture en direct"
+    }
+  },
+  "notice": {
+    "on": "Sur {doc}.",
+    "linkExtensionRequested": {
+      "title": "{who} demande plus de temps",
+      "body": "{doc} a expiré. Prolongez-le en un clic."
+    },
+    "linkExpiring": {
+      "title": "Expire bientôt : {who}",
+      "bodyDate": "{doc} expire le {date}. Prolongez ou relancez.",
+      "bodyTomorrow": "{doc} expire demain. Prolongez ou relancez."
+    },
+    "prospectQuestion": {
+      "title": "{who} a une question"
+    },
+    "voiceComment": {
+      "title": "{who} a laissé un vocal",
+      "bodyPage": "Page {page} de {doc}."
+    },
+    "prospectValidated": {
+      "title": "{who} a validé",
+      "body": "{doc} est validé. Revenez vers ce prospect rapidement."
+    },
+    "meetingBooked": {
+      "title": "{who} a pris rendez-vous",
+      "bodyDate": "Rendez-vous le {date}, depuis {doc}.",
+      "body": "Depuis {doc}. La date est dans votre agenda."
+    },
+    "changeRequested": {
+      "title": "{who} demande un ajustement"
+    },
+    "quoteRequested": {
+      "title": "{who} demande un devis",
+      "bodyAfter": "Après {doc}."
+    },
+    "draftReady": {
+      "title": "Relance à valider",
+      "body": "Une relance pour {who} attend votre accord."
+    },
+    "committeeLive": {
+      "title": "Comité en lecture chez {who}",
+      "reasonFallback": "Plusieurs personnes lisent"
+    },
+    "decisionMaker": {
+      "title": "Décideur en lecture : {who}",
+      "reasonFallback": "Un décideur lit votre proposition"
+    },
+    "newReader": {
+      "title": "Nouveau lecteur chez {who}",
+      "reasonFallback": "Quelqu'un de nouveau lit votre proposition"
+    },
+    "hot": {
+      "title": "{who} lit votre proposition",
+      "reasonMulti": "{count} personnes lisent en même temps",
+      "reasonMultiMany": "Plusieurs personnes lisent en même temps",
+      "reasonBack": "Revient après {days} jours",
+      "reasonBackSome": "Revient après quelques jours"
+    },
+    "callNow": "{reason}. C'est le moment d'appeler.",
+    "reason": "{reason}."
+  },
+  "digest": {
+    "subjectTodo": "Ce matin : {count, plural, one {# prospect} other {# prospects}} à recontacter",
+    "subjectActions": "{count, plural, one {# réponse} other {# réponses}} de prospects depuis {since}",
+    "subjectExpiring": "{count, plural, one {# lien expire} other {# liens expirent}} bientôt",
+    "subjectAutoSent": "Clozer a relancé {count, plural, one {# prospect} other {# prospects}} pour vous",
+    "subjectDrafts": "{count, plural, one {# relance attend} other {# relances attendent}} votre accord",
+    "todoHeading": "À faire aujourd'hui",
+    "actionsHeading": "Réponses depuis {since}",
+    "action": {
+      "validated": "{label} a validé",
+      "change": "{label} demande un ajustement",
+      "quote": "{label} demande un devis",
+      "extension": "{label} demande une prolongation",
+      "meeting": "{label} a pris rendez-vous",
+      "question": "{label} a posé une question"
+    },
+    "quote": "« {text} »",
+    "expiringHeading": "Expirent bientôt",
+    "expiringDetail": "Se verrouille le {when}. Prolongez ou relancez d'ici là.",
+    "facts": {
+      "readers": "{count, plural, one {# prospect a lu} other {# prospects ont lu}} votre proposition",
+      "followupsSent": "{count, plural, one {# relance partie} other {# relances parties}}",
+      "followupsFailed": "{count, plural, one {# relance en échec} other {# relances en échec}}",
+      "unsubscribed": "{count, plural, one {# désinscription} other {# désinscriptions}}"
+    },
+    "sinceHeading": "Depuis {since}",
+    "autoSentHeading": "Parties toutes seules",
+    "whatsapp": "Message WhatsApp",
+    "draftsLine": "{count, plural, one {# relance attend} other {# relances attendent}} votre accord.",
+    "reviewButton": "Les relire",
+    "openButton": "Ouvrir Clozer",
+    "footer": "Régler ou couper ce compte rendu",
+    "yesterday": "hier"
+  },
+  "readerMap": {
+    "unidentifiedReader": "Lecteur non identifié {letter}",
+    "unidentified": "Lecteur non identifié",
+    "network": "Réseau non identifié {n}",
+    "personal": "Adresses personnelles",
+    "unknownNetwork": "Réseau inconnu"
+  },
+  "readers": {
+    "roleTagged": "{role}, tagué",
+    "roleDetected": "{role}, détecté",
+    "committee": "{count} personnes lisent en même temps{among} : le comité regarde votre proposition",
+    "amongOne": ", dont un décideur",
+    "amongMany": ", dont {count} décideurs",
+    "forwardedInternal": "Repartagé en interne : {name} lit votre proposition",
+    "external": "{name}{domain} lit votre proposition",
+    "probableNew": "Nouveau lecteur probable (autre appareil)",
+    "decisionMaker": "{name} ({role}){forwarded} lit votre proposition",
+    "forwarded": ", à qui la proposition a été repartagée,",
+    "withOthers": "{reason}, avec {count} autres personnes en ce moment"
+  },
+  "callMoment": {
+    "multiViewer": "{count} personnes lisent en même temps",
+    "reopened": "Revient après {days} jours sans lecture",
+    "pricing": "S'attarde sur les tarifs",
+    "firstOpen": "Ouvre votre proposition pour la première fois",
+    "hotDeal": "Deal chaud, en train de relire"
+  }
+}

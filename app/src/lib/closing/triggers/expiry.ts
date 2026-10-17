@@ -1,5 +1,7 @@
 import { ACTIVE_WORKSPACE } from "@/lib/closing/active-workspace";
 import { prisma } from "@/lib/db";
+import { toUiLocale } from "@/lib/seller-locale";
+import { getNamespaceTranslator } from "@/lib/server-translator";
 
 import { markDealDirty } from "../brain/analyze-deal";
 import { DAY_MS, HOUR_MS } from "../constants";
@@ -47,6 +49,7 @@ export async function scanExpiryReminders(now = new Date()) {
         take: REMINDER_RECIPIENTS,
       },
       organization: { include: { settings: true } },
+      createdBy: { select: { locale: true } },
       followups: {
         where: { status: { in: ["SENT", "DELIVERED"] }, sentAt: { gte: new Date(now.getTime() - DAY_MS) } },
         select: { prospectId: true },
@@ -84,7 +87,8 @@ export async function scanExpiryReminders(now = new Date()) {
         channel: "EMAIL",
         scheduledFor: plan.scheduledFor,
         timezone,
-        locale: prospect.locale ?? "fr",
+        // Unknown prospect language: the seller's, not French by default
+        locale: prospect.locale ?? toUiLocale(link.createdBy?.locale),
         dedupeKey: expiryReminderKey(link.id, link.expiresAt, prospect.id),
         context: {
           expiresAt: link.expiresAt.toISOString(),
@@ -97,7 +101,7 @@ export async function scanExpiryReminders(now = new Date()) {
       // The reminder is the next message: an unapproved AI one would make two
       await prisma.followup.updateMany({
         where: { linkId: link.id, prospectId: prospect.id, trigger: "AI_DECISION", status: { in: ["PENDING", "DRAFT"] } },
-        data: { status: "CANCELLED", cancelledAt: now, error: "Remplacée par le rappel d'échéance" },
+        data: { status: "CANCELLED", cancelledAt: now, error: getNamespaceTranslator(toUiLocale(link.createdBy?.locale), "server.followups")("replacedByReminder") },
       });
       await generateFollowupMessage(followupId);
     }
@@ -157,6 +161,6 @@ export async function scanExpiringLinks(now = new Date()) {
  * the analysis takes another look.
  */
 export async function onLinkExpiryChanged(linkId: string, now = new Date()) {
-  await cancelOpenFollowups(linkId, "Échéance modifiée", ["EXPIRY_REMINDER"]);
+  await cancelOpenFollowups(linkId, "deadlineChanged", ["EXPIRY_REMINDER"]);
   await markDealDirty(linkId, now);
 }

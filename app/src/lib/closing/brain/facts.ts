@@ -1,9 +1,12 @@
 import { createHash } from "node:crypto";
 
 import type { DocumentKind, PageTag, ProspectActionType, ViewSignalType } from "@/generated/prisma/enums";
+import type { UiLocale } from "@/i18n/locale";
+import { getNamespaceTranslator, type ServerT } from "@/lib/server-translator";
 
 import { DAY_MS } from "../constants";
 import { tagLabels } from "../documents/doc-types";
+import { tagNames } from "../documents/doc-type-names";
 import { reachedLabel, segmentLabel } from "../documents/video-segments";
 
 /**
@@ -34,6 +37,8 @@ export const TAG_NAMES: Record<PageTag, string> = tagLabels(null);
 
 export type DealFactsInput = {
   now: Date;
+  /** The seller's language: the facts are shown to them next to the analysis. */
+  locale: UiLocale;
   /** Seller-side time zone, used when a session has none. */
   defaultTimezone: string;
   businessHours: { start: number; end: number; days: number[] };
@@ -133,13 +138,20 @@ export type DealStory = {
   inputHash: string;
 };
 
-const fmtDuration = (ms: number) => {
+/** "3 min 08" / "3m 08s" */
+const fmtDuration = (ms: number, locale: UiLocale) => {
   const s = Math.round(ms / 1000);
-  if (s < 60) return `${s} s`;
+  const pad = (n: number) => String(n).padStart(2, "0");
   const m = Math.floor(s / 60);
   const rest = s % 60;
-  if (m < 60) return rest ? `${m} min ${String(rest).padStart(2, "0")}` : `${m} min`;
-  return `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, "0")}`;
+  if (locale === "en") {
+    if (s < 60) return `${s}s`;
+    if (m < 60) return rest ? `${m}m ${pad(rest)}s` : `${m} min`;
+    return `${Math.floor(m / 60)}h ${pad(m % 60)}m`;
+  }
+  if (s < 60) return `${s} s`;
+  if (m < 60) return rest ? `${m} min ${pad(rest)}` : `${m} min`;
+  return `${Math.floor(m / 60)} h ${pad(m % 60)}`;
 };
 
 function localParts(date: Date, timeZone: string) {
@@ -155,7 +167,10 @@ function localParts(date: Date, timeZone: string) {
   return { weekday, hour: Number(get("hour")), label: `${get("hour")}:${get("minute")}` };
 }
 
-const FR_WEEKDAYS = ["lun.", "mar.", "mer.", "jeu.", "ven.", "sam.", "dim."];
+const WEEKDAYS: Record<UiLocale, string[]> = {
+  fr: ["lun.", "mar.", "mer.", "jeu.", "ven.", "sam.", "dim."],
+  en: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+};
 
 function safeZone(zone: string | null, fallback: string) {
   if (!zone) return fallback;
@@ -197,47 +212,39 @@ function deadlineBucket(daysLeft: number | null) {
   return "later";
 }
 
-const SELLER_ACTIVITY_TEXT: Record<DealFactsInput["sellerActivities"][number]["type"], string> = {
-  CALL: "Appel avec le prospect",
-  EMAIL_REPLY_RECEIVED: "Réponse du prospect reçue par email",
-  MEETING: "Rendez-vous avec le prospect",
-  NOTE: "Note du vendeur",
-  MANUAL_SEND: "Message envoyé par le vendeur",
-};
+type FactsT = ServerT<"server.facts">;
 
 /** What a session's signals add to its line, in the analysis' words. */
-function signalNotes(signals: { type: ViewSignalType; valueMs: number | null }[]) {
+function signalNotes(signals: { type: ViewSignalType; valueMs: number | null }[], t: FactsT, locale: UiLocale) {
   const notes: string[] = [];
   if (signals.some((s) => s.type === "EXTERNAL_OPEN")) {
     const awayMs = signals.reduce((sum, s) => sum + (s.type === "EXTERNAL_RETURN" ? (s.valueMs ?? 0) : 0), 0);
-    notes.push(
-      awayMs > 0
-        ? `a ouvert le site dans un nouvel onglet (≈${fmtDuration(awayMs)} avant de revenir)`
-        : "a ouvert le site dans un nouvel onglet",
-    );
+    notes.push(awayMs > 0 ? t("externalAway", { duration: fmtDuration(awayMs, locale) }) : t("external"));
   }
-  if (signals.some((s) => s.type === "DOWNLOAD")) notes.push("a téléchargé le PDF");
-  if (signals.some((s) => s.type === "EXIT_PROMPT_OPENED")) notes.push("en partant, a ouvert l'assistant pour poser une question");
+  if (signals.some((s) => s.type === "DOWNLOAD")) notes.push(t("download"));
+  if (signals.some((s) => s.type === "EXIT_PROMPT_OPENED")) notes.push(t("exitPrompt"));
   return notes;
 }
 
 export function buildDealStory(input: DealFactsInput): DealStory {
-  const { now, deal, document } = input;
+  const { now, deal, document, locale } = input;
+  const t = getNamespaceTranslator(locale, "server.facts");
+  const duration = (ms: number) => fmtDuration(ms, locale);
   const origin = deal.sentAt ?? deal.createdAt;
-  const dayOf = (date: Date) => `J+${Math.max(0, Math.floor((date.getTime() - origin.getTime()) / DAY_MS))}`;
+  const dayOf = (date: Date) => t("day", { days: String(Math.max(0, Math.floor((date.getTime() - origin.getTime()) / DAY_MS))) });
   const pageByNumber = new Map(document.pages.map((page) => [page.pageNumber, page]));
-  const sectionNames = tagLabels(document.docType);
+  const sectionNames = tagNames(document.docType, locale);
   const numPages = document.kind !== "URL" ? document.pages.length : 0;
   // A video pitch: page N is its Nth tenth, watched rather than read
   const video = document.kind === "VIDEO";
-  const pageName = (n: number) => (video ? `${segmentLabel(n)} de la vidéo` : `p.${n}`);
+  const pageName = (n: number) => (video ? t("videoPart", { segment: segmentLabel(n, undefined, locale) }) : `p.${n}`);
   const expectedMs = (wordCount: number) =>
     video && document.durationMs && numPages ? document.durationMs / numPages : expectedReadMs(wordCount);
   const sentAs = video
-    ? ` (vidéo de ${fmtDuration(document.durationMs ?? 0)})`
+    ? t("sentAsVideo", { duration: duration(document.durationMs ?? 0) })
     : numPages
-      ? ` (${numPages} pages)`
-      : " (page web)";
+      ? t("sentAsPages", { count: numPages })
+      : t("sentAsWeb");
   const mainProspectId = input.prospects[0]?.id ?? null;
 
   // Readers: one per known contact, else one per browser
@@ -251,8 +258,8 @@ export function buildDealStory(input: DealFactsInput): DealStory {
     const prospect = input.prospects.find((p) => p.id === view.prospectId);
     const firstName = prospect?.name?.trim().split(/\s+/)[0];
     const description = prospect
-      ? `${firstName ?? "contact sans nom"}, ${prospect.id === mainProspectId ? "contact principal" : "autre contact enregistré"}`
-      : ["lecteur non identifié", view.deviceType, view.country].filter(Boolean).join(", ");
+      ? `${firstName ?? t("unnamedContact")}, ${prospect.id === mainProspectId ? t("mainContact") : t("otherContact")}`
+      : [t("unidentifiedReader"), view.deviceType, view.country].filter(Boolean).join(", ");
     readers.set(key, { label, prospectId: prospect?.id ?? null, description });
   }
 
@@ -262,7 +269,7 @@ export function buildDealStory(input: DealFactsInput): DealStory {
   timeline.push({
     kind: "SENT",
     at: origin,
-    text: `[J+0] Proposition « ${document.name} » envoyée${sentAs}`,
+    text: `[${t("day", { days: "0" })}] ${t("sent", { name: document.name, sentAs })}`,
     hashed: true,
   });
 
@@ -278,16 +285,21 @@ export function buildDealStory(input: DealFactsInput): DealStory {
 
     if (!seenReaders.has(reader.label)) {
       seenReaders.add(reader.label);
-      if (seenReaders.size > 1) notes.push("premier passage de ce lecteur");
+      if (seenReaders.size > 1) notes.push(t("firstVisit"));
     }
     if (previousEnd && view.startedAt.getTime() - previousEnd.getTime() >= REVISIT_GAP_MS) {
-      notes.push(`retour après ${Math.floor((view.startedAt.getTime() - previousEnd.getTime()) / DAY_MS)} j sans lecture`);
+      notes.push(t("backAfter", { days: Math.floor((view.startedAt.getTime() - previousEnd.getTime()) / DAY_MS) }));
     }
     const followupBefore = input.followups
       .filter((f) => f.sentAt <= view.startedAt && view.startedAt.getTime() - f.sentAt.getTime() <= REOPEN_AFTER_FOLLOWUP_MS)
       .at(-1);
     if (followupBefore) {
-      notes.push(`ouvert ${fmtDuration(view.startedAt.getTime() - followupBefore.sentAt.getTime())} après la relance du ${dayOf(followupBefore.sentAt)}`);
+      notes.push(
+        t("openedAfterFollowup", {
+          duration: duration(view.startedAt.getTime() - followupBefore.sentAt.getTime()),
+          day: dayOf(followupBefore.sentAt),
+        }),
+      );
     }
 
     const notable = view.pages
@@ -298,29 +310,36 @@ export function buildDealStory(input: DealFactsInput): DealStory {
         const page = pageByNumber.get(p.pageNumber);
         const tag = page?.tags.find((t) => t !== "OTHER");
         const ratio = page ? p.totalDurationMs / expectedMs(page.wordCount) : 0;
-        const ratioText = ratio >= 1.8 ? ` (≈${Math.round(ratio)}× ${video ? "la durée du passage" : "le temps de lecture"})` : "";
-        return `${tag ? `${sectionNames[tag]} ` : ""}${pageName(p.pageNumber)} ${fmtDuration(p.totalDurationMs)}${ratioText}`;
+        const ratioText =
+          ratio >= 1.8 ? ` ${t("ratio", { ratio: String(Math.round(ratio)), basis: video ? t("basisWatch") : t("basisRead") })}` : "";
+        return `${tag ? `${sectionNames[tag]} ` : ""}${pageName(p.pageNumber)} ${duration(p.totalDurationMs)}${ratioText}`;
       });
 
     const parts = [
-      `[${dayOf(view.startedAt)} ${FR_WEEKDAYS[local.weekday - 1]} ${local.label} heure locale, ${view.deviceType ?? "appareil inconnu"}, Lecteur ${reader.label}]`,
-      `${fmtDuration(view.totalDurationMs)} ${video ? "de visionnage" : "de lecture"}`,
+      t("sessionHeader", {
+        day: dayOf(view.startedAt),
+        weekday: WEEKDAYS[locale][local.weekday - 1],
+        time: local.label,
+        device: view.deviceType ?? t("unknownDevice"),
+        label: reader.label,
+      }),
+      video ? t("watchTime", { duration: duration(view.totalDurationMs) }) : t("readTime", { duration: duration(view.totalDurationMs) }),
       video
-        ? `regardée ${reachedLabel(view.maxPageReached, numPages)}`
+        ? t("watched", { reached: reachedLabel(view.maxPageReached, numPages, locale) })
         : numPages
-          ? `jusqu'à la p.${view.maxPageReached}/${numPages}`
+          ? t("upToPage", { page: view.maxPageReached, count: numPages })
           : null,
       document.embeddedVideo
-        ? `${Math.round((view.depth ?? 0) * 100)} % de la vidéo vue`
+        ? t("videoWatched", { percent: Math.round((view.depth ?? 0) * 100) })
         : view.depth
-          ? `article lu jusqu'à ${Math.round(view.depth * 100)} %`
+          ? t("articleRead", { percent: Math.round(view.depth * 100) })
           : null,
-      numPages && notable.length ? `surtout : ${notable.join(", ")}` : null,
-      ...signalNotes(view.signals ?? []),
+      numPages && notable.length ? t("mostly", { pages: notable.join(", ") }) : null,
+      ...signalNotes(view.signals ?? [], t, locale),
       notes.length ? notes.join(", ") : null,
     ].filter(Boolean);
 
-    sessionDrafts.push({ kind: "SESSION", at: view.startedAt, text: parts.join(" ; "), hashed: true });
+    sessionDrafts.push({ kind: "SESSION", at: view.startedAt, text: parts.join(t("sep")), hashed: true });
     previousEnd = view.lastSeenAt;
   }
   if (sessionDrafts.length > MAX_SESSION_FACTS) {
@@ -329,7 +348,12 @@ export function buildDealStory(input: DealFactsInput): DealStory {
     timeline.push({
       kind: "OLDER_SESSIONS",
       at: older[0].at,
-      text: `${older.length} lectures plus anciennes entre ${dayOf(olderViews[0].startedAt)} et ${dayOf(olderViews.at(-1)!.startedAt)}, ${fmtDuration(olderViews.reduce((s, v) => s + v.totalDurationMs, 0))} au total`,
+      text: t("olderSessions", {
+        count: older.length,
+        from: dayOf(olderViews[0].startedAt),
+        to: dayOf(olderViews.at(-1)!.startedAt),
+        duration: duration(olderViews.reduce((s, v) => s + v.totalDurationMs, 0)),
+      }),
       hashed: true,
     });
   }
@@ -337,31 +361,31 @@ export function buildDealStory(input: DealFactsInput): DealStory {
 
   for (const action of input.actions) {
     const reader = [...readers.values()].find((r) => r.prospectId && r.prospectId === action.prospectId);
-    const who = reader ? `Lecteur ${reader.label}` : "Le prospect";
-    const what =
-      action.type === "VALIDATE_SIGN"
-        ? "a cliqué « Valider la proposition »"
-        : action.type === "REQUEST_EXTENSION"
-          ? "a demandé à rouvrir la proposition expirée"
-          : action.type === "MEETING_BOOKED"
-            ? "a réservé un rendez-vous dans l'agenda du vendeur"
-            : action.type === "MEETING_CLICK"
-              ? "a ouvert l'agenda du vendeur pour prendre rendez-vous"
-              : action.type === "REQUEST_QUOTE"
-                ? "a demandé un devis après la vidéo"
-                : "a demandé un ajustement";
+    const who = reader ? t("reader", { label: reader.label }) : t("theProspect");
+    const what = t(
+      `action.${
+        (["VALIDATE_SIGN", "REQUEST_EXTENSION", "MEETING_BOOKED", "MEETING_CLICK", "REQUEST_QUOTE"] as const).find(
+          (type) => type === action.type,
+        ) ?? "REQUEST_CHANGE"
+      }`,
+    );
     const message = action.message
-      ? ` : <untrusted_prospect_message>${action.message.slice(0, 600)}</untrusted_prospect_message>`
+      ? `${t("colon")}<untrusted_prospect_message>${action.message.slice(0, 600)}</untrusted_prospect_message>`
       : "";
     timeline.push({ kind: "PROSPECT_ACTION", at: action.createdAt, text: `[${dayOf(action.createdAt)}] ${who} ${what}${message}`, hashed: true });
   }
 
   for (const followup of input.followups) {
-    const how = followup.sentVia === "MANUAL" ? "envoyée par le vendeur lui-même" : "envoyée par Clozer";
+    const how = followup.sentVia === "MANUAL" ? t("followupByHand") : t("followupByClozer");
+    const channel = followup.channel === "EMAIL" ? (locale === "en" ? "Email" : "email") : "WhatsApp";
     timeline.push({
       kind: "FOLLOWUP_SENT",
       at: followup.sentAt,
-      text: `[${dayOf(followup.sentAt)}] Relance ${followup.channel === "EMAIL" ? "email" : "WhatsApp"} ${how}${followup.subject ? ` (objet : « ${followup.subject.slice(0, 120)} »)` : ""}`,
+      text: `[${dayOf(followup.sentAt)}] ${t("followup", {
+        channel,
+        how,
+        subject: followup.subject ? t("followupSubject", { subject: followup.subject.slice(0, 120) }) : "",
+      })}`,
       hashed: true,
     });
   }
@@ -370,7 +394,7 @@ export function buildDealStory(input: DealFactsInput): DealStory {
     timeline.push({
       kind: "SELLER_ACTIVITY",
       at: activity.occurredAt,
-      text: `[${dayOf(activity.occurredAt)}] ${SELLER_ACTIVITY_TEXT[activity.type]}${activity.note ? ` : ${activity.note.slice(0, 400)}` : ""}`,
+      text: `[${dayOf(activity.occurredAt)}] ${t(`activity.${activity.type}`)}${activity.note ? `${t("colon")}${activity.note.slice(0, 400)}` : ""}`,
       hashed: true,
     });
   }
@@ -402,7 +426,19 @@ export function buildDealStory(input: DealFactsInput): DealStory {
       summary.push({
         kind: "SECTION_ATTENTION",
         at: null,
-        text: `${sectionNames[tag]} (${video ? entry.pages.map((n) => segmentLabel(n, numPages)).join(", ") : pageRanges(entry.pages)}) : ${entry.ms ? `${fmtDuration(entry.ms)} au total, ≈${ratio < 1 ? ratio.toFixed(1) : Math.round(ratio)}× ${video ? "la durée du passage" : "le temps d'une lecture"}` : video ? "jamais regardé" : "jamais lu"}`,
+        text: t("section", {
+          section: sectionNames[tag],
+          pages: video ? entry.pages.map((n) => segmentLabel(n, numPages, locale)).join(", ") : pageRanges(entry.pages),
+          detail: entry.ms
+            ? t("sectionTime", {
+                duration: duration(entry.ms),
+                ratio: String(ratio < 1 ? ratio.toFixed(1) : Math.round(ratio)),
+                basis: video ? t("basisWatch") : t("basisReadOnce"),
+              })
+            : video
+              ? t("neverWatched")
+              : t("neverRead"),
+        }),
         hashed: true,
       });
     }
@@ -413,7 +449,11 @@ export function buildDealStory(input: DealFactsInput): DealStory {
       summary.push({
         kind: "DROP_OFF",
         at: null,
-        text: `${video ? `Vidéo regardée au mieux ${reachedLabel(furthest, numPages)}` : `Personne n'est allé plus loin que la p.${furthest}/${numPages}`}${page?.summary ? ` (${page.summary})` : ""}`,
+        text: `${
+          video
+            ? t("dropOffVideo", { reached: reachedLabel(furthest, numPages, locale) })
+            : t("dropOffPages", { page: furthest, count: numPages })
+        }${page?.summary ? ` (${page.summary})` : ""}`,
         hashed: true,
       });
     }
@@ -423,7 +463,10 @@ export function buildDealStory(input: DealFactsInput): DealStory {
     summary.push({
       kind: "READERS",
       at: null,
-      text: `${readers.size} lecteur${readers.size > 1 ? "s" : ""} : ${[...readers.values()].map((r) => `${r.label} (${r.description})`).join(" ; ")}`,
+      text: t("readers", {
+        count: readers.size,
+        list: [...readers.values()].map((r) => `${r.label} (${r.description})`).join(t("sep")),
+      }),
       hashed: true,
     });
   }
@@ -444,7 +487,7 @@ export function buildDealStory(input: DealFactsInput): DealStory {
       summary.push({
         kind: "OFF_HOURS",
         at: null,
-        text: `${Math.round((offMs / totalMs) * 100)} % du temps de lecture le soir ou le week-end (heure locale)`,
+        text: t("offHours", { percent: Math.round((offMs / totalMs) * 100) }),
         hashed: true,
       });
     }
@@ -459,10 +502,10 @@ export function buildDealStory(input: DealFactsInput): DealStory {
     at: null,
     text:
       quietDays === null
-        ? `Jamais ouvert, envoyé il y a ${sinceSent} j`
+        ? t("neverOpened", { sent: sinceSent })
         : quietDays === 0
-          ? `Dernière lecture il y a ${Math.max(1, Math.round((now.getTime() - lastReading!.getTime()) / HOUR_MS))} h ; envoyé il y a ${sinceSent} j`
-          : `Aucune lecture depuis ${quietDays} j ; envoyé il y a ${sinceSent} j`,
+          ? t("lastReadHours", { hours: Math.max(1, Math.round((now.getTime() - lastReading!.getTime()) / HOUR_MS)), sent: sinceSent })
+          : t("quietDays", { days: quietDays, sent: sinceSent }),
     hashed: false,
   });
 
@@ -473,7 +516,7 @@ export function buildDealStory(input: DealFactsInput): DealStory {
     summary.push({
       kind: "DEADLINE",
       at: null,
-      text: daysLeft >= 0 ? `Décision attendue dans ${daysLeft} j (selon le vendeur)` : `Date de décision dépassée de ${-daysLeft} j (selon le vendeur)`,
+      text: daysLeft >= 0 ? t("decisionIn", { days: daysLeft }) : t("decisionPast", { days: -daysLeft }),
       hashed: false,
     });
   }
@@ -484,16 +527,18 @@ export function buildDealStory(input: DealFactsInput): DealStory {
       kind: "DEADLINE",
       at: null,
       text:
-        expiryDaysLeft > 0
-          ? `Le lien expire dans ${expiryDaysLeft} j (fixé par le vendeur ; accès coupé ensuite)`
-          : `Lien expiré depuis ${-expiryDaysLeft} j : le prospect ne peut plus l'ouvrir sans demander`,
+        expiryDaysLeft > 0 ? t("expiresIn", { days: expiryDaysLeft }) : t("expiredSince", { days: -expiryDaysLeft }),
       hashed: false,
     });
   }
 
   if (input.score && opened) {
-    const tier = { HOT: "chaud", WARM: "tiède", COLD: "froid" }[input.score.tier];
-    summary.push({ kind: "SCORE", at: null, text: `Score d'engagement mesuré : ${input.score.score}/100 (${tier})`, hashed: false });
+    summary.push({
+      kind: "SCORE",
+      at: null,
+      text: t("score", { score: input.score.score, tier: t(`tier.${input.score.tier}`) }),
+      hashed: false,
+    });
   }
 
   const drafts = [...timeline, ...summary];

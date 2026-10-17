@@ -2,9 +2,10 @@
 
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
-import { saveMailClient } from "@/app/bienvenue/actions";
+import { saveMailClient } from "@/app/welcome/actions";
 import { Logo } from "@/components/brand/logo";
 import { Button, buttonVariants } from "@/components/ui/button";
 import type { MailClient } from "@/lib/onboarding";
@@ -14,7 +15,7 @@ import { InstallStep } from "./install-step";
 import { MailStep } from "./mail-step";
 
 /**
- * /bienvenue?etape=outil: plugging Clozer into the mailbox, outside the tour
+ * /welcome?step=tool: plugging Clozer into the mailbox, outside the tour
  * (share screen tip, settings, the tour's last step).
  */
 export function ToolSetup({
@@ -30,6 +31,7 @@ export function ToolSetup({
   account: { email: string; workspace: string };
   chromeStoreUrl: string | null;
 }) {
+  const t = useTranslations("onboarding.toolSetup");
   const [mailClient, setMailClient] = useState(initialMailClient);
   const [choosing, setChoosing] = useState(!initialMailClient);
 
@@ -38,7 +40,7 @@ export function ToolSetup({
       <header className="mx-auto flex h-14 w-full max-w-3xl items-center justify-between gap-6 px-4 sm:px-6">
         <Logo />
         <Link href="/dashboard" className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}>
-          Tableau de bord
+          {t("dashboard")}
         </Link>
       </header>
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 pt-6 pb-16 sm:px-6 sm:pt-10">
@@ -59,7 +61,7 @@ export function ToolSetup({
           {!choosing && (
             <Button variant="ghost" onClick={() => setChoosing(true)}>
               <ArrowLeft />
-              Changer de messagerie
+              {t("changeMailbox")}
             </Button>
           )}
           {choosing ? (
@@ -72,11 +74,11 @@ export function ToolSetup({
                 setChoosing(false);
               }}
             >
-              Continuer
+              {t("continue")}
             </Button>
           ) : (
             <Link href="/dashboard" className={cn(buttonVariants({ size: "lg" }), "ml-auto")}>
-              Terminé
+              {t("done")}
             </Link>
           )}
         </footer>

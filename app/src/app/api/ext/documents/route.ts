@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { getTranslator } from "@/i18n/messages";
 import { createFileDocument, DocumentInputError } from "@/lib/closing/documents/create-document";
 import { prisma } from "@/lib/db";
 import { extError, withExtensionAuth } from "@/lib/extension-auth";
@@ -43,9 +44,9 @@ export const POST = withExtensionAuth(async (request, { user, organization }) =>
     return Response.json(result, { status: 201 });
   } catch (error) {
     if (error instanceof DocumentInputError) {
-      return extError(400, "not_pdf", "Ce fichier n'est pas un PDF valide.");
+      return extError(400, "not_pdf", getTranslator(user.locale)("server.ext.notPdf"));
     }
     console.error("[ext] document creation failed", error);
-    return extError(500, "server", "Clozer n'a pas pu enregistrer le PDF. Réessayez.");
+    return extError(500, "server", getTranslator(user.locale)("server.ext.pdfSaveFailed"));
   }
 });

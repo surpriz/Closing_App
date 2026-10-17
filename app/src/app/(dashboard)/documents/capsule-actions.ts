@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { capsuleUploadPrefix, deletePrivateBlob, headPrivateBlob } from "@/lib/blob";
@@ -15,12 +16,12 @@ import { requireWorkspace } from "@/lib/session";
 
 type CapsuleResult = { ok: true } | { error: string };
 
-const MEDIA_ERRORS: Record<MediaError, string> = {
-  type: "Ce format n'est pas pris en charge.",
-  too_large: "L'enregistrement est trop lourd.",
-  empty: "L'enregistrement est vide.",
-  too_long: `L'enregistrement dépasse ${CAPSULE_MAX_MS / 1000} secondes.`,
-};
+const MEDIA_ERRORS = {
+  type: "mediaType",
+  too_large: "mediaTooLarge",
+  empty: "mediaEmpty",
+  too_long: "mediaTooLong",
+} as const satisfies Record<MediaError, string>;
 
 const hookSchema = z
   .string()
@@ -88,39 +89,40 @@ async function checkedPoster(pathname: string | null | undefined, prefix: string
 
 /** Registers a clip the browser just uploaded, replacing the page's previous one for the same scope. */
 export async function saveCapsule(input: z.input<typeof saveSchema>): Promise<CapsuleResult> {
+  const t = await getTranslations("documents.capsuleActions");
   const parsed = saveSchema.safeParse(input);
-  if (!parsed.success) return { error: "Enregistrement invalide." };
+  if (!parsed.success) return { error: t("invalidRecording") };
   const { documentId, linkId, pageNumber, kind, pathname, durationMs } = parsed.data;
   const { workspace, document } = await requireCapsuleScope({ documentId, linkId });
 
   const prefix = capsuleUploadPrefix(workspace.organization.id);
-  if (!pathname.startsWith(prefix)) return { error: "Enregistrement invalide." };
+  if (!pathname.startsWith(prefix)) return { error: t("invalidRecording") };
   // Only fresh uploads: a path a saved capsule already uses is never adopted, nor deleted as a reject
   const requested = parsed.data.posterPathname?.startsWith(prefix) ? parsed.data.posterPathname : null;
   const taken = await capsulePathsInUse([pathname, requested]);
-  if (taken.has(pathname)) return { error: "Enregistrement invalide." };
+  if (taken.has(pathname)) return { error: t("invalidRecording") };
   const poster = requested && !taken.has(requested) ? requested : null;
   const discard = () => inBackground("capsule-discard", () => deletePrivateBlob(poster ? [pathname, poster] : pathname));
 
   // A video pitch already is the seller speaking: no bubble on top of it
   if (document.kind === "VIDEO") {
     discard();
-    return { error: "Un pitch vidéo n'a pas de mot d'accueil." };
+    return { error: t("videoNoWelcome") };
   }
   // The welcome message fits any document, a web link included; a page needs a PDF that has it
   if (pageNumber !== WELCOME_PAGE && (document.kind !== "FILE" || pageNumber > (document.numPages ?? 0))) {
     discard();
-    return { error: "Cette page n'existe pas." };
+    return { error: t("noSuchPage") };
   }
 
   // Type and size from the store, not from the browser
   const blob = await headPrivateBlob(pathname).catch(() => null);
-  if (!blob) return { error: "L'envoi n'a pas abouti, réessayez." };
+  if (!blob) return { error: t("uploadFailed") };
   const contentType = baseMime(blob.contentType);
   const mediaError = validateMedia({ use: "capsule", kind, contentType, size: blob.size, durationMs });
   if (mediaError) {
     discard();
-    return { error: MEDIA_ERRORS[mediaError] };
+    return { error: t(MEDIA_ERRORS[mediaError], { seconds: CAPSULE_MAX_MS / 1000 }) };
   }
 
   const scopeKey = capsuleScopeKey(linkId);
@@ -172,7 +174,9 @@ export async function deleteCapsule(capsuleId: string): Promise<CapsuleResult> {
 export async function updateCapsuleHook(capsuleId: string, hookText: string): Promise<CapsuleResult> {
   const capsule = await requireOwnedCapsule(capsuleId);
   const parsed = hookSchema.safeParse(hookText);
-  if (!parsed.success) return { error: `${CAPSULE_HOOK_MAX} caractères au plus.` };
+  if (!parsed.success) {
+    return { error: (await getTranslations("documents.capsuleActions"))("hookTooLong", { max: CAPSULE_HOOK_MAX }) };
+  }
   await prisma.pageCapsule.update({ where: { id: capsule.id }, data: { hookText: parsed.data } });
   revalidateCapsule(capsule.documentId, capsule.linkId);
   return { ok: true };

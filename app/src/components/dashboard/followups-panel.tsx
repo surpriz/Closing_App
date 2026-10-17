@@ -1,6 +1,7 @@
 "use client";
 
 import { Check, Copy, Mail, RefreshCw } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -18,24 +19,20 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { FollowupStatus } from "@/generated/prisma/enums";
 import { buildMailto } from "@/lib/closing/followups/mailto";
+import { formatInTimeZone } from "@/lib/format";
 
 import type { FollowupItem } from "./followup-item";
-import { CHANNEL_LABELS, FOLLOWUP_STATUS_LABELS, FOLLOWUP_TRIGGER_LABELS } from "./labels";
 
-const OUTCOME_MESSAGES: Record<string, string> = {
-  sent: "Relance envoyée",
-  failed: "Échec de l'envoi, voir le détail",
-  cancelled: "Relance annulée : la situation a changé",
-  skipped: "Relance ignorée",
-  ignored: "Rien à envoyer",
-};
+const OUTCOME_KEYS = {
+  sent: "outcomeSent",
+  failed: "outcomeFailed",
+  cancelled: "outcomeCancelled",
+  skipped: "outcomeSkipped",
+  ignored: "outcomeIgnored",
+} as const;
 
 /** One-click instructions for "Réécrire". */
-const REWRITE_PRESETS = ["Plus court", "Plus direct", "Proposer un appel", "Autre angle"];
-
-function formatInZone(date: Date, timeZone: string) {
-  return new Intl.DateTimeFormat("fr-FR", { timeZone, dateStyle: "medium", timeStyle: "short" }).format(date);
-}
+const REWRITE_PRESETS = ["presetShorter", "presetDirect", "presetCall", "presetAngle"] as const;
 
 function statusVariant(status: FollowupStatus) {
   if (status === "SENT" || status === "DELIVERED") return "default" as const;
@@ -60,13 +57,13 @@ export function FollowupsPanel({
   /** Why there is nothing yet, e.g. what the latest analysis advised. */
   emptyHint?: string | null;
 }) {
+  const t = useTranslations("deal.followupsPanel");
   if (followups.length === 0) {
     return (
       <div className="space-y-1.5 text-body">
-        <p className="font-medium">Aucune relance pour l&apos;instant.</p>
+        <p className="font-medium">{t("emptyTitle")}</p>
         <p className="text-small text-muted-foreground">
-          {emptyHint ??
-            "Dès que Clozer juge qu'il faut relancer, il écrit le message et le met ici. Vous recevez un email, vous relisez, vous validez."}
+          {emptyHint ?? t("emptyHint")}
         </p>
       </div>
     );
@@ -83,31 +80,35 @@ export function FollowupsPanel({
 
 function FollowupRow({ followup: f, showLink }: { followup: FollowupItem; showLink: boolean }) {
   const editable = f.status === "DRAFT" || f.status === "GENERATED" || f.status === "SCHEDULED";
+  const t = useTranslations("deal.followupsPanel");
+  const tl = useTranslations("labels");
+  const locale = useLocale();
+  const formatInZone = (date: Date, timeZone: string) => formatInTimeZone(date, timeZone, locale);
 
   return (
     <li className="space-y-2.5 py-4 first:pt-0 last:pb-0">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-small">
-        <Badge variant={statusVariant(f.status)}>{FOLLOWUP_STATUS_LABELS[f.status]}</Badge>
-        <span className="font-medium">{FOLLOWUP_TRIGGER_LABELS[f.trigger]}</span>
+        <Badge variant={statusVariant(f.status)}>{tl(`followupStatus.${f.status}`)}</Badge>
+        <span className="font-medium">{tl(`followupTrigger.${f.trigger}`)}</span>
         <span className="text-muted-foreground">
-          par {CHANNEL_LABELS[f.channel].toLowerCase()} à {f.recipient}
+          {t("via", { channel: tl(`channel.${f.channel}`).toLowerCase(), recipient: f.recipient })}
           {showLink && `, ${f.linkName}`}
         </span>
       </div>
 
       <p className="text-small text-muted-foreground">
         {f.sentAt
-          ? `Envoyée le ${formatInZone(f.sentAt, f.timezone)}${f.sentVia === "MANUAL" ? ", par vous" : ""}`
+          ? `${t("sentOn", { date: formatInZone(f.sentAt, f.timezone) })}${f.sentVia === "MANUAL" ? t("byYou") : ""}`
           : f.status === "DRAFT"
-            ? `Conseillée pour le ${formatInZone(f.scheduledFor, f.timezone)}, heure du prospect. Elle attend votre accord.`
-            : `Prévue le ${formatInZone(f.scheduledFor, f.timezone)}, heure du prospect`}
+            ? t("draftFor", { date: formatInZone(f.scheduledFor, f.timezone) })
+            : t("plannedFor", { date: formatInZone(f.scheduledFor, f.timezone) })}
       </p>
 
       {f.rationale && (
         <p className="text-body">
-          <span className="font-medium">Pourquoi : </span>
+          <span className="font-medium">{t("why")} </span>
           {f.rationale}
-          {f.confidence !== null && <span className="text-muted-foreground"> (fiabilité de l&apos;analyse {f.confidence} %)</span>}
+          {f.confidence !== null && <span className="text-muted-foreground"> {t("confidence", { value: f.confidence })}</span>}
         </p>
       )}
 
@@ -116,7 +117,7 @@ function FollowupRow({ followup: f, showLink }: { followup: FollowupItem; showLi
       ) : (
         f.body && (
           <details className="group border-l border-foreground/30 pl-3 text-body">
-            <summary className="cursor-pointer select-none font-medium">{f.subject ?? "Message WhatsApp"}</summary>
+            <summary className="cursor-pointer select-none font-medium">{f.subject ?? t("whatsappMessage")}</summary>
             <p className="mt-2 max-w-prose whitespace-pre-wrap text-muted-foreground">{f.body}</p>
           </details>
         )
@@ -134,6 +135,7 @@ function DraftEditor({ followup: f }: { followup: FollowupItem }) {
   const [rewriting, setRewriting] = useState(false);
   const [instruction, setInstruction] = useState("");
   const [copied, setCopied] = useState(false);
+  const t = useTranslations("deal.followupsPanel");
 
   const dirty = subject !== (f.subject ?? "") || body !== (f.body ?? "");
   const isEmail = f.channel === "EMAIL";
@@ -155,7 +157,7 @@ function DraftEditor({ followup: f }: { followup: FollowupItem }) {
   const rewrite = (text: string) =>
     startTransition(async () => {
       const result = await regenerateFollowup(f.id, text);
-      toastResult(result, "Nouvelle version prête");
+      toastResult(result, t("newVersion"));
       if (!result.error) {
         setRewriting(false);
         setInstruction("");
@@ -166,7 +168,7 @@ function DraftEditor({ followup: f }: { followup: FollowupItem }) {
     <div className="space-y-2.5 border border-border bg-muted/50 p-3">
       {isEmail && (
         <Input
-          aria-label="Objet"
+          aria-label={t("subject")}
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
           className="bg-card font-medium"
@@ -174,23 +176,23 @@ function DraftEditor({ followup: f }: { followup: FollowupItem }) {
         />
       )}
       <Textarea
-        aria-label="Message"
+        aria-label={t("message")}
         value={body}
         onChange={(e) => setBody(e.target.value)}
         className="min-h-40 bg-card text-body"
         disabled={pending}
       />
       <p className="text-small text-muted-foreground">
-        {f.aiProvider === "template" ? "Écrite à partir d'un modèle" : "Rédigée par l'IA"}
-        {f.edited && ", retouchée par vous"}. Le lien de désinscription est ajouté à l&apos;envoi.
+        {f.aiProvider === "template" ? t("fromTemplate") : t("byAi")}
+        {f.edited && t("editedByYou")}. {t("unsubscribeNote")}
       </p>
 
       {rewriting && (
         <div className="space-y-2 border border-border bg-card p-2.5">
           <div className="flex flex-wrap gap-1.5">
             {REWRITE_PRESETS.map((preset) => (
-              <Button key={preset} size="xs" variant="outline" disabled={pending} onClick={() => rewrite(preset)}>
-                {preset}
+              <Button key={preset} size="xs" variant="outline" disabled={pending} onClick={() => rewrite(t(preset))}>
+                {t(preset)}
               </Button>
             ))}
           </div>
@@ -202,14 +204,14 @@ function DraftEditor({ followup: f }: { followup: FollowupItem }) {
             }}
           >
             <Input
-              aria-label="Ce qu'il faut changer"
-              placeholder="Ou dites ce qu'il faut changer…"
+              aria-label={t("changeAria")}
+              placeholder={t("changePlaceholder")}
               value={instruction}
               onChange={(e) => setInstruction(e.target.value)}
               disabled={pending}
             />
             <Button type="submit" size="sm" disabled={pending}>
-              Réécrire
+              {t("rewrite")}
             </Button>
           </form>
         </div>
@@ -220,9 +222,9 @@ function DraftEditor({ followup: f }: { followup: FollowupItem }) {
           <Button
             size="sm"
             disabled={pending}
-            onClick={() => run(async () => toastResult(await approveFollowup(f.id), "Relance validée, elle partira à l'heure prévue"))}
+            onClick={() => run(async () => toastResult(await approveFollowup(f.id), t("approved")))}
           >
-            Valider
+            {t("approve")}
           </Button>
         )}
         <Button
@@ -232,11 +234,13 @@ function DraftEditor({ followup: f }: { followup: FollowupItem }) {
           onClick={() =>
             run(async () => {
               const { outcome } = await sendFollowupNow(f.id);
-              (outcome === "sent" ? toast.success : toast.error)(OUTCOME_MESSAGES[outcome]);
+              (outcome === "sent" ? toast.success : toast.error)(
+                outcome in OUTCOME_KEYS ? t(OUTCOME_KEYS[outcome as keyof typeof OUTCOME_KEYS]) : undefined,
+              );
             })
           }
         >
-          Envoyer maintenant
+          {t("sendNow")}
         </Button>
         {dirty && (
           <Button
@@ -245,19 +249,19 @@ function DraftEditor({ followup: f }: { followup: FollowupItem }) {
             disabled={pending}
             onClick={() =>
               run(async () => {
-                toast.success("Modifications enregistrées");
+                toast.success(t("changesSaved"));
               })
             }
           >
-            Enregistrer
+            {t("save")}
           </Button>
         )}
         <Button size="sm" variant="ghost" disabled={pending} onClick={() => setRewriting((v) => !v)}>
-          <RefreshCw /> Réécrire
+          <RefreshCw /> {t("rewrite")}
         </Button>
         {mailto && (
           <Button size="sm" variant="ghost" render={<a href={mailto} />} nativeButton={false}>
-            <Mail /> Ouvrir dans ma messagerie
+            <Mail /> {t("openInMail")}
           </Button>
         )}
         <Button
@@ -269,15 +273,15 @@ function DraftEditor({ followup: f }: { followup: FollowupItem }) {
             setTimeout(() => setCopied(false), 1500);
           }}
         >
-          {copied ? <Check /> : <Copy />} Copier
+          {copied ? <Check /> : <Copy />} {t("copy")}
         </Button>
         <Button
           size="sm"
           variant="ghost"
           disabled={pending}
-          onClick={() => run(async () => toastResult(await markFollowupSentByMe(f.id), "Notée comme envoyée par vous"))}
+          onClick={() => run(async () => toastResult(await markFollowupSentByMe(f.id), t("markedSent")))}
         >
-          Je l&apos;ai envoyée moi-même
+          {t("sentMyself")}
         </Button>
         <Button
           size="sm"
@@ -286,11 +290,11 @@ function DraftEditor({ followup: f }: { followup: FollowupItem }) {
           onClick={() =>
             startTransition(async () => {
               await cancelFollowup(f.id);
-              toast.success("Relance annulée");
+              toast.success(t("cancelled"));
             })
           }
         >
-          Annuler
+          {t("cancel")}
         </Button>
       </div>
     </div>

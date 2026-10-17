@@ -1,9 +1,10 @@
+import { INTL_LOCALE, type UiLocale } from "@/i18n/locale";
 import type { Money } from "@/lib/closing/dashboard/team";
 
 /** "12 500 € · 3 000 $US", or null when no deal had an amount. */
-export function formatMoney(money: Money) {
+export function formatMoney(money: Money, locale: UiLocale) {
   const parts = Object.entries(money).map(([currency, cents]) =>
-    new Intl.NumberFormat("fr-FR", { style: "currency", currency, maximumFractionDigits: 0 }).format(cents / 100),
+    new Intl.NumberFormat(INTL_LOCALE[locale], { style: "currency", currency, maximumFractionDigits: 0 }).format(cents / 100),
   );
   return parts.length > 0 ? parts.join(" · ") : null;
 }

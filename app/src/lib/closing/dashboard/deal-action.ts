@@ -1,5 +1,3 @@
-import { INSIGHT_ACTION_LABELS, TIMING_LABELS } from "@/components/dashboard/labels";
-
 import { computeNextAction, withAiAdvice, type NextAction } from "./next-action";
 import type { OpenDeal } from "./queries";
 
@@ -30,7 +28,6 @@ export function dealAction(deal: OpenDeal, now: Date, readingNow: boolean) {
       quoteRequestedAt: deal.quoteRequestedAt,
     }),
     ai.advice,
-    { action: INSIGHT_ACTION_LABELS, timing: TIMING_LABELS },
   );
   return {
     action,

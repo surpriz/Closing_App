@@ -1,6 +1,7 @@
 "use client";
 
 import { Settings2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useState, type ComponentProps } from "react";
 import { toast } from "sonner";
 
@@ -23,10 +24,11 @@ type Props = ComponentProps<typeof LinkSettingsPanel> & { name: string };
 
 function LinkName({ linkId, name }: { linkId: string; name: string }) {
   const [saved, setSaved] = useState(name);
+  const t = useTranslations("deal.linkSettingsForm");
 
   return (
     <div className="space-y-1.5">
-      <Label htmlFor="link-name">Nom du lien</Label>
+      <Label htmlFor="link-name">{t("name")}</Label>
       <Input
         id="link-name"
         defaultValue={name}
@@ -44,6 +46,7 @@ function LinkName({ linkId, name }: { linkId: string; name: string }) {
 
 export function LinkSettingsDialog({ name, ...panel }: Props) {
   const [open, setOpen] = useState(false);
+  const t = useTranslations("deal.linkSettingsForm");
 
   // Expiration lives in this dialog: an email or the header chip links to #expiration
   useEffect(() => {
@@ -59,12 +62,12 @@ export function LinkSettingsDialog({ name, ...panel }: Props) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={<Button variant="outline" size="lg" className="bg-card" />}>
         <Settings2 />
-        Réglages du lien
+        {t("title")}
       </DialogTrigger>
       <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-heading">Réglages du lien</DialogTitle>
-          <DialogDescription>Chaque changement est enregistré tout de suite.</DialogDescription>
+          <DialogTitle className="text-heading">{t("title")}</DialogTitle>
+          <DialogDescription>{t("description")}</DialogDescription>
         </DialogHeader>
         <div className="space-y-6">
           <LinkName linkId={panel.linkId} name={name} />

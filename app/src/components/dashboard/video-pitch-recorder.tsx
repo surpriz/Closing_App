@@ -3,6 +3,7 @@
 import { upload } from "@vercel/blob/client";
 import { Monitor, RotateCcw, Square, Video } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -15,15 +16,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { MULTIPART_THRESHOLD_BYTES, PITCH_MAX_MS } from "@/lib/closing/media/limits";
 import { baseMime, extensionFor } from "@/lib/closing/media/mime";
-import { isStaleDeployment, STALE_DEPLOYMENT_MESSAGE } from "@/lib/stale-deployment";
+import { isStaleDeployment } from "@/lib/stale-deployment";
 import { cn } from "@/lib/utils";
-
-const RECORDER_ERRORS: Record<RecorderError, string> = {
-  denied: "Accès à la caméra, au micro ou à l'écran refusé. Autorisez-le dans la barre d'adresse puis réessayez.",
-  missing: "Aucune caméra ou aucun micro trouvé.",
-  unsupported: "Ce navigateur ne sait pas enregistrer. Essayez Chrome, Edge, Firefox ou Safari récent.",
-  failed: "L'enregistrement n'a pas marché, réessayez.",
-};
 
 const clock = (ms: number) => {
   const s = Math.max(0, Math.ceil(ms / 1000));
@@ -41,15 +35,13 @@ export function VideoPitchDialog({
   /** pitchUploadPrefix of the workspace, checked again by the upload route. */
   uploadPrefix: string;
 }) {
+  const t = useTranslations("documents.pitch");
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-heading">Enregistrer un pitch vidéo</DialogTitle>
-          <DialogDescription>
-            Jusqu&apos;à {PITCH_MAX_MS / 60_000} minutes, face caméra ou en montrant votre écran. Le prospect voit la
-            vidéo en grand, avec vos boutons rendez-vous et devis, et vous savez jusqu&apos;où il l&apos;a regardée.
-          </DialogDescription>
+          <DialogTitle className="text-heading">{t("title")}</DialogTitle>
+          <DialogDescription>{t("description", { minutes: PITCH_MAX_MS / 60_000 })}</DialogDescription>
         </DialogHeader>
         {/* Mounted only while open: closing the dialog frees the camera and the screen */}
         {open && <PitchRecorder uploadPrefix={uploadPrefix} onDone={() => onOpenChange(false)} />}
@@ -59,6 +51,7 @@ export function VideoPitchDialog({
 }
 
 function PitchRecorder({ uploadPrefix, onDone }: { uploadPrefix: string; onDone: () => void }) {
+  const t = useTranslations("documents.pitch");
   const [screenAllowed] = useState(canShareScreen);
   const [source, setSource] = useState<PitchSource>("camera");
   const [title, setTitle] = useState("");
@@ -125,12 +118,12 @@ function PitchRecorder({ uploadPrefix, onDone }: { uploadPrefix: string; onDone:
     } catch (error) {
       if (isStaleDeployment(error)) {
         // The take can't be saved from this tab any more: say why, and offer the reload
-        toast.error(STALE_DEPLOYMENT_MESSAGE, {
+        toast.error(t("staleDeployment"), {
           duration: Infinity,
-          action: { label: "Recharger", onClick: () => window.location.reload() },
+          action: { label: t("reload"), onClick: () => window.location.reload() },
         });
       } else {
-        toast.error(error instanceof Error ? error.message : "L'envoi a échoué.");
+        toast.error(error instanceof Error ? error.message : t("sendFailed"));
       }
       setProgress(null);
     }
@@ -139,7 +132,7 @@ function PitchRecorder({ uploadPrefix, onDone }: { uploadPrefix: string; onDone:
   return (
     <div className="space-y-4">
       {screenAllowed && (
-        <div className="flex gap-px border border-foreground bg-foreground" role="radiogroup" aria-label="Ce que vous enregistrez">
+        <div className="flex gap-px border border-foreground bg-foreground" role="radiogroup" aria-label={t("sourceAria")}>
           {(["camera", "screen"] as const).map((option) => (
             <button
               key={option}
@@ -156,7 +149,7 @@ function PitchRecorder({ uploadPrefix, onDone }: { uploadPrefix: string; onDone:
               )}
             >
               {option === "camera" ? <Video className="size-4" /> : <Monitor className="size-4" />}
-              {option === "camera" ? "Caméra" : "Écran + caméra"}
+              {option === "camera" ? t("camera") : t("screen")}
             </button>
           ))}
         </div>
@@ -185,33 +178,31 @@ function PitchRecorder({ uploadPrefix, onDone }: { uploadPrefix: string; onDone:
           <div className="flex flex-col items-center gap-2 px-6 text-center text-small text-muted-foreground">
             {source === "camera" ? <Video className="size-8" /> : <Monitor className="size-8" />}
             {source === "camera"
-              ? "Présentez-vous et dites au prospect ce que vous lui proposez."
-              : "Choisissez l'écran, la fenêtre ou l'onglet à montrer. Votre caméra apparaît dans une bulle."}
+              ? t("cameraHint")
+              : t("screenHint")}
           </div>
         )}
         {recorder.status === "recording" && (
           <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 bg-black/75 px-2 py-0.5 font-mono text-micro text-white">
             <span aria-hidden className="size-1.5 animate-pulse bg-destructive motion-reduce:animate-none" />
-            <span className="sr-only">Enregistrement, temps restant</span>
+            <span className="sr-only">{t("remaining")}</span>
             {clock(PITCH_MAX_MS - recorder.elapsedMs)}
           </span>
         )}
       </div>
 
       {source === "screen" && recorder.status === "recording" && (
-        <p className="text-small text-muted-foreground">
-          Vous pouvez passer sur la fenêtre partagée : l&apos;enregistrement continue. Gardez seulement cet onglet ouvert.
-        </p>
+        <p className="text-small text-muted-foreground">{t("screenNote")}</p>
       )}
-      {recorder.error && <p className="text-small text-destructive">{RECORDER_ERRORS[recorder.error]}</p>}
+      {recorder.error && <p className="text-small text-destructive">{t(`errors.${recorder.error satisfies RecorderError}`)}</p>}
 
       <label className="block space-y-1.5">
-        <span className="text-small font-medium">Titre (facultatif)</span>
+        <span className="text-small font-medium">{t("titleLabel")}</span>
         <Input
           value={title}
           maxLength={200}
           onChange={(event) => setTitle(event.target.value)}
-          placeholder="Proposition pour Acme"
+          placeholder={t("titlePlaceholder")}
           disabled={progress !== null}
         />
       </label>
@@ -219,15 +210,15 @@ function PitchRecorder({ uploadPrefix, onDone }: { uploadPrefix: string; onDone:
       <DialogFooter>
         {recorder.status === "recording" ? (
           <Button onClick={recorder.stop}>
-            <Square /> Arrêter
+            <Square /> {t("stop")}
           </Button>
         ) : recorder.status === "recorded" ? (
           <>
             <Button variant="outline" disabled={progress !== null} onClick={recorder.reset}>
-              <RotateCcw /> Recommencer
+              <RotateCcw /> {t("restart")}
             </Button>
             <Button disabled={progress !== null} onClick={save}>
-              {progress === null ? "Créer le lien" : `Envoi… ${Math.round(progress)} %`}
+              {progress === null ? t("createLink") : t("sending", { percent: Math.round(progress) })}
             </Button>
           </>
         ) : (
@@ -236,7 +227,7 @@ function PitchRecorder({ uploadPrefix, onDone }: { uploadPrefix: string; onDone:
             onClick={() => void recorder.start(source)}
           >
             {source === "camera" ? <Video /> : <Monitor />}
-            {recorder.status === "requesting" ? "Autorisation…" : "Démarrer l'enregistrement"}
+            {recorder.status === "requesting" ? t("requesting") : t("start")}
           </Button>
         )}
       </DialogFooter>

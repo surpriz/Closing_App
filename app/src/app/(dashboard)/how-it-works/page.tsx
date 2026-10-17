@@ -12,103 +12,31 @@ import {
 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 
 import { PageHeader, SectionTitle, Surface } from "@/components/dashboard/page-header";
 import { buttonVariants } from "@/components/ui/button";
 
-export const metadata: Metadata = { title: "Comment ça marche" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("help.howItWorks");
+  return { title: t("metaTitle") };
+}
 
-const STEPS: { icon: LucideIcon; title: string; body: React.ReactNode }[] = [
-  {
-    icon: FileSearch,
-    title: "Vous déposez un document",
-    body: (
-      <>
-        Clozer le lit une fois pour toutes. Il reconnaît son type (devis, proposition, présentation, CV…), résume
-        chaque page et repère où sont le prix, le planning, le périmètre ou vos références. Il note aussi les faits
-        précis : « 12 000 € HT », « 8 semaines », « paiement en 3 fois ».
-      </>
-    ),
-  },
-  {
-    icon: Eye,
-    title: "Votre prospect ouvre son lien",
-    body: (
-      <>
-        Il voit votre document normalement. Clozer note, page par page, combien de temps il y passe, quand, sur quel
-        appareil, et si d&apos;autres personnes l&apos;ouvrent. Les aperçus automatiques (Slack, LinkedIn) et vos
-        propres lectures ne comptent pas. Si vous êtes sur Clozer à ce moment-là, vous le voyez lire en direct.
-      </>
-    ),
-  },
-  {
-    icon: Sparkles,
-    title: "Il referme : Clozer lit le deal",
-    body: (
-      <>
-        Quelques minutes après sa lecture, Clozer reconstitue l&apos;histoire du deal en faits datés (« dimanche 21 h,
-        sur mobile, 3 min sur les tarifs, s&apos;arrête page 9 ») et une IA l&apos;interprète comme le ferait un
-        commercial expérimenté : où en est le deal, ce qui coince (prix, décideur, timing…), ce qu&apos;il faut faire.
-        Chaque conclusion cite les faits qui la justifient ; ce qui n&apos;est pas prouvé est écarté.
-      </>
-    ),
-  },
-  {
-    icon: PenLine,
-    title: "S'il faut relancer, Clozer écrit le message",
-    body: (
-      <>
-        En votre nom, avec votre offre et les vrais chiffres du document, sur l&apos;angle qui compte pour ce
-        prospect. Par exemple : « Si l&apos;enveloppe coince, on peut étaler le paiement, on en parle 15 minutes ? ».
-        Jamais « j&apos;ai vu que vous avez regardé les prix » : le prospect ne doit pas se sentir observé.
-      </>
-    ),
-  },
-  {
-    icon: Timer,
-    title: "Il choisit le bon moment",
-    body: (
-      <>
-        Jamais juste après une lecture (ça sentirait la surveillance), toujours aux heures de bureau du prospect, 3
-        relances par mois au maximum, et rien juste après un échange que vous avez noté.
-      </>
-    ),
-  },
-  {
-    icon: MailCheck,
-    title: "Vous validez, ou il envoie seul",
-    body: (
-      <>
-        Par défaut, la relance vous attend : un email vous prévient, vous la retrouvez dans « Relances à valider » sur
-        le tableau de bord et sur la fiche du prospect. Vous la relisez, la retouchez ou la faites réécrire, puis vous
-        validez. En mode automatique, seules les relances sûres partent seules. Les réponses du prospect arrivent dans
-        votre boîte mail.
-      </>
-    ),
-  },
-  {
-    icon: BellRing,
-    title: "Et il continue de surveiller",
-    body: (
-      <>
-        Silence de 3 jours, de 7 jours : il relit le deal et adapte la suite. Lien jamais ouvert : un rappel discret
-        après quelques jours. Le prospect clique « Valider » ou « Demander un ajustement » : tout s&apos;arrête et vous
-        êtes prévenu. Vous l&apos;avez eu au téléphone : notez l&apos;échange en un clic, Clozer en tient compte.
-      </>
-    ),
-  },
-];
+const STEPS = [
+  { icon: FileSearch, id: "read" },
+  { icon: Eye, id: "open" },
+  { icon: Sparkles, id: "analyze" },
+  { icon: PenLine, id: "write" },
+  { icon: Timer, id: "timing" },
+  { icon: MailCheck, id: "approve" },
+  { icon: BellRing, id: "watch" },
+] as const satisfies { icon: LucideIcon; id: string }[];
 
-const GUARDRAILS = [
-  "Jamais d'allusion au fait que vous voyez ce qu'il lit : un contrôle bloque toute phrase qui le laisserait deviner.",
-  "Jamais un chiffre ou une date absents de votre document : un contrôle vérifie chaque montant.",
-  "3 relances par mois et par contact au maximum, espacées de quelques jours.",
-  "Jamais dans les heures qui suivent une lecture, toujours aux heures de bureau du prospect.",
-  "Une seule relance en préparation par deal : une analyse plus récente remplace l'ancienne.",
-  "Vos notes privées sur un deal servent à l'analyse, jamais à la rédaction d'un message.",
-];
+const GUARDRAILS = ["noHint", "noInvented", "cap", "timing", "single", "privateNotes"] as const;
 
-function Step({ icon: Icon, title, body, index }: (typeof STEPS)[number] & { index: number }) {
+function Step({ icon: Icon, id, index }: (typeof STEPS)[number] & { index: number }) {
+  const t = useTranslations("help.howItWorks.steps");
   return (
     <li className="grid grid-cols-[2.5rem_minmax(0,1fr)] gap-x-4 py-5">
       <span className="flex flex-col items-center gap-1.5">
@@ -120,83 +48,72 @@ function Step({ icon: Icon, title, body, index }: (typeof STEPS)[number] & { ind
         </span>
       </span>
       <div className="space-y-1 pt-2">
-        <h3 className="text-body font-semibold">{title}</h3>
-        <p className="text-body text-muted-foreground">{body}</p>
+        <h3 className="text-body font-semibold">{t(`${id}.title`)}</h3>
+        <p className="text-body text-muted-foreground">{t(`${id}.body`)}</p>
       </div>
     </li>
   );
 }
 
-export default function HowItWorksPage() {
+export default async function HowItWorksPage() {
+  const t = await getTranslations("help.howItWorks");
+  const strong = (chunks: React.ReactNode) => <span className="text-foreground">{chunks}</span>;
   return (
     <div className="max-w-3xl space-y-12">
       <PageHeader
-        title="Comment Clozer pense"
-        description="Ce qui se passe derrière chaque lien que vous envoyez, et pourquoi vous n'avez presque rien à faire."
+        title={t("title")}
+        description={t("description")}
         action={
           <>
             <Link href="/faq" className={buttonVariants({ variant: "outline" })}>
-              Questions fréquentes
+              {t("faq")}
             </Link>
-            <Link href="/bienvenue" className={buttonVariants({ variant: "outline" })}>
-              Revoir la prise en main
+            <Link href="/welcome" className={buttonVariants({ variant: "outline" })}>
+              {t("replayTour")}
             </Link>
           </>
         }
       />
 
       <section>
-        <p className="text-heading text-balance">
-          Clozer voit comment votre prospect lit votre document, comprend où en est le deal comme le ferait un
-          commercial expérimenté, et prépare la bonne relance au bon moment. Vous validez et vous appelez ceux qui sont
-          prêts.
-        </p>
+        <p className="text-heading text-balance">{t("intro")}</p>
       </section>
 
       <section>
-        <SectionTitle hint="ce qui se passe quand vous envoyez un lien">Le parcours d&apos;un deal</SectionTitle>
+        <SectionTitle hint={t("journeyHint")}>{t("journeyTitle")}</SectionTitle>
         <ol className="divide-y divide-border">
           {STEPS.map((step, i) => (
-            <Step key={step.title} {...step} index={i + 1} />
+            <Step key={step.id} {...step} index={i + 1} />
           ))}
         </ol>
       </section>
 
       <section>
-        <SectionTitle>Deux indicateurs, deux questions</SectionTitle>
+        <SectionTitle>{t("indicatorsTitle")}</SectionTitle>
         <div className="grid gap-px border-y border-foreground bg-border sm:grid-cols-2 [&>*]:bg-card">
           <div className="space-y-2 p-5">
             <p className="flex items-center gap-2 text-body font-semibold">
-              <Gauge className="size-4" aria-hidden /> Température (sur 100)
+              <Gauge className="size-4" aria-hidden /> {t("temperatureTitle")}
             </p>
-            <p className="text-body text-muted-foreground">
-              <span className="text-foreground">Combien il lit.</span> Calculée sans IA : lecture récente, temps passé,
-              visites répétées, plusieurs lecteurs, tarifs lus, lecture jusqu&apos;au bout. Chaque point a sa raison,
-              affichée sur la fiche.
-            </p>
+            <p className="text-body text-muted-foreground">{t.rich("temperatureBody", { b: strong })}</p>
           </div>
           <div className="space-y-2 p-5">
             <p className="flex items-center gap-2 text-body font-semibold">
-              <Sparkles className="size-4" aria-hidden /> Lecture IA (et sa fiabilité)
+              <Sparkles className="size-4" aria-hidden /> {t("aiReadTitle")}
             </p>
-            <p className="text-body text-muted-foreground">
-              <span className="text-foreground">Ce que ça veut dire.</span> L&apos;IA interprète : un prospect peut
-              être « chaud » (beaucoup de lectures) avec une lecture IA prudente (lectures courtes, trop tôt pour
-              conclure). La fiabilité dit à quel point l&apos;IA est sûre d&apos;elle : faible quand il y a peu de
-              signaux.
-            </p>
+            <p className="text-body text-muted-foreground">{t.rich("aiReadBody", { b: strong })}</p>
           </div>
         </div>
       </section>
 
       <section>
-        <SectionTitle>Les règles qu&apos;il respecte toujours</SectionTitle>
+        <SectionTitle>{t("rulesTitle")}</SectionTitle>
         <Surface className="p-5">
           <ul className="space-y-2.5 text-body">
             {GUARDRAILS.map((rule) => (
               <li key={rule} className="flex gap-2.5">
                 <ShieldCheck className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
-                {rule}
+                {t(`rules.${rule}`)}
               </li>
             ))}
           </ul>
@@ -204,42 +121,37 @@ export default function HowItWorksPage() {
       </section>
 
       <section>
-        <SectionTitle>Ce que vous faites, vous</SectionTitle>
+        <SectionTitle>{t("youTitle")}</SectionTitle>
         <ol className="list-inside list-decimal space-y-1.5 text-body">
           <li>
-            Décrire votre offre une fois, dans les{" "}
-            <Link href="/settings" className="underline underline-offset-4">
-              Réglages
-            </Link>{" "}
-            (facultatif : Clozer la devine à partir de votre premier document).
+            {t.rich("you1", {
+              link: (chunks) => (
+                <Link href="/settings" className="underline underline-offset-4">
+                  {chunks}
+                </Link>
+              ),
+            })}
           </li>
-          <li>Déposer un document et créer un lien par prospect.</li>
-          <li>Valider les relances proposées, et appeler quand Clozer vous le dit.</li>
-          <li>Noter vos appels et réponses reçues, en un clic sur la fiche du prospect.</li>
+          <li>{t("you2")}</li>
+          <li>{t("you3")}</li>
+          <li>{t("you4")}</li>
         </ol>
       </section>
 
       <section>
-        <SectionTitle>Sous le capot</SectionTitle>
+        <SectionTitle>{t("underTheHoodTitle")}</SectionTitle>
         <div className="space-y-2 text-body text-muted-foreground">
-          <p>
-            Deux modèles d&apos;IA d&apos;Anthropic. Claude Haiku, rapide, lit les documents et fait un second contrôle
-            avant tout envoi automatique. Claude Sonnet, plus réfléchi, analyse chaque deal et rédige les relances.
-          </p>
-          <p>
-            Aucune adresse email ni adresse IP n&apos;est envoyée à l&apos;IA : les lecteurs sont désignés par une
-            lettre (lecteur A, lecteur B…). Une analyse n&apos;est relancée que s&apos;il s&apos;est passé quelque chose
-            de nouveau.
-          </p>
+          <p>{t("underTheHood1")}</p>
+          <p>{t("underTheHood2")}</p>
         </div>
       </section>
 
       <section>
-        <SectionTitle>Ce qui n&apos;est pas encore là</SectionTitle>
+        <SectionTitle>{t("notYetTitle")}</SectionTitle>
         <ul className="list-inside list-disc space-y-1.5 text-body text-muted-foreground">
-          <li>Les relances partent de l&apos;adresse de Clozer, avec votre email en adresse de réponse.</li>
-          <li>Clozer ne voit pas encore les réponses reçues par email : notez-les sur la fiche du prospect.</li>
-          <li>Les relances WhatsApp arrivent bientôt.</li>
+          <li>{t("notYet1")}</li>
+          <li>{t("notYet2")}</li>
+          <li>{t("notYet3")}</li>
         </ul>
       </section>
     </div>

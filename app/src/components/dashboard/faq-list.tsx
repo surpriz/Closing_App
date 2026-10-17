@@ -2,11 +2,12 @@
 
 import { ArrowRight, ChevronDown, LifeBuoy, Search } from "lucide-react";
 import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { FAQ, searchFaq } from "@/lib/closing/help/faq";
+import { getFaq, searchFaq } from "@/lib/closing/help/faq";
 
 import { openHelp } from "./open-help";
 import { SectionTitle, Surface } from "./page-header";
@@ -28,17 +29,21 @@ function useOpenFromHash() {
 }
 
 export function AskHelpButton({ variant = "outline" }: { variant?: "outline" | "default" }) {
+  const t = useTranslations("help.faq");
   return (
     <Button variant={variant} onClick={openHelp}>
       <LifeBuoy />
-      Poser une question
+      {t("ask")}
     </Button>
   );
 }
 
 export function FaqList() {
+  const t = useTranslations("help.faq");
+  const locale = useLocale();
+  const faq = useMemo(() => getFaq(locale), [locale]);
   const [query, setQuery] = useState("");
-  const sections = useMemo(() => searchFaq(query), [query]);
+  const sections = useMemo(() => searchFaq(query, faq), [query, faq]);
   const searching = query.trim().length > 1;
   useOpenFromHash();
 
@@ -51,14 +56,14 @@ export function FaqList() {
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Rechercher : relance, Outlook, expiration…"
-            aria-label="Rechercher dans les questions"
+            placeholder={t("searchPlaceholder")}
+            aria-label={t("searchAria")}
             className="h-11 pl-9"
           />
         </div>
         {!searching && (
-          <nav aria-label="Thèmes" className="flex flex-wrap gap-2">
-            {FAQ.map((section) => (
+          <nav aria-label={t("themesAria")} className="flex flex-wrap gap-2">
+            {faq.map((section) => (
               <a
                 key={section.id}
                 href={`#${section.id}`}
@@ -73,8 +78,8 @@ export function FaqList() {
 
       {sections.length === 0 && (
         <Surface className="space-y-3 p-6 text-center">
-          <p className="text-body">Aucune question ne correspond à « {query.trim()} ».</p>
-          <p className="text-small text-muted-foreground">L&apos;assistant d&apos;aide vous répond tout de suite.</p>
+          <p className="text-body">{t("noMatch", { query: query.trim() })}</p>
+          <p className="text-small text-muted-foreground">{t("noMatchHint")}</p>
           <AskHelpButton variant="default" />
         </Surface>
       )}
@@ -119,10 +124,8 @@ export function FaqList() {
       {sections.length > 0 && (
         <Surface className="flex flex-wrap items-center justify-between gap-4 p-5">
           <div className="space-y-1">
-            <p className="text-body font-medium">Vous n&apos;avez pas trouvé ?</p>
-            <p className="text-small text-muted-foreground">
-              Posez la question à l&apos;assistant, ou envoyez une idée ou un bug à l&apos;équipe.
-            </p>
+            <p className="text-body font-medium">{t("notFoundTitle")}</p>
+            <p className="text-small text-muted-foreground">{t("notFoundBody")}</p>
           </div>
           <AskHelpButton />
         </Surface>

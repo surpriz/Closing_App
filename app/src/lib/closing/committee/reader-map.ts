@@ -113,8 +113,31 @@ function personKeys(views: ReaderView[], prospectsByEmail: Map<string, ReaderPro
   return (v: ReaderView) => identity(v) ?? byVisitor.get(v.visitorId) ?? `v:${v.visitorId}`;
 }
 
-export function buildReaderMap(input: { views: ReaderView[]; prospects: ReaderProspect[]; now: Date }): ReaderMap {
+/** Names for readers and networks nobody identified, in the seller's language. */
+export type ReaderMapNames = {
+  unidentifiedReader: (letter: string) => string;
+  unidentified: string;
+  network: (n: number) => string;
+  personal: string;
+  unknownNetwork: string;
+};
+
+const FRENCH_NAMES: ReaderMapNames = {
+  unidentifiedReader: (letter) => `Lecteur non identifié ${letter}`,
+  unidentified: "Lecteur non identifié",
+  network: (n) => `Réseau non identifié ${n}`,
+  personal: "Adresses personnelles",
+  unknownNetwork: "Réseau inconnu",
+};
+
+export function buildReaderMap(input: {
+  views: ReaderView[];
+  prospects: ReaderProspect[];
+  now: Date;
+  names?: ReaderMapNames;
+}): ReaderMap {
   const { prospects, now } = input;
+  const names = input.names ?? FRENCH_NAMES;
   const views = [...input.views].sort((a, b) => byTime(a.startedAt, b.startedAt));
   const prospectsById = new Map(prospects.map((p) => [p.id, p]));
   const prospectsByEmail = new Map(prospects.map((p) => [p.email.toLowerCase(), p]));
@@ -128,6 +151,7 @@ export function buildReaderMap(input: { views: ReaderView[]; prospects: ReaderPr
       const p = v.prospectId ? prospectsById.get(v.prospectId) : undefined;
       return { ...v, prospect: p ? { name: p.name, email: p.email } : null };
     }),
+    names.unidentifiedReader,
   );
 
   const persons = new Map<string, Person>();
@@ -141,7 +165,7 @@ export function buildReaderMap(input: { views: ReaderView[]; prospects: ReaderPr
         key,
         prospectId: prospect?.id ?? null,
         email,
-        label: prospect ? (prospect.name ?? prospect.email) : (email ?? labels.get(v.id)?.name ?? "Lecteur non identifié"),
+        label: prospect ? (prospect.name ?? prospect.email) : (email ?? labels.get(v.id)?.name ?? names.unidentified),
         identified: !!email,
         role: prospect ? effectiveRole(prospect) : email ? effectiveRole({ role: null, email, name: null }) : null,
         detectedRole: email ? classifyRole({ email, name: prospect?.name ?? null }) : null,
@@ -176,10 +200,10 @@ export function buildReaderMap(input: { views: ReaderView[]; prospects: ReaderPr
   if (originalDomains.size === 0) for (const p of list) if (p.origin === "initial" && p.domain) originalDomains.add(p.domain);
   for (const p of list) if (p.origin === "external" && p.domain && originalDomains.has(p.domain)) p.origin = "forwarded_internal";
 
-  return { persons: list, groups: groupPersons(list) };
+  return { persons: list, groups: groupPersons(list, names) };
 }
 
-function groupPersons(persons: Person[]): ReaderGroup[] {
+function groupPersons(persons: Person[], names: ReaderMapNames): ReaderGroup[] {
   const groups = new Map<string, ReaderGroup>();
   const add = (key: string, make: () => Omit<ReaderGroup, "persons">, person: Person) => {
     let group = groups.get(key);
@@ -204,11 +228,11 @@ function groupPersons(persons: Person[]): ReaderGroup[] {
     } else if (p.ipHashes.length > 0) {
       const existing = p.ipHashes.map((ip) => `net:${ip}`).find((k) => groups.has(k));
       const key = existing ?? `net:${p.ipHashes[0]}`;
-      add(key, () => ({ key, kind: "network", label: `Réseau non identifié ${++networks}` }), p);
+      add(key, () => ({ key, kind: "network", label: names.network(++networks) }), p);
     } else if (p.email) {
-      add("personal", () => ({ key: "personal", kind: "personal", label: "Adresses personnelles" }), p);
+      add("personal", () => ({ key: "personal", kind: "personal", label: names.personal }), p);
     } else {
-      add("unknown", () => ({ key: "unknown", kind: "unknown", label: "Réseau inconnu" }), p);
+      add("unknown", () => ({ key: "unknown", kind: "unknown", label: names.unknownNetwork }), p);
     }
   }
 

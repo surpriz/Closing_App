@@ -1,0 +1,191 @@
+{
+  "dealStatus": {
+    "OPEN": "Open",
+    "VALIDATED": "Approved",
+    "CHANGE_REQUESTED": "Changes requested",
+    "WON": "Won",
+    "LOST": "Lost"
+  },
+  "tag": {
+    "PRICING": "Pricing",
+    "TERMS": "Terms",
+    "TIMELINE": "Timeline",
+    "SCOPE": "Scope",
+    "TEAM": "Team",
+    "CASE_STUDY": "Case studies",
+    "OTHER": "Other"
+  },
+  "tier": {
+    "HOT": "Hot",
+    "WARM": "Warm",
+    "COLD": "Cold"
+  },
+  "followupStatus": {
+    "PENDING": "Writing…",
+    "DRAFT": "To review",
+    "GENERATED": "Scheduled",
+    "SCHEDULED": "Scheduled",
+    "SENT": "Sent",
+    "DELIVERED": "Delivered",
+    "FAILED": "Failed",
+    "CANCELLED": "Cancelled",
+    "SKIPPED": "Skipped"
+  },
+  "followupTrigger": {
+    "HOT_PRICING": "After a pricing read",
+    "ANTI_GHOSTING": "Link not opened yet",
+    "MANUAL": "Manual follow-up",
+    "AI_DECISION": "Suggested by the analysis",
+    "EXPIRY_REMINDER": "Reminder before expiry",
+    "WARM_READ": "After a cold email click"
+  },
+  "sellerActivity": {
+    "CALL": "Call",
+    "EMAIL_REPLY_RECEIVED": "Reply received",
+    "MEETING": "Meeting",
+    "NOTE": "Note",
+    "MANUAL_SEND": "Message sent"
+  },
+  "channel": {
+    "EMAIL": "Email",
+    "WHATSAPP": "WhatsApp"
+  },
+  "alertChannel": {
+    "EMAIL": "Email",
+    "SLACK": "Slack",
+    "WEBHOOK": "Webhook",
+    "EXTENSION": "Extension"
+  },
+  "alertType": {
+    "MULTI_VIEWER": "Several readers",
+    "REOPENED_AFTER_INACTIVITY": "Reopened after a quiet spell",
+    "DRAFT_READY": "Follow-up ready to review",
+    "PROSPECT_VALIDATED": "Proposal approved",
+    "CHANGE_REQUESTED": "Changes requested",
+    "QUOTE_REQUESTED": "Quote requested",
+    "PROSPECT_QUESTION": "Prospect question",
+    "VOICE_COMMENT": "Voice comment",
+    "CALL_MOMENT": "Time to call",
+    "COMMITTEE_LIVE": "Committee reading",
+    "NEW_READER": "New reader",
+    "DECISION_MAKER_DETECTED": "Decision-maker reading",
+    "LINK_EXTENSION_REQUESTED": "Extension request",
+    "LINK_EXPIRING": "Link expiring soon",
+    "MEETING_BOOKED": "Meeting booked"
+  },
+  "prospectRole": {
+    "DECISION_MAKER": "Decision-maker",
+    "FINANCE": "Finance / procurement",
+    "TECHNICAL": "Technical",
+    "CHAMPION": "Champion",
+    "INFLUENCER": "Influencer",
+    "OTHER": "Other"
+  },
+  "readerOrigin": {
+    "initial": "Recipient",
+    "forwarded_internal": "Forwarded internally",
+    "external": "Outside the company",
+    "anonymous": "No email"
+  },
+  "scoreReason": {
+    "deal_validated": "Proposal approved",
+    "deal_lost": "Deal lost",
+    "recent_activity_24h": "Read in the last 24 h",
+    "recent_activity_3d": "Read in the last 3 days",
+    "recent_activity_7d": "Read this week",
+    "reading_time": "Reading time",
+    "first_visit": "First visit",
+    "repeat_visits": "Repeat visits",
+    "multiple_viewers": "Several readers",
+    "pricing_focus": "Long pricing read",
+    "pricing_interest": "Pricing read",
+    "read_to_end": "Read to the end",
+    "read_halfway": "Read halfway",
+    "watched_to_end": "Video watched to the end",
+    "watched_halfway": "Video watched halfway",
+    "change_requested": "Changes requested",
+    "quote_requested": "Asked for a quote",
+    "meeting_clicked": "Opened your calendar",
+    "meeting_booked": "Meeting booked"
+  },
+  "stage": {
+    "NOT_ENGAGED": "Not engaged yet",
+    "DISCOVERING": "Discovering the offer",
+    "EVALUATING": "Evaluating",
+    "NEGOTIATING": "Negotiating",
+    "DECIDING": "Close to a decision",
+    "STALLED": "Stalled",
+    "LIKELY_LOST": "Likely lost"
+  },
+  "momentum": {
+    "RISING": "rising",
+    "STEADY": "steady",
+    "COOLING": "cooling"
+  },
+  "friction": {
+    "PRICE": "Price",
+    "SCOPE": "Scope",
+    "TIMING": "Timing",
+    "DECISION_MAKER": "Decision-maker",
+    "COMPETITION": "Competition",
+    "TRUST": "Trust",
+    "STALLED_AT_SECTION": "Stuck on a section",
+    "OTHER": "Other"
+  },
+  "insightAction": {
+    "send_followup": "Follow up in writing",
+    "call": "Call",
+    "reply_to_request": "Answer their request",
+    "involve_decision_maker": "Bring the decision-maker in",
+    "wait": "Wait",
+    "close_lost": "Close the deal as lost"
+  },
+  "timing": {
+    "now": "now",
+    "next_business_morning": "tomorrow morning",
+    "in_2_business_days": "within 2 business days",
+    "in_1_week": "in a week",
+    "before_deadline": "before the deadline"
+  },
+  "followupGoal": {
+    "gentle_reminder": "Gentle reminder",
+    "clarify_pricing": "Clarify the budget",
+    "propose_call": "Suggest a call",
+    "address_objection": "Handle an objection",
+    "share_case_study": "Share a case study",
+    "involve_decision_maker": "Involve the decision-maker",
+    "reactivate": "Restart the conversation"
+  },
+  "role": {
+    "owner": "Owner",
+    "admin": "Admin",
+    "member": "Member"
+  },
+  "teamHealth": {
+    "hot": "Moving",
+    "at_risk": "Slipping",
+    "dead": "To close out",
+    "steady": "On track"
+  },
+  "teamHealthHint": {
+    "hot": "watch closely",
+    "at_risk": "cooling down",
+    "dead": "one last follow-up, or close it"
+  },
+  "healthSignal": {
+    "reading_now": "Reading right now",
+    "change_requested": "Changes requested",
+    "tier_hot": "Hot temperature",
+    "ai_priority": "Priority per the analysis",
+    "pricing_focus": "Long pricing read",
+    "cooling": "Interest cooling",
+    "quiet": "Not read for {days} d",
+    "unopened": "Not opened for {days} d",
+    "ai_likely_lost": "Likely lost per the analysis",
+    "ai_stalled": "Stalled per the analysis",
+    "ai_close_lost": "The analysis suggests closing it",
+    "never_opened": "Never opened in {days} d",
+    "silent": "Not read for {days} d",
+    "deadline_passed": "Deadline passed ({date})"
+  }
+}

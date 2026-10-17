@@ -1,6 +1,13 @@
+import { createTranslator } from "next-intl";
 import { describe, expect, it } from "vitest";
 
-import { buildTodayHeadline, type TodayHeadlineInput } from "./today-headline";
+import { MESSAGES } from "@/i18n/messages";
+
+import { buildTodayHeadline as build, type TodayHeadlineInput } from "./today-headline";
+
+const fr = createTranslator({ locale: "fr", messages: MESSAGES.fr });
+const en = createTranslator({ locale: "en", messages: MESSAGES.en });
+const buildTodayHeadline = (input: TodayHeadlineInput) => build(fr, input);
 
 const base: TodayHeadlineInput = {
   hotProspects: [],
@@ -25,6 +32,12 @@ describe("buildTodayHeadline", () => {
       headline: "Acme a validé.",
       hint: "Appelez Lumen en premier.",
     });
+  });
+
+  it("speaks English too", () => {
+    expect(build(en, { ...base, freshValidations: ["Acme", "Lumen", "Norda"] }).headline).toBe(
+      "Acme and 2 others approved.",
+    );
   });
 
   it("groups several validations", () => {

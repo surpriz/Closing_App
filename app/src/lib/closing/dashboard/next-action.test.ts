@@ -1,4 +1,7 @@
+import { createTranslator } from "next-intl";
 import { describe, expect, it } from "vitest";
+
+import { MESSAGES } from "@/i18n/messages";
 
 import {
   compareByUrgency,
@@ -8,6 +11,9 @@ import {
   type NextActionInput,
   withAiAdvice,
 } from "./next-action";
+
+const i18n = { t: createTranslator({ locale: "fr", messages: MESSAGES.fr }), locale: "fr" as const };
+const en = { t: createTranslator({ locale: "en", messages: MESSAGES.en }), locale: "en" as const };
 
 const now = new Date("2026-10-04T10:00:00Z");
 const DAY = 24 * 60 * 60 * 1000;
@@ -34,14 +40,14 @@ describe("computeNextAction", () => {
     const action = computeNextAction({ ...base, dealStatus: "VALIDATED", readingNow: true });
     expect(action).toEqual({ kind: "close_won" });
     expect(isUrgent(action)).toBe(true);
-    expect(withAiAdvice(action, { type: "wait", timing: "now", priority: 1 }, { action: {}, timing: {} })).toEqual(action);
+    expect(withAiAdvice(action, { type: "wait", timing: "now", priority: 1 })).toEqual(action);
   });
 
   it("asks to send the quote a video pitch prospect asked for, until the seller logs a contact", () => {
     const asked = { ...base, quoteRequestedAt: ago(1), tier: "HOT" as const };
     const action = computeNextAction(asked);
     expect(action).toEqual({ kind: "reply", quote: true });
-    expect(describeNextAction(action, now)).toBe("Devis demandé : envoyez-le.");
+    expect(describeNextAction(action, now, i18n)).toBe("Devis demandé : envoyez-le.");
     expect(isUrgent(action)).toBe(true);
     expect(computeNextAction({ ...asked, lastSellerContactAt: ago(0.5) }).kind).not.toBe("reply");
   });
@@ -112,19 +118,19 @@ describe("computeNextAction", () => {
 describe("describeNextAction", () => {
   it("never genders the prospect", () => {
     const texts = [
-      describeNextAction({ kind: "call_now" }, now),
-      describeNextAction({ kind: "reply" }, now),
-      describeNextAction({ kind: "call", pricing: true }, now),
-      describeNextAction({ kind: "call", pricing: false }, now),
-      describeNextAction({ kind: "nudge", days: 4, opened: true }, now),
-      describeNextAction({ kind: "wait", days: 1, opened: true, tier: "WARM" }, now),
+      describeNextAction({ kind: "call_now" }, now, i18n),
+      describeNextAction({ kind: "reply" }, now, i18n),
+      describeNextAction({ kind: "call", pricing: true }, now, i18n),
+      describeNextAction({ kind: "call", pricing: false }, now, i18n),
+      describeNextAction({ kind: "nudge", days: 4, opened: true }, now, i18n),
+      describeNextAction({ kind: "wait", days: 1, opened: true, tier: "WARM" }, now, i18n),
     ];
     for (const text of texts) expect(text).not.toMatch(/\b(il|elle|-le|-la)\b|engagée?\b|intéressée?\b/i);
   });
 
   it("explains an unopened link with its follow-up", () => {
     expect(
-      describeNextAction({ kind: "followup_planned", at: new Date(now.getTime() + DAY), opened: false }, now),
+      describeNextAction({ kind: "followup_planned", at: new Date(now.getTime() + DAY), opened: false }, now, i18n),
     ).toBe("Pas encore ouvert. Relance auto demain.");
   });
 });
@@ -194,7 +200,7 @@ describe("seller-side context", () => {
 
   it("says when the meeting is", () => {
     const meetingAt = new Date("2026-12-03T09:00:00Z");
-    expect(describeNextAction({ kind: "meeting_booked", at: ago(1), meetingAt }, now)).toBe(
+    expect(describeNextAction({ kind: "meeting_booked", at: ago(1), meetingAt }, now, i18n)).toBe(
       "Rendez-vous le 3 décembre : préparez l'échange.",
     );
   });
@@ -223,14 +229,10 @@ describe("seller-side context", () => {
 });
 
 describe("withAiAdvice", () => {
-  const labels = {
-    action: { wait: "Attendre", call: "Appeler", send_followup: "Relancer par écrit" },
-    timing: { next_business_morning: "demain matin", now: "maintenant" },
-  };
-
   it("lets a current analysis overrule the score-based call", () => {
-    const action = withAiAdvice({ kind: "call", pricing: false }, { type: "wait", timing: "now", priority: 2 }, labels);
-    expect(action).toEqual({ kind: "ai_advice", text: "Rien à faire pour l'instant, Clozer surveille.", urgent: false });
+    const action = withAiAdvice({ kind: "call", pricing: false }, { type: "wait", timing: "now", priority: 2 });
+    expect(action).toEqual({ kind: "ai_advice", adviceType: "wait", timing: "now", urgent: false });
+    expect(describeNextAction(action, now, i18n)).toBe("Rien à faire pour l'instant, Clozer surveille.");
     expect(isUrgent(action)).toBe(false);
   });
 
@@ -238,20 +240,20 @@ describe("withAiAdvice", () => {
     const action = withAiAdvice(
       { kind: "wait", days: 1, opened: true, tier: "WARM" },
       { type: "call", timing: "next_business_morning", priority: 5 },
-      labels,
     );
-    expect(action).toEqual({ kind: "ai_advice", text: "Appeler demain matin.", urgent: true });
+    expect(action).toEqual({ kind: "ai_advice", adviceType: "call", timing: "next_business_morning", urgent: true });
+    expect(describeNextAction(action, now, i18n)).toBe("Appeler demain matin.");
+    expect(describeNextAction(action, now, en)).toBe("Call tomorrow morning.");
   });
 
   it("never hides a fact of the moment", () => {
     for (const fact of [{ kind: "call_now" }, { kind: "reply" }, { kind: "review_draft" }] as const) {
-      expect(withAiAdvice(fact, { type: "wait", timing: "now", priority: 1 }, labels)).toBe(fact);
+      expect(withAiAdvice(fact, { type: "wait", timing: "now", priority: 1 })).toBe(fact);
     }
   });
 
   it("keeps the rules when there is no current analysis", () => {
     const rule = { kind: "nudge", days: 4, opened: true } as const;
-    expect(withAiAdvice(rule, null, labels)).toBe(rule);
+    expect(withAiAdvice(rule, null)).toBe(rule);
   });
 });
-

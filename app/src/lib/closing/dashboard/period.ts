@@ -6,10 +6,11 @@ export type PeriodKey = "7d" | "30d" | "all";
 
 export const DEFAULT_PERIOD: PeriodKey = "30d";
 
-export const PERIODS: Record<PeriodKey, { label: string; hint: string; days: number | null }> = {
-  "7d": { label: "7 jours", hint: "sur 7 jours", days: 7 },
-  "30d": { label: "30 jours", hint: "sur 30 jours", days: 30 },
-  all: { label: "Tout", hint: "depuis le début", days: null },
+/** Labels live in the "today.period" messages, keyed by period. */
+export const PERIODS: Record<PeriodKey, { days: number | null }> = {
+  "7d": { days: 7 },
+  "30d": { days: 30 },
+  all: { days: null },
 };
 
 export function parsePeriod(raw: string | string[] | undefined): PeriodKey {

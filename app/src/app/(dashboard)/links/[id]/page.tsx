@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { getLocale, getTranslations } from "next-intl/server";
 
 import { ActivityTimeline } from "@/components/dashboard/activity-timeline";
 import { AutoRefresh } from "@/components/dashboard/auto-refresh";
@@ -35,10 +36,7 @@ import { WelcomeMessage } from "@/components/dashboard/welcome-message";
 import { ShareMailToolTip } from "@/components/onboarding/share-mail-tool-tip";
 import { capsuleUploadPrefix } from "@/lib/blob";
 import { dealLabel, linkLabelSelect } from "@/lib/closing/dashboard/labels";
-import {
-  DOC_TYPE_LABELS,
-  type DocType,
-} from "@/lib/closing/documents/doc-types";
+import type { DocType } from "@/lib/closing/documents/doc-types";
 import { linkTitle } from "@/lib/closing/documents/link-title";
 import { showsCountdown } from "@/lib/closing/expiry";
 import { firstNameOf, guessMailClient } from "@/lib/closing/share/compose";
@@ -57,7 +55,12 @@ export async function generateMetadata({
     where: { id, organizationId: organization.id },
     select: linkLabelSelect,
   });
-  return { title: link ? dealLabel(link) : "Prospect" };
+  const t = await getTranslations();
+  return {
+    title: link
+      ? dealLabel(link, t("today.page.noRecipient"))
+      : t("deal.page.metaTitleFallback"),
+  };
 }
 
 /**
@@ -76,6 +79,9 @@ export default async function LinkDetailPage({
   if (!deal) notFound();
 
   const { link, now, canEdit, url, mainProspect, settings, insight } = deal;
+  const t = await getTranslations("deal.page");
+  const tDocs = await getTranslations("documents");
+  const locale = await getLocale();
   const uploadPrefix = capsuleUploadPrefix(workspace.organization.id);
 
   const welcome = deal.welcome ? (
@@ -94,7 +100,7 @@ export default async function LinkDetailPage({
     ? (deal.signature.signerName ??
       deal.signature.prospect?.name ??
       deal.signature.prospect?.email ??
-      "Le prospect")
+      t("theProspect"))
     : null;
 
   return (
@@ -132,14 +138,17 @@ export default async function LinkDetailPage({
             }
             signature={settings.senderSignature}
             processing={deal.reading}
-            summary={settingsSummary(link, now)}
+            summary={settingsSummary(link, now, locale)}
             shared={link.shared}
             welcome={welcome}
             notice={
               link.autoSettings &&
               link.expiresAt &&
               showsCountdown(link.document.docType)
-                ? `Reconnu comme « ${DOC_TYPE_LABELS[link.document.docType as DocType]} » : le prospect a jusqu'au ${formatDate(link.expiresAt)} et voit le décompte.`
+                ? t("autoNotice", {
+                    docType: tDocs(`docType.${link.document.docType as DocType}`),
+                    date: formatDate(link.expiresAt, locale),
+                  })
                 : null
             }
             settings={deal.settingsPanel}
@@ -197,11 +206,9 @@ export default async function LinkDetailPage({
           >
             {deal.showsDetail && (
               <DealFold
-                title="Temps par page en détail"
+                title={t("pageTimeTitle")}
                 hint={
-                  deal.isVideo
-                    ? "sur chaque passage de la vidéo"
-                    : "total et moyenne par lecture"
+                  deal.isVideo ? t("pageTimeHintVideo") : t("pageTimeHint")
                 }
               >
                 <PageTimeChart data={deal.chartData} video={deal.isVideo} />
@@ -233,7 +240,7 @@ export default async function LinkDetailPage({
               }}
             />
 
-            <DealSection id="relances" title="Relances">
+            <DealSection id="relances" title={t("followupsTitle")}>
               <div className="pt-4">
                 <FollowupsPanel followups={deal.followupItems} />
               </div>
@@ -242,8 +249,8 @@ export default async function LinkDetailPage({
             {deal.transcript.length > 0 && (
               <DealSection
                 id="questions"
-                title="Questions du prospect"
-                hint="posées à l'assistant du document"
+                title={t("questionsTitle")}
+                hint={t("questionsHint")}
               >
                 <ChatTranscript conversations={deal.transcript} />
               </DealSection>
@@ -252,14 +259,14 @@ export default async function LinkDetailPage({
             {deal.voiceComments.length > 0 && (
               <DealSection
                 id="vocaux"
-                title="Commentaires vocaux"
-                hint="laissés sur les pages du document"
+                title={t("voiceTitle")}
+                hint={t("voiceHint")}
               >
                 <VoiceComments comments={deal.voiceComments} />
               </DealSection>
             )}
 
-            <DealSection id="activite" title="Activité">
+            <DealSection id="activite" title={t("activityTitle")}>
               <div className="pt-4 pl-3">
                 <ActivityTimeline items={deal.timeline} />
               </div>
@@ -271,15 +278,15 @@ export default async function LinkDetailPage({
               <>
                 <DealSection
                   id="lecteurs"
-                  title="Lecteurs"
-                  hint="chacun a son lien et son suivi"
+                  title={t("readersTitle")}
+                  hint={t("readersHint")}
                 >
                   <SharedReaders readers={deal.sharedReaders} />
                 </DealSection>
                 {canEdit && (
                   <DealSection
-                    title="Smart Link pour cold email"
-                    hint="Lemlist, Instantly, Apollo…"
+                    title={t("smartLinkTitle")}
+                    hint={t("smartLinkHint")}
                   >
                     <SmartLinkTemplate url={url} />
                   </DealSection>
@@ -288,8 +295,8 @@ export default async function LinkDetailPage({
             ) : (
               <DealSection
                 id="prospect"
-                title="Prospect"
-                hint="reçoit les relances, et qui a lu"
+                title={t("prospectTitle")}
+                hint={t("prospectHint")}
               >
                 <ProspectPanel
                   linkId={link.id}
@@ -302,20 +309,24 @@ export default async function LinkDetailPage({
 
             <DealSection
               id="noter"
-              title="Noter un échange"
-              hint="appels, réponses, rendez-vous"
+              title={t("logTitle")}
+              hint={t("logHint")}
             >
               <SellerActivityForm linkId={link.id} />
             </DealSection>
 
             <DealContextSummaryDetails
-              summary={dealContextSummary({
-                amountCents: link.dealAmountCents,
-                currency: link.dealCurrency,
-                decisionDeadline: link.decisionDeadline,
-                decisionMakerName: link.decisionMakerName,
-                decisionMakerRole: link.decisionMakerRole,
-              })}
+              summary={dealContextSummary(
+                {
+                  amountCents: link.dealAmountCents,
+                  currency: link.dealCurrency,
+                  decisionDeadline: link.decisionDeadline,
+                  decisionMakerName: link.decisionMakerName,
+                  decisionMakerRole: link.decisionMakerRole,
+                },
+                locale,
+                await getTranslations("deal.dealContextSummary"),
+              )}
               paused={!!link.snoozedUntil && link.snoozedUntil > now}
             >
               <div className="divide-y divide-border">
@@ -360,7 +371,7 @@ export default async function LinkDetailPage({
 
         {canEdit && (
           <DealSettings
-            summary={settingsSummary(link, now)}
+            summary={settingsSummary(link, now, locale)}
             name={link.name ?? ""}
             panel={deal.settingsPanel}
             welcome={!deal.sharing ? welcome : null}
@@ -381,8 +392,8 @@ export default async function LinkDetailPage({
         {!canEdit && deal.linkCapsules.length > 0 && (
           <DealSection
             id="capsules"
-            title="Capsules par page"
-            hint="enregistrées avant le mot d'accueil"
+            title={t("capsulesTitle")}
+            hint={t("capsulesHint")}
           >
             <LinkCapsules
               documentId={link.document.id}

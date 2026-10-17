@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
 import { useId } from "react";
 import {
   Bar,
@@ -34,10 +35,12 @@ const TICK = { fill: "var(--muted-foreground)", fontSize: 11, fontFamily: MONO }
  * `video`: the bars are tenths of a video pitch, not pages.
  */
 export function PageTimeChart({ data, video = false }: { data: PageTimeDatum[]; video?: boolean }) {
+  const t = useTranslations("deal.pageTimeChart");
+  const locale = useLocale();
   const uid = `ironbow${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
-  const name = (page: number) => (video ? segmentLabel(page) : `Page ${page}`);
+  const name = (page: number) => (video ? segmentLabel(page, undefined, locale) : t("page", { page }));
   const pricing = new Set(data.filter((d) => d.isPricing).map((d) => d.pageNumber));
-  const tickLabel = (page: number) => (video ? `${(page - 1) * 10} %` : `p.${page}`);
+  const tickLabel = (page: number) => (video ? t("tickVideo", { percent: (page - 1) * 10 }) : t("tickPage", { page }));
 
   return (
     <div className="space-y-3">
@@ -95,14 +98,14 @@ export function PageTimeChart({ data, video = false }: { data: PageTimeDatum[]; 
               itemStyle={{ color: "var(--popover-foreground)", fontFamily: MONO, fontSize: 12 }}
               labelFormatter={(label, payload) => {
                 const summary = (payload?.[0]?.payload as PageTimeDatum | undefined)?.summary;
-                return summary ? `${name(Number(label))} : ${summary}` : name(Number(label));
+                return summary ? t("labelWithSummary", { name: name(Number(label)), summary }) : name(Number(label));
               }}
               formatter={(value, _name, item) => {
                 const datum = item.payload as PageTimeDatum;
-                const per = video ? "par visionnage" : "par lecture";
+                const per = video ? t("perView") : t("perRead");
                 return [
-                  `${value} s au total · ${datum.avgSeconds} s ${per}`,
-                  datum.isPricing ? "Tarifs" : video ? "Visionnage" : "Lecture",
+                  t("tooltipValue", { total: String(value), avg: datum.avgSeconds, per }),
+                  datum.isPricing ? t("pricing") : video ? t("view") : t("read"),
                 ];
               }}
             />
@@ -116,14 +119,14 @@ export function PageTimeChart({ data, video = false }: { data: PageTimeDatum[]; 
       </div>
       <p className="flex flex-wrap items-center gap-x-6 gap-y-1 text-small text-muted-foreground">
         <span className="inline-flex items-center gap-2">
-          peu lu
+          {t("lowRead")}
           <HeatScale className="h-1.5 w-16" />
-          très lu
+          {t("highRead")}
         </span>
         {pricing.size > 0 && (
           <span className="inline-flex items-center gap-2">
             <span aria-hidden className="h-0.5 w-3.5 bg-foreground" />
-            {video ? "passage sur les tarifs" : "page de tarifs"}
+            {video ? t("pricingSegment") : t("pricingPage")}
           </span>
         )}
       </p>

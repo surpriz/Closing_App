@@ -1,6 +1,8 @@
 import { generateText, Output } from "ai";
 import { z } from "zod";
 
+import type { UiLocale } from "@/i18n/locale";
+
 import { lintFollowup } from "./guard";
 import { buildFollowupPrompt, FOLLOWUP_SYSTEM_PROMPT, type FollowupPromptInput } from "./prompts";
 import { getLanguageModel } from "./provider";
@@ -31,7 +33,12 @@ const MAX_ATTEMPTS = 2;
 
 export async function draftFollowup(
   input: FollowupPromptInput,
-  { sourceText, organizationId, linkId }: { sourceText: string; organizationId: string; linkId: string },
+  {
+    sourceText,
+    organizationId,
+    linkId,
+    sellerLocale,
+  }: { sourceText: string; organizationId: string; linkId: string; sellerLocale: UiLocale },
 ): Promise<GeneratedFollowup> {
   const llm = getLanguageModel("followup");
   if (!llm) return fromTemplate(input);
@@ -67,7 +74,7 @@ export async function draftFollowup(
         body,
       };
 
-      issues = lintFollowup(draft, { channel: input.channel, proposalUrl: input.proposalUrl, sourceText }).map(
+      issues = lintFollowup(draft, { channel: input.channel, proposalUrl: input.proposalUrl, sourceText, locale: sellerLocale }).map(
         (issue) => issue.message,
       );
       if (issues.length === 0) {

@@ -1,3 +1,5 @@
+import { useLocale, useTranslations } from "next-intl";
+
 import type { EngagementTier } from "@/generated/prisma/enums";
 import { formatReadTime } from "@/lib/closing/dashboard/document-heat";
 import type { PageHeat } from "@/lib/closing/dashboard/page-heat";
@@ -67,11 +69,13 @@ export function HottestReading({
   video?: boolean;
   className?: string;
 }) {
+  const t = useTranslations("documents.readingBits");
+  const locale = useLocale();
   if (!heat?.hottest) return null;
   const { page, seconds } = heat.hottest;
   return (
     <span className={cn("text-foreground", className)}>
-      {video ? `Passage ${segmentLabel(page)} le plus vu` : `Page ${page} la plus lue`} ·{" "}
+      {video ? t("hottestSegment", { segment: segmentLabel(page, undefined, locale) }) : t("hottestPage", { page })} ·{" "}
       <span className="font-medium">{formatReadTime(seconds)}</span>
     </span>
   );

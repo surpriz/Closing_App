@@ -55,11 +55,12 @@ describe("buildOnboardingEmail", () => {
       appUrl: "https://app.clozer.club",
       firstName: "Marie",
       deal: { label: "Acme", url: "https://app.clozer.club/links/l1" },
+      locale: "fr",
     });
     expect(email.subject).toBe("Acme a ouvert votre document");
     expect(email.html).toContain("https://app.clozer.club/links/l1");
     expect(email.text).toContain("Bonjour Marie,");
-    expect(email.text).toContain("/bienvenue/emails");
+    expect(email.text).toContain("/welcome/emails");
   });
 
   it("falls back when the reader has no name", () => {
@@ -67,7 +68,16 @@ describe("buildOnboardingEmail", () => {
       appUrl: "https://app.clozer.club",
       firstName: null,
       deal: { label: null, url: "https://app.clozer.club/links/l1" },
+      locale: "fr",
     });
     expect(email.subject).toBe("Un prospect a ouvert votre document");
+  });
+
+  it("writes in English for an English-speaking seller", () => {
+    const email = buildOnboardingEmail("welcome", { appUrl: "https://app.clozer.club", firstName: "Mary", locale: "en" });
+    expect(email.subject).toBe("Welcome to Clozer");
+    expect(email.text).toContain("Hi Mary,");
+    expect(email.text).toContain("Let's go: https://app.clozer.club/welcome");
+    expect(email.html).toContain('<html lang="en">');
   });
 });

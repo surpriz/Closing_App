@@ -1,3 +1,5 @@
+import { useTranslations } from "next-intl";
+
 export type RecentReadRow = {
   id: string;
   reader: string;
@@ -12,6 +14,7 @@ export type RecentReadRow = {
 
 /** The latest readings, newest first: who, for which deal, how long. */
 export function RecentReads({ rows }: { rows: RecentReadRow[] }) {
+  const t = useTranslations("documents.recentReads");
   return (
     <ul className="divide-y divide-border border-y border-foreground bg-card">
       {rows.map((row) => (
@@ -19,7 +22,7 @@ export function RecentReads({ rows }: { rows: RecentReadRow[] }) {
           <div className="min-w-0">
             <p className="font-medium">
               {row.reader}
-              <span className="font-normal text-muted-foreground"> pour {row.deal}</span>
+              <span className="font-normal text-muted-foreground"> {t("forDeal", { deal: row.deal })}</span>
             </p>
             {row.where && <p className="truncate text-muted-foreground">{row.where}</p>}
           </div>

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 
+import { LocaleSwitcher } from "@/components/locale-switcher";
 import { ExtensionTokens } from "@/components/dashboard/extension-tokens";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { PrivacySettings } from "@/components/dashboard/privacy-settings";
@@ -31,23 +33,22 @@ function safeDecrypt(value: string | null) {
   }
 }
 
-export const metadata: Metadata = { title: "Réglages" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("settings");
+  return { title: t("metaTitle") };
+}
 
-const ESSENTIAL = [
-  { id: "pilote", label: "Pilote automatique" },
-  { id: "alertes", label: "Être prévenu" },
-  { id: "agenda", label: "Votre agenda" },
-];
+const ESSENTIAL = [{ id: "pilote" }, { id: "alertes" }, { id: "agenda" }] as const;
 
 const ADVANCED = [
-  { id: "offre", label: "Votre offre" },
-  { id: "liens", label: "Vos liens" },
-  { id: "assistant", label: "Assistant prospect" },
-  { id: "messages", label: "Vos messages" },
-  { id: "extension", label: "Chrome et Outlook" },
-  { id: "equipe", label: "Équipe", managerOnly: true },
-  { id: "donnees", label: "Données" },
-];
+  { id: "offre" },
+  { id: "liens" },
+  { id: "assistant" },
+  { id: "messages" },
+  { id: "extension" },
+  { id: "equipe", managerOnly: true },
+  { id: "donnees" },
+] as const;
 
 export default async function SettingsPage() {
   const { user, organization, role } = await requireWorkspace();
@@ -73,21 +74,23 @@ export default async function SettingsPage() {
     isManager ? getTeam(organization.id) : null,
   ]);
   const llm = getLanguageModel("followup");
+  const t = await getTranslations("settings.page");
 
   return (
     <div className="space-y-10">
       <PageHeader
-        title="Réglages"
-        description="L'essentiel d'abord. Le reste attend sous Réglages avancés."
+        title={t("title")}
+        description={t("description")}
+        action={<LocaleSwitcher />}
       />
 
       <AdvancedSettingsProvider>
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-[11rem_minmax(0,1fr)]">
           <SettingsNav
-            essential={ESSENTIAL}
+            essential={ESSENTIAL.map(({ id }) => ({ id, label: t(`nav.${id}`) }))}
             advanced={ADVANCED.filter(
-              (section) => isManager || !section.managerOnly,
-            )}
+              (section) => isManager || !("managerOnly" in section),
+            ).map(({ id }) => ({ id, label: t(`nav.${id}`) }))}
           />
           <div className="space-y-10">
             <SettingsForm

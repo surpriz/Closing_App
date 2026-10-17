@@ -1,0 +1,73 @@
+{
+  "layout": {
+    "homeAria": "Clozer, today"
+  },
+  "dashboardNav": {
+    "mainNav": "Main navigation",
+    "today": "Today",
+    "team": "Team",
+    "documents": "Documents",
+    "prospecting": "Prospecting",
+    "settings": "Settings"
+  },
+  "userMenu": {
+    "account": "My account",
+    "privacy": "Data and privacy",
+    "admin": "Admin",
+    "language": "Language",
+    "signOut": "Sign out"
+  },
+  "theme": {
+    "appearance": "Appearance",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "helpMenu": {
+    "label": "Help",
+    "ask": "Ask a question",
+    "howItWorks": "How it works",
+    "faq": "FAQ",
+    "replayTour": "Replay the walkthrough"
+  },
+  "commandMenu": {
+    "searchTrigger": "Search…",
+    "search": "Search",
+    "placeholder": "A prospect, a company, a document…",
+    "noMatch": "No matches.",
+    "groups": {
+      "deal": "Prospects",
+      "document": "Documents",
+      "page": "Go to"
+    },
+    "pages": {
+      "today": "Today",
+      "documents": "Documents",
+      "howItWorks": "How it works",
+      "settings": "Settings",
+      "onboarding": "Getting started",
+      "faq": "Frequently asked questions",
+      "faqHint": "FAQ",
+      "ask": "Ask a question",
+      "askHint": "Help, suggestions, bugs"
+    }
+  },
+  "helpWidget": {
+    "launcherAria": "Ask Clozer Help a question",
+    "launcher": "Help",
+    "title": "Clozer Help",
+    "subtitle": "Questions, tips, ideas, bugs",
+    "close": "Close",
+    "greeting": "Hi {name}! A question about Clozer, a tip, a bug to report or an idea? I'm here for that.",
+    "greetingNoName": "Hi! A question about Clozer, a tip, a bug to report or an idea? I'm here for that.",
+    "sent": "Sent to the Clozer team",
+    "sentAnnouncement": "Sent to the Clozer team.",
+    "writing": "Writing…",
+    "quota": "That's a lot of questions at once. Try again a bit later.",
+    "unavailable": "The assistant is unavailable, try again in a moment.",
+    "placeholder": "Your question or idea…",
+    "inputAria": "Your question or idea",
+    "send": "Send",
+    "disclaimer": "Automatic answers, the assistant can get things wrong. Nothing is passed on without your OK."
+  }
+}

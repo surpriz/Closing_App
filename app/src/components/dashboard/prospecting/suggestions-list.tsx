@@ -1,14 +1,15 @@
 "use client";
 
 import { Check, ExternalLink, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useTransition } from "react";
 import { toast } from "sonner";
 
-import { acceptSuggestionsAction, rejectSuggestionAction, type ActionResult } from "@/app/(dashboard)/prospection/actions";
+import { acceptSuggestionsAction, rejectSuggestionAction, type ActionResult } from "@/app/(dashboard)/prospecting/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
-import { INVALID_LABELS, PROVIDER_LABELS, STATUS_LABELS } from "./labels";
+import { invalidLabel, providerLabel, statusLabel } from "./labels";
 import { OptOutButton } from "./opt-out-button";
 import { OutreachDialog } from "./outreach-dialog";
 
@@ -36,6 +37,8 @@ function linkedinHref(row: SuggestionRow) {
 }
 
 export function SuggestionsList({ rows, documents }: { rows: SuggestionRow[]; documents: { id: string; name: string }[] }) {
+  const t = useTranslations("prospecting.suggestions");
+  const tl = useTranslations("prospecting.labels");
   const [pending, startTransition] = useTransition();
 
   const run = (action: () => Promise<ActionResult>) =>
@@ -51,12 +54,12 @@ export function SuggestionsList({ rows, documents }: { rows: SuggestionRow[]; do
         <li key={row.id} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center">
           <div className="min-w-0 flex-1 space-y-1">
             <p className="flex flex-wrap items-center gap-2 text-body font-semibold">
-              {[row.firstName, row.lastName ?? row.lastNameMasked].filter(Boolean).join(" ") || "Contact"}
+              {[row.firstName, row.lastName ?? row.lastNameMasked].filter(Boolean).join(" ") || t("contact")}
               <a
                 href={linkedinHref(row)}
                 target="_blank"
                 rel="noreferrer"
-                aria-label={row.linkedinUrl ? "Voir le profil LinkedIn" : "Chercher sur LinkedIn"}
+                aria-label={row.linkedinUrl ? t("viewLinkedin") : t("searchLinkedin")}
                 className="rounded-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/30"
               >
                 <ExternalLink className="size-3.5" aria-hidden />
@@ -67,11 +70,11 @@ export function SuggestionsList({ rows, documents }: { rows: SuggestionRow[]; do
             </p>
             <div className="flex flex-wrap items-center gap-1.5">
               <Badge variant={row.status === "READY" ? "success" : row.status === "INVALID" ? "destructive" : "secondary"}>
-                {row.status === "INVALID" && row.invalidReason ? INVALID_LABELS[row.invalidReason] : STATUS_LABELS[row.status]}
+                {row.status === "INVALID" && row.invalidReason ? invalidLabel(tl, row.invalidReason) : statusLabel(tl, row.status)}
               </Badge>
-              {row.nafVerified === true && <Badge variant="success">Secteur confirmé</Badge>}
-              {row.nafVerified === false && <Badge variant="warning">Autre code NAF</Badge>}
-              <span className="text-micro text-muted-foreground">via {PROVIDER_LABELS[row.provider] ?? row.provider}</span>
+              {row.nafVerified === true && <Badge variant="success">{t("sectorConfirmed")}</Badge>}
+              {row.nafVerified === false && <Badge variant="warning">{t("otherNaf")}</Badge>}
+              <span className="text-micro text-muted-foreground">{t("via", { provider: providerLabel(tl, row.provider) })}</span>
               {row.email && <span className="text-small">{row.email}</span>}
             </div>
           </div>
@@ -83,17 +86,17 @@ export function SuggestionsList({ rows, documents }: { rows: SuggestionRow[]; do
             {row.status === "SUGGESTED" && (
               <Button size="sm" disabled={pending} onClick={() => run(() => acceptSuggestionsAction([row.id]))}>
                 <Check aria-hidden />
-                Révéler
+                {t("reveal")}
               </Button>
             )}
             {row.status === "SUGGESTED" && (
               <Button size="sm" variant="ghost" disabled={pending} onClick={() => run(() => rejectSuggestionAction(row.id))}>
                 <X aria-hidden />
-                Écarter
+                {t("reject")}
               </Button>
             )}
             {row.status !== "REJECTED" && row.status !== "REVEALING" && (
-              <OptOutButton suggestionId={row.id} name={row.firstName ?? "Cette personne"} />
+              <OptOutButton suggestionId={row.id} name={row.firstName ?? t("thisPerson")} />
             )}
           </div>
         </li>

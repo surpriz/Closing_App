@@ -3,7 +3,11 @@ import { createHash, randomBytes } from "node:crypto";
 // Browser extension credentials. High-entropy, so a plain sha256 is enough to store them.
 const PREFIX = "clz_ext_";
 
-/** Label of tokens held by the Outlook add-in; Chrome tokens carry the browser and OS. */
+/**
+ * Label of tokens held by the Outlook add-in; Chrome tokens carry the browser and OS.
+ * Stored on the token and matched as is: an identifier, not translated. Show your own
+ * text when `label === OUTLOOK_TOKEN_LABEL`.
+ */
 export const OUTLOOK_TOKEN_LABEL = "Outlook · complément";
 const TOKEN = /^clz_ext_[A-Za-z0-9_-]{43}$/;
 

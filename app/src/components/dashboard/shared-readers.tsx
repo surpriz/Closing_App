@@ -1,5 +1,6 @@
 import { ArrowRight, ChevronRight, Phone } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 export type SharedReader = {
   /** Their own link, made when they gave their email. */
@@ -22,10 +23,11 @@ const OPEN_LIST_MAX = 8;
  * other. The few who stayed come first, to call before the rest.
  */
 export function SharedReaders({ readers }: { readers: SharedReader[] }) {
+  const t = useTranslations("deal.sharedReaders");
   if (readers.length === 0) {
     return (
       <p className="py-3 text-small text-muted-foreground">
-        Personne pour l&apos;instant. Chaque lecteur apparaîtra ici avec son propre suivi.
+        {t("empty")}
       </p>
     );
   }
@@ -40,7 +42,7 @@ export function SharedReaders({ readers }: { readers: SharedReader[] }) {
         <div>
           <p className="flex items-center gap-1.5 pt-3 text-small font-semibold">
             <Phone className="size-3.5" aria-hidden />
-            À appeler maintenant
+            {t("callNow")}
           </p>
           <ReaderList readers={hot} />
         </div>
@@ -49,7 +51,7 @@ export function SharedReaders({ readers }: { readers: SharedReader[] }) {
         <details className="group">
           <summary className="flex cursor-pointer list-none items-center gap-1.5 py-3 text-small text-muted-foreground hover:text-foreground">
             <ChevronRight className="size-4 transition-transform group-open:rotate-90" aria-hidden />
-            {others.length} autres lecteurs
+            {t("others", { count: others.length })}
           </summary>
           <ReaderList readers={others} />
         </details>

@@ -1,6 +1,7 @@
 "use client";
 
 import { PenLine } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useTransition } from "react";
 import { toast } from "sonner";
 
@@ -17,6 +18,7 @@ export function PrepareFollowupButton({
   variant?: "default" | "outline";
 }) {
   const [pending, startTransition] = useTransition();
+  const t = useTranslations("deal.prepareFollowupButton");
 
   return (
     <Button
@@ -30,12 +32,12 @@ export function PrepareFollowupButton({
             toast.error(result.error);
             return;
           }
-          toast.success("Relance prête, relisez-la plus bas");
+          toast.success(t("ready"));
           document.getElementById("relances")?.scrollIntoView({ behavior: "smooth" });
         })
       }
     >
-      <PenLine /> {pending ? "Rédaction…" : "Préparer une relance"}
+      <PenLine /> {pending ? t("writing") : t("label")}
     </Button>
   );
 }

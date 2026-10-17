@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache";
 
+import { getTranslator } from "@/i18n/messages";
 import { applyDealStatus } from "@/lib/closing/deals/status";
 import { prisma } from "@/lib/db";
 import { extError, withExtensionAuth } from "@/lib/extension-auth";
@@ -20,7 +21,7 @@ export const POST = withExtensionAuth(
     if (link.createdById !== user.id && !isManagerRole(member?.role ?? "")) return extError(403, "forbidden");
 
     // Only what the alert offers: a deal the prospect signed, not closed yet
-    if (link.dealStatus !== "VALIDATED") return extError(409, "not_validated", "Ce deal n'est plus en attente.");
+    if (link.dealStatus !== "VALIDATED") return extError(409, "not_validated", getTranslator(user.locale)("server.ext.dealNotPending"));
     await applyDealStatus(link.id, "WON");
     revalidatePath(`/links/${link.id}`);
     revalidatePath("/dashboard");

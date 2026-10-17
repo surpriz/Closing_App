@@ -8,5 +8,5 @@ import { requireWorkspace } from "@/lib/session";
 export async function stopOnboardingEmails() {
   const { user, organization } = await requireWorkspace();
   await upsertSellerPrefs(user.id, organization.id, { onboardingEmailsOff: true });
-  revalidatePath("/bienvenue/emails");
+  revalidatePath("/welcome/emails");
 }

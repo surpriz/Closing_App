@@ -1,5 +1,6 @@
 import { ChevronDown, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 
 import type { TeamDealRow } from "@/lib/closing/dashboard/team-queries";
 import { formatRelative } from "@/lib/format";
@@ -28,6 +29,9 @@ export function DealColumn({
   now: Date;
   limit: number;
 }) {
+  const t = useTranslations("team.column");
+  const tl = useTranslations("labels");
+  const locale = useLocale();
   // Never-opened links have nothing to read off: one folded line, as on Aujourd'hui
   const waiting = rows.filter((row) => !row.tier && !row.lastActivityAt);
   const read = rows.filter((row) => row.tier || row.lastActivityAt);
@@ -49,12 +53,17 @@ export function DealColumn({
             <ul className="stagger divide-y divide-border border-y border-foreground bg-card">
               {read.slice(0, limit).map((row) => {
                 const meta = [
-                  names && (names.get(row.sellerId) ?? "Ancien membre"),
+                  names && (names.get(row.sellerId) ?? t("formerMember")),
                   row.amountCents !== null &&
-                    formatMoney({ [row.currency ?? "EUR"]: row.amountCents }),
+                    formatMoney(
+                      { [row.currency ?? "EUR"]: row.amountCents },
+                      locale,
+                    ),
                   row.lastActivityAt
-                    ? `lu ${formatRelative(row.lastActivityAt, now)}`
-                    : "jamais ouvert",
+                    ? t("readAgo", {
+                        when: formatRelative(row.lastActivityAt, locale, now),
+                      })
+                    : t("neverOpened"),
                 ].filter(Boolean);
                 return (
                   <li
@@ -77,7 +86,7 @@ export function DealColumn({
                           />
                         ) : (
                           <span className="shrink-0 text-small text-muted-foreground">
-                            Pas encore lu
+                            {t("notRead")}
                           </span>
                         )}
                       </div>
@@ -95,7 +104,7 @@ export function DealColumn({
                             key={signal.code}
                             className="rounded-sm bg-muted px-1.5 py-0.5 text-micro font-medium"
                           >
-                            {describeHealthSignal(signal)}
+                            {describeHealthSignal(tl, locale, signal)}
                           </li>
                         ))}
                       </ul>
@@ -106,7 +115,7 @@ export function DealColumn({
                         >
                           <Sparkles
                             className="mt-0.5 size-3.5 shrink-0"
-                            aria-label="Analyse IA"
+                            aria-label={t("aiAnalysis")}
                           />
                           <span className="line-clamp-2">
                             {row.insightHeadline}
@@ -124,8 +133,7 @@ export function DealColumn({
               <summary className="flex cursor-pointer list-none items-center justify-between gap-3 py-2.5 text-small [&::-webkit-details-marker]:hidden">
                 <span>
                   <span className="font-semibold">
-                    {waiting.length} lien{waiting.length > 1 ? "s" : ""} pas
-                    encore ouvert{waiting.length > 1 ? "s" : ""}
+                    {t("waiting", { count: waiting.length })}
                   </span>
                 </span>
                 <ChevronDown
@@ -145,7 +153,7 @@ export function DealColumn({
                     {names && (
                       <span className="text-muted-foreground">
                         {" "}
-                        · {names.get(row.sellerId) ?? "Ancien membre"}
+                        · {names.get(row.sellerId) ?? t("formerMember")}
                       </span>
                     )}
                   </li>
@@ -157,7 +165,7 @@ export function DealColumn({
       )}
       {read.length > limit && (
         <p className="mt-2 text-small text-muted-foreground">
-          Et {read.length - limit} autres.
+          {t("andMore", { count: read.length - limit })}
         </p>
       )}
     </section>

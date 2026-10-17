@@ -21,7 +21,7 @@ export function isProspectingAllowed(
 
 /** Pages and actions of the prospecting POC: a 404 for everyone else. */
 export async function requireProspecting() {
-  const workspace = await requireWorkspace("/prospection");
+  const workspace = await requireWorkspace("/prospecting");
   if (!isProspectingAllowed(workspace.user, workspace.organization.id)) notFound();
   return workspace;
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowRight, Mail } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 
 import { Logo } from "@/components/brand/logo";
@@ -13,15 +14,21 @@ import { authClient } from "@/lib/auth-client";
 type Status = "idle" | "sending" | "sent" | "redirecting" | "error";
 
 // Webmails worth a shortcut after "check your inbox"
-const WEBMAILS: { match: RegExp; label: string; url: string }[] = [
-  { match: /@(gmail|googlemail)\.com$/i, label: "Ouvrir Gmail", url: "https://mail.google.com/mail/u/0/#inbox" },
+const WEBMAILS: { match: RegExp; label: "openGmail" | "openOutlook" | "openYahoo"; url: string }[] = [
+  { match: /@(gmail|googlemail)\.com$/i, label: "openGmail", url: "https://mail.google.com/mail/u/0/#inbox" },
   {
     match: /@(outlook|hotmail|live|msn)\.[a-z.]+$/i,
-    label: "Ouvrir Outlook",
+    label: "openOutlook",
     url: "https://outlook.live.com/mail/0/inbox",
   },
-  { match: /@(yahoo|ymail)\.[a-z.]+$/i, label: "Ouvrir Yahoo Mail", url: "https://mail.yahoo.com" },
+  { match: /@(yahoo|ymail)\.[a-z.]+$/i, label: "openYahoo", url: "https://mail.yahoo.com" },
 ];
+
+// Refusals the server sends with a code (lib/auth.ts), shown in the visitor's language
+const KNOWN_ERROR_CODES = ["SIGNUP_BLOCKED", "SIGNUP_CLOSED", "BANNED_USER"] as const;
+type KnownErrorCode = (typeof KNOWN_ERROR_CODES)[number];
+const isKnownErrorCode = (code: unknown): code is KnownErrorCode =>
+  KNOWN_ERROR_CODES.includes(code as KnownErrorCode);
 
 export function LoginForm({
   devMode,
@@ -40,6 +47,8 @@ export function LoginForm({
   /** Coming from the landing's signup form: start the chosen sign-in without a second click. */
   autoStart?: "email" | "google" | null;
 }) {
+  const t = useTranslations("auth.loginForm");
+  const tErrors = useTranslations("auth.login.errors");
   const [email, setEmail] = useState(initialEmail);
   const [status, setStatus] = useState<Status>(initialError ? "error" : "idle");
   const [error, setError] = useState<string | null>(initialError);
@@ -57,7 +66,7 @@ export function LoginForm({
 
     if (error) {
       setStatus("error");
-      setError(error.message ?? "Envoi impossible, réessayez.");
+      setError(isKnownErrorCode(error.code) ? tErrors(error.code) : (error.message ?? t("sendFailed")));
       return;
     }
 
@@ -76,7 +85,7 @@ export function LoginForm({
     const { error } = await authClient.signIn.social({ provider: "google", callbackURL: next, errorCallbackURL });
     if (error) {
       setStatus("error");
-      setError(error.message ?? "Connexion Google impossible, réessayez ou utilisez votre email.");
+      setError(isKnownErrorCode(error.code) ? tErrors(error.code) : (error.message ?? t("googleFailed")));
     }
   }
 
@@ -103,16 +112,16 @@ export function LoginForm({
     <div className="w-full max-w-[25rem] animate-rise">
       <Logo />
       <h1 className="condensed mt-12 text-display">
-        {status === "sent" ? "Regardez vos emails." : "Entrez dans Clozer."}
+        {status === "sent" ? t("titleSent") : t("title")}
       </h1>
       <p className="mt-4 text-body text-muted-foreground">
         {status === "sent" ? (
-          <>
-            Le lien de connexion vient de partir vers <span className="font-medium text-foreground">{email}</span>.
-            Cliquez dessus, vous êtes dedans.
-          </>
+          t.rich("sentLead", {
+            email,
+            b: (chunks) => <span className="font-medium text-foreground">{chunks}</span>,
+          })
         ) : (
-          "Pas de mot de passe. Premier passage ? Votre compte se crée tout seul."
+          t("lead")
         )}
       </p>
 
@@ -128,7 +137,7 @@ export function LoginForm({
                   rel="noopener noreferrer"
                   className={buttonVariants({ size: "xl", className: "w-full justify-between" })}
                 >
-                  {webmail.label}
+                  {t(webmail.label)}
                   <Mail data-icon="inline-end" />
                 </a>
               )
@@ -136,14 +145,14 @@ export function LoginForm({
           })()}
           {devMode && devLink && (
             <div className="space-y-3 border border-dashed border-input p-4 text-small">
-              <p className="text-muted-foreground">Mode dev : aucun service d&apos;email configuré.</p>
+              <p className="text-muted-foreground">{t("devMode")}</p>
               <a href={devLink} className={buttonVariants({ size: "lg", className: "w-full" })}>
-                Ouvrir le lien de connexion
+                {t("openDevLink")}
               </a>
             </div>
           )}
           <Button variant="ghost" className="w-full" onClick={() => setStatus("idle")}>
-            Utiliser une autre adresse
+            {t("otherAddress")}
           </Button>
         </div>
       ) : (
@@ -158,23 +167,23 @@ export function LoginForm({
                 onClick={() => void signInWithGoogle()}
               >
                 <GoogleMark />
-                {status === "redirecting" ? "Ouverture de Google…" : "Continuer avec Google"}
+                {status === "redirecting" ? t("openingGoogle") : t("continueGoogle")}
               </Button>
               <p className="my-6 flex items-center gap-3 text-small text-muted-foreground before:h-px before:flex-1 before:bg-border after:h-px after:flex-1 after:bg-border">
-                ou par email
+                {t("orEmail")}
               </p>
             </>
           )}
           <form onSubmit={onSubmit} className="space-y-3">
             <div className="space-y-2">
-              <Label htmlFor="email">Votre email professionnel</Label>
+              <Label htmlFor="email">{t("emailLabel")}</Label>
               <Input
                 id="email"
                 type="email"
                 required
                 autoComplete="email"
                 autoFocus={!google}
-                placeholder="vous@entreprise.fr"
+                placeholder={t("emailPlaceholder")}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="h-12 text-body md:text-body"
@@ -192,20 +201,23 @@ export function LoginForm({
               className="w-full justify-between"
               disabled={busy}
             >
-              {status === "sending" ? "Envoi du lien…" : "Recevoir mon lien de connexion"}
+              {status === "sending" ? t("sending") : t("submit")}
               {status !== "sending" && <ArrowRight data-icon="inline-end" />}
             </Button>
           </form>
           <p className="mt-6 text-micro text-muted-foreground">
-            En continuant, vous acceptez les{" "}
-            <a href={TERMS_URL} target="_blank" rel="noreferrer" className="underline underline-offset-2">
-              conditions d&apos;utilisation
-            </a>{" "}
-            et la{" "}
-            <a href={PRIVACY_POLICY_URL} target="_blank" rel="noreferrer" className="underline underline-offset-2">
-              politique de confidentialité
-            </a>
-            .
+            {t.rich("legal", {
+              terms: (chunks) => (
+                <a href={TERMS_URL} target="_blank" rel="noreferrer" className="underline underline-offset-2">
+                  {chunks}
+                </a>
+              ),
+              privacy: (chunks) => (
+                <a href={PRIVACY_POLICY_URL} target="_blank" rel="noreferrer" className="underline underline-offset-2">
+                  {chunks}
+                </a>
+              ),
+            })}
           </p>
         </div>
       )}

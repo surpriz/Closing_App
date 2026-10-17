@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useOptimistic, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -7,9 +8,8 @@ import { setProspectRole } from "@/app/(dashboard)/links/actions";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { ProspectRole } from "@/generated/prisma/enums";
 
-import { PROSPECT_ROLE_LABELS } from "./labels";
-
 const AUTO = "auto";
+const ROLES: ProspectRole[] = ["DECISION_MAKER", "FINANCE", "TECHNICAL", "CHAMPION", "INFLUENCER", "OTHER"];
 
 export function ProspectRoleSelect({
   linkId,
@@ -26,10 +26,12 @@ export function ProspectRoleSelect({
 }) {
   const [optimistic, setOptimistic] = useOptimistic<string>(role ?? AUTO);
   const [pending, startTransition] = useTransition();
+  const t = useTranslations("deal.prospectRoleSelect");
+  const tl = useTranslations("labels");
 
   const items = [
-    { value: AUTO, label: detected ? `Deviné : ${PROSPECT_ROLE_LABELS[detected]}` : "Rôle à préciser" },
-    ...(Object.keys(PROSPECT_ROLE_LABELS) as ProspectRole[]).map((value) => ({ value, label: PROSPECT_ROLE_LABELS[value] })),
+    { value: AUTO, label: detected ? t("guessed", { role: tl(`prospectRole.${detected}`) }) : t("toSpecify") },
+    ...ROLES.map((value) => ({ value, label: tl(`prospectRole.${value}`) })),
   ];
 
   return (
@@ -43,14 +45,14 @@ export function ProspectRoleSelect({
           setOptimistic(value);
           try {
             await setProspectRole(linkId, prospectId, value === AUTO ? null : (value as ProspectRole));
-            toast.success("Rôle enregistré");
+            toast.success(t("saved"));
           } catch {
-            toast.error("Modification impossible");
+            toast.error(t("failed"));
           }
         });
       }}
     >
-      <SelectTrigger aria-label="Rôle du contact" size="sm" className="h-7 min-w-32 bg-card text-small">
+      <SelectTrigger aria-label={t("ariaLabel")} size="sm" className="h-7 min-w-32 bg-card text-small">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>

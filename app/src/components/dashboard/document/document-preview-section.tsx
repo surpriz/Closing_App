@@ -1,3 +1,5 @@
+import { useTranslations } from "next-intl";
+
 import { DocumentPreview } from "@/components/dashboard/document-preview";
 import { ReaderArticle } from "@/components/viewer/reader-article";
 
@@ -17,6 +19,7 @@ export function DocumentPreviewSection({
   };
   ready: boolean;
 }) {
+  const t = useTranslations("documents.preview");
   const fileUrl = `/api/documents/${document.id}/file`;
 
   if (document.kind === "URL") {
@@ -39,7 +42,7 @@ export function DocumentPreviewSection({
           <ReaderArticle
             html={document.readerHtml}
             title={document.name}
-            sourceLabel="Version lecture de"
+            sourceLabel={t("readerSource")}
             externalUrl={document.externalUrl}
           />
         </div>
@@ -47,15 +50,14 @@ export function DocumentPreviewSection({
     }
     return (
       <p className="border-y border-border py-12 text-center text-body text-muted-foreground">
-        Ce site refuse l&apos;affichage intégré. Vos prospects verront un bouton pour l&apos;ouvrir dans un nouvel
-        onglet.{" "}
+        {t("noEmbed")}{" "}
         <a
           href={document.externalUrl ?? undefined}
           target="_blank"
           rel="noopener noreferrer"
           className="text-foreground underline underline-offset-4"
         >
-          Ouvrir la page
+          {t("openPage")}
         </a>
       </p>
     );
@@ -77,7 +79,7 @@ export function DocumentPreviewSection({
   if (!ready) {
     return (
       <p className="border-y border-border py-12 text-center text-body text-muted-foreground">
-        L&apos;aperçu s&apos;affichera une fois l&apos;analyse terminée.
+        {t("later")}
       </p>
     );
   }

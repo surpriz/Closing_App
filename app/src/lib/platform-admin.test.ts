@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { checkSignup, isPlatformAdminEmail, isUserBlocked, loginErrorMessage, parseSignupMode, userStatus } from "./platform-admin";
+import { loginErrorMessage } from "./login-messages";
+import { checkSignup, isPlatformAdminEmail, isUserBlocked, parseSignupMode, userStatus } from "./platform-admin";
 
 const ADMIN = "boss@clozer.test";
 
@@ -90,12 +91,16 @@ describe("parseSignupMode", () => {
 
 describe("loginErrorMessage", () => {
   it("explains known codes in French", () => {
-    expect(loginErrorMessage("SIGNUP_CLOSED")).toBe("Les inscriptions sont sur invitation pour le moment.");
-    expect(loginErrorMessage("BANNED_USER")).toContain("désactivé");
+    expect(loginErrorMessage("SIGNUP_CLOSED", "fr")).toBe("Les inscriptions sont sur invitation pour le moment.");
+    expect(loginErrorMessage("BANNED_USER", "fr")).toContain("désactivé");
+  });
+
+  it("speaks English too", () => {
+    expect(loginErrorMessage("SIGNUP_CLOSED", "en")).toBe("Sign-ups are invite-only for now.");
   });
 
   it("has a fallback for unknown codes and nothing without one", () => {
-    expect(loginErrorMessage("whatever")).toContain("nouveau lien");
-    expect(loginErrorMessage(undefined)).toBeNull();
+    expect(loginErrorMessage("whatever", "fr")).toContain("nouveau lien");
+    expect(loginErrorMessage(undefined, "fr")).toBeNull();
   });
 });

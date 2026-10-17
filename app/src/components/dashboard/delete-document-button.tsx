@@ -1,6 +1,7 @@
 "use client";
 
 import { Trash2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useTransition } from "react";
 
 import { archiveDocument } from "@/app/(dashboard)/documents/actions";
@@ -17,32 +18,33 @@ import {
 } from "@/components/ui/dialog";
 
 export function DeleteDocumentButton({ documentId, linkCount }: { documentId: string; linkCount: number }) {
+  const t = useTranslations("documents.delete");
   const [pending, startTransition] = useTransition();
 
   return (
     <Dialog>
-      <DialogTrigger render={<Button variant="ghost" size="icon-lg" aria-label="Supprimer le document" className="text-muted-foreground hover:text-foreground" />}>
+      <DialogTrigger render={<Button variant="ghost" size="icon-lg" aria-label={t("aria")} className="text-muted-foreground hover:text-foreground" />}>
         <Trash2 />
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Supprimer ce document ?</DialogTitle>
+          <DialogTitle>{t("title")}</DialogTitle>
           <DialogDescription>
             {linkCount === 0
-              ? "Il disparaît de Clozer."
+              ? t("none")
               : linkCount === 1
-                ? "Le lien envoyé à votre prospect ne s'ouvrira plus, et ses relances prévues sont annulées."
-                : `Les ${linkCount} liens envoyés ne s'ouvriront plus, et leurs relances prévues sont annulées.`}
+                ? t("one")
+                : t("many", { count: linkCount })}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <DialogClose render={<Button variant="outline" />}>Garder le document</DialogClose>
+          <DialogClose render={<Button variant="outline" />}>{t("keep")}</DialogClose>
           <Button
             variant="destructive"
             disabled={pending}
             onClick={() => startTransition(() => archiveDocument(documentId))}
           >
-            {pending ? "Suppression…" : "Supprimer le document"}
+            {pending ? t("deleting") : t("confirm")}
           </Button>
         </DialogFooter>
       </DialogContent>

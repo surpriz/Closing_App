@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
 import { useActionState, useEffect, useOptimistic, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -23,14 +24,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { INTL_LOCALE } from "@/i18n/locale";
 
 import { CopyButton } from "./copy-button";
-import { ROLE_LABELS, roleLabel } from "./labels";
+import { roleLabel } from "./labels";
 
 export type TeamMemberRow = { id: string; userId: string; name: string; email: string; role: string };
 export type TeamInvitationRow = { id: string; email: string; role: string; expiresAt: string };
-
-const dateFormat = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" });
 
 function report(result: TeamActionState, success: string) {
   if (result?.error) toast.error(result.error);
@@ -38,9 +38,11 @@ function report(result: TeamActionState, success: string) {
 }
 
 function RoleSelect({ member, roles }: { member: TeamMemberRow; roles: string[] }) {
+  const t = useTranslations("team.settings");
+  const tl = useTranslations("labels");
   const [optimistic, setOptimistic] = useOptimistic(member.role);
   const [pending, startTransition] = useTransition();
-  const items = roles.map((value) => ({ value, label: roleLabel(value) }));
+  const items = roles.map((value) => ({ value, label: roleLabel(tl, value) }));
 
   return (
     <Select
@@ -51,11 +53,14 @@ function RoleSelect({ member, roles }: { member: TeamMemberRow; roles: string[] 
         if (!value || value === member.role) return;
         startTransition(async () => {
           setOptimistic(value);
-          report(await updateMemberRole(member.id, value), `${member.name} est maintenant ${roleLabel(value).toLowerCase()}`);
+          report(
+            await updateMemberRole(member.id, value),
+            t("roleChanged", { name: member.name, role: roleLabel(tl, value).toLowerCase() }),
+          );
         });
       }}
     >
-      <SelectTrigger aria-label={`Rôle de ${member.name}`} size="sm" className="min-w-32 bg-card">
+      <SelectTrigger aria-label={t("roleAria", { name: member.name })} size="sm" className="min-w-32 bg-card">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
@@ -70,28 +75,27 @@ function RoleSelect({ member, roles }: { member: TeamMemberRow; roles: string[] 
 }
 
 function RemoveButton({ member }: { member: TeamMemberRow }) {
+  const t = useTranslations("team.settings");
   const [pending, startTransition] = useTransition();
 
   return (
     <Dialog>
-      <DialogTrigger render={<Button variant="ghost" size="sm" />}>Retirer</DialogTrigger>
+      <DialogTrigger render={<Button variant="ghost" size="sm" />}>{t("remove")}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Retirer {member.name} de l&apos;équipe ?</DialogTitle>
-          <DialogDescription>
-            Ses deals restent dans l&apos;espace et passent au propriétaire. Son extension Chrome est déconnectée.
-          </DialogDescription>
+          <DialogTitle>{t("removeTitle", { name: member.name })}</DialogTitle>
+          <DialogDescription>{t("removeDescription")}</DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <DialogClose render={<Button variant="outline" />}>Annuler</DialogClose>
+          <DialogClose render={<Button variant="outline" />}>{t("cancel")}</DialogClose>
           <Button
             variant="destructive"
             disabled={pending}
             onClick={() =>
-              startTransition(async () => report(await removeMember(member.id), `${member.name} a été retiré`))
+              startTransition(async () => report(await removeMember(member.id), t("removed", { name: member.name })))
             }
           >
-            {pending ? "Retrait…" : "Retirer"}
+            {pending ? t("removing") : t("remove")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -100,47 +104,50 @@ function RemoveButton({ member }: { member: TeamMemberRow }) {
 }
 
 function CancelInvitationButton({ id }: { id: string }) {
+  const t = useTranslations("team.settings");
   const [pending, startTransition] = useTransition();
   return (
     <Button
       variant="ghost"
       size="sm"
       disabled={pending}
-      onClick={() => startTransition(async () => report(await cancelInvitation(id), "Invitation annulée"))}
+      onClick={() => startTransition(async () => report(await cancelInvitation(id), t("invitationCancelled")))}
     >
-      Annuler
+      {t("cancel")}
     </Button>
   );
 }
 
 function InviteForm() {
+  const t = useTranslations("team.settings");
+  const tl = useTranslations("labels");
   const [state, formAction, pending] = useActionState<TeamActionState, FormData>(inviteMember, null);
 
   useEffect(() => {
-    if (state?.ok) toast.success("Invitation envoyée");
+    if (state?.ok) toast.success(t("invitationSent"));
     if (state?.error) toast.error(state.error);
-  }, [state]);
+  }, [state, t]);
 
   return (
     <form action={formAction} className="space-y-3 px-5 py-4">
       <div className="flex flex-col gap-2 sm:flex-row">
-        <Input name="email" type="email" required placeholder="prenom@entreprise.fr" aria-label="Email" className="sm:flex-1" />
+        <Input name="email" type="email" required placeholder={t("emailPlaceholder")} aria-label={t("emailAria")} className="sm:flex-1" />
         <select
           name="role"
           defaultValue="member"
-          aria-label="Rôle"
+          aria-label={t("roleSelectAria")}
           className="h-9 rounded-lg border border-input bg-card px-2 text-small outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/20"
         >
-          <option value="member">{ROLE_LABELS.member}</option>
-          <option value="admin">{ROLE_LABELS.admin}</option>
+          <option value="member">{tl("role.member")}</option>
+          <option value="admin">{tl("role.admin")}</option>
         </select>
         <Button type="submit" disabled={pending}>
-          {pending ? "Envoi…" : "Inviter"}
+          {pending ? t("sending") : t("invite")}
         </Button>
       </div>
       {state?.devUrl && (
         <p className="flex items-center gap-1 text-small text-muted-foreground">
-          Pas d&apos;email en local, lien à ouvrir :
+          {t("devLink")}
           <span className="truncate font-mono text-micro text-foreground">{state.devUrl}</span>
           <CopyButton value={state.devUrl} />
         </p>
@@ -158,6 +165,10 @@ export function TeamSettings({
   members: TeamMemberRow[];
   invitations: TeamInvitationRow[];
 }) {
+  const t = useTranslations("team.settings");
+  const tl = useTranslations("labels");
+  const locale = useLocale();
+  const dateFormat = new Intl.DateTimeFormat(INTL_LOCALE[locale], { day: "numeric", month: "short" });
   // Only an owner hands out "owner"; an admin cannot touch an owner
   const roles = viewer.isOwner ? ["member", "admin", "owner"] : ["member", "admin"];
   const canManage = (member: TeamMemberRow) =>
@@ -166,11 +177,8 @@ export function TeamSettings({
   return (
     <section id="equipe" className="scroll-mt-24 space-y-3">
       <div className="space-y-1">
-        <h2 className="text-heading">Équipe</h2>
-        <p className="text-body text-muted-foreground">
-          Chaque commercial suit ses propres deals. Les admins voient toute l&apos;équipe sur la page Équipe et règlent
-          l&apos;espace.
-        </p>
+        <h2 className="text-heading">{t("title")}</h2>
+        <p className="text-body text-muted-foreground">{t("intro")}</p>
       </div>
       <div className="divide-y divide-border border-y border-foreground bg-card">
         {members.map((member) => (
@@ -178,7 +186,7 @@ export function TeamSettings({
             <div className="min-w-0">
               <p className="truncate text-body">
                 {member.name}
-                {member.userId === viewer.userId && <span className="text-muted-foreground"> (vous)</span>}
+                {member.userId === viewer.userId && <span className="text-muted-foreground"> {t("you")}</span>}
               </p>
               <p className="truncate text-small text-muted-foreground">{member.email}</p>
             </div>
@@ -188,7 +196,7 @@ export function TeamSettings({
                 <RemoveButton member={member} />
               </div>
             ) : (
-              <span className="shrink-0 text-small text-muted-foreground">{roleLabel(member.role)}</span>
+              <span className="shrink-0 text-small text-muted-foreground">{roleLabel(tl, member.role)}</span>
             )}
           </div>
         ))}
@@ -197,8 +205,10 @@ export function TeamSettings({
             <div className="min-w-0">
               <p className="truncate text-body">{invitation.email}</p>
               <p className="text-small text-muted-foreground">
-                Invité comme {roleLabel(invitation.role).toLowerCase()}, en attente jusqu&apos;au{" "}
-                {dateFormat.format(new Date(invitation.expiresAt))}
+                {t("invited", {
+                  role: roleLabel(tl, invitation.role).toLowerCase(),
+                  date: dateFormat.format(new Date(invitation.expiresAt)),
+                })}
               </p>
             </div>
             <CancelInvitationButton id={invitation.id} />

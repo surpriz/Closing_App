@@ -1,6 +1,7 @@
 "use client";
 
 import { Hourglass } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -11,7 +12,12 @@ import { Label } from "@/components/ui/label";
 import { EXPIRY_PRESETS, EXTENSION_DAYS, endOfLocalDay, expiryFromPreset, type ExpiryPreset } from "@/lib/closing/expiry";
 import { formatDate, formatRelative } from "@/lib/format";
 
-const PRESET_LABELS: Record<ExpiryPreset, string> = { "48h": "48 h", "7d": "7 jours", "15d": "15 jours", "30d": "30 jours" };
+const PRESET_KEYS = {
+  "48h": "preset48h",
+  "7d": "preset7d",
+  "15d": "preset15d",
+  "30d": "preset30d",
+} as const satisfies Record<ExpiryPreset, string>;
 
 function browserTimeZone() {
   return Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -35,10 +41,11 @@ function useExpiryChoice() {
 type Choice = ExpiryPreset | "date" | null;
 
 function ChoiceChips({ choice, pick, withNone }: { choice: Choice; pick: (next: Choice) => void; withNone: boolean }) {
+  const t = useTranslations("deal.expiryControl");
   const options: { value: Choice; label: string }[] = [
-    ...(withNone ? [{ value: null, label: "Aucune" }] : []),
-    ...EXPIRY_PRESETS.map((preset) => ({ value: preset, label: PRESET_LABELS[preset] })),
-    { value: "date", label: "Date précise" },
+    ...(withNone ? [{ value: null, label: t("none") }] : []),
+    ...EXPIRY_PRESETS.map((preset) => ({ value: preset, label: t(PRESET_KEYS[preset]) })),
+    { value: "date", label: t("exactDate") },
   ];
   return (
     <div className="flex flex-wrap gap-1.5">
@@ -72,6 +79,8 @@ export function ExpiryControl({
   canEdit: boolean;
 }) {
   const [pending, startTransition] = useTransition();
+  const t = useTranslations("deal.expiryControl");
+  const locale = useLocale();
   const [editing, setEditing] = useState(false);
   const { choice, expiresAt: chosen, pick, pickDate } = useExpiryChoice();
   const deadline = expiresAt ? new Date(expiresAt) : null;
@@ -79,14 +88,13 @@ export function ExpiryControl({
   const [now] = useState(() => new Date());
   const expired = !!deadline && deadline <= now;
   // Moving an expired date opens the link again, whatever the button
-  const done = (otherwise: string) => (expired ? "Lien réactivé" : otherwise);
+  const done = (otherwise: string) => (expired ? t("reactivated") : otherwise);
 
   function run(action: () => Promise<ExpiryChangeResult>, success: string) {
     startTransition(async () => {
       const result = await action();
       if ("error" in result) return void toast.error(result.error);
-      const s = result.told > 1 ? "s" : "";
-      toast.success(result.told ? `${success}, ${result.told} prospect${s} prévenu${s}` : success);
+      toast.success(result.told ? t("told", { success, count: result.told }) : success);
       setEditing(false);
       pick(null);
     });
@@ -98,13 +106,13 @@ export function ExpiryControl({
         <Hourglass className={`mt-0.5 size-4 shrink-0 ${expired ? "text-destructive" : "text-muted-foreground"}`} aria-hidden />
         <span>
           {!deadline
-            ? "Pas de date d'expiration."
+            ? t("noExpiry")
             : expired
-              ? `Expiré ${formatRelative(deadline, now)}, le prospect ne peut plus l'ouvrir.`
-              : `Expire ${formatRelative(deadline, now)} (${formatDate(deadline)}).`}
+              ? t("expiredAgo", { when: formatRelative(deadline, locale, now) })
+              : t("expiresIn", { when: formatRelative(deadline, locale, now), date: formatDate(deadline, locale) })}
           {expired && requests > 0 && (
             <span className="block font-medium">
-              {requests} demande{requests > 1 ? "s" : ""} de prolongation
+              {t("requests", { count: requests })}
             </span>
           )}
         </span>
@@ -118,21 +126,21 @@ export function ExpiryControl({
               size="sm"
               variant={expired ? "default" : "outline"}
               disabled={pending}
-              onClick={() => run(() => extendLink(linkId, days), done("Échéance repoussée"))}
+              onClick={() => run(() => extendLink(linkId, days), done(t("extended")))}
             >
-              +{days} j
+              {t("plusDays", { days })}
             </Button>
           ))}
           <Button size="sm" variant="ghost" disabled={pending} onClick={() => setEditing((v) => !v)}>
-            Autre date
+            {t("otherDate")}
           </Button>
           <Button
             size="sm"
             variant="ghost"
             disabled={pending}
-            onClick={() => run(() => setLinkExpiry(linkId, null), done("Échéance retirée"))}
+            onClick={() => run(() => setLinkExpiry(linkId, null), done(t("removed")))}
           >
-            Retirer
+            {t("remove")}
           </Button>
         </div>
       )}
@@ -143,23 +151,23 @@ export function ExpiryControl({
           onSubmit={(e) => {
             e.preventDefault();
             if (!chosen) return;
-            run(() => setLinkExpiry(linkId, chosen.toISOString()), done("Échéance enregistrée"));
+            run(() => setLinkExpiry(linkId, chosen.toISOString()), done(t("saved")));
           }}
         >
           <ChoiceChips choice={choice} pick={pick} withNone={false} />
           {choice === "date" && (
             <div className="space-y-1">
               <Label htmlFor="expiryDate" className="sr-only">
-                Date d&apos;expiration
+                {t("dateLabel")}
               </Label>
               <Input id="expiryDate" type="date" required onChange={(e) => pickDate(e.target.value)} />
             </div>
           )}
           {chosen && (
             <div className="flex items-center justify-between gap-3">
-              <span className="text-muted-foreground">Jusqu&apos;au {formatDate(chosen)}</span>
+              <span className="text-muted-foreground">{t("until", { date: formatDate(chosen, locale) })}</span>
               <Button type="submit" size="sm" disabled={pending}>
-                Enregistrer
+                {t("save")}
               </Button>
             </div>
           )}

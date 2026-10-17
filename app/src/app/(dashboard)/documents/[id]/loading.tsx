@@ -1,8 +1,11 @@
+import { useTranslations } from "next-intl";
+
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Loading() {
+  const t = useTranslations("documents");
   return (
-    <div className="space-y-8" aria-busy aria-label="Chargement">
+    <div className="space-y-8" aria-busy aria-label={t("loading")}>
       <div className="space-y-5">
         <Skeleton className="h-4 w-24 rounded-sm" />
         <Skeleton className="h-4 w-80 max-w-full rounded-none" />

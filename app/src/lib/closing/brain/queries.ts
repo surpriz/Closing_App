@@ -1,5 +1,7 @@
+import { INTL_LOCALE } from "@/i18n/locale";
 import { prisma } from "@/lib/db";
 import { getEnv } from "@/lib/env";
+import { toUiLocale } from "@/lib/seller-locale";
 
 import { DAY_MS } from "../constants";
 import { videoProvider } from "../documents/web-link";
@@ -12,6 +14,7 @@ export async function loadDealForAnalysis(linkId: string, now: Date) {
     where: { id: linkId },
     include: {
       organization: { include: { settings: true } },
+      createdBy: { select: { locale: true } },
       document: {
         select: {
           name: true,
@@ -59,11 +62,14 @@ export async function loadDealForAnalysis(linkId: string, now: Date) {
   if (!link) return null;
 
   const settings = link.organization.settings;
+  // The analysis is written for the seller who sent the link
+  const locale = toUiLocale(link.createdBy?.locale);
   const sentLast30Days = link.followups.filter((f) => f.sentAt!.getTime() >= now.getTime() - 30 * DAY_MS).length;
 
   const isVideo = link.document.kind === "URL" && videoProvider(link.document.embedUrl) !== null;
   const facts: DealFactsInput = {
     now,
+    locale,
     defaultTimezone: getEnv().DEFAULT_TIMEZONE,
     businessHours: {
       start: link.businessHourStart ?? settings?.businessHourStart ?? 9,
@@ -123,7 +129,7 @@ export async function loadDealForAnalysis(linkId: string, now: Date) {
     dealStatus: link.dealStatus,
     dealAmount:
       link.dealAmountCents !== null
-        ? new Intl.NumberFormat("fr-FR", { style: "currency", currency: link.dealCurrency ?? "EUR" }).format(
+        ? new Intl.NumberFormat(INTL_LOCALE[locale], { style: "currency", currency: link.dealCurrency ?? "EUR" }).format(
             link.dealAmountCents / 100,
           )
         : null,
@@ -154,5 +160,6 @@ export async function loadDealForAnalysis(linkId: string, now: Date) {
     facts,
     profile,
     deal,
+    locale,
   };
 }

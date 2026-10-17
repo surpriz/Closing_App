@@ -3,6 +3,7 @@
 import { upload } from "@vercel/blob/client";
 import { FileUp, Link2, Plus, Video } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useEffectEvent, useRef, useState, type DragEvent, type FormEvent } from "react";
 import { toast } from "sonner";
 
@@ -63,17 +64,18 @@ function isTyping(target: EventTarget | null) {
 export type AddedSource = { documentId: string; linkId: string };
 
 function useAddSource(uploadPrefix: string, onDone?: () => void, onCreated?: (added: AddedSource) => void) {
+  const t = useTranslations("documents.upload");
   const router = useRouter();
   const [progress, setProgress] = useState<number | null>(null);
   const [addingUrl, setAddingUrl] = useState(false);
 
   async function handleFile(file: File) {
     if (file.type !== "application/pdf") {
-      toast.error("Pour l'instant, seuls les PDF sont acceptés. Exportez votre Word ou PowerPoint en PDF, ou collez un lien.");
+      toast.error(t("pdfOnly"));
       return;
     }
     if (file.size > MAX_UPLOAD_BYTES) {
-      toast.error("Fichier trop lourd (25 Mo maximum).");
+      toast.error(t("tooLarge"));
       return;
     }
 
@@ -98,11 +100,11 @@ function useAddSource(uploadPrefix: string, onDone?: () => void, onCreated?: (ad
         onCreated({ documentId: id, linkId });
         return;
       }
-      if (waiting) toast.success("Vous aviez déjà ce document : voici son lien, toujours prêt à envoyer.");
-      else if (reused) toast.success("Vous aviez déjà ce document : voici un nouveau lien.");
+      if (waiting) toast.success(t("alreadyWaiting"));
+      else if (reused) toast.success(t("alreadyReused"));
       router.push(`/links/${linkId}?new=1`);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "L'import a échoué.");
+      toast.error(error instanceof Error ? error.message : t("importFailed"));
       setProgress(null);
     }
   }
@@ -110,7 +112,7 @@ function useAddSource(uploadPrefix: string, onDone?: () => void, onCreated?: (ad
   // Returns false when the text is not a link, so the caller can explain
   async function handleUrl(text: string) {
     if (!parseWebUrl(text)) {
-      toast.error("Ce lien n'est pas valide. Collez une adresse complète, par exemple https://notion.so/…");
+      toast.error(t("invalidUrl"));
       return false;
     }
     setAddingUrl(true);
@@ -125,7 +127,7 @@ function useAddSource(uploadPrefix: string, onDone?: () => void, onCreated?: (ad
       else router.push(`/links/${result.linkId}?new=1`);
       return true;
     } catch {
-      toast.error("L'ajout du lien a échoué.");
+      toast.error(t("addLinkFailed"));
       return false;
     } finally {
       setAddingUrl(false);
@@ -175,6 +177,7 @@ function Progress({ value }: { value: number }) {
 }
 
 function UrlForm({ source, autoFocus }: { source: AddSource; autoFocus?: boolean }) {
+  const t = useTranslations("documents.upload");
   const [value, setValue] = useState("");
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -190,8 +193,8 @@ function UrlForm({ source, autoFocus }: { source: AddSource; autoFocus?: boolean
           type="text"
           inputMode="url"
           autoComplete="off"
-          aria-label="Lien web"
-          placeholder="Collez un lien Notion, Loom, Figma, Webflow…"
+          aria-label={t("urlAria")}
+          placeholder={t("urlPlaceholder")}
           value={value}
           onChange={(e) => setValue(e.target.value)}
           autoFocus={autoFocus}
@@ -200,7 +203,7 @@ function UrlForm({ source, autoFocus }: { source: AddSource; autoFocus?: boolean
         />
       </div>
       <Button type="submit" variant="outline" disabled={source.busy || !value.trim()}>
-        {source.addingUrl ? "Ajout…" : "Ajouter"}
+        {source.addingUrl ? t("adding") : t("add")}
       </Button>
     </form>
   );
@@ -216,6 +219,7 @@ function SourcePicker({
   autoFocusUrl?: boolean;
   onRecordVideo?: () => void;
 }) {
+  const t = useTranslations("documents.upload");
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const { progress, uploading, busy, handleFile, handleUrl } = source;
@@ -257,16 +261,17 @@ function SourcePicker({
         {uploading ? (
           <>
             <p className="font-medium">
-              Import en cours, <span className="font-mono">{Math.round(progress ?? 0)} %</span>
+              {t.rich("importing", {
+                percent: Math.round(progress ?? 0),
+                mono: (chunks) => <span className="font-mono">{chunks}</span>,
+              })}
             </p>
             <Progress value={progress ?? 0} />
           </>
         ) : (
           <div className="space-y-1">
-            <p className="text-heading">Déposez un document ou un lien ici</p>
-            <p className="text-small text-muted-foreground">
-              Devis, facture, présentation, doc technique… en PDF, 25 Mo maximum
-            </p>
+            <p className="text-heading">{t("dropTitle")}</p>
+            <p className="text-small text-muted-foreground">{t("dropHint")}</p>
           </div>
         )}
         <FileInput inputRef={inputRef} onFile={(file) => void handleFile(file)} />
@@ -277,7 +282,7 @@ function SourcePicker({
           <span className="h-px flex-1 bg-border" />
           <Button variant="outline" size="lg" disabled={busy} onClick={onRecordVideo}>
             <Video />
-            Enregistrer un pitch vidéo
+            {t("recordPitch")}
           </Button>
           <span className="h-px flex-1 bg-border" />
         </div>
@@ -332,6 +337,7 @@ type PitchProps = {
 
 /** A ready-made PDF for a seller with no document at hand (welcome tour). */
 function SampleButton({ source, sample }: { source: AddSource; sample: { url: string; name: string } }) {
+  const t = useTranslations("documents.upload");
   const [loading, setLoading] = useState(false);
 
   async function loadSample() {
@@ -342,7 +348,7 @@ function SampleButton({ source, sample }: { source: AddSource; sample: { url: st
       const blob = await response.blob();
       await source.handleFile(new File([blob], sample.name, { type: "application/pdf" }));
     } catch {
-      toast.error("Impossible de charger l'exemple. Déposez plutôt un de vos documents.");
+      toast.error(t("sampleFailed"));
     } finally {
       setLoading(false);
     }
@@ -350,14 +356,14 @@ function SampleButton({ source, sample }: { source: AddSource; sample: { url: st
 
   return (
     <p className="text-small text-muted-foreground">
-      Pas de document sous la main ?{" "}
+      {t("noDocument")}{" "}
       <button
         type="button"
         disabled={source.busy || loading}
         onClick={() => void loadSample()}
         className="text-foreground underline underline-offset-4 disabled:opacity-50"
       >
-        {loading ? "Chargement…" : "Essayer avec un devis exemple"}
+        {loading ? t("loading") : t("trySample")}
       </button>
     </p>
   );
@@ -401,6 +407,7 @@ export function UploadDropzone({
  * dialog through openAddDocument().
  */
 export function UploadButton({ uploadPrefix, pitchUploadPrefix }: { uploadPrefix: string } & PitchProps) {
+  const t = useTranslations("documents.upload");
   const [open, setOpen] = useState(false);
   const [recording, setRecording] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -455,24 +462,21 @@ export function UploadButton({ uploadPrefix, pitchUploadPrefix }: { uploadPrefix
     <>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger
-          render={<Button disabled={source.busy} aria-label="Ajouter un document" className="max-sm:size-9 max-sm:px-0" />}
+          render={<Button disabled={source.busy} aria-label={t("addDocument")} className="max-sm:size-9 max-sm:px-0" />}
         >
           <Plus />
           <span className="max-sm:sr-only">
             {source.uploading
-              ? `Import, ${Math.round(source.progress ?? 0)} %`
+              ? t("importProgress", { percent: Math.round(source.progress ?? 0) })
               : source.addingUrl
-                ? "Ajout du lien…"
-                : "Ajouter un document"}
+                ? t("addingLink")
+                : t("addDocument")}
           </span>
         </DialogTrigger>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle className="text-heading">Ajouter un document ou un lien</DialogTitle>
-            <DialogDescription>
-              Un PDF (devis, facture, présentation, doc technique…), une page web (Notion, Loom, Figma, Webflow, Google
-              Slides…), ou une vidéo que vous enregistrez ici.
-            </DialogDescription>
+            <DialogTitle className="text-heading">{t("dialogTitle")}</DialogTitle>
+            <DialogDescription>{t("dialogDescription")}</DialogDescription>
           </DialogHeader>
           <SourcePicker
             source={source}
@@ -494,7 +498,7 @@ export function UploadButton({ uploadPrefix, pitchUploadPrefix }: { uploadPrefix
       {dragging && !open && !recording && (
         <div className="pointer-events-none fixed inset-3 z-50 flex items-center justify-center border border-dashed border-foreground bg-background/85">
           <p className="border border-foreground bg-card px-5 py-2.5 text-body font-medium">
-            Déposez le fichier ou le lien pour l&apos;ajouter
+            {t("dropOverlay")}
           </p>
         </div>
       )}

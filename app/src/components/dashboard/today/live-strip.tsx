@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 import type { WorkspaceLiveState } from "@/lib/closing/live";
 
@@ -13,6 +14,7 @@ import { useLivePoll } from "../use-live-poll";
  */
 export function LiveStrip({ initial }: { initial: WorkspaceLiveState }) {
   const { readers } = useLivePoll("/api/live", initial);
+  const t = useTranslations("today.liveStrip");
 
   if (readers.length === 0) return null;
 
@@ -23,7 +25,7 @@ export function LiveStrip({ initial }: { initial: WorkspaceLiveState }) {
     >
       <span className="flex items-center gap-2.5 text-body font-medium">
         <LiveDot />
-        En train de lire
+        {t("reading")}
       </span>
       <ul className="flex flex-wrap gap-x-5 gap-y-1 text-small">
         {readers.map((reader) => (
@@ -34,7 +36,7 @@ export function LiveStrip({ initial }: { initial: WorkspaceLiveState }) {
             {reader.name && reader.name !== reader.label && (
               <span className="text-muted-foreground">, {reader.name}</span>
             )}
-            {reader.currentPage && <span className="text-muted-foreground">, page {reader.currentPage}</span>}
+            {reader.currentPage && <span className="text-muted-foreground">{t("page", { page: reader.currentPage })}</span>}
           </li>
         ))}
       </ul>

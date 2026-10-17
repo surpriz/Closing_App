@@ -1,0 +1,62 @@
+{
+  "loading": "Chargement",
+  "error": {
+    "title": "Cette page n'a pas pu se charger.",
+    "description": "Souvent une coupure réseau passagère. Réessayez ; si ça persiste, rechargez la page.",
+    "retry": "Réessayer"
+  },
+  "notFound": {
+    "title": "Cette page n'existe plus.",
+    "description": "Le document ou le lien a peut-être été archivé.",
+    "back": "Retour aux documents"
+  },
+  "copyButton": {
+    "copyLink": "Copier le lien",
+    "copied": "Copié"
+  },
+  "liveActivity": {
+    "readingOne": "En train de lire",
+    "readingMany": "{count} lecteurs en ce moment",
+    "anonymous": "Lecteur anonyme",
+    "videoAt": "vers {segment} de la vidéo",
+    "page": "page {page} sur {total}",
+    "device": {
+      "mobile": "sur mobile",
+      "tablet": "sur tablette",
+      "desktop": "sur ordinateur"
+    }
+  },
+  "temperature": {
+    "toWarm": "{count, plural, one {Encore # point pour passer tiède.} other {Encore # points pour passer tiède.}}",
+    "toHot": "{count, plural, one {Encore # point pour passer chaud.} other {Encore # points pour passer chaud.}}",
+    "intense": "Lecture intense.",
+    "guideTitle": "Comment la température est calculée",
+    "guideIntro": "Un score sur 100 qui mesure l'intérêt du prospect pour ce document. Froid en dessous de {warm}, tiède jusqu'à {warmMax}, chaud à partir de {hot}. Il baisse tout seul si le prospect ne revient pas, et passe à 100 quand la proposition est validée ou le deal gagné.",
+    "rows": {
+      "recentRead": "Lecture récente",
+      "recentReadRule": "25 si lu dans les dernières 24 h, 15 sur 3 jours, 5 sur 7 jours",
+      "readTime": "Temps de lecture",
+      "readTimeRule": "1 point toutes les 12 secondes, jusqu'à 25",
+      "visits": "Visites",
+      "visitsRule": "5 pour la première, 12 pour la deuxième, 20 à partir de trois",
+      "readers": "Plusieurs lecteurs",
+      "readersRule": "10 à deux personnes, 15 à partir de trois : le document circule",
+      "pricing": "Page de tarifs",
+      "pricingRule": "7 à partir de {third} s dessus, 15 à partir de {full} s",
+      "progress": "Progression",
+      "progressRule": "4 si lu à moitié, 10 si lu jusqu'au bout",
+      "change": "Ajustement demandé",
+      "changeRule": "10 points",
+      "meeting": "Rendez-vous",
+      "meetingRule": "5 s'il ouvre votre agenda, 25 s'il réserve un créneau"
+    }
+  },
+  "verdict": {
+    "notOpened": "Pas encore ouvert.",
+    "notOpenedDetail": "Le verdict arrive dès la première lecture.",
+    "opened": "Ouvert.",
+    "openedDetail": "Le verdict arrive dès que Clozer a lu ce deal.",
+    "noRecentRead": "aucune lecture récente",
+    "headline": "{tier} : {why}."
+  }
+}

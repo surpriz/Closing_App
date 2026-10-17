@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 
 import { revokeExtensionToken } from "@/app/extension/actions";
@@ -14,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { INTL_LOCALE, type UiLocale } from "@/i18n/locale";
 import { OUTLOOK_TOKEN_LABEL } from "@/lib/extension-tokens";
 import type { ExtensionProbe } from "@/lib/onboarding";
 
@@ -25,26 +27,34 @@ export type ExtensionTokenRow = {
   lastUsedAt: string | null;
 };
 
-const dateFormat = new Intl.DateTimeFormat("fr-FR", {
-  day: "numeric",
-  month: "short",
-  year: "numeric",
-});
+const dateFormats = new Map<UiLocale, Intl.DateTimeFormat>();
+
+function dateFormat(locale: UiLocale) {
+  let format = dateFormats.get(locale);
+  if (!format) {
+    format = new Intl.DateTimeFormat(INTL_LOCALE[locale], {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+    dateFormats.set(locale, format);
+  }
+  return format;
+}
 
 function RevokeButton({ id }: { id: string }) {
+  const t = useTranslations("settings.extensionTokens");
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>
-        Révoquer
+        {t("revoke")}
       </Button>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Révoquer cet accès ?</DialogTitle>
-          <DialogDescription>
-            Chrome ou Outlook devra être reconnecté.
-          </DialogDescription>
+          <DialogTitle>{t("revokeTitle")}</DialogTitle>
+          <DialogDescription>{t("revokeDescription")}</DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button
@@ -52,7 +62,7 @@ function RevokeButton({ id }: { id: string }) {
             onClick={() => setOpen(false)}
             disabled={pending}
           >
-            Annuler
+            {t("cancel")}
           </Button>
           <Button
             variant="destructive"
@@ -64,7 +74,7 @@ function RevokeButton({ id }: { id: string }) {
               })
             }
           >
-            {pending ? "Révocation…" : "Révoquer"}
+            {pending ? t("revoking") : t("revoke")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -73,10 +83,12 @@ function RevokeButton({ id }: { id: string }) {
 }
 
 function TokenList({ tokens }: { tokens: ExtensionTokenRow[] }) {
+  const t = useTranslations("settings.extensionTokens");
+  const format = dateFormat(useLocale());
   if (tokens.length === 0)
     return (
       <p className="px-5 py-3 text-small text-muted-foreground">
-        Rien de connecté.
+        {t("nothingConnected")}
       </p>
     );
   return (
@@ -88,15 +100,15 @@ function TokenList({ tokens }: { tokens: ExtensionTokenRow[] }) {
         >
           <div className="min-w-0">
             <p className="text-body">
-              {token.label ?? "Navigateur"}{" "}
+              {token.label === OUTLOOK_TOKEN_LABEL ? t("outlookToken") : (token.label ?? t("browser"))}{" "}
               <span className="font-mono text-small text-muted-foreground">
                 …{token.hint}
               </span>
             </p>
             <p className="text-small text-muted-foreground">
-              Connecté le {dateFormat.format(new Date(token.createdAt))}
+              {t("connectedOn", { date: format.format(new Date(token.createdAt)) })}
               {token.lastUsedAt &&
-                ` · utilisé le ${dateFormat.format(new Date(token.lastUsedAt))}`}
+                t("usedOn", { date: format.format(new Date(token.lastUsedAt)) })}
             </p>
           </div>
           <RevokeButton id={token.id} />
@@ -136,20 +148,18 @@ export function ExtensionTokens({
   chromeStoreUrl: string | null;
   probe: ExtensionProbe;
 }) {
+  const t = useTranslations("settings.extensionTokens");
   const chrome = tokens.filter((token) => token.label !== OUTLOOK_TOKEN_LABEL);
   const outlook = tokens.filter((token) => token.label === OUTLOOK_TOKEN_LABEL);
 
   return (
     <section id="extension" className="scroll-mt-24 space-y-3">
       <div className="space-y-1">
-        <h2 className="text-heading">Chrome et Outlook</h2>
-        <p className="text-body text-muted-foreground">
-          Joignez un PDF dans votre messagerie, Clozer le remplace par un lien
-          et vous prévient pendant la lecture.
-        </p>
+        <h2 className="text-heading">{t("title")}</h2>
+        <p className="text-body text-muted-foreground">{t("description")}</p>
       </div>
       <div className="grid gap-px border-y border-foreground bg-border sm:grid-cols-2">
-        <Card title="Chrome" hint="Gmail et Outlook sur le web.">
+        <Card title="Chrome" hint={t("chromeHint")}>
           <div className="px-5 pb-4">
             {chromeStoreUrl ? (
               <a
@@ -158,11 +168,11 @@ export function ExtensionTokens({
                 rel="noreferrer"
                 className={buttonVariants({ variant: "outline" })}
               >
-                Installer dans Chrome
+                {t("installChrome")}
               </a>
             ) : (
               <p className="text-small text-muted-foreground">
-                Bientôt sur le Chrome Web Store.
+                {t("chromeSoon")}
               </p>
             )}
           </div>
@@ -171,26 +181,19 @@ export function ExtensionTokens({
             <TokenList tokens={chrome} />
           </div>
         </Card>
-        <Card title="Outlook" hint="Installé sur Windows ou Mac.">
+        <Card title="Outlook" hint={t("outlookHint")}>
           <ol className="list-decimal space-y-1 px-5 pb-4 pl-9 text-small text-muted-foreground">
             <li>
               <OutlookManifestLink className="underline hover:text-foreground">
-                Téléchargez le fichier manifeste
+                {t("outlookStep1Link")}
               </OutlookManifestLink>
               .
             </li>
-            <li>
-              Outlook › Compléments › Mes compléments › Ajouter à partir
-              d&apos;un fichier.
-            </li>
-            <li>
-              Dans un nouvel email, cliquez sur Clozer puis « Connecter Clozer
-              ».
-            </li>
+            <li>{t("outlookStep2")}</li>
+            <li>{t("outlookStep3")}</li>
           </ol>
           <p className="px-5 pb-4 text-small text-muted-foreground">
-            Votre service informatique peut aussi le déployer pour toute
-            l&apos;équipe depuis le centre d&apos;administration Microsoft 365.
+            {t("outlookAdmin")}
           </p>
           <div className="border-t border-border">
             <TokenList tokens={outlook} />

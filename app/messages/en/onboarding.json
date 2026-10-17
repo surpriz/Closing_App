@@ -1,0 +1,160 @@
+{
+  "metaTitle": "Getting started",
+  "documentNotFound": "Document not found.",
+  "steps": {
+    "drop": "Your document",
+    "test": "Prospect's view",
+    "daily": "Day to day"
+  },
+  "mailClients": {
+    "gmail": {
+      "title": "Gmail",
+      "hint": "In Chrome or Edge"
+    },
+    "outlook_web": {
+      "title": "Outlook in the browser",
+      "hint": "outlook.office.com, outlook.live.com"
+    },
+    "outlook_desktop": {
+      "title": "Outlook desktop app",
+      "hint": "The app on Windows or Mac"
+    },
+    "other": {
+      "title": "Other email app",
+      "hint": "Apple Mail, Thunderbird, phone…"
+    }
+  },
+  "wizard": {
+    "skip": "Skip",
+    "stepsAria": "Steps",
+    "back": "Back",
+    "continueWithDocument": "Continue with this document",
+    "continue": "Continue",
+    "skipStep": "Skip this step",
+    "dashboard": "Dashboard",
+    "sendToProspect": "Send my document to a prospect",
+    "goToDashboard": "Go to my dashboard"
+  },
+  "drop": {
+    "titleWithName": "Welcome, {firstName}. Drop in a document.",
+    "title": "Welcome. Drop in a document.",
+    "lead": "The last one you sent works great: nobody gets it during this test. In a minute, you'll watch it heat up the way your prospect will read it.",
+    "nothingToInstall": "Nothing to install to get started. It all happens here, in your browser.",
+    "coldPages": "Your pages, still cold. They heat up every time your prospect reads them."
+  },
+  "test": {
+    "title": "Open it like your prospect",
+    "lead": "Here's the link your prospect will get. Open it, flip through a few pages, then come back here.",
+    "preparing": "Getting your document ready…",
+    "openAsProspect": "Open as my prospect",
+    "copyLink": "Copy link",
+    "copied": "Link copied. Try opening it on your phone.",
+    "notCounted": "This test link doesn't count in your stats and never triggers a follow-up.",
+    "opened": "Your document was just opened.",
+    "readUpTo": "Read up to page {page}",
+    "firstPage": "First page opened",
+    "readTime": ", {duration} of reading",
+    "liveHint": "That's what you'll see, live, when your prospect opens it. And Clozer will tell you when to follow up.",
+    "waiting": "Waiting for you to read it…"
+  },
+  "daily": {
+    "title": "Now, for real.",
+    "lead": "Day to day, you sell like you always have. Clozer does the tracking.",
+    "sendTitle": "You send the link to your prospect",
+    "sendBody": "Copy your document's link and paste it into your email instead of the attachment. Or click “Send by email”: the message is already written.",
+    "alertTitle": "You get notified when they read",
+    "alertBody": "By email, and live on your dashboard. That's the right time to call.",
+    "approveTitle": "You approve the follow-ups",
+    "approveBody": "Clozer writes them at the right time. You'll find them in “Follow-ups to approve”.",
+    "mailQuestion": "You write your emails in…",
+    "optional": "(optional)",
+    "mailboxAria": "Your email app",
+    "hintManual": "Perfect: pasting the link into your email is all it takes.",
+    "hintConnected": "Your email is already connected to Clozer.",
+    "hintSoon": "Soon, Clozer will put the link in your emails for you. Until then, copy-paste does the job.",
+    "hintInstall": "Clozer can put the link in your emails for you. <link>Set it up in 2 minutes</link>. Nothing required: copy-paste works too.",
+    "extensionTitle": "{mailbox}: attach your PDF as usual",
+    "extensionBody": "The Clozer extension swaps it for a link and tells you when your prospect reads it. Without it, copy-pasting the link works too.",
+    "addToChrome": "Add to Chrome",
+    "thenConnect": "Then connect it, step by step",
+    "desktopOnly": "It installs from Chrome or Edge on a computer. Open Clozer there when you want to add it.",
+    "offerSaveFailed": "Couldn't save. You can do it in Settings.",
+    "offerSaved": "Offer saved. You can add to it in Settings.",
+    "offerLabel": "What you sell",
+    "offerPlaceholder": "E.g. scheduling software for architecture firms, $200 to $800 a month.",
+    "offerHint": "Clozer uses it to write your follow-ups. Left empty, it works out your offer from your first document.",
+    "save": "Save"
+  },
+  "install": {
+    "checkAgain": "Done, check again",
+    "chromeTitle": "Add the Clozer extension",
+    "chromeLead": "It works in {mailbox}, on Chrome or Edge. You attach a PDF as usual, it swaps it for a Clozer link and tells you when your prospect reads it.",
+    "chromeConnected": "Extension connected. You can move on.",
+    "installFromStore": "Install it from the Chrome Web Store.",
+    "openInChrome": "Open this page in Chrome or Edge on a computer, then install it from the Chrome Web Store.",
+    "comingSoon": "It's coming to the Chrome Web Store very soon. Until then, create your links in Clozer and paste them into your emails: we'll show you how right after.",
+    "addToChrome": "Add to Chrome",
+    "pin": "Pin it to the browser toolbar (puzzle icon), click Clozer, then “Connect Clozer”.",
+    "tryIt": "Open {mailbox}, write an email and attach a PDF: Clozer swaps it for a link right away.",
+    "outlookTitle": "Add Clozer to Outlook",
+    "outlookLead": "An add-in for Outlook on Windows or Mac. It swaps your attached PDFs for Clozer links and shows you who reads, without leaving Outlook.",
+    "outlookConnected": "Outlook is connected. You can move on.",
+    "download": "Download the add-in file.",
+    "addFromFile": "In Outlook: <b>Add-ins › My add-ins › Add from file</b>, then pick this file. In classic Outlook for Windows, it's under <b>Home › Get Add-ins</b>.",
+    "openEmail": "Open a new email and click “Clozer” in the ribbon: a code shows up.",
+    "enterCode": "Enter that code here.",
+    "outlookDone": "Attach a PDF to an email in Outlook: Clozer swaps it for a link right away.",
+    "itDeploy": "Can't install add-ins? Your IT team can deploy it for the whole team from the Microsoft 365 admin center, with the same file.",
+    "manualTitle": "No tool to install",
+    "manualLead": "Clozer works with any email app: just paste the link instead of the attachment.",
+    "manual1": "Drop your PDF into Clozer: the link to send is ready right away.",
+    "manual2": "Paste it into your email instead of the attachment. Or click “Send by email”.",
+    "manual3": "To test it, open it in a private window: your own reads don't count.",
+    "alsoUse": "Also using Gmail or Outlook? <change>Change your answer</change>: Clozer can create the links for you."
+  },
+  "mailStep": {
+    "title": "You write your emails in…",
+    "leadWithName": "{firstName}, Clozer can plug into your email: you attach the PDF as usual, it swaps it for a link.",
+    "lead": "Clozer can plug into your email: you attach the PDF as usual, it swaps it for a link.",
+    "mailboxAria": "Your email app"
+  },
+  "mailToolTip": {
+    "chrome": "Next time, just attach the PDF in {mailbox}: the Chrome extension puts the link in its place for you.",
+    "outlookAddin": "Next time, just attach the PDF in Outlook: the Clozer add-in puts the link in its place for you.",
+    "unknown": "Sending from Gmail or Outlook? Just attach the PDF: Clozer can put the link in its place for you.",
+    "seeHow": "See how",
+    "install": "Set up, 2 minutes",
+    "hide": "Don't show again"
+  },
+  "toolSetup": {
+    "dashboard": "Dashboard",
+    "changeMailbox": "Change email app",
+    "continue": "Continue",
+    "done": "Done"
+  },
+  "emailsPage": {
+    "metaTitle": "Getting-started tips",
+    "stopped": "Got it, you won't get these tips anymore.",
+    "body": "These few emails help you get started. Your alerts and morning report don't change.",
+    "stop": "Stop these tips"
+  },
+  "firstSteps": {
+    "title": "First steps",
+    "done": "Done",
+    "dropTitle": "Drop in a document",
+    "dropBody": "A quote, an invoice, a deck or a technical doc as a PDF, or a Notion, Loom, Figma link… The link to send is ready right away.",
+    "sendMany": "Send your links",
+    "sendOne": "Send your link",
+    "send": "Send the link",
+    "sendManyBody": "They're ready, under “To send” just below. Paste each one into your email instead of the attachment: your prospect reads without filling anything in.",
+    "sendOneBody": "It's ready, under “To send” just below. Paste it into your email instead of the attachment: your prospect reads without filling anything in.",
+    "sendBody": "Paste it into your email instead of the attachment. One link per prospect: you'll know who reads.",
+    "readTitle": "The prospect opens it",
+    "readBody": "You get notified, and you see here which pages they read and when to follow up. To test it, open it in a private window: your own reads don't count."
+  },
+  "welcomeMessage": {
+    "linkVersion": "Version for this prospect, replacing the document's",
+    "record": "Record a welcome message",
+    "personal": "Personal version for this prospect"
+  }
+}

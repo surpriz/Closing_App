@@ -1,8 +1,12 @@
 /**
  * Is this reading worth interrupting the seller for a call? Pure.
  * Any reading shows up in the extension badge; only these become a
- * notification. The first matching reason wins, strongest first.
+ * notification. The first matching reason wins, strongest first. `detail`
+ * is written for the seller, in their language.
  */
+
+import type { UiLocale } from "@/i18n/locale";
+import { getNamespaceTranslator } from "@/lib/server-translator";
 
 export type CallMomentFacts = {
   /** Distinct people reading the link right now. */
@@ -26,21 +30,22 @@ export type CallMomentReason = "multi_viewer" | "reopened" | "pricing" | "first_
 
 export type CallMoment = { reason: CallMomentReason; detail: string };
 
-export function detectCallMoment(facts: CallMomentFacts): CallMoment | null {
+export function detectCallMoment(facts: CallMomentFacts, locale: UiLocale): CallMoment | null {
+  const t = getNamespaceTranslator(locale, "alerts.callMoment");
   if (facts.liveReaders > facts.multiViewerThreshold && facts.liveReaders < facts.committeeThreshold) {
-    return { reason: "multi_viewer", detail: `${facts.liveReaders} personnes lisent en même temps` };
+    return { reason: "multi_viewer", detail: t("multiViewer", { count: facts.liveReaders }) };
   }
   if (facts.inactiveDays !== null && facts.inactiveDays >= facts.reopenAfterDays) {
-    return { reason: "reopened", detail: `Revient après ${facts.inactiveDays} jours sans lecture` };
+    return { reason: "reopened", detail: t("reopened", { days: facts.inactiveDays }) };
   }
   if (facts.pricingSeconds !== null && facts.pricingSeconds >= facts.pricingThresholdSec) {
-    return { reason: "pricing", detail: "S'attarde sur les tarifs" };
+    return { reason: "pricing", detail: t("pricing") };
   }
   if (facts.firstOpen) {
-    return { reason: "first_open", detail: "Ouvre votre proposition pour la première fois" };
+    return { reason: "first_open", detail: t("firstOpen") };
   }
   if (facts.aiPriority !== null && facts.aiPriority >= 4) {
-    return { reason: "hot_deal", detail: "Deal chaud, en train de relire" };
+    return { reason: "hot_deal", detail: t("hotDeal") };
   }
   return null;
 }

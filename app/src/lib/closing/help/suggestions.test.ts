@@ -4,7 +4,7 @@ import { helpSuggestions } from "./suggestions";
 
 describe("helpSuggestions", () => {
   it("offers three questions everywhere", () => {
-    for (const path of [null, "/dashboard", "/documents", "/documents/abc", "/links/x", "/settings", "/equipe"]) {
+    for (const path of [null, "/dashboard", "/documents", "/documents/abc", "/links/x", "/settings", "/team"]) {
       expect(helpSuggestions(path)).toHaveLength(3);
     }
   });

@@ -207,9 +207,9 @@ const ALERT_FOR_ACTION = {
 } as const;
 
 const FOLLOWUP_CANCEL_REASON = {
-  VALIDATE_SIGN: "Proposition validée par le prospect",
-  REQUEST_CHANGE: "Ajustement demandé par le prospect",
-  REQUEST_QUOTE: "Devis demandé par le prospect",
+  VALIDATE_SIGN: "validatedByProspect",
+  REQUEST_CHANGE: "changeRequestedByProspect",
+  REQUEST_QUOTE: "quoteRequested",
 } as const;
 
 export async function submitProspectAction(input: z.input<typeof actionSchema>) {
@@ -434,7 +434,7 @@ export async function recordMeetingBooked(input: z.input<typeof meetingSchema> &
   );
 
   inBackground("meeting-booked", async () => {
-    await cancelOpenFollowups(link.id, "Rendez-vous pris par le prospect");
+    await cancelOpenFollowups(link.id, "meetingBooked");
     await refreshEngagementScore(link.id);
     await analyzeDeal(link.id, "PROSPECT_ACTION");
   });

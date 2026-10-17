@@ -3,9 +3,10 @@
 import { randomBytes } from "node:crypto";
 
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
-import { BOOKING_URL_ERROR, parseOptionalBookingUrl } from "@/lib/closing/booking/url";
+import { parseOptionalBookingUrl } from "@/lib/closing/booking/url";
 import { isSafeOutboundUrl } from "@/lib/closing/channels/webhooks";
 import { upsertSellerPrefs } from "@/lib/closing/notify/preferences";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
@@ -31,11 +32,11 @@ const settingsSchema = z.object({
   alertEmail: z.union([z.literal(""), z.email()]).transform((v) => v || null),
   slackWebhookUrl: z.union([
     z.literal(""),
-    z.url().refine((v) => v.startsWith("https://hooks.slack.com/"), "URL Slack invalide"),
+    z.url().refine((v) => v.startsWith("https://hooks.slack.com/"), "invalidSlackUrl"),
   ]),
   removeSlack: z.boolean(),
   outboundWebhookUrl: z
-    .union([z.literal(""), z.url().refine(isSafeOutboundUrl, "URL de webhook non autorisée")])
+    .union([z.literal(""), z.url().refine(isSafeOutboundUrl, "unsafeWebhookUrl")])
     .transform((v) => v || null),
   aiTone: optionalText(300),
   senderName: optionalText(80),
@@ -76,10 +77,18 @@ const prefsSchema = z.object({
   // Empty = no booking button on this seller's links
   bookingUrl: z.string().transform((v, ctx) => {
     const url = parseOptionalBookingUrl(v);
-    if (url === undefined) ctx.addIssue({ code: "custom", message: BOOKING_URL_ERROR });
+    if (url === undefined) ctx.addIssue({ code: "custom", message: "invalidBookingUrl" });
     return url ?? null;
   }),
 });
+
+// Schema messages are keys of settings.actions; anything else (zod's own) shows as is
+type ActionsT = Awaited<ReturnType<typeof getTranslations<"settings.actions">>>;
+
+function issueMessage(t: ActionsT, message: string | undefined, fallback: "invalidNotifications" | "invalidSettings") {
+  if (!message) return t(fallback);
+  return t.has(message as never) ? t(message as never) : message;
+}
 
 function isValidTimezone(timeZone: string) {
   try {
@@ -102,7 +111,10 @@ export async function saveWorkspaceSettings(_prev: SettingsState, formData: Form
     timezone: String(formData.get("timezone") ?? ""),
     bookingUrl: String(formData.get("bookingUrl") ?? ""),
   });
-  if (!prefs.success) return { error: prefs.error.issues[0]?.message ?? "Réglages de notification invalides." };
+  if (!prefs.success) {
+    const t = await getTranslations("settings.actions");
+    return { error: issueMessage(t, prefs.error.issues[0]?.message, "invalidNotifications") };
+  }
 
   // A plain member only owns their notifications. Their workspace fields are
   // disabled, so not even sent: parsing them would wipe the saved values.
@@ -136,7 +148,8 @@ export async function saveWorkspaceSettings(_prev: SettingsState, formData: Form
     avgSalesCycleDays: String(formData.get("avgSalesCycleDays") ?? ""),
   });
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Paramètres invalides." };
+    const t = await getTranslations("settings.actions");
+    return { error: issueMessage(t, parsed.error.issues[0]?.message, "invalidSettings") };
   }
 
   const { slackWebhookUrl, removeSlack, ...values } = parsed.data;

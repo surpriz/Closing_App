@@ -6,6 +6,9 @@
  * template and waits for the seller.
  */
 
+import type { UiLocale } from "@/i18n/locale";
+import { getNamespaceTranslator } from "@/lib/server-translator";
+
 export type GuardIssue = { code: string; message: string };
 
 export type GuardContext = {
@@ -13,6 +16,8 @@ export type GuardContext = {
   proposalUrl: string;
   /** Everything the message may quote: document text, key facts, seller description, signature. */
   sourceText: string;
+  /** Language of the issue messages: the seller's (they read them on the draft). */
+  locale: UiLocale;
 };
 
 // JS \b only knows ASCII letters: "consulté\b" never matches. A real Unicode word boundary:
@@ -121,6 +126,7 @@ export function hasPlaceholder(text: string) {
 
 export function lintFollowup(draft: { subject: string | null; body: string }, ctx: GuardContext): GuardIssue[] {
   const issues: GuardIssue[] = [];
+  const t = getNamespaceTranslator(ctx.locale, "server.followups.guard");
   const full = `${draft.subject ?? ""}\n${draft.body}`;
   // The URL itself contains digits and "page"-like words: judge the prose without it
   const prose = full.split(ctx.proposalUrl).join(" ");
@@ -129,7 +135,7 @@ export function lintFollowup(draft: { subject: string | null; body: string }, ct
   if (hint) {
     issues.push({
       code: "tracking_hint",
-      message: `Le message laisse deviner que la lecture est suivie (« ${hint} »).`,
+      message: t("trackingHint", { hint }),
     });
   }
 
@@ -137,25 +143,25 @@ export function lintFollowup(draft: { subject: string | null; body: string }, ct
   if (urlCount !== 1) {
     issues.push({
       code: "url",
-      message: urlCount === 0 ? "Le lien de la proposition manque." : "Le lien de la proposition apparaît plusieurs fois.",
+      message: urlCount === 0 ? t("urlMissing") : t("urlRepeated"),
     });
   }
 
   for (const figure of findInventedFigures(prose, ctx.sourceText)) {
-    issues.push({ code: "invented_figure", message: `Le montant « ${figure} » n'apparaît pas dans la proposition.` });
+    issues.push({ code: "invented_figure", message: t("inventedFigure", { figure }) });
   }
   for (const date of findInventedDates(prose, ctx.sourceText)) {
-    issues.push({ code: "invented_date", message: `La date « ${date} » n'apparaît pas dans la proposition.` });
+    issues.push({ code: "invented_date", message: t("inventedDate", { date }) });
   }
 
   if (hasPlaceholder(full)) {
-    issues.push({ code: "placeholder", message: "Le message contient un texte à compléter." });
+    issues.push({ code: "placeholder", message: t("placeholder") });
   }
   if (ctx.channel === "EMAIL" && EMOJI.test(full)) {
-    issues.push({ code: "emoji", message: "Pas d'emoji dans un email." });
+    issues.push({ code: "emoji", message: t("emoji") });
   }
   if (draft.body.length > MAX_LENGTH[ctx.channel]) {
-    issues.push({ code: "length", message: "Le message est trop long." });
+    issues.push({ code: "length", message: t("tooLong") });
   }
 
   return issues;

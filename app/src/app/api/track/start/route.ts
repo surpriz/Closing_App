@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
   if (!excluded) {
     await confirmDraftOnOpen(link.id, now);
     inBackground("view-started", async () => {
-      await cancelOpenFollowups(link.id, "Le prospect a ouvert la proposition", ["ANTI_GHOSTING"]);
+      await cancelOpenFollowups(link.id, "openedProposal", ["ANTI_GHOSTING"]);
       // A new reader, a decision maker or a committee says more than a plain call moment
       const readerAlert = await evaluateReaders(viewId, now);
       if (!readerAlert) await evaluateHotLead(viewId, !!recentView, now);

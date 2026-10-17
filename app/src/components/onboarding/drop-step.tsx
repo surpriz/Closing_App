@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { type AddedSource, UploadDropzone } from "@/components/dashboard/upload-dropzone";
 
 import { ThermalPlate } from "@/components/brand/thermal-plate";
@@ -17,13 +19,14 @@ export function DropStep({
   uploadPrefix: string;
   onCreated: (added: AddedSource) => void;
 }) {
+  const t = useTranslations("onboarding.drop");
   return (
     <div className="space-y-8">
       <StepHeading
-        title={firstName ? `Bienvenue, ${firstName}. Déposez un document.` : "Bienvenue. Déposez un document."}
-        lead="Le dernier que vous avez envoyé fait très bien l'affaire : personne ne le recevra pendant ce test. Dans une minute, vous le verrez chauffer comme votre prospect le lira."
+        title={firstName ? t("titleWithName", { firstName }) : t("title")}
+        lead={t("lead")}
       />
-      <p className="font-medium">Rien à installer pour commencer. Tout se passe ici, dans votre navigateur.</p>
+      <p className="font-medium">{t("nothingToInstall")}</p>
       <figure className="flex items-center gap-4">
         <span aria-hidden className="grid w-40 shrink-0 grid-cols-6 gap-px">
           {Array.from({ length: 6 }, (_, i) => (
@@ -31,7 +34,7 @@ export function DropStep({
           ))}
         </span>
         <figcaption className="text-small text-muted-foreground">
-          Vos pages, encore froides. Elles chaufferont à chaque lecture de votre prospect.
+          {t("coldPages")}
         </figcaption>
       </figure>
       <UploadDropzone uploadPrefix={uploadPrefix} onCreated={onCreated} sample={SAMPLE_DOCUMENT} />

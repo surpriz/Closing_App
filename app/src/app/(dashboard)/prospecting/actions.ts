@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { getPublicAppUrl } from "@/lib/app-origin";
@@ -51,7 +52,7 @@ export async function saveTargetAction(formData: FormData): Promise<ActionResult
     seniorities: formData.getAll("seniorities").map(String),
     excludedDomains: splitList(formData.get("excludedDomains")?.toString()),
   });
-  if (!parsed.success) return { error: "Un des champs est trop long ou contient trop de valeurs." };
+  if (!parsed.success) return { error: (await getTranslations("prospecting.actions"))("fieldTooLong") };
 
   const inferred = formData.get("origin") === "INFERRED";
   let evidence: z.infer<typeof evidenceSchema> = null;
@@ -70,7 +71,7 @@ export async function saveTargetAction(formData: FormData): Promise<ActionResult
     origin: inferred ? "INFERRED" : "MANUAL",
     evidence,
   });
-  revalidatePath("/prospection");
+  revalidatePath("/prospecting");
   return { ok: true };
 }
 
@@ -80,10 +81,9 @@ export async function deduceTargetAction(): Promise<DeducedTarget> {
   const inferred = await inferWorkspaceTarget(organization.id);
 
   if (inferred.evidence.recognized === 0) {
+    const t = await getTranslations("prospecting.actions");
     return {
-      error: inferred.evidence.domains
-        ? "Clozer n'a reconnu aucune entreprise parmi vos prospects. Saisissez votre cible à la main."
-        : "Pas encore de devis ou de présentation envoyés à une adresse professionnelle.",
+      error: inferred.evidence.domains ? t("noCompanyRecognized") : t("noProfessionalSends"),
     };
   }
 
@@ -110,20 +110,21 @@ const providerSchema = z.enum(["APOLLO", "LEMLIST", "MOCK"]);
  */
 export async function startSearchAction(providers: string[]): Promise<ActionResult> {
   const { organization } = await requireProspecting();
+  const t = await getTranslations("prospecting.actions");
   const names = z.array(providerSchema).min(1).max(3).parse(providers);
   const available = availableProviders(organization.id);
-  if (names.some((name) => !available.includes(name))) return { error: "Ce fournisseur n'est pas configuré." };
+  if (names.some((name) => !available.includes(name))) return { error: t("providerNotConfigured") };
 
   const target = await activeTarget(organization.id);
   if (!target || !targetIsSearchable(filtersOf(target))) {
-    return { error: "Indiquez au moins un secteur et des postes ou niveaux visés." };
+    return { error: t("targetNotSearchable") };
   }
   const now = new Date();
   await expireStaleRuns(now, { organizationId: organization.id });
   const running = await prisma.prospectingRun.count({
     where: { organizationId: organization.id, status: "RUNNING" },
   });
-  if (running > 0) return { error: "Une recherche est déjà en cours." };
+  if (running > 0) return { error: t("searchRunning") };
 
   const comparisonId = names.length > 1 ? crypto.randomUUID() : null;
   const runIds: string[] = [];
@@ -134,7 +135,7 @@ export async function startSearchAction(providers: string[]): Promise<ActionResu
   inBackground("prospecting-search", async () => {
     for (const runId of runIds) await runSearch(runId);
   });
-  revalidatePath("/prospection");
+  revalidatePath("/prospecting");
   return { ok: true };
 }
 
@@ -151,8 +152,8 @@ export async function rejectSuggestionAction(suggestionId: string): Promise<Acti
     where: { id: suggestionId, organizationId: organization.id, status: "SUGGESTED" },
     data: { status: "REJECTED", decidedAt: new Date(), decidedById: user.id },
   });
-  if (count === 0) return { error: "Cette suggestion a déjà été traitée." };
-  revalidatePath("/prospection");
+  if (count === 0) return { error: (await getTranslations("prospecting.actions"))("alreadyHandled") };
+  revalidatePath("/prospecting");
   return { ok: true };
 }
 
@@ -163,7 +164,7 @@ export async function rejectSuggestionAction(suggestionId: string): Promise<Acti
 export async function optOutSuggestionAction(suggestionId: string): Promise<ActionResult> {
   const { user, organization } = await requireProspecting();
   const suggestion = await ownedSuggestion(organization.id, suggestionId);
-  if (suggestion.status === "REVEALING") return { error: "Attendez la fin de la révélation." };
+  if (suggestion.status === "REVEALING") return { error: (await getTranslations("prospecting.actions"))("waitReveal") };
 
   await addOptOut(
     {
@@ -190,13 +191,14 @@ export async function optOutSuggestionAction(suggestionId: string): Promise<Acti
     // Nothing that identifies someone who said no
     data: { status: "REJECTED", decidedAt: new Date(), decidedById: user.id, ...PERSONAL_FIELDS },
   });
-  revalidatePath("/prospection");
+  revalidatePath("/prospecting");
   return { ok: true };
 }
 
 /** Accepted contacts are revealed (provider credits) in the background, within the daily cap. */
 export async function acceptSuggestionsAction(suggestionIds: string[]): Promise<ActionResult> {
   const { user, organization } = await requireProspecting();
+  const t = await getTranslations("prospecting.actions");
   const ids = z.array(z.string().min(1)).min(1).max(50).parse(suggestionIds);
   const now = new Date();
   const dailyLimit = getEnv().PROSPECTING_DAILY_REVEAL_LIMIT;
@@ -224,17 +226,17 @@ export async function acceptSuggestionsAction(suggestionIds: string[]): Promise<
       { isolationLevel: "Serializable" },
     );
   } catch {
-    return { error: "Un autre choix est en cours. Réessayez." };
+    return { error: t("concurrentChoice") };
   }
 
-  if (outcome.asked === 0) return { error: "Ces suggestions ont déjà été traitées." };
-  if (outcome.accepted.length === 0) return { error: "Limite de révélations du jour atteinte. Reprenez demain." };
+  if (outcome.asked === 0) return { error: t("allAlreadyHandled") };
+  if (outcome.accepted.length === 0) return { error: t("dailyLimitReached") };
 
   inBackground("prospecting-reveal", () => startReveals(outcome.accepted, now));
-  revalidatePath("/prospection");
+  revalidatePath("/prospecting");
   const left = outcome.asked - outcome.accepted.length;
   return left > 0
-    ? { ok: true, notice: `Limite du jour atteinte : ${left} contact${left > 1 ? "s" : ""} non révélé${left > 1 ? "s" : ""}.` }
+    ? { ok: true, notice: t("dailyLimitPartial", { left }) }
     : { ok: true };
 }
 
@@ -253,8 +255,9 @@ const CREATING_TIMEOUT_MS = 2 * 60 * 1000;
  */
 export async function createOutreachLinkAction(suggestionId: string, documentId: string): Promise<OutreachResult> {
   const { user, organization } = await requireProspecting();
+  const t = await getTranslations("prospecting.actions");
   const suggestion = await ownedSuggestion(organization.id, suggestionId);
-  if (suggestion.status !== "READY" || !suggestion.email) return { error: "Ce contact n'est pas prêt." };
+  if (suggestion.status !== "READY" || !suggestion.email) return { error: t("contactNotReady") };
 
   // The person may have opted out, here or elsewhere, since the reveal
   const [blocked, unsubscribed] = await Promise.all([
@@ -268,7 +271,7 @@ export async function createOutreachLinkAction(suggestionId: string, documentId:
       select: { id: true },
     }),
   ]);
-  if (blocked.size > 0 || unsubscribed) return { error: "Cette personne ne souhaite pas être contactée." };
+  if (blocked.size > 0 || unsubscribed) return { error: t("doNotContact") };
 
   let linkId = suggestion.linkId;
   const abandoned = linkId === CREATING && suggestion.updatedAt < new Date(Date.now() - CREATING_TIMEOUT_MS);
@@ -278,7 +281,7 @@ export async function createOutreachLinkAction(suggestionId: string, documentId:
       where: { id: suggestion.id, linkId: suggestion.linkId, updatedAt: suggestion.updatedAt },
       data: { linkId: CREATING },
     });
-    if (count === 0) return { error: "Le lien est en cours de création." };
+    if (count === 0) return { error: t("linkBeingCreated") };
 
     const link = await createDocumentLink({
       organizationId: organization.id,
@@ -295,10 +298,10 @@ export async function createOutreachLinkAction(suggestionId: string, documentId:
       draft: true,
     }).catch(() => null);
     await prisma.prospectSuggestion.update({ where: { id: suggestion.id }, data: { linkId: link?.id ?? null } });
-    if (!link) return { error: "Document introuvable." };
+    if (!link) return { error: t("documentNotFound") };
     linkId = link.id;
   } else if (linkId === CREATING) {
-    return { error: "Le lien est en cours de création." };
+    return { error: t("linkBeingCreated") };
   }
 
   const link = await prisma.link.findFirst({
@@ -312,7 +315,7 @@ export async function createOutreachLinkAction(suggestionId: string, documentId:
   });
   if (!link || link.prospects.length === 0) {
     await prisma.prospectSuggestion.update({ where: { id: suggestion.id }, data: { linkId: null, hookSubject: null, hookBody: null } });
-    return { error: "Le lien a été archivé. Recommencez pour en créer un nouveau." };
+    return { error: t("linkArchived") };
   }
   const url = `${getPublicAppUrl()}/v/${link.slug}`;
 
@@ -345,7 +348,7 @@ export async function createOutreachLinkAction(suggestionId: string, documentId:
     unsubscribeUrl: unsubscribePageUrl(link.prospects[0].id),
   });
 
-  revalidatePath("/prospection");
+  revalidatePath("/prospecting");
   return { linkId, url, email: suggestion.email, subject, body: `${message}\n\n${footer}`, draft: !!link.draftAt };
 }
 
@@ -353,8 +356,8 @@ export async function createOutreachLinkAction(suggestionId: string, documentId:
 export async function markOutreachSentAction(linkId: string): Promise<ActionResult> {
   const { organization } = await requireProspecting();
   const confirmed = await confirmLinkSent({ organizationId: organization.id, linkId });
-  if (!confirmed) return { error: "Lien introuvable." };
-  revalidatePath("/prospection");
+  if (!confirmed) return { error: (await getTranslations("prospecting.actions"))("linkNotFound") };
+  revalidatePath("/prospecting");
   revalidatePath("/dashboard");
   return { ok: true };
 }

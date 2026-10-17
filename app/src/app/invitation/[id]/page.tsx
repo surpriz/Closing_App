@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
 
 import { InvitationResponse, SwitchAccountButton } from "@/components/auth/invitation-response";
@@ -8,15 +9,16 @@ import { getSession } from "@/lib/session";
 
 import { acceptInvitation, rejectInvitation } from "./actions";
 
-export const metadata: Metadata = {
-  title: "Invitation",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("auth.invitation");
+  return { title: t("metaTitle"), robots: { index: false, follow: false } };
+}
 
 // Opening the page changes nothing: mail scanners follow links, so joining
 // takes a click.
 export default async function InvitationPage({ params }: PageProps<"/invitation/[id]">) {
   const { id } = await params;
+  const t = await getTranslations("auth.invitation");
   const here = `/invitation/${id}`;
   const session = await getSession();
   if (!session) redirect(`/login?next=${encodeURIComponent(here)}`);
@@ -34,17 +36,17 @@ export default async function InvitationPage({ params }: PageProps<"/invitation/
 
   if (!invitation || invitation.status !== "pending" || invitation.expiresAt < new Date()) {
     return (
-      <Card title="Cette invitation n'est plus valable.">
-        <p className="text-muted-foreground">Demandez-en une nouvelle à votre manager.</p>
+      <Card title={t("invalidTitle")}>
+        <p className="text-muted-foreground">{t("invalidBody")}</p>
       </Card>
     );
   }
 
   if (invitation.email.toLowerCase() !== session.user.email.toLowerCase()) {
     return (
-      <Card title="Cette invitation est pour une autre adresse.">
+      <Card title={t("otherAddressTitle")}>
         <p className="text-muted-foreground">
-          Vous êtes connecté avec {session.user.email}, l&apos;invitation a été envoyée à {invitation.email}.
+          {t("otherAddressBody", { current: session.user.email, invited: invitation.email })}
         </p>
         <SwitchAccountButton next={here} />
       </Card>
@@ -53,10 +55,8 @@ export default async function InvitationPage({ params }: PageProps<"/invitation/
 
   const inviter = invitation.user.name || invitation.user.email;
   return (
-    <Card title={`${inviter} vous invite à rejoindre ${invitation.organization.name}.`}>
-      <p className="text-muted-foreground">
-        Vous suivrez vos propositions dans l&apos;espace de l&apos;équipe. Votre manager verra où en sont vos deals.
-      </p>
+    <Card title={t("inviteTitle", { inviter, workspace: invitation.organization.name })}>
+      <p className="text-muted-foreground">{t("inviteBody")}</p>
       <InvitationResponse accept={acceptInvitation.bind(null, id)} reject={rejectInvitation.bind(null, id)} />
     </Card>
   );

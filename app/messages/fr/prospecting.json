@@ -1,0 +1,151 @@
+{
+  "metaTitle": "Prospection",
+  "page": {
+    "title": "Prospection",
+    "description": "Des décideurs qui ressemblent à vos clients. Vous choisissez qui révéler.",
+    "coverage": "Base d'entreprises françaises.",
+    "target": "Votre cible",
+    "targetUndefined": "à définir",
+    "departement": "dép. {code}",
+    "search": "Recherche",
+    "runRunning": "en cours…",
+    "runFailed": "échec : {error}",
+    "unknownError": "erreur inconnue",
+    "runDone": "{created, plural, one {# nouvelle suggestion} other {# nouvelles suggestions}} sur {found, plural, one {# trouvée} other {# trouvées}}",
+    "providers": "Fournisseurs",
+    "providersHint": "sur votre cible actuelle",
+    "suggestions": "Suggestions",
+    "empty": "Lancez une recherche pour voir des contacts."
+  },
+  "actions": {
+    "fieldTooLong": "Un des champs est trop long ou contient trop de valeurs.",
+    "noCompanyRecognized": "Clozer n'a reconnu aucune entreprise parmi vos prospects. Saisissez votre cible à la main.",
+    "noProfessionalSends": "Pas encore de devis ou de présentation envoyés à une adresse professionnelle.",
+    "providerNotConfigured": "Ce fournisseur n'est pas configuré.",
+    "targetNotSearchable": "Indiquez au moins un secteur et des postes ou niveaux visés.",
+    "searchRunning": "Une recherche est déjà en cours.",
+    "alreadyHandled": "Cette suggestion a déjà été traitée.",
+    "waitReveal": "Attendez la fin de la révélation.",
+    "concurrentChoice": "Un autre choix est en cours. Réessayez.",
+    "allAlreadyHandled": "Ces suggestions ont déjà été traitées.",
+    "dailyLimitReached": "Limite de révélations du jour atteinte. Reprenez demain.",
+    "dailyLimitPartial": "Limite du jour atteinte : {left, plural, one {# contact non révélé} other {# contacts non révélés}}.",
+    "contactNotReady": "Ce contact n'est pas prêt.",
+    "doNotContact": "Cette personne ne souhaite pas être contactée.",
+    "linkBeingCreated": "Le lien est en cours de création.",
+    "documentNotFound": "Document introuvable.",
+    "linkArchived": "Le lien a été archivé. Recommencez pour en créer un nouveau.",
+    "linkNotFound": "Lien introuvable."
+  },
+  "labels": {
+    "provider": {
+      "MOCK": "Démo"
+    },
+    "status": {
+      "SUGGESTED": "À trier",
+      "ACCEPTED": "Accepté",
+      "REVEALING": "Révélation…",
+      "READY": "Prêt",
+      "INVALID": "Indisponible",
+      "REJECTED": "Écarté"
+    },
+    "invalid": {
+      "NOT_FOUND": "Email introuvable",
+      "UNVERIFIED": "Email non vérifié",
+      "PERSONAL": "Email personnel, écarté",
+      "DUPLICATE": "Déjà dans vos prospects",
+      "OPTED_OUT": "Ne souhaite pas être contacté"
+    }
+  },
+  "runControls": {
+    "started": "Recherche lancée",
+    "noProvider": "Aucun fournisseur configuré (APOLLO_API_KEY, LEMLIST_API_KEY).",
+    "searchWith": "Chercher avec {provider}",
+    "compare": "Comparer sur la même cible"
+  },
+  "providerCompare": {
+    "label": "Comparaison des fournisseurs sur votre cible",
+    "provider": "Fournisseur",
+    "found": "Proposés",
+    "decisionMakers": "Décideurs",
+    "verifiedCompany": "Entreprise confirmée",
+    "validEmails": "Emails valides",
+    "credits": "Crédits",
+    "perDelivered": "Par contact livré",
+    "percent": "{value} %"
+  },
+  "suggestions": {
+    "contact": "Contact",
+    "viewLinkedin": "Voir le profil LinkedIn",
+    "searchLinkedin": "Chercher sur LinkedIn",
+    "sectorConfirmed": "Secteur confirmé",
+    "otherNaf": "Autre code NAF",
+    "via": "via {provider}",
+    "reveal": "Révéler",
+    "reject": "Écarter",
+    "thisPerson": "Cette personne"
+  },
+  "optOut": {
+    "done": "Cette personne ne sera plus jamais proposée",
+    "trigger": "Ne plus proposer",
+    "title": "{name} ne souhaite pas être contacté ?",
+    "description": "Clozer ne proposera plus jamais cette personne, à vous ni à personne d'autre, et efface ce qu'il savait d'elle. Les liens déjà créés pour elle n'enverront plus rien. C'est définitif.",
+    "cancel": "Annuler",
+    "saving": "Enregistrement…",
+    "confirm": "Ne plus jamais proposer"
+  },
+  "outreach": {
+    "sent": "C'est parti : le deal apparaît dans votre journée",
+    "copied": "Message copié",
+    "copyFailed": "Copie impossible : sélectionnez le texte à la main.",
+    "viewMessage": "Voir le message",
+    "createLink": "Créer un lien",
+    "title": "Premier message",
+    "description": "Vous l'envoyez depuis votre boîte mail. Clozer ne relance pas tout seul un contact qui ne vous connaît pas.",
+    "noDocument": "Ajoutez d'abord un document dans <link>Documents</link>.",
+    "documentLabel": "Document à partager",
+    "drafting": "Rédaction…",
+    "showMessage": "Afficher le message",
+    "createAndDraft": "Créer le lien et rédiger",
+    "to": "À :",
+    "subject": "Objet :",
+    "messageLabel": "Message à envoyer",
+    "copy": "Copier le message",
+    "openMail": "Ouvrir dans ma messagerie",
+    "markSent": "Je l'ai envoyé"
+  },
+  "targetForm": {
+    "saved": "Cible enregistrée",
+    "deducing": "Analyse de vos deals…",
+    "deduce": "Déduire de mes deals",
+    "evidence": "Proposé à partir de {recognized, plural, one {# entreprise reconnue} other {# entreprises reconnues}} sur {domains}",
+    "evidenceWon": ", dont {won, plural, one {# gagnée} other {# gagnées}}",
+    "evidenceConfidence": " · confiance {level, select, good {bonne} medium {moyenne} other {faible}}",
+    "evidenceEnd": ". Vérifiez puis enregistrez.",
+    "keywordsLabel": "Secteur, en vos mots",
+    "keywordsPlaceholder": "agence web, studio de design",
+    "nafLabel": "Codes NAF",
+    "jobTitlesLabel": "Postes visés",
+    "jobTitlesPlaceholder": "Directeur commercial, CEO",
+    "seniorityLegend": "Niveau",
+    "seniority": {
+      "owner": "Gérant",
+      "founder": "Fondateur",
+      "c_suite": "Direction générale",
+      "partner": "Associé",
+      "vp": "VP",
+      "head": "Responsable",
+      "director": "Directeur",
+      "manager": "Manager"
+    },
+    "excludedLabel": "Domaines à exclure",
+    "excludedPlaceholder": "client-actuel.fr",
+    "headcountLegend": "Effectif",
+    "headcountRange": "{min}-{max} salariés",
+    "headcountOpen": "{min}+ salariés",
+    "regionsLegend": "Régions",
+    "departementsLabel": "Départements",
+    "saving": "Enregistrement…",
+    "save": "Enregistrer la cible"
+  }
+}

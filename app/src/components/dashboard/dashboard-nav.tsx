@@ -2,13 +2,15 @@
 
 import { FileText, Settings2, Sun, Telescope, Users } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 
 type Item = {
   href: string;
-  label: string;
+  /** Key in "nav.dashboardNav". */
+  label: "today" | "team" | "documents" | "prospecting" | "settings";
   icon: typeof Sun;
   match: string[];
   /** Owners and admins only. */
@@ -20,11 +22,11 @@ type Item = {
 };
 
 const ITEMS: Item[] = [
-  { href: "/dashboard", label: "Aujourd'hui", icon: Sun, match: ["/dashboard", "/links"] },
-  { href: "/equipe", label: "Équipe", icon: Users, match: ["/equipe"], managerOnly: true, teamOnly: true },
-  { href: "/documents", label: "Documents", icon: FileText, match: ["/documents"] },
-  { href: "/prospection", label: "Prospection", icon: Telescope, match: ["/prospection"], prospectingOnly: true },
-  { href: "/settings", label: "Réglages", icon: Settings2, match: ["/settings"] },
+  { href: "/dashboard", label: "today", icon: Sun, match: ["/dashboard", "/links"] },
+  { href: "/team", label: "team", icon: Users, match: ["/team"], managerOnly: true, teamOnly: true },
+  { href: "/documents", label: "documents", icon: FileText, match: ["/documents"] },
+  { href: "/prospecting", label: "prospecting", icon: Telescope, match: ["/prospecting"], prospectingOnly: true },
+  { href: "/settings", label: "settings", icon: Settings2, match: ["/settings"] },
 ];
 
 type Access = { isManager: boolean; hasTeam: boolean; prospecting?: boolean };
@@ -42,9 +44,10 @@ function useActive() {
 /** Report-strip tabs in the header, from the `sm` breakpoint up: cells between hairlines. */
 export function DashboardNav(access: Access) {
   const isActive = useActive();
+  const t = useTranslations("nav.dashboardNav");
 
   return (
-    <nav aria-label="Navigation principale" className="hidden items-stretch border-l border-border sm:flex">
+    <nav aria-label={t("mainNav")} className="hidden items-stretch border-l border-border sm:flex">
       {itemsFor(access).map((item) => {
         const active = isActive(item.match);
         return (
@@ -59,7 +62,7 @@ export function DashboardNav(access: Access) {
                 : "text-muted-foreground hover:bg-card hover:text-foreground",
             )}
           >
-            {item.label}
+            {t(item.label)}
           </Link>
         );
       })}
@@ -70,11 +73,12 @@ export function DashboardNav(access: Access) {
 /** Fixed tab bar at the bottom of the screen on phones. */
 export function MobileNav({ isManager, hasTeam }: { isManager: boolean; hasTeam: boolean }) {
   const isActive = useActive();
+  const t = useTranslations("nav.dashboardNav");
   const items = itemsFor({ isManager, hasTeam }).filter((item) => !item.prospectingOnly);
 
   return (
     <nav
-      aria-label="Navigation principale"
+      aria-label={t("mainNav")}
       className="fixed inset-x-0 bottom-0 z-40 border-t border-foreground bg-background pb-[env(safe-area-inset-bottom)] sm:hidden"
     >
       <div className={cn("grid", items.length === 4 ? "grid-cols-4" : "grid-cols-3")}>
@@ -93,7 +97,7 @@ export function MobileNav({ isManager, hasTeam }: { isManager: boolean; hasTeam:
             >
               {active && <span aria-hidden className="absolute inset-x-0 top-0 h-0.5 bg-foreground" />}
               <Icon className="size-5" strokeWidth={active ? 2.2 : 1.8} aria-hidden />
-              {item.label}
+              {t(item.label)}
             </Link>
           );
         })}

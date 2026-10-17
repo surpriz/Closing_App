@@ -10,6 +10,7 @@ import {
   Users,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import {
   useState,
   useTransition,
@@ -75,6 +76,8 @@ export function ShareReady({
   settings: ComponentProps<typeof LinkSettingsPanel>;
 }) {
   const router = useRouter();
+  const t = useTranslations("deal.shareReady");
+  const locale = useLocale();
   const [copied, setCopied] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [who, setWho] = useState("");
@@ -94,10 +97,10 @@ export function ShareReady({
       await navigator.clipboard.writeText(url);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-      toast.success("Lien copié. Collez-le dans votre message.");
+      toast.success(t("copiedToast"));
       noteCopied();
     } catch {
-      toast.error("Copie impossible : sélectionnez le lien à la main.");
+      toast.error(t("copyFailed"));
     }
   }
 
@@ -108,6 +111,7 @@ export function ShareReady({
       to: recipient?.email,
       firstName: recipient?.firstName,
       signature,
+      locale,
     });
     const target = composeUrl(mailClient, draft);
     if (!target) return void copy();
@@ -150,28 +154,28 @@ export function ShareReady({
           <h2 className="text-heading">
             {sent
               ? shared
-                ? "C'est en ligne. Chaque nouveau lecteur apparaît ici."
-                : "C'est parti. Vous serez prévenu dès qu'il l'ouvre."
+                ? t("liveShared")
+                : t("sentPersonal")
               : wasCopied
-                ? "Lien copié"
-                : "Votre lien est prêt"}
+                ? t("linkCopied")
+                : t("ready")}
           </h2>
           {!sent && wasCopied && (
             <div className="flex max-w-xl flex-wrap items-center gap-x-3 gap-y-2">
               <p className="text-body text-muted-foreground">
-                Collez-le dans votre message et envoyez-le. Le suivi démarre dès qu&apos;il l&apos;ouvre.
+                {t("pasteAndSend")}
               </p>
               <Button size="sm" variant="outline" disabled={pending} onClick={confirmSent}>
                 <Check />
-                C&apos;est envoyé
+                {t("confirmSent")}
               </Button>
             </div>
           )}
           {!sent && !wasCopied && (
             <p className="max-w-xl text-body text-muted-foreground">
               {shared
-                ? "Postez-le, mettez-le en signature ou transférez-le : chaque lecteur donne son email et reçoit son propre lien, suivi comme un deal."
-                : "Il l'ouvre et lit tout de suite, sans rien remplir. Vous saurez quelles pages, combien de temps, et quand relancer."}
+                ? t("sharedIntro")
+                : t("personalIntro")}
             </p>
           )}
         </div>
@@ -179,14 +183,17 @@ export function ShareReady({
 
       {shared ? null : recipient ? (
         <p className="text-small text-muted-foreground">
-          Pour <span className="text-foreground">{recipient.email}</span>
+          {t.rich("forRecipient", {
+            email: recipient.email,
+            b: (chunks) => <span className="text-foreground">{chunks}</span>,
+          })}
         </p>
       ) : (
         <form onSubmit={saveRecipient} className="space-y-1.5">
           <label htmlFor="share-who" className="text-small font-medium">
-            Pour qui est ce lien ?{" "}
+            {t("whoLabel")}{" "}
             <span className="font-normal text-muted-foreground">
-              (facultatif)
+              {t("optional")}
             </span>
           </label>
           <div className="flex gap-2">
@@ -194,7 +201,7 @@ export function ShareReady({
               id="share-who"
               value={who}
               onChange={(e) => setWho(e.target.value)}
-              placeholder="Marie Dupont, Acme ou marie@acme.fr"
+              placeholder={t("whoPlaceholder")}
               className="h-10"
               disabled={pending}
             />
@@ -204,11 +211,11 @@ export function ShareReady({
               size="lg"
               disabled={pending || !who.trim()}
             >
-              Enregistrer
+              {t("save")}
             </Button>
           </div>
           <p className="text-micro text-muted-foreground">
-            Le deal portera ce nom. Avec un email, Clozer pourra le relancer.
+            {t("whoHint")}
           </p>
         </form>
       )}
@@ -218,25 +225,24 @@ export function ShareReady({
           type="button"
           onClick={copy}
           className="h-10 min-w-0 flex-1 truncate rounded-lg border border-input bg-muted/50 px-3 text-left font-mono text-small transition-colors hover:border-foreground/60"
-          title="Copier le lien"
+          title={t("copyTitle")}
         >
           {url.replace(/^https?:\/\//, "")}
         </button>
         <Button size="lg" onClick={copy}>
           {copied ? <Check /> : <Copy />}
-          {copied ? "Copié" : "Copier le lien"}
+          {copied ? t("copied") : t("copyLink")}
         </Button>
         <Button size="lg" variant="outline" onClick={sendByEmail}>
           <Mail />
-          Envoyer par email
+          {t("sendByEmail")}
         </Button>
       </div>
 
       {processing && (
         <p className="flex items-center gap-2 text-small text-muted-foreground">
           <Sparkles className="size-4 shrink-0 animate-pulse" aria-hidden />
-          Clozer lit votre document pour adapter les réglages. Vous pouvez déjà
-          l&apos;envoyer.
+          {t("processing")}
         </p>
       )}
       {notice && (
@@ -248,14 +254,13 @@ export function ShareReady({
 
       <div className="space-y-2 border-t border-border pt-4">
         <p className="text-body font-medium">
-          Mot d&apos;accueil{" "}
+          {t("welcomeTitle")}{" "}
           <span className="font-normal text-muted-foreground">
-            (facultatif)
+            {t("optional")}
           </span>
         </p>
         <p className="text-small text-muted-foreground">
-          Une vidéo ou un vocal pour présenter le document : le prospect voit
-          votre bulle dès l&apos;ouverture.
+          {t("welcomeHint")}
         </p>
         {welcome}
       </div>
@@ -276,7 +281,7 @@ export function ShareReady({
             </span>
           ))}
           <span className="inline-flex items-center gap-1 px-1 text-muted-foreground hover:text-foreground">
-            Personnaliser
+            {t("customize")}
             <ChevronDown
               className={cn(
                 "size-4 transition-transform",
@@ -296,7 +301,7 @@ export function ShareReady({
         className="inline-flex items-center gap-1.5 text-small text-muted-foreground hover:text-foreground"
       >
         <Eye className="size-4" aria-hidden />
-        Voir ce que verra le prospect
+        {t("preview")}
       </a>
 
       {/* The everyday case is one link for one person; broadcasting is the exception, one line away */}
@@ -306,28 +311,28 @@ export function ShareReady({
           <span>
             {shared ? (
               <>
-                Lien ouvert à tous : chaque lecteur donne son email et reçoit son propre lien.{" "}
+                {t("sharedMode")}{" "}
                 <button
                   type="button"
                   disabled={pending}
                   onClick={() => switchMode(false)}
                   className="font-medium text-foreground underline underline-offset-4"
                 >
-                  Revenir à un lien pour une personne
+                  {t("backToPersonal")}
                 </button>
               </>
             ) : (
               <>
-                Vous voulez le diffuser largement (post, plaquette, signature) ?{" "}
+                {t("broadcastAsk")}{" "}
                 <button
                   type="button"
                   disabled={pending}
                   onClick={() => switchMode(true)}
                   className="font-medium text-foreground underline underline-offset-4"
                 >
-                  En faire un lien ouvert à tous
+                  {t("makeOpen")}
                 </button>
-                , chaque lecteur donnera son email.
+                {t("makeOpenAfter")}
               </>
             )}
           </span>
