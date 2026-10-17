@@ -1,15 +1,22 @@
 "use client";
 
-import { BellRing, Check, PenLine, Send } from "lucide-react";
+import { BellRing, Check, ExternalLink, PenLine, Send } from "lucide-react";
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useState, useSyncExternalStore, useTransition } from "react";
 import { toast } from "sonner";
 
 import { saveMailClient, saveOfferDescription } from "@/app/bienvenue/actions";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { MAIL_CLIENT_LABELS, MAIL_CLIENTS, OFFER_DESCRIPTION_MAX, toolFor, type MailClient } from "@/lib/onboarding";
+import {
+  canInstallChromeExtension,
+  MAIL_CLIENT_LABELS,
+  MAIL_CLIENTS,
+  OFFER_DESCRIPTION_MAX,
+  toolFor,
+  type MailClient,
+} from "@/lib/onboarding";
 import { cn } from "@/lib/utils";
 
 import { IconRow, StepHeading } from "./parts";
@@ -93,7 +100,11 @@ function MailClientQuestion({
           </button>
         ))}
       </div>
-      {value && <p className="text-small text-muted-foreground">{mailToolHint(value, connected, chromeStoreUrl)}</p>}
+      {value && toolFor(value) === "chrome" && chromeStoreUrl && !connected.chrome ? (
+        <ExtensionOffer mailbox={value === "gmail" ? "Gmail" : "Outlook"} storeUrl={chromeStoreUrl} />
+      ) : (
+        value && <p className="text-small text-muted-foreground">{mailToolHint(value, connected, chromeStoreUrl)}</p>
+      )}
     </div>
   );
 }
@@ -119,6 +130,48 @@ function mailToolHint(
       </Link>
       . Rien d&apos;obligatoire : le copier-coller marche aussi.
     </>
+  );
+}
+
+const noSubscribe = () => () => {};
+
+/** Gmail or Outlook on the web, store live, not paired yet: the extension is worth a real offer. Still optional. */
+function ExtensionOffer({ mailbox, storeUrl }: { mailbox: string; storeUrl: string }) {
+  // The user agent only exists in the browser: say nothing about it on the server
+  const canInstall = useSyncExternalStore(
+    noSubscribe,
+    () => canInstallChromeExtension(navigator.userAgent),
+    () => null,
+  );
+
+  return (
+    <div className="space-y-3 border border-foreground bg-card px-4 py-4">
+      <p className="font-semibold">
+        {mailbox} : joignez votre PDF comme d&apos;habitude{" "}
+        <span className="font-normal text-muted-foreground">(facultatif)</span>
+      </p>
+      <p className="text-small text-muted-foreground">
+        L&apos;extension Clozer le remplace par un lien et vous prévient quand votre prospect le lit. Sans elle, le
+        copier-coller du lien marche aussi.
+      </p>
+      {canInstall === true && (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <a href={storeUrl} target="_blank" rel="noreferrer" className={buttonVariants({ variant: "default" })}>
+            Ajouter à Chrome
+            <ExternalLink />
+          </a>
+          <Link href="/bienvenue?etape=outil" className="text-small underline underline-offset-4">
+            Puis la connecter, pas à pas
+          </Link>
+        </div>
+      )}
+      {canInstall === false && (
+        <p className="text-small">
+          Elle s&apos;installe depuis Chrome ou Edge, sur ordinateur. Rouvrez Clozer là-bas quand vous voudrez
+          l&apos;ajouter.
+        </p>
+      )}
+    </div>
   );
 }
 

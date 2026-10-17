@@ -2,12 +2,12 @@
 
 import { Check, Download, ExternalLink, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useSyncExternalStore, useTransition } from "react";
 
 import { OutlookConnect } from "@/components/dashboard/outlook-connect";
 import { OutlookManifestLink } from "@/components/dashboard/outlook-manifest-link";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { toolFor, type MailClient } from "@/lib/onboarding";
+import { canInstallChromeExtension, toolFor, type MailClient } from "@/lib/onboarding";
 
 import { Instructions, StepHeading } from "./parts";
 
@@ -47,8 +47,16 @@ function CheckAgain() {
   );
 }
 
+const noSubscribe = () => () => {};
+
 function ChromeInstall({ mailClient, connected, chromeStoreUrl }: Props) {
   const mailbox = mailClient === "gmail" ? "Gmail" : "Outlook";
+  // Assume a capable browser on the server, the page is mostly opened from one
+  const canInstall = useSyncExternalStore(
+    noSubscribe,
+    () => canInstallChromeExtension(navigator.userAgent),
+    () => true,
+  );
   return (
     <div className="space-y-8">
       <StepHeading
@@ -62,9 +70,11 @@ function ChromeInstall({ mailClient, connected, chromeStoreUrl }: Props) {
           items={[
             {
               text: chromeStoreUrl
-                ? "Installez-la depuis le Chrome Web Store."
+                ? canInstall
+                  ? "Installez-la depuis le Chrome Web Store."
+                  : "Ouvrez cette page dans Chrome ou Edge, sur ordinateur, puis installez-la depuis le Chrome Web Store."
                 : "Elle arrive très bientôt sur le Chrome Web Store. En attendant, créez vos liens depuis Clozer et collez-les dans vos emails : on vous montre comment juste après.",
-              extra: chromeStoreUrl && (
+              extra: chromeStoreUrl && canInstall && (
                 <a
                   href={chromeStoreUrl}
                   target="_blank"

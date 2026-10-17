@@ -55,6 +55,14 @@ export function mailToolTip(
 }
 
 /**
+ * The Chrome extension only installs from a desktop Chromium browser (Chrome,
+ * Edge, Brave…). Chrome on iOS says CriOS, not Chrome/, and can't take it either.
+ */
+export function canInstallChromeExtension(userAgent: string) {
+  return /Chrome\//.test(userAgent) && !/Mobi|Android|iPhone|iPad/i.test(userAgent);
+}
+
+/**
  * Value by doing, tools last: the seller drops a real document straight away and
  * opens it as their prospect would before anything about mailboxes or extensions.
  */

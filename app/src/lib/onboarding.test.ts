@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  canInstallChromeExtension,
   isTestRead,
   isToolConnected,
   mailToolTip,
@@ -66,5 +67,25 @@ describe("onboarding", () => {
   it("names the test link after the document", () => {
     expect(testLinkName("Devis Acme.pdf")).toBe("Test · Devis Acme.pdf");
     expect(testLinkName("x".repeat(300))).toHaveLength(200);
+  });
+
+  it("offers the extension on desktop Chromium only", () => {
+    const chromeMac =
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36";
+    const edgeWin =
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0";
+    const safari =
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15";
+    const firefox = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:131.0) Gecko/20100101 Firefox/131.0";
+    const chromeAndroid =
+      "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36";
+    const chromeIos =
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/141.0 Mobile/15E148 Safari/604.1";
+    expect(canInstallChromeExtension(chromeMac)).toBe(true);
+    expect(canInstallChromeExtension(edgeWin)).toBe(true);
+    expect(canInstallChromeExtension(safari)).toBe(false);
+    expect(canInstallChromeExtension(firefox)).toBe(false);
+    expect(canInstallChromeExtension(chromeAndroid)).toBe(false);
+    expect(canInstallChromeExtension(chromeIos)).toBe(false);
   });
 });
