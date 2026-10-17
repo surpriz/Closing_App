@@ -8,8 +8,11 @@ export default defineConfig({
     // which the app needs in EXTENSION_IDS. The Web Store assigns the production ID.
     const devKey = process.env.WXT_MANIFEST_KEY;
     return {
-      name: mode === "production" ? "Clozer" : `Clozer (${mode})`,
-      description: "Remplacez une pièce jointe PDF par un lien Clozer dans Gmail et Outlook, et sachez quand un prospect lit votre proposition.",
+      // Name and description per Chrome UI language: public/_locales/{en,fr}/messages.json.
+      // Dev and staging builds keep a plain name so they stand out next to the Store one.
+      default_locale: "en",
+      name: mode === "production" ? "__MSG_extName__" : `Clozer (${mode})`,
+      description: "__MSG_extDescription__",
       homepage_url: "https://www.clozer.club/support",
       // notifications + alarms + idle: "your prospect is reading right now", polled every 30 s
       permissions: ["storage", "notifications", "alarms", "idle"],

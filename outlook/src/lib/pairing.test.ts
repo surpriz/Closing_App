@@ -38,6 +38,9 @@ describe("waitForPairing", () => {
     expect(url).toMatch(/\/api\/ext\/pair\/poll$/);
     expect(JSON.parse(init.body)).toEqual({ poll: pairing.poll });
     expect(init.headers.Authorization).toBeUndefined();
+    // The app answers in Outlook's language; no custom header that CORS would preflight
+    expect(init.headers["Accept-Language"]).toMatch(/^(en|fr)$/);
+    expect(Object.keys(init.headers).sort()).toEqual(["Accept-Language", "Content-Type"]);
   });
 
   it("stops when the code expired", async () => {

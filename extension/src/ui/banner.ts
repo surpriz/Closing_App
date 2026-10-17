@@ -16,7 +16,7 @@ let stack: HTMLElement | null = null;
 
 function getStack() {
   if (!stack?.isConnected) {
-    stack = h("div", { class: "banners", role: "region", "aria-label": "Alertes Clozer" });
+    stack = h("div", { class: "banners", role: "region", "aria-label": COPY.alerts });
     getLayer().append(stack);
   }
   return stack;
@@ -69,14 +69,14 @@ export function renderBanners(alerts: MailAlert[], handlers: BannerHandlers) {
           "div",
           { class: "row" },
           alert.canMarkWon
-            ? h("button", { class: "primary", type: "button", onclick: () => handlers.won(alert) }, "Marquer gagné")
+            ? h("button", { class: "primary", type: "button", onclick: () => handlers.won(alert) }, COPY.markWon)
             : null,
           h(
             "button",
             { class: alert.canMarkWon ? "ghost" : "primary", type: "button", onclick: () => handlers.open(alert) },
-            action ? "Voir le deal" : "Voir la lecture",
+            action ? COPY.seeDeal : COPY.seeReading,
           ),
-          action ? null : h("button", { class: "ghost", type: "button", onclick: () => handlers.later(alert) }, "Plus tard"),
+          action ? null : h("button", { class: "ghost", type: "button", onclick: () => handlers.later(alert) }, COPY.later),
         ),
       );
     }),

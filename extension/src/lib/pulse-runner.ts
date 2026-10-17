@@ -1,6 +1,7 @@
 import { browser } from "wxt/browser";
 
 import { api, getToken } from "./api";
+import { COPY } from "./copy";
 import {
   alertsToShow,
   badgeText,
@@ -72,7 +73,7 @@ export async function pulse() {
     await browser.action.setBadgeBackgroundColor({ color: BADGE_COLOR });
     await browser.action.setBadgeText({ text: data.enabled ? badgeText(data.readers) : "" });
     await browser.action.setTitle({
-      title: data.readers.length ? `Clozer · en train de lire : ${[...new Set(data.readers.map((r) => r.label))].join(", ")}` : "Clozer",
+      title: data.readers.length ? COPY.readingTitle([...new Set(data.readers.map((r) => r.label))].join(", ")) : "Clozer",
     });
     if (!data.enabled) return;
 
@@ -93,7 +94,7 @@ export async function pulse() {
         priority: alert.priority === "ACTION" ? 2 : 1,
         // A validation waits on screen; a call moment fades with the moment
         requireInteraction: alert.priority === "ACTION",
-        buttons: alert.priority === "ACTION" ? [{ title: "Ouvrir" }] : [{ title: "Ouvrir" }, { title: "Plus tard" }],
+        buttons: alert.priority === "ACTION" ? [{ title: COPY.open }] : [{ title: COPY.open }, { title: COPY.later }],
       });
     }
 
@@ -138,8 +139,8 @@ export async function testNotification() {
   await browser.notifications.create(`${NOTICE_PREFIX}test`, {
     type: "basic",
     iconUrl: browser.runtime.getURL("/icon/128.png"),
-    title: "Clozer est prêt",
-    message: "C'est ainsi qu'on vous préviendra quand un prospect lit votre proposition.",
+    title: COPY.testNotificationTitle,
+    message: COPY.testNotificationText,
     priority: 2,
   });
   return true;

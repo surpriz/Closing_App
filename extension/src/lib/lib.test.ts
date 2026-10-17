@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { fromBase64, splitChunks, toBase64 } from "./chunks";
+import { COPIES, getLocale, setLocale, type Locale } from "./copy";
 import { linkHtml } from "./link-html";
 import { hasPdfMagic, looksLikePdf, safeFileName } from "./pdf";
 import { extractEmail, toRecipient } from "./recipients";
@@ -59,6 +60,9 @@ describe("recipients", () => {
 });
 
 describe("link card", () => {
+  const initial = getLocale();
+  afterEach(() => setLocale(initial));
+
   it("escapes the title and the url", () => {
     const html = linkHtml("https://x.test/v/a?b=1&c=2", "Devis <Acme>");
     expect(html).toContain('href="https://x.test/v/a?b=1&#38;c=2"');
@@ -72,11 +76,19 @@ describe("link card", () => {
     expect(html).not.toContain("<table");
   });
 
-  it("never hints that reading is followed", () => {
+  it.each(Object.keys(COPIES) as Locale[])("never hints that reading is followed (%s)", (locale) => {
+    setLocale(locale);
     const text = (linkHtml("https://app.clozer.club/v/abc", "Proposition") + linkHtml("https://app.clozer.club/v/abc", "Proposition", "text")).toLowerCase();
     for (const word of ["suivi", "track", "notif", "lecture", "ouvert", "clozer"]) {
       expect(text.replaceAll("app.clozer.club", "")).not.toContain(word);
     }
+  });
+
+  it("speaks the seller's language to the prospect", () => {
+    setLocale("fr");
+    expect(linkHtml("https://x.test/v/a", "Devis")).toContain("Consulter le document &rarr;");
+    setLocale("en");
+    expect(linkHtml("https://x.test/v/a", "Quote")).toContain("View the document &rarr;");
   });
 });
 

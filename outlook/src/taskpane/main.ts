@@ -12,6 +12,7 @@ import { ensureDocument, searchDocuments } from "../lib/documents";
 import { ClozerError } from "../lib/errors";
 import { insertDocument, insertedNote, NOTICE_KEY, replaceAttachment } from "../lib/insert";
 import { readLinks } from "../lib/links-store";
+import { syncLocale } from "../lib/locale";
 import { composeItem, mailbox, officeCall, openInBrowser, supports } from "../lib/office";
 import { CONNECT_URL, startPairing, waitForPairing, type Pairing } from "../lib/pairing";
 import { getAskFirst, getLinkStyle, getToken, setAskFirst, setLinkStyle, setToken } from "../lib/settings";
@@ -38,6 +39,9 @@ const state = {
 };
 
 const app = document.getElementById("app")!;
+// Browser language until Office says otherwise in onReady
+syncLocale();
+app.replaceChildren(h("p", { class: "muted" }, COPY.loading));
 
 // ---------------------------------------------------------------------------
 // Rendering
@@ -68,19 +72,19 @@ function connectView(): (Node | null)[] {
   if (state.pairing) {
     const pairing = state.pairing;
     return [
-      h("p", {}, "Dans votre navigateur, connecté à Clozer, saisissez ce code :"),
-      h("div", { class: "code", "aria-label": `Code ${pairing.code.split("").join(" ")}` }, pairing.code),
+      h("p", {}, COPY.enterCode),
+      h("div", { class: "code", "aria-label": COPY.codeLabel(pairing.code.split("").join(" ")) }, pairing.code),
       h(
         "div",
         { class: "row" },
         h("button", { class: "primary", onclick: () => openInBrowser(CONNECT_URL) }, COPY.openApp),
         h("button", { onclick: () => cancelPairing() }, COPY.cancel),
       ),
-      h("p", { class: "muted small" }, "Cette fenêtre se met à jour toute seule une fois le code validé."),
+      h("p", { class: "muted small" }, COPY.paneUpdates),
     ];
   }
   return [
-    h("p", {}, "Remplacez le PDF joint à un email par un lien Clozer, et voyez qui consulte vos propositions."),
+    h("p", {}, COPY.pitchOutlook),
     state.pairingError ? h("p", { class: "error", role: "alert" }, state.pairingError) : null,
     h("button", { class: "primary wide", onclick: () => void connect() }, COPY.connect),
   ];
@@ -110,14 +114,14 @@ function linksView() {
   return h(
     "fieldset",
     {},
-    h("legend", {}, "Dans cet email"),
+    h("legend", {}, COPY.inThisEmail),
     ...state.links.map((link) => {
       // Only our own pages open from the pane
       const target = link.manageUrl?.startsWith(`${APP_ORIGIN}/`) ? link.manageUrl : link.url;
       return h(
         "div",
         { class: "item" },
-        h("span", { title: link.title ?? "Lien Clozer" }, link.title ?? "Lien Clozer"),
+        h("span", { title: link.title ?? COPY.clozerLink }, link.title ?? COPY.clozerLink),
         h("button", { class: "link", onclick: () => openInBrowser(target) }, COPY.seeLink),
       );
     }),
@@ -133,7 +137,7 @@ function attachmentsView(compose: Office.MessageCompose) {
   return h(
     "fieldset",
     {},
-    h("legend", {}, "PDF joints"),
+    h("legend", {}, COPY.attachedPdfs),
     // One ink action per group: the first PDF; the others are outlined
     ...pdfs.map((attachment, index) =>
       h(
@@ -194,7 +198,8 @@ function documentsView(compose: Office.MessageCompose) {
   );
 }
 
-const STYLES: { value: LinkStyle; label: string; hint: string }[] = [
+// A function, not a constant: the locale is only known once Office is ready
+const styles = (): { value: LinkStyle; label: string; hint: string }[] => [
   { value: "card", label: COPY.card, hint: COPY.cardHint },
   { value: "text", label: COPY.plainLink, hint: COPY.plainLinkHint },
 ];
@@ -205,7 +210,7 @@ function linkStyleView() {
     "fieldset",
     {},
     h("legend", {}, COPY.linkStyleLegend),
-    ...STYLES.map((style) =>
+    ...styles().map((style) =>
       h(
         "label",
         { class: "choice" },
@@ -264,9 +269,9 @@ function alertsView() {
         h(
           "div",
           { class: "row" },
-          alert.canMarkWon ? h("button", { class: "", onclick: () => void markWon(alert) }, "Marquer gagné") : null,
-          h("button", { onclick: () => openInBrowser(alert.url) }, "Ouvrir"),
-          h("button", { class: "link", onclick: () => dismissAlert(alert.id) }, "OK"),
+          alert.canMarkWon ? h("button", { class: "", onclick: () => void markWon(alert) }, COPY.markWon) : null,
+          h("button", { onclick: () => openInBrowser(alert.url) }, COPY.open),
+          h("button", { class: "link", onclick: () => dismissAlert(alert.id) }, COPY.ok),
         ),
       ),
     ),
@@ -373,7 +378,7 @@ function setStatus(status: Status | null) {
 }
 
 function messageOf(error: unknown) {
-  return error instanceof Error && error.message ? error.message : "Une erreur est survenue.";
+  return error instanceof Error && error.message ? error.message : COPY.error;
 }
 
 async function run(task: () => Promise<void>) {
@@ -382,7 +387,7 @@ async function run(task: () => Promise<void>) {
   try {
     await task();
   } catch (error) {
-    setStatus({ kind: "error", title: "Lien non créé", detail: messageOf(error) });
+    setStatus({ kind: "error", title: COPY.linkNotCreated, detail: messageOf(error) });
   } finally {
     state.busy = false;
     render();
@@ -399,9 +404,9 @@ async function replaceInPane(compose: Compose, attachment: AttachmentInfo) {
 
 async function insertFile(compose: Compose, file: File) {
   await run(async () => {
-    step("Préparation du PDF…");
+    step(COPY.preparingPdf);
     const document = await ensureDocument(new Uint8Array(await file.arrayBuffer()), file.name, (percent) =>
-      step(`Envoi du PDF… ${percent} %`),
+      step(COPY.uploadingPercent(percent)),
     );
     done(await insertDocument(compose, document, step));
   });
@@ -486,7 +491,7 @@ async function markWon(alert: PulseAlert) {
   try {
     await api(`/api/ext/links/${encodeURIComponent(alert.linkId)}/won`, { method: "POST" });
     dismissAlert(alert.id);
-    setStatus({ kind: "done", title: "Deal gagné", detail: "Bravo. Les relances sont arrêtées." });
+    setStatus({ kind: "done", title: COPY.dealWon, detail: COPY.dealWonText });
   } catch {
     openInBrowser(alert.url);
   }
@@ -533,6 +538,7 @@ async function onItemChanged() {
 }
 
 void Office.onReady(async () => {
+  syncLocale();
   if (getToken()) {
     await loadAccount();
     startPulse();

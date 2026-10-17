@@ -17,13 +17,13 @@ export const NOTICE_KEY = "clozer-pdf";
 type Step = (text: string) => void;
 
 export async function replaceAttachment(compose: Office.MessageCompose, attachment: AttachmentInfo, step: Step) {
-  step("Lecture de la pièce jointe…");
+  step(COPY.readingAttachment);
   const content = await officeCall<Office.AttachmentContent>((callback) => compose.getAttachmentContentAsync(attachment.id, callback));
   if (content.format !== Office.MailboxEnums.AttachmentContentFormat.Base64) {
-    throw new ClozerError("format", "Cette pièce jointe ne peut pas être lue. Ajoutez le PDF depuis le volet Clozer.");
+    throw new ClozerError("format", COPY.unreadableAttachment);
   }
   const document = await ensureDocument(base64ToBytes(content.content), attachment.name, (percent) =>
-    step(`Envoi du PDF… ${percent} %`),
+    step(COPY.uploadingPercent(percent)),
   );
   return insertDocument(compose, document, step, attachment.id);
 }
@@ -32,7 +32,7 @@ export async function replaceAttachment(compose: Office.MessageCompose, attachme
 export async function insertDocument(compose: Office.MessageCompose, document: DocumentSummary, step: Step, attachmentId?: string) {
   // The AI title lands a few seconds after upload: the link then carries it instead of the file name
   document = (await waitForTitle(() => getDocument(document.id), { initial: document, onWait: () => step(COPY.naming) })) ?? document;
-  step("Création du lien…");
+  step(COPY.creatingLink);
   const to = await officeCall<Office.EmailAddressDetails[]>((callback) => compose.to.getAsync(callback)).catch(() => []);
   const recipient = firstRecipient(to);
   const link = await createLink(document.id, recipient);
@@ -48,7 +48,7 @@ export async function insertDocument(compose: Office.MessageCompose, document: D
   } catch {
     // No caret in the body (focus in the subject, or an event with the pane closed): top of the email
     await officeCall<void>((callback) => compose.body.prependAsync(content, { coercionType }, callback)).catch(() => {
-      throw new ClozerError("insert", `Le lien n'a pas pu être inséré. Copiez-le : ${link.url}`);
+      throw new ClozerError("insert", COPY.insertFailed(link.url));
     });
   }
   await rememberLink(compose, {

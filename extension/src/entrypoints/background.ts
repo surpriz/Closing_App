@@ -5,6 +5,7 @@ import { defineBackground } from "wxt/utils/define-background";
 import { api, getToken, setToken } from "@/lib/api";
 import { fromBase64 } from "@/lib/chunks";
 import { API_ORIGIN, MAX_UPLOAD_BYTES } from "@/lib/config";
+import { COPY } from "@/lib/copy";
 import { answerExternal } from "@/lib/external";
 import {
   ClozerError,
@@ -115,7 +116,7 @@ async function update(): Promise<UpdateStatus> {
 function toResponse(error: unknown): Response {
   if (error instanceof ClozerError) return { ok: false, error: error.code, message: error.message };
   console.error("[clozer]", error);
-  return { ok: false, error: "unknown", message: "Une erreur inattendue est survenue." };
+  return { ok: false, error: "unknown", message: COPY.unexpectedError };
 }
 
 // Receives the PDF in chunks, uploads it straight to Blob storage, then registers it
@@ -137,7 +138,7 @@ function receiveUpload(port: Browser.runtime.Port) {
       const bytes = fromBase64(message.data);
       received += bytes.length;
       if (received > MAX_UPLOAD_BYTES) {
-        send({ kind: "error", message: "Ce PDF dépasse 25 Mo." });
+        send({ kind: "error", message: COPY.tooLarge });
         port.disconnect();
         return;
       }
@@ -146,7 +147,7 @@ function receiveUpload(port: Browser.runtime.Port) {
     }
 
     if (received !== meta.size) {
-      send({ kind: "error", message: "Le PDF n'a pas été reçu en entier. Réessayez." });
+      send({ kind: "error", message: COPY.uploadIncomplete });
       return;
     }
 

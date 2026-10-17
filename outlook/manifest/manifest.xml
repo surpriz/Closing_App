@@ -4,9 +4,11 @@
   <Id>{{ID}}</Id>
   <Version>{{VERSION}}</Version>
   <ProviderName>Clozer</ProviderName>
-  <DefaultLocale>fr-FR</DefaultLocale>
+  <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="Clozer{{SUFFIX}}"/>
-  <Description DefaultValue="Remplacez le PDF joint à un email par un lien Clozer, et voyez qui consulte vos propositions."/>
+  <Description DefaultValue="Replace the PDF attached to an email with a Clozer link, and see who reads your proposals.">
+    <Override Locale="fr-FR" Value="Remplacez le PDF joint à un email par un lien Clozer, et voyez qui consulte vos propositions."/>
+  </Description>
   <IconUrl DefaultValue="{{BASE}}/icons/64.png"/>
   <HighResolutionIconUrl DefaultValue="{{BASE}}/icons/128.png"/>
   <SupportUrl DefaultValue="https://www.clozer.club/support"/>
@@ -109,8 +111,12 @@
         <bt:String id="Button.Label" DefaultValue="Clozer"/>
       </bt:ShortStrings>
       <bt:LongStrings>
-        <bt:String id="Button.Compose" DefaultValue="Remplacer le PDF joint par un lien Clozer, ou insérer un document."/>
-        <bt:String id="Button.Read" DefaultValue="Voir qui consulte vos propositions en ce moment."/>
+        <bt:String id="Button.Compose" DefaultValue="Replace the attached PDF with a Clozer link, or insert a document.">
+          <bt:Override Locale="fr-FR" Value="Remplacer le PDF joint par un lien Clozer, ou insérer un document."/>
+        </bt:String>
+        <bt:String id="Button.Read" DefaultValue="See who is reading your proposals right now.">
+          <bt:Override Locale="fr-FR" Value="Voir qui consulte vos propositions en ce moment."/>
+        </bt:String>
       </bt:LongStrings>
     </Resources>
 
@@ -202,8 +208,12 @@
           <bt:String id="Button.Label" DefaultValue="Clozer"/>
         </bt:ShortStrings>
         <bt:LongStrings>
-          <bt:String id="Button.Compose" DefaultValue="Remplacer le PDF joint par un lien Clozer, ou insérer un document."/>
-          <bt:String id="Button.Read" DefaultValue="Voir qui consulte vos propositions en ce moment."/>
+          <bt:String id="Button.Compose" DefaultValue="Replace the attached PDF with a Clozer link, or insert a document.">
+            <bt:Override Locale="fr-FR" Value="Remplacer le PDF joint par un lien Clozer, ou insérer un document."/>
+          </bt:String>
+          <bt:String id="Button.Read" DefaultValue="See who is reading your proposals right now.">
+            <bt:Override Locale="fr-FR" Value="Voir qui consulte vos propositions en ce moment."/>
+          </bt:String>
         </bt:LongStrings>
       </Resources>
     </VersionOverrides>

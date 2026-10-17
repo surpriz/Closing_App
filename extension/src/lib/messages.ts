@@ -77,7 +77,7 @@ export type UploadOut =
 
 export async function ask<T>(request: Request): Promise<T> {
   const response = (await browser.runtime.sendMessage(request)) as Response<T> | undefined;
-  if (!response) throw new ClozerError("unavailable", "L'extension Clozer ne répond pas. Rechargez la page.");
+  if (!response) throw new ClozerError("unavailable", COPY.extensionNotResponding);
   if (!response.ok) throw new ClozerError(response.error, response.message);
   return response.data;
 }

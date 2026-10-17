@@ -1,9 +1,11 @@
+import { COPY } from "@ext/copy";
+
 // Office.js callbacks as promises
 export function officeCall<T>(start: (callback: (result: Office.AsyncResult<T>) => void) => void): Promise<T> {
   return new Promise((resolve, reject) =>
     start((result) => {
       if (result.status === Office.AsyncResultStatus.Succeeded) resolve(result.value);
-      else reject(new Error(result.error?.message ?? "Outlook n'a pas pu traiter la demande."));
+      else reject(new Error(result.error?.message ?? COPY.outlookFailed));
     }),
   );
 }

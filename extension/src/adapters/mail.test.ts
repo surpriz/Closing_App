@@ -71,6 +71,12 @@ describe("gmail adapter", () => {
     expect(findAttachmentRemover(root, body, "devis.pdf")?.getAttribute("aria-label")).toBe("Supprimer la pièce jointe");
     expect(findAttachmentRemover(root, body, "autre.pdf")).toBeNull();
   });
+
+  it("works the same in an English Gmail", () => {
+    const { root, body } = mount(GMAIL.replace("Supprimer la pièce jointe", "Remove attachment").replace("Bonjour Marie,", "Hi Marie,"));
+    expect(firstRecipient("gmail", root, body)).toEqual({ email: "marie@acme-group.fr", displayName: "Marie Dupont" });
+    expect(findAttachmentRemover(root, body, "devis.pdf")?.getAttribute("aria-label")).toBe("Remove attachment");
+  });
 });
 
 describe("outlook adapter", () => {

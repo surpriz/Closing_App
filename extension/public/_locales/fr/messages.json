@@ -1,0 +1,10 @@
+{
+  "extName": {
+    "message": "Clozer",
+    "description": "Nom de l'extension dans Chrome et le Web Store. Une marque : jamais traduite."
+  },
+  "extDescription": {
+    "message": "Remplacez une pièce jointe PDF par un lien Clozer dans Gmail et Outlook, et sachez quand un prospect lit votre proposition.",
+    "description": "Description du manifest, aussi le résumé du Web Store (132 caractères au plus)."
+  }
+}

@@ -1,3 +1,5 @@
+import { COPY } from "@ext/copy";
+
 import { api } from "./api";
 import { APP_ORIGIN } from "./config";
 import { ClozerError } from "./errors";
@@ -22,7 +24,7 @@ export async function waitForPairing(
 ) {
   const deadline = new Date(pairing.expiresAt).getTime();
   while (Date.now() < deadline) {
-    if (signal?.aborted) throw new ClozerError("aborted", "Connexion annulée.");
+    if (signal?.aborted) throw new ClozerError("aborted", COPY.pairingCancelled);
     const result = await api<{ status: "pending" | "done"; token?: string }>("/api/ext/pair/poll", {
       body: { poll: pairing.poll },
       anonymous: true,
@@ -37,5 +39,5 @@ export async function waitForPairing(
     }
     await sleep(POLL_MS);
   }
-  throw new ClozerError("expired", "Le code a expiré. Recommencez la connexion.");
+  throw new ClozerError("expired", COPY.codeExpired);
 }

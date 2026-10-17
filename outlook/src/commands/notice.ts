@@ -29,15 +29,15 @@ export function attachmentNotice(
   if (!connected) {
     return {
       kind: "show",
-      message: `Envoyez « ${name} » en lien Clozer : connectez d'abord Outlook à votre compte.`.slice(0, MAX_MESSAGE),
+      message: COPY.connectFirstNotice(name).slice(0, MAX_MESSAGE),
       actionText: COPY.connect,
       attachmentId: null,
     };
   }
-  if (!askFirst) return { kind: "replace", attachment: details!, progress: `Clozer remplace « ${name} » par un lien…`.slice(0, MAX_MESSAGE) };
+  if (!askFirst) return { kind: "replace", attachment: details!, progress: COPY.replacingNotice(name).slice(0, MAX_MESSAGE) };
   return {
     kind: "show",
-    message: `Remplacer « ${name} » par un lien Clozer ?`.slice(0, MAX_MESSAGE),
+    message: COPY.replaceQuestion(name).slice(0, MAX_MESSAGE),
     actionText: COPY.replaceWithLink,
     attachmentId: details!.id,
   };
@@ -45,9 +45,9 @@ export function attachmentNotice(
 
 // Outcome of an automatic replacement, shown in the same bar
 export function replacedMessage(name: string, note: string) {
-  return `« ${shorten(name, 60)} » remplacé par un lien Clozer. ${note}`.trim().slice(0, MAX_MESSAGE);
+  return `${COPY.replacedNotice(shorten(name, 60))} ${note}`.trim().slice(0, MAX_MESSAGE);
 }
 
 export function failedMessage(name: string, reason: string) {
-  return `Clozer n'a pas pu remplacer « ${shorten(name, 40)} » : ${reason}`.slice(0, MAX_MESSAGE);
+  return COPY.failedNotice(shorten(name, 40), reason).slice(0, MAX_MESSAGE);
 }

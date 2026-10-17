@@ -1,7 +1,7 @@
 import { browser } from "wxt/browser";
 
 import { API_ORIGIN } from "@/lib/config";
-import { COPY } from "@/lib/copy";
+import { COPY, getLocale } from "@/lib/copy";
 import { mailHost } from "@/lib/hosts";
 import { ask, requestUpdate, type Account } from "@/lib/messages";
 import { getAskFirst, getLinkStyle, setAskFirst, setLinkStyle, type LinkStyle } from "@/lib/preferences";
@@ -11,6 +11,7 @@ import { h } from "@/ui/dom";
 import { logo } from "@/ui/marks";
 import { readerRows } from "@/ui/readers";
 
+document.documentElement.lang = getLocale();
 const app = document.getElementById("app")!;
 
 // Report header strip (logo, workspace) above an ink rule, then the sheet

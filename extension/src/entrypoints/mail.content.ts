@@ -71,7 +71,7 @@ function uploadPdf(name: string, bytes: Uint8Array, sha256: string, onProgress: 
     const port = browser.runtime.connect({ name: UPLOAD_PORT });
     const send = (message: UploadIn) => port.postMessage(message);
     const ping = setInterval(() => send({ kind: "ping" }), 20_000);
-    const timeout = setTimeout(() => fail("L'envoi prend trop de temps. Réessayez."), UPLOAD_TIMEOUT_MS);
+    const timeout = setTimeout(() => fail(COPY.uploadTooSlow), UPLOAD_TIMEOUT_MS);
     const stop = () => {
       clearInterval(ping);
       clearTimeout(timeout);
@@ -91,7 +91,7 @@ function uploadPdf(name: string, bytes: Uint8Array, sha256: string, onProgress: 
     });
     port.onDisconnect.addListener(() => {
       stop();
-      reject(new ClozerError("upload", "L'envoi a été interrompu. Réessayez."));
+      reject(new ClozerError("upload", COPY.uploadInterrupted));
     });
 
     send({ kind: "start", name, size: bytes.length, sha256 });
@@ -219,7 +219,7 @@ export default defineContentScript({
           account = null;
           compose.widget.error(error.message, [connectAction(compose)]);
         } else {
-          compose.widget.error(error instanceof Error ? error.message : "Une erreur est survenue.");
+          compose.widget.error(error instanceof Error ? error.message : COPY.error);
         }
       } finally {
         compose.busy = false;
@@ -234,13 +234,13 @@ export default defineContentScript({
         document = await ask<DocumentSummary>({ type: "document", id: document.id }).catch(() => document);
       }
       if (document.status === "FAILED" && compose.body.isConnected && compose.widget.idle) {
-        compose.widget.error("Ce PDF n'a pas pu être préparé. Retirez le lien et ajoutez le document depuis Clozer.");
+        compose.widget.error(COPY.pdfFailed);
       }
     }
 
     // Link for this email (first "To" recipient = prospect), inserted where the seller was typing
     async function insertDocument(compose: Compose, document: DocumentSummary, attachmentName?: string) {
-      compose.widget.progress("Création du lien…", 90);
+      compose.widget.progress(COPY.creatingLink, 90);
       const recipient = firstRecipient(host, compose.root, compose.body);
 
       let link = compose.links.get(document.id);
@@ -251,13 +251,13 @@ export default defineContentScript({
             initial: document,
             onWait: () => compose.widget.progress(COPY.naming, 85),
           })) ?? document;
-        compose.widget.progress("Création du lien…", 90);
+        compose.widget.progress(COPY.creatingLink, 90);
         link = await ask<CreatedLink>({ type: "link", documentId: document.id, recipient, source: host });
         compose.links.set(document.id, link);
       }
       const style = await getLinkStyle();
       if (!insertLink(compose.body, compose.saved, insertionAnchor(host, compose.body), { ...link, style })) {
-        throw new ClozerError("insert", `Le lien n'a pas pu être inséré. Copiez-le : ${link.url}`);
+        throw new ClozerError("insert", COPY.insertFailed(link.url));
       }
 
       let attachmentLeft = false;
@@ -281,17 +281,17 @@ export default defineContentScript({
     }
 
     async function replaceFile(compose: Compose, file: File, isAttachment: boolean) {
-      if (file.size > MAX_UPLOAD_BYTES) throw new ClozerError("too_large", "Ce PDF dépasse 25 Mo.");
-      compose.widget.progress("Préparation…", null);
+      if (file.size > MAX_UPLOAD_BYTES) throw new ClozerError("too_large", COPY.tooLarge);
+      compose.widget.progress(COPY.preparing, null);
 
       const buffer = await file.arrayBuffer();
       const bytes = new Uint8Array(buffer);
-      if (!hasPdfMagic(bytes)) throw new ClozerError("not_pdf", "Ce fichier n'est pas un PDF.");
+      if (!hasPdfMagic(bytes)) throw new ClozerError("not_pdf", COPY.notPdf);
 
       const sha256 = await sha256Hex(buffer);
       const existing = await ask<DocumentSummary | null>({ type: "lookup", sha256 });
       const document =
-        existing ?? (await uploadPdf(file.name, bytes, sha256, (percent) => compose.widget.progress("Envoi du PDF…", Math.min(percent, 80))));
+        existing ?? (await uploadPdf(file.name, bytes, sha256, (percent) => compose.widget.progress(COPY.uploading, Math.min(percent, 80))));
 
       await insertDocument(compose, document, isAttachment ? file.name : undefined);
     }
@@ -311,7 +311,7 @@ export default defineContentScript({
       const [file] = files;
       if (!account) {
         compose.pending = { kind: "files", files };
-        compose.widget.message(`Envoyer « ${file.name} » en lien ?`, "Connectez Clozer pour remplacer la pièce jointe par un lien.", [
+        compose.widget.message(COPY.sendAsLink(file.name), COPY.sendAsLinkText, [
           connectAction(compose),
           ignoreAction(compose),
         ]);
@@ -322,8 +322,7 @@ export default defineContentScript({
       };
       // Zero click by default: the PDF becomes a link as soon as it is attached
       if (!(await getAskFirst())) return void replaceAll();
-      const label = files.length > 1 ? `ces ${files.length} PDF` : `« ${file.name} »`;
-      compose.widget.message(`Remplacer ${label} par un lien Clozer ?`, null, [
+      compose.widget.message(COPY.replaceQuestion(file.name, files.length), null, [
         { label: COPY.replaceWithLink, primary: true, run: () => void replaceAll() },
         ignoreAction(compose),
       ]);
@@ -339,7 +338,7 @@ export default defineContentScript({
       if (compose.widget.showingPicker) return compose.widget.hide();
       if (!account) {
         compose.pending = { kind: "picker" };
-        compose.widget.message("Clozer n'est pas connecté", "Connectez votre compte pour insérer vos documents.", [
+        compose.widget.message(COPY.notConnected, COPY.notConnectedText, [
           connectAction(compose),
           ignoreAction(compose),
         ]);

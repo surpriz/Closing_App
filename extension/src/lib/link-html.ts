@@ -1,5 +1,7 @@
 // How the link looks in the email: a framed card, or a plain line of text.
 // Lives here, not in preferences.ts, so the Outlook add-in can import this file without WXT.
+import { COPY } from "./copy";
+
 export type LinkStyle = "card" | "text";
 
 function escapeHtml(value: string) {
@@ -21,7 +23,7 @@ export function linkHtml(url: string, title: string, style: LinkStyle = "card") 
     `style="border:1px solid #d7d9dc;border-radius:4px;border-collapse:separate;margin:8px 0">` +
     `<tr><td style="padding:12px 18px 12px 14px;font-family:Arial,Helvetica,sans-serif">` +
     `<a href="${href}" style="text-decoration:none;color:#18191d;font-size:15px;font-weight:bold">${escapeHtml(title)}</a><br>` +
-    `<a href="${href}" style="text-decoration:underline;color:#55585e;font-size:13px">Consulter le document &rarr;</a>` +
+    `<a href="${href}" style="text-decoration:underline;color:#55585e;font-size:13px">${escapeHtml(COPY.viewDocument)} &rarr;</a>` +
     `</td></tr></table></div><div><br></div>`
   );
 }

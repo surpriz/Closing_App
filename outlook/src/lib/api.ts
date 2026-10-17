@@ -1,3 +1,5 @@
+import { COPY, getLocale } from "@ext/copy";
+
 import { APP_ORIGIN } from "./config";
 import { ClozerError } from "./errors";
 import { getToken, setToken } from "./settings";
@@ -5,7 +7,7 @@ import { getToken, setToken } from "./settings";
 // Calls /api/ext/* with the seller's token, like the Chrome extension's background
 export async function api<T>(path: string, init: { method?: string; body?: unknown; anonymous?: boolean; keepalive?: boolean } = {}): Promise<T> {
   const token = init.anonymous ? null : getToken();
-  if (!init.anonymous && !token) throw new ClozerError("unauthorized", "Connectez Outlook à votre compte Clozer.");
+  if (!init.anonymous && !token) throw new ClozerError("unauthorized", COPY.connectOutlook);
 
   let res: Response;
   try {
@@ -13,6 +15,8 @@ export async function api<T>(path: string, init: { method?: string; body?: unkno
       method: init.method ?? (init.body ? "POST" : "GET"),
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        // CORS-safelisted: the app answers in the seller's language
+        "Accept-Language": getLocale(),
         ...(init.body ? { "Content-Type": "application/json" } : {}),
       },
       body: init.body ? JSON.stringify(init.body) : undefined,
@@ -20,18 +24,18 @@ export async function api<T>(path: string, init: { method?: string; body?: unkno
       keepalive: init.keepalive,
     });
   } catch {
-    throw new ClozerError("network", "Clozer est injoignable. Vérifiez votre connexion.");
+    throw new ClozerError("network", COPY.unreachable);
   }
 
   if (res.status === 401 && token) {
     await setToken(null).catch(() => undefined);
-    throw new ClozerError("unauthorized", "Reconnectez Outlook à votre compte Clozer.");
+    throw new ClozerError("unauthorized", COPY.reconnectOutlook);
   }
   if (res.status === 204) return undefined as T;
 
   const data = (await res.json().catch(() => null)) as (T & { error?: string; message?: string }) | null;
   if (!res.ok || !data) {
-    throw new ClozerError(data?.error ?? "server", data?.message ?? "Clozer n'a pas pu traiter la demande.");
+    throw new ClozerError(data?.error ?? "server", data?.message ?? COPY.serverFailed);
   }
   return data;
 }

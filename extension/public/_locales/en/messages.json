@@ -1,0 +1,10 @@
+{
+  "extName": {
+    "message": "Clozer",
+    "description": "Extension name in Chrome and the Web Store. A brand: never translated."
+  },
+  "extDescription": {
+    "message": "Replace a PDF attachment with a Clozer link in Gmail and Outlook, and know when a prospect reads your proposal.",
+    "description": "Manifest description, also the Web Store summary (132 characters at most)."
+  }
+}

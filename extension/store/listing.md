@@ -5,7 +5,7 @@ Copy for the developer dashboard. Keep it in step with the privacy page (`landin
 ## Store listing
 
 - **Nom** : Clozer
-- **Résumé** (≤ 132 car., = `description` du manifest) : Remplacez une pièce jointe PDF par un lien Clozer dans Gmail et Outlook, et sachez quand un prospect lit votre proposition.
+- **Résumé** (≤ 132 car., = `extDescription` de `public/_locales/fr/messages.json`) : Remplacez une pièce jointe PDF par un lien Clozer dans Gmail et Outlook, et sachez quand un prospect lit votre proposition.
 - **Catégorie** : Productivité › Outils
 - **Langue** : français
 - **Site** : https://www.clozer.club
@@ -35,7 +35,7 @@ Il faut un compte Clozer (https://app.clozer.club). L'extension ne lit pas vos e
   3. La notification « en train de lire »
   4. Le relevé de lecture dans l'app
 
-**Langues** : listing en français tant que l'extension n'est qu'en français. Pour l'anglais, ajouter `default_locale` et `_locales/{fr,en}` à l'extension : le dashboard propose alors une fiche (texte et captures) par langue.
+**Langues** : l'extension parle anglais (par défaut) et français (`default_locale: "en"`, `public/_locales/{en,fr}/messages.json`). Le dashboard propose une fiche par langue : celle-ci pour le français, `listing.en.md` pour l'anglais (fiche par défaut). Captures en français ici, en anglais sur la fiche anglaise.
 
 ## Privacy practices
 

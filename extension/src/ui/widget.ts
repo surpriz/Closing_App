@@ -1,5 +1,5 @@
 import type { DocumentSummary } from "@/lib/messages";
-import { COPY } from "@/lib/copy";
+import { COPY, getLocale } from "@/lib/copy";
 
 import { h } from "./dom";
 import { loadInPageFonts } from "./fonts";
@@ -13,6 +13,8 @@ export function getLayer() {
   if (host?.isConnected && layer) return layer;
   loadInPageFonts();
   host = document.createElement("clozer-root");
+  // Our words, not the mail app's: screen readers pick the right voice
+  host.lang = getLocale();
   const shadow = host.attachShadow({ mode: "open" });
   shadow.append(h("style", {}, STYLES));
   layer = h("div", { class: "layer" });
@@ -46,7 +48,7 @@ export class ComposeWidget {
   private version = 0;
 
   constructor(onButton: () => void) {
-    const fab = h("button", { class: "fab", type: "button", title: "Insérer un lien Clozer", "aria-label": "Insérer un lien Clozer", onclick: onButton }, logoMark(18));
+    const fab = h("button", { class: "fab", type: "button", title: COPY.insertLink, "aria-label": COPY.insertLink, onclick: onButton }, logoMark(18));
     this.box.append(this.panel, this.live, fab);
     this.box.addEventListener("keydown", (event) => {
       if (event.key === "Escape") this.hide();

@@ -1,9 +1,12 @@
+import { COPY } from "@ext/copy";
+
 import { api, type Account } from "../lib/api";
 import { debug } from "../lib/debug";
 import { firstRecipient, linksInBody, type AttachmentInfo } from "../lib/compose";
 import { KILL_SWITCH_HOST } from "../lib/config";
 import { insertedNote, NOTICE_KEY, replaceAttachment } from "../lib/insert";
 import { readLinks } from "../lib/links-store";
+import { syncLocale } from "../lib/locale";
 import { officeCall } from "../lib/office";
 import { getAskFirst, getToken } from "../lib/settings";
 import { attachmentNotice, failedMessage, replacedMessage } from "./notice";
@@ -58,12 +61,13 @@ async function replaceNow(attachment: AttachmentInfo, progress: string) {
     });
   } catch (error) {
     debug("replace failed", error);
-    const reason = error instanceof Error && error.message ? error.message : "erreur inattendue.";
+    const reason = error instanceof Error && error.message ? error.message : COPY.unexpectedReason;
     await showNotice({ type: Office.MailboxEnums.ItemNotificationMessageType.ErrorMessage, message: failedMessage(attachment.name, reason) });
   }
 }
 
 async function onAttachmentsChanged(event: AttachmentsEvent) {
+  syncLocale();
   debug("onAttachmentsChanged", event.attachmentStatus, event.attachmentDetails, "token", !!getToken(), "askFirst", getAskFirst());
   try {
     const notice = attachmentNotice(event.attachmentDetails, String(event.attachmentStatus ?? ""), !!getToken(), getAskFirst());
@@ -97,6 +101,7 @@ async function onAttachmentsChanged(event: AttachmentsEvent) {
 // The links inserted in this email become deals. Never blocks the send: whatever
 // happens, the email leaves, and the first prospect open confirms the link otherwise.
 async function onMessageSend(event: LaunchEvent) {
+  syncLocale();
   debug("onMessageSend");
   try {
     const compose = item();

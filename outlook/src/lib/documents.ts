@@ -1,5 +1,6 @@
 import { upload } from "@vercel/blob/client";
 
+import { COPY } from "@ext/copy";
 import { linkHtml, type LinkStyle } from "@ext/link-html";
 import { hasPdfMagic, safeFileName } from "@ext/pdf";
 import type { Recipient } from "@ext/recipients";
@@ -12,8 +13,8 @@ import { getToken } from "./settings";
 
 // Same PDF already in Clozer → reuse it. Otherwise straight to Blob storage, then registered.
 export async function ensureDocument(bytes: Uint8Array, name: string, onProgress: (percent: number) => void) {
-  if (bytes.length > MAX_UPLOAD_BYTES) throw new ClozerError("too_large", "Ce PDF dépasse 25 Mo.");
-  if (!hasPdfMagic(bytes)) throw new ClozerError("not_pdf", "Ce fichier n'est pas un PDF lisible.");
+  if (bytes.length > MAX_UPLOAD_BYTES) throw new ClozerError("too_large", COPY.tooLarge);
+  if (!hasPdfMagic(bytes)) throw new ClozerError("not_pdf", COPY.notReadablePdf);
 
   const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
   // WebCrypto may be missing in classic Outlook's event runtime: then no reuse, the server dedupes anyway
@@ -41,7 +42,7 @@ export async function createLink(documentId: string, recipient: Recipient | null
 
 // Plain-text emails get the bare URL; same wording rule as the card (nothing about tracking)
 export function linkContent(link: LinkCreated, bodyType: "html" | "text", style: LinkStyle) {
-  return bodyType === "html" ? linkHtml(link.url, link.title, style) : `${link.title} : ${link.url}\n`;
+  return bodyType === "html" ? linkHtml(link.url, link.title, style) : `${COPY.plainTextLink(link.title, link.url)}\n`;
 }
 
 export async function getDocument(id: string) {

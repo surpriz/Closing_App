@@ -36,6 +36,15 @@ describe("manifest", () => {
     expect(commands).toContain('associate("onMessageSend"');
   });
 
+  it("speaks English by default and French to French Outlook", () => {
+    expect(xml).toContain("<DefaultLocale>en-US</DefaultLocale>");
+    expect(xml).toContain('<Description DefaultValue="Replace the PDF attached to an email with a Clozer link, and see who reads your proposals.">');
+    expect(xml).toContain('<Override Locale="fr-FR" Value="Remplacez le PDF joint à un email par un lien Clozer, et voyez qui consulte vos propositions."/>');
+    // Both VersionOverrides carry the button tips in both languages
+    expect(xml.match(/<bt:Override Locale="fr-FR"/g)).toHaveLength(4);
+    expect(xml.match(/<bt:String id="Button\.(Compose|Read)" DefaultValue="[^"]*"\/>/g)).toBeNull();
+  });
+
   it("uses four-part versions", () => {
     expect(addinVersion("1.2.3")).toBe("1.2.3.0");
     expect(addinVersion("1")).toBe("1.0.0.0");
