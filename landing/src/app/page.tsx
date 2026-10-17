@@ -1,5 +1,5 @@
 import { Icon } from "@/components/icons";
-import { APP_URL, CONTACT_EMAIL } from "@/components/links";
+import { APP_URL, CONTACT_EMAIL, EXTENSION_STORE_URL } from "@/components/links";
 import { SignupForm } from "@/components/signup-form";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -33,9 +33,10 @@ const SEND_WAYS = [
   },
   {
     name: "Depuis Gmail ou Outlook",
-    status: "Bientôt",
-    available: false,
-    body: "Joignez votre PDF comme d'habitude. Au moment d'envoyer, l'extension le remplace par un lien Clozer, et vous prévient en haut de votre boîte quand il est lu. L'extension Chrome (Gmail et Outlook dans le navigateur) est en cours de validation par Google ; le complément pour Outlook installé suit.",
+    status: "Disponible",
+    available: true,
+    body: "Joignez votre PDF comme d'habitude. Au moment d'envoyer, l'extension le remplace par un lien Clozer, et vous prévient en haut de votre boîte quand il est lu. L'extension Chrome marche dans Gmail et dans Outlook ouvert dans le navigateur ; pour Outlook installé, votre administrateur Microsoft 365 ajoute le complément.",
+    action: { label: "Ajouter à Chrome", href: EXTENSION_STORE_URL },
   },
 ];
 
@@ -110,7 +111,7 @@ const SEGMENTS = [
 
 const BETA_INCLUDES = [
   "PDF, pages web et pitchs vidéo",
-  "Extension Gmail et Outlook dès sa sortie",
+  "Extension Gmail et Outlook",
   "Suivi page par page, alertes en direct",
   "Lecture des deals, relances préparées",
   "Rendez-vous, assistant et vocaux du prospect",
@@ -138,8 +139,8 @@ const FAQ = [
     a: "Non. Vous vous connectez avec Google ou votre email, sans mot de passe, vous copiez le lien et votre client le lit dans son navigateur, sur ordinateur comme sur téléphone. L'extension pour Gmail et Outlook est un raccourci en plus, pas une obligation.",
   },
   {
-    q: "Quand l'extension Gmail et Outlook sera-t-elle disponible ?",
-    a: "L'extension Chrome, qui marche dans Gmail et dans Outlook ouvert dans le navigateur, est en cours de validation par Google. Le complément pour Outlook installé sur Windows et Mac suit. Créez votre compte dès maintenant : vous serez prévenu à sa sortie, et vos liens existants continueront de fonctionner.",
+    q: "Comment installer l'extension Gmail et Outlook ?",
+    a: "Installez « Clozer » depuis le Chrome Web Store : l'extension marche dans Gmail et dans Outlook ouvert dans le navigateur. Pour Outlook installé sur Windows ou Mac, l'administrateur Microsoft 365 de votre entreprise ajoute le complément pour toute l'équipe ; la marche à suivre est sur la page Support.",
   },
   {
     q: "Le prospect peut-il me répondre ?",
@@ -233,7 +234,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Two ways to send: the link today, the mailbox extension soon. */}
+        {/* Two ways to send: the link, or the mailbox extension. */}
         <section id="envoi" className="scroll-mt-14 border-b border-ink bg-sheet">
           <div className={`${WRAP} py-20 md:py-28`}>
             <h2 className="condensed max-w-[20ch] text-title font-bold">Deux façons d&apos;envoyer. Aucune à apprendre.</h2>
@@ -252,6 +253,15 @@ export default function Home() {
                     </span>
                   </div>
                   <p className="mt-4 max-w-[58ch] text-body text-ink-soft">{way.body}</p>
+                  {way.action && (
+                    <a
+                      href={way.action.href}
+                      className="group mt-6 flex h-12 max-w-xs items-center justify-between border border-ink px-4 font-semibold transition-colors hover:bg-ink hover:text-sheet"
+                    >
+                      {way.action.label}
+                      <Icon name="arrow" className="size-5 transition-transform duration-300 ease-[var(--ease-out-expo)] group-hover:translate-x-1" />
+                    </a>
+                  )}
                 </article>
               ))}
             </div>
