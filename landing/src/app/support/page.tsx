@@ -19,7 +19,13 @@ export default function Support() {
 
       <h2>Extension Chrome (Gmail et Outlook web)</h2>
       <ol>
-        <li>Installez « Clozer » depuis le Chrome Web Store.</li>
+        <li>
+          Installez « Clozer » depuis le{" "}
+          <a href="https://chromewebstore.google.com/detail/clozer/fnefeeodeepechnhbijpfmjjcolopmmj">
+            Chrome Web Store
+          </a>
+          .
+        </li>
         <li>
           Cliquez sur l&apos;icône Clozer dans Chrome, puis sur « Connecter Clozer ». Connectez-vous à Clozer si besoin.
         </li>

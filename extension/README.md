@@ -27,11 +27,20 @@ To load a build by hand: `chrome://extensions` → Developer mode → Load unpac
 
 The popup opens `/extension/connect?nonce=…` on the app. The seller signs in if needed, clicks "Connecter Clozer", and the page hands a token to the extension through `externally_connectable`. Only the hash is stored server side (`extension_tokens`). Tokens are listed and revocable in Réglages.
 
-The app only sends tokens to extension IDs listed in `EXTENSION_IDS`. Dev and staging builds pin their ID with `WXT_MANIFEST_KEY` (public key, in `.env.development` / `.env.staging`): `oidkcbbpbinommpbbpabnlhlnffekbjb`. Production uses the Web Store ID.
+The app only sends tokens to extension IDs listed in `EXTENSION_IDS`. Dev and staging builds pin their ID with `WXT_MANIFEST_KEY` (public key, in `.env.development` / `.env.staging`): `oidkcbbpbinommpbbpabnlhlnffekbjb`. Production uses the Web Store ID, `fnefeeodeepechnhbijpfmjjcolopmmj` ([listing](https://chromewebstore.google.com/detail/clozer/fnefeeodeepechnhbijpfmjjcolopmmj)).
+
+The staging build can sit next to the Store one ("Clozer (staging)", loaded unpacked from `.output/chrome-mv3-staging`). Both act on Gmail and Outlook, so switch one off in `chrome://extensions` while testing, or keep staging in its own Chrome profile.
+
+## Releasing
+
+1. Bump `version` in `package.json` (the Store refuses a version that does not go up).
+2. Merge to `main`. CI keeps the zip as the `chrome-extension` artifact of the run (or `npm run zip`).
+3. Developer dashboard → Package → upload → submit for review. Updates usually pass within a day, longer when a permission or a host is added. Untick automatic publishing to release it by hand, right after the matching app deploy.
+4. Chrome updates installed copies on its own within hours. The API must keep serving the previous version meanwhile.
 
 ## When Gmail or Outlook breaks it
 
-1. Switch the host off without a release: `EXTENSION_DISABLED_HOSTS=gmail` (or `outlook`) on the app, or force an update with `EXTENSION_MIN_VERSION`.
+1. Switch the host off without a release: `EXTENSION_DISABLED_HOSTS=gmail` (or `outlook`) on the app, or force an update with `EXTENSION_MIN_VERSION`. Older versions then stop acting and show "Clozer doit être mis à jour" (from 1.1.0), whose button asks Chrome for the new version right away.
 2. Save the compose HTML (DevTools → Copy outerHTML of the compose), update the fixture in `adapters/mail.test.ts`, fix `adapters/mail.ts`.
 
 ## Not covered yet

@@ -1,5 +1,6 @@
 import { browser } from "wxt/browser";
 
+import { COPY } from "./copy";
 import type { Recipient } from "./recipients";
 
 export type MailHost = "gmail" | "outlook";
@@ -39,7 +40,17 @@ export type Request =
   | { type: "testNotification" }
   // Gmail / Outlook banner buttons
   | { type: "dismissBanner"; alertId: string; snoozeLinkId?: string }
-  | { type: "openUrl"; url: string };
+  | { type: "openUrl"; url: string }
+  // The app no longer accepts this version: fetch the new one from the Web Store
+  | { type: "update" };
+
+export type UpdateStatus = "updating" | "no_update" | "throttled";
+
+/** Asks the background for the new version and says what happened, for the seller. */
+export async function requestUpdate() {
+  const status = await ask<UpdateStatus>({ type: "update" }).catch(() => "no_update" as const);
+  return status === "updating" ? COPY.updating : COPY.updateNotYet;
+}
 
 // MAIN-world capture script → isolated content script (window.postMessage)
 export const CAPTURE_SOURCE = "clozer-capture";
