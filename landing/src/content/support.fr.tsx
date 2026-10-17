@@ -1,17 +1,10 @@
-import type { Metadata } from "next";
-
-import { LegalPage } from "@/components/legal-page";
 import { CONTACT_EMAIL } from "@/components/links";
-
-export const metadata: Metadata = {
-  title: "Support — Clozer",
-  description: "Installer l'extension Chrome et le complément Outlook, et nous joindre.",
-};
+import { Link } from "@/i18n/navigation";
 
 // Support URL of the Chrome Web Store listing and of the Outlook manifest (outlook/manifest/manifest.xml)
-export default function Support() {
+export function SupportFr() {
   return (
-    <LegalPage title="Support" updatedAt="13 octobre 2026">
+    <>
       <p>
         Une question, un bug, un lien qui ne s&apos;est pas créé : écrivez-nous à{" "}
         <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>. On répond sous un jour ouvré.
@@ -61,8 +54,8 @@ export default function Support() {
       <h2>Vos données</h2>
       <p>
         Ce que l&apos;extension et le complément envoient à Clozer est décrit dans la page{" "}
-        <a href="/confidentialite">confidentialité</a>.
+        <Link href="/privacy">confidentialité</Link>.
       </p>
-    </LegalPage>
+    </>
   );
 }

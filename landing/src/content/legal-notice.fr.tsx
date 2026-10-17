@@ -1,16 +1,9 @@
-import type { Metadata } from "next";
-
-import { LegalPage } from "@/components/legal-page";
 import { CONTACT_EMAIL } from "@/components/links";
+import { Link } from "@/i18n/navigation";
 
-export const metadata: Metadata = {
-  title: "Mentions légales — Clozer",
-  description: "Éditeur et hébergeur du site Clozer.",
-};
-
-export default function LegalNotice() {
+export function LegalNoticeFr() {
   return (
-    <LegalPage title="Mentions légales" updatedAt="16 octobre 2026">
+    <>
       <h2>Éditeur</h2>
       <p>
         JAAP v2, SASU au capital de 500 €<br />
@@ -35,9 +28,9 @@ export default function LegalNotice() {
 
       <h2>Données personnelles</h2>
       <p>
-        Voir la <a href="/confidentialite">politique de confidentialité</a> et la{" "}
-        <a href="/sous-traitants">liste des sous-traitants</a>.
+        Voir la <Link href="/privacy">politique de confidentialité</Link> et la{" "}
+        <Link href="/subprocessors">liste des sous-traitants</Link>.
       </p>
-    </LegalPage>
+    </>
   );
 }

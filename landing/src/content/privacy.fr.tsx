@@ -1,17 +1,10 @@
-import type { Metadata } from "next";
-
-import { LegalPage } from "@/components/legal-page";
 import { CONTACT_EMAIL } from "@/components/links";
-
-export const metadata: Metadata = {
-  title: "Confidentialité — Clozer",
-  description: "Quelles données Clozer traite, pourquoi, et comment exercer vos droits.",
-};
+import { Link } from "@/i18n/navigation";
 
 // Keep in sync with the app: retention/purge.ts, tracking/request-context.ts, ai/provider.ts
-export default function Privacy() {
+export function PrivacyFr() {
   return (
-    <LegalPage title="Confidentialité" updatedAt="13 octobre 2026">
+    <>
       <p>
         Clozer permet à un vendeur d&apos;envoyer une proposition commerciale sous forme de lien, de voir comment elle
         est consultée et de relancer au bon moment. Cette page explique ce que nous collectons, dans quel but, combien
@@ -108,7 +101,7 @@ export default function Privacy() {
       <h2>Prestataires</h2>
       <p>
         Hébergement et base de données dans l&apos;Union européenne. La liste complète, avec la localisation de chacun,
-        est sur la page <a href="/sous-traitants">sous-traitants</a>. Certains sont des sociétés américaines : les
+        est sur la page <Link href="/subprocessors">sous-traitants</Link>. Certains sont des sociétés américaines : les
         transferts sont encadrés par le Data Privacy Framework ou par les clauses contractuelles types de la
         Commission européenne.
       </p>
@@ -138,6 +131,6 @@ export default function Privacy() {
         un mois.
       </p>
       <p>Vous pouvez aussi déposer une réclamation auprès de la CNIL (cnil.fr).</p>
-    </LegalPage>
+    </>
   );
 }

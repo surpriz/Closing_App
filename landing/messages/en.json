@@ -1,0 +1,332 @@
+{
+  "meta": {
+    "title": "Clozer · Know who reads your documents, follow up at the right time",
+    "description": "Quotes, invoices, decks, technical docs: send a tracked link instead of an attachment. Clozer sees which pages get read, tells you who to follow up with, and writes the follow-up.",
+    "shortDescription": "Quotes, invoices, decks: send a tracked link. Clozer tells you who to follow up with and writes the follow-up.",
+    "ogHeadline": "See where your document heats up."
+  },
+  "nav": {
+    "label": "Navigation",
+    "home": "Clozer, home",
+    "how": "How it works",
+    "followUps": "Follow-ups",
+    "who": "Who it's for",
+    "faq": "FAQ",
+    "login": "Log in",
+    "try": "Try it",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "language": "Language"
+  },
+  "footer": {
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "subprocessors": "Subprocessors",
+    "legal": "Legal notice",
+    "support": "Support"
+  },
+  "signup": {
+    "emailLabel": "Your work email",
+    "noPassword": "no password needed",
+    "placeholder": "you@company.com",
+    "submit": "Create my first link",
+    "google": "Continue with Google"
+  },
+  "reading": {
+    "caption": "Example reading: {name}.",
+    "captionVideo": "The most-watched part is “{title}”, watched {count, plural, one {# time} other {# times}}. The prospect dropped off before the end.",
+    "captionPage": "The most-read page is “{title}”, at {time}.",
+    "tablist": "Document type",
+    "hot": "Hot",
+    "cold": "Cold",
+    "documents": {
+      "quote": {
+        "tab": "Quote",
+        "name": "“Website redesign” quote",
+        "pages": {
+          "p1": "Cover",
+          "p2": "Context",
+          "p3": "Approach",
+          "p4": "Pricing",
+          "p5": "Timeline",
+          "p6": "Terms"
+        }
+      },
+      "deck": {
+        "tab": "Deck",
+        "name": "“2027 Offer” deck",
+        "pages": {
+          "p1": "Cover",
+          "p2": "The problem",
+          "p3": "Demo",
+          "p4": "Results",
+          "p5": "Team",
+          "p6": "Contact"
+        }
+      },
+      "tech": {
+        "tab": "Tech doc",
+        "name": "“ERP migration” technical brief",
+        "pages": {
+          "p1": "Contents",
+          "p2": "Current setup",
+          "p3": "Architecture",
+          "p4": "Security",
+          "p5": "Timeline",
+          "p6": "Appendices"
+        }
+      },
+      "invoice": {
+        "tab": "Invoice",
+        "name": "Invoice #2026-118",
+        "pages": {
+          "p1": "Summary",
+          "p2": "Line items",
+          "p3": "Discounts",
+          "p4": "Payment schedule",
+          "p5": "Fine print",
+          "p6": "Bank details"
+        }
+      },
+      "video": {
+        "tab": "Video",
+        "name": "“SEO audit” video pitch · 3:00",
+        "pages": {
+          "p1": "Hello",
+          "p2": "The problem",
+          "p3": "Demo",
+          "p4": "Results",
+          "p5": "Pricing",
+          "p6": "Next step"
+        }
+      }
+    }
+  },
+  "home": {
+    "demoBar": {
+      "report": "Reading report #0412",
+      "company": "Atelier Morel"
+    },
+    "demo": "Demo example",
+    "hero": {
+      "title": "See where your document",
+      "titleHot": "heats up.",
+      "lead": "Quote, invoice, deck, tech doc, contract: send a link instead of an attachment. Clozer tracks reading page by page, tells you who to follow up with, writes the follow-up and picks the time to send it.",
+      "free": "Free during the beta",
+      "noCard": "No credit card"
+    },
+    "readout": {
+      "prospect": "Prospect",
+      "prospectValue": "Marie Dupont · Atelier Morel",
+      "temperature": "Temperature",
+      "hot": "Hot",
+      "activity": "Activity",
+      "activityValue": "Back 3 times since yesterday",
+      "next": "Next follow-up",
+      "ready": "Ready",
+      "nextTime": "Thu 10:30 AM"
+    },
+    "silence": {
+      "title": "You hit send. Then, silence.",
+      "body": "The document is out. Did they open it? Make it to pricing? Forward it to the decision-maker? So you follow up blind: too early and you're a pest, too late and they've signed with someone else.",
+      "answer": "Clozer swaps the attachment for a link, and the guesswork for what actually happened.",
+      "pdf": "PDF attachment",
+      "pdfVerdict": "Nothing measured",
+      "link": "Clozer link",
+      "linkVerdict": "Pricing read for 3:38"
+    },
+    "send": {
+      "title": "Two ways to send. Nothing to learn.",
+      "link": {
+        "name": "The link",
+        "status": "Available",
+        "body": "Upload the document and your link is ready in a second. Paste it wherever you already talk to clients: email, WhatsApp, LinkedIn, text. Your client opens it in the browser, on desktop or phone, with nothing to install."
+      },
+      "mail": {
+        "name": "From Gmail or Outlook",
+        "status": "Available",
+        "body": "Attach your PDF like you always do. When you hit send, the extension swaps it for a Clozer link, then pings you at the top of your inbox when it gets read. The Chrome extension works in Gmail and in Outlook on the web; for desktop Outlook, your Microsoft 365 admin adds the add-in.",
+        "action": "Add to Chrome"
+      }
+    },
+    "steps": {
+      "title": "Three steps, once per document.",
+      "upload": {
+        "title": "Upload your document",
+        "body": "A PDF, a web page (Notion, Loom, Figma…) or a three-minute video pitch. Clozer figures out whether it's a quote, an invoice, a deck or a résumé, and reads every page accordingly: on a résumé, “Pricing” becomes your day rate.",
+        "measure": "10 document types"
+      },
+      "send": {
+        "title": "Send the link",
+        "body": "Paste it into your email, WhatsApp or LinkedIn, or let the Gmail and Outlook extension replace the attachment for you. One link per recipient: you know who's reading, and who's sitting on it.",
+        "measure": "1 link = 1 reader"
+      },
+      "followUp": {
+        "title": "Let Clozer follow up",
+        "body": "It sees who read what, writes the follow-up and suggests the day and time to send it. You approve in one click.",
+        "measure": "You approve every follow-up"
+      }
+    },
+    "followUps": {
+      "title": "Follow-ups that write and schedule themselves.",
+      "body": "Clozer starts from what your client actually read and from your offer. It writes a follow-up that tackles whatever is holding them back, and picks the moment: a business day, during office hours, in your client's time zone.",
+      "approve": "Approve in one click, or let the simple ones go out on their own. The tricky ones always wait for you.",
+      "caption": "Example follow-up drafted by Clozer, scheduled for Thursday at 10:30 AM, prospect's time.",
+      "cardTitle": "Follow-up ready · Marie Dupont",
+      "cardStatus": "needs approval",
+      "read": {
+        "label": "What they read",
+        "value": "Pricing read 3 times, Timeline skimmed"
+      },
+      "stuck": {
+        "label": "What's holding it up",
+        "value": "Price, judging by time spent on the payment schedule"
+      },
+      "schedule": {
+        "label": "Suggested send",
+        "value": "Thursday, Oct 22, 10:30 AM, prospect's time"
+      },
+      "message": "“Hi Marie, to make the decision easier, I can offer to split the payment into three installments. Do you have a few minutes Thursday to talk it over?”",
+      "send": "Approve and send",
+      "edit": "Edit"
+    },
+    "readings": {
+      "title": "A brief on every prospect, every morning.",
+      "pages": {
+        "title": "Page by page",
+        "body": "Pages read, time spent on each one, return visits to pricing, number of readers. For a video, which parts got watched and where the prospect dropped off. You can tell when the document is making the rounds internally."
+      },
+      "live": {
+        "title": "Live",
+        "body": "A notification in Chrome, or at the top of Gmail and Outlook, the moment a prospect is reading. You get an alert when they come back after a long silence or when several people are reading."
+      },
+      "score": {
+        "title": "A temperature that explains itself",
+        "body": "Cold, warm, hot: a score out of 100 where every point comes with a reason you can read. No black box."
+      },
+      "deal": {
+        "title": "A read on every deal",
+        "body": "Where the prospect stands, what's holding things up, what to do and when. Every claim points back to a measured fact, or it gets thrown out."
+      },
+      "reply": {
+        "title": "The prospect replies right in the document",
+        "body": "Accept the proposal, ask for a change, book a meeting on your calendar, ask the assistant a question or leave a voice note on a page. It all lands at the top of your dashboard."
+      }
+    },
+    "sheet": {
+      "caption": "Example prospect brief: Marie Dupont, hot, 86 out of 100, with the score breakdown.",
+      "proposal": "Atelier Morel · “Website redesign” proposal",
+      "score": "/100 · hot",
+      "reasons": {
+        "pricing": "Read pricing for 3:38",
+        "back": "Back 3 times since yesterday",
+        "forwarded": "Forwarded to a 2nd reader",
+        "method": "Read the whole approach"
+      }
+    },
+    "trust": {
+      "title": "Track the deal, not the person.",
+      "body": "Your prospects are your future customers. Heat is measured on pages, never on people, and your follow-up still reads like it came from a thoughtful salesperson.",
+      "informed": "The prospect is told, right on the page, what the sender can see.",
+      "discreet": "A follow-up never lets on that you're tracking what they read.",
+      "limit": "Three follow-ups per contact per month, max, and never right after a read.",
+      "unsubscribe": "An unsubscribe link in every follow-up. IP addresses are never stored in the clear."
+    },
+    "who": {
+      "title": "One tool, from solo shop to sales team.",
+      "beta": "Clozer is in beta: everything is unlocked, no credit card required. If a paid plan comes along, you'll hear about it first.",
+      "solo": {
+        "name": "Solo",
+        "who": "Freelancers, contractors, consultants, small agencies.",
+        "body": "Quotes, invoices, decks: one link per client, follow-ups written for you. Sign in with Google or your email and send your first link in minutes.",
+        "offer": "Free during the beta",
+        "action": "Create my account"
+      },
+      "team": {
+        "name": "Team",
+        "who": "Sales reps at small and midsize companies, with a manager.",
+        "body": "Invite your team: everyone tracks their own deals, and the manager sees the full picture in the Team view. Alerts by email, Slack, Chrome or Outlook.",
+        "offer": "Free during the beta",
+        "action": "Create the team space"
+      },
+      "enterprise": {
+        "name": "Enterprise",
+        "who": "Large sales organizations.",
+        "body": "Rolling out across several teams, or have security or integration requirements? We'll look at your setup together before opening access.",
+        "offer": "Let's talk",
+        "action": "Email us",
+        "mailSubject": "Clozer for our team"
+      },
+      "includedLabel": "Included during the beta:",
+      "included": {
+        "formats": "PDFs, web pages and video pitches",
+        "extension": "Gmail and Outlook extension",
+        "tracking": "Page-by-page tracking, live alerts",
+        "deals": "Deal reads, follow-ups drafted for you",
+        "replies": "Meetings, assistant and voice notes from prospects"
+      }
+    },
+    "faq": {
+      "title": "Questions we get.",
+      "more": "Something else? <link>Email us</link>.",
+      "informed": {
+        "q": "Does the prospect know their reading is tracked?",
+        "a": "Yes. A clear notice sits on the document page, with a link to our privacy policy. Follow-ups, on the other hand, stay natural: they never mention a specific page or reading time."
+      },
+      "auto": {
+        "q": "Do follow-ups go out on their own?",
+        "a": "By default, Clozer writes the follow-up and suggests the day and time to send it; you review it and approve in one click. Later on, you can let it send the simple ones by itself when it's confident. The tricky cases (an objection, a question from the prospect) always wait for you."
+      },
+      "documents": {
+        "q": "What can I send?",
+        "a": "Anything you send to a client or prospect. Any PDF: quote, invoice, proposal, deck, technical document, contract, résumé, brochure, case study. Clozer recognizes the type and shows you how it was read, page by page. A web page (Notion, Loom, Figma, Google Slides, Webflow…): opens and time spent, plus a reader view if the site won't display inside Clozer. A video pitch recorded in Clozer, up to three minutes: you know how far they watched."
+      },
+      "ownOpens": {
+        "q": "Do my own opens skew the numbers?",
+        "a": "No. When you open your own links while signed in to Clozer, the read is ignored. Bots are filtered out too."
+      },
+      "install": {
+        "q": "Do I need to install anything?",
+        "a": "No. Sign in with Google or your email, no password, copy the link, and your client reads it in their browser, on desktop or phone. The Gmail and Outlook extension is a handy shortcut, not a requirement."
+      },
+      "extension": {
+        "q": "How do I install the Gmail and Outlook extension?",
+        "a": "Install “Clozer” from the Chrome Web Store: it works in Gmail and in Outlook on the web. For desktop Outlook on Windows or Mac, your company's Microsoft 365 admin adds the add-in for the whole team; the steps are on the Support page."
+      },
+      "replies": {
+        "q": "Can the prospect get back to me?",
+        "a": "Yes, without leaving the document. They can accept the proposal or ask for a change, book a meeting on your calendar (Calendly, Cal.com…), ask the assistant, which answers from your offer when you're not around, or leave a voice note on a page. You get all of it, with the transcript."
+      }
+    },
+    "final": "Send your next document as a tracked link."
+  },
+  "legal": {
+    "updatedAt": "Last updated {date}.",
+    "translationNotice": "This is a translation provided for convenience. The <link>French version</link> prevails in case of discrepancy.",
+    "terms": {
+      "title": "Terms of Service",
+      "description": "Clozer's terms of service and data processing agreement."
+    },
+    "privacy": {
+      "title": "Privacy",
+      "description": "What data Clozer processes, why, and how to exercise your rights."
+    },
+    "notice": {
+      "title": "Legal Notice",
+      "description": "Publisher and host of the Clozer website."
+    },
+    "subprocessors": {
+      "title": "Subprocessors",
+      "description": "The providers that process data for Clozer, and where."
+    },
+    "support": {
+      "title": "Support",
+      "description": "Install the Chrome extension and the Outlook add-in, and get in touch."
+    }
+  },
+  "notFound": {
+    "title": "Page not found",
+    "body": "This link doesn't lead anywhere, or the page has moved.",
+    "back": "Back to home"
+  }
+}

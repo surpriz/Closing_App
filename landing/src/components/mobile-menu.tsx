@@ -1,15 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
-import { PrimaryCta } from "./cta";
-import { APP_URL } from "./links";
+import { useEffect, useState, type ReactNode } from "react";
 
 /**
  * The only client component of the site: a 44px button that drops the nav under the header on small screens.
  * Not a <details>: the /#section anchors must keep working without reloading the page, so we close on hashchange.
  */
-export function MobileMenu({ items }: { items: { href: string; label: string }[] }) {
+export function MobileMenu({
+  items,
+  loginHref,
+  labels,
+  cta,
+  switcher,
+}: {
+  items: { href: string; label: string }[];
+  loginHref: string;
+  labels: { nav: string; open: string; close: string; login: string };
+  /** Rendered by the server header: the CTA and the language links stay server components. */
+  cta: ReactNode;
+  switcher: ReactNode;
+}) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -30,7 +40,7 @@ export function MobileMenu({ items }: { items: { href: string; label: string }[]
         type="button"
         aria-expanded={open}
         aria-controls="mobile-menu"
-        aria-label={open ? "Fermer le menu" : "Ouvrir le menu"}
+        aria-label={open ? labels.close : labels.open}
         onClick={() => setOpen((value) => !value)}
         className="-mr-2 ml-1 flex size-11 items-center justify-center text-ink transition-colors hover:bg-sheet"
       >
@@ -44,7 +54,7 @@ export function MobileMenu({ items }: { items: { href: string; label: string }[]
           onClick={() => setOpen(false)}
           className="absolute inset-x-0 top-full border-b border-ink bg-paper px-5 py-2"
         >
-          <nav aria-label="Navigation" className="grid divide-y divide-rule">
+          <nav aria-label={labels.nav} className="grid divide-y divide-rule">
             {items.map((item) => (
               <a key={item.href} href={item.href} className="py-3.5 text-lead font-medium text-ink">
                 {item.label}
@@ -52,10 +62,11 @@ export function MobileMenu({ items }: { items: { href: string; label: string }[]
             ))}
           </nav>
           <div className="flex items-center justify-between gap-3 border-t border-ink py-3">
-            <a href={APP_URL} className="py-2 text-body font-medium text-ink-soft hover:text-ink">
-              Se connecter
+            <a href={loginHref} className="py-2 text-body font-medium text-ink-soft hover:text-ink">
+              {labels.login}
             </a>
-            <PrimaryCta>Essayer</PrimaryCta>
+            {switcher}
+            {cta}
           </div>
         </div>
       )}

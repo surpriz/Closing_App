@@ -7,11 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit",
-    "check:legal": "! grep -rniE '\\[(raison sociale|forme juridique|montant|adresse|ville|numéro|prénom nom|fonction)' src/app || (echo 'Legal placeholders left above: fill them in from the Kbis before chaining this to the build.' && exit 1)"
+    "typecheck": "tsc --noEmit && npm run check:messages",
+    "check:legal": "! grep -rniE '\\[(raison sociale|forme juridique|montant|adresse|ville|numéro|prénom nom|fonction|company name|legal form|share capital|amount|address|city|number|full name|position)' src/content || (echo 'Legal placeholders left above: fill them in from the Kbis (French and English versions) before chaining this to the build.' && exit 1)",
+    "check:messages": "node scripts/check-messages.mjs"
   },
   "dependencies": {
     "next": "16.3.5",
+    "next-intl": "^4.14.9",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },

@@ -1,22 +1,33 @@
 import type { MetadataRoute } from "next";
 
-const BASE = "https://www.clozer.club";
+import { UPDATED_AT } from "@/components/page-dates";
+import { routing, type AppPathname } from "@/i18n/routing";
+import { SITE_URL, alternatesFor } from "@/i18n/seo";
 
-// The legal pages show "Mise à jour le …"; keep these in step with their updatedAt.
-const LEGAL_UPDATED_AT = new Date("2026-10-11");
-const PRIVACY_UPDATED_AT = new Date("2026-10-13");
-const NOTICE_UPDATED_AT = new Date("2026-10-16");
-const SUPPORT_UPDATED_AT = new Date("2026-10-13");
-// Last copy change on the home page.
-const HOME_UPDATED_AT = new Date("2026-10-12");
+const PAGES: { path: AppPathname; changeFrequency: "weekly" | "monthly" | "yearly"; priority: number }[] = [
+  { path: "/", changeFrequency: "weekly", priority: 1 },
+  { path: "/terms", changeFrequency: "yearly", priority: 0.3 },
+  { path: "/privacy", changeFrequency: "yearly", priority: 0.3 },
+  { path: "/subprocessors", changeFrequency: "yearly", priority: 0.3 },
+  { path: "/legal", changeFrequency: "yearly", priority: 0.3 },
+  { path: "/support", changeFrequency: "monthly", priority: 0.4 },
+];
 
+// Every page in every locale, each listing its translations (hreflang in the sitemap).
 export default function sitemap(): MetadataRoute.Sitemap {
-  return [
-    { url: `${BASE}/`, lastModified: HOME_UPDATED_AT, changeFrequency: "weekly", priority: 1 },
-    { url: `${BASE}/cgu`, lastModified: NOTICE_UPDATED_AT, changeFrequency: "yearly", priority: 0.3 },
-    { url: `${BASE}/confidentialite`, lastModified: PRIVACY_UPDATED_AT, changeFrequency: "yearly", priority: 0.3 },
-    { url: `${BASE}/sous-traitants`, lastModified: LEGAL_UPDATED_AT, changeFrequency: "yearly", priority: 0.3 },
-    { url: `${BASE}/mentions-legales`, lastModified: NOTICE_UPDATED_AT, changeFrequency: "yearly", priority: 0.3 },
-    { url: `${BASE}/support`, lastModified: SUPPORT_UPDATED_AT, changeFrequency: "monthly", priority: 0.4 },
-  ];
+  return PAGES.flatMap(({ path, changeFrequency, priority }) =>
+    routing.locales.map((locale) => {
+      const alternates = alternatesFor(locale, path)!;
+      const languages = Object.fromEntries(
+        Object.entries(alternates.languages ?? {}).map(([lang, href]) => [lang, `${SITE_URL}${href}`]),
+      );
+      return {
+        url: `${SITE_URL}${alternates.canonical}`,
+        lastModified: UPDATED_AT[path],
+        changeFrequency,
+        priority,
+        alternates: { languages },
+      };
+    }),
+  );
 }

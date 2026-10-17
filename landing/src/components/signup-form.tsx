@@ -1,21 +1,26 @@
-import { APP_URL, GOOGLE_SIGNUP_URL } from "./links";
+import { getTranslations } from "next-intl/server";
+
+import type { Locale } from "@/i18n/routing";
+
+import { APP_LOGIN_URL, appUrl } from "./links";
 
 /**
  * The report's "Client" field is the signup itself: the email travels to the app's login page,
- * which sends the link at once. No JS needed.
+ * which sends the link at once. No JS needed. `lang` rides along so the account gets the page's language.
  */
-export function SignupForm({ id, tone = "light" }: { id: string; tone?: "light" | "dark" }) {
+export async function SignupForm({ id, locale, tone = "light" }: { id: string; locale: Locale; tone?: "light" | "dark" }) {
+  const t = await getTranslations({ locale, namespace: "signup" });
   const dark = tone === "dark";
   const line = dark ? "border-sheet/30" : "border-ink";
   return (
-    <form action={APP_URL} method="get" className={`border ${line} ${dark ? "text-sheet" : "bg-sheet"}`}>
+    <form action={APP_LOGIN_URL} method="get" className={`border ${line} ${dark ? "text-sheet" : "bg-sheet"}`}>
       <label
         htmlFor={id}
         className={`flex items-baseline justify-between gap-4 border-b ${line} px-4 py-2.5 text-micro font-medium tracking-[0.06em] uppercase`}
       >
-        <span>Votre email pro</span>
+        <span>{t("emailLabel")}</span>
         <span className={`normal-case tracking-normal max-sm:hidden ${dark ? "text-sheet/60" : "text-ink-soft"}`}>
-          sans mot de passe
+          {t("noPassword")}
         </span>
       </label>
       <input
@@ -24,26 +29,27 @@ export function SignupForm({ id, tone = "light" }: { id: string; tone?: "light" 
         type="email"
         required
         autoComplete="email"
-        placeholder="vous@entreprise.fr"
+        placeholder={t("placeholder")}
         className={`block h-14 w-full border-b ${line} bg-transparent px-4 text-lead outline-none placeholder:text-ink-soft/70 focus-visible:outline-2 focus-visible:-outline-offset-2 ${dark ? "placeholder:text-sheet/50" : ""}`}
       />
+      <input type="hidden" name="lang" value={locale} />
       <button
         type="submit"
         className={`group flex h-16 w-full items-center justify-between px-4 text-left text-lead font-semibold transition-colors ${
           dark ? "bg-sheet text-ink hover:bg-iron-4" : "bg-ink text-sheet hover:bg-ink/90"
         }`}
       >
-        Créer mon premier lien
+        {t("submit")}
         <Arrow />
       </button>
       <a
-        href={GOOGLE_SIGNUP_URL}
+        href={appUrl(locale, { provider: "google" })}
         className={`flex h-14 items-center gap-3 border-t ${line} px-4 text-body font-medium transition-colors ${
           dark ? "hover:bg-sheet/10" : "hover:bg-muted"
         }`}
       >
         <GoogleMark />
-        Continuer avec Google
+        {t("google")}
       </a>
     </form>
   );

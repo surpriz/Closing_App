@@ -1,4 +1,9 @@
 import type { NextConfig } from "next";
+import createNextIntlPlugin from "next-intl/plugin";
+
+// The French pages lived at the root before the site went bilingual. Those URLs are in emails,
+// the app and the store listings, so they move for good to their /fr equivalent.
+const LEGACY_FRENCH_PAGES = ["/cgu", "/confidentialite", "/mentions-legales", "/sous-traitants", "/support"];
 
 const nextConfig: NextConfig = {
   async redirects() {
@@ -9,8 +14,11 @@ const nextConfig: NextConfig = {
         destination: "https://www.clozer.club/:path*",
         permanent: true,
       },
+      ...LEGACY_FRENCH_PAGES.map((source) => ({ source, destination: `/fr${source}`, statusCode: 301 as const })),
     ];
   },
 };
 
-export default nextConfig;
+const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
+
+export default withNextIntl(nextConfig);

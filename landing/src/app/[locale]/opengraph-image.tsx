@@ -1,10 +1,21 @@
+import { hasLocale } from "next-intl";
+import { getTranslations } from "next-intl/server";
 import { ImageResponse } from "next/og";
 
 import { BRAND } from "@/components/brand-colors";
+import { routing } from "@/i18n/routing";
 
-export const alt = "Clozer · Sachez qui lit vos documents, relancez au bon moment";
-export const size = { width: 1200, height: 630 };
-export const contentType = "image/png";
+const size = { width: 1200, height: 630 };
+
+function localeOf(value: string) {
+  return hasLocale(routing.locales, value) ? value : routing.defaultLocale;
+}
+
+// One image per locale; generateImageMetadata is what lets the alt text follow the language.
+export async function generateImageMetadata({ params }: { params: { locale: string } }) {
+  const t = await getTranslations({ locale: localeOf(params.locale), namespace: "meta" });
+  return [{ id: "card", alt: t("title"), size, contentType: "image/png" }];
+}
 
 // Heat per page of the example quote, as on the home page.
 const PLATES = [0.3, 0.5, 0.68, 1, 0.38, 0];
@@ -21,7 +32,9 @@ function plateBackground(heat: number) {
   return `radial-gradient(circle at 50% 45%, ${stops.join(", ")})`;
 }
 
-export default function OpengraphImage() {
+export default async function OpengraphImage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale: localeOf(locale), namespace: "meta" });
   return new ImageResponse(
     (
       <div
@@ -45,7 +58,7 @@ export default function OpengraphImage() {
             clozer
           </div>
           <div style={{ fontSize: 84, fontWeight: 800, lineHeight: 0.95, letterSpacing: -3, maxWidth: 900 }}>
-            Voyez où votre document chauffe.
+            {t("ogHeadline")}
           </div>
         </div>
         <div style={{ display: "flex", gap: 2, background: BRAND.ink, borderTop: `2px solid ${BRAND.ink}`, height: 230 }}>

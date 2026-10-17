@@ -1,0 +1,332 @@
+{
+  "meta": {
+    "title": "Clozer · Sachez qui lit vos documents, relancez au bon moment",
+    "description": "Devis, factures, présentations, docs techniques : envoyez un lien suivi au lieu de la pièce jointe. Clozer voit les pages lues, vous dit qui relancer et écrit la relance.",
+    "shortDescription": "Devis, factures, présentations : envoyez un lien suivi. Clozer vous dit qui relancer et écrit la relance.",
+    "ogHeadline": "Voyez où votre document chauffe."
+  },
+  "nav": {
+    "label": "Navigation",
+    "home": "Clozer, accueil",
+    "how": "Comment ça marche",
+    "followUps": "Relances",
+    "who": "Pour qui",
+    "faq": "Questions",
+    "login": "Se connecter",
+    "try": "Essayer",
+    "openMenu": "Ouvrir le menu",
+    "closeMenu": "Fermer le menu",
+    "language": "Langue"
+  },
+  "footer": {
+    "privacy": "Confidentialité",
+    "terms": "CGU",
+    "subprocessors": "Sous-traitants",
+    "legal": "Mentions légales",
+    "support": "Support"
+  },
+  "signup": {
+    "emailLabel": "Votre email pro",
+    "noPassword": "sans mot de passe",
+    "placeholder": "vous@entreprise.fr",
+    "submit": "Créer mon premier lien",
+    "google": "Continuer avec Google"
+  },
+  "reading": {
+    "caption": "Exemple : lecture de « {name} ».",
+    "captionVideo": "Le passage le plus regardé est « {title} », vu {count} fois. Le prospect a décroché avant la fin.",
+    "captionPage": "La page la plus lue est « {title} », {time}.",
+    "tablist": "Type de document",
+    "hot": "Chaud",
+    "cold": "Froid",
+    "documents": {
+      "quote": {
+        "tab": "Devis",
+        "name": "Devis « Refonte du site »",
+        "pages": {
+          "p1": "Couverture",
+          "p2": "Contexte",
+          "p3": "Méthode",
+          "p4": "Tarifs",
+          "p5": "Planning",
+          "p6": "Conditions"
+        }
+      },
+      "deck": {
+        "tab": "Présentation",
+        "name": "Présentation « Offre 2027 »",
+        "pages": {
+          "p1": "Couverture",
+          "p2": "Le constat",
+          "p3": "Démo",
+          "p4": "Résultats",
+          "p5": "Équipe",
+          "p6": "Contact"
+        }
+      },
+      "tech": {
+        "tab": "Doc technique",
+        "name": "Dossier technique « Migration ERP »",
+        "pages": {
+          "p1": "Sommaire",
+          "p2": "Existant",
+          "p3": "Architecture",
+          "p4": "Sécurité",
+          "p5": "Planning",
+          "p6": "Annexes"
+        }
+      },
+      "invoice": {
+        "tab": "Facture",
+        "name": "Facture n° 2026-118",
+        "pages": {
+          "p1": "Récapitulatif",
+          "p2": "Détail",
+          "p3": "Remises",
+          "p4": "Échéancier",
+          "p5": "Mentions",
+          "p6": "RIB"
+        }
+      },
+      "video": {
+        "tab": "Vidéo",
+        "name": "Pitch vidéo « Audit SEO » · 3:00",
+        "pages": {
+          "p1": "Bonjour",
+          "p2": "Le constat",
+          "p3": "Démo",
+          "p4": "Résultats",
+          "p5": "Tarif",
+          "p6": "Prochaine étape"
+        }
+      }
+    }
+  },
+  "home": {
+    "demoBar": {
+      "report": "Rapport de lecture n° 0412",
+      "company": "Atelier Morel"
+    },
+    "demo": "Exemple de démonstration",
+    "hero": {
+      "title": "Voyez où votre document",
+      "titleHot": "chauffe.",
+      "lead": "Devis, facture, présentation, doc technique, contrat : envoyez un lien à la place de la pièce jointe. Clozer mesure la lecture page par page, vous dit qui relancer, écrit la relance et propose l'heure d'envoi.",
+      "free": "Gratuit pendant la bêta",
+      "noCard": "Sans carte bancaire"
+    },
+    "readout": {
+      "prospect": "Prospect",
+      "prospectValue": "Marie Dupont · Atelier Morel",
+      "temperature": "Température",
+      "hot": "Chaud",
+      "activity": "Activité",
+      "activityValue": "Revenu 3 fois depuis hier",
+      "next": "Prochaine relance",
+      "ready": "Prête",
+      "nextTime": "jeu. 10:30"
+    },
+    "silence": {
+      "title": "Après l'envoi, le silence.",
+      "body": "Le document est parti. A-t-il été ouvert ? Lu jusqu'aux tarifs ? Transmis au décideur ? Vous relancez à l'aveugle : trop tôt, vous agacez ; trop tard, le prospect a signé ailleurs.",
+      "answer": "Clozer remplace la pièce jointe par un lien, et le doute par ce qui s'est vraiment passé.",
+      "pdf": "Pièce jointe PDF",
+      "pdfVerdict": "Aucune mesure",
+      "link": "Lien Clozer",
+      "linkVerdict": "Tarifs lus 3 min 38"
+    },
+    "send": {
+      "title": "Deux façons d'envoyer. Aucune à apprendre.",
+      "link": {
+        "name": "Le lien",
+        "status": "Disponible",
+        "body": "Déposez le document : le lien est prêt dans la seconde. Collez-le où vous écrivez déjà à vos clients, email, WhatsApp, LinkedIn, SMS. Votre client l'ouvre dans son navigateur, sur ordinateur comme sur téléphone, sans rien installer."
+      },
+      "mail": {
+        "name": "Depuis Gmail ou Outlook",
+        "status": "Disponible",
+        "body": "Joignez votre PDF comme d'habitude. Au moment d'envoyer, l'extension le remplace par un lien Clozer, et vous prévient en haut de votre boîte quand il est lu. L'extension Chrome marche dans Gmail et dans Outlook ouvert dans le navigateur ; pour Outlook installé, votre administrateur Microsoft 365 ajoute le complément.",
+        "action": "Ajouter à Chrome"
+      }
+    },
+    "steps": {
+      "title": "Trois gestes, une fois par document.",
+      "upload": {
+        "title": "Déposez votre document",
+        "body": "Un PDF, une page web (Notion, Loom, Figma…) ou un pitch vidéo de trois minutes. Clozer reconnaît s'il s'agit d'un devis, d'une facture, d'une présentation ou d'un CV, et lit chaque page en conséquence : sur un CV, « Tarifs » devient votre taux journalier.",
+        "measure": "10 types reconnus"
+      },
+      "send": {
+        "title": "Envoyez le lien",
+        "body": "Copiez-le dans votre email, sur WhatsApp ou LinkedIn, ou laissez l'extension Gmail et Outlook remplacer la pièce jointe pour vous. Un lien par destinataire : vous savez qui lit, et qui ne fait rien.",
+        "measure": "1 lien = 1 lecteur"
+      },
+      "followUp": {
+        "title": "Laissez Clozer relancer",
+        "body": "Il voit qui lit quoi, écrit la relance et propose le jour et l'heure d'envoi. Vous validez d'un clic.",
+        "measure": "Relance validée par vous"
+      }
+    },
+    "followUps": {
+      "title": "Les relances s'écrivent et se programment seules.",
+      "body": "Clozer part de ce que votre client a vraiment lu et de votre offre. Il écrit une relance qui répond à ce qui coince, et choisit le moment : un jour ouvré, en heures de bureau, dans le fuseau de votre client.",
+      "approve": "Vous validez d'un clic, ou vous laissez partir seules les relances simples. Les cas délicats vous attendent toujours.",
+      "caption": "Exemple de relance préparée par Clozer, avec l'envoi proposé jeudi à 10 h 30, heure du prospect.",
+      "cardTitle": "Relance préparée · Marie Dupont",
+      "cardStatus": "à valider",
+      "read": {
+        "label": "Ce qui a été lu",
+        "value": "Tarifs relus 3 fois, Planning survolé"
+      },
+      "stuck": {
+        "label": "Ce qui coince",
+        "value": "Le prix, d'après le temps passé sur l'échéancier"
+      },
+      "schedule": {
+        "label": "Envoi proposé",
+        "value": "Jeudi 22 oct., 10:30, heure du prospect"
+      },
+      "message": "« Bonjour Marie, pour faciliter la décision, je peux vous proposer un paiement en trois fois. Un créneau jeudi pour en parler ? »",
+      "send": "Valider l'envoi",
+      "edit": "Modifier"
+    },
+    "readings": {
+      "title": "Une fiche par prospect, chaque matin.",
+      "pages": {
+        "title": "Page par page",
+        "body": "Pages lues, temps passé sur chacune, retours sur les tarifs, nombre de lecteurs. Pour une vidéo, les passages regardés et où le prospect a décroché. Vous voyez si le document circule en interne."
+      },
+      "live": {
+        "title": "En direct",
+        "body": "Une notification dans Chrome, ou en haut de Gmail et Outlook, quand un prospect lit. Une alerte part s'il revient après un long silence ou s'il lit à plusieurs."
+      },
+      "score": {
+        "title": "Une température qui s'explique",
+        "body": "Froid, tiède, chaud : un score sur 100 dont chaque point a une raison lisible. Pas de boîte noire."
+      },
+      "deal": {
+        "title": "Une lecture de chaque deal",
+        "body": "Où en est le prospect, ce qui coince, quoi faire et quand. Chaque affirmation renvoie à un fait mesuré, sinon elle est écartée."
+      },
+      "reply": {
+        "title": "Le prospect répond dans le document",
+        "body": "Valider la proposition, demander un ajustement, prendre rendez-vous dans votre agenda, poser une question à l'assistant ou laisser un vocal sur une page. Tout remonte en tête de votre tableau de bord."
+      }
+    },
+    "sheet": {
+      "caption": "Exemple de fiche prospect : Marie Dupont, chaude, 86 sur 100, avec le détail du score.",
+      "proposal": "Atelier Morel · proposition « Refonte du site »",
+      "score": "/100 · chaud",
+      "reasons": {
+        "pricing": "Tarifs lus 3 min 38",
+        "back": "Revenu 3 fois depuis hier",
+        "forwarded": "Transmis à un 2e lecteur",
+        "method": "Méthode lue en entier"
+      }
+    },
+    "trust": {
+      "title": "Suivre sans fliquer.",
+      "body": "Vos prospects sont vos futurs clients. La chaleur se mesure sur les pages, jamais sur les personnes, et votre relance reste celle d'un commercial attentif.",
+      "informed": "Le prospect est informé, sur la page, de ce que l'expéditeur voit.",
+      "discreet": "Une relance ne laisse jamais deviner que vous suivez la lecture.",
+      "limit": "Trois relances par mois et par contact au maximum, jamais juste après une lecture.",
+      "unsubscribe": "Lien de désinscription dans chaque relance, adresses IP jamais stockées en clair."
+    },
+    "who": {
+      "title": "Un seul outil, de l'artisan à l'équipe.",
+      "beta": "Clozer est en bêta : tout est ouvert, sans carte bancaire. Si une offre payante arrive, vous serez prévenu avant.",
+      "solo": {
+        "name": "Solo",
+        "who": "Indépendants, artisans, consultants, agences de quelques personnes.",
+        "body": "Devis, factures, présentations : un lien par client, les relances écrites pour vous. Connexion avec Google ou votre email, premier lien en quelques minutes.",
+        "offer": "Gratuit pendant la bêta",
+        "action": "Créer mon compte"
+      },
+      "team": {
+        "name": "Équipe",
+        "who": "Commerciaux de PME avec un manager.",
+        "body": "Invitez l'équipe : chacun suit ses deals, le manager voit l'ensemble dans la vue Équipe. Alertes par email, Slack, Chrome ou Outlook.",
+        "offer": "Gratuit pendant la bêta",
+        "action": "Créer l'espace d'équipe"
+      },
+      "enterprise": {
+        "name": "Entreprise",
+        "who": "Grandes équipes commerciales.",
+        "body": "Déploiement à plusieurs équipes, besoins de sécurité ou d'intégration : on regarde votre cas ensemble avant de vous ouvrir l'accès.",
+        "offer": "Sur échange",
+        "action": "Nous écrire",
+        "mailSubject": "Clozer pour notre équipe"
+      },
+      "includedLabel": "Inclus pendant la bêta :",
+      "included": {
+        "formats": "PDF, pages web et pitchs vidéo",
+        "extension": "Extension Gmail et Outlook",
+        "tracking": "Suivi page par page, alertes en direct",
+        "deals": "Lecture des deals, relances préparées",
+        "replies": "Rendez-vous, assistant et vocaux du prospect"
+      }
+    },
+    "faq": {
+      "title": "Ce qu'on nous demande.",
+      "more": "Une autre question ? <link>Écrivez-nous</link>.",
+      "informed": {
+        "q": "Le prospect sait-il que sa lecture est suivie ?",
+        "a": "Oui. Une mention claire figure sur la page du document, avec un lien vers notre politique de confidentialité. Les relances, elles, restent naturelles : elles ne citent jamais une page ni un temps de lecture."
+      },
+      "auto": {
+        "q": "Les relances partent-elles toutes seules ?",
+        "a": "Par défaut, Clozer écrit la relance et propose le jour et l'heure d'envoi ; vous la relisez et la validez d'un clic. Vous pouvez ensuite le laisser envoyer seul les messages simples quand il est sûr de lui. Les cas délicats (une objection, une question du prospect) vous attendent toujours."
+      },
+      "documents": {
+        "q": "Quels documents puis-je envoyer ?",
+        "a": "Tout ce que vous envoyez à un client ou un prospect. Un PDF, quel qu'il soit : devis, facture, proposition, présentation, document technique, contrat, CV, plaquette, étude de cas. Clozer reconnaît le type et vous montre la lecture page par page. Une page web (Notion, Loom, Figma, Google Slides, Webflow…) : l'ouverture et le temps passé, et une vue lecture si le site refuse de s'afficher dans Clozer. Un pitch vidéo enregistré dans Clozer, jusqu'à trois minutes : vous savez jusqu'où il a été regardé."
+      },
+      "ownOpens": {
+        "q": "Mes propres ouvertures faussent-elles les chiffres ?",
+        "a": "Non. Quand vous ouvrez vos liens en étant connecté à Clozer, la lecture est ignorée. Les robots sont écartés aussi."
+      },
+      "install": {
+        "q": "Faut-il installer quelque chose ?",
+        "a": "Non. Vous vous connectez avec Google ou votre email, sans mot de passe, vous copiez le lien et votre client le lit dans son navigateur, sur ordinateur comme sur téléphone. L'extension pour Gmail et Outlook est un raccourci en plus, pas une obligation."
+      },
+      "extension": {
+        "q": "Comment installer l'extension Gmail et Outlook ?",
+        "a": "Installez « Clozer » depuis le Chrome Web Store : l'extension marche dans Gmail et dans Outlook ouvert dans le navigateur. Pour Outlook installé sur Windows ou Mac, l'administrateur Microsoft 365 de votre entreprise ajoute le complément pour toute l'équipe ; la marche à suivre est sur la page Support."
+      },
+      "replies": {
+        "q": "Le prospect peut-il me répondre ?",
+        "a": "Oui, sans quitter le document. Il peut valider la proposition ou demander un ajustement, prendre rendez-vous dans votre agenda (Calendly, Cal.com…), poser ses questions à l'assistant qui répond à partir de votre offre quand vous n'êtes pas là, ou laisser un vocal sur une page. Vous recevez tout, avec la transcription."
+      }
+    },
+    "final": "Votre prochain document part avec un lien suivi."
+  },
+  "legal": {
+    "updatedAt": "Mise à jour le {date}.",
+    "translationNotice": "Cette page est une traduction fournie pour information. La <link>version française</link> prévaut en cas de divergence.",
+    "terms": {
+      "title": "Conditions d'utilisation",
+      "description": "Conditions d'utilisation de Clozer et accord de traitement des données."
+    },
+    "privacy": {
+      "title": "Confidentialité",
+      "description": "Quelles données Clozer traite, pourquoi, et comment exercer vos droits."
+    },
+    "notice": {
+      "title": "Mentions légales",
+      "description": "Éditeur et hébergeur du site Clozer."
+    },
+    "subprocessors": {
+      "title": "Sous-traitants",
+      "description": "Les prestataires qui traitent des données pour Clozer, et où."
+    },
+    "support": {
+      "title": "Support",
+      "description": "Installer l'extension Chrome et le complément Outlook, et nous joindre."
+    }
+  },
+  "notFound": {
+    "title": "Page introuvable",
+    "body": "Ce lien ne mène nulle part, ou la page a été déplacée.",
+    "back": "Retour à l'accueil"
+  }
+}

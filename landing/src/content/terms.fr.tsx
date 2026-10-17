@@ -1,19 +1,12 @@
-import type { Metadata } from "next";
-
-import { LegalPage } from "@/components/legal-page";
 import { CONTACT_EMAIL } from "@/components/links";
-
-export const metadata: Metadata = {
-  title: "Conditions d'utilisation — Clozer",
-  description: "Conditions d'utilisation de Clozer et accord de traitement des données.",
-};
+import { Link } from "@/i18n/navigation";
 
 // Draft: to be reviewed by a lawyer before it binds anyone. Bracketed fields come from the Kbis.
-export default function Terms() {
+export function TermsFr() {
   const mail = <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>;
 
   return (
-    <LegalPage title="Conditions d'utilisation" updatedAt="16 octobre 2026">
+    <>
       <p>
         Ces conditions encadrent l&apos;utilisation de Clozer, service édité par [raison sociale] (« Clozer »), par
         les professionnels qui créent un espace (« le Client ») et les personnes qu&apos;ils y invitent. Créer un
@@ -107,7 +100,7 @@ export default function Terms() {
 
       <h3>Sous-traitants ultérieurs</h3>
       <p>
-        Le Client autorise les prestataires listés sur la page <a href="/sous-traitants">sous-traitants</a>. Nous le
+        Le Client autorise les prestataires listés sur la page <Link href="/subprocessors">sous-traitants</Link>. Nous le
         prévenons 30 jours avant tout ajout ; il peut s&apos;y opposer et, à défaut d&apos;accord, résilier. Chaque
         prestataire est tenu par des obligations équivalentes à celles-ci.
       </p>
@@ -137,6 +130,6 @@ export default function Terms() {
       </p>
 
       <p>Questions : {mail}.</p>
-    </LegalPage>
+    </>
   );
 }
