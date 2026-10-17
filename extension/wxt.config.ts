@@ -14,7 +14,8 @@ export default defineConfig({
       // notifications + alarms + idle: "your prospect is reading right now", polled every 30 s
       permissions: ["storage", "notifications", "alarms", "idle"],
       host_permissions: [`${apiOrigin}/*`],
-      externally_connectable: { matches: [`${apiOrigin}/extension/connect*`] },
+      // Every app page: the dashboard asks whether the extension is here and signed in
+      externally_connectable: { matches: [`${apiOrigin}/*`] },
       ...(mode !== "production" && devKey ? { key: devKey } : {}),
     };
   },

@@ -5,6 +5,7 @@ import { defineBackground } from "wxt/utils/define-background";
 import { api, getToken, setToken } from "@/lib/api";
 import { fromBase64 } from "@/lib/chunks";
 import { API_ORIGIN, MAX_UPLOAD_BYTES } from "@/lib/config";
+import { answerExternal } from "@/lib/external";
 import {
   ClozerError,
   UPLOAD_PORT,
@@ -182,10 +183,20 @@ export default defineBackground(() => {
     return true;
   });
 
-  // The app's /extension/connect page hands over the token
+  // The app's /extension/connect page hands over the token; any app page may ask for the status
   browser.runtime.onMessageExternal.addListener((message: unknown, sender, sendResponse) => {
     const { type, token, nonce } = (message ?? {}) as { type?: string; token?: string; nonce?: string };
     if (sender.origin !== API_ORIGIN) return;
+    const answer = answerExternal(type, {
+      version: browser.runtime.getManifest().version,
+      account,
+      startConnect,
+      update,
+    });
+    if (answer) {
+      void answer.then(sendResponse, () => sendResponse({ ok: false }));
+      return true;
+    }
     // The connect page asks again when the seller did not see the first one
     if (type === "clozer:test-notification") {
       void testNotification().then(() => sendResponse({ ok: true }), () => sendResponse({ ok: false }));
@@ -213,6 +224,10 @@ export default defineBackground(() => {
     if (alarm.name === PULSE_ALARM) void pulse();
   });
   browser.runtime.onStartup.addListener(() => void startPulse());
-  browser.runtime.onInstalled.addListener(() => void startPulse());
+  browser.runtime.onInstalled.addListener(async ({ reason }) => {
+    void startPulse();
+    // Straight from the Web Store: one click on the page that opens and Clozer is connected
+    if (reason === "install" && !(await getToken())) await startConnect().catch(() => undefined);
+  });
   listenToNotifications();
 });
