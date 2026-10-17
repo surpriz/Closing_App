@@ -6,7 +6,7 @@ import { requestUpdate } from "./messages";
 
 // The background answers "update" with what Chrome said about the Web Store
 function backgroundSays(response: unknown) {
-  vi.spyOn(fakeBrowser.runtime, "sendMessage").mockResolvedValue(response);
+  vi.spyOn(fakeBrowser.runtime, "sendMessage").mockResolvedValue(response as never);
 }
 
 describe("requestUpdate", () => {
