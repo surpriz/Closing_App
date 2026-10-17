@@ -62,6 +62,59 @@ export function canInstallChromeExtension(userAgent: string) {
   return /Chrome\//.test(userAgent) && !/Mobi|Android|iPhone|iPad/i.test(userAgent);
 }
 
+/** The extension's answer to "clozer:status", from 1.2.0 on. */
+export type ExtensionReply = { version: string; signedIn: boolean; email: string | null };
+
+export type ExtensionState = "absent" | "signed_out" | "other_account" | "outdated" | "ok";
+
+/** What the server knows, for the browser to find out the rest. */
+export type ExtensionProbe = {
+  ids: string[];
+  minVersion: string | null;
+  userEmail: string;
+  /** A live Chrome token somewhere: vouches for versions that can't answer. */
+  serverChrome: boolean;
+};
+
+export function isOlderVersion(version: string, min: string) {
+  const a = version.split(".").map(Number);
+  const b = min.split(".").map(Number);
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    const diff = (a[i] ?? 0) - (b[i] ?? 0);
+    if (diff !== 0) return diff < 0;
+  }
+  return false;
+}
+
+/**
+ * Where this browser's extension stands. No reply means no extension, or one
+ * older than 1.2.0 that can't hear the app: a live Chrome token then vouches for it.
+ */
+export function extensionState({
+  reply,
+  userEmail,
+  minVersion,
+  serverChrome,
+}: {
+  reply: ExtensionReply | null;
+  userEmail: string;
+  minVersion: string | null;
+  serverChrome: boolean;
+}): ExtensionState {
+  if (!reply) return serverChrome ? "ok" : "absent";
+  if (minVersion && isOlderVersion(reply.version, minVersion)) return "outdated";
+  if (!reply.signedIn) return "signed_out";
+  if (reply.email && reply.email.toLowerCase() !== userEmail.toLowerCase()) return "other_account";
+  return "ok";
+}
+
+/** The dashboard banner comes back a week after the seller closed it. */
+export const EXTENSION_NUDGE_SNOOZE_MS = 7 * 24 * 60 * 60 * 1000;
+
+export function isExtensionNudgeSnoozed(hiddenAt: Date | null, now: Date) {
+  return hiddenAt !== null && now.getTime() - hiddenAt.getTime() < EXTENSION_NUDGE_SNOOZE_MS;
+}
+
 /**
  * Value by doing, tools last: the seller drops a real document straight away and
  * opens it as their prospect would before anything about mailboxes or extensions.

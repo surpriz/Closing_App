@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   canInstallChromeExtension,
+  extensionState,
+  isExtensionNudgeSnoozed,
+  isOlderVersion,
   isTestRead,
   isToolConnected,
   mailToolTip,
@@ -87,5 +90,31 @@ describe("onboarding", () => {
     expect(canInstallChromeExtension(firefox)).toBe(false);
     expect(canInstallChromeExtension(chromeAndroid)).toBe(false);
     expect(canInstallChromeExtension(chromeIos)).toBe(false);
+  });
+
+  it("tells where this browser's extension stands", () => {
+    const base = { userEmail: "Ada@acme.fr", minVersion: null, serverChrome: false };
+    const reply = { version: "1.2.0", signedIn: true, email: "ada@acme.fr" };
+    expect(extensionState({ ...base, reply })).toBe("ok");
+    expect(extensionState({ ...base, reply: { ...reply, email: null } })).toBe("ok");
+    expect(extensionState({ ...base, reply: { ...reply, signedIn: false, email: null } })).toBe("signed_out");
+    expect(extensionState({ ...base, reply: { ...reply, email: "bob@acme.fr" } })).toBe("other_account");
+    expect(extensionState({ ...base, minVersion: "1.3.0", reply })).toBe("outdated");
+    // No answer: nothing installed, or a version too old to hear the app
+    expect(extensionState({ ...base, reply: null })).toBe("absent");
+    expect(extensionState({ ...base, reply: null, serverChrome: true })).toBe("ok");
+  });
+
+  it("compares extension versions", () => {
+    expect(isOlderVersion("1.1.0", "1.2.0")).toBe(true);
+    expect(isOlderVersion("1.10.0", "1.2.0")).toBe(false);
+    expect(isOlderVersion("1.2", "1.2.0")).toBe(false);
+  });
+
+  it("brings the closed banner back after a week", () => {
+    const now = new Date("2026-10-17T12:00:00Z");
+    expect(isExtensionNudgeSnoozed(null, now)).toBe(false);
+    expect(isExtensionNudgeSnoozed(new Date("2026-10-12T12:00:00Z"), now)).toBe(true);
+    expect(isExtensionNudgeSnoozed(new Date("2026-10-09T12:00:00Z"), now)).toBe(false);
   });
 });

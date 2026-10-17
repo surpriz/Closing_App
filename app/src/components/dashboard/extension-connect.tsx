@@ -9,38 +9,7 @@ import {
   revokeExtensionToken,
 } from "@/app/extension/actions";
 import { Button } from "@/components/ui/button";
-
-type ChromeRuntime = {
-  sendMessage: (
-    id: string,
-    message: unknown,
-    callback: (response: unknown) => void,
-  ) => void;
-  lastError?: { message?: string };
-};
-
-function chromeRuntime() {
-  return (globalThis as { chrome?: { runtime?: ChromeRuntime } }).chrome
-    ?.runtime;
-}
-
-// Resolves true when one of our extensions took the token
-function sendToExtension(id: string, message: unknown) {
-  return new Promise<boolean>((resolve) => {
-    const runtime = chromeRuntime();
-    if (!runtime?.sendMessage) return resolve(false);
-    try {
-      runtime.sendMessage(id, message, (response) => {
-        resolve(
-          !runtime.lastError &&
-            (response as { ok?: boolean } | undefined)?.ok === true,
-        );
-      });
-    } catch {
-      resolve(false);
-    }
-  });
-}
+import { sendToExtension } from "@/lib/extension-bridge";
 
 export function ExtensionConnect({
   nonce,

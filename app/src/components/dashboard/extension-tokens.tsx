@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 
 import { revokeExtensionToken } from "@/app/extension/actions";
 import { OutlookManifestLink } from "@/components/dashboard/outlook-manifest-link";
+import { ExtensionStatus } from "@/components/onboarding/extension-status";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,6 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { OUTLOOK_TOKEN_LABEL } from "@/lib/extension-tokens";
+import type { ExtensionProbe } from "@/lib/onboarding";
 
 export type ExtensionTokenRow = {
   id: string;
@@ -128,9 +130,11 @@ function Card({
 export function ExtensionTokens({
   tokens,
   chromeStoreUrl,
+  probe,
 }: {
   tokens: ExtensionTokenRow[];
   chromeStoreUrl: string | null;
+  probe: ExtensionProbe;
 }) {
   const chrome = tokens.filter((token) => token.label !== OUTLOOK_TOKEN_LABEL);
   const outlook = tokens.filter((token) => token.label === OUTLOOK_TOKEN_LABEL);
@@ -162,6 +166,7 @@ export function ExtensionTokens({
               </p>
             )}
           </div>
+          <ExtensionStatus probe={probe} />
           <div className="border-t border-border">
             <TokenList tokens={chrome} />
           </div>

@@ -31,6 +31,12 @@ export async function hideMailToolTip() {
   await upsertSellerPrefs(user.id, organization.id, { mailToolTipHiddenAt: new Date() });
 }
 
+// Closing the banner about the Chrome extension: back in a week
+export async function snoozeExtensionNudge() {
+  const { user, organization } = await requireWorkspace();
+  await upsertSellerPrefs(user.id, organization.id, { extensionNudgeHiddenAt: new Date() });
+}
+
 // Only fills an empty offer: the full form lives in the settings
 export async function saveOfferDescription(input: unknown): Promise<{ ok: boolean }> {
   const { organization, role } = await requireWorkspace();

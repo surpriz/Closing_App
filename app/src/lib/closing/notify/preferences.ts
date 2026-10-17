@@ -7,6 +7,7 @@ export type StoredPrefs = SellerPrefs & {
   extensionSeenAt: Date | null;
   onboardingCompletedAt: Date | null;
   mailToolTipHiddenAt: Date | null;
+  extensionNudgeHiddenAt: Date | null;
   mailClient: string | null;
   bookingUrl: string | null;
 };
@@ -22,6 +23,7 @@ export async function getSellerPrefs(userId: string, organizationId: string): Pr
       extensionSeenAt: null,
       onboardingCompletedAt: null,
       mailToolTipHiddenAt: null,
+      extensionNudgeHiddenAt: null,
       mailClient: null,
       bookingUrl: null,
     };
@@ -36,6 +38,7 @@ export async function getSellerPrefs(userId: string, organizationId: string): Pr
     extensionSeenAt: row.extensionSeenAt,
     onboardingCompletedAt: row.onboardingCompletedAt,
     mailToolTipHiddenAt: row.mailToolTipHiddenAt,
+    extensionNudgeHiddenAt: row.extensionNudgeHiddenAt,
     mailClient: row.mailClient,
     bookingUrl: row.bookingUrl,
   };
@@ -55,6 +58,7 @@ export function upsertSellerPrefs(
     onboardingTestReadAt?: Date;
     onboardingEmailsOff?: boolean;
     mailToolTipHiddenAt?: Date;
+    extensionNudgeHiddenAt?: Date;
     mailClient?: string;
     bookingUrl?: string | null;
   },

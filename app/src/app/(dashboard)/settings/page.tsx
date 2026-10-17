@@ -15,6 +15,7 @@ import { getSellerPrefs } from "@/lib/closing/notify/preferences";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
 import { decryptSecret } from "@/lib/crypto";
 import { getEnv } from "@/lib/env";
+import { extensionProbe } from "@/lib/extension-config";
 import { connectedClients } from "@/lib/extension-tokens";
 import { prisma } from "@/lib/db";
 import { isEmailConfigured } from "@/lib/email";
@@ -142,6 +143,7 @@ export default async function SettingsPage() {
                   lastUsedAt: token.lastUsedAt?.toISOString() ?? null,
                 }))}
                 chromeStoreUrl={getEnv().EXTENSION_STORE_URL ?? null}
+                probe={extensionProbe(user.email, tokens)}
               />
               {team && (
                 <TeamSettings

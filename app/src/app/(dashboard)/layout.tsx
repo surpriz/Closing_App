@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 
 import { ImpersonationBanner } from "@/components/admin/impersonation-banner";
 import { Logo } from "@/components/brand/logo";
@@ -7,6 +8,7 @@ import { DashboardNav, MobileNav } from "@/components/dashboard/dashboard-nav";
 import { HelpMenu } from "@/components/dashboard/help-menu";
 import { HelpWidget } from "@/components/dashboard/help-widget";
 import { UserMenu } from "@/components/dashboard/user-menu";
+import { DashboardExtensionBanner } from "@/components/onboarding/dashboard-extension-banner";
 import { dealDocumentMeta, dealLabel, linkLabelSelect } from "@/lib/closing/dashboard/labels";
 import { sellerLinks } from "@/lib/closing/dashboard/queries";
 import { prisma } from "@/lib/db";
@@ -92,6 +94,9 @@ export default async function DashboardLayout({
           </div>
         </div>
       </header>
+      <Suspense>
+        <DashboardExtensionBanner user={user} organizationId={organization.id} />
+      </Suspense>
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 pt-8 pb-28 sm:px-6 sm:pt-10 sm:pb-16">
         {children}
       </main>

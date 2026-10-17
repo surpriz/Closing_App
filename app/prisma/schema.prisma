@@ -921,6 +921,8 @@ model NotificationPreference {
   onboardingTestReadAt  DateTime? // the seller saw their own test link being read during the tour
   onboardingEmailsOff   Boolean   @default(false) // unsubscribed from the getting-started emails
 
+  extensionNudgeHiddenAt DateTime? // closed the "install / connect the extension" banner: back after a week
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

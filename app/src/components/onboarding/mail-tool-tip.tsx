@@ -24,10 +24,13 @@ const COPY: Record<MailToolTipKind, (mailbox: string) => string> = {
 export function MailToolTip({
   tool,
   mailbox,
+  action,
 }: {
   tool: MailToolTipKind;
   /** "Gmail" or "Outlook", for the Chrome extension. */
   mailbox: string;
+  /** Replaces the link to the setup step, e.g. when the extension only needs connecting. */
+  action?: React.ReactNode;
 }) {
   const [hidden, setHidden] = useState(false);
   if (hidden) return null;
@@ -37,9 +40,11 @@ export function MailToolTip({
       <Paperclip className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
       <div className="min-w-0 flex-1 space-y-2">
         <p className="text-body">{COPY[tool](mailbox)}</p>
-        <Link href="/bienvenue?etape=outil" className={buttonVariants({ variant: "outline", size: "sm" })}>
-          {tool === "unknown" ? "Voir comment" : "Installer, 2 minutes"}
-        </Link>
+        {action ?? (
+          <Link href="/bienvenue?etape=outil" className={buttonVariants({ variant: "outline", size: "sm" })}>
+            {tool === "unknown" ? "Voir comment" : "Installer, 2 minutes"}
+          </Link>
+        )}
       </div>
       <button
         type="button"
