@@ -52,6 +52,11 @@ export default function Support() {
         Le complément apparaît dans Outlook en quelques heures. Ouvrez-le depuis un email, cliquez sur « Connecter
         Clozer » et recopiez le code affiché dans Outlook sur la page Clozer qui s&apos;ouvre dans votre navigateur.
       </p>
+      <p>
+        Le complément fonctionne avec les comptes Microsoft 365, Exchange et Outlook.com. Microsoft ne permet pas
+        d&apos;ajouter un complément à une boîte connectée en IMAP ou POP (une adresse sur votre propre nom de domaine
+        hébergée ailleurs, par exemple).
+      </p>
 
       <h2>Vos données</h2>
       <p>

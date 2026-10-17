@@ -59,6 +59,7 @@ Add `outlook-addin` to `EXTENSION_DISABLED_HOSTS` in the app. The pane then show
 
 ## Not covered
 
+- IMAP and POP accounts (a custom domain hosted outside Microsoft, read in Outlook): Office add-ins only load on Microsoft 365, Exchange and Outlook.com mailboxes, so "Get Add-ins" is greyed out there.
 - OneDrive or cloud attachments.
 - System notifications while the pane is closed. The email and Slack alerts take over, as for a seller without the extension.
 - Links in a draft reopened from the Drafts folder. `sessionData` only lives as long as the compose window. The first prospect open confirms those links.
