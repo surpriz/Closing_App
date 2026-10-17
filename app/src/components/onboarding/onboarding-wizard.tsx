@@ -12,6 +12,7 @@ import {
   startOnboarding,
 } from "@/app/welcome/actions";
 import { Logo } from "@/components/brand/logo";
+import { LocaleMenu } from "@/components/dashboard/locale-menu";
 import type { AddedSource } from "@/components/dashboard/upload-dropzone";
 import { Button } from "@/components/ui/button";
 import {
@@ -90,16 +91,19 @@ export function OnboardingWizard({
       <header className="border-b border-foreground">
         <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-6 px-4 sm:px-6">
           <Logo />
-          {index < LAST && (
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={leaving}
-              onClick={() => leave("/dashboard")}
-            >
-              {t("skip")}
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            <LocaleMenu />
+            {index < LAST && (
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={leaving}
+                onClick={() => leave("/dashboard")}
+              >
+                {t("skip")}
+              </Button>
+            )}
+          </div>
         </div>
       </header>
 

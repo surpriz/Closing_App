@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useTransition } from "react";
 
-import { LocaleSwitcher } from "@/components/locale-switcher";
 import { ThemeMenuItems } from "@/components/theme/theme-menu-items";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -69,11 +68,6 @@ export function UserMenu({
         )}
         <DropdownMenuSeparator />
         <ThemeMenuItems />
-        <DropdownMenuSeparator />
-        <div className="flex items-center justify-between gap-2 px-2 py-1.5">
-          <span className="text-micro text-muted-foreground">{t("language")}</span>
-          <LocaleSwitcher className="[&_button]:px-2 [&_button]:py-0.5 [&_button]:text-micro" />
-        </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           disabled={pending}
