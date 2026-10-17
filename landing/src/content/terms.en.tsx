@@ -8,7 +8,7 @@ export function TermsEn() {
   return (
     <>
       <p>
-        These terms govern the use of Clozer, a service published by [company name] (&ldquo;Clozer&rdquo;), by the
+        These terms govern the use of Clozer, a service published by JAAP v2 (&ldquo;Clozer&rdquo;), by the
         professionals who create a workspace (&ldquo;the Customer&rdquo;) and the people they invite to it. Creating
         an account constitutes acceptance.
       </p>

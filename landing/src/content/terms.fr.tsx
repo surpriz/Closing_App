@@ -8,7 +8,7 @@ export function TermsFr() {
   return (
     <>
       <p>
-        Ces conditions encadrent l&apos;utilisation de Clozer, service édité par [raison sociale] (« Clozer »), par
+        Ces conditions encadrent l&apos;utilisation de Clozer, service édité par JAAP v2 (« Clozer »), par
         les professionnels qui créent un espace (« le Client ») et les personnes qu&apos;ils y invitent. Créer un
         compte vaut acceptation.
       </p>
