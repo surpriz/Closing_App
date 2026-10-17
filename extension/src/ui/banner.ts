@@ -14,13 +14,44 @@ export type BannerHandlers = {
 
 let stack: HTMLElement | null = null;
 
-/** Replaces the banners on screen with these (newest first). */
-export function renderBanners(alerts: MailAlert[], handlers: BannerHandlers) {
+function getStack() {
   if (!stack?.isConnected) {
     stack = h("div", { class: "banners", role: "region", "aria-label": "Alertes Clozer" });
     getLayer().append(stack);
   }
-  stack.replaceChildren(
+  return stack;
+}
+
+/** The app no longer accepts this version: one banner that stays until the update is done. */
+export function renderUpdateBanner(update: () => Promise<string>) {
+  const text = h("p", { class: "muted" }, COPY.updateText);
+  const button = h(
+    "button",
+    {
+      class: "primary",
+      type: "button",
+      onclick: async () => {
+        button.disabled = true;
+        text.textContent = await update();
+        button.disabled = false;
+      },
+    },
+    COPY.update,
+  );
+  getStack().replaceChildren(
+    h(
+      "div",
+      { class: "banner action", role: "status" },
+      h("span", { class: "mark" }, logoMark(18)),
+      h("div", { class: "text" }, h("p", { class: "title" }, COPY.updateTitle), text),
+      h("div", { class: "row" }, button),
+    ),
+  );
+}
+
+/** Replaces the banners on screen with these (newest first). */
+export function renderBanners(alerts: MailAlert[], handlers: BannerHandlers) {
+  getStack().replaceChildren(
     ...alerts.map((alert) => {
       const action = alert.priority === "ACTION";
       return h(

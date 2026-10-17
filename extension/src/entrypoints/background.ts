@@ -14,6 +14,7 @@ import {
   type Request,
   type Response,
   type UploadIn,
+  type UpdateStatus,
   type UploadOut,
 } from "@/lib/messages";
 import { safeFileName } from "@/lib/pdf";
@@ -95,7 +96,19 @@ async function handle(request: Request): Promise<unknown> {
       return api(`/api/ext/links/${encodeURIComponent(request.linkId)}/sent`, { body: { recipient: request.recipient } });
     case "markWon":
       return api(`/api/ext/links/${encodeURIComponent(request.linkId)}/won`, { method: "POST" });
+    case "update":
+      return update();
   }
+}
+
+// Chrome checks the Web Store every few hours on its own. This asks now, and restarts
+// the extension on the new version as soon as it is downloaded.
+async function update(): Promise<UpdateStatus> {
+  const { status } = await browser.runtime.requestUpdateCheck();
+  if (status !== "update_available") return status === "throttled" ? "throttled" : "no_update";
+  // Leave time for the answer to reach the page before this context goes away
+  setTimeout(() => browser.runtime.reload(), 500);
+  return "updating";
 }
 
 function toResponse(error: unknown): Response {

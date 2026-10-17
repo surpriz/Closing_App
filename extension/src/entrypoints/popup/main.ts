@@ -3,9 +3,10 @@ import { browser } from "wxt/browser";
 import { API_ORIGIN } from "@/lib/config";
 import { COPY } from "@/lib/copy";
 import { mailHost } from "@/lib/hosts";
-import { ask, type Account } from "@/lib/messages";
+import { ask, requestUpdate, type Account } from "@/lib/messages";
 import { getAskFirst, getLinkStyle, setAskFirst, setLinkStyle, type LinkStyle } from "@/lib/preferences";
 import type { PulseReader } from "@/lib/pulse";
+import { isOlder } from "@/lib/version";
 import { h } from "@/ui/dom";
 import { logo } from "@/ui/marks";
 import { readerRows } from "@/ui/readers";
@@ -148,6 +149,24 @@ async function show() {
         h("button", { class: "primary wide", onclick: () => void ask({ type: "connect" }).then(() => window.close()) }, COPY.connect),
       ),
     );
+    return;
+  }
+
+  if (account.minVersion && isOlder(browser.runtime.getManifest().version, account.minVersion)) {
+    const text = h("p", { class: "muted" }, COPY.updateText);
+    const button = h(
+      "button",
+      {
+        class: "primary wide",
+        onclick: async () => {
+          button.disabled = true;
+          text.textContent = await requestUpdate();
+          button.disabled = false;
+        },
+      },
+      COPY.update,
+    );
+    render(COPY.workspace(account.organization.name), h("p", {}, h("strong", {}, COPY.updateTitle)), text, h("div", { class: "row" }, button));
     return;
   }
 

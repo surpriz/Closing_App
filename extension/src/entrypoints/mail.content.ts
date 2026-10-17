@@ -20,6 +20,7 @@ import {
   CAPTURE_NONCE_ATTR,
   CAPTURE_SOURCE,
   ClozerError,
+  requestUpdate,
   UPLOAD_PORT,
   type Account,
   type CaptureMessage,
@@ -34,7 +35,7 @@ import { bannersToShow, MAIL_ALERTS_KEY, MAIL_DISMISSED_KEY, type MailAlert } fr
 import { sha256Hex } from "@/lib/sha256";
 import { waitForTitle } from "@/lib/title-wait";
 import { isOlder } from "@/lib/version";
-import { renderBanners } from "@/ui/banner";
+import { renderBanners, renderUpdateBanner } from "@/ui/banner";
 import { ComposeWidget, removeLayer } from "@/ui/widget";
 
 type Compose = {
@@ -124,7 +125,11 @@ export default defineContentScript({
     // Remote kill switch: a broken adapter can be turned off without a store release
     const version = browser.runtime.getManifest().version;
     const remote = account as Account | null;
-    if (remote && (remote.disabledHosts.includes(host) || (remote.minVersion && isOlder(version, remote.minVersion)))) {
+    if (remote?.disabledHosts.includes(host)) return;
+    // Too old for the app: nothing would work, so say why and offer the update instead
+    if (remote?.minVersion && isOlder(version, remote.minVersion)) {
+      renderUpdateBanner(requestUpdate);
+      ctx.onInvalidated(removeLayer);
       return;
     }
 

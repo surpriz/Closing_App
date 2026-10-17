@@ -8,6 +8,11 @@ export const COPY = {
   connectingText: "Validez dans l'onglet Clozer. Le lien se fera tout seul au retour.",
   connected: (email: string) => `Connecté · ${email}`,
   paused: (host: string) => `Clozer est en pause sur ${host} pour le moment.`,
+  updateTitle: "Clozer doit être mis à jour",
+  updateText: "Cette version ne fonctionne plus. La mise à jour prend quelques secondes.",
+  update: "Mettre à jour",
+  updating: "Mise à jour en cours. Rechargez la page dans quelques secondes.",
+  updateNotYet: "La mise à jour n'est pas encore arrivée dans Chrome. Réessayez dans quelques minutes.",
   pitch: "Joignez un PDF dans Gmail ou Outlook : Clozer le remplace par un lien.",
   pitchHere: "Joignez un PDF à cet email : Clozer le remplace par un lien.",
 
