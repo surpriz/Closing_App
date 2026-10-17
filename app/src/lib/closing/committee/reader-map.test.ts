@@ -126,3 +126,19 @@ describe("buildReaderMap", () => {
     ]);
   });
 });
+
+describe("buildReaderMap with forwards", () => {
+  it("never makes someone a reader forwarded it to the recipient, and names the forwarder", () => {
+    const gate = prospect("g1", "anne@acme.fr", { origin: "EMAIL_GATE", name: "Anne" });
+    const marie = prospect("f1", "marie@acme.fr", { origin: "FORWARDED", forwardedById: "g1" });
+    const map = buildReaderMap({
+      views: [view("m", { prospectId: "f1", startedAt: ago(30) }), view("a", { prospectId: "g1", startedAt: ago(10) })],
+      prospects: [gate, marie],
+      now,
+    });
+    const byId = Object.fromEntries(map.persons.map((p) => [p.prospectId, p]));
+    expect(byId.g1.origin).toBe("initial");
+    expect(byId.f1.origin).not.toBe("initial");
+    expect(byId.f1.forwardedBy).toBe("Anne");
+  });
+});

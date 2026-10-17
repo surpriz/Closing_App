@@ -31,7 +31,7 @@ async function loadReaderInputs(linkId: string) {
     }),
     prisma.prospect.findMany({
       where: { linkId },
-      select: { id: true, email: true, name: true, role: true, origin: true, createdAt: true },
+      select: { id: true, email: true, name: true, role: true, origin: true, forwardedById: true, createdAt: true },
     }),
   ]);
   return { views, prospects };

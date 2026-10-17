@@ -18,6 +18,7 @@ import { PrivacyNotice } from "./privacy-notice";
 import { usePageTracking } from "./use-page-tracking";
 import { ViewerHeader } from "./viewer-header";
 import { VoiceCommentButton, VoiceCommentPanel } from "./voice-comment-button";
+import type { ForwardOptions } from "./forward-dialog";
 
 export type PageSize = { width: number; height: number };
 
@@ -31,6 +32,8 @@ type Props = {
   /** The reader's name when known, offered when they sign. */
   signerName: string | null;
   booking: BookingTarget | null;
+  /** "Transférer" to a colleague, null when not offered. */
+  forward: ForwardOptions | null;
   dealStatus: DealStatus;
   locale: SupportedLocale;
   /** Null when the assistant is off for this link. */
@@ -54,6 +57,7 @@ export function PdfViewer({
   ctaEnabled,
   signerName,
   booking,
+  forward,
   dealStatus,
   locale,
   chat,
@@ -67,7 +71,7 @@ export function PdfViewer({
   const [failed, setFailed] = useState(false);
   const { currentPage, registerPage, getViewId } = usePageTracking(slug, sizes.length);
   // The bottom bar carries the answers, the booking button, or both
-  const barVisible = ctaEnabled || !!booking;
+  const barVisible = ctaEnabled || !!booking || !!forward;
   // Once the reader has seen the price or the last page, the strip stays open
   const [decisionReached, setDecisionReached] = useState(false);
   const atDecision = sizes.length > 0 && (currentPage >= sizes.length || decisionPages.includes(currentPage));
@@ -189,6 +193,7 @@ export function PdfViewer({
           downloadUrl={`${fileUrl}?download=1`}
           atEnd={decisionReached}
           onAskQuestion={chat ? () => setChatOpen(true) : undefined}
+          forward={forward}
           voice={voiceTrigger("bar")}
         />
       )}

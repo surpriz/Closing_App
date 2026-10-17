@@ -8,6 +8,8 @@ import type { ViewerCapsule } from "@/components/viewer/capsule-bubble";
 import type { ChatWidgetData } from "@/components/viewer/chat-widget";
 import { EmailGate } from "@/components/viewer/email-gate";
 import { ExpiryGate } from "@/components/viewer/expiry-gate";
+import type { ForwardOptions } from "@/components/viewer/forward-dialog";
+import { ForwardHandoff } from "@/components/viewer/forward-handoff";
 import { LinkExpired } from "@/components/viewer/link-expired";
 import { PdfViewer } from "@/components/viewer/pdf-viewer";
 import { SmartLinkHandoff } from "@/components/viewer/smart-link-handoff";
@@ -28,6 +30,7 @@ import {
   showsCountdown,
   viewerDeadline,
 } from "@/lib/closing/expiry";
+import { canForward } from "@/lib/closing/forward/rules";
 import {
   getViewerLabels,
   pickLocale,
@@ -41,6 +44,7 @@ import {
 } from "@/lib/closing/links";
 import { maskEmail } from "@/lib/closing/prospects/mask-email";
 import { firstNameOf } from "@/lib/closing/share/compose";
+import { viewerSenderName } from "@/lib/closing/sender-name";
 import { parseSmartParams } from "@/lib/closing/shared/smart-params";
 import { VISITOR_COOKIE } from "@/lib/closing/tracking/visitor";
 import { prisma } from "@/lib/db";
@@ -94,14 +98,12 @@ export default async function ViewerPage({
       },
     }),
   ]);
-  // The prospect should always know who is asking for their email: the name the workspace
-  // set, else the seller's own name, else the workspace, else the seller's address before the @
-  const senderName =
-    settings?.senderName?.trim() ||
-    creator?.createdBy?.name?.trim() ||
-    creator?.organization.name.trim() ||
-    creator?.createdBy?.email.split("@")[0] ||
-    null;
+  // The prospect should always know who is asking for their email
+  const senderName = viewerSenderName({
+    senderName: settings?.senderName,
+    createdBy: creator?.createdBy,
+    organizationName: creator?.organization.name,
+  });
   const countdown = showsCountdown(link.document.docType);
   const deadline = viewerDeadline(link);
 
@@ -145,6 +147,13 @@ export default async function ViewerPage({
     return (
       <SmartLinkHandoff slug={slug} reader={smart} label={labels.loading} />
     );
+
+  // From a forward email: the token names the recipient, no form. Done in the browser, never on this GET
+  const forwardToken = typeof query.f === "string" && !link.shared && !isSeller ? query.f : null;
+  if (forwardToken) {
+    if (access.email) redirect(`/v/${slug}`);
+    return <ForwardHandoff slug={slug} token={forwardToken} label={labels.loading} />;
+  }
 
   if (!access.allowed) {
     const recipient = plainGate ? null : await knownRecipient(link.id);
@@ -218,6 +227,12 @@ export default async function ViewerPage({
       )
     : null;
 
+  // "Transférer": any reader but the seller, on a link that is one deal
+  const forward: ForwardOptions | null =
+    !isSeller && canForward(link)
+      ? { senderName: senderName ?? labels.chatSenderFallback, needsEmail: !access.email }
+      : null;
+
   const sellerNotice = isSeller && (
     <SellerNotice>
       Vous êtes connecté à Clozer : cette lecture ne compte pas. Testez dans un
@@ -255,6 +270,7 @@ export default async function ViewerPage({
             labels={labels}
             quote={link.ctaEnabled}
             booking={booking}
+            forward={forward}
             dealStatus={link.dealStatus}
             locale={locale}
             chat={chat}
@@ -290,6 +306,7 @@ export default async function ViewerPage({
             ctaEnabled={link.ctaEnabled}
             signerName={signerName}
             booking={booking}
+            forward={forward}
             dealStatus={link.dealStatus}
             locale={locale}
             chat={chat}
@@ -325,6 +342,7 @@ export default async function ViewerPage({
           ctaEnabled={link.ctaEnabled}
           signerName={signerName}
           booking={booking}
+          forward={forward}
           dealStatus={link.dealStatus}
           locale={locale}
           chat={chat}

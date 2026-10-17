@@ -20,6 +20,7 @@ import { usePageTracking } from "./use-page-tracking";
 import { useVideoProgress } from "./use-video-progress";
 import { sendSignal } from "./view-signal";
 import { ViewerHeader } from "./viewer-header";
+import type { ForwardOptions } from "./forward-dialog";
 
 type Props = {
   slug: string;
@@ -35,6 +36,8 @@ type Props = {
   /** The reader's name when known, offered when they sign. */
   signerName: string | null;
   booking: BookingTarget | null;
+  /** "Transférer" to a colleague, null when not offered. */
+  forward: ForwardOptions | null;
   dealStatus: DealStatus;
   locale: SupportedLocale;
   /** Null when the assistant is off for this link. */
@@ -57,6 +60,7 @@ export function WebViewer({
   ctaEnabled,
   signerName,
   booking,
+  forward,
   dealStatus,
   locale,
   chat,
@@ -77,7 +81,7 @@ export function WebViewer({
   useVideoProgress(iframeRef, provider, watchedRef, markActive);
   const openExternal = useExternalVisit(getViewId);
   // The bottom bar carries the answers, the booking button, or both
-  const barVisible = ctaEnabled || !!booking;
+  const barVisible = ctaEnabled || !!booking || !!forward;
   const [chatOpen, setChatOpen] = useState(false);
 
   return (
@@ -165,6 +169,7 @@ export function WebViewer({
           answers={ctaEnabled}
           booking={booking}
           onAskQuestion={chat ? () => setChatOpen(true) : undefined}
+          forward={forward}
         />
       )}
 

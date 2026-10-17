@@ -357,6 +357,7 @@ enum SellerAlertType {
   VOICE_COMMENT // the prospect left a voice comment on a page
   MEETING_BOOKED // the prospect booked a meeting in the seller's calendar from the viewer
   QUOTE_REQUESTED // the prospect asked for a quote under a video pitch
+  DOCUMENT_FORWARDED // a reader passed the proposal on with "Transférer"
 }
 
 // Role of a prospect contact in the buying committee, set by the seller.
@@ -375,6 +376,7 @@ enum ProspectOrigin {
   EMAIL_GATE // typed an email to open the link, the proposal was passed on
   PROSPECTING // suggested by Clozer prospecting: an unsubscribe also opts out of prospecting for everyone
   COLD_EMAIL // came from a cold email Smart Link: the address was in the URL, unverified
+  FORWARDED // another reader sent them the link with "Transférer": the address was typed by that reader
 }
 
 enum SellerAlertChannel {
@@ -642,6 +644,7 @@ model Link {
   voiceComments    VoiceComment[]
   viewSignals      ViewSignal[]
   webhookEvents    WebhookEvent[]
+  forwards         LinkForward[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -675,16 +678,25 @@ model Prospect {
   firstSeenAt DateTime?
   lastSeenAt  DateTime?
 
-  views         DocumentView[]
-  followups     Followup[]
-  actions       ProspectAction[]
-  voiceComments VoiceComment[]
+  // Who sent them the link with "Transférer" first: the edge of the seller's "Circuit du document".
+  // Set once, never on a contact the seller added.
+  forwardedById String?
+  forwardedBy   Prospect?  @relation("ForwardTree", fields: [forwardedById], references: [id], onDelete: SetNull)
+  forwardees    Prospect[] @relation("ForwardTree")
+
+  views            DocumentView[]
+  followups        Followup[]
+  actions          ProspectAction[]
+  voiceComments    VoiceComment[]
+  forwardsSent     LinkForward[]    @relation("ForwardFrom")
+  forwardsReceived LinkForward[]    @relation("ForwardTo")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([linkId, email])
   @@index([email])
+  @@index([forwardedById])
   @@map("prospects")
 }
 
@@ -1031,6 +1043,41 @@ model ProspectAction {
 
   @@index([linkId, createdAt(sort: Desc)])
   @@map("prospect_actions")
+}
+
+// One "Transférer" from the viewer: who sent the link to whom, what they wrote (the seller sees it,
+// the viewer says so), whether the email left and whether the recipient opened it.
+model LinkForward {
+  id             String    @id @default(cuid())
+  linkId         String
+  link           Link      @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  fromProspectId String?
+  fromProspect   Prospect? @relation("ForwardFrom", fields: [fromProspectId], references: [id], onDelete: SetNull)
+  toProspectId   String
+  toProspect     Prospect  @relation("ForwardTo", fields: [toProspectId], references: [id], onDelete: Cascade)
+  viewId         String? // the forwarder's reading session
+
+  message      String?
+  // The forwarder asked to be told when the recipient opens it
+  notifyOnOpen Boolean @default(false)
+  locale       String // the email's language: the forwarder's
+
+  // quotas
+  visitorId String
+  ipHash    String?
+
+  sentAt        DateTime? // the email provider accepted it
+  error         String?
+  openedAt      DateTime? // first real session of the recipient after this forward
+  receiptSentAt DateTime? // claimed before sending: one receipt per forward
+
+  createdAt DateTime @default(now())
+
+  @@index([linkId, createdAt(sort: Desc)])
+  @@index([toProspectId, openedAt])
+  @@index([visitorId, createdAt])
+  @@index([ipHash, createdAt])
+  @@map("link_forwards")
 }
 
 model ChatMessage {

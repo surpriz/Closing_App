@@ -53,3 +53,22 @@ describe("extensionNotice", () => {
     expect(notice.body).toBe("“Quote” expires on Thursday, October 15 at 11:59 PM. Extend or follow up.");
   });
 });
+
+describe("extensionNotice for a forward", () => {
+  it("names who forwarded it to whom, and quotes the note", () => {
+    expect(
+      extensionNotice("DOCUMENT_FORWARDED", "Acme", "Devis", { forwardedBy: "Paul", forwardedTo: "Marie", message: "Ton avis ?" }, "fr"),
+    ).toEqual({ title: "Paul a transféré votre proposition", body: "À Marie : « Ton avis ? »" });
+  });
+
+  it("says when a decision maker joins", () => {
+    expect(
+      extensionNotice("DOCUMENT_FORWARDED", "Acme", "Devis", {
+        forwardedBy: "Paul",
+        forwardedTo: "daf@acme.fr",
+        forwardedToRole: "FINANCE",
+        decisionMaker: true,
+      }, "fr").body,
+    ).toBe("À daf@acme.fr (Finance / achats) : un décideur entre dans la boucle.");
+  });
+});

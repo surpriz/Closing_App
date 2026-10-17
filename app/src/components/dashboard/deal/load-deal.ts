@@ -43,6 +43,11 @@ import { showsReadingDetail } from "@/lib/closing/dashboard/reading-detail";
 import { videoProvider } from "@/lib/closing/documents/web-link";
 import { VIDEO_SEGMENTS } from "@/lib/closing/documents/video-segments";
 import { hasReason } from "@/lib/closing/engagement/reasons";
+import {
+  actionsByProspect,
+  buildForwardTree,
+  FORWARD_ACTION,
+} from "@/lib/closing/forward/tree";
 import { freshEngagementScore } from "@/lib/closing/engagement/refresh-score";
 import { getLinkLiveState } from "@/lib/closing/live";
 import { getSellerPrefs } from "@/lib/closing/notify/preferences";
@@ -136,6 +141,8 @@ export async function loadDeal(
     capsuleRows,
     capsulePlays,
     voiceRows,
+    forwards,
+    prospectPages,
   ] = await Promise.all([
     getLinkAnalytics(link.id),
     getWorkspaceSettings(organization.id),
@@ -159,6 +166,7 @@ export async function loadDeal(
             "PROSPECT_QUESTION",
             "LINK_EXTENSION_REQUESTED",
             "VOICE_COMMENT",
+            "DOCUMENT_FORWARDED",
           ],
         },
       },
@@ -235,6 +243,7 @@ export async function loadDeal(
       take: 50,
       select: {
         id: true,
+        prospectId: true,
         pageNumber: true,
         status: true,
         transcript: true,
@@ -247,6 +256,29 @@ export async function loadDeal(
           },
         },
       },
+    }),
+    // "Transférer": who passed it to whom, for the timeline and the circuit
+    prisma.linkForward.findMany({
+      where: { linkId: link.id },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      select: {
+        id: true,
+        fromProspectId: true,
+        toProspectId: true,
+        message: true,
+        createdAt: true,
+        sentAt: true,
+        error: true,
+        fromProspect: { select: { name: true, email: true } },
+        toProspect: { select: { name: true, email: true } },
+      },
+    }),
+    // Time per page and per known person: the hottest pages of each node of the circuit
+    prisma.pageView.findMany({
+      where: { linkId: link.id, totalDurationMs: { gt: 0 }, view: { isBot: false, prospectId: { not: null } } },
+      take: 2000,
+      select: { pageNumber: true, totalDurationMs: true, view: { select: { prospectId: true } } },
     }),
   ]);
   const insightRecipient = insight?.recommendedAction.prospectId
@@ -611,6 +643,18 @@ export async function loadDeal(
       }),
       detail: activity.note,
     })),
+    ...forwards.map((forward) => ({
+      id: `forward-${forward.id}`,
+      at: forward.createdAt,
+      kind: "forward" as const,
+      title: t("forwarded", {
+        from: forward.fromProspect ? readerName({ prospect: forward.fromProspect, email: null }) : t("aReader"),
+        to: readerName({ prospect: forward.toProspect, email: null }),
+      }),
+      detail: [forward.message && t("quoted", { text: forward.message }), !forward.sentAt && forward.error && t("notDelivered")]
+        .filter(Boolean)
+        .join(" · ") || null,
+    })),
     ...alerts.map((alert) => {
       const payload = alert.payload as {
         liveViewers?: number;
@@ -636,6 +680,26 @@ export async function loadDeal(
   ]
     .sort((a, b) => b.at.getTime() - a.at.getTime())
     .slice(0, 40);
+
+  const pagesByProspect = new Map<string, { pageNumber: number; totalDurationMs: number }[]>();
+  for (const row of prospectPages) {
+    const prospectId = row.view.prospectId!;
+    const pages = pagesByProspect.get(prospectId) ?? [];
+    const page = pages.find((p) => p.pageNumber === row.pageNumber);
+    if (page) page.totalDurationMs += row.totalDurationMs;
+    else pages.push({ pageNumber: row.pageNumber, totalDurationMs: row.totalDurationMs });
+    pagesByProspect.set(prospectId, pages);
+  }
+  const forwardTree = buildForwardTree({
+    prospects: link.prospects,
+    forwards,
+    persons: readerMap.persons,
+    pagesByProspect,
+    actionsByProspect: actionsByProspect([
+      ...actions.map((a) => ({ prospectId: a.prospectId, action: FORWARD_ACTION[a.type], at: a.createdAt })),
+      ...voiceRows.map((v) => ({ prospectId: v.prospectId, action: "voice" as const, at: v.createdAt })),
+    ]),
+  });
 
   const followupItems: FollowupItem[] = followups.map((f) =>
     toFollowupItem(f, title),
@@ -698,6 +762,7 @@ export async function loadDeal(
     followupItems,
     signature,
     sharedReaders,
+    forwardTree,
   };
 }
 

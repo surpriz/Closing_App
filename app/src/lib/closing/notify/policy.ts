@@ -7,7 +7,8 @@ import { getLocalParts } from "../scheduling/business-hours";
  *
  * - ACTION (the prospect validated, asked for a change, asked the assistant
  *   a question it could not answer, asked for more time on an expired
- *   link, left a voice comment or booked a meeting): always, day or night.
+ *   link, left a voice comment, booked a meeting or forwarded the proposal):
+ *   always, day or night.
  * - CALL (reading right now): the extension first; email only when asked for
  *   and the extension is not running. Never outside working hours, at most a
  *   few per hour.
@@ -24,6 +25,7 @@ export const ALERT_PRIORITY: Record<SellerAlertType, AlertPriority> = {
   LINK_EXTENSION_REQUESTED: "ACTION",
   VOICE_COMMENT: "ACTION",
   MEETING_BOOKED: "ACTION",
+  DOCUMENT_FORWARDED: "ACTION",
   CALL_MOMENT: "CALL",
   MULTI_VIEWER: "CALL",
   REOPENED_AFTER_INACTIVITY: "CALL",

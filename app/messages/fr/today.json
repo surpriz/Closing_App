@@ -201,7 +201,9 @@
       "forwardedInternal": "a été repartagé en interne",
       "newReader": "a un nouveau lecteur",
       "reopenedDays": "a été rouvert après {days} jours de silence",
-      "reopened": "a été rouvert après un silence"
+      "reopened": "a été rouvert après un silence",
+      "documentForwardedTo": "a été transféré à {to}",
+      "documentForwarded": "a été transféré"
     },
     "followup": "a reçu une relance {channel}",
     "followupAntiGhosting": "a reçu une relance {channel} (lien pas encore ouvert)",

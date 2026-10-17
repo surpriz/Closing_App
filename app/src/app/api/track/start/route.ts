@@ -10,6 +10,7 @@ import { VIEW_SESSION_WINDOW_MS } from "@/lib/closing/constants";
 import { confirmDraftOnOpen } from "@/lib/closing/documents/create-link";
 import { refreshEngagementScore } from "@/lib/closing/engagement/refresh-score";
 import { cancelOpenFollowups } from "@/lib/closing/followups/queue";
+import { markForwardsOpened } from "@/lib/closing/forward/forward";
 import { getLinkForViewer, getViewerAccess } from "@/lib/closing/links";
 import {
   getRequestContext,
@@ -139,6 +140,8 @@ export async function POST(request: NextRequest) {
       if (!readerAlert) await evaluateHotLead(viewId, !!recentView, now);
       await refreshEngagementScore(link.id);
     });
+    // Someone a reader forwarded it to: opened, once per forward, and the forwarder told if they asked
+    if (prospect) inBackground("forward-opened", () => markForwardsOpened(prospect.id, now));
     // A Smart Link reader really reading: their cold email sequence can stop. Apart, so nothing above can skip it
     if (link.parentLinkId) inBackground("reader-opened", () => emitReaderEvent(link.id, "reader.opened"));
   }

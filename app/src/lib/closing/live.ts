@@ -33,7 +33,7 @@ const readerSelect = {
 
 export async function getLinkLiveState(linkId: string, now = new Date()): Promise<LinkLiveState> {
   const since = new Date(now.getTime() - LIVE_READING_WINDOW_MS);
-  const [recent, views, score, followup, alert, action] = await Promise.all([
+  const [recent, views, score, followup, alert, action, forward] = await Promise.all([
     prisma.documentView.findMany({
       where: { linkId, isBot: false, lastSeenAt: { gte: since }, leftAt: null },
       orderBy: { lastSeenAt: "desc" },
@@ -48,6 +48,8 @@ export async function getLinkLiveState(linkId: string, now = new Date()): Promis
     prisma.followup.aggregate({ where: { linkId }, _max: { updatedAt: true } }),
     prisma.sellerAlert.aggregate({ where: { linkId }, _max: { createdAt: true } }),
     prisma.prospectAction.aggregate({ where: { linkId }, _max: { createdAt: true } }),
+    // A forward shows in the circuit even when its alert was muted
+    prisma.linkForward.aggregate({ where: { linkId }, _max: { createdAt: true, openedAt: true } }),
   ]);
 
   // One line per browser, even if it has several views open
@@ -61,6 +63,8 @@ export async function getLinkLiveState(linkId: string, now = new Date()): Promis
     followup._max.updatedAt?.getTime(),
     alert._max.createdAt?.getTime(),
     action._max.createdAt?.getTime(),
+    forward._max.createdAt?.getTime(),
+    forward._max.openedAt?.getTime(),
   ].join(":");
 
   return { readers, stamp };

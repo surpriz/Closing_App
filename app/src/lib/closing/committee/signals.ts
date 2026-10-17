@@ -28,6 +28,8 @@ export type ReaderAlert = {
   readerDomain?: string;
   liveViewers?: number;
   decisionMakers?: string[];
+  /** The reader who forwarded it to this person with "Transférer". */
+  forwardedBy?: string;
 };
 
 /** At most one committee alert per link in this window. */
@@ -90,10 +92,12 @@ export function detectNewReader(map: ReaderMap, linkId: string, viewId: string, 
   const person = ownerOf(map, viewId);
   if (!person || person.origin === "initial" || map.persons.length < 2) return null;
 
+  const domain = person.domain ? ` (${person.domain})` : "";
   let reason: string;
-  if (person.origin === "forwarded_internal") reason = t("forwardedInternal", { name: person.label });
+  if (person.forwardedBy) reason = t("forwardedBy", { name: person.label, domain, by: person.forwardedBy });
+  else if (person.origin === "forwarded_internal") reason = t("forwardedInternal", { name: person.label });
   else if (person.origin === "external") {
-    reason = t("external", { name: person.label, domain: person.domain ? ` (${person.domain})` : "" });
+    reason = t("external", { name: person.label, domain });
   }
   else {
     // Without a network we cannot tell a new person from a cleared cookie
@@ -109,6 +113,7 @@ export function detectNewReader(map: ReaderMap, linkId: string, viewId: string, 
     readerName: person.label,
     readerOrigin: person.origin,
     readerDomain: person.domain ?? undefined,
+    forwardedBy: person.forwardedBy ?? undefined,
   };
 }
 
@@ -119,7 +124,11 @@ export function detectDecisionMaker(map: ReaderMap, linkId: string, viewId: stri
   // The seller already talks to the recipients: only someone the proposal reached matters
   if (person.origin === "initial") return null;
 
-  const forwarded = person.origin === "forwarded_internal" ? t("forwarded") : "";
+  const forwarded = person.forwardedBy
+    ? t("forwardedByDecision", { by: person.forwardedBy })
+    : person.origin === "forwarded_internal"
+      ? t("forwarded")
+      : "";
   return {
     type: "DECISION_MAKER_DETECTED",
     dedupeKey: decisionMakerKey(linkId, person.prospectId),
@@ -128,6 +137,7 @@ export function detectDecisionMaker(map: ReaderMap, linkId: string, viewId: stri
     readerName: person.label,
     readerOrigin: person.origin,
     readerDomain: person.domain ?? undefined,
+    forwardedBy: person.forwardedBy ?? undefined,
   };
 }
 

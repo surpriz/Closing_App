@@ -42,6 +42,8 @@ export type ReaderProspect = {
   name: string | null;
   role: ProspectRole | null;
   origin: ProspectOrigin;
+  /** Who sent them the link with "Transférer". */
+  forwardedById?: string | null;
   createdAt: Date;
 };
 
@@ -57,6 +59,8 @@ export type Person = {
   /** What the email and name suggest, whatever the seller tagged. */
   detectedRole: ProspectRole | null;
   origin: ReaderOrigin;
+  /** Who forwarded them the proposal with "Transférer", as the seller knows that person. */
+  forwardedBy: string | null;
   /** Company domain, null for personal mailboxes and anonymous readers. */
   domain: string | null;
   /** Joined a company group through its network, not its email. */
@@ -154,6 +158,11 @@ export function buildReaderMap(input: {
     names.unidentifiedReader,
   );
 
+  const forwarderLabel = (prospect: ReaderProspect | undefined) => {
+    const forwarder = prospect?.forwardedById ? prospectsById.get(prospect.forwardedById) : undefined;
+    return forwarder ? (forwarder.name ?? forwarder.email) : null;
+  };
+
   const persons = new Map<string, Person>();
   for (const v of views) {
     const key = keyOf(v);
@@ -170,6 +179,7 @@ export function buildReaderMap(input: {
         role: prospect ? effectiveRole(prospect) : email ? effectiveRole({ role: null, email, name: null }) : null,
         detectedRole: email ? classifyRole({ email, name: prospect?.name ?? null }) : null,
         origin: !email ? "anonymous" : prospect?.origin === "SELLER" ? "initial" : "external",
+        forwardedBy: forwarderLabel(prospect),
         domain: emailDomain(email),
         viaNetwork: false,
         viewIds: [],
@@ -194,8 +204,11 @@ export function buildReaderMap(input: {
   }
 
   const list = [...persons.values()];
-  // Nobody the seller added has read yet: the first reader is the recipient
-  if (!list.some((p) => p.origin === "initial") && list.length > 0) list[0].origin = "initial";
+  // Nobody the seller added has read yet: the first reader is the recipient, never someone a reader forwarded it to
+  if (!list.some((p) => p.origin === "initial")) {
+    const first = list.find((p) => (p.prospectId ? prospectsById.get(p.prospectId)?.origin : null) !== "FORWARDED");
+    if (first) first.origin = "initial";
+  }
   // No contact from the seller: the recipient's company is the one that read first
   if (originalDomains.size === 0) for (const p of list) if (p.origin === "initial" && p.domain) originalDomains.add(p.domain);
   for (const p of list) if (p.origin === "external" && p.domain && originalDomains.has(p.domain)) p.origin = "forwarded_internal";

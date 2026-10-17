@@ -3,6 +3,11 @@ import { sendEmail, textToHtml } from "@/lib/email";
 import { unsubscribeOneClickUrl, unsubscribePageUrl } from "./unsubscribe";
 import { unsubscribeFooter } from "./unsubscribe/copy";
 
+/** The configured sender of prospect emails. */
+export function prospectSender() {
+  return process.env.FOLLOWUP_EMAIL_FROM ?? process.env.AUTH_EMAIL_FROM;
+}
+
 /**
  * A plain-text email to a prospect, from the seller's side: replies go to the
  * seller, and the unsubscribe footer and one-click header are always there.
@@ -14,12 +19,14 @@ export function sendProspectEmail(input: {
   body: string;
   /** The seller who created the link. */
   replyTo: string | null | undefined;
+  /** Another From than the seller's side, e.g. "Paul via Clozer" for a forward. */
+  from?: string;
 }) {
   // Added at send time only: the seller previews the message without it
   const footer = unsubscribeFooter(unsubscribePageUrl(input.prospect.id), input.locale);
   return sendEmail({
     to: input.prospect.email,
-    from: process.env.FOLLOWUP_EMAIL_FROM ?? process.env.AUTH_EMAIL_FROM,
+    from: input.from ?? prospectSender(),
     replyTo: input.replyTo ?? process.env.FOLLOWUP_EMAIL_REPLY_TO ?? undefined,
     subject: input.subject,
     text: input.body + footer.text,

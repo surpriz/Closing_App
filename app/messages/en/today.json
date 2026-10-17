@@ -201,7 +201,9 @@
       "forwardedInternal": "was shared internally",
       "newReader": "has a new reader",
       "reopenedDays": "was reopened after {days} quiet days",
-      "reopened": "was reopened after a quiet spell"
+      "reopened": "was reopened after a quiet spell",
+      "documentForwardedTo": "was forwarded to {to}",
+      "documentForwarded": "was forwarded"
     },
     "followup": "got a follow-up by {channel}",
     "followupAntiGhosting": "got a follow-up by {channel} (link not opened yet)",

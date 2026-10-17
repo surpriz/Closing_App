@@ -111,11 +111,12 @@ function describeAction(type: ProspectActionType, t: AppT) {
 }
 
 function describeAlert(type: SellerAlertType, payload: unknown, t: AppT) {
-  const { liveViewers, inactiveDays, reason, readerOrigin } = (payload ?? {}) as {
+  const { liveViewers, inactiveDays, reason, readerOrigin, forwardedTo } = (payload ?? {}) as {
     liveViewers?: number;
     inactiveDays?: number;
     reason?: string;
     readerOrigin?: string;
+    forwardedTo?: string;
   };
   if (type === "CALL_MOMENT") {
     return reason
@@ -128,6 +129,11 @@ function describeAlert(type: SellerAlertType, payload: unknown, t: AppT) {
   if (type === "PROSPECT_QUESTION") return t("today.feed.alert.prospectQuestion");
   if (type === "VOICE_COMMENT") return t("today.feed.alert.voiceComment");
   if (type === "MEETING_BOOKED") return t("today.feed.alert.meetingBooked");
+  if (type === "DOCUMENT_FORWARDED") {
+    return forwardedTo
+      ? t("today.feed.alert.documentForwardedTo", { to: forwardedTo })
+      : t("today.feed.alert.documentForwarded");
+  }
   if (type === "MULTI_VIEWER") {
     return liveViewers
       ? t("today.feed.alert.multiViewerCount", { count: liveViewers })

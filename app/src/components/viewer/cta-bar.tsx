@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils";
 
 import { BookingDialog } from "./booking-dialog";
 import { BAR_HEIGHT_VAR, STRIP_CELL, STRIP_ICON_CELL } from "./decision-strip";
+import { ForwardDialog, type ForwardOptions } from "./forward-dialog";
 import { sendSignal } from "./view-signal";
 
 type Props = {
@@ -50,6 +51,8 @@ type Props = {
   onAskQuestion?: () => void;
   /** The voice note button, when the prospect may leave one and no sheet is open. */
   voice?: React.ReactNode;
+  /** "Transférer" to a colleague, null when not offered. */
+  forward?: ForwardOptions | null;
 };
 
 export function CtaBar({
@@ -66,6 +69,7 @@ export function CtaBar({
   booking,
   onAskQuestion,
   voice,
+  forward = null,
 }: Props) {
   const [status, setStatus] = useState<DealStatus>(initialStatus);
   const [dialog, setDialog] = useState<"validate" | "change" | "quote" | null>(null);
@@ -147,6 +151,17 @@ export function CtaBar({
       : cn(STRIP_ICON_CELL, "sm:w-auto sm:px-4"),
   );
   const toolCell = cn(STRIP_CELL, STRIP_ICON_CELL, "gap-2", expanded && "max-sm:order-2 sm:min-h-14");
+  const forwardButton = (className: string) =>
+    forward && (
+      <ForwardDialog
+        {...forward}
+        slug={slug}
+        labels={labels}
+        documentName={documentName}
+        getViewId={getViewId}
+        className={className}
+      />
+    );
 
   return (
     <>
@@ -170,6 +185,8 @@ export function CtaBar({
                   </p>
                 </div>
               </div>
+              {/* Signed: the moment it goes to finance or legal */}
+              {forwardButton(cn(STRIP_CELL, "w-14 gap-2 md:w-auto md:px-5"))}
               {downloadUrl && (
                 <Button
                   variant="ghost"
@@ -211,6 +228,7 @@ export function CtaBar({
                 </Button>
               )}
               {voice && <div className={cn("flex", expanded && "max-sm:order-2")}>{voice}</div>}
+              {forwardButton(cn(toolCell, "md:w-auto md:px-4"))}
               {booking &&
                 (bookingIsPrimary ? (
                   <Button className={primaryCell} onClick={openBooking}>

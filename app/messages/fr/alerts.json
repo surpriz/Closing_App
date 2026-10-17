@@ -92,6 +92,17 @@
       "body": "{who} lit {doc} en ce moment. {reason}.",
       "goodMoment": "C'est un bon moment pour appeler.",
       "button": "Voir la lecture en direct"
+    },
+    "documentForwarded": {
+      "someone": "quelqu'un",
+      "body": "{from} vient de transférer {doc} à {to}{role}. Vous saurez quand cette personne l'ouvre.",
+      "bodyDecision": "{from} vient de transférer {doc} à {to}{role}. Votre proposition arrive chez un décideur : c'est le moment de reprendre la main.",
+      "email": "Son email : {email}",
+      "writeTo": "Écrire à {name}",
+      "button": "Voir le circuit",
+      "subject": "{from} a transféré votre proposition à {to}",
+      "subjectDecision": "Votre proposition arrive chez un décideur : {to}{role}",
+      "line": "{from} a transféré {doc} à {to}{role}{quote}"
     }
   },
   "notice": {
@@ -152,7 +163,13 @@
       "reasonBackSome": "Revient après quelques jours"
     },
     "callNow": "{reason}. C'est le moment d'appeler.",
-    "reason": "{reason}."
+    "reason": "{reason}.",
+    "documentForwarded": {
+      "title": "{from} a transféré votre proposition",
+      "body": "À {to}.",
+      "bodyQuote": "À {to} : « {text} »",
+      "bodyDecision": "À {to} : un décideur entre dans la boucle."
+    }
   },
   "digest": {
     "subjectTodo": "Ce matin : {count, plural, one {# prospect} other {# prospects}} à recontacter",
@@ -206,7 +223,9 @@
     "probableNew": "Nouveau lecteur probable (autre appareil)",
     "decisionMaker": "{name} ({role}){forwarded} lit votre proposition",
     "forwarded": ", à qui la proposition a été repartagée,",
-    "withOthers": "{reason}, avec {count} autres personnes en ce moment"
+    "withOthers": "{reason}, avec {count} autres personnes en ce moment",
+    "forwardedBy": "{name}{domain} ouvre la proposition que {by} lui a transférée",
+    "forwardedByDecision": ", à qui {by} a transféré la proposition,"
   },
   "callMoment": {
     "multiViewer": "{count} personnes lisent en même temps",

@@ -21,7 +21,9 @@
     "logTitle": "Log an exchange",
     "logHint": "calls, replies, meetings",
     "capsulesTitle": "Page capsules",
-    "capsulesHint": "recorded before the welcome message"
+    "capsulesHint": "recorded before the welcome message",
+    "circuitTitle": "Document chain",
+    "circuitHint": "who passed it to whom"
   },
   "loading": {
     "ariaLabel": "Loading"
@@ -491,9 +493,35 @@
     "siteOpenFor": "site opened, ≈ {time} on it",
     "siteOpened": "site opened in a tab",
     "pdfDownloaded": "PDF downloaded",
-    "exitAssistant": "opened the assistant on the way out"
+    "exitAssistant": "opened the assistant on the way out",
+    "forwarded": "{from} forwarded the document to {to}",
+    "notDelivered": "Email not delivered"
   },
   "heat": {
     "notRead": "Not read yet"
+  },
+  "forwardTree": {
+    "offClozer": "Forwarded outside Clozer",
+    "offClozerHint": "arrived without using “Forward”",
+    "anonymous": "{count, plural, one {# unidentified reader} other {# unidentified readers}}",
+    "readingNow": "reading now",
+    "openedAgo": "opened {when}",
+    "views": "{count, plural, one {# read} other {# reads}}",
+    "pages": "p. {pages}",
+    "notOpened": "Not opened yet",
+    "notDelivered": "Email not delivered",
+    "forwardedBy": "forwarded by {name} {when}",
+    "forwardedAgo": "forwarded {when}",
+    "guessed": "{role} (guessed)",
+    "taggedByYou": "Tagged by you",
+    "guessedFromEmail": "Guessed from the email",
+    "action": {
+      "signed": "Accepted",
+      "change": "Asked for a change",
+      "quote": "Asked for a quote",
+      "voice": "Left a voice note",
+      "meeting": "Booked a meeting",
+      "extension": "Asked for more time"
+    }
   }
 }

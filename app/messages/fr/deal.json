@@ -21,7 +21,9 @@
     "logTitle": "Noter un échange",
     "logHint": "appels, réponses, rendez-vous",
     "capsulesTitle": "Capsules par page",
-    "capsulesHint": "enregistrées avant le mot d'accueil"
+    "capsulesHint": "enregistrées avant le mot d'accueil",
+    "circuitTitle": "Circuit du document",
+    "circuitHint": "qui l'a transmis à qui"
   },
   "loading": {
     "ariaLabel": "Chargement"
@@ -491,9 +493,35 @@
     "siteOpenFor": "site ouvert, ≈ {time} dessus",
     "siteOpened": "site ouvert dans un onglet",
     "pdfDownloaded": "PDF téléchargé",
-    "exitAssistant": "a ouvert l'assistant en partant"
+    "exitAssistant": "a ouvert l'assistant en partant",
+    "forwarded": "{from} a transféré le document à {to}",
+    "notDelivered": "Email non remis"
   },
   "heat": {
     "notRead": "Pas encore lu"
+  },
+  "forwardTree": {
+    "offClozer": "Transfert hors Clozer",
+    "offClozerHint": "arrivés sans passer par « Transférer »",
+    "anonymous": "{count, plural, one {# lecteur non identifié} other {# lecteurs non identifiés}}",
+    "readingNow": "lit en ce moment",
+    "openedAgo": "ouvert {when}",
+    "views": "{count, plural, one {# lecture} other {# lectures}}",
+    "pages": "p. {pages}",
+    "notOpened": "Pas encore ouvert",
+    "notDelivered": "Email non remis",
+    "forwardedBy": "transféré par {name} {when}",
+    "forwardedAgo": "transféré {when}",
+    "guessed": "{role} (deviné)",
+    "taggedByYou": "Tagué par vous",
+    "guessedFromEmail": "Deviné depuis l'email",
+    "action": {
+      "signed": "A validé",
+      "change": "Demande un ajustement",
+      "quote": "Demande un devis",
+      "voice": "A laissé un vocal",
+      "meeting": "A pris rendez-vous",
+      "extension": "Demande une prolongation"
+    }
   }
 }

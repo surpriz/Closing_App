@@ -71,7 +71,8 @@
     "DECISION_MAKER_DETECTED": "Decision-maker reading",
     "LINK_EXTENSION_REQUESTED": "Extension request",
     "LINK_EXPIRING": "Link expiring soon",
-    "MEETING_BOOKED": "Meeting booked"
+    "MEETING_BOOKED": "Meeting booked",
+    "DOCUMENT_FORWARDED": "Document forwarded"
   },
   "prospectRole": {
     "DECISION_MAKER": "Decision-maker",

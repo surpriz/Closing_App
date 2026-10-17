@@ -123,6 +123,27 @@ export type ViewerLabels = {
   quoteRequested: string;
   videoError: string;
   playVideo: string;
+  /** "Transférer": the reader sends the link to a colleague. {sender}, {email}. */
+  forwardButton: string;
+  forwardTitle: string;
+  forwardDescription: string;
+  forwardToEmail: string;
+  forwardToName: string;
+  forwardMessage: string;
+  forwardMessageNotice: string;
+  forwardFromEmail: string;
+  forwardFromName: string;
+  forwardNotifyOpen: string;
+  forwardSend: string;
+  forwardSent: string;
+  forwardAnother: string;
+  forwardErrorSelf: string;
+  forwardErrorSeller: string;
+  forwardErrorUnavailable: string;
+  forwardErrorLink: string;
+  forwardErrorName: string;
+  forwardErrorLimit: string;
+  forwardError: string;
   /** Title, placeholder and suggested questions, by family of document (chat/kind.ts). */
   chatKinds: Record<ChatKind, ChatKindLabels>;
 };
@@ -219,6 +240,26 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     quoteRequested: "Request sent. The quote is on its way.",
     videoError: "This video can't play in this browser. Try another one, or contact the sender.",
     playVideo: "Play the video",
+    forwardButton: "Forward",
+    forwardTitle: "Forward the document",
+    forwardDescription: "We email it to them on your behalf.",
+    forwardToEmail: "Their email",
+    forwardToName: "Their name (optional)",
+    forwardMessage: "A note (optional)",
+    forwardMessageNotice: "{sender} will also see this note.",
+    forwardFromEmail: "Your email",
+    forwardFromName: "Your name",
+    forwardNotifyOpen: "Let me know when they open it",
+    forwardSend: "Send",
+    forwardSent: "Sent to {email}.",
+    forwardAnother: "Forward to someone else",
+    forwardErrorSelf: "That's your own address.",
+    forwardErrorSeller: "{sender} already has this document.",
+    forwardErrorUnavailable: "We can't send to this address.",
+    forwardErrorLink: "The note can't contain a link.",
+    forwardErrorName: "A name takes letters only, no digits or dots.",
+    forwardErrorLimit: "You've forwarded this document several times today. Try again tomorrow.",
+    forwardError: "It didn't go through. Please try again.",
     chatKinds: {
       offer: {
         title: "Questions about this proposal?",
@@ -353,6 +394,26 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     quoteRequested: "Demande envoyée. Le devis arrive.",
     videoError: "Cette vidéo ne s'ouvre pas dans ce navigateur. Essayez-en un autre, ou contactez l'expéditeur.",
     playVideo: "Lire la vidéo",
+    forwardButton: "Transférer",
+    forwardTitle: "Transférer le document",
+    forwardDescription: "Nous lui envoyons le document par email, de votre part.",
+    forwardToEmail: "Son email",
+    forwardToName: "Son nom (facultatif)",
+    forwardMessage: "Un mot (facultatif)",
+    forwardMessageNotice: "{sender} verra aussi ce message.",
+    forwardFromEmail: "Votre email",
+    forwardFromName: "Votre nom",
+    forwardNotifyOpen: "Me prévenir quand cette personne l'ouvre",
+    forwardSend: "Envoyer",
+    forwardSent: "Envoyé à {email}.",
+    forwardAnother: "Transférer à quelqu'un d'autre",
+    forwardErrorSelf: "C'est votre propre adresse.",
+    forwardErrorSeller: "{sender} a déjà ce document.",
+    forwardErrorUnavailable: "Impossible d'envoyer à cette adresse.",
+    forwardErrorLink: "Le message ne peut pas contenir de lien.",
+    forwardErrorName: "Un nom ne contient que des lettres, sans chiffres ni points.",
+    forwardErrorLimit: "Vous avez déjà transféré ce document plusieurs fois aujourd'hui. Réessayez demain.",
+    forwardError: "L'envoi n'a pas abouti. Réessayez.",
     chatKinds: {
       offer: {
         title: "Une question sur cette proposition ?",
@@ -487,6 +548,26 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     quoteRequested: "Solicitud enviada. El presupuesto está en camino.",
     videoError: "Este vídeo no se puede reproducir en este navegador. Prueba con otro o contacta con el remitente.",
     playVideo: "Reproducir el vídeo",
+    forwardButton: "Reenviar",
+    forwardTitle: "Reenviar el documento",
+    forwardDescription: "Se lo enviamos por email en tu nombre.",
+    forwardToEmail: "Su email",
+    forwardToName: "Su nombre (opcional)",
+    forwardMessage: "Una nota (opcional)",
+    forwardMessageNotice: "{sender} también verá esta nota.",
+    forwardFromEmail: "Tu email",
+    forwardFromName: "Tu nombre",
+    forwardNotifyOpen: "Avisarme cuando lo abra",
+    forwardSend: "Enviar",
+    forwardSent: "Enviado a {email}.",
+    forwardAnother: "Reenviar a otra persona",
+    forwardErrorSelf: "Es tu propia dirección.",
+    forwardErrorSeller: "{sender} ya tiene este documento.",
+    forwardErrorUnavailable: "No podemos enviar a esta dirección.",
+    forwardErrorLink: "La nota no puede contener enlaces.",
+    forwardErrorName: "Un nombre solo lleva letras, sin números ni puntos.",
+    forwardErrorLimit: "Ya has reenviado este documento varias veces hoy. Inténtalo mañana.",
+    forwardError: "No se ha podido enviar. Inténtalo de nuevo.",
     chatKinds: {
       offer: {
         title: "¿Preguntas sobre esta propuesta?",
@@ -621,6 +702,26 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     quoteRequested: "Anfrage gesendet. Das Angebot kommt.",
     videoError: "Dieses Video kann in diesem Browser nicht abgespielt werden. Versuchen Sie einen anderen oder kontaktieren Sie den Absender.",
     playVideo: "Video abspielen",
+    forwardButton: "Weiterleiten",
+    forwardTitle: "Dokument weiterleiten",
+    forwardDescription: "Wir senden es per E-Mail in Ihrem Namen.",
+    forwardToEmail: "E-Mail des Empfängers",
+    forwardToName: "Name (optional)",
+    forwardMessage: "Eine Notiz (optional)",
+    forwardMessageNotice: "{sender} sieht diese Notiz ebenfalls.",
+    forwardFromEmail: "Ihre E-Mail",
+    forwardFromName: "Ihr Name",
+    forwardNotifyOpen: "Benachrichtigen, wenn die Person es öffnet",
+    forwardSend: "Senden",
+    forwardSent: "Gesendet an {email}.",
+    forwardAnother: "An jemand anderen weiterleiten",
+    forwardErrorSelf: "Das ist Ihre eigene Adresse.",
+    forwardErrorSeller: "{sender} hat dieses Dokument bereits.",
+    forwardErrorUnavailable: "An diese Adresse können wir nicht senden.",
+    forwardErrorLink: "Die Notiz darf keinen Link enthalten.",
+    forwardErrorName: "Ein Name enthält nur Buchstaben, keine Ziffern oder Punkte.",
+    forwardErrorLimit: "Sie haben dieses Dokument heute schon mehrmals weitergeleitet. Versuchen Sie es morgen erneut.",
+    forwardError: "Das Senden hat nicht geklappt. Bitte erneut versuchen.",
     chatKinds: {
       offer: {
         title: "Fragen zu diesem Angebot?",
@@ -675,9 +776,10 @@ export function getViewerLabels(locale: SupportedLocale): ViewerLabels {
   return LABELS[locale as keyof typeof LABELS] ?? LABELS.en;
 }
 
-/** Fills the {sender} and {page} placeholders of a label. */
-export function fillLabel(text: string, values: { sender?: string; page?: number }) {
+/** Fills the {sender}, {page} and {email} placeholders of a label. */
+export function fillLabel(text: string, values: { sender?: string; page?: number; email?: string }) {
   let filled = text;
+  if (values.email !== undefined) filled = filled.replaceAll("{email}", values.email);
   if (values.sender !== undefined) filled = filled.replaceAll("{sender}", values.sender);
   if (values.page !== undefined) filled = filled.replaceAll("{page}", String(values.page));
   return filled;

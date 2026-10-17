@@ -85,6 +85,7 @@ export async function evaluateReaders(viewId: string, now = new Date()) {
         readerDomain: alert.readerDomain,
         liveViewers: alert.liveViewers,
         decisionMakers: alert.decisionMakers,
+        forwardedBy: alert.forwardedBy,
       },
       now,
       silent,

@@ -4,6 +4,7 @@ import {
   CalendarDays,
   CheckCircle2,
   Eye,
+  Forward,
   Hourglass,
   Link2,
   MessageCircleQuestion,
@@ -35,7 +36,8 @@ export type TimelineItem = {
     | "capsule"
     | "followup"
     | "alert"
-    | "seller";
+    | "seller"
+    | "forward";
   title: string;
   detail?: string | null;
 };
@@ -55,6 +57,7 @@ const ICONS: Record<TimelineItem["kind"], React.ReactNode> = {
   followup: <Send className="size-3.5" />,
   alert: <BellRing className="size-3.5" />,
   seller: <Phone className="size-3.5" />,
+  forward: <Forward className="size-3.5" />,
 };
 
 export function ActivityTimeline({ items }: { items: TimelineItem[] }) {

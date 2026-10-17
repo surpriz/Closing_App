@@ -1,4 +1,4 @@
-import type { AlertPriority, SellerAlertChannel, SellerAlertType } from "@/generated/prisma/enums";
+import type { AlertPriority, ProspectRole, SellerAlertChannel, SellerAlertType } from "@/generated/prisma/enums";
 import { getPublicAppUrl } from "@/lib/app-origin";
 import { decryptSecret } from "@/lib/crypto";
 import { prisma } from "@/lib/db";
@@ -38,6 +38,13 @@ export type AlertPayload = {
   transcript?: string | null;
   /** MEETING_BOOKED: start of the meeting, ISO, when the widget gave it (Cal.com). */
   meetingAt?: string | null;
+  /** DOCUMENT_FORWARDED: who passed it to whom; prospectEmail is the forwarder, for replies. */
+  forwardedBy?: string | null;
+  forwardedTo?: string;
+  forwardedToEmail?: string;
+  forwardedToRole?: ProspectRole | null;
+  /** The recipient looks like someone who signs or holds the budget. */
+  decisionMaker?: boolean;
 };
 
 const READER_ALERTS = new Set<SellerAlertType>(["COMMITTEE_LIVE", "DECISION_MAKER_DETECTED", "NEW_READER"]);
@@ -49,6 +56,7 @@ const REPLY_ALERTS = new Set<SellerAlertType>([
   "LINK_EXTENSION_REQUESTED",
   "VOICE_COMMENT",
   "MEETING_BOOKED",
+  "DOCUMENT_FORWARDED",
 ]);
 
 export type AlertDelivery = {
@@ -255,6 +263,40 @@ export function alertMessage(
         url,
       };
     }
+    case "DOCUMENT_FORWARDED": {
+      const url = `${linkUrl}#circuit`;
+      const from = payload.forwardedBy ?? who;
+      const to = payload.forwardedTo ?? t("message.documentForwarded.someone");
+      const role = payload.forwardedToRole
+        ? ` (${getNamespaceTranslator(locale, "labels")(`prospectRole.${payload.forwardedToRole}`)})`
+        : "";
+      const blocks: EmailBlock[] = [
+        {
+          kind: "text",
+          text: t(payload.decisionMaker ? "message.documentForwarded.bodyDecision" : "message.documentForwarded.body", {
+            from,
+            doc,
+            to,
+            role,
+          }),
+        },
+      ];
+      if (payload.message) blocks.push({ kind: "quote", text: payload.message });
+      if (payload.forwardedToEmail) {
+        blocks.push({ kind: "text", text: t("message.documentForwarded.email", { email: payload.forwardedToEmail }) });
+      }
+      const reply = replyButton(link, payload, t);
+      if (reply?.kind === "button") blocks.push({ ...reply, label: t("message.documentForwarded.writeTo", { name: from }) });
+      blocks.push({ kind: "button", label: t("message.documentForwarded.button"), href: url });
+      return {
+        subject: payload.decisionMaker
+          ? t("message.documentForwarded.subjectDecision", { to, role })
+          : t("message.documentForwarded.subject", { from, to }),
+        line: t("message.documentForwarded.line", { from, doc, to, role, quote: lineQuote(payload.message) }),
+        blocks,
+        url,
+      };
+    }
     case "DRAFT_READY": {
       const url = `${linkUrl}#relances`;
       return {
@@ -395,6 +437,8 @@ export async function createAndDeliverAlert(input: AlertDelivery) {
               ? "🎙️"
               : input.type === "MEETING_BOOKED"
                 ? "📅"
+              : input.type === "DOCUMENT_FORWARDED"
+                ? "↪️"
               : input.type === "LINK_EXTENSION_REQUESTED" || input.type === "LINK_EXPIRING"
                 ? "⏳"
                 : input.priority === "ACTION"

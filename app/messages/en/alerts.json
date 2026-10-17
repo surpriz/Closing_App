@@ -92,6 +92,17 @@
       "body": "{who} is reading {doc} right now. {reason}.",
       "goodMoment": "It's a good time to call.",
       "button": "Watch the live read"
+    },
+    "documentForwarded": {
+      "someone": "someone",
+      "body": "{from} just forwarded {doc} to {to}{role}. You'll know when they open it.",
+      "bodyDecision": "{from} just forwarded {doc} to {to}{role}. Your proposal is reaching a decision-maker: time to take the lead again.",
+      "email": "Their email: {email}",
+      "writeTo": "Write to {name}",
+      "button": "See the chain",
+      "subject": "{from} forwarded your proposal to {to}",
+      "subjectDecision": "Your proposal is reaching a decision-maker: {to}{role}",
+      "line": "{from} forwarded {doc} to {to}{role}{quote}"
     }
   },
   "notice": {
@@ -152,7 +163,13 @@
       "reasonBackSome": "Back after a few days"
     },
     "callNow": "{reason}. Now's the time to call.",
-    "reason": "{reason}."
+    "reason": "{reason}.",
+    "documentForwarded": {
+      "title": "{from} forwarded your proposal",
+      "body": "To {to}.",
+      "bodyQuote": "To {to}: “{text}”",
+      "bodyDecision": "To {to}: a decision-maker joins the loop."
+    }
   },
   "digest": {
     "subjectTodo": "This morning: {count, plural, one {# prospect} other {# prospects}} to contact",
@@ -206,7 +223,9 @@
     "probableNew": "Probably a new reader (another device)",
     "decisionMaker": "{name} ({role}){forwarded} is reading your proposal",
     "forwarded": ", who the proposal was reshared with,",
-    "withOthers": "{reason}, with {count} other people right now"
+    "withOthers": "{reason}, with {count} other people right now",
+    "forwardedBy": "{name}{domain} opened the proposal {by} forwarded to them",
+    "forwardedByDecision": ", who {by} forwarded the proposal to,"
   },
   "callMoment": {
     "multiViewer": "{count} people reading at the same time",

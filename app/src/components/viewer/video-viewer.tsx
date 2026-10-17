@@ -15,6 +15,7 @@ import { ExpiryChip } from "./expiry-countdown";
 import { PrivacyNotice } from "./privacy-notice";
 import { usePageTracking } from "./use-page-tracking";
 import { ViewerHeader } from "./viewer-header";
+import type { ForwardOptions } from "./forward-dialog";
 
 type Props = {
   slug: string;
@@ -29,6 +30,8 @@ type Props = {
   /** "Demander un devis" (Link.ctaEnabled). */
   quote: boolean;
   booking: BookingTarget | null;
+  /** "Transférer" to a colleague, null when not offered. */
+  forward: ForwardOptions | null;
   dealStatus: DealStatus;
   locale: SupportedLocale;
   /** Null when the assistant is off for this link or the transcript is not there yet. */
@@ -51,6 +54,7 @@ export function VideoViewer({
   labels,
   quote,
   booking,
+  forward,
   dealStatus,
   locale,
   chat,
@@ -62,7 +66,7 @@ export function VideoViewer({
   const [atEnd, setAtEnd] = useState(false);
   const [failed, setFailed] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
-  const barVisible = quote || !!booking;
+  const barVisible = quote || !!booking || !!forward;
 
   function followPosition(video: HTMLVideoElement) {
     const length = Number.isFinite(video.duration) && video.duration > 0 ? video.duration * 1000 : (durationMs ?? 0);
@@ -150,6 +154,7 @@ export function VideoViewer({
           quote={quote}
           booking={booking}
           onAskQuestion={chat ? () => setChatOpen(true) : undefined}
+          forward={forward}
         />
       )}
 

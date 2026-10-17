@@ -1,4 +1,4 @@
-import type { SellerAlertType } from "@/generated/prisma/enums";
+import type { ProspectRole, SellerAlertType } from "@/generated/prisma/enums";
 import { INTL_LOCALE, type UiLocale } from "@/i18n/locale";
 import { getNamespaceTranslator } from "@/lib/server-translator";
 
@@ -22,6 +22,10 @@ export function extensionNotice(
     inactiveDays?: number;
     expiresAt?: string;
     meetingAt?: string | null;
+    forwardedBy?: string | null;
+    forwardedTo?: string;
+    forwardedToRole?: ProspectRole | null;
+    decisionMaker?: boolean;
   },
   locale: UiLocale,
   timezone = "Europe/Paris",
@@ -71,6 +75,20 @@ export function extensionNotice(
         title: t("notice.quoteRequested.title", { who }),
         body: payload.message ? quote(payload.message, 110) : t("notice.quoteRequested.bodyAfter", { doc }),
       };
+    case "DOCUMENT_FORWARDED": {
+      const role = payload.forwardedToRole
+        ? ` (${getNamespaceTranslator(locale, "labels")(`prospectRole.${payload.forwardedToRole}`)})`
+        : "";
+      const to = `${payload.forwardedTo ?? t("message.documentForwarded.someone")}${role}`;
+      return {
+        title: t("notice.documentForwarded.title", { from: payload.forwardedBy ?? who }),
+        body: payload.decisionMaker
+          ? t("notice.documentForwarded.bodyDecision", { to })
+          : payload.message
+            ? t("notice.documentForwarded.bodyQuote", { to, text: truncate(payload.message, 90) })
+            : t("notice.documentForwarded.body", { to }),
+      };
+    }
     case "DRAFT_READY":
       return { title: t("notice.draftReady.title"), body: t("notice.draftReady.body", { who }) };
     case "COMMITTEE_LIVE":

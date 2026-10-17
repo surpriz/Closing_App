@@ -17,7 +17,7 @@ import { postSignedWebhook } from "./webhooks";
  * retried by the cron, since a missed one sends the prospect the generic step 3.
  */
 
-export type ReaderEvent = "reader.opened" | "reader.hot";
+export type ReaderEvent = "reader.opened" | "reader.hot" | "reader.forwarded";
 
 /** Waits before each retry; past the last one the event is dropped. */
 const RETRY_DELAYS_MS = [60_000, 5 * 60_000, 30 * 60_000, 2 * 60 * 60_000];
@@ -48,7 +48,7 @@ async function smartReader(linkId: string) {
 }
 
 /** Fired once per reader and event. Does nothing without a webhook or for other readers. */
-export async function emitReaderEvent(linkId: string, event: ReaderEvent) {
+export async function emitReaderEvent(linkId: string, event: Exclude<ReaderEvent, "reader.forwarded">) {
   // Most tracking flushes land here after the event went out: one cheap lookup
   if (await prisma.webhookEvent.findFirst({ where: { linkId, event }, select: { id: true } })) return;
   const reader = await smartReader(linkId);
@@ -79,10 +79,46 @@ export async function emitReaderEvent(linkId: string, event: ReaderEvent) {
     dashboardUrl: `${getPublicAppUrl()}/links/${link.id}`,
   };
 
+  await queueWebhookEvent(link.id, event, dedupeKey, payload);
+}
+
+/**
+ * A reader passed the proposal on with "Transférer": for a CRM or a sequence
+ * tool, a new contact in the buying team. Any link, not only Smart Links.
+ */
+export async function emitForwardEvent(forwardId: string) {
+  const forward = await prisma.linkForward.findUnique({
+    where: { id: forwardId },
+    select: {
+      linkId: true,
+      message: true,
+      createdAt: true,
+      link: { select: { organizationId: true, document: { select: { name: true } } } },
+      fromProspect: { select: { email: true, name: true } },
+      toProspect: { select: { email: true, name: true, company: true } },
+    },
+  });
+  if (!forward) return;
+  const settings = await getWorkspaceSettings(forward.link.organizationId);
+  if (!settings.outboundWebhookUrl || !settings.webhookSecret) return;
+
+  await queueWebhookEvent(forward.linkId, "reader.forwarded", `reader.forwarded:${forwardId}`, {
+    linkId: forward.linkId,
+    document: forward.link.document.name,
+    from: forward.fromProspect,
+    to: forward.toProspect,
+    message: forward.message,
+    forwardedAt: forward.createdAt.toISOString(),
+    dashboardUrl: `${getPublicAppUrl()}/links/${forward.linkId}#circuit`,
+  });
+}
+
+/** Stored first, then sent: the cron retries what fails. Once per dedupe key. */
+async function queueWebhookEvent(linkId: string, event: ReaderEvent, dedupeKey: string, payload: object) {
   let id: string;
   try {
     ({ id } = await prisma.webhookEvent.create({
-      data: { linkId: link.id, event, dedupeKey, payload },
+      data: { linkId, event, dedupeKey, payload },
       select: { id: true },
     }));
   } catch (error) {

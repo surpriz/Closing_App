@@ -19,6 +19,7 @@ import { DealContextSummaryDetails } from "@/components/dashboard/deal-context-d
 import { dealContextSummary } from "@/components/dashboard/deal-context-summary";
 import { DealVerdict } from "@/components/dashboard/deal-verdict";
 import { FollowupsPanel } from "@/components/dashboard/followups-panel";
+import { ForwardTreeView } from "@/components/dashboard/forward-tree";
 import { LinkCapsules } from "@/components/dashboard/link-capsules";
 import { LinkTestTools } from "@/components/dashboard/link-test-tools";
 import { LiveActivity } from "@/components/dashboard/live-activity";
@@ -265,6 +266,18 @@ export default async function LinkDetailPage({
                 <VoiceComments comments={deal.voiceComments} />
               </DealSection>
             )}
+
+            {!link.shared &&
+              (deal.forwardTree.hasForwards ||
+                deal.forwardTree.offClozer.length > 0) && (
+                <DealSection
+                  id="circuit"
+                  title={t("circuitTitle")}
+                  hint={t("circuitHint")}
+                >
+                  <ForwardTreeView tree={deal.forwardTree} now={now} />
+                </DealSection>
+              )}
 
             <DealSection id="activite" title={t("activityTitle")}>
               <div className="pt-4 pl-3">

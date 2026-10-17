@@ -132,3 +132,21 @@ describe("pickReaderAlert", () => {
     expect(pickReaderAlert([], "fr")).toEqual({ notify: null, silent: [] });
   });
 });
+
+describe("readers who got the proposal through Transférer", () => {
+  const marie = prospect("p4", "marie@acme.fr", { name: "Marie", origin: "FORWARDED", forwardedById: "p1" });
+  const daf = prospect("p5", "daf@acme.fr", { origin: "FORWARDED", forwardedById: "p1" });
+
+  it("says who forwarded it when they open it", () => {
+    const map = mapOf([view("a", "x", { prospectId: "p1", startedAt: ago(60) }), view("b", "y", { prospectId: "p4" })], [anne, marie]);
+    const alert = detectNewReader(map, "l1", "b", "fr");
+    expect(alert?.reason).toBe("Marie (acme.fr) ouvre la proposition que Anne Martin lui a transférée");
+    expect(alert?.forwardedBy).toBe("Anne Martin");
+  });
+
+  it("says it too when a decision maker opens it", () => {
+    const map = mapOf([view("a", "x", { prospectId: "p1", startedAt: ago(60) }), view("b", "y", { prospectId: "p5" })], [anne, daf]);
+    const alert = detectDecisionMaker(map, "l1", "b", "fr");
+    expect(alert?.reason).toContain("à qui Anne Martin a transféré la proposition");
+  });
+});
