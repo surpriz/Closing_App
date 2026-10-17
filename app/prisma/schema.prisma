@@ -400,6 +400,7 @@ enum ViewSignalType {
   DOWNLOAD // downloaded the PDF
   EXIT_PROMPT_SHOWN // about to leave: the assistant offered to answer a question
   EXIT_PROMPT_OPENED // and the reader took it
+  TRANSLATED // read the document translated; detail = the language
 }
 
 enum ProspectActionType {
@@ -522,10 +523,13 @@ model Document {
   displayTitle      String?
   // sha256 of the PDF bytes, so the same file sent twice is stored and read once
   contentSha256     String?
+  // ISO 639-1 code of the content, guessed by the AI reading. Null: unknown, every language is offered
+  language          String?
 
-  pages    DocumentPage[]
-  links    Link[]
-  capsules PageCapsule[]
+  pages        DocumentPage[]
+  links        Link[]
+  capsules     PageCapsule[]
+  translations DocumentTranslation[]
 
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
@@ -555,6 +559,23 @@ model DocumentPage {
   @@map("document_pages")
 }
 
+// A page (or the web article) translated for a reader, kept so each language is paid for once per document
+model DocumentTranslation {
+  id         String   @id @default(cuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  locale  String // SUPPORTED_LOCALES
+  part    Int // PDF: the page number. URL: 1, the whole article as HTML
+  content String
+  model   String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([documentId, locale, part])
+  @@map("document_translations")
+}
+
 // One link = one proposal sent to one prospect company. Public URL: /v/[slug]
 model Link {
   id             String       @id @default(cuid())
@@ -578,6 +599,8 @@ model Link {
   voiceCommentsEnabled Boolean    @default(true)
   // "Prendre rendez-vous", independent of ctaEnabled: a CV or a deck calls for a meeting, not a signature
   bookingEnabled       Boolean    @default(true)
+  // the reader can pick a language and read the document translated by the AI (PDF and web reader view)
+  translationEnabled   Boolean    @default(true)
   // Booking page shown to the prospect; null = the link creator's (NotificationPreference.bookingUrl)
   bookingUrl           String?
   // The prospect booked a meeting from the viewer: automatic follow-ups stop for good
@@ -761,6 +784,7 @@ model ViewSignal {
   link    Link           @relation(fields: [linkId], references: [id], onDelete: Cascade)
   type    ViewSignalType
   valueMs Int?
+  detail  String? // TRANSLATED: the language read in
 
   createdAt DateTime @default(now())
 

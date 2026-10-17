@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getViewerLabels, pickLocale, type ViewerLabels } from "./viewer";
+import { chosenLocale, getViewerLabels, pickLocale, type ViewerLabels } from "./viewer";
 
 const LOCALES = ["en", "fr", "es", "de"] as const;
 
@@ -77,5 +77,18 @@ describe("pickLocale", () => {
     expect(pickLocale("ja,de;q=0.5")).toBe("de");
     expect(pickLocale("ja")).toBe("en");
     expect(pickLocale(null)).toBe("en");
+  });
+});
+
+describe("chosenLocale", () => {
+  it("keeps a language the viewer offers", () => {
+    expect(chosenLocale("de")).toBe("de");
+    expect(chosenLocale("pt")).toBe("pt");
+  });
+
+  it("ignores anything else", () => {
+    expect(chosenLocale(undefined)).toBeNull();
+    expect(chosenLocale("ja")).toBeNull();
+    expect(chosenLocale("en-US")).toBeNull();
   });
 });

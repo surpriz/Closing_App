@@ -16,7 +16,9 @@ import { CtaBar } from "./cta-bar";
 import { ExpiryChip } from "./expiry-countdown";
 import { PrivacyNotice } from "./privacy-notice";
 import { ReaderArticle } from "./reader-article";
+import { LanguageMenu, TranslationStrip } from "./translation-controls";
 import { usePageTracking } from "./use-page-tracking";
+import { useTranslatedPart, useViewerTranslation, type ViewerTranslation } from "./use-translation";
 import { useVideoProgress } from "./use-video-progress";
 import { sendSignal } from "./view-signal";
 import { ViewerHeader } from "./viewer-header";
@@ -46,6 +48,8 @@ type Props = {
   countdown?: boolean;
   /** The seller's welcome message, if any: a web page has no pages to hang clips on. */
   welcome: ViewerCapsule | null;
+  /** Only the reader view can be translated: null for a framed site, the menu then only changes the labels. */
+  translation: ViewerTranslation | null;
 };
 
 // URL documents (Notion, Loom, Figma...) are tracked as a single page
@@ -66,6 +70,7 @@ export function WebViewer({
   chat,
   countdown,
   welcome,
+  translation,
 }: Props) {
   const provider = videoProvider(embedUrl);
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -80,6 +85,9 @@ export function WebViewer({
   });
   useVideoProgress(iframeRef, provider, watchedRef, markActive);
   const openExternal = useExternalVisit(getViewId);
+  const translated = useViewerTranslation(translation, getViewId);
+  const article = useTranslatedPart(slug, reader ? translated.locale : null, null, true, translated.onTranslated);
+  const articleHtml = article?.status === "done" && article.content ? article.content : readerHtml;
   // The bottom bar carries the answers, the booking button, or both
   const barVisible = ctaEnabled || !!booking || !!forward;
   const [chatOpen, setChatOpen] = useState(false);
@@ -94,6 +102,21 @@ export function WebViewer({
         documentName={documentName}
         senderName={senderName}
         labels={labels}
+        below={
+          <TranslationStrip
+            labels={labels}
+            locale={locale}
+            source={translation?.source ?? null}
+            target={translated.target}
+            showOriginal={translated.showOriginal}
+            onToggleOriginal={translated.toggleOriginal}
+            status={article?.status === "done" ? null : article?.status}
+            offer={translated.offer}
+            pending={translated.pending}
+            onAccept={translated.choose}
+            onDismiss={translated.dismissOffer}
+          />
+        }
         aside={
           <>
             {countdown && <ExpiryChip labels={labels} />}
@@ -110,6 +133,13 @@ export function WebViewer({
                 <span className="hidden sm:inline">{labels.openExternal}</span>
               </a>
             )}
+            <LanguageMenu
+              current={locale}
+              source={translation?.source ?? null}
+              labels={labels}
+              pending={translated.pending}
+              onChoose={translated.choose}
+            />
           </>
         }
       />
@@ -117,10 +147,11 @@ export function WebViewer({
       <main
         className={`flex min-h-0 flex-1 flex-col gap-3 px-2 pt-2 sm:px-4 sm:pt-4 ${barVisible ? "pb-[calc(var(--decision-bar-h,4rem)+0.75rem)]" : chat ? "pb-20" : "pb-3"}`}
       >
-        {!embedUrl && readerHtml ? (
+        {!embedUrl && articleHtml ? (
           <ReaderArticle
             ref={(element) => registerPage(1, element)}
-            html={readerHtml}
+            html={articleHtml}
+            lang={articleHtml === readerHtml ? undefined : (translated.locale ?? undefined)}
             title={documentName}
             sourceLabel={labels.readerSource}
             externalUrl={externalUrl}

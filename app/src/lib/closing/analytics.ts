@@ -39,7 +39,7 @@ export async function getReadingAnalytics(scope: Scope) {
         prospect: { select: { name: true, email: true, company: true } },
         // Page 1 depth is the share watched when the document is a video
         pageViews: { where: { pageNumber: 1 }, select: { maxScrollDepth: true } },
-        signals: { select: { type: true, valueMs: true } },
+        signals: { select: { type: true, valueMs: true, detail: true } },
       },
     }),
   ]);

@@ -9,6 +9,7 @@ import type { ChatWidgetData } from "@/components/viewer/chat-widget";
 import { EmailGate } from "@/components/viewer/email-gate";
 import { ExpiryGate } from "@/components/viewer/expiry-gate";
 import type { ForwardOptions } from "@/components/viewer/forward-dialog";
+import type { ViewerTranslation } from "@/components/viewer/use-translation";
 import { ForwardHandoff } from "@/components/viewer/forward-handoff";
 import { LinkExpired } from "@/components/viewer/link-expired";
 import { PdfViewer } from "@/components/viewer/pdf-viewer";
@@ -30,10 +31,13 @@ import {
   showsCountdown,
   viewerDeadline,
 } from "@/lib/closing/expiry";
+import type { SupportedLocale } from "@/lib/closing/constants";
 import { canForward } from "@/lib/closing/forward/rules";
 import {
+  chosenLocale,
   getViewerLabels,
   pickLocale,
+  VIEWER_LOCALE_COOKIE,
   type ViewerLabels,
 } from "@/lib/closing/i18n/viewer";
 import {
@@ -47,6 +51,7 @@ import { firstNameOf } from "@/lib/closing/share/compose";
 import { viewerSenderName } from "@/lib/closing/sender-name";
 import { parseSmartParams } from "@/lib/closing/shared/smart-params";
 import { VISITOR_COOKIE } from "@/lib/closing/tracking/visitor";
+import { guessLanguage, translationTarget } from "@/lib/closing/translation/translation";
 import { prisma } from "@/lib/db";
 import { isWorkspaceMember } from "@/lib/session";
 
@@ -81,7 +86,10 @@ export default async function ViewerPage({
   const { link, expired } = resolved;
 
   const requestHeaders = await headers();
-  const locale = pickLocale(requestHeaders.get("accept-language"));
+  const browserLocale = pickLocale(requestHeaders.get("accept-language"));
+  // The language picked in the viewer's menu wins over the browser's
+  const chosen = chosenLocale((await cookies()).get(VIEWER_LOCALE_COOKIE)?.value);
+  const locale = chosen ?? browserLocale;
   const labels = getViewerLabels(locale);
   const [access, settings, isSeller, creator] = await Promise.all([
     getViewerAccess(link),
@@ -282,6 +290,7 @@ export default async function ViewerPage({
   }
 
   const capsules = await loadCapsules(slug, link);
+  const translation = await loadTranslation(link, { chosen, browserLocale });
 
   if (link.document.kind === "URL" && link.document.externalUrl) {
     // Loaded apart, and only when needed: an article weighs far more than the rest of the link
@@ -315,6 +324,7 @@ export default async function ViewerPage({
               capsules.find((capsule) => capsule.pageNumber === WELCOME_PAGE) ??
               null
             }
+            translation={reader?.readerHtml ? translation : null}
           />,
         )}
       </>
@@ -350,6 +360,7 @@ export default async function ViewerPage({
           decisionPages={pricingPages}
           capsules={capsules}
           voiceComments={link.voiceCommentsEnabled}
+          translation={translation}
         />,
       )}
     </>
@@ -414,6 +425,32 @@ async function loadCapsules(
       poster: row.posterPathname ? `${src}?poster` : null,
     };
   });
+}
+
+/**
+ * What the reader can do with the document's language. Documents read before
+ * the AI gave their language get a guess from their first pages.
+ */
+async function loadTranslation(
+  link: { translationEnabled: boolean; document: { id: string; language: string | null } },
+  reader: { chosen: SupportedLocale | null; browserLocale: SupportedLocale },
+): Promise<ViewerTranslation | null> {
+  if (!link.translationEnabled || !getLanguageModel("translate")) return null;
+  let source = link.document.language;
+  if (!source) {
+    const pages = await prisma.documentPage.findMany({
+      where: { documentId: link.document.id, text: { not: null } },
+      orderBy: { pageNumber: "asc" },
+      take: 3,
+      select: { text: true },
+    });
+    source = guessLanguage(pages.map((page) => page.text).join("\n"));
+  }
+  return {
+    source,
+    target: translationTarget(reader.chosen, source),
+    offer: !reader.chosen && source && source !== reader.browserLocale ? reader.browserLocale : null,
+  };
 }
 
 // Shown only when on for the link, an AI is configured and the document has something to answer from

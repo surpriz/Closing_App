@@ -28,6 +28,7 @@ export async function readerLinkFor(
     bookingUrl: string | null;
     chatEnabled: boolean;
     voiceCommentsEnabled: boolean;
+    translationEnabled: boolean;
     followupsEnabled: boolean;
     expiresAt: Date | null;
     hotPricingThresholdSec: number | null;
@@ -71,6 +72,7 @@ export async function readerLinkFor(
       bookingUrl: parent.bookingUrl,
       chatEnabled: parent.chatEnabled,
       voiceCommentsEnabled: parent.voiceCommentsEnabled,
+      translationEnabled: parent.translationEnabled,
       followupsEnabled: parent.followupsEnabled,
       hotPricingThresholdSec: parent.hotPricingThresholdSec,
       channels: parent.channels,

@@ -1,5 +1,7 @@
 import type { ViewSignalType } from "@/generated/prisma/enums";
 
+import { SUPPORTED_LOCALES } from "../constants";
+
 /** Time away from the tab counted as time on the site, at most. Beyond it the reader moved on. */
 export const MAX_EXTERNAL_AWAY_MS = 30 * 60 * 1000;
 /** A reader clicking around cannot fill the table. */
@@ -16,4 +18,13 @@ export function signalValue(type: ViewSignalType, valueMs: number | undefined): 
   if (type !== "EXTERNAL_RETURN") return null;
   if (valueMs === undefined || valueMs < MIN_EXTERNAL_AWAY_MS) return undefined;
   return Math.min(Math.round(valueMs), MAX_EXTERNAL_AWAY_MS);
+}
+
+/**
+ * The detail kept with a signal: the language of a translation, nothing for
+ * the others. Undefined when a TRANSLATED signal names no language we offer.
+ */
+export function signalDetail(type: ViewSignalType, detail: string | undefined): string | null | undefined {
+  if (type !== "TRANSLATED") return null;
+  return (SUPPORTED_LOCALES as readonly string[]).includes(detail ?? "") ? detail : undefined;
 }

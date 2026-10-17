@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { MAX_EXTERNAL_AWAY_MS, signalValue } from "./view-signals";
+import { MAX_EXTERNAL_AWAY_MS, signalDetail, signalValue } from "./view-signals";
 
 describe("signalValue", () => {
   it("keeps no value on plain signals", () => {
@@ -16,5 +16,20 @@ describe("signalValue", () => {
   it("drops a glance at the other tab", () => {
     expect(signalValue("EXTERNAL_RETURN", 1500)).toBeUndefined();
     expect(signalValue("EXTERNAL_RETURN", undefined)).toBeUndefined();
+  });
+});
+
+describe("signalDetail", () => {
+  it("keeps the language of a translation", () => {
+    expect(signalDetail("TRANSLATED", "de")).toBe("de");
+  });
+
+  it("drops a translation into a language we do not offer", () => {
+    expect(signalDetail("TRANSLATED", "xx")).toBeUndefined();
+    expect(signalDetail("TRANSLATED", undefined)).toBeUndefined();
+  });
+
+  it("keeps nothing on the other signals", () => {
+    expect(signalDetail("DOWNLOAD", "de")).toBeNull();
   });
 });

@@ -21,7 +21,15 @@ export type LinkSwitches = Record<LinkSwitch, boolean>;
 
 type PanelT = ReturnType<typeof useTranslations<"deal.linkSettingsPanel">>;
 
-type Item = { key: LinkSwitch; label: string; hint?: string; pdfOnly?: boolean; personalOnly?: boolean };
+type Item = {
+  key: LinkSwitch;
+  label: string;
+  hint?: string;
+  pdfOnly?: boolean;
+  /** A video has no text to translate. */
+  noVideo?: boolean;
+  personalOnly?: boolean;
+};
 
 const item = (t: PanelT, key: LinkSwitch, extra: Partial<Item> = {}): Item => ({
   key,
@@ -44,6 +52,7 @@ const groups = (t: PanelT): { id: "access" | "prospect" | "tracking"; title: str
       item(t, "bookingEnabled"),
       item(t, "chatEnabled"),
       item(t, "voiceCommentsEnabled", { pdfOnly: true }),
+      item(t, "translationEnabled", { noVideo: true }),
     ],
   },
   {
@@ -143,7 +152,12 @@ export function LinkSettingsPanel({
           <h3 className="text-small font-medium text-muted-foreground">{group.title}</h3>
           <div className="divide-y divide-border rounded-lg border border-border bg-card">
             {group.items
-              .filter((item) => (kind === "FILE" || !item.pdfOnly) && !(shared && item.personalOnly))
+              .filter(
+                (item) =>
+                  (kind === "FILE" || !item.pdfOnly) &&
+                  !(kind === "VIDEO" && item.noVideo) &&
+                  !(shared && item.personalOnly),
+              )
               // Under a video pitch, the buttons are "Demander un devis"
               .map((item) => (kind === "VIDEO" && item.key === "ctaEnabled" ? { ...item, ...videoCta } : item))
               .map((item) => (

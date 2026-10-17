@@ -29,6 +29,7 @@ const serverEnvSchema = z.object({
   AI_MODEL_CLASSIFY: z.string().optional(),
   AI_MODEL_ANALYZE: z.string().optional(),
   AI_MODEL_HELP: z.string().optional(),
+  AI_MODEL_TRANSLATE: z.string().optional(),
   AI_MODEL_TRANSCRIBE: z.string().optional(),
   // Deal analyses per workspace per day, and AI spend per day across all workspaces
   AI_BRAIN_DAILY_LIMIT: z.coerce.number().int().min(0).default(200),
@@ -37,6 +38,8 @@ const serverEnvSchema = z.object({
   AI_CHAT_DAILY_BUDGET_USD: z.coerce.number().min(0).default(10),
   // Help assistant for users, across all workspaces, USD per day
   AI_HELP_DAILY_BUDGET_USD: z.coerce.number().min(0).default(5),
+  // Documents translated for readers, per workspace, USD per day. Each page is paid once per language
+  AI_TRANSLATE_DAILY_BUDGET_USD: z.coerce.number().min(0).default(5),
   // Where the help assistant sends users' suggestions, bugs and unanswered questions. Unset: stored only
   HELP_INBOX_EMAIL: z.preprocess((value) => value || undefined, z.email().optional()),
 

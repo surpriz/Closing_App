@@ -54,6 +54,7 @@ import { getSellerPrefs } from "@/lib/closing/notify/preferences";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
 import { rankSharedReaders } from "@/lib/closing/shared/hot-readers";
 import { readingByLink } from "@/lib/closing/shared/reading-time";
+import { languageName } from "@/lib/closing/translation/translation";
 import { getLanguageModel } from "@/lib/closing/ai/provider";
 import type { EngagementReason } from "@/lib/closing/types";
 import { prisma } from "@/lib/db";
@@ -311,6 +312,7 @@ export async function loadDeal(
       bookingEnabled: link.bookingEnabled,
       chatEnabled: link.chatEnabled,
       voiceCommentsEnabled: link.voiceCommentsEnabled,
+      translationEnabled: link.translationEnabled,
       followupsEnabled: link.followupsEnabled,
     },
     expiresAt: link.expiresAt?.toISOString() ?? null,
@@ -548,7 +550,7 @@ export async function loadDeal(
               isEmbeddedVideo,
             )
           : null,
-        ...signalDetails(t, view.signals),
+        ...signalDetails(t, view.signals, locale),
         [view.deviceType, view.browser].filter(Boolean).join(" "),
         view.timezone,
       ]
@@ -862,7 +864,8 @@ function depthDetail(t: LoadDealT, depth: number, video: boolean) {
 /** What the reader did around the content, for a line of the timeline. */
 function signalDetails(
   t: LoadDealT,
-  signals: { type: ViewSignalType; valueMs: number | null }[],
+  signals: { type: ViewSignalType; valueMs: number | null; detail: string | null }[],
+  locale: string,
 ) {
   const details: string[] = [];
   if (signals.some((s) => s.type === "EXTERNAL_OPEN")) {
@@ -880,5 +883,9 @@ function signalDetails(
     details.push(t("pdfDownloaded"));
   if (signals.some((s) => s.type === "EXIT_PROMPT_OPENED"))
     details.push(t("exitAssistant"));
+  for (const s of signals) {
+    if (s.type === "TRANSLATED" && s.detail)
+      details.push(t("readTranslated", { language: languageName(s.detail, locale) }));
+  }
   return details;
 }

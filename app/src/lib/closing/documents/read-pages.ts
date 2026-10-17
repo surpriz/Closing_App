@@ -9,6 +9,7 @@ import { getLanguageModel, getTranscriptionModel, THINKING_ROOM_TOKENS } from ".
 import { recordAiUsage } from "../ai/usage";
 import { followDocumentType } from "./create-link";
 import { DOC_TYPES } from "./doc-types";
+import { cleanLanguage } from "../translation/translation";
 import { cleanDisplayTitle } from "./link-title";
 import { inferOfferFromDocument } from "./infer-offer";
 import {
@@ -39,7 +40,12 @@ const readingSchema = z.object({
   ),
 });
 
-const classifySchema = z.object({ docType: z.enum(DOC_TYPES), purpose: z.string(), title: z.string() });
+const classifySchema = z.object({
+  docType: z.enum(DOC_TYPES),
+  purpose: z.string(),
+  title: z.string(),
+  language: z.string(),
+});
 /** Enough of the start of a document to tell a quote from a résumé. */
 const CLASSIFY_CHARS = 4000;
 
@@ -74,6 +80,7 @@ async function classifyDocument(
       docType: output.docType,
       purpose: output.purpose.trim().slice(0, 200) || null,
       title: cleanDisplayTitle(output.title),
+      language: cleanLanguage(output.language),
     };
   } catch (error) {
     console.error("[documents] classification failed", error);
@@ -151,6 +158,7 @@ export async function readDocumentPages(documentId: string): Promise<ReadPagesOu
         ...(keepType ? {} : { docType: classified.docType }),
         docPurpose: classified.purpose,
         displayTitle: classified.title,
+        language: classified.language,
       },
     });
     if (!keepType) await followDocumentType(document.id);

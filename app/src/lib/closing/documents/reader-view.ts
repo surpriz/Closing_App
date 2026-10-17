@@ -80,6 +80,14 @@ function serialize(node: Node, base: URL, inPre = false): string {
   return `<${tag}>${inPre || tag === "pre" ? inner : inner.trim()}</${tag}>`;
 }
 
+/** Only the tags and attributes the reader view allows, links made absolute against `base`. */
+export function cleanArticleHtml(html: string, base: URL) {
+  const { document } = parseHTML(`<!doctype html><html><body>${html}</body></html>`);
+  return serialize(document.body as unknown as Node, base)
+    .replace(/\s*(<\/?(?:p|h[2-4]|ul|ol|li|blockquote|figure|figcaption|table|thead|tbody|tr|hr)>)\s*/g, "$1")
+    .trim();
+}
+
 /**
  * The article of a page that refuses to be framed, cleaned to plain HTML the
  * viewer can show in Clozer. Null when the page has no article (an app, a
@@ -97,10 +105,7 @@ export function extractReaderHtml(html: string, pageUrl: URL): string | null {
     );
     const article = new Readability(document as unknown as Document, { charThreshold: MIN_ARTICLE_CHARS }).parse();
     if (!article?.content || (article.textContent ?? "").trim().length < MIN_ARTICLE_CHARS) return null;
-    const { document: content } = parseHTML(`<!doctype html><html><body>${article.content}</body></html>`);
-    const cleaned = serialize(content.body as unknown as Node, pageUrl)
-      .replace(/\s*(<\/?(?:p|h[2-4]|ul|ol|li|blockquote|figure|figcaption|table|thead|tbody|tr|hr)>)\s*/g, "$1")
-      .trim();
+    const cleaned = cleanArticleHtml(article.content, pageUrl);
     if (!cleaned || Buffer.byteLength(cleaned) > MAX_READER_BYTES) return null;
     if (!cover || cleaned.includes("<img")) return cleaned;
     return `<figure><img src="${escape(cover)}" alt="" referrerpolicy="no-referrer"></figure>${cleaned}`;

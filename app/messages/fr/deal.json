@@ -209,6 +209,8 @@
     "chatEnabledHint": "Il répond à partir du document et vous transmet le reste.",
     "voiceCommentsEnabled": "Laisser un vocal sur une page",
     "voiceCommentsEnabledHint": "Vous recevez l'audio et sa transcription.",
+    "translationEnabled": "Lire le document dans sa langue",
+    "translationEnabledHint": "Traduit par l'IA à la demande du lecteur, l'original reste accessible.",
     "followupsEnabled": "Relances préparées par Clozer",
     "followupsEnabledHint": "Coupé : le deal reste suivi, sans relance.",
     "videoCta": "Demander un devis",
@@ -494,6 +496,7 @@
     "siteOpened": "site ouvert dans un onglet",
     "pdfDownloaded": "PDF téléchargé",
     "exitAssistant": "a ouvert l'assistant en partant",
+    "readTranslated": "lu traduit en {language}",
     "forwarded": "{from} a transféré le document à {to}",
     "notDelivered": "Email non remis"
   },

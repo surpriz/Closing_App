@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { extractReaderHtml } from "./reader-view";
+import { cleanArticleHtml, extractReaderHtml } from "./reader-view";
 
 const BASE = new URL("https://news.example.com/2026/10/article");
 const PARAGRAPH =
@@ -62,5 +62,19 @@ describe("extractReaderHtml", () => {
     expect(extractReaderHtml("<html><body><div id='root'></div><script>boot()</script></body></html>", BASE)).toBeNull();
     expect(extractReaderHtml("<html><body><p>Bienvenue</p></body></html>", BASE)).toBeNull();
     expect(extractReaderHtml("", BASE)).toBeNull();
+  });
+});
+
+describe("cleanArticleHtml", () => {
+  // A translated article comes back from a model: it gets the same cleaning as the original
+  it("drops what a model could have slipped in", () => {
+    const html =
+      '<p onclick="steal()">Bonjour <a href="javascript:steal()">ici</a></p><script>steal()</script><img src="http://x.test/a.png" onerror="steal()"><iframe src="https://evil.test"></iframe>';
+    expect(cleanArticleHtml(html, BASE)).toBe("<p>Bonjour ici</p>");
+  });
+
+  it("keeps the article as it was", () => {
+    const html = '<h2>Titre</h2><p>Un <a href="https://example.com/" target="_blank" rel="noopener noreferrer nofollow">lien</a></p>';
+    expect(cleanArticleHtml(html, BASE)).toBe(html);
   });
 });

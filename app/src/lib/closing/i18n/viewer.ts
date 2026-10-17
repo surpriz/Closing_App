@@ -52,6 +52,17 @@ export type ViewerLabels = {
   externalTitle: string;
   /** Before the site name, above the article shown in Clozer. */
   readerSource: string;
+  /** The reader's language menu, and the AI translation of the document. {language} is filled with languageName. */
+  languageMenu: string;
+  originalLanguage: string;
+  translationOffer: string;
+  translationAccept: string;
+  translationDismiss: string;
+  machineTranslated: string;
+  showOriginal: string;
+  showTranslation: string;
+  translating: string;
+  translationFailed: string;
   externalDescription: string;
   sharedBy: string;
   readyPrompt: string;
@@ -180,6 +191,16 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     openExternal: "Open in a new tab",
     externalTitle: "This document opens on its own site",
     readerSource: "Reader view of",
+    languageMenu: "Language",
+    originalLanguage: "original",
+    translationOffer: "This document is in {language}.",
+    translationAccept: "Translate to {language}",
+    translationDismiss: "Keep the original",
+    machineTranslated: "Machine translation. The original prevails.",
+    showOriginal: "Show original",
+    showTranslation: "Show translation",
+    translating: "Translating…",
+    translationFailed: "Translation unavailable for now, here is the original.",
     externalDescription: "It cannot be displayed here. Open it in a new tab, then come back to reply.",
     sharedBy: "Shared by",
     readyPrompt: "What next?",
@@ -334,6 +355,16 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     openExternal: "Ouvrir dans un nouvel onglet",
     externalTitle: "Ce document s'ouvre sur son propre site",
     readerSource: "Version lecture de",
+    languageMenu: "Langue",
+    originalLanguage: "original",
+    translationOffer: "Ce document est en {language}.",
+    translationAccept: "Traduire en {language}",
+    translationDismiss: "Garder l'original",
+    machineTranslated: "Traduction automatique. L'original fait foi.",
+    showOriginal: "Voir l'original",
+    showTranslation: "Voir la traduction",
+    translating: "Traduction en cours…",
+    translationFailed: "Traduction indisponible pour le moment, voici l'original.",
     externalDescription: "Il ne peut pas s'afficher ici. Ouvrez-le dans un nouvel onglet, puis revenez pour répondre.",
     sharedBy: "Envoyé par",
     readyPrompt: "Et pour la suite ?",
@@ -488,6 +519,16 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     openExternal: "Abrir en una pestaña nueva",
     externalTitle: "Este documento se abre en su propio sitio",
     readerSource: "Versión de lectura de",
+    languageMenu: "Idioma",
+    originalLanguage: "original",
+    translationOffer: "Este documento está en {language}.",
+    translationAccept: "Ver en {language}",
+    translationDismiss: "Mantener el original",
+    machineTranslated: "Traducción automática. Prevalece el original.",
+    showOriginal: "Ver el original",
+    showTranslation: "Ver la traducción",
+    translating: "Traduciendo…",
+    translationFailed: "Traducción no disponible por ahora, aquí está el original.",
     externalDescription: "No se puede mostrar aquí. Ábrelo en una pestaña nueva y vuelve para responder.",
     sharedBy: "Enviado por",
     readyPrompt: "¿Qué sigue?",
@@ -642,6 +683,16 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     openExternal: "In neuem Tab öffnen",
     externalTitle: "Dieses Dokument öffnet sich auf seiner eigenen Website",
     readerSource: "Leseansicht von",
+    languageMenu: "Sprache",
+    originalLanguage: "Original",
+    translationOffer: "Dieses Dokument ist auf {language}.",
+    translationAccept: "Auf {language} übersetzen",
+    translationDismiss: "Original behalten",
+    machineTranslated: "Maschinelle Übersetzung. Maßgeblich ist das Original.",
+    showOriginal: "Original anzeigen",
+    showTranslation: "Übersetzung anzeigen",
+    translating: "Wird übersetzt…",
+    translationFailed: "Übersetzung gerade nicht verfügbar, hier ist das Original.",
     externalDescription: "Es kann hier nicht angezeigt werden. Öffnen Sie es in einem neuen Tab und kommen Sie dann zurück, um zu antworten.",
     sharedBy: "Gesendet von",
     readyPrompt: "Wie geht es weiter?",
@@ -772,13 +823,30 @@ export function pickLocale(acceptLanguage: string | null): SupportedLocale {
   return matchLocale(acceptLanguage, SUPPORTED_LOCALES, DEFAULT_LOCALE);
 }
 
+/** The language the reader picked in the viewer's menu: labels, assistant and translation follow it. */
+export const VIEWER_LOCALE_COOKIE = "clozer_viewer_lang";
+export const VIEWER_LOCALE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+
+export function chosenLocale(cookieValue: string | undefined): SupportedLocale | null {
+  return (SUPPORTED_LOCALES as readonly string[]).includes(cookieValue ?? "") ? (cookieValue as SupportedLocale) : null;
+}
+
 export function getViewerLabels(locale: SupportedLocale): ViewerLabels {
   return LABELS[locale as keyof typeof LABELS] ?? LABELS.en;
 }
 
-/** Fills the {sender}, {page} and {email} placeholders of a label. */
-export function fillLabel(text: string, values: { sender?: string; page?: number; email?: string }) {
+/** The language the labels are really in: Italian and Portuguese readers get the English ones. */
+export function labelsLocale(locale: SupportedLocale): SupportedLocale {
+  return locale in LABELS ? locale : "en";
+}
+
+/** Fills the {sender}, {page}, {email} and {language} placeholders of a label. */
+export function fillLabel(
+  text: string,
+  values: { sender?: string; page?: number; email?: string; language?: string },
+) {
   let filled = text;
+  if (values.language !== undefined) filled = filled.replaceAll("{language}", values.language);
   if (values.email !== undefined) filled = filled.replaceAll("{email}", values.email);
   if (values.sender !== undefined) filled = filled.replaceAll("{sender}", values.sender);
   if (values.page !== undefined) filled = filled.replaceAll("{page}", String(values.page));

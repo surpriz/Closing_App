@@ -17,6 +17,8 @@ type Props = {
   kind?: "pdf" | "web" | "video";
   /** Right side: page counter, external link… */
   aside?: React.ReactNode;
+  /** A line under the strip that stays in sight with it (the translation notice). */
+  below?: React.ReactNode;
   /** 0–1, drawn as an ink rule under the header: the reader's own place, nothing more. */
   progress?: number;
   className?: string;
@@ -27,7 +29,7 @@ type Props = {
  * report voice, who sent it, and a lock that always opens the privacy notice
  * (what the sender sees), wherever the reader is in the document.
  */
-export function ViewerHeader({ documentName, senderName, labels, kind = "pdf", aside, progress, className }: Props) {
+export function ViewerHeader({ documentName, senderName, labels, kind = "pdf", aside, below, progress, className }: Props) {
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const noticeId = useId();
 
@@ -77,6 +79,8 @@ export function ViewerHeader({ documentName, senderName, labels, kind = "pdf", a
           </div>
         </div>
       )}
+
+      {below}
 
       {progress !== undefined && (
         <div className="absolute inset-x-0 -bottom-px h-0.5" aria-hidden>

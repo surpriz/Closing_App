@@ -27,6 +27,7 @@ async function findViewerLink(slug: string) {
           posterPathname: true,
           durationMs: true,
           contentSha256: true,
+          language: true,
           archivedAt: true,
         },
       },

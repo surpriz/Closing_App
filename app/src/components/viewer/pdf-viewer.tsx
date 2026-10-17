@@ -15,7 +15,10 @@ import { ChatWidget, type ChatWidgetData } from "./chat-widget";
 import { CtaBar } from "./cta-bar";
 import { ExpiryBanner, ExpiryChip } from "./expiry-countdown";
 import { PrivacyNotice } from "./privacy-notice";
+import { TranslatedPdfPage } from "./translated-page";
+import { LanguageMenu, TranslationStrip } from "./translation-controls";
 import { usePageTracking } from "./use-page-tracking";
+import { useViewerTranslation, type ViewerTranslation } from "./use-translation";
 import { ViewerHeader } from "./viewer-header";
 import { VoiceCommentButton, VoiceCommentPanel } from "./voice-comment-button";
 import type { ForwardOptions } from "./forward-dialog";
@@ -46,6 +49,8 @@ type Props = {
   capsules: ViewerCapsule[];
   /** The prospect may record a voice comment on a page. */
   voiceComments: boolean;
+  /** Null when the document cannot be translated: the menu then only changes the labels. */
+  translation: ViewerTranslation | null;
 };
 
 export function PdfViewer({
@@ -65,11 +70,13 @@ export function PdfViewer({
   decisionPages = [],
   capsules,
   voiceComments,
+  translation,
 }: Props) {
   const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null);
   const [sizes, setSizes] = useState<PageSize[]>([]);
   const [failed, setFailed] = useState(false);
   const { currentPage, registerPage, getViewId } = usePageTracking(slug, sizes.length);
+  const translated = useViewerTranslation(translation, getViewId);
   // The bottom bar carries the answers, the booking button, or both
   const barVisible = ctaEnabled || !!booking || !!forward;
   // Once the reader has seen the price or the last page, the strip stays open
@@ -127,6 +134,20 @@ export function PdfViewer({
         senderName={senderName}
         labels={labels}
         progress={sizes.length > 0 ? currentPage / sizes.length : undefined}
+        below={
+          <TranslationStrip
+            labels={labels}
+            locale={locale}
+            source={translation?.source ?? null}
+            target={translated.target}
+            showOriginal={translated.showOriginal}
+            onToggleOriginal={translated.toggleOriginal}
+            offer={translated.offer}
+            pending={translated.pending}
+            onAccept={translated.choose}
+            onDismiss={translated.dismissOffer}
+          />
+        }
         aside={
           <>
             {countdown && countdown.pricingPages.length === 0 && <ExpiryChip labels={labels} />}
@@ -141,6 +162,13 @@ export function PdfViewer({
                 </span>
               </span>
             )}
+            <LanguageMenu
+              current={locale}
+              source={translation?.source ?? null}
+              labels={labels}
+              pending={translated.pending}
+              onChoose={translated.choose}
+            />
           </>
         }
       />
@@ -164,18 +192,33 @@ export function PdfViewer({
           </div>
         )}
         {pdf &&
-          sizes.map((size, index) => (
-            <PdfPage
-              key={index + 1}
-              pdf={pdf}
-              pageNumber={index + 1}
-              size={size}
-              registerPage={registerPage}
-              overlay={countdown?.pricingPages.includes(index + 1) ? <ExpiryBanner labels={labels} /> : undefined}
-              // With a bar, the mic sits in it; without, in the corner of the page on screen
-              corner={!barVisible && index + 1 === currentPage ? voiceTrigger("corner") : undefined}
-            />
-          ))}
+          sizes.map((size, index) => {
+            const pageNumber = index + 1;
+            const overlay = countdown?.pricingPages.includes(pageNumber) ? <ExpiryBanner labels={labels} /> : undefined;
+            // With a bar, the mic sits in it; without, in the corner of the page on screen
+            const corner = !barVisible && pageNumber === currentPage ? voiceTrigger("corner") : undefined;
+            const original = <PdfPage pdf={pdf} pageNumber={pageNumber} size={size} overlay={overlay} corner={corner} />;
+            return (
+              // The tracked element stays the same when the reader switches between the original and the translation
+              <div key={pageNumber} ref={(element) => registerPage(pageNumber, element)} data-page={pageNumber}>
+                {translated.locale ? (
+                  <TranslatedPdfPage
+                    slug={slug}
+                    locale={translated.locale}
+                    pageNumber={pageNumber}
+                    size={size}
+                    labels={labels}
+                    original={original}
+                    overlay={overlay}
+                    corner={corner}
+                    onTranslated={translated.onTranslated}
+                  />
+                ) : (
+                  original
+                )}
+              </div>
+            );
+          })}
         {/* Also shown here because the email gate is optional per link */}
         <PrivacyNotice labels={labels} className="mx-auto border-t border-border px-2 pt-4 text-center" />
       </main>

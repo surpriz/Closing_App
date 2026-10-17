@@ -10,8 +10,8 @@ function startOfUtcDay(now: Date) {
 /**
  * Two ceilings on AI spend: analyses per workspace per day, and dollars per
  * day across all workspaces. Over either, the rule-based advice takes over.
- * The prospect assistant and the help assistant have their own budgets
- * (canChat, canHelp), and voice comments are transcribed whatever this says:
+ * The prospect assistant, the help assistant and translations have their own
+ * budgets (canChat, canHelp, canTranslate), and voice comments are transcribed whatever this says:
  * neither prospects nor help questions must starve the analyses.
  */
 export async function canAnalyze(organizationId: string, now = new Date()) {
@@ -20,7 +20,7 @@ export async function canAnalyze(organizationId: string, now = new Date()) {
 
   const [analyses, spend] = await Promise.all([
     prisma.dealInsight.count({ where: { organizationId, createdAt: { gte: since }, model: { not: null } } }),
-    prisma.aiUsage.aggregate({ where: { createdAt: { gte: since }, purpose: { notIn: ["chat", "transcribe", "help"] } }, _sum: { costMicroUsd: true } }),
+    prisma.aiUsage.aggregate({ where: { createdAt: { gte: since }, purpose: { notIn: ["chat", "transcribe", "help", "translate"] } }, _sum: { costMicroUsd: true } }),
   ]);
   if (analyses >= AI_BRAIN_DAILY_LIMIT) return false;
   return (spend._sum.costMicroUsd ?? 0) < AI_DAILY_BUDGET_USD * 1_000_000;
@@ -50,4 +50,14 @@ export async function canHelp(now = new Date()) {
     _sum: { costMicroUsd: true },
   });
   return (spend._sum.costMicroUsd ?? 0) < AI_HELP_DAILY_BUDGET_USD * 1_000_000;
+}
+
+/** Ceiling for documents translated for readers, per workspace. */
+export async function canTranslate(organizationId: string, now = new Date()) {
+  const { AI_TRANSLATE_DAILY_BUDGET_USD } = getEnv();
+  const spend = await prisma.aiUsage.aggregate({
+    where: { organizationId, createdAt: { gte: startOfUtcDay(now) }, purpose: "translate" },
+    _sum: { costMicroUsd: true },
+  });
+  return (spend._sum.costMicroUsd ?? 0) < AI_TRANSLATE_DAILY_BUDGET_USD * 1_000_000;
 }

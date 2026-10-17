@@ -4,19 +4,27 @@ import { createOpenAI } from "@ai-sdk/openai";
 import type { AiProvider } from "../types";
 import { resolveAiProvider } from "./provider-choice";
 
-/** `help` answers the users themselves about Clozer; `chat` answers prospects. */
-export type AiPurpose = "followup" | "chat" | "classify" | "analyze" | "help";
+/** `help` answers the users themselves about Clozer; `chat` answers prospects; `translate` rewrites a document in the reader's language. */
+export type AiPurpose = "followup" | "chat" | "classify" | "analyze" | "help" | "translate";
 /** Purposes recorded in ai_usage: the language model ones, plus speech to text. */
 export type AiUsagePurpose = AiPurpose | "transcribe";
 
 const DEFAULT_MODELS: Record<AiProvider, Record<AiPurpose, string>> = {
-  openai: { followup: "gpt-4o", chat: "gpt-4o-mini", classify: "gpt-4o-mini", analyze: "gpt-4o", help: "gpt-4o-mini" },
+  openai: {
+    followup: "gpt-4o",
+    chat: "gpt-4o-mini",
+    classify: "gpt-4o-mini",
+    analyze: "gpt-4o",
+    help: "gpt-4o-mini",
+    translate: "gpt-4o-mini",
+  },
   anthropic: {
     followup: "claude-sonnet-5-5",
     chat: "claude-sonnet-5-5",
     classify: "claude-haiku-5-5",
     analyze: "claude-sonnet-5-5",
     help: "claude-sonnet-5-5",
+    translate: "claude-haiku-5-5",
   },
 };
 
@@ -35,6 +43,9 @@ const MODEL_ENV: Record<AiPurpose, string | undefined> = {
   },
   get help() {
     return process.env.AI_MODEL_HELP;
+  },
+  get translate() {
+    return process.env.AI_MODEL_TRANSLATE;
   },
 };
 

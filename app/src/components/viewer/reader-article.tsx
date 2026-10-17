@@ -21,13 +21,16 @@ type Props = {
   sourceLabel: string;
   externalUrl: string;
   onOpen?: () => void;
+  /** Set when the article is shown translated. */
+  lang?: string;
 };
 
 // The article of a site that refuses framing, read in Clozer like a PDF page
-export function ReaderArticle({ ref, html, title, sourceLabel, externalUrl, onOpen }: Props) {
+export function ReaderArticle({ ref, html, title, sourceLabel, externalUrl, onOpen, lang }: Props) {
   return (
     <article
       ref={ref}
+      lang={lang}
       data-page={1}
       className="mx-auto w-full max-w-2xl bg-card px-5 py-8 ring-1 ring-border sm:px-10 sm:py-10"
     >
@@ -44,6 +47,7 @@ export function ReaderArticle({ ref, html, title, sourceLabel, externalUrl, onOp
         </a>
       </p>
       <h1 className="condensed mb-6 text-title font-bold">{title}</h1>
+      {/* The original, or its translation cleaned again the same way (translation/translate.ts) */}
       <div className={ARTICLE_STYLES} dangerouslySetInnerHTML={{ __html: html }} />
     </article>
   );
