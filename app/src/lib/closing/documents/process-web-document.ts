@@ -29,6 +29,8 @@ export async function processWebDocument(
 
   await prisma.$transaction([
     prisma.documentPage.deleteMany({ where: { documentId } }),
+    // The page may have changed: translations of the old one must not be served
+    prisma.documentTranslation.deleteMany({ where: { documentId } }),
     ...(text ? [prisma.documentPage.create({ data: { documentId, pageNumber: 1, text } })] : []),
     prisma.document.update({
       where: { id: documentId },
