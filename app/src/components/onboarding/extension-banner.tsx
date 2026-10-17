@@ -2,10 +2,11 @@
 
 import { Puzzle, X } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { snoozeExtensionNudge } from "@/app/bienvenue/actions";
+import { snoozeExtensionNudge } from "@/app/welcome/actions";
 import { Button, buttonVariants } from "@/components/ui/button";
 import type { ExtensionProbe } from "@/lib/onboarding";
 
@@ -16,6 +17,7 @@ import { startExtensionConnect, updateExtension, useExtensionState } from "./use
  * installed, signed in to this account and up to date. Closed: back in a week.
  */
 export function ExtensionBanner({ probe, storeUrl }: { probe: ExtensionProbe; storeUrl: string }) {
+  const t = useTranslations("onboarding.extensionBanner");
   const { state, reply, extensionId } = useExtensionState(probe);
   const pathname = usePathname();
   const [hidden, setHidden] = useState(false);
@@ -27,23 +29,21 @@ export function ExtensionBanner({ probe, storeUrl }: { probe: ExtensionProbe; st
 
   async function update(id: string) {
     toast(
-      (await updateExtension(id))
-        ? "Mise à jour en cours. Rechargez Gmail ou Outlook dans quelques secondes."
-        : "La mise à jour n'est pas encore arrivée dans Chrome. Réessayez dans quelques minutes.",
+      (await updateExtension(id)) ? t("updating") : t("updateNotYet"),
     );
   }
 
   let text: string;
   let action: React.ReactNode;
   if (state === "absent" && installing) {
-    text = "Une fois l'extension ajoutée à Chrome, rechargez cette page.";
+    text = t("reloadAfterInstall");
     action = (
       <Button size="sm" variant="outline" onClick={() => location.reload()}>
-        Recharger
+        {t("reload")}
       </Button>
     );
   } else if (state === "absent") {
-    text = "Joignez le PDF dans Gmail ou Outlook, l'extension Chrome met le lien Clozer à sa place. Et vous savez quand le prospect lit.";
+    text = t("absent");
     action = (
       <a
         href={storeUrl}
@@ -52,24 +52,24 @@ export function ExtensionBanner({ probe, storeUrl }: { probe: ExtensionProbe; st
         onClick={() => setInstalling(true)}
         className={buttonVariants({ size: "sm" })}
       >
-        Installer l&apos;extension
+        {t("install")}
       </a>
     );
   } else if (state === "outdated") {
-    text = "Une nouvelle version de l'extension Clozer est prête.";
+    text = t("outdated");
     action = extensionId && (
       <Button size="sm" onClick={() => update(extensionId)}>
-        Mettre à jour
+        {t("update")}
       </Button>
     );
   } else {
     text =
       state === "other_account"
-        ? `L'extension est connectée à ${reply?.email}, pas à ${probe.userEmail}.`
-        : "L'extension Clozer est installée, il reste à la connecter à votre compte.";
+        ? t("otherAccount", { extensionEmail: reply?.email ?? "", userEmail: probe.userEmail })
+        : t("signedOut");
     action = extensionId && (
       <Button size="sm" onClick={() => startExtensionConnect(extensionId)}>
-        {state === "other_account" ? "Changer de compte" : "Connecter"}
+        {state === "other_account" ? t("switchAccount") : t("connect")}
       </Button>
     );
   }
@@ -82,8 +82,8 @@ export function ExtensionBanner({ probe, storeUrl }: { probe: ExtensionProbe; st
         {action}
         <button
           type="button"
-          aria-label="Masquer pour l'instant"
-          title="Masquer pour l'instant"
+          aria-label={t("hide")}
+          title={t("hide")}
           onClick={() => {
             setHidden(true);
             void snoozeExtensionNudge();

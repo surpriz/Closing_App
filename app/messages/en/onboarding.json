@@ -156,5 +156,35 @@
     "linkVersion": "Version for this prospect, replacing the document's",
     "record": "Record a welcome message",
     "personal": "Personal version for this prospect"
+  },
+  "extensionBanner": {
+    "updating": "Updating now. Reload Gmail or Outlook in a few seconds.",
+    "updateNotYet": "The update hasn't reached Chrome yet. Try again in a few minutes.",
+    "reloadAfterInstall": "Once the extension is added to Chrome, reload this page.",
+    "reload": "Reload",
+    "absent": "Attach the PDF in Gmail or Outlook, and the Chrome extension swaps in the Clozer link. You'll know when the prospect reads it.",
+    "install": "Install the extension",
+    "outdated": "A new version of the Clozer extension is ready.",
+    "update": "Update",
+    "otherAccount": "The extension is connected to {extensionEmail}, not {userEmail}.",
+    "signedOut": "The Clozer extension is installed. Just connect it to your account.",
+    "switchAccount": "Switch account",
+    "connect": "Connect",
+    "hide": "Hide for now"
+  },
+  "chromeTip": {
+    "connect": "Connect the extension"
+  },
+  "extensionStatus": {
+    "absent": "not installed",
+    "signed_out": "installed, not connected",
+    "other_account": "connected to another account",
+    "outdated": "needs an update",
+    "connectedVersion": "connected, version {version}",
+    "connected": "connected",
+    "connectedTo": "connected to {email}",
+    "line": "In this browser: {label}.",
+    "connect": "Connect",
+    "update": "Update"
   }
 }

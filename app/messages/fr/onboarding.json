@@ -156,5 +156,35 @@
     "linkVersion": "Version pour ce prospect, à la place de celle du document",
     "record": "Enregistrer un mot d'accueil",
     "personal": "Version perso pour ce prospect"
+  },
+  "extensionBanner": {
+    "updating": "Mise à jour en cours. Rechargez Gmail ou Outlook dans quelques secondes.",
+    "updateNotYet": "La mise à jour n'est pas encore arrivée dans Chrome. Réessayez dans quelques minutes.",
+    "reloadAfterInstall": "Une fois l'extension ajoutée à Chrome, rechargez cette page.",
+    "reload": "Recharger",
+    "absent": "Joignez le PDF dans Gmail ou Outlook, l'extension Chrome met le lien Clozer à sa place. Et vous savez quand le prospect lit.",
+    "install": "Installer l'extension",
+    "outdated": "Une nouvelle version de l'extension Clozer est prête.",
+    "update": "Mettre à jour",
+    "otherAccount": "L'extension est connectée à {extensionEmail}, pas à {userEmail}.",
+    "signedOut": "L'extension Clozer est installée, il reste à la connecter à votre compte.",
+    "switchAccount": "Changer de compte",
+    "connect": "Connecter",
+    "hide": "Masquer pour l'instant"
+  },
+  "chromeTip": {
+    "connect": "Connecter l'extension"
+  },
+  "extensionStatus": {
+    "absent": "pas installée",
+    "signed_out": "installée, pas connectée",
+    "other_account": "connectée à un autre compte",
+    "outdated": "à mettre à jour",
+    "connectedVersion": "connectée, version {version}",
+    "connected": "connectée",
+    "connectedTo": "connectée à {email}",
+    "line": "Sur ce navigateur : {label}.",
+    "connect": "Connecter",
+    "update": "Mettre à jour"
   }
 }
