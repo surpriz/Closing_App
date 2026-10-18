@@ -19,7 +19,7 @@ export async function SignupForm({ id, locale, tone = "light" }: { id: string; l
         className={`flex items-baseline justify-between gap-4 border-b ${line} px-4 py-2.5 text-micro font-medium tracking-[0.06em] uppercase`}
       >
         <span>{t("emailLabel")}</span>
-        <span className={`normal-case tracking-normal max-sm:hidden ${dark ? "text-sheet/60" : "text-ink-soft"}`}>
+        <span className={`normal-case tracking-normal ${dark ? "text-sheet/60" : "text-ink-soft"}`}>
           {t("noPassword")}
         </span>
       </label>
