@@ -1,20 +1,20 @@
 /**
  * One page of a quote seen through a thermal camera. `heat` (0–1) is how long it was read,
  * relative to the most-read page; ironbow layers fade in as it rises.
- * Geometry only: the page skeleton is drawn as bars (a video: the speaker in frame), the heat as radial fields.
+ * Geometry only: the page skeleton is drawn as bars, the heat as radial fields.
  */
 export function ThermalPlate({
   heat,
   seed = 0,
   className = "",
-  frame = false,
+  heading,
   children,
 }: {
   heat: number;
   seed?: number;
   className?: string;
-  /** A slice of a recorded video instead of a page. */
-  frame?: boolean;
+  /** The page's real title, drawn in place of the title bar. Decorative: the caption carries it. */
+  heading?: string;
   children?: React.ReactNode;
 }) {
   // Where the reader lingered on this page: varies per page so the band never looks stamped.
@@ -24,7 +24,7 @@ export function ThermalPlate({
   const layer = (from: number, to: number) => Math.min(1, Math.max(0, (heat - from) / (to - from)));
 
   return (
-    <div className={`relative overflow-hidden bg-iron-0 ${className}`}>
+    <div className={`@container relative overflow-hidden bg-iron-0 ${className}`}>
       <div
         className="plate-layer absolute inset-0"
         style={{ opacity: layer(0.02, 0.4), background: `radial-gradient(75% 55% ${at}, var(--color-iron-1), transparent 75%)` }}
@@ -42,14 +42,12 @@ export function ThermalPlate({
         style={{ opacity: layer(0.9, 1), background: `radial-gradient(16% 11% ${at}, var(--color-iron-4), transparent 70%)` }}
       />
       {/* The page itself: title, paragraphs, a table, as the camera sees paper. */}
-      {frame ? (
-        <div aria-hidden className="absolute inset-0 opacity-25 mix-blend-screen">
-          <span className="absolute top-[24%] left-1/2 aspect-square w-[34%] -translate-x-1/2 rounded-full bg-sheet" />
-          <span className="absolute top-[56%] left-1/2 h-[30%] w-[72%] -translate-x-1/2 rounded-t-full bg-sheet" />
-        </div>
-      ) : (
       <div aria-hidden className="absolute inset-x-[14%] top-[12%] grid gap-[6%] opacity-25 mix-blend-screen">
-        <span className="h-1.5 w-2/3 bg-sheet" />
+        {heading ? (
+          <span className="text-[9cqw] leading-tight font-semibold text-sheet">{heading}</span>
+        ) : (
+          <span className="h-1.5 w-2/3 bg-sheet" />
+        )}
         <span className="grid gap-1.5">
           <span className="h-1 bg-sheet" />
           <span className="h-1 bg-sheet" />
@@ -65,7 +63,6 @@ export function ThermalPlate({
           ))}
         </span>
       </div>
-      )}
       {children}
     </div>
   );
