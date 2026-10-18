@@ -111,22 +111,24 @@
       }
     },
     "steps": {
-      "title": "Three steps, once per document.",
+      "title": "Three steps. Nothing to install to get started.",
       "upload": {
-        "title": "Upload your document",
-        "body": "A PDF, a web page (Notion, Loom, Figma…) or a three-minute video pitch. Clozer figures out whether it's a quote, an invoice, a deck or a résumé, and reads every page accordingly: on a résumé, “Pricing” becomes your day rate.",
-        "measure": "10 document types"
+        "title": "Drop your proposal.",
+        "body": "A PDF, a web page (Notion, Google Slides, Figma…) or a 3-minute video pitch.",
+        "alt": "Clozer screen: the area to drop a PDF, and the field to paste a web page link."
       },
       "send": {
-        "title": "Send the link",
-        "body": "Paste it into your email, WhatsApp or LinkedIn, or let the Gmail and Outlook extension replace the attachment for you. One link per recipient: you know who's reading, and who's sitting on it.",
-        "measure": "1 link = 1 reader"
+        "title": "Send the link.",
+        "body": "Paste it into your email, or let the Gmail and Outlook extension swap the attachment. One link per prospect.",
+        "alt": "Clozer screen: the link is ready for Sarah Collins, with Copy link and Send by email buttons."
       },
       "followUp": {
-        "title": "Let Clozer follow up",
-        "body": "It sees who read what, writes the follow-up and suggests the day and time to send it. You approve in one click.",
-        "measure": "You approve every follow-up"
-      }
+        "title": "Approve the follow-up.",
+        "body": "Clozer writes it and picks the time. You read it, you send it.",
+        "alt": "Clozer screen: a follow-up written after a pricing read, suggested for 9 AM the next day, waiting for Approve."
+      },
+      "screen": "Real screen, example data",
+      "guided": "After you sign up, a guided tour walks you through a first test link."
     },
     "followUps": {
       "title": "Follow-ups that write and schedule themselves.",

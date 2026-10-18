@@ -111,22 +111,24 @@
       }
     },
     "steps": {
-      "title": "Trois gestes, une fois par document.",
+      "title": "Trois étapes, rien à installer pour commencer.",
       "upload": {
-        "title": "Déposez votre document",
-        "body": "Un PDF, une page web (Notion, Loom, Figma…) ou un pitch vidéo de trois minutes. Clozer reconnaît s'il s'agit d'un devis, d'une facture, d'une présentation ou d'un CV, et lit chaque page en conséquence : sur un CV, « Tarifs » devient votre taux journalier.",
-        "measure": "10 types reconnus"
+        "title": "Déposez la proposition.",
+        "body": "Un PDF, une page web (Notion, Google Slides, Figma…) ou un pitch vidéo de 3 minutes.",
+        "alt": "Écran de Clozer : la zone où déposer un PDF, et le champ pour coller le lien d'une page web."
       },
       "send": {
-        "title": "Envoyez le lien",
-        "body": "Copiez-le dans votre email, sur WhatsApp ou LinkedIn, ou laissez l'extension Gmail et Outlook remplacer la pièce jointe pour vous. Un lien par destinataire : vous savez qui lit, et qui ne fait rien.",
-        "measure": "1 lien = 1 lecteur"
+        "title": "Envoyez le lien.",
+        "body": "Collez-le dans votre email, ou laissez l'extension Gmail et Outlook remplacer la pièce jointe. Un lien par prospect.",
+        "alt": "Écran de Clozer : le lien est prêt pour Marie Martin, avec les boutons Copier le lien et Envoyer par email."
       },
       "followUp": {
-        "title": "Laissez Clozer relancer",
-        "body": "Il voit qui lit quoi, écrit la relance et propose le jour et l'heure d'envoi. Vous validez d'un clic.",
-        "measure": "Relance validée par vous"
-      }
+        "title": "Validez la relance.",
+        "body": "Clozer l'écrit et propose l'heure. Vous relisez, vous envoyez.",
+        "alt": "Écran de Clozer : une relance écrite après la lecture des tarifs, conseillée pour le lendemain à 9 h, qui attend le bouton Valider."
+      },
+      "screen": "Écran réel, données d'exemple",
+      "guided": "Après l'inscription, un tour guidé crée avec vous un premier lien de test."
     },
     "followUps": {
       "title": "Les relances s'écrivent et se programment seules.",

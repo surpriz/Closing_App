@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
+import Image, { type StaticImageData } from "next/image";
 import { getTranslations } from "next-intl/server";
 
+import followUpEn from "@/assets/steps/followUp-en.png";
+import followUpFr from "@/assets/steps/followUp-fr.png";
+import sendEn from "@/assets/steps/send-en.png";
+import sendFr from "@/assets/steps/send-fr.png";
+import uploadEn from "@/assets/steps/upload-en.png";
+import uploadFr from "@/assets/steps/upload-fr.png";
 import { Icon } from "@/components/icons";
 import { CONTACT_EMAIL, EXTENSION_STORE_URL, appUrl } from "@/components/links";
 import { SignupForm } from "@/components/signup-form";
@@ -10,11 +17,18 @@ import { HeatScale, ThermalPlate } from "@/components/thermal-plate";
 import { ThermalReading } from "@/components/thermal-reading";
 import { READING_PAGES } from "@/components/thermal-reading-data";
 import { resolveLocale } from "@/i18n/page";
+import type { Locale } from "@/i18n/routing";
 import { alternatesFor } from "@/i18n/seo";
 
 // Copy lives in messages/<locale>.json under "home"; these keys set the order on the page.
 const SILENCE_ROWS = ["opened", "depth", "forwarded", "reply"] as const;
 const STEPS = ["upload", "send", "followUp"] as const;
+// Real app screens (local app on example data), one per step and language.
+const STEP_SCREENS: Record<(typeof STEPS)[number], Record<Locale, StaticImageData>> = {
+  upload: { fr: uploadFr, en: uploadEn },
+  send: { fr: sendFr, en: sendEn },
+  followUp: { fr: followUpFr, en: followUpEn },
+};
 const SEND_WAYS = [
   { key: "link", available: true, store: false },
   { key: "mail", available: true, store: true },
@@ -43,9 +57,10 @@ const WRAP = "mx-auto w-full max-w-[90rem] px-5 sm:px-8";
 
 export default async function Home({ params }: Props) {
   const locale = await resolveLocale(params);
-  const [t, tr] = await Promise.all([
+  const [t, tr, ts] = await Promise.all([
     getTranslations({ locale, namespace: "home" }),
     getTranslations({ locale, namespace: "reading" }),
+    getTranslations({ locale, namespace: "signup" }),
   ]);
 
   const pages = READING_PAGES.map((page) => ({
@@ -172,20 +187,40 @@ export default async function Home({ params }: Props) {
         {/* How it works: the protocol, three rows. */}
         <section id="comment" className="scroll-mt-14 border-b border-ink">
           <div className={`${WRAP} py-20 md:py-28`}>
-            <h2 className="condensed max-w-[18ch] text-title font-bold">{t("steps.title")}</h2>
-            <ol className="mt-14 border-t border-ink">
+            <h2 className="condensed max-w-[22ch] text-title font-bold">{t("steps.title")}</h2>
+            <ol className="mt-12 border-t border-ink md:mt-14">
               {STEPS.map((step, index) => (
                 <li
                   key={step}
-                  className="grid gap-3 border-b border-rule py-8 md:grid-cols-[4rem_minmax(0,5fr)_minmax(0,6fr)_minmax(0,3fr)] md:gap-8"
+                  className="grid gap-6 border-b border-rule py-10 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:items-center md:gap-12 lg:gap-20"
                 >
-                  <span className="font-mono text-small text-ink-soft">{index + 1}/3</span>
-                  <h3 className="condensed text-[1.75rem] leading-tight font-bold tracking-[-0.02em]">{t(`steps.${step}.title`)}</h3>
-                  <p className="max-w-[60ch] text-body text-ink-soft">{t(`steps.${step}.body`)}</p>
-                  <p className="text-small font-medium md:text-right">{t(`steps.${step}.measure`)}</p>
+                  <div>
+                    <span className="font-mono text-small text-ink-soft">{index + 1}/3</span>
+                    <h3 className="condensed mt-3 text-[1.75rem] leading-tight font-bold tracking-[-0.02em]">{t(`steps.${step}.title`)}</h3>
+                    <p className="mt-3 max-w-[48ch] text-body text-ink-soft">{t(`steps.${step}.body`)}</p>
+                  </div>
+                  <figure className="w-full max-w-[37rem] md:justify-self-end">
+                    <Image
+                      src={STEP_SCREENS[step][locale]}
+                      alt={t(`steps.${step}.alt`)}
+                      sizes="(min-width: 768px) 37rem, calc(100vw - 2.5rem)"
+                      className="w-full border border-rule"
+                    />
+                    <figcaption className="mt-2 font-mono text-micro text-ink-soft">{t("steps.screen")}</figcaption>
+                  </figure>
                 </li>
               ))}
             </ol>
+            <div className="mt-10 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+              <p className="max-w-[52ch] text-body">{t("steps.guided")}</p>
+              <a
+                href={appUrl(locale)}
+                className="group flex h-14 shrink-0 items-center justify-between gap-6 bg-ink px-5 text-lead font-semibold text-sheet transition-colors hover:bg-ink/90"
+              >
+                {ts("submit")}
+                <Icon name="arrow" className="size-5 transition-transform duration-300 ease-[var(--ease-out-expo)] group-hover:translate-x-1" />
+              </a>
+            </div>
           </div>
         </section>
 
