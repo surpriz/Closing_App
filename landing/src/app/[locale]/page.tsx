@@ -25,6 +25,7 @@ import todayDesktopFr from "@/assets/today/desktop-fr.png";
 import todayMobileEn from "@/assets/today/mobile-en.png";
 import todayMobileFr from "@/assets/today/mobile-fr.png";
 import { Icon } from "@/components/icons";
+import { ANCHORS } from "@/components/anchors";
 import { CONTACT_EMAIL, EXTENSION_STORE_URL, appUrl } from "@/components/links";
 import { SignupForm } from "@/components/signup-form";
 import { SiteFooter } from "@/components/site-footer";
@@ -86,6 +87,7 @@ export default async function Home({ params }: Props) {
     getTranslations({ locale, namespace: "signup" }),
   ]);
 
+  const anchors = ANCHORS[locale];
   const pages = READING_PAGES.map((page) => ({
     label: tr(`pages.${page.key}.label`),
     heading: tr(`pages.${page.key}.heading`),
@@ -169,7 +171,7 @@ export default async function Home({ params }: Props) {
         </section>
 
         {/* How it works: the protocol, three rows. */}
-        <section id="comment" className="scroll-mt-14 border-b border-ink">
+        <section id={anchors.how} className="scroll-mt-14 border-b border-ink">
           <div className={`${WRAP} py-20 md:py-28`}>
             <h2 className="condensed max-w-[22ch] text-title font-bold">{t("steps.title")}</h2>
             <ol className="mt-12 border-t border-ink md:mt-14">
@@ -208,7 +210,7 @@ export default async function Home({ params }: Props) {
           </div>
         </section>
 
-        <section id="fonctionnalites" className="scroll-mt-14 border-b border-ink bg-sheet">
+        <section id={anchors.features} className="scroll-mt-14 border-b border-ink bg-sheet">
           <div className={`${WRAP} grid gap-12 py-20 md:py-28 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-20`}>
             <div className="lg:sticky lg:top-24 lg:self-start">
               <h2 className="condensed max-w-[16ch] text-title font-bold">{t("reading.title")}</h2>
@@ -240,7 +242,7 @@ export default async function Home({ params }: Props) {
         </section>
 
         {/* Follow-ups: the Today board as proof, then the four rules it follows. */}
-        <section id="relances" className="scroll-mt-14 border-b border-ink">
+        <section id={anchors.followUps} className="scroll-mt-14 border-b border-ink">
           <div className={`${WRAP} py-20 md:py-28`}>
             <h2 className="condensed max-w-[24ch] text-title font-bold">
               {t.rich("followUps.title", { nowrap: (chunks) => <span className="whitespace-nowrap">{chunks}</span> })}
@@ -273,7 +275,7 @@ export default async function Home({ params }: Props) {
         </section>
 
         {/* Prospect side: two real phone screens, then what the prospect can do without writing to the seller. */}
-        <section id="prospect" className="scroll-mt-14 border-b border-ink bg-sheet">
+        <section id={anchors.prospect} className="scroll-mt-14 border-b border-ink bg-sheet">
           <div className={`${WRAP} grid gap-12 py-20 md:py-28 lg:grid-cols-[minmax(0,6fr)_minmax(0,6fr)] lg:gap-20`}>
             <div className="lg:order-2">
               <h2 className="condensed max-w-[18ch] text-title font-bold">{t("prospect.title")}</h2>
@@ -304,7 +306,7 @@ export default async function Home({ params }: Props) {
         </section>
 
         {/* Channels: where the link goes out, one row each; the only other button on the page leads to the store. */}
-        <section id="envoi" className="scroll-mt-14 border-b border-ink">
+        <section id={anchors.channels} className="scroll-mt-14 border-b border-ink">
           <div className={`${WRAP} grid gap-12 py-20 md:py-28 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-20`}>
             <div>
               <h2 className="condensed max-w-[16ch] text-title font-bold">{t("channels.title")}</h2>
@@ -366,7 +368,7 @@ export default async function Home({ params }: Props) {
         </section>
 
         {/* Segments: the team offer first, with its real screen; no prices exist yet, so none are shown. */}
-        <section id="pour-qui" className="scroll-mt-14 border-b border-ink">
+        <section id={anchors.teams} className="scroll-mt-14 border-b border-ink">
           <div className={`${WRAP} py-20 md:py-28`}>
             <h2 className="condensed max-w-[20ch] text-title font-bold">{t("who.title")}</h2>
             <p className="mt-6 max-w-[56ch] text-lead text-ink-soft">{t("who.beta")}</p>
@@ -428,7 +430,7 @@ export default async function Home({ params }: Props) {
         </section>
 
         {/* FAQ, mirrored as FAQPage structured data. */}
-        <section id="faq" className="scroll-mt-14 border-b border-ink">
+        <section id={anchors.faq} className="scroll-mt-14 border-b border-ink">
           <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{

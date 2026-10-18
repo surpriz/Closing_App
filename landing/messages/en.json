@@ -1,19 +1,19 @@
 {
   "meta": {
-    "title": "Clozer · Know who reads your documents, follow up at the right time",
-    "description": "Quotes, invoices, decks, technical docs: send a tracked link instead of an attachment. Clozer sees which pages get read, tells you who to follow up with, and writes the follow-up.",
-    "shortDescription": "Quotes, invoices, decks: send a tracked link. Clozer tells you who to follow up with and writes the follow-up.",
-    "ogHeadline": "See where your document heats up."
+    "title": "Clozer · Know who reads your sales proposals",
+    "description": "Send a tracked link instead of the PDF. Clozer sees who reads what and who else, then drafts the follow-up. Free during the beta.",
+    "shortDescription": "Send a tracked link instead of the PDF. Clozer sees who reads it, then drafts the follow-up.",
+    "ogHeadline": "Know who's reading your proposal."
   },
   "nav": {
     "label": "Navigation",
     "home": "Clozer, home",
     "how": "How it works",
-    "followUps": "Follow-ups",
-    "who": "Who it's for",
+    "features": "Features",
+    "teams": "For teams",
     "faq": "FAQ",
     "login": "Log in",
-    "try": "Try it",
+    "try": "Create a link",
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
     "language": "Language"

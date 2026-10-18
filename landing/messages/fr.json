@@ -1,19 +1,19 @@
 {
   "meta": {
-    "title": "Clozer · Sachez qui lit vos documents, relancez au bon moment",
-    "description": "Devis, factures, présentations, docs techniques : envoyez un lien suivi au lieu de la pièce jointe. Clozer voit les pages lues, vous dit qui relancer et écrit la relance.",
-    "shortDescription": "Devis, factures, présentations : envoyez un lien suivi. Clozer vous dit qui relancer et écrit la relance.",
-    "ogHeadline": "Voyez où votre document chauffe."
+    "title": "Clozer · Sachez qui lit vos propositions commerciales",
+    "description": "Envoyez un lien suivi à la place du PDF. Clozer voit qui lit, quoi et qui d'autre, puis prépare la relance. Gratuit pendant la bêta.",
+    "shortDescription": "Envoyez un lien suivi à la place du PDF. Clozer voit qui lit, puis prépare la relance.",
+    "ogHeadline": "Sachez qui lit votre proposition."
   },
   "nav": {
     "label": "Navigation",
     "home": "Clozer, accueil",
     "how": "Comment ça marche",
-    "followUps": "Relances",
-    "who": "Pour qui",
+    "features": "Fonctionnalités",
+    "teams": "Pour les équipes",
     "faq": "Questions",
     "login": "Se connecter",
-    "try": "Essayer",
+    "try": "Créer un lien",
     "openMenu": "Ouvrir le menu",
     "closeMenu": "Fermer le menu",
     "language": "Langue"
