@@ -28,6 +28,7 @@ import { SiteHeader } from "@/components/site-header";
 import { HeatScale } from "@/components/thermal-plate";
 import { ThermalReading } from "@/components/thermal-reading";
 import { READING_PAGES } from "@/components/thermal-reading-data";
+import { Link } from "@/i18n/navigation";
 import { resolveLocale } from "@/i18n/page";
 import type { Locale } from "@/i18n/routing";
 import { alternatesFor } from "@/i18n/seo";
@@ -344,6 +345,13 @@ export default async function Home({ params }: Props) {
             <div>
               <h2 className="condensed text-title font-bold">{t("trust.title")}</h2>
               <p className="mt-6 max-w-[48ch] text-lead text-sheet/75">{t("trust.body")}</p>
+              <Link
+                href="/subprocessors"
+                className="mt-8 inline-block text-body font-semibold underline decoration-sheet/40 underline-offset-4 transition-colors hover:decoration-sheet"
+              >
+                {t("trust.subprocessors")}
+                <Icon name="arrow" className="ml-2 inline size-4 align-[-0.15em]" />
+              </Link>
             </div>
             <ul className="border-t border-sheet/30 self-center">
               {GUARANTEES.map((item) => (

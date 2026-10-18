@@ -186,10 +186,11 @@
     "trust": {
       "title": "Suivre sans fliquer.",
       "body": "Vos prospects sont vos futurs clients. La chaleur se mesure sur les pages, jamais sur les personnes, et votre relance reste celle d'un commercial attentif.",
-      "informed": "Le prospect est informé, sur la page, de ce que l'expéditeur voit.",
-      "discreet": "Une relance ne laisse jamais deviner que vous suivez la lecture.",
+      "informed": "Le prospect est informé, sur la page, de ce que vous voyez.",
+      "discreet": "Vos relances parlent de l'offre, jamais de ce que vous avez vu.",
       "limit": "Trois relances par mois et par contact au maximum, jamais juste après une lecture.",
-      "unsubscribe": "Lien de désinscription dans chaque relance, adresses IP jamais stockées en clair."
+      "unsubscribe": "Un lien de désinscription dans chaque relance, et les adresses IP ne sont jamais stockées en clair.",
+      "subprocessors": "Voir nos sous-traitants et où sont vos données"
     },
     "who": {
       "title": "Un seul outil, de l'artisan à l'équipe.",
