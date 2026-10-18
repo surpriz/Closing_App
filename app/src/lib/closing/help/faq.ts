@@ -491,7 +491,7 @@ export const FAQ: FaqSection[] = [
       {
         id: "reglages-grises",
         q: "Pourquoi certains réglages sont grisés ?",
-        a: "Les réglages de l'espace sont réservés aux propriétaires et admins. Un membre ne les voit pas : il a seulement Chrome et Outlook, Être prévenu, Votre agenda et Données.",
+        a: "Les réglages de l'espace sont réservés aux propriétaires et admins. Un membre ne les voit pas : il a seulement Chrome et Outlook, Être prévenu, Votre agenda, et Données sous « Réglages avancés ».",
       },
     ],
   },

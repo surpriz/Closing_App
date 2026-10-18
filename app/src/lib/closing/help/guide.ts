@@ -186,7 +186,7 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
   avancés » déplie le reste : Offre et assistant, Liens et relances, Intégrations, Équipe (propriétaires et
   admins), Données (tout le monde). Un lien direct vers une section avancée (/settings#offre…) la déplie tout
   seul.
-- Un membre ne voit que Chrome et Outlook, Être prévenu, Votre agenda et Données.
+- Un membre ne voit que Chrome et Outlook, Être prévenu, Votre agenda, et Données sous « Réglages avancés ».
 
 ## Relances et pilote automatique
 - Réglages → Réglages avancés → Liens et relances, partie Pilote automatique (/settings#pilote), réglé par les propriétaires et admins pour tout l'espace.
@@ -209,18 +209,18 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
 - Arrêter les relances : pour tout l'espace, « Tout valider moi-même » sur Aujourd'hui ou repasser sur « Je la
   relis et je valide » ; pour un prospect, l'interrupteur « Relances » (onglet Prospects du document) ou «
   Relances préparées par Clozer » dans les réglages du lien, la pause « Mettre en pause jusqu'au », ou un
-  statut autre que En cours. Pour les nouveaux liens : Réglages → Liens et relances → « Préparer les relances ».
+  statut autre que En cours. Pour les nouveaux liens : Réglages → Réglages avancés → Liens et relances → « Préparer les relances ».
 
 ## Assistant prospect
 - Sur le document, il répond aux questions du prospect quand vous n'êtes pas là. Il s'appuie sur le document
-  (résumés, faits, texte des pages, transcription d'une vidéo), sur votre offre (Réglages → Offre et assistant), sur
+  (résumés, faits, texte des pages, transcription d'une vidéo), sur votre offre (Réglages → Réglages avancés → Offre et assistant), sur
   les « Infos pour l'assistant » du document et sur « Ce que l'assistant doit savoir » (Réglages → Offre et
   assistant, /settings#assistant, 4 000 caractères). Jamais sur un prix ou une condition inventés.
 - Ce qu'il ne sait pas, il vous le transmet aussitôt : alerte « Question du prospect », question marquée sur
   la fiche et reprise dans le compte rendu du matin.
 - Tout ce que vous écrivez pour l'assistant peut être obtenu par le prospect en posant la question : rien de
   confidentiel.
-- Activation : « Activer l'assistant sur les nouveaux liens » dans Réglages → Offre et assistant, puis lien par lien (« Poser ses
+- Activation : « Activer l'assistant sur les nouveaux liens » dans Réglages → Réglages avancés → Offre et assistant, puis lien par lien (« Poser ses
   questions à l'assistant »). Sans IA configurée, l'assistant reste masqué.
 - Les conversations apparaissent sur la fiche, rubrique « Questions du prospect ». Vos propres tests sur votre
   lien ne sont pas comptés.
@@ -233,7 +233,7 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
 - Capsules par page : anciennes explications page par page, toujours jouées sur leur page.
 - Commentaires vocaux : le prospect enregistre un vocal sur une page (60 s max) ; vous recevez l'audio et sa
   transcription (rubrique « Commentaires vocaux » + alerte). À activer avec « Laisser le prospect enregistrer
-  un vocal sur une page » (Réglages → Liens et relances) ou lien par lien.
+  un vocal sur une page » (Réglages → Réglages avancés → Liens et relances) ou lien par lien.
 
 ## Extension Chrome et add-in Outlook
 - Réglages → Chrome et Outlook (/settings#extension). Principe : vous joignez un PDF dans Gmail ou Outlook,
@@ -286,7 +286,7 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
 - Rôles : Propriétaire, Admin, Membre.
 - Membre : voit ses propres prospects sur Aujourd'hui, consulte ceux des collègues sans les modifier, règle ses
   notifications et son agenda. Ne voit pas les réglages de l'espace : seulement Chrome et Outlook, Être
-  prévenu, Votre agenda et Données.
+  prévenu, Votre agenda, et Données sous « Réglages avancés ».
 - Admin : voit toute l'équipe sur la page Équipe, règle l'espace, modifie tous les prospects, supprime les
   documents, invite et retire des membres.
 - Propriétaire : comme un admin, plus les liens sans commercial attitré, la possibilité de nommer un autre

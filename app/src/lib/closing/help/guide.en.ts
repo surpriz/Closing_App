@@ -165,7 +165,7 @@ export const HELP_GUIDE_EN = `## What Clozer is
 - The essentials are visible right away: Chrome and Outlook, Notifications, Your calendar. The “Advanced
   settings” button expands the rest: Offer and assistant, Links and follow-ups, Integrations, Team (owners and
   admins), Data (everyone). A direct link to an advanced section (/settings#offre…) expands it on its own.
-- A member only sees Chrome and Outlook, Notifications, Your calendar and Data.
+- A member only sees Chrome and Outlook, Notifications, Your calendar, and Data under “Advanced settings”.
 
 ## Follow-ups and Autopilot
 - Settings → Advanced settings → Links and follow-ups, Autopilot part (/settings#pilote), set by owners and
@@ -187,18 +187,18 @@ export const HELP_GUIDE_EN = `## What Clozer is
 - An unsubscribe link is added to every send.
 - Stop follow-ups: for the whole workspace, “Review everything myself” on Today or switch back to “I review and
   approve”; for one prospect, the “Follow-ups” toggle (document's Prospects tab) or “Follow-ups prepared by Clozer”
-  in the link settings, “Pause until”, or a status other than Open. For new links: Settings → Links and follow-ups →
+  in the link settings, “Pause until”, or a status other than Open. For new links: Settings → Advanced settings → Links and follow-ups →
   “Prepare follow-ups”.
 
 ## Prospect assistant
 - On the document, it answers the prospect's questions when you're not around. It relies on the document
-  (summaries, facts, page text, video transcript), your offer (Settings → Offer and assistant), the document's “Info for
-  the assistant” and “What the assistant should know” (Settings → Offer and assistant, /settings#assistant,
+  (summaries, facts, page text, video transcript), your offer (Settings → Advanced settings → Offer and assistant), the document's “Info for
+  the assistant” and “What the assistant should know” (Settings → Advanced settings → Offer and assistant, /settings#assistant,
   4,000 characters). Never on a made-up price or term.
 - Whatever it doesn't know, it passes to you right away: “Prospect question” alert, question flagged on the
   prospect's page and included in the morning digest.
 - Anything you write for the assistant can be obtained by the prospect by asking: nothing confidential.
-- Turning it on: “Turn on the assistant for new links” in Settings → Offer and assistant, then link by link (“Ask the assistant”).
+- Turning it on: “Turn on the assistant for new links” in Settings → Advanced settings → Offer and assistant, then link by link (“Ask the assistant”).
   With no AI configured, the assistant stays hidden.
 - Conversations show up on the prospect's page, “Prospect questions” section. Your own tests on your link don't
   count.
@@ -261,7 +261,7 @@ export const HELP_GUIDE_EN = `## What Clozer is
 - Roles: Owner, Admin, Member.
 - Member: sees their own prospects on Today, views coworkers' prospects without editing them, sets their own
   notifications and calendar. Doesn't see workspace settings: only Chrome and Outlook, Notifications, Your
-  calendar and Data.
+  calendar, and Data under “Advanced settings”.
 - Admin: sees the whole team on the Team page, configures the workspace, edits every prospect, deletes documents,
   invites and removes members.
 - Owner: same as an admin, plus links without an assigned sales rep, the ability to make someone else owner and

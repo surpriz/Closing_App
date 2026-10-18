@@ -475,7 +475,7 @@ export const FAQ_EN: FaqSection[] = [
       {
         id: "reglages-grises",
         q: "Why are some settings grayed out?",
-        a: "Workspace settings are reserved for owners and admins. Members don't see them: they only get Chrome and Outlook, Notifications, Your calendar and Data.",
+        a: "Workspace settings are reserved for owners and admins. Members don't see them: they only get Chrome and Outlook, Notifications, Your calendar, and Data under “Advanced settings”.",
       },
     ],
   },
