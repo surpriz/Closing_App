@@ -486,11 +486,17 @@ export default async function Home({ params }: Props) {
           </div>
         </section>
 
-        {/* Close: the same field, once more. */}
+        {/* Close: the hero's field, once more, with the same promise underneath. */}
         <section>
           <div className={`${WRAP} grid gap-10 py-20 md:py-28 lg:grid-cols-[minmax(0,1fr)_26rem] lg:items-end lg:gap-16`}>
-            <h2 className="condensed max-w-[14ch] text-display font-extrabold">{t("final")}</h2>
-            <SignupForm id="email-final" locale={locale} />
+            <h2 className="condensed max-w-[16ch] text-display font-extrabold">{t("final")}</h2>
+            <div>
+              <SignupForm id="email-final" locale={locale} />
+              <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-small text-ink-soft">
+                <span>{t("hero.free")}</span>
+                <span>{t("hero.noCard")}</span>
+              </p>
+            </div>
           </div>
         </section>
       </main>
