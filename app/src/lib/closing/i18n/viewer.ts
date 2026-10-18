@@ -69,6 +69,8 @@ export type ViewerLabels = {
   readyPrompt: string;
   confirmTitle: string;
   confirmAction: string;
+  /** Under the title of the accept dialog: what accepting means and what happens next. */
+  confirmHint: string;
   validatedNext: string;
   /** The gate knows who the link was sent to. {name}, {email} (masked). */
   greeting: string;
@@ -137,6 +139,8 @@ export type ViewerLabels = {
   playVideo: string;
   /** "Transférer": the reader sends the link to a colleague. {sender}, {email}. */
   forwardButton: string;
+  /** Small screens: the menu holding the actions that don't fit in the bar. */
+  moreActions: string;
   forwardTitle: string;
   forwardDescription: string;
   forwardToEmail: string;
@@ -200,13 +204,14 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     machineTranslated: "Machine translation. The original prevails.",
     showOriginal: "Show original",
     showTranslation: "Show translation",
-    translating: "Translating the whole document, layout included. The first time takes up to a minute: the original stays here meanwhile.",
+    translating: "Translating, up to a minute. The original stays here meanwhile.",
     translationFailed: "Translation unavailable for now, here is the original.",
     externalDescription: "It cannot be displayed here. Open it in a new tab, then come back to reply.",
     sharedBy: "Shared by",
     readyPrompt: "What next?",
     confirmTitle: "Accept this proposal",
     confirmAction: "Accept",
+    confirmHint: "By accepting, you agree to this proposal. The sender is notified and will get back to you with next steps.",
     validatedNext: "The sender has been notified.",
     greeting: "Hello {name}",
     sentTo: "Sent to {email}",
@@ -263,6 +268,7 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     videoError: "This video can't play in this browser. Try another one, or contact the sender.",
     playVideo: "Play the video",
     forwardButton: "Forward",
+    moreActions: "More",
     forwardTitle: "Forward the document",
     forwardDescription: "We email it to them on your behalf.",
     forwardToEmail: "Their email",
@@ -364,13 +370,14 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     machineTranslated: "Traduction automatique. L'original fait foi.",
     showOriginal: "Voir l'original",
     showTranslation: "Voir la traduction",
-    translating: "Traduction du document complet, mise en page comprise. La première fois, comptez jusqu'à une minute : l'original reste affiché en attendant.",
+    translating: "Traduction en cours, jusqu'à une minute. L'original reste affiché en attendant.",
     translationFailed: "Traduction indisponible pour le moment, voici l'original.",
     externalDescription: "Il ne peut pas s'afficher ici. Ouvrez-le dans un nouvel onglet, puis revenez pour répondre.",
     sharedBy: "Envoyé par",
     readyPrompt: "Et pour la suite ?",
     confirmTitle: "Valider cette proposition",
     confirmAction: "Valider",
+    confirmHint: "En validant, vous donnez votre accord sur cette proposition. L'expéditeur est prévenu et revient vers vous pour la suite.",
     validatedNext: "L'expéditeur est prévenu.",
     greeting: "Bonjour {name}",
     sentTo: "Envoyé à {email}",
@@ -404,7 +411,7 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     chatLimit: "Vous avez atteint la limite de questions pour le moment. {sender} vous répondra volontiers directement.",
     chatSenderFallback: "l'expéditeur",
     capsuleFrom: "Un mot de {sender}",
-    capsuleOpen: "Écouter le message",
+    capsuleOpen: "Lancer le message",
     capsuleClose: "Fermer",
     capsuleDismiss: "Masquer",
     voiceButton: "Laisser un vocal",
@@ -427,6 +434,7 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     videoError: "Cette vidéo ne s'ouvre pas dans ce navigateur. Essayez-en un autre, ou contactez l'expéditeur.",
     playVideo: "Lire la vidéo",
     forwardButton: "Transférer",
+    moreActions: "Plus",
     forwardTitle: "Transférer le document",
     forwardDescription: "Nous lui envoyons le document par email, de votre part.",
     forwardToEmail: "Son email",
@@ -528,13 +536,14 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     machineTranslated: "Traducción automática. Prevalece el original.",
     showOriginal: "Ver el original",
     showTranslation: "Ver la traducción",
-    translating: "Traduciendo el documento completo, con su formato. La primera vez tarda hasta un minuto: mientras tanto se muestra el original.",
+    translating: "Traduciendo, hasta un minuto. Mientras tanto se muestra el original.",
     translationFailed: "Traducción no disponible por ahora, aquí está el original.",
     externalDescription: "No se puede mostrar aquí. Ábrelo en una pestaña nueva y vuelve para responder.",
     sharedBy: "Enviado por",
     readyPrompt: "¿Qué sigue?",
     confirmTitle: "Aceptar esta propuesta",
     confirmAction: "Aceptar",
+    confirmHint: "Al aceptar, das tu conformidad a esta propuesta. El remitente recibe un aviso y te contactará para los siguientes pasos.",
     validatedNext: "El remitente ha sido avisado.",
     greeting: "Hola {name}",
     sentTo: "Enviado a {email}",
@@ -591,6 +600,7 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     videoError: "Este vídeo no se puede reproducir en este navegador. Prueba con otro o contacta con el remitente.",
     playVideo: "Reproducir el vídeo",
     forwardButton: "Reenviar",
+    moreActions: "Más",
     forwardTitle: "Reenviar el documento",
     forwardDescription: "Se lo enviamos por email en tu nombre.",
     forwardToEmail: "Su email",
@@ -692,13 +702,14 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     machineTranslated: "Maschinelle Übersetzung. Maßgeblich ist das Original.",
     showOriginal: "Original anzeigen",
     showTranslation: "Übersetzung anzeigen",
-    translating: "Das ganze Dokument wird samt Layout übersetzt. Beim ersten Mal dauert es bis zu einer Minute, bis dahin bleibt das Original sichtbar.",
+    translating: "Wird übersetzt, bis zu einer Minute. Bis dahin bleibt das Original sichtbar.",
     translationFailed: "Übersetzung gerade nicht verfügbar, hier ist das Original.",
     externalDescription: "Es kann hier nicht angezeigt werden. Öffnen Sie es in einem neuen Tab und kommen Sie dann zurück, um zu antworten.",
     sharedBy: "Gesendet von",
     readyPrompt: "Wie geht es weiter?",
     confirmTitle: "Dieses Angebot annehmen",
     confirmAction: "Annehmen",
+    confirmHint: "Mit der Annahme stimmen Sie diesem Angebot zu. Der Absender wird benachrichtigt und meldet sich wegen der nächsten Schritte.",
     validatedNext: "Der Absender wurde benachrichtigt.",
     greeting: "Hallo {name}",
     sentTo: "Gesendet an {email}",
@@ -755,6 +766,7 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     videoError: "Dieses Video kann in diesem Browser nicht abgespielt werden. Versuchen Sie einen anderen oder kontaktieren Sie den Absender.",
     playVideo: "Video abspielen",
     forwardButton: "Weiterleiten",
+    moreActions: "Mehr",
     forwardTitle: "Dokument weiterleiten",
     forwardDescription: "Wir senden es per E-Mail in Ihrem Namen.",
     forwardToEmail: "E-Mail des Empfängers",

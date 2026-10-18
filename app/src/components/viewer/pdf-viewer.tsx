@@ -81,8 +81,9 @@ export function PdfViewer({
   const translatedFile = useTranslatedFile(slug, translated.locale, translated.onTranslated);
   // The translated PDF replaces the original once ready: same pages, same tracking, same capsules
   const shownUrl = translatedFile?.status === "done" ? `${fileUrl}?lang=${translated.locale}` : fileUrl;
-  const pdf = loaded?.url === shownUrl ? loaded.pdf : null;
   const failed = failedUrl === shownUrl;
+  // The file on screen stays until the next one is in: switching language keeps the reader's place
+  const pdf = failed ? null : (loaded?.pdf ?? null);
   // The bottom bar carries the answers, the booking button, or both
   const barVisible = ctaEnabled || !!booking || !!forward;
   // Once the reader has seen the price or the last page, the strip stays open
@@ -102,6 +103,7 @@ export function PdfViewer({
 
   useEffect(() => {
     let cancelled = false;
+    let handedOver = false;
     let loadingTask: PDFDocumentLoadingTask | null = null;
 
     (async () => {
@@ -118,6 +120,7 @@ export function PdfViewer({
           pageSizes.push({ width: viewport.width, height: viewport.height });
         }
         if (!cancelled) {
+          handedOver = true;
           setLoaded({ pdf: doc, url: shownUrl });
           setSizes(pageSizes);
         }
@@ -129,9 +132,16 @@ export function PdfViewer({
 
     return () => {
       cancelled = true;
-      void loadingTask?.destroy();
+      // A file on screen is destroyed once replaced (below), not when the next one starts loading
+      if (!handedOver) void loadingTask?.destroy();
     };
   }, [shownUrl]);
+
+  // The previous file goes once the next one is shown, and the last one with the viewer
+  useEffect(() => {
+    const doc = loaded?.pdf;
+    return () => void doc?.loadingTask.destroy();
+  }, [loaded]);
 
   return (
     <div className="flex min-h-full flex-1 flex-col bg-background selection:bg-foreground/15 selection:text-foreground">
@@ -158,9 +168,10 @@ export function PdfViewer({
         aside={
           <>
             {countdown && countdown.pricingPages.length === 0 && <ExpiryChip labels={labels} />}
+            {/* On a phone the progress rule says where the reader is: the title keeps the room */}
             {sizes.length > 0 && (
               <span className="shrink-0 font-mono text-micro text-muted-foreground tabular-nums">
-                <span aria-hidden>
+                <span aria-hidden className="max-sm:hidden">
                   P.{currentPage}/{sizes.length}
                 </span>
                 <span className="sr-only">

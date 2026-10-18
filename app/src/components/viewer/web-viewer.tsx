@@ -144,8 +144,19 @@ export function WebViewer({
         }
       />
 
+      {/* An embedded player stops above the capsule bubble: its controls stay reachable */}
       <main
-        className={`flex min-h-0 flex-1 flex-col gap-3 px-2 pt-2 sm:px-4 sm:pt-4 ${barVisible ? "pb-[calc(var(--decision-bar-h,4rem)+0.75rem)]" : chat ? "pb-20" : "pb-3"}`}
+        className={`flex min-h-0 flex-1 flex-col gap-3 px-2 pt-2 sm:px-4 sm:pt-4 ${
+          embedUrl && welcome
+            ? barVisible
+              ? "pb-[calc(var(--decision-bar-h,4rem)+5.5rem)]"
+              : "pb-24"
+            : barVisible
+              ? "pb-[calc(var(--decision-bar-h,4rem)+0.75rem)]"
+              : chat
+                ? "pb-20"
+                : "pb-3"
+        }`}
       >
         {!embedUrl && articleHtml ? (
           <ReaderArticle

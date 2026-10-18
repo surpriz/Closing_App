@@ -1,6 +1,16 @@
 "use client";
 
-import { CalendarDays, Check, Download, MessageCircleQuestion, MessageSquareText, Receipt } from "lucide-react";
+import {
+  CalendarDays,
+  Check,
+  Download,
+  Forward,
+  MessageCircleQuestion,
+  MessageSquareText,
+  MoreHorizontal,
+  Receipt,
+  type LucideIcon,
+} from "lucide-react";
 import { useEffect, useRef, useState, useTransition } from "react";
 
 import { recordMeetingBooked, recordMeetingClick, submitProspectAction } from "@/app/v/[slug]/actions";
@@ -15,6 +25,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -85,6 +101,7 @@ export function CtaBar({
   const [bookingOpening, setBookingOpening] = useState(0);
   const [bookingOpen, setBookingOpen] = useState(false);
   const [booked, setBooked] = useState(false);
+  const [forwardOpen, setForwardOpen] = useState(false);
   const barRef = useRef<HTMLDivElement>(null);
   usePublishedHeight(barRef);
 
@@ -151,6 +168,9 @@ export function CtaBar({
       : cn(STRIP_ICON_CELL, "sm:w-auto sm:px-4"),
   );
   const toolCell = cn(STRIP_CELL, STRIP_ICON_CELL, "gap-2", expanded && "max-sm:order-2 sm:min-h-14");
+  // Small screens, folded strip: the side actions go under one labelled "Plus", the answer keeps the room
+  const folded = !expanded;
+  const inMenu = folded && "max-sm:hidden";
   const forwardButton = (className: string) =>
     forward && (
       <ForwardDialog
@@ -160,8 +180,23 @@ export function CtaBar({
         documentName={documentName}
         getViewId={getViewId}
         className={className}
+        open={forwardOpen}
+        onOpenChange={setForwardOpen}
       />
     );
+  const moreMenu = (items: MoreItem[]) =>
+    items.length > 0 && (
+      <MoreMenu label={labels.moreActions} items={items} className={cn(STRIP_CELL, "gap-2 px-4 sm:hidden")} />
+    );
+  const chatItem: MoreItem[] = onAskQuestion
+    ? [{ key: "chat", icon: MessageCircleQuestion, label: labels.chatAsk, onSelect: onAskQuestion }]
+    : [];
+  const bookingItem: MoreItem[] = booking
+    ? [{ key: "booking", icon: CalendarDays, label: labels.bookMeeting, onSelect: openBooking }]
+    : [];
+  const forwardItem: MoreItem[] = forward
+    ? [{ key: "forward", icon: Forward, label: labels.forwardButton, onSelect: () => setForwardOpen(true) }]
+    : [];
 
   return (
     <>
@@ -185,8 +220,32 @@ export function CtaBar({
                   </p>
                 </div>
               </div>
-              {/* Signed: the moment it goes to finance or legal */}
-              {forwardButton(cn(STRIP_CELL, "w-14 gap-2 md:w-auto md:px-5"))}
+              {/* Signed: still a question to ask or a meeting to book, and the moment it goes to finance or legal */}
+              {moreMenu([...chatItem, ...bookingItem, ...forwardItem])}
+              {onAskQuestion && (
+                <Button
+                  variant="ghost"
+                  className={cn(STRIP_CELL, "w-14 gap-2 max-sm:hidden md:w-auto md:px-5")}
+                  aria-label={labels.chatAsk}
+                  onClick={onAskQuestion}
+                  data-chat-trigger
+                >
+                  <MessageCircleQuestion />
+                  <span className="hidden md:inline">{labels.chatAsk}</span>
+                </Button>
+              )}
+              {booking && (
+                <Button
+                  variant="ghost"
+                  className={cn(STRIP_CELL, "w-14 gap-2 max-sm:hidden md:w-auto md:px-5")}
+                  aria-label={labels.bookMeeting}
+                  onClick={openBooking}
+                >
+                  <CalendarDays />
+                  <span className="hidden md:inline">{labels.bookMeeting}</span>
+                </Button>
+              )}
+              {forwardButton(cn(STRIP_CELL, "w-14 gap-2 max-sm:hidden md:w-auto md:px-5"))}
               {downloadUrl && (
                 <Button
                   variant="ghost"
@@ -215,10 +274,27 @@ export function CtaBar({
               >
                 {notice ?? labels.readyPrompt}
               </p>
+              {moreMenu(
+                folded
+                  ? [
+                      ...chatItem,
+                      ...(bookingIsPrimary ? [] : bookingItem),
+                      ...forwardItem,
+                      ...(answers
+                        ? [{
+                            key: "change",
+                            icon: MessageSquareText,
+                            label: labels.requestChange,
+                            onSelect: () => setDialog("change"),
+                          }]
+                        : []),
+                    ]
+                  : [],
+              )}
               {onAskQuestion && (
                 <Button
                   variant="ghost"
-                  className={cn(toolCell, "md:w-auto md:px-4")}
+                  className={cn(toolCell, inMenu, "md:w-auto md:px-4")}
                   aria-label={labels.chatAsk}
                   onClick={onAskQuestion}
                   data-chat-trigger
@@ -228,7 +304,7 @@ export function CtaBar({
                 </Button>
               )}
               {voice && <div className={cn("flex", expanded && "max-sm:order-2")}>{voice}</div>}
-              {forwardButton(cn(toolCell, "md:w-auto md:px-4"))}
+              {forwardButton(cn(toolCell, inMenu, "md:w-auto md:px-4"))}
               {booking &&
                 (bookingIsPrimary ? (
                   <Button className={primaryCell} onClick={openBooking}>
@@ -238,7 +314,7 @@ export function CtaBar({
                 ) : (
                   <Button
                     variant="ghost"
-                    className={secondaryCell}
+                    className={cn(secondaryCell, inMenu)}
                     aria-label={labels.bookMeeting}
                     onClick={openBooking}
                     disabled={pending}
@@ -257,7 +333,7 @@ export function CtaBar({
                 <>
                   <Button
                     variant="ghost"
-                    className={secondaryCell}
+                    className={cn(secondaryCell, inMenu)}
                     aria-label={labels.requestChange}
                     onClick={() => setDialog("change")}
                     disabled={pending}
@@ -300,6 +376,7 @@ export function CtaBar({
                 <DialogTitle className="text-heading">{labels.confirmTitle}</DialogTitle>
                 <DialogDescription>{documentName}</DialogDescription>
               </DialogHeader>
+              <p className="text-body text-muted-foreground">{labels.confirmHint}</p>
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="signer-name">{labels.signName}</Label>
@@ -380,6 +457,28 @@ export function CtaBar({
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+type MoreItem = { key: string; icon: LucideIcon; label: string; onSelect: () => void };
+
+/** "Plus" on small screens: the side actions, each with its words, instead of a row of bare icons. */
+function MoreMenu({ label, items, className }: { label: string; items: MoreItem[]; className: string }) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger render={<Button variant="ghost" className={className} />}>
+        <MoreHorizontal aria-hidden />
+        {label}
+      </DropdownMenuTrigger>
+      <DropdownMenuContent side="top" align="start" className="w-auto min-w-56">
+        {items.map(({ key, icon: Icon, label: text, onSelect }) => (
+          <DropdownMenuItem key={key} className="min-h-11 gap-2.5" onClick={onSelect}>
+            <Icon aria-hidden />
+            {text}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 

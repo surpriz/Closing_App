@@ -38,6 +38,9 @@ type Props = ForwardOptions & {
   className: string;
   /** The label next to the icon; hidden on small screens otherwise. */
   showLabel?: boolean;
+  /** Opened from elsewhere too (the bar's "Plus" menu on small screens). */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 };
 
 type Failure = Extract<ForwardResult, { ok: false }>["error"];
@@ -65,8 +68,21 @@ function errorText(error: Failure, labels: ViewerLabels, sender: string) {
 }
 
 /** "Transférer": the reader sends the document to a colleague, in their name. */
-export function ForwardDialog({ slug, labels, documentName, getViewId, senderName, needsEmail, className, showLabel = false }: Props) {
-  const [open, setOpen] = useState(false);
+export function ForwardDialog({
+  slug,
+  labels,
+  documentName,
+  getViewId,
+  senderName,
+  needsEmail,
+  className,
+  showLabel = false,
+  open: openProp,
+  onOpenChange,
+}: Props) {
+  const [ownOpen, setOwnOpen] = useState(false);
+  const open = openProp ?? ownOpen;
+  const setOpen = onOpenChange ?? setOwnOpen;
   const [to, setTo] = useState("");
   const [toName, setToName] = useState("");
   const [message, setMessage] = useState("");

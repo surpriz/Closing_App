@@ -223,8 +223,21 @@ function Bubble({ capsule, from, initials, labels, onOpen, onDismiss }: BubblePr
           <Play className={cn("fill-white text-white", fresh ? "size-5" : "size-4")} aria-hidden />
         </span>
       </button>
+      {/* Folded, the still keeps a way to close it: it would come back on every page with a clip */}
+      {!fresh && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-auto w-11 shrink-0 rounded-none border-l border-border"
+          onClick={onDismiss}
+          aria-label={labels.capsuleDismiss}
+        >
+          <X />
+        </Button>
+      )}
       {fresh && (
-        <div className="flex max-w-[min(15rem,calc(100vw-7.5rem))] items-center gap-1 border-l border-border py-1 pr-1 pl-3">
+        // Narrow enough to leave the chat launcher, bottom right, uncovered on a phone
+        <div className="flex max-w-[min(15rem,calc(100vw-10rem))] items-center gap-1 border-l border-border py-1 pr-1 pl-3">
           <button
             type="button"
             onClick={onOpen}
