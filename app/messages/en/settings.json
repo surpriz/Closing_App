@@ -37,7 +37,7 @@
     "save": "Save settings",
     "pilot": {
       "title": "Autopilot",
-      "descriptionAi": "Clozer reads every deal like a seasoned closer: who reads what, what's blocking, when to follow up. It drafts the follow-ups on its own.",
+      "descriptionAi": "Clozer reads every prospect like a seasoned closer: who reads what, what's blocking, when to follow up. It drafts the follow-ups on its own.",
       "descriptionNoAi": "Follow-ups are drafted from simple rules until an AI is configured.",
       "hint": "Either way: at most 3 follow-ups per contact per month, never right after a read, always during the prospect's business hours, and never a hint that you can see what they read.",
       "question": "When Clozer has drafted a follow-up",
@@ -91,7 +91,7 @@
       "whyPlaceholder": "Flat-rate pricing, +18% conversion rate on average, a dedicated team",
       "objectionsLabel": "Objections you often hear",
       "objectionsPlaceholder": "Too expensive compared to a freelancer, afraid of losing SEO, not the right time",
-      "cycleBefore": "A deal usually closes in",
+      "cycleBefore": "A sale usually closes in",
       "cycleAfter": "days"
     },
     "links": {
@@ -152,7 +152,7 @@
     "exportWorkspaceDescription": "Links, prospects, reads and messages, as JSON.",
     "download": "Download",
     "deleteAccountTitle": "Delete my account",
-    "deleteAccountDescription": "Your deals stay in the workspace, your access goes away.",
+    "deleteAccountDescription": "Your prospects stay in the workspace, your access goes away.",
     "deleteAccountDialogTitle": "Delete your account?",
     "deleteAccountDialogDescription": "You'll be signed out everywhere. Your links stay with the team.",
     "deleteTrigger": "Delete",

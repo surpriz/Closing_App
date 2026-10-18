@@ -95,7 +95,7 @@
     "confirm": "Never suggest again"
   },
   "outreach": {
-    "sent": "You're off: the deal shows up in your Today",
+    "sent": "You're off: the prospect shows up in your Today",
     "copied": "Message copied",
     "copyFailed": "Couldn't copy: select the text by hand.",
     "viewMessage": "View message",
@@ -116,8 +116,8 @@
   },
   "targetForm": {
     "saved": "Target saved",
-    "deducing": "Analyzing your deals…",
-    "deduce": "Infer from my deals",
+    "deducing": "Analyzing your prospects…",
+    "deduce": "Infer from my prospects",
     "evidence": "Suggested from {recognized, plural, one {# recognized company} other {# recognized companies}} out of {domains}",
     "evidenceWon": ", {won} won",
     "evidenceConfidence": " · {level, select, good {high} medium {medium} other {low}} confidence",

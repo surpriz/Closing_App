@@ -4,7 +4,7 @@ import { isManagerRole, isOwnerRole } from "@/lib/roles";
 
 /**
  * What the help assistant knows about the user asking: where they are and how
- * far they got. Counts and switches only, never a prospect or a deal: the
+ * far they got. Counts and switches only, never a prospect or a sale: the
  * assistant explains Clozer, it does not read the pipeline.
  */
 
@@ -25,7 +25,7 @@ const PAGE_LABELS_EN: [prefix: string, label: string][] = [
   ["/dashboard", "Today (daily cockpit)"],
   ["/documents/", "a document page (links per prospect, what Clozer understood, what blocks)"],
   ["/documents", "Documents (list and upload)"],
-  ["/links/", "a deal page (one prospect's link: follow-ups, readers, activity)"],
+  ["/links/", "a prospect page (one prospect's link: follow-ups, readers, activity)"],
   ["/team", "Team (team view, managers only)"],
   ["/settings", "Settings"],
   ["/how-it-works", "How it works"],
@@ -36,7 +36,7 @@ const PAGE_LABELS_FR: [prefix: string, label: string][] = [
   ["/dashboard", "Aujourd'hui (daily cockpit)"],
   ["/documents/", "a document page (links per prospect, what Clozer understood, what blocks)"],
   ["/documents", "Documents (list and upload)"],
-  ["/links/", "a deal page (one prospect's link: follow-ups, readers, activity)"],
+  ["/links/", "a prospect page (one prospect's link: follow-ups, readers, activity)"],
   ["/team", "Équipe (team view, managers only)"],
   ["/settings", "Réglages"],
   ["/how-it-works", "Comment ça marche"],
@@ -54,7 +54,7 @@ export function pageLabel(pathname: string | null | undefined, locale: UiLocale 
 function roleLabel(role: string) {
   if (isOwnerRole(role)) return "owner (manages the workspace and the team)";
   if (isManagerRole(role)) return "admin (manages the team)";
-  return "member (seller, sees and changes their own deals)";
+  return "member (seller, sees and changes their own prospects)";
 }
 
 /** Pure: the <user_state> block given to the model. */

@@ -54,8 +54,8 @@
     "noAi": "Aucune IA n'est configurée.",
     "budget": "Quota d'analyses du jour atteint.",
     "analysisFailed": "L'analyse a échoué, réessayez dans un moment.",
-    "dealClosed": "Ce deal n'est plus en cours.",
-    "analyzeFirst": "Analysez d'abord ce deal.",
+    "dealClosed": "Ce prospect n'est plus en cours.",
+    "analyzeFirst": "Analysez d'abord ce prospect.",
     "cannotPrepare": "Impossible de préparer une relance.",
     "expiryPast": "Choisissez une date à venir.",
     "expiryTooFar": "Un an maximum."
@@ -82,7 +82,7 @@
     "viaSharedNamed": "via le lien partagé « {name} »",
     "expiredAgo": "Expiré {when}",
     "expiresIn": "Expire {when}",
-    "readOnly": "Deal de {seller}. Vous pouvez le consulter, seuls son commercial et les admins peuvent le modifier.",
+    "readOnly": "Prospect de {seller}. Vous pouvez le consulter, seuls son commercial et les admins peuvent le modifier.",
     "anotherSeller": "un autre commercial",
     "expiredBanner": "Ce lien a expiré : le prospect ne peut plus l'ouvrir. Prolongez-le pour le réactiver.",
     "newLink": "Nouveau lien"
@@ -125,7 +125,7 @@
     "avgPerRead": "{time} par lecture en moyenne"
   },
   "dealContextDetails": {
-    "title": "Contexte du deal",
+    "title": "Contexte commercial",
     "emptySummary": "votre équipe le voit, pas le prospect",
     "paused": "en pause"
   },
@@ -134,7 +134,7 @@
   },
   "dealContextForm": {
     "saved": "Contexte enregistré",
-    "amount": "Montant du deal",
+    "amount": "Montant en jeu",
     "amountPlaceholder": "12 000",
     "currency": "Devise",
     "deadline": "Décision attendue avant le",
@@ -143,17 +143,17 @@
     "rolePlaceholder": "DAF, CEO…",
     "notes": "Vos notes",
     "notesPlaceholder": "Budget serré, compare avec un concurrent, veut démarrer en janvier…",
-    "notesHint": "Servent à l'analyse du deal. Jamais reprises telles quelles dans un message au prospect.",
+    "notesHint": "Servent à l'analyse. Jamais reprises telles quelles dans un message au prospect.",
     "referenceConsent": "Ce client accepte d'être cité comme référence",
     "referenceConsentHint": "Sans son accord, son nom n'apparaît jamais dans vos messages de prospection.",
     "saving": "Enregistrement…",
     "save": "Enregistrer"
   },
   "dealStatusSelect": {
-    "reopened": "Deal rouvert",
+    "reopened": "Rouvert",
     "changed": "Statut « {status} », relances en attente annulées",
     "failed": "Modification impossible",
-    "ariaLabel": "Statut du deal"
+    "ariaLabel": "Statut du prospect"
   },
   "dealVerdict": {
     "severityLow": "faible",
@@ -161,7 +161,7 @@
     "severityHigh": "forte",
     "aiReadAnalyzed": "Lecture IA, analysée {when}",
     "aiReadUpdated": "Lecture IA, mise à jour {when}",
-    "analyzeDeal": "Analyser ce deal",
+    "analyzeDeal": "Analyser ce prospect",
     "readSince": "Le prospect a relu depuis cette analyse. Clozer la met à jour quelques minutes après la fin de sa lecture, ou tout de suite avec « Réanalyser ».",
     "whyTemperature": "Pourquoi cette température",
     "outOf100": "<b>{score}</b> sur 100",
@@ -214,7 +214,7 @@
     "translationEnabled": "Lire le document dans sa langue",
     "translationEnabledHint": "Traduit à la demande du lecteur, mise en page comprise. L'original reste à un clic.",
     "followupsEnabled": "Relances préparées par Clozer",
-    "followupsEnabledHint": "Coupé : le deal reste suivi, sans relance.",
+    "followupsEnabledHint": "Coupé : le prospect reste suivi, sans relance.",
     "videoCta": "Demander un devis",
     "videoCtaHint": "Un bouton sous la vidéo.",
     "bookingLabel": "Lien de l'agenda",
@@ -227,7 +227,7 @@
     "keepDefaults": "Garder ces réglages pour mes prochains liens"
   },
   "linkTestTools": {
-    "aged": "Ce deal a vieilli de {days, plural, one {# jour} other {# jours}}. Lancez un cycle du moteur pour voir la suite.",
+    "aged": "Ce prospect a vieilli de {days, plural, one {# jour} other {# jours}}. Lancez un cycle du moteur pour voir la suite.",
     "title": "Outils de test",
     "timeTravel": "Faire passer le temps :",
     "plusDays": "+{days} j",
@@ -388,8 +388,8 @@
     "save": "Enregistrer"
   },
   "markWonButton": {
-    "won": "Deal gagné, bravo.",
-    "failed": "Impossible de mettre à jour le deal.",
+    "won": "Gagné, bravo.",
+    "failed": "Impossible de mettre à jour ce prospect.",
     "label": "Marquer gagné"
   },
   "archiveLinkButton": {
@@ -420,9 +420,9 @@
     "saving": "Enregistrement…",
     "submit": "Noter l'échange",
     "pausedUntil": "En pause jusqu'au {date}",
-    "resumed": "Le deal reprend",
+    "resumed": "Le suivi reprend",
     "resume": "Reprendre",
-    "pausedToast": "Deal en pause, plus de relance d'ici là",
+    "pausedToast": "En pause, plus de relance d'ici là",
     "pauseLabel": "Mettre en pause jusqu'au",
     "pause": "Pause",
     "pauseHint": "Le prospect revient vers vous plus tard ? Clozer se tait d'ici là."

@@ -10,7 +10,7 @@ import { HELP_GUIDE_EN } from "./guide.en";
 export const HELP_GUIDE = `## Ce qu'est Clozer
 - Clozer remplace la pièce jointe par un lien suivi. Le vendeur dépose un document (devis, proposition,
   présentation en PDF, page web ou pitch vidéo), crée un lien par prospect et l'envoie.
-- Clozer voit comment le prospect lit, comprend où en est le deal et prépare la bonne relance au bon moment.
+- Clozer voit comment le prospect lit, comprend où en est la vente et prépare la bonne relance au bon moment.
   Le vendeur valide et appelle ceux qui sont prêts.
 - Connexion par email, sans mot de passe. Le prospect lit dans son navigateur, sur ordinateur comme sur
   téléphone, sans rien installer.
@@ -26,13 +26,13 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
 - Menu du compte (avatar en haut à droite) : Données et confidentialité (/settings#donnees), choix du thème,
   Se déconnecter.
 
-## Parcours d'un deal
+## Parcours d'un prospect
 1. Vous déposez un document. Clozer le lit une fois : type, résumé de chaque page, où sont le prix, le
    planning, le périmètre, et les faits précis (« 12 000 € HT »).
 2. Le prospect ouvre son lien. Clozer note page par page le temps passé, quand, sur quel appareil, et si
    d'autres l'ouvrent. Sur Clozer, vous le voyez lire en direct.
-3. Quelques minutes après sa lecture, Clozer reconstitue l'histoire du deal en faits datés et une IA
-   l'interprète : où en est le deal, ce qui coince (prix, décideur, timing…), quoi faire. Chaque conclusion
+3. Quelques minutes après sa lecture, Clozer reconstitue l'histoire de la vente en faits datés et une IA
+   l'interprète : où en est la vente, ce qui coince (prix, décideur, timing…), quoi faire. Chaque conclusion
    cite ses faits ; ce qui n'est pas prouvé est écarté.
 4. S'il faut relancer, Clozer écrit le message en votre nom, avec votre offre et les vrais chiffres du
    document. Jamais « j'ai vu que vous avez regardé les prix ».
@@ -40,10 +40,10 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
    relances par mois au maximum, rien juste après un échange que vous avez noté.
 6. Par défaut la relance vous attend (email + « Relances à valider »). En mode automatique, seules les
    relances sûres partent seules. Les réponses du prospect arrivent dans votre boîte mail.
-7. Il continue de surveiller : silence de 3 jours, de 7 jours, il relit le deal et adapte la suite. Lien
+7. Il continue de surveiller : silence de 3 jours, de 7 jours, il refait le point et adapte la suite. Lien
    jamais ouvert : rappel discret après quelques jours. Le prospect clique « Valider » ou « Demander un
    ajustement » : tout s'arrête et vous êtes prévenu.
-- Statuts d'un deal : En cours, Validé, Ajustement demandé, Gagné, Perdu.
+- Statuts d'un prospect : En cours, Validé, Ajustement demandé, Gagné, Perdu.
 
 ## Deux indicateurs : température et lecture IA
 - Température (sur 100, Chaud / Tiède / Froid) : combien il lit. Calculée sans IA : lecture récente, temps
@@ -52,10 +52,10 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
 - Lecture IA (avec sa fiabilité) : ce que ça veut dire. Un prospect peut être « chaud » avec une lecture IA
   prudente (lectures courtes, trop tôt pour conclure). Fiabilité faible quand il y a peu de signaux.
 - Actions conseillées par la lecture IA : Relancer par écrit, Appeler, Répondre à sa demande, Faire entrer le
-  décideur dans la boucle, Attendre, Classer le deal.
+  décideur dans la boucle, Attendre, Classer comme perdu.
 
 ## Aujourd'hui (/dashboard)
-- La page d'accueil. Un vendeur y voit ses propres deals ; la vue de toute l'équipe est sur Équipe.
+- La page d'accueil. Un vendeur y voit ses propres prospects ; la vue de toute l'équipe est sur Équipe.
 - Premiers pas (3 étapes cochées d'après vos vraies données) : Déposez un document, Envoyez le lien, Le
   prospect l'ouvre. Pour tester, ouvrez votre lien dans une fenêtre privée : vos propres lectures connectées
   ne comptent pas.
@@ -64,13 +64,13 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
 - Bandeau « Mode automatique » (si le pilote automatique est actif) : combien de relances sont parties seules
   depuis 24 h, et pour les propriétaires et admins le bouton « Tout valider moi-même » qui repasse tout en
   validation manuelle.
-- À traiter : vos deals du plus urgent au moins urgent (15 affichés), avec leur état (Chaud, Tiède, Froid, Pas
+- À traiter : vos prospects du plus urgent au moins urgent (15 affichés), avec leur état (Chaud, Tiède, Froid, Pas
   encore ouvert, Validé…), l'action conseillée et un bouton pour copier le lien, ou « Marquer gagné » quand le
   prospect a validé.
 - Vos envois : entonnoir envoyés, ouverts, lus attentivement, validés, sur 7 jours, 30 jours ou Tout. « Lu
   attentivement » = la moitié du PDF avec au moins 30 s de lecture, une minute sur un lien web, ou une longue
   lecture des tarifs.
-- Colonne de droite : Deals en cours (répartition par température), Relances à valider (mène à la fiche,
+- Colonne de droite : Prospects en cours (répartition par température), Relances à valider (mène à la fiche,
   rubrique Relances), Ce qui s'est passé, Relances à venir.
 
 ## Documents (/documents)
@@ -116,11 +116,11 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
   est prêt ».
 - Par défaut, un lien pour une personne. En bas de l'écran, « En faire un lien ouvert à tous » le rend
   partagé. Lien ouvert à tous = lien partagé (plaquette, post
-  LinkedIn, signature) : chaque lecteur donne son email et reçoit son propre lien, suivi comme un deal ; ses
+  LinkedIn, signature) : chaque lecteur donne son email et reçoit son propre lien, suivi comme un prospect ; ses
   relances attendent toujours votre feu vert. Un lien déjà lu ou attribué à un contact ne peut plus devenir
   partagé : créez-en un nouveau.
 - Champ « Pour qui est ce lien ? » en haut (facultatif) : un email ajoute le contact, un nom nomme juste le
-  lien (et le deal).
+  lien (et le prospect).
 - Un lien « Pour un prospect » s'ouvre directement, sans demander d'email au lecteur : il a été fait pour
   lui. On peut quand même l'exiger lien par lien dans « Personnaliser ». Un lien transféré est repéré comme
   un nouveau lecteur.
@@ -135,10 +135,10 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
 - Aussi : « Personnaliser » (mot d'accueil) et « Voir ce que verra le prospect ». Pour un devis ou une
   proposition, une échéance peut être réglée d'office : le prospect voit un décompte.
 
-## Fiche d'un prospect / deal (/links/[id])
-- En-tête : nom de la société ou du contact, le lien à copier, le sélecteur « Statut du deal », « Réglages du
+## Fiche d'un prospect (/links/[id])
+- En-tête : nom de la société ou du contact, le lien à copier, le sélecteur « Statut du prospect », « Réglages du
   lien » et « Archiver le lien ». Changer le statut (hors En cours) annule les relances en attente.
-- Deal d'un collègue : consultable, mais seuls son commercial et les admins peuvent le modifier.
+- Prospect d'un collègue : consultable, mais seuls son commercial et les admins peuvent le modifier.
 - Prospect qui a validé : bandeau « a validé… Confirmez la vente pour arrêter les relances » avec « Marquer
   gagné ».
 - Lien expiré : bandeau rouge, le prospect ne peut plus l'ouvrir ; prolongez-le pour le réactiver.
@@ -146,7 +146,7 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
 - Le verdict, un seul bloc en tête : pastille de température (Chaud, Tiède, Froid, « Pas encore lu »),
   « lu il y a… », nombre de lectures, puis la phrase de la lecture IA (ou, sans analyse, la température et
   ses deux raisons les plus fortes), puis l'action conseillée (la même que sur Aujourd'hui) avec « Préparer
-  une relance », « Voir la relance prête » ou « Analyser ce deal ».
+  une relance », « Voir la relance prête » ou « Analyser ce prospect ».
   - Repli « Pourquoi cette température » : score sur 100, jauge, chaque raison avec ses points, « Comment la
     température est calculée ».
   - Repli « Détails de l'analyse » : date, « sûre à N % », stade et dynamique, « Ce qui compte », « Ce qui
@@ -162,10 +162,10 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
     ouvrir un contact pour le modifier (email, nom, entreprise, téléphone mobile, « Accepte d'être contacté
     sur WhatsApp ») ; « Ajouter un contact » ; puis « Autres lecteurs » (#qui-lit), regroupés par société ou
     réseau. Pour un lien partagé : « Lecteurs », chacun avec son lien.
-  - Contexte du deal (replié ; votre équipe le voit, pas le prospect) : Montant du deal, Devise, Décision
+  - Contexte commercial (replié ; votre équipe le voit, pas le prospect) : Montant en jeu, Devise, Décision
     attendue avant le, Décideur, Son rôle, Vos notes. Les notes servent à l'analyse, jamais à la rédaction
     d'un message. Le résumé (montant · échéance · décideur) reste visible sur la ligne repliée.
-  - « Mettre en pause jusqu'au » (dans Contexte du deal) : le prospect revient vers vous plus tard, Clozer se
+  - « Mettre en pause jusqu'au » (dans Contexte commercial) : le prospect revient vers vous plus tard, Clozer se
     tait d'ici là. « Reprendre » pour annuler.
   - Noter un échange : Appel, Réponse reçue, Rendez-vous, Note, avec « Ce qui s'est dit » et « Quand » (vide =
     maintenant), bouton « Noter l'échange ». Clozer en tient compte et ne relance pas juste après.
@@ -176,7 +176,7 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
 - Réglages du lien (« Chaque changement est enregistré tout de suite ») : Nom du lien, « Demander son email
   avant de lire », et ce que le prospect peut faire : « Valider ou demander un ajustement » (deux boutons en
   bas du document ; « Demander un devis » sous une vidéo), « Prendre rendez-vous », « Poser ses questions à
-  l'assistant », « Laisser un vocal sur une page » (PDF), « Relances préparées par Clozer » (coupé : le deal
+  l'assistant », « Laisser un vocal sur une page » (PDF), « Relances préparées par Clozer » (coupé : le prospect
   reste suivi, sans relance). « Lien de l'agenda » : vide = votre agenda des Réglages. Propriétaires et admins
   : « Garder ces réglages pour mes prochains liens ».
 - Archiver le lien : le prospect ne peut plus ouvrir le document, les relances prévues sont annulées.
@@ -197,7 +197,7 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
 - Règles toujours respectées : jamais d'allusion au fait que vous voyez ce qu'il lit (un contrôle bloque toute
   phrase qui le laisserait deviner) ; jamais un chiffre ou une date absents du document ; 3 relances par mois
   et par contact au maximum, espacées ; jamais dans les heures qui suivent une lecture, toujours aux heures de
-  bureau du prospect ; une seule relance en préparation par deal (une analyse plus récente remplace
+  bureau du prospect ; une seule relance en préparation par prospect (une analyse plus récente remplace
   l'ancienne) ; vos notes privées ne servent jamais à la rédaction.
 - Sur une relance : modifier l'objet et le message puis « Enregistrer » ; « Réécrire » avec Plus court, Plus
   direct, Proposer un appel, Autre angle, ou une consigne libre ; « Valider » (elle part à l'heure prévue,
@@ -205,7 +205,7 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
   envoyée moi-même » ; « Annuler ». Un lien expiré doit être prolongé avant de relancer.
 - Un lien de désinscription est ajouté à chaque envoi.
 - Arrêter les relances : pour tout l'espace, « Tout valider moi-même » sur Aujourd'hui ou repasser sur « Je la
-  relis et je valide » ; pour un deal, l'interrupteur « Relances » (onglet Prospects du document) ou «
+  relis et je valide » ; pour un prospect, l'interrupteur « Relances » (onglet Prospects du document) ou «
   Relances préparées par Clozer » dans les réglages du lien, la pause « Mettre en pause jusqu'au », ou un
   statut autre que En cours. Pour les nouveaux liens : Réglages → Vos liens → « Préparer les relances ».
 
@@ -263,12 +263,12 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
   Outil externe ; « Mettre en copie des emails d'alerte » ; « Brancher Slack ou un outil externe » : adresse
   du webhook Slack, et Webhook (CRM, Zapier, Make…) signé HMAC SHA-256 (en-tête X-Closing-Signature).
 - Votre agenda (/settings#agenda, personnel) : lien de prise de rendez-vous. Calendly et Cal.com s'affichent
-  dans la page du prospect (nom et email pré-remplis) ; les autres (HubSpot, Google Agenda…) s'ouvrent dans un
+  dans la page que lit votre prospect (nom et email pré-remplis) ; les autres (HubSpot, Google Agenda…) s'ouvrent dans un
   onglet. Vide : pas de bouton « Prendre rendez-vous ».
 
 ## Autres réglages de l'espace
 - Votre offre (/settings#offre) : Ce que vous vendez, Vos clients, Pourquoi ils vous choisissent, Les
-  objections que vous entendez souvent, durée habituelle d'un deal en jours. Facultatif : Clozer la
+  objections que vous entendez souvent, durée habituelle d'une vente en jours. Facultatif : Clozer la
   pré-remplit à la lecture du premier document.
 - Vos liens (/settings#liens) : ce que chaque nouveau lien propose d'office. « Demander son email au lecteur
   avant d'ouvrir », expiration d'un devis ou d'une proposition (7, 15, 30 jours ou jamais ; le décompte ne va
@@ -278,15 +278,15 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
 
 ## Équipe et rôles
 - Rôles : Propriétaire, Admin, Membre.
-- Membre : voit ses propres deals sur Aujourd'hui, consulte ceux des collègues sans les modifier, règle ses
+- Membre : voit ses propres prospects sur Aujourd'hui, consulte ceux des collègues sans les modifier, règle ses
   notifications et son agenda. Réglages de l'espace grisés (« Réglé par un administrateur de l'espace. »).
-- Admin : voit toute l'équipe sur la page Équipe, règle l'espace, modifie tous les deals, supprime les
+- Admin : voit toute l'équipe sur la page Équipe, règle l'espace, modifie tous les prospects, supprime les
   documents, invite et retire des membres.
 - Propriétaire : comme un admin, plus les liens sans commercial attitré, la possibilité de nommer un autre
   propriétaire et de supprimer l'espace.
 - Page Équipe (/team) : chiffres En cours, Ça avance, Ça glisse, À classer, Pipeline ; tableau « Par
   commercial » (cliquez pour filtrer) ; colonnes Ça avance (à suivre de près), Ça glisse (en train de
-  refroidir), À classer (à relancer une dernière fois ou à classer). Ces mots décrivent la vie du deal ; la
+  refroidir), À classer (à relancer une dernière fois ou à classer). Ces mots décrivent la vie de la vente ; la
   température (Chaud, Tiède, Froid) reste celle du dashboard.
 - Inviter : « Inviter un commercial » ou Réglages → Équipe (/settings#equipe), email + rôle (Membre ou Admin),
   « Inviter ». Changer un rôle, « Retirer » un membre, annuler une invitation.
@@ -301,7 +301,7 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
   » (lectures, messages, vocaux, relances). Les validations signées restent 5 ans comme preuve de l'accord.
   Répondez sous un mois.
 - « Exporter l'espace » (propriétaires et admins) : liens, prospects, lectures et messages en JSON.
-- « Supprimer mon compte » (tapez SUPPRIMER) : vos deals restent dans l'espace, votre accès disparaît.
+- « Supprimer mon compte » (tapez SUPPRIMER) : vos prospects restent dans l'espace, votre accès disparaît.
 - « Supprimer l'espace » (propriétaire, tapez le nom de l'espace) : tout est effacé, fichiers compris, pour
   toute l'équipe. Irréversible : exportez d'abord.
 
@@ -312,7 +312,7 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
 - Les relances WhatsApp arrivent bientôt.
 - Fichiers : PDF uniquement, 25 Mo maximum. Sur un lien web, pas de détail page par page.
 - IA : Claude Haiku (d'Anthropic) lit les documents et fait le second contrôle avant tout envoi automatique ;
-  Claude Sonnet analyse chaque deal et rédige les relances. Une analyse n'est relancée que s'il s'est passé
+  Claude Sonnet analyse chaque prospect et rédige les relances. Une analyse n'est relancée que s'il s'est passé
   quelque chose de nouveau.
 
 ## Conseils pour bien utiliser Clozer
@@ -322,7 +322,7 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
 - Remplissez Votre offre et Vos messages : les relances sont plus justes et signées comme vous.
 - Commencez en « Je la relis et je valide », passez en automatique une fois en confiance avec les brouillons.
 - Notez vos appels, rendez-vous et réponses : Clozer évite de relancer à contretemps et l'analyse reste juste.
-- Renseignez Le deal (montant, échéance, décideur) : meilleure analyse, pipeline juste.
+- Renseignez le Contexte commercial (montant, échéance, décideur) : meilleure analyse, pipeline juste.
 - Vérifiez les étiquettes de pages, surtout Tarifs : elles comptent pour la température et les relances.
 - Nourrissez l'assistant (modalités, garanties, FAQ) et lisez les questions posées : elles révèlent les
   objections.
@@ -335,7 +335,7 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
   répond aux questions sur Clozer et transmet à l'équipe Clozer, avec votre accord, vos suggestions, bugs,
   remarques et les questions auxquelles il n'a pas su répondre. L'équipe lit tout et peut vous répondre par
   email.
-- Il ne voit ni vos documents ni vos deals et ne peut rien modifier à votre place.
+- Il ne voit ni vos documents ni vos prospects et ne peut rien modifier à votre place.
 - Questions fréquentes (/faq) : toutes les questions courantes, par thème, avec une recherche. Depuis le menu
   du compte, Cmd+K ou Comment ça marche.
 

@@ -95,7 +95,7 @@
     "confirm": "Ne plus jamais proposer"
   },
   "outreach": {
-    "sent": "C'est parti : le deal apparaît dans votre journée",
+    "sent": "C'est parti : le prospect apparaît dans votre journée",
     "copied": "Message copié",
     "copyFailed": "Copie impossible : sélectionnez le texte à la main.",
     "viewMessage": "Voir le message",
@@ -116,8 +116,8 @@
   },
   "targetForm": {
     "saved": "Cible enregistrée",
-    "deducing": "Analyse de vos deals…",
-    "deduce": "Déduire de mes deals",
+    "deducing": "Analyse de vos prospects…",
+    "deduce": "Déduire de mes prospects",
     "evidence": "Proposé à partir de {recognized, plural, one {# entreprise reconnue} other {# entreprises reconnues}} sur {domains}",
     "evidenceWon": ", dont {won, plural, one {# gagnée} other {# gagnées}}",
     "evidenceConfidence": " · confiance {level, select, good {bonne} medium {moyenne} other {faible}}",

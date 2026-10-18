@@ -20,8 +20,8 @@ describe("pageLabel", () => {
     expect(pageLabel("/documents/abc")).toMatch(/document page/);
   });
 
-  it("knows deal pages and settings", () => {
-    expect(pageLabel("/links/xyz")).toMatch(/deal page/);
+  it("knows prospect pages and settings", () => {
+    expect(pageLabel("/links/xyz")).toMatch(/prospect page/);
     expect(pageLabel("/settings")).toBe("Réglages");
     expect(pageLabel("/settings", "en")).toBe("Settings");
   });

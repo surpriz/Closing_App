@@ -90,7 +90,7 @@
   },
   "scoreReason": {
     "deal_validated": "Proposal approved",
-    "deal_lost": "Deal lost",
+    "deal_lost": "Marked lost",
     "recent_activity_24h": "Read in the last 24 h",
     "recent_activity_3d": "Read in the last 3 days",
     "recent_activity_7d": "Read this week",
@@ -139,7 +139,7 @@
     "reply_to_request": "Answer their request",
     "involve_decision_maker": "Bring the decision-maker in",
     "wait": "Wait",
-    "close_lost": "Close the deal as lost"
+    "close_lost": "Mark as lost"
   },
   "timing": {
     "now": "now",

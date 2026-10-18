@@ -10,7 +10,7 @@
   "ext": {
     "unauthorized": "Reconnect the Clozer extension.",
     "documentNotFound": "Document not found.",
-    "dealNotPending": "This deal is no longer pending.",
+    "dealNotPending": "This prospect is no longer pending.",
     "notPdf": "This file isn't a valid PDF.",
     "pdfSaveFailed": "Clozer couldn't save the PDF. Try again.",
     "codeExpired": "The code has expired. Start the connection again."
@@ -128,9 +128,9 @@
   },
   "followups": {
     "policy": {
-      "notActive": "The deal is no longer active.",
+      "notActive": "This prospect is no longer active.",
       "followupsOff": "Follow-ups are turned off on this link.",
-      "snoozed": "The deal is paused.",
+      "snoozed": "This prospect is paused.",
       "meetingBooked": "The prospect booked a meeting: no more automatic follow-ups.",
       "quoteRequested": "The prospect asked for a quote: it's up to you to reply, no more automatic follow-ups.",
       "noContact": "No contact to write to.",
@@ -154,7 +154,7 @@
     "dispatch": {
       "followupsOff": "Follow-ups turned off on this link",
       "prospectReplied": "The prospect already replied on the proposal",
-      "paused": "Deal paused by the salesperson",
+      "paused": "Paused by the salesperson",
       "quoteRequested": "Quote requested by the prospect",
       "linkExpired": "Link expired",
       "unsubscribed": "Prospect unsubscribed",

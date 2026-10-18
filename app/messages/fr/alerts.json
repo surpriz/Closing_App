@@ -4,9 +4,9 @@
     "doc": "« {name} »",
     "quote": "« {text} »",
     "lineQuote": " : « {text} »",
-    "viewDeal": "Voir le deal",
+    "viewDeal": "Voir le prospect",
     "reply": "Lui répondre",
-    "dealLine": "Le deal : {url}",
+    "dealLine": "Le prospect : {url}",
     "footer": "Régler mes notifications"
   },
   "message": {
@@ -30,8 +30,8 @@
       "line": "{who} a validé {doc}"
     },
     "meetingBooked": {
-      "bodyDate": "{who} vient de réserver un rendez-vous depuis {doc}, pour le {date}. Les relances automatiques de ce deal sont arrêtées.",
-      "body": "{who} vient de réserver un rendez-vous depuis {doc}. Les relances automatiques de ce deal sont arrêtées.",
+      "bodyDate": "{who} vient de réserver un rendez-vous depuis {doc}, pour le {date}. Les relances automatiques pour ce prospect sont arrêtées.",
+      "body": "{who} vient de réserver un rendez-vous depuis {doc}. Les relances automatiques pour ce prospect sont arrêtées.",
       "noDate": "La date et l'heure sont dans votre agenda.",
       "subjectDate": "{who} a pris rendez-vous le {date}",
       "subject": "{who} a pris rendez-vous",
@@ -44,20 +44,20 @@
       "line": "{who} demande un ajustement sur {doc}"
     },
     "quoteRequested": {
-      "body": "{who} a regardé {doc} et demande un devis. Les relances automatiques de ce deal sont arrêtées.",
+      "body": "{who} a regardé {doc} et demande un devis. Les relances automatiques pour ce prospect sont arrêtées.",
       "subject": "{who} demande un devis",
       "line": "{who} demande un devis après {doc}"
     },
     "prospectQuestion": {
       "body": "{who} a posé une question sur {doc}. L'assistant n'a pas pu répondre et lui a dit que vous reviendriez vers lui.",
-      "dealAndChat": "Le deal et la conversation : {url}",
+      "dealAndChat": "Sa page et la conversation : {url}",
       "subject": "{who} a une question sur votre proposition",
       "line": "{who} a une question sur {doc}"
     },
     "voiceComment": {
       "bodyPage": "{who} a enregistré un commentaire vocal sur la page {page} de {doc}.",
       "body": "{who} a enregistré un commentaire vocal sur {doc}.",
-      "noTranscript": "Pas de transcription cette fois, écoutez-le sur la page du deal.",
+      "noTranscript": "Pas de transcription cette fois, écoutez-le sur la page du prospect.",
       "listen": "L'écouter : {url}",
       "subject": "{who} vous a laissé un message vocal",
       "linePage": "{who} a laissé un vocal sur la page {page} de {doc}",
@@ -232,6 +232,6 @@
     "reopened": "Revient après {days} jours sans lecture",
     "pricing": "S'attarde sur les tarifs",
     "firstOpen": "Ouvre votre proposition pour la première fois",
-    "hotDeal": "Deal chaud, en train de relire"
+    "hotDeal": "Prospect chaud, en train de relire"
   }
 }

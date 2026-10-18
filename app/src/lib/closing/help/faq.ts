@@ -28,7 +28,7 @@ export const FAQ: FaqSection[] = [
       {
         id: "cest-quoi",
         q: "Qu'est-ce que Clozer fait, concrètement ?",
-        a: "Clozer remplace la pièce jointe par un lien suivi. Vous déposez un document (devis, proposition, présentation, page web ou pitch vidéo), vous créez un lien par prospect et vous l'envoyez.\n\nClozer voit comment le prospect lit, comprend où en est le deal et prépare la bonne relance au bon moment. Vous validez, et vous appelez ceux qui sont prêts.",
+        a: "Clozer remplace la pièce jointe par un lien suivi. Vous déposez un document (devis, proposition, présentation, page web ou pitch vidéo), vous créez un lien par prospect et vous l'envoyez.\n\nClozer voit comment le prospect lit, comprend où en est la vente et prépare la bonne relance au bon moment. Vous validez, et vous appelez ceux qui sont prêts.",
         link: { href: "/how-it-works", label: "Comment ça marche" },
       },
       {
@@ -98,7 +98,7 @@ export const FAQ: FaqSection[] = [
       {
         id: "etiquettes",
         q: "Pourquoi corriger les étiquettes de pages ?",
-        a: "Elles comptent pour la température et pour les relances, en particulier Tarifs : une page de prix mal repérée fausse la lecture du deal.",
+        a: "Elles comptent pour la température et pour les relances, en particulier Tarifs : une page de prix mal repérée fausse la lecture de la vente.",
       },
       {
         id: "type-document",
@@ -124,12 +124,12 @@ export const FAQ: FaqSection[] = [
       {
         id: "un-lien-par-prospect",
         q: "Pourquoi un lien par prospect ?",
-        a: "Pour savoir qui lit. Chaque lien devient un deal, avec ses lectures, sa température et ses relances. Sur la page du document, « Un lien pour un autre prospect » (« Créer le lien » tant que le document n'en a aucun) en crée un de plus.",
+        a: "Pour savoir qui lit. Chaque lien devient un prospect, avec ses lectures, sa température et ses relances. Sur la page du document, « Un lien pour un autre prospect » (« Créer le lien » tant que le document n'en a aucun) en crée un de plus.",
       },
       {
         id: "lien-partage",
         q: "Puis-je envoyer un même lien à beaucoup de monde ?",
-        a: "Oui, avec « Lien ouvert à tous » sur l'écran de partage : c'est un lien partagé, pratique pour une plaquette, un post LinkedIn ou une signature. Chaque lecteur donne son email et reçoit son propre lien, suivi comme un deal ; ses relances attendent toujours votre feu vert.\n\nUn lien déjà lu ou attribué à un contact ne peut plus devenir partagé : créez-en un nouveau.",
+        a: "Oui, avec « Lien ouvert à tous » sur l'écran de partage : c'est un lien partagé, pratique pour une plaquette, un post LinkedIn ou une signature. Chaque lecteur donne son email et reçoit son propre lien, suivi comme un prospect ; ses relances attendent toujours votre feu vert.\n\nUn lien déjà lu ou attribué à un contact ne peut plus devenir partagé : créez-en un nouveau.",
       },
       {
         id: "envoyer",
@@ -149,22 +149,22 @@ export const FAQ: FaqSection[] = [
       {
         id: "expiration",
         q: "Comment fonctionne l'expiration d'un lien ?",
-        a: "Sur la fiche du deal, « Réglages du lien » → Expiration : Aucune, 48 h, 7, 15 ou 30 jours, ou une date précise. Pour un devis ou une proposition, le prospect voit un décompte. Après l'échéance, le lien ne s'ouvre plus.\n\nLe réglage par défaut se fait dans Réglages → Réglages avancés → Vos liens (7, 15, 30 jours ou jamais).",
+        a: "Sur la fiche du prospect, « Réglages du lien » → Expiration : Aucune, 48 h, 7, 15 ou 30 jours, ou une date précise. Pour un devis ou une proposition, le prospect voit un décompte. Après l'échéance, le lien ne s'ouvre plus.\n\nLe réglage par défaut se fait dans Réglages → Réglages avancés → Vos liens (7, 15, 30 jours ou jamais).",
       },
       {
         id: "prolonger",
         q: "Comment prolonger ou rouvrir un lien expiré ?",
-        a: "Fiche du deal → « Réglages du lien » → Expiration : +3 j, +7 j, +14 j ou « Autre date ». Le prospect d'un lien expiré peut aussi cliquer « Demander une prolongation » : vous êtes prévenu. Un lien expiré doit être prolongé avant toute relance.",
+        a: "Fiche du prospect → « Réglages du lien » → Expiration : +3 j, +7 j, +14 j ou « Autre date ». Le prospect d'un lien expiré peut aussi cliquer « Demander une prolongation » : vous êtes prévenu. Un lien expiré doit être prolongé avant toute relance.",
       },
       {
         id: "reglages-lien",
         q: "Que puis-je régler lien par lien ?",
-        a: "Fiche du deal → Réglages du lien (chaque changement est enregistré tout de suite) : nom du lien, « Demander son email avant de lire », « Valider ou demander un ajustement », « Prendre rendez-vous », « Poser ses questions à l'assistant », « Laisser un vocal sur une page », « Relances préparées par Clozer » et le lien de l'agenda.\n\nPropriétaires et admins : « Garder ces réglages pour mes prochains liens ».",
+        a: "Fiche du prospect → Réglages du lien (chaque changement est enregistré tout de suite) : nom du lien, « Demander son email avant de lire », « Valider ou demander un ajustement », « Prendre rendez-vous », « Poser ses questions à l'assistant », « Laisser un vocal sur une page », « Relances préparées par Clozer » et le lien de l'agenda.\n\nPropriétaires et admins : « Garder ces réglages pour mes prochains liens ».",
       },
       {
         id: "archiver-lien",
         q: "Comment désactiver un lien ?",
-        a: "Fiche du deal → « Archiver le lien » : le prospect ne peut plus ouvrir le document et les relances prévues sont annulées.",
+        a: "Fiche du prospect → « Archiver le lien » : le prospect ne peut plus ouvrir le document et les relances prévues sont annulées.",
       },
     ],
   },
@@ -206,33 +206,33 @@ export const FAQ: FaqSection[] = [
   },
   {
     id: "deals",
-    title: "Deals et analyse",
+    title: "Prospects et analyse",
     items: [
       {
         id: "aujourdhui",
         q: "À quoi sert la page Aujourd'hui ?",
-        a: "C'est votre cockpit : un résumé de la journée, qui lit en ce moment, « À traiter » (vos deals du plus urgent au moins urgent, avec l'action conseillée), l'entonnoir de vos envois, les relances à valider, ce qui s'est passé et les relances à venir.",
+        a: "C'est votre cockpit : un résumé de la journée, qui lit en ce moment, « À traiter » (vos prospects du plus urgent au moins urgent, avec l'action conseillée), l'entonnoir de vos envois, les relances à valider, ce qui s'est passé et les relances à venir.",
         link: { href: "/dashboard", label: "Aujourd'hui" },
       },
       {
         id: "lecture-ia",
-        q: "Que fait l'analyse IA d'un deal ?",
-        a: "Quelques minutes après une lecture, Clozer reconstitue l'histoire du deal en faits datés et une IA l'interprète : « Ce qui compte », « Ce qui coince » (prix, décideur, timing…) et l'action conseillée. Chaque conclusion cite ses faits ; ce qui n'est pas prouvé est écarté.",
+        q: "Que fait l'analyse IA d'un prospect ?",
+        a: "Quelques minutes après une lecture, Clozer reconstitue l'histoire de la vente en faits datés et une IA l'interprète : « Ce qui compte », « Ce qui coince » (prix, décideur, timing…) et l'action conseillée. Chaque conclusion cite ses faits ; ce qui n'est pas prouvé est écarté.",
       },
       {
         id: "actions-conseillees",
         q: "Quelles actions Clozer peut-il conseiller ?",
-        a: "Relancer par écrit, Appeler, Répondre à sa demande, Faire entrer le décideur dans la boucle, Attendre, Classer le deal.",
+        a: "Relancer par écrit, Appeler, Répondre à sa demande, Faire entrer le décideur dans la boucle, Attendre, Classer comme perdu.",
       },
       {
         id: "reanalyser",
-        q: "Comment relancer l'analyse d'un deal ?",
-        a: "Fiche du deal → « Réanalyser » (au plus toutes les deux minutes), ou « Analyser ce deal » s'il n'y en a pas encore. Une analyse n'est refaite automatiquement que s'il s'est passé quelque chose de nouveau.",
+        q: "Comment relancer l'analyse d'un prospect ?",
+        a: "Fiche du prospect → « Réanalyser » (au plus toutes les deux minutes), ou « Analyser ce prospect » s'il n'y en a pas encore. Une analyse n'est refaite automatiquement que s'il s'est passé quelque chose de nouveau.",
       },
       {
         id: "statuts",
-        q: "Quels sont les statuts d'un deal ?",
-        a: "En cours, Validé, Ajustement demandé, Gagné, Perdu. Changez-le avec le sélecteur « Statut du deal » en haut de la fiche. Tout statut autre que En cours annule les relances en attente.",
+        q: "Quels sont les statuts d'un prospect ?",
+        a: "En cours, Validé, Ajustement demandé, Gagné, Perdu. Changez-le avec le sélecteur « Statut du prospect » en haut de la fiche. Tout statut autre que En cours annule les relances en attente.",
       },
       {
         id: "gagne",
@@ -242,26 +242,26 @@ export const FAQ: FaqSection[] = [
       {
         id: "noter-echange",
         q: "J'ai eu le prospect au téléphone, je le note où ?",
-        a: "Fiche du deal → Noter un échange : Appel, Réponse reçue, Rendez-vous ou Note, avec « Ce qui s'est dit » et « Quand » (vide = maintenant). Clozer en tient compte et ne relance pas juste après.",
+        a: "Fiche du prospect → Noter un échange : Appel, Réponse reçue, Rendez-vous ou Note, avec « Ce qui s'est dit » et « Quand » (vide = maintenant). Clozer en tient compte et ne relance pas juste après.",
       },
       {
         id: "infos-deal",
         q: "Où renseigner le montant, l'échéance ou le décideur ?",
-        a: "Fiche du deal → « Contexte du deal » (replié, colonne de droite) : montant, devise, décision attendue avant le, décideur, son rôle et vos notes. Votre équipe le voit, pas le prospect. Les notes servent à l'analyse, jamais à la rédaction d'un message.",
+        a: "Fiche du prospect → « Contexte commercial » (replié, colonne de droite) : montant, devise, décision attendue avant le, décideur, son rôle et vos notes. Votre équipe le voit, pas le prospect. Les notes servent à l'analyse, jamais à la rédaction d'un message.",
       },
       {
         id: "pause-deal",
         q: "Le prospect m'a dit de revenir vers lui plus tard. Comment mettre en pause ?",
-        a: "Fiche du deal → « Mettre en pause jusqu'au » : Clozer se tait jusqu'à cette date. « Reprendre » pour annuler.",
+        a: "Fiche du prospect → « Mettre en pause jusqu'au » : Clozer se tait jusqu'à cette date. « Reprendre » pour annuler.",
       },
       {
         id: "contacts",
         q: "Comment ajouter ou modifier un contact ?",
-        a: "Fiche du deal → Contacts (ce sont eux qui reçoivent les relances) : modifier un contact (email, nom, entreprise, mobile, accord WhatsApp) ou « Ajouter un contact ».",
+        a: "Fiche du prospect → Contacts (ce sont eux qui reçoivent les relances) : modifier un contact (email, nom, entreprise, mobile, accord WhatsApp) ou « Ajouter un contact ».",
       },
       {
         id: "deal-collegue",
-        q: "Puis-je modifier le deal d'un collègue ?",
+        q: "Puis-je modifier le prospect d'un collègue ?",
         a: "Vous pouvez le consulter, mais seuls son commercial, les admins et les propriétaires peuvent le modifier.",
       },
     ],
@@ -314,7 +314,7 @@ export const FAQ: FaqSection[] = [
       {
         id: "arreter",
         q: "Comment arrêter les relances ?",
-        a: "Pour tout l'espace : « Tout valider moi-même » sur Aujourd'hui, ou repasser en « Je la relis et je valide ».\n\nPour un deal : l'interrupteur « Relances » (onglet Prospects du document), « Relances préparées par Clozer » dans les réglages du lien, « Mettre en pause jusqu'au », ou un statut autre que En cours.\n\nPour les nouveaux liens : Réglages → Réglages avancés → Vos liens → « Préparer les relances ».",
+        a: "Pour tout l'espace : « Tout valider moi-même » sur Aujourd'hui, ou repasser en « Je la relis et je valide ».\n\nPour un prospect : l'interrupteur « Relances » (onglet Prospects du document), « Relances préparées par Clozer » dans les réglages du lien, « Mettre en pause jusqu'au », ou un statut autre que En cours.\n\nPour les nouveaux liens : Réglages → Réglages avancés → Vos liens → « Préparer les relances ».",
       },
       {
         id: "ton-signature",
@@ -357,7 +357,7 @@ export const FAQ: FaqSection[] = [
       {
         id: "assistant-conversations",
         q: "Où voir les questions posées par le prospect ?",
-        a: "Sur la fiche du deal, rubrique « Questions du prospect ». Vos propres tests sur votre lien ne sont pas comptés.",
+        a: "Sur la fiche du prospect, rubrique « Questions du prospect ». Vos propres tests sur votre lien ne sont pas comptés.",
       },
     ],
   },
@@ -373,7 +373,7 @@ export const FAQ: FaqSection[] = [
       {
         id: "mot-accueil-perso",
         q: "Puis-je personnaliser le mot d'accueil pour un prospect ?",
-        a: "Oui : fiche du deal → Mot d'accueil → « Version perso pour ce prospect ». Elle remplace celle du document pour ce prospect.",
+        a: "Oui : fiche du prospect → Mot d'accueil → « Version perso pour ce prospect ». Elle remplace celle du document pour ce prospect.",
       },
       {
         id: "vocaux",
@@ -469,7 +469,7 @@ export const FAQ: FaqSection[] = [
       {
         id: "roles",
         q: "Quels sont les rôles et que peut faire chacun ?",
-        a: "- Membre : voit ses propres deals sur Aujourd'hui, consulte ceux des collègues sans les modifier, règle ses notifications et son agenda.\n- Admin : voit toute l'équipe sur la page Équipe, règle l'espace, modifie tous les deals, supprime les documents, invite et retire des membres.\n- Propriétaire : comme un admin, plus les liens sans commercial attitré, la possibilité de nommer un autre propriétaire et de supprimer l'espace.",
+        a: "- Membre : voit ses propres prospects sur Aujourd'hui, consulte ceux des collègues sans les modifier, règle ses notifications et son agenda.\n- Admin : voit toute l'équipe sur la page Équipe, règle l'espace, modifie tous les prospects, supprime les documents, invite et retire des membres.\n- Propriétaire : comme un admin, plus les liens sans commercial attitré, la possibilité de nommer un autre propriétaire et de supprimer l'espace.",
       },
       {
         id: "inviter",
@@ -527,7 +527,7 @@ export const FAQ: FaqSection[] = [
       {
         id: "supprimer-compte",
         q: "Comment supprimer mon compte ou l'espace ?",
-        a: "Réglages → Données :\n- « Supprimer mon compte » (tapez SUPPRIMER) : vos deals restent dans l'espace, votre accès disparaît ;\n- « Supprimer l'espace » (propriétaire, tapez le nom de l'espace) : tout est effacé, fichiers compris, pour toute l'équipe. C'est irréversible : exportez d'abord.",
+        a: "Réglages → Données :\n- « Supprimer mon compte » (tapez SUPPRIMER) : vos prospects restent dans l'espace, votre accès disparaît ;\n- « Supprimer l'espace » (propriétaire, tapez le nom de l'espace) : tout est effacé, fichiers compris, pour toute l'équipe. C'est irréversible : exportez d'abord.",
       },
     ],
   },
@@ -538,7 +538,7 @@ export const FAQ: FaqSection[] = [
       {
         id: "votre-offre",
         q: "À quoi sert « Votre offre » ?",
-        a: "Ce que vous vendez, vos clients, pourquoi ils vous choisissent, les objections fréquentes et la durée habituelle d'un deal. Clozer s'en sert pour analyser et rédiger. C'est facultatif : Clozer la pré-remplit à la lecture du premier document. Pensez à « Enregistrer les réglages ».",
+        a: "Ce que vous vendez, vos clients, pourquoi ils vous choisissent, les objections fréquentes et la durée habituelle d'une vente. Clozer s'en sert pour analyser et rédiger. C'est facultatif : Clozer la pré-remplit à la lecture du premier document. Pensez à « Enregistrer les réglages ».",
         link: { href: "/settings#offre", label: "Réglages → Réglages avancés → Votre offre" },
       },
       {

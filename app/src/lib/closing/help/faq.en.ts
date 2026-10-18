@@ -12,7 +12,7 @@ export const FAQ_EN: FaqSection[] = [
       {
         id: "cest-quoi",
         q: "What does Clozer actually do?",
-        a: "Clozer replaces the attachment with a tracked link. You upload a document (quote, proposal, deck, web page or video pitch), create one link per prospect and send it.\n\nClozer sees how the prospect reads, works out where the deal stands and prepares the right follow-up at the right time. You approve it, and you call the ones who are ready.",
+        a: "Clozer replaces the attachment with a tracked link. You upload a document (quote, proposal, deck, web page or video pitch), create one link per prospect and send it.\n\nClozer sees how the prospect reads, works out where the sale stands and prepares the right follow-up at the right time. You approve it, and you call the ones who are ready.",
         link: { href: "/how-it-works", label: "How it works" },
       },
       {
@@ -82,7 +82,7 @@ export const FAQ_EN: FaqSection[] = [
       {
         id: "etiquettes",
         q: "Why fix page tags?",
-        a: "They count for the temperature and for follow-ups, Pricing especially: a pricing page that isn't spotted throws off the read on the deal.",
+        a: "They count for the temperature and for follow-ups, Pricing especially: a pricing page that isn't spotted throws off the read on the sale.",
       },
       {
         id: "type-document",
@@ -108,12 +108,12 @@ export const FAQ_EN: FaqSection[] = [
       {
         id: "un-lien-par-prospect",
         q: "Why one link per prospect?",
-        a: "So you know who's reading. Each link becomes a deal, with its reads, temperature and follow-ups. On the document page, “A link for another prospect” (“Create the link” while the document has none) creates one more.",
+        a: "So you know who's reading. Each link becomes a prospect, with its reads, temperature and follow-ups. On the document page, “A link for another prospect” (“Create the link” while the document has none) creates one more.",
       },
       {
         id: "lien-partage",
         q: "Can I send the same link to lots of people?",
-        a: "Yes, with “Link open to everyone” on the share screen: it's a shared link, handy for a brochure, a LinkedIn post or an email signature. Each reader gives their email and gets their own link, tracked as a deal; their follow-ups still wait for your go-ahead.\n\nA link that has already been read or assigned to a contact can't become shared: create a new one.",
+        a: "Yes, with “Link open to everyone” on the share screen: it's a shared link, handy for a brochure, a LinkedIn post or an email signature. Each reader gives their email and gets their own link, tracked as a prospect; their follow-ups still wait for your go-ahead.\n\nA link that has already been read or assigned to a contact can't become shared: create a new one.",
       },
       {
         id: "envoyer",
@@ -133,22 +133,22 @@ export const FAQ_EN: FaqSection[] = [
       {
         id: "expiration",
         q: "How does link expiration work?",
-        a: "On the deal page, “Link settings” → Expiration: None, 48 h, 7, 15 or 30 days, or a specific date. For a quote or a proposal, the prospect sees a countdown. After the deadline, the link no longer opens.\n\nThe default is set in Settings → Advanced settings → Your links (7, 15, 30 days or never).",
+        a: "On the prospect's page, “Link settings” → Expiration: None, 48 h, 7, 15 or 30 days, or a specific date. For a quote or a proposal, the prospect sees a countdown. After the deadline, the link no longer opens.\n\nThe default is set in Settings → Advanced settings → Your links (7, 15, 30 days or never).",
       },
       {
         id: "prolonger",
         q: "How do I extend or reopen an expired link?",
-        a: "Deal page → “Link settings” → Expiration: +3 d, +7 d, +14 d or “Other date”. The prospect on an expired link can also click “Ask for an extension”: you get notified. An expired link must be extended before any follow-up.",
+        a: "Prospect page → “Link settings” → Expiration: +3 d, +7 d, +14 d or “Other date”. The prospect on an expired link can also click “Ask for an extension”: you get notified. An expired link must be extended before any follow-up.",
       },
       {
         id: "reglages-lien",
         q: "What can I set link by link?",
-        a: "Deal page → Link settings (every change is saved right away): link name, “Ask for their email before reading”, “Approve or request changes”, “Book a meeting”, “Ask the assistant”, “Leave a voice note on a page”, “Follow-ups prepared by Clozer” and the calendar link.\n\nOwners and admins: “Keep these settings for my next links”.",
+        a: "Prospect page → Link settings (every change is saved right away): link name, “Ask for their email before reading”, “Approve or request changes”, “Book a meeting”, “Ask the assistant”, “Leave a voice note on a page”, “Follow-ups prepared by Clozer” and the calendar link.\n\nOwners and admins: “Keep these settings for my next links”.",
       },
       {
         id: "archiver-lien",
         q: "How do I turn off a link?",
-        a: "Deal page → “Archive link”: the prospect can no longer open the document and scheduled follow-ups are canceled.",
+        a: "Prospect page → “Archive link”: the prospect can no longer open the document and scheduled follow-ups are canceled.",
       },
     ],
   },
@@ -164,12 +164,12 @@ export const FAQ_EN: FaqSection[] = [
       {
         id: "temperature",
         q: "What does the temperature mean?",
-        a: "A score out of 100 (Hot, Warm, Cold) that says how much they read. It's computed without AI: recent read, time spent, repeat visits, several readers, pricing read, read to the end, requests, meetings. On the deal page, the “Why this temperature” section breaks down every point.",
+        a: "A score out of 100 (Hot, Warm, Cold) that says how much they read. It's computed without AI: recent read, time spent, repeat visits, several readers, pricing read, read to the end, requests, meetings. On the prospect's page, the “Why this temperature” section breaks down every point.",
       },
       {
         id: "temperature-vs-ia",
         q: "Why does a hot prospect get a cautious AI read?",
-        a: "They answer two different questions. The temperature says how much they read; the AI read says what it means. Lots of short reads, or too early to tell: hot, but cautious. The AI read leads the deal page; the temperature stays as a badge, with its detail in “Why this temperature”. “N% confident” (in “Analysis details”) is low when there are few signals.",
+        a: "They answer two different questions. The temperature says how much they read; the AI read says what it means. Lots of short reads, or too early to tell: hot, but cautious. The AI read leads the prospect's page; the temperature stays as a badge, with its detail in “Why this temperature”. “N% confident” (in “Analysis details”) is low when there are few signals.",
       },
       {
         id: "lu-en-profondeur",
@@ -179,7 +179,7 @@ export const FAQ_EN: FaqSection[] = [
       {
         id: "plusieurs-lecteurs",
         q: "How do I know if several people are reading?",
-        a: "“Prospect” block on the deal page: each contact with what they read, then “Other readers”, grouped by company or network, with their role (Decision-maker, Finance / procurement, Technical…), guessed from the email or picked by you. Two different letters = often two people.",
+        a: "“Prospect” block on the prospect's page: each contact with what they read, then “Other readers”, grouped by company or network, with their role (Decision-maker, Finance / procurement, Technical…), guessed from the email or picked by you. Two different letters = often two people.",
       },
       {
         id: "pas-de-lecture",
@@ -190,62 +190,62 @@ export const FAQ_EN: FaqSection[] = [
   },
   {
     id: "deals",
-    title: "Deals and analysis",
+    title: "Prospects and analysis",
     items: [
       {
         id: "aujourdhui",
         q: "What is the Today page for?",
-        a: "It's your cockpit: a summary of the day, who is reading right now, “To do” (your deals from most to least urgent, with the suggested action), your sends funnel, follow-ups to review, what happened and upcoming follow-ups.",
+        a: "It's your cockpit: a summary of the day, who is reading right now, “To do” (your prospects from most to least urgent, with the suggested action), your sends funnel, follow-ups to review, what happened and upcoming follow-ups.",
         link: { href: "/dashboard", label: "Today" },
       },
       {
         id: "lecture-ia",
-        q: "What does the AI analysis of a deal do?",
-        a: "A few minutes after a read, Clozer rebuilds the deal's story as dated facts and an AI interprets it: “What matters”, “What's stuck” (price, decision-maker, timing…) and the suggested action. Every conclusion cites its facts; anything unproven is left out.",
+        q: "What does the AI analysis of a prospect do?",
+        a: "A few minutes after a read, Clozer rebuilds the sale's story as dated facts and an AI interprets it: “What matters”, “What's stuck” (price, decision-maker, timing…) and the suggested action. Every conclusion cites its facts; anything unproven is left out.",
       },
       {
         id: "actions-conseillees",
         q: "What actions can Clozer suggest?",
-        a: "Follow up in writing, Call, Answer their request, Bring the decision-maker in, Wait, Close the deal as lost.",
+        a: "Follow up in writing, Call, Answer their request, Bring the decision-maker in, Wait, Mark as lost.",
       },
       {
         id: "reanalyser",
-        q: "How do I rerun a deal's analysis?",
-        a: "Deal page → “Reanalyze” (at most every two minutes), or “Analyze this deal” if there isn't one yet. An analysis only reruns automatically when something new has happened.",
+        q: "How do I rerun a prospect's analysis?",
+        a: "Prospect page → “Reanalyze” (at most every two minutes), or “Analyze this prospect” if there isn't one yet. An analysis only reruns automatically when something new has happened.",
       },
       {
         id: "statuts",
-        q: "What are the deal statuses?",
-        a: "Open, Approved, Changes requested, Won, Lost. Change it with the “Deal status” picker at the top of the deal page. Any status other than Open cancels pending follow-ups.",
+        q: "What are the prospect statuses?",
+        a: "Open, Approved, Changes requested, Won, Lost. Change it with the “Prospect status” picker at the top of the prospect's page. Any status other than Open cancels pending follow-ups.",
       },
       {
         id: "gagne",
         q: "The prospect approved. What should I do?",
-        a: "A banner shows up on the deal page: click “Mark as won” to confirm the sale and stop follow-ups. Mark it Won or Lost as soon as it's settled.",
+        a: "A banner shows up on the prospect's page: click “Mark as won” to confirm the sale and stop follow-ups. Mark it Won or Lost as soon as it's settled.",
       },
       {
         id: "noter-echange",
         q: "I spoke to the prospect on the phone. Where do I log it?",
-        a: "Deal page → Log an interaction: Call, Reply received, Meeting or Note, with “What was said” and “When” (empty = now). Clozer takes it into account and won't follow up right after.",
+        a: "Prospect page → Log an interaction: Call, Reply received, Meeting or Note, with “What was said” and “When” (empty = now). Clozer takes it into account and won't follow up right after.",
       },
       {
         id: "infos-deal",
         q: "Where do I enter the amount, deadline or decision-maker?",
-        a: "Deal page → “Deal context” (collapsed, right column): amount, currency, decision expected by, decision-maker, their role and your notes. Your team sees it, the prospect doesn't. Notes feed the analysis, never the writing of a message.",
+        a: "Prospect page → “Sales context” (collapsed, right column): amount, currency, decision expected by, decision-maker, their role and your notes. Your team sees it, the prospect doesn't. Notes feed the analysis, never the writing of a message.",
       },
       {
         id: "pause-deal",
         q: "The prospect told me to get back to them later. How do I pause?",
-        a: "Deal page → “Pause until”: Clozer stays quiet until that date. “Resume” to cancel.",
+        a: "Prospect page → “Pause until”: Clozer stays quiet until that date. “Resume” to cancel.",
       },
       {
         id: "contacts",
         q: "How do I add or edit a contact?",
-        a: "Deal page → Contacts (they're the ones who receive follow-ups): edit a contact (email, name, company, mobile, WhatsApp consent) or “Add a contact”.",
+        a: "Prospect page → Contacts (they're the ones who receive follow-ups): edit a contact (email, name, company, mobile, WhatsApp consent) or “Add a contact”.",
       },
       {
         id: "deal-collegue",
-        q: "Can I edit a coworker's deal?",
+        q: "Can I edit a coworker's prospect?",
         a: "You can view it, but only its sales rep, admins and owners can edit it.",
       },
     ],
@@ -257,7 +257,7 @@ export const FAQ_EN: FaqSection[] = [
       {
         id: "relances-seules",
         q: "Do follow-ups go out on their own?",
-        a: "Not by default. In “I review and approve” mode (Copilot), every follow-up waits for you: you get an email and it shows up in “Follow-ups to review” and on the deal page.\n\nIn “It goes out on its own when Clozer is confident” mode, only confident follow-ups go out on their own; tricky cases (objection, message from the prospect, doubt) wait for your approval.",
+        a: "Not by default. In “I review and approve” mode (Copilot), every follow-up waits for you: you get an email and it shows up in “Follow-ups to review” and on the prospect's page.\n\nIn “It goes out on its own when Clozer is confident” mode, only confident follow-ups go out on their own; tricky cases (objection, message from the prospect, doubt) wait for your approval.",
         link: { href: "/settings#pilote", label: "Settings → Autopilot" },
       },
       {
@@ -293,12 +293,12 @@ export const FAQ_EN: FaqSection[] = [
       {
         id: "reponses",
         q: "Does Clozer see my prospects' replies?",
-        a: "Not yet. Log them on the deal page (Log an interaction → Reply received): Clozer adjusts what comes next and won't follow up at the wrong moment.",
+        a: "Not yet. Log them on the prospect's page (Log an interaction → Reply received): Clozer adjusts what comes next and won't follow up at the wrong moment.",
       },
       {
         id: "arreter",
         q: "How do I stop follow-ups?",
-        a: "For the whole workspace: “Review everything myself” on Today, or switch back to “I review and approve”.\n\nFor one deal: the “Follow-ups” toggle (document's Prospects tab), “Follow-ups prepared by Clozer” in the link settings, “Pause until”, or a status other than Open.\n\nFor new links: Settings → Advanced settings → Your links → “Prepare follow-ups”.",
+        a: "For the whole workspace: “Review everything myself” on Today, or switch back to “I review and approve”.\n\nFor one prospect: the “Follow-ups” toggle (document's Prospects tab), “Follow-ups prepared by Clozer” in the link settings, “Pause until”, or a status other than Open.\n\nFor new links: Settings → Advanced settings → Your links → “Prepare follow-ups”.",
       },
       {
         id: "ton-signature",
@@ -309,7 +309,7 @@ export const FAQ_EN: FaqSection[] = [
       {
         id: "whatsapp",
         q: "Can I follow up on WhatsApp?",
-        a: "Not yet: WhatsApp follow-ups are coming soon. You can already record a contact's WhatsApp consent on the deal page.",
+        a: "Not yet: WhatsApp follow-ups are coming soon. You can already record a contact's WhatsApp consent on the prospect's page.",
       },
     ],
   },
@@ -325,7 +325,7 @@ export const FAQ_EN: FaqSection[] = [
       {
         id: "assistant-ne-sait-pas",
         q: "What happens when it can't answer?",
-        a: "It passes the question to you right away: “Prospect question” alert, question flagged on the deal page and included in the morning digest.",
+        a: "It passes the question to you right away: “Prospect question” alert, question flagged on the prospect's page and included in the morning digest.",
       },
       {
         id: "assistant-nourrir",
@@ -341,7 +341,7 @@ export const FAQ_EN: FaqSection[] = [
       {
         id: "assistant-conversations",
         q: "Where do I see the questions the prospect asked?",
-        a: "On the deal page, “Prospect questions” section. Your own tests on your link don't count.",
+        a: "On the prospect's page, “Prospect questions” section. Your own tests on your link don't count.",
       },
     ],
   },
@@ -357,12 +357,12 @@ export const FAQ_EN: FaqSection[] = [
       {
         id: "mot-accueil-perso",
         q: "Can I personalize the welcome message for one prospect?",
-        a: "Yes: deal page → Welcome message → “Personal version for this prospect”. It replaces the document's version for this prospect.",
+        a: "Yes: prospect's page → Welcome message → “Personal version for this prospect”. It replaces the document's version for this prospect.",
       },
       {
         id: "vocaux",
         q: "Can the prospect leave me a voice message?",
-        a: "Yes, on a page of a PDF (60 seconds max). You get the audio and its transcript, on the deal page (Voice comments) and through an alert. Turn it on in Settings → Advanced settings → Your links, or link by link with “Leave a voice note on a page”.",
+        a: "Yes, on a page of a PDF (60 seconds max). You get the audio and its transcript, on the prospect's page (Voice comments) and through an alert. Turn it on in Settings → Advanced settings → Your links, or link by link with “Leave a voice note on a page”.",
       },
       {
         id: "capsules",
@@ -453,7 +453,7 @@ export const FAQ_EN: FaqSection[] = [
       {
         id: "roles",
         q: "What are the roles and what can each one do?",
-        a: "- Member: sees their own deals on Today, views coworkers' deals without editing them, sets their own notifications and calendar.\n- Admin: sees the whole team on the Team page, configures the workspace, edits every deal, deletes documents, invites and removes members.\n- Owner: same as an admin, plus links without an assigned sales rep, the ability to make someone else owner and to delete the workspace.",
+        a: "- Member: sees their own prospects on Today, views coworkers' prospects without editing them, sets their own notifications and calendar.\n- Admin: sees the whole team on the Team page, configures the workspace, edits every prospect, deletes documents, invites and removes members.\n- Owner: same as an admin, plus links without an assigned sales rep, the ability to make someone else owner and to delete the workspace.",
       },
       {
         id: "inviter",
@@ -511,7 +511,7 @@ export const FAQ_EN: FaqSection[] = [
       {
         id: "supprimer-compte",
         q: "How do I delete my account or the workspace?",
-        a: "Settings → Data:\n- “Delete my account” (type DELETE): your deals stay in the workspace, your access goes away;\n- “Delete workspace” (owner, type the workspace name): everything is erased, files included, for the whole team. This can't be undone: export first.",
+        a: "Settings → Data:\n- “Delete my account” (type DELETE): your prospects stay in the workspace, your access goes away;\n- “Delete workspace” (owner, type the workspace name): everything is erased, files included, for the whole team. This can't be undone: export first.",
       },
     ],
   },
@@ -522,7 +522,7 @@ export const FAQ_EN: FaqSection[] = [
       {
         id: "votre-offre",
         q: "What is “Your offer” for?",
-        a: "What you sell, your customers, why they pick you, common objections and the usual length of a deal. Clozer uses it to analyze and write. It's optional: Clozer prefills it when it reads your first document. Remember to click “Save settings”.",
+        a: "What you sell, your customers, why they pick you, common objections and the usual length of a sale. Clozer uses it to analyze and write. It's optional: Clozer prefills it when it reads your first document. Remember to click “Save settings”.",
         link: { href: "/settings#offre", label: "Settings → Advanced settings → Your offer" },
       },
       {

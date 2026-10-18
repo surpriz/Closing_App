@@ -5,9 +5,9 @@
     "description": "What happens behind every link you send, and why you have almost nothing to do.",
     "faq": "FAQ",
     "replayTour": "Replay the tour",
-    "intro": "Clozer sees how your prospect reads your document, understands where the deal stands the way a seasoned salesperson would, and gets the right follow-up ready at the right time. You approve, and you call the ones who are ready.",
+    "intro": "Clozer sees how your prospect reads your document, understands where the sale stands the way a seasoned salesperson would, and gets the right follow-up ready at the right time. You approve, and you call the ones who are ready.",
     "journeyHint": "what happens when you send a link",
-    "journeyTitle": "A deal's journey",
+    "journeyTitle": "A prospect's journey",
     "steps": {
       "read": {
         "title": "You drop in a document",
@@ -18,8 +18,8 @@
         "body": "They see your document as usual. Clozer notes, page by page, how long they spend, when, on which device, and whether other people open it. Automatic previews (Slack, LinkedIn) and your own reads don't count. If you're on Clozer at that moment, you watch them read live."
       },
       "analyze": {
-        "title": "They close it: Clozer reads the deal",
-        "body": "A few minutes after they read, Clozer rebuilds the deal's story as dated facts (“Sunday 9 pm, on mobile, 3 min on pricing, stops at page 9”) and an AI reads it the way a seasoned salesperson would: where the deal stands, what's blocking (price, decision-maker, timing…), what to do next. Every conclusion cites the facts behind it; anything unproven is dropped."
+        "title": "They close it: Clozer takes stock",
+        "body": "A few minutes after they read, Clozer rebuilds the prospect's story as dated facts (“Sunday 9 pm, on mobile, 3 min on pricing, stops at page 9”) and an AI reads it the way a seasoned salesperson would: where the sale stands, what's blocking (price, decision-maker, timing…), what to do next. Every conclusion cites the facts behind it; anything unproven is dropped."
       },
       "write": {
         "title": "If a follow-up is needed, Clozer writes it",
@@ -35,12 +35,12 @@
       },
       "watch": {
         "title": "And it keeps watching",
-        "body": "3 days of silence, 7 days: it rereads the deal and adjusts what's next. Link never opened: a gentle reminder after a few days. The prospect clicks “Approve” or “Ask for a change”: everything stops and you're notified. You got them on the phone: log the call in one click, Clozer takes it into account."
+        "body": "3 days of silence, 7 days: it takes stock again and adjusts what's next. Link never opened: a gentle reminder after a few days. The prospect clicks “Approve” or “Ask for a change”: everything stops and you're notified. You got them on the phone: log the call in one click, Clozer takes it into account."
       }
     },
     "indicatorsTitle": "Two indicators, two questions",
     "temperatureTitle": "Temperature (out of 100)",
-    "temperatureBody": "<b>How much they read.</b> Computed without AI: recent reading, time spent, repeat visits, several readers, pricing read, read to the end. Every point has its reason, shown on the deal page.",
+    "temperatureBody": "<b>How much they read.</b> Computed without AI: recent reading, time spent, repeat visits, several readers, pricing read, read to the end. Every point has its reason, shown on the prospect's page.",
     "aiReadTitle": "AI read (and its confidence)",
     "aiReadBody": "<b>What it means.</b> The AI interprets: a prospect can be “hot” (lots of reads) with a cautious AI read (short reads, too early to tell). Confidence says how sure the AI is: low when there are few signals.",
     "rulesTitle": "The rules it always follows",
@@ -49,8 +49,8 @@
       "noInvented": "Never a number or date that isn't in your document: a check verifies every amount.",
       "cap": "3 follow-ups a month per contact at most, a few days apart.",
       "timing": "Never in the hours after a read, always during the prospect's business hours.",
-      "single": "Only one follow-up in the works per deal: a newer analysis replaces the old one.",
-      "privateNotes": "Your private notes on a deal feed the analysis, never the writing of a message."
+      "single": "Only one follow-up in the works per prospect: a newer analysis replaces the old one.",
+      "privateNotes": "Your private notes on a prospect feed the analysis, never the writing of a message."
     },
     "youTitle": "What you do",
     "you1": "Describe your offer once, in <link>Settings</link> (optional: Clozer works it out from your first document).",
@@ -58,7 +58,7 @@
     "you3": "Approve the suggested follow-ups, and call when Clozer tells you to.",
     "you4": "Log your calls and replies in one click on the prospect's page.",
     "underTheHoodTitle": "Under the hood",
-    "underTheHood1": "Two AI models from Anthropic. Claude Haiku, the fast one, reads documents and runs a second check before any automatic send. Claude Sonnet, the more thoughtful one, analyzes each deal and writes the follow-ups.",
+    "underTheHood1": "Two AI models from Anthropic. Claude Haiku, the fast one, reads documents and runs a second check before any automatic send. Claude Sonnet, the more thoughtful one, analyzes each prospect and writes the follow-ups.",
     "underTheHood2": "No email address or IP address is sent to the AI: readers go by a letter (reader A, reader B…). An analysis only reruns when something new has happened.",
     "notYetTitle": "What's not there yet",
     "notYet1": "Follow-ups go out from Clozer's address, with your email as the reply-to.",

@@ -10,7 +10,7 @@
   "ext": {
     "unauthorized": "Reconnectez l'extension Clozer.",
     "documentNotFound": "Document introuvable.",
-    "dealNotPending": "Ce deal n'est plus en attente.",
+    "dealNotPending": "Ce prospect n'est plus en attente.",
     "notPdf": "Ce fichier n'est pas un PDF valide.",
     "pdfSaveFailed": "Clozer n'a pas pu enregistrer le PDF. Réessayez.",
     "codeExpired": "Le code a expiré. Recommencez la connexion."
@@ -128,9 +128,9 @@
   },
   "followups": {
     "policy": {
-      "notActive": "Le deal n'est plus en cours.",
+      "notActive": "Ce prospect n'est plus en cours.",
       "followupsOff": "Les relances sont coupées sur ce lien.",
-      "snoozed": "Le deal est en pause.",
+      "snoozed": "Ce prospect est en pause.",
       "meetingBooked": "Le prospect a pris rendez-vous : plus de relance automatique.",
       "quoteRequested": "Le prospect a demandé un devis : à vous de lui répondre, plus de relance automatique.",
       "noContact": "Aucun contact à qui écrire.",
@@ -154,7 +154,7 @@
     "dispatch": {
       "followupsOff": "Relances désactivées sur ce lien",
       "prospectReplied": "Le prospect a déjà répondu sur la proposition",
-      "paused": "Deal mis en pause par le vendeur",
+      "paused": "Mis en pause par le vendeur",
       "quoteRequested": "Devis demandé par le prospect",
       "linkExpired": "Lien expiré",
       "unsubscribed": "Prospect désinscrit",

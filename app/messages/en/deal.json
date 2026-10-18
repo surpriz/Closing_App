@@ -54,8 +54,8 @@
     "noAi": "No AI is configured.",
     "budget": "Daily analysis quota reached.",
     "analysisFailed": "The analysis failed, try again in a moment.",
-    "dealClosed": "This deal is no longer open.",
-    "analyzeFirst": "Analyze this deal first.",
+    "dealClosed": "This prospect is no longer active.",
+    "analyzeFirst": "Analyze this prospect first.",
     "cannotPrepare": "Couldn't prepare a follow-up.",
     "expiryPast": "Pick a future date.",
     "expiryTooFar": "One year max."
@@ -82,7 +82,7 @@
     "viaSharedNamed": "via the shared link “{name}”",
     "expiredAgo": "Expired {when}",
     "expiresIn": "Expires {when}",
-    "readOnly": "{seller}'s deal. You can view it; only its seller and the admins can change it.",
+    "readOnly": "{seller}'s prospect. You can view it; only its seller and the admins can change it.",
     "anotherSeller": "Another seller",
     "expiredBanner": "This link has expired: the prospect can no longer open it. Extend it to bring it back.",
     "newLink": "New link"
@@ -125,7 +125,7 @@
     "avgPerRead": "{time} per read on average"
   },
   "dealContextDetails": {
-    "title": "Deal context",
+    "title": "Sales context",
     "emptySummary": "your team sees it, the prospect doesn't",
     "paused": "paused"
   },
@@ -134,7 +134,7 @@
   },
   "dealContextForm": {
     "saved": "Context saved",
-    "amount": "Deal amount",
+    "amount": "Amount at stake",
     "amountPlaceholder": "12,000",
     "currency": "Currency",
     "deadline": "Decision expected by",
@@ -143,17 +143,17 @@
     "rolePlaceholder": "CFO, CEO…",
     "notes": "Your notes",
     "notesPlaceholder": "Tight budget, comparing with a competitor, wants to start in January…",
-    "notesHint": "Used for the deal analysis. Never copied as is into a message to the prospect.",
+    "notesHint": "Used for the analysis. Never copied as is into a message to the prospect.",
     "referenceConsent": "This customer agrees to be named as a reference",
     "referenceConsentHint": "Without their consent, their name never shows up in your prospecting messages.",
     "saving": "Saving…",
     "save": "Save"
   },
   "dealStatusSelect": {
-    "reopened": "Deal reopened",
+    "reopened": "Reopened",
     "changed": "Status “{status}”, pending follow-ups cancelled",
     "failed": "Couldn't save the change",
-    "ariaLabel": "Deal status"
+    "ariaLabel": "Prospect status"
   },
   "dealVerdict": {
     "severityLow": "low",
@@ -161,7 +161,7 @@
     "severityHigh": "high",
     "aiReadAnalyzed": "AI read, analyzed {when}",
     "aiReadUpdated": "AI read, updated {when}",
-    "analyzeDeal": "Analyze this deal",
+    "analyzeDeal": "Analyze this prospect",
     "readSince": "The prospect read again since this analysis. Clozer refreshes it a few minutes after they stop reading, or right away with “Reanalyze”.",
     "whyTemperature": "Why this temperature",
     "outOf100": "<b>{score}</b> out of 100",
@@ -214,7 +214,7 @@
     "translationEnabled": "Read the document in their language",
     "translationEnabledHint": "Translated when the reader asks, layout included. The original stays one click away.",
     "followupsEnabled": "Follow-ups prepared by Clozer",
-    "followupsEnabledHint": "Off: the deal is still tracked, with no follow-ups.",
+    "followupsEnabledHint": "Off: the prospect is still tracked, with no follow-ups.",
     "videoCta": "Request a quote",
     "videoCtaHint": "A button under the video.",
     "bookingLabel": "Calendar link",
@@ -227,7 +227,7 @@
     "keepDefaults": "Keep these settings for my next links"
   },
   "linkTestTools": {
-    "aged": "This deal aged {days, plural, one {# day} other {# days}}. Run an engine cycle to see what comes next.",
+    "aged": "This prospect aged {days, plural, one {# day} other {# days}}. Run an engine cycle to see what comes next.",
     "title": "Test tools",
     "timeTravel": "Fast-forward time:",
     "plusDays": "+{days} d",
@@ -388,8 +388,8 @@
     "save": "Save"
   },
   "markWonButton": {
-    "won": "Deal won, nice work.",
-    "failed": "Couldn't update the deal.",
+    "won": "Won, nice work.",
+    "failed": "Couldn't update this prospect.",
     "label": "Mark as won"
   },
   "archiveLinkButton": {
@@ -420,9 +420,9 @@
     "saving": "Saving…",
     "submit": "Log the exchange",
     "pausedUntil": "Paused until {date}",
-    "resumed": "The deal is back on",
+    "resumed": "Tracking is back on",
     "resume": "Resume",
-    "pausedToast": "Deal paused, no follow-ups until then",
+    "pausedToast": "Paused, no follow-ups until then",
     "pauseLabel": "Pause until",
     "pause": "Pause",
     "pauseHint": "The prospect will get back to you later? Clozer stays quiet until then."

@@ -4,9 +4,9 @@
     "doc": "“{name}”",
     "quote": "“{text}”",
     "lineQuote": ": “{text}”",
-    "viewDeal": "View the deal",
+    "viewDeal": "View the prospect",
     "reply": "Reply",
-    "dealLine": "The deal: {url}",
+    "dealLine": "The prospect: {url}",
     "footer": "Manage my notifications"
   },
   "message": {
@@ -30,8 +30,8 @@
       "line": "{who} approved {doc}"
     },
     "meetingBooked": {
-      "bodyDate": "{who} just booked a meeting from {doc}, for {date}. Automatic follow-ups on this deal are stopped.",
-      "body": "{who} just booked a meeting from {doc}. Automatic follow-ups on this deal are stopped.",
+      "bodyDate": "{who} just booked a meeting from {doc}, for {date}. Automatic follow-ups for this prospect are stopped.",
+      "body": "{who} just booked a meeting from {doc}. Automatic follow-ups for this prospect are stopped.",
       "noDate": "The date and time are in your calendar.",
       "subjectDate": "{who} booked a meeting for {date}",
       "subject": "{who} booked a meeting",
@@ -44,20 +44,20 @@
       "line": "{who} is asking for a change on {doc}"
     },
     "quoteRequested": {
-      "body": "{who} looked at {doc} and is asking for a quote. Automatic follow-ups on this deal are stopped.",
+      "body": "{who} looked at {doc} and is asking for a quote. Automatic follow-ups for this prospect are stopped.",
       "subject": "{who} is asking for a quote",
       "line": "{who} is asking for a quote after {doc}"
     },
     "prospectQuestion": {
       "body": "{who} asked a question about {doc}. The assistant couldn't answer and told them you'd get back to them.",
-      "dealAndChat": "The deal and the conversation: {url}",
+      "dealAndChat": "Their page and the conversation: {url}",
       "subject": "{who} has a question about your proposal",
       "line": "{who} has a question about {doc}"
     },
     "voiceComment": {
       "bodyPage": "{who} recorded a voice comment on page {page} of {doc}.",
       "body": "{who} recorded a voice comment on {doc}.",
-      "noTranscript": "No transcript this time, listen to it on the deal page.",
+      "noTranscript": "No transcript this time, listen to it on the prospect's page.",
       "listen": "Listen to it: {url}",
       "subject": "{who} left you a voice message",
       "linePage": "{who} left a voice note on page {page} of {doc}",
@@ -232,6 +232,6 @@
     "reopened": "Back after {days} days without reading",
     "pricing": "Lingering on the pricing",
     "firstOpen": "Opening your proposal for the first time",
-    "hotDeal": "Hot deal, reading it again"
+    "hotDeal": "Hot prospect, reading it again"
   }
 }

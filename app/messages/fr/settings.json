@@ -37,7 +37,7 @@
     "save": "Enregistrer les réglages",
     "pilot": {
       "title": "Pilote automatique",
-      "descriptionAi": "Clozer lit chaque deal comme un closer expérimenté : qui lit quoi, ce qui coince, quand relancer. Il prépare les relances tout seul.",
+      "descriptionAi": "Clozer lit chaque prospect comme un closer expérimenté : qui lit quoi, ce qui coince, quand relancer. Il prépare les relances tout seul.",
       "descriptionNoAi": "Les relances sont préparées à partir de règles simples tant qu'aucune IA n'est configurée.",
       "hint": "Dans tous les cas : 3 relances par mois et par contact au maximum, jamais juste après une lecture, toujours aux heures de bureau du prospect, et jamais d'allusion au fait que vous voyez ce qu'il lit.",
       "question": "Quand Clozer a préparé une relance",
@@ -91,7 +91,7 @@
       "whyPlaceholder": "Prix forfaitaire, taux de conversion +18 % en moyenne, une équipe dédiée",
       "objectionsLabel": "Les objections que vous entendez souvent",
       "objectionsPlaceholder": "Trop cher par rapport à un freelance, peur de perdre le SEO, pas le bon moment",
-      "cycleBefore": "Un deal se signe en général en",
+      "cycleBefore": "Une vente se signe en général en",
       "cycleAfter": "jours"
     },
     "links": {
@@ -152,7 +152,7 @@
     "exportWorkspaceDescription": "Liens, prospects, lectures et messages, en JSON.",
     "download": "Télécharger",
     "deleteAccountTitle": "Supprimer mon compte",
-    "deleteAccountDescription": "Vos deals restent dans l'espace, votre accès disparaît.",
+    "deleteAccountDescription": "Vos prospects restent dans l'espace, votre accès disparaît.",
     "deleteAccountDialogTitle": "Supprimer votre compte ?",
     "deleteAccountDialogDescription": "Vous serez déconnecté partout. Vos liens restent à l'équipe.",
     "deleteTrigger": "Supprimer",

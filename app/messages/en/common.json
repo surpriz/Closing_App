@@ -31,7 +31,7 @@
     "toHot": "{count, plural, one {# more point to turn hot.} other {# more points to turn hot.}}",
     "intense": "Intense reading.",
     "guideTitle": "How the temperature is worked out",
-    "guideIntro": "A score out of 100 that measures how interested the prospect is in this document. Cold below {warm}, warm up to {warmMax}, hot from {hot}. It drops on its own if the prospect doesn't come back, and goes to 100 when the proposal is approved or the deal won.",
+    "guideIntro": "A score out of 100 that measures how interested the prospect is in this document. Cold below {warm}, warm up to {warmMax}, hot from {hot}. It drops on its own if the prospect doesn't come back, and goes to 100 when the proposal is approved or marked won.",
     "rows": {
       "recentRead": "Recent read",
       "recentReadRule": "25 if read in the last 24 h, 15 within 3 days, 5 within 7 days",
@@ -55,7 +55,7 @@
     "notOpened": "Not opened yet.",
     "notOpenedDetail": "The verdict comes with the first read.",
     "opened": "Opened.",
-    "openedDetail": "The verdict comes as soon as Clozer has read this deal.",
+    "openedDetail": "The verdict comes as soon as Clozer has analyzed this prospect.",
     "noRecentRead": "no recent read",
     "headline": "{tier}: {why}."
   }

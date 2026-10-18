@@ -26,7 +26,7 @@ const BY_PAGE_FR: [prefix: string, questions: string[]][] = [
     "/links/",
     [
       "Comment valider ou modifier une relance ?",
-      "Que veut dire la température du deal ?",
+      "Que veut dire la température du prospect ?",
       "Comment prolonger un lien expiré ?",
     ],
   ],
@@ -40,7 +40,7 @@ const BY_PAGE_FR: [prefix: string, questions: string[]][] = [
   ],
   [
     "/team",
-    ["Comment lire la vue équipe ?", "Comment inviter un commercial ?", "Qui peut modifier les deals de l'équipe ?"],
+    ["Comment lire la vue équipe ?", "Comment inviter un commercial ?", "Qui peut modifier les prospects de l'équipe ?"],
   ],
 ];
 
@@ -65,13 +65,13 @@ const BY_PAGE_EN: [prefix: string, questions: string[]][] = [
   ],
   [
     "/links/",
-    ["How do I approve or edit a follow-up?", "What does the deal temperature mean?", "How do I extend an expired link?"],
+    ["How do I approve or edit a follow-up?", "What does the prospect temperature mean?", "How do I extend an expired link?"],
   ],
   [
     "/settings",
     ["Copilot or Autopilot, which one should I pick?", "How do I get alerts in Slack?", "How do I invite my team?"],
   ],
-  ["/team", ["How do I read the team view?", "How do I invite a salesperson?", "Who can edit the team's deals?"]],
+  ["/team", ["How do I read the team view?", "How do I invite a salesperson?", "Who can edit the team's prospects?"]],
 ];
 
 const DEFAULT_EN = [

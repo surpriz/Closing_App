@@ -66,7 +66,7 @@ describe("dealVerdict", () => {
     });
     expect(dealVerdict({ insight: null, score: null, opened: true }, labels)).toEqual({
       headline: "Ouvert.",
-      detail: "Le verdict arrive dès que Clozer a lu ce deal.",
+      detail: "Le verdict arrive dès que Clozer a analysé ce prospect.",
     });
   });
 });

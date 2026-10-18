@@ -90,7 +90,7 @@
   },
   "scoreReason": {
     "deal_validated": "Proposition validée",
-    "deal_lost": "Deal perdu",
+    "deal_lost": "Marqué perdu",
     "recent_activity_24h": "Lu dans les dernières 24 h",
     "recent_activity_3d": "Lu ces 3 derniers jours",
     "recent_activity_7d": "Lu cette semaine",
@@ -139,7 +139,7 @@
     "reply_to_request": "Répondre à sa demande",
     "involve_decision_maker": "Faire entrer le décideur dans la boucle",
     "wait": "Attendre",
-    "close_lost": "Classer le deal"
+    "close_lost": "Classer comme perdu"
   },
   "timing": {
     "now": "maintenant",
