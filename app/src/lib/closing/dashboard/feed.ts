@@ -14,6 +14,7 @@ export type FeedKind =
   | "change"
   | "quote"
   | "extension"
+  | "relink"
   | "meeting"
   | "meeting_click"
   | "alert"
@@ -102,6 +103,7 @@ export const ACTION_KIND = {
   REQUEST_CHANGE: "change",
   REQUEST_QUOTE: "quote",
   REQUEST_EXTENSION: "extension",
+  REQUEST_RELINK: "relink",
   MEETING_BOOKED: "meeting",
   MEETING_CLICK: "meeting_click",
 } as const satisfies Record<ProspectActionType, FeedKind>;
@@ -111,12 +113,13 @@ function describeAction(type: ProspectActionType, t: AppT) {
 }
 
 function describeAlert(type: SellerAlertType, payload: unknown, t: AppT) {
-  const { liveViewers, inactiveDays, reason, readerOrigin, forwardedTo } = (payload ?? {}) as {
+  const { liveViewers, inactiveDays, reason, readerOrigin, forwardedTo, deadState } = (payload ?? {}) as {
     liveViewers?: number;
     inactiveDays?: number;
     reason?: string;
     readerOrigin?: string;
     forwardedTo?: string;
+    deadState?: "archived" | "expired";
   };
   if (type === "CALL_MOMENT") {
     return reason
@@ -142,6 +145,12 @@ function describeAlert(type: SellerAlertType, payload: unknown, t: AppT) {
   if (type === "DRAFT_READY") return t("today.feed.alert.draftReady");
   if (type === "LINK_EXTENSION_REQUESTED") return t("today.feed.alert.extensionRequested");
   if (type === "LINK_EXPIRING") return t("today.feed.alert.linkExpiring");
+  if (type === "RELINK_REQUESTED") return t("today.feed.alert.relinkRequested");
+  if (type === "DEAD_LINK_OPENED") {
+    return deadState === "expired"
+      ? t("today.feed.alert.deadLinkOpenedExpired")
+      : t("today.feed.alert.deadLinkOpenedArchived");
+  }
   if (type === "COMMITTEE_LIVE") {
     return liveViewers != null
       ? t("today.feed.alert.committeeLive", { count: liveViewers })
@@ -187,7 +196,8 @@ export function buildFeed(source: FeedSource, limit: number, t: AppT): FeedItem[
     ...source.alerts.map((alert) => ({
       id: `alert-${alert.id}`,
       at: alert.createdAt,
-      kind: "alert" as const,
+      // Back on a dead link reads like the request it often comes before
+      kind: alert.type === "DEAD_LINK_OPENED" ? ("relink" as const) : ("alert" as const),
       linkId: alert.linkId,
       who: alert.linkLabel,
       what: describeAlert(alert.type, alert.payload, t),
