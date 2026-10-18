@@ -2,19 +2,18 @@
   "metaTitle": "Réglages",
   "page": {
     "title": "Réglages",
-    "description": "L'essentiel d'abord. Le reste attend sous Réglages avancés.",
     "nav": {
-      "pilote": "Pilote automatique",
+      "extension": "Chrome et Outlook",
       "alertes": "Être prévenu",
       "agenda": "Votre agenda",
-      "offre": "Votre offre",
-      "liens": "Vos liens",
-      "assistant": "Assistant prospect",
-      "messages": "Vos messages",
-      "extension": "Chrome et Outlook",
+      "offre": "Offre et assistant",
+      "liens": "Liens et relances",
+      "integrations": "Intégrations",
       "equipe": "Équipe",
       "donnees": "Données"
-    }
+    },
+    "teamManaged": "L'offre, les liens et les relances de l'équipe sont réglés par un administrateur.",
+    "instantSave": "Ces sections s'enregistrent dès que vous les modifiez."
   },
   "advanced": {
     "show": "Réglages avancés",
@@ -30,7 +29,6 @@
     "invalidSettings": "Paramètres invalides."
   },
   "form": {
-    "lockedNote": "Réglé par un administrateur de l'espace.",
     "saved": "Réglages enregistrés",
     "unsaved": "Modifications non enregistrées",
     "saving": "Enregistrement…",
@@ -80,7 +78,7 @@
       "hint": "Calendly et Cal.com s'affichent dans la page du prospect, avec son nom et son email déjà remplis. HubSpot, Google Agenda, Microsoft Bookings et les autres s'ouvrent dans un nouvel onglet. Vide : pas de bouton « Prendre rendez-vous »."
     },
     "offer": {
-      "title": "Votre offre",
+      "title": "Votre offre et l'assistant",
       "descriptionInferred": "Pré-rempli par Clozer à partir de « {document} ». Corrigez si besoin et enregistrez : vos relances n'en seront que plus justes.",
       "description": "Facultatif. Sans rien ici, Clozer se base sur vos documents ; il pré-remplit cette partie à la lecture du premier.",
       "whatLabel": "Ce que vous vendez",
@@ -95,7 +93,7 @@
       "cycleAfter": "jours"
     },
     "links": {
-      "title": "Vos liens",
+      "title": "Liens et relances",
       "description": "Ce que chaque nouveau lien propose d'office. Clozer l'ajuste au document (le décompte ne va que sur les devis et propositions), et tout reste modifiable lien par lien.",
       "expiryHint": "Passé cette date, le prospect voit le document verrouillé et peut vous demander une prolongation.",
       "expiryLabel": "Un devis ou une proposition expire après",
@@ -123,6 +121,10 @@
       "tonePlaceholder": "direct, vouvoiement, sans jargon",
       "signatureLabel": "Signature",
       "signaturePlaceholder": "Jérôme Laval\nStudio Nova, 06 12 34 56 78"
+    },
+    "integrations": {
+      "title": "Intégrations de l'équipe",
+      "description": "Pour toute l'équipe : chaque alerte aussi dans Slack, dans un outil externe (CRM, Zapier…) ou par email en copie."
     }
   },
   "privacy": {

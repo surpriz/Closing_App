@@ -56,7 +56,14 @@ export function UserMenu({
           <p className="truncate text-micro text-muted-foreground">{email}</p>
         </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => router.push("/settings#donnees")}>
+        <DropdownMenuItem
+          onClick={() => {
+            // Already on the settings: a client push fires no hashchange, the fold would stay shut
+            if (window.location.pathname !== "/settings") return router.push("/settings#donnees");
+            window.history.replaceState(null, "", "/settings");
+            window.location.hash = "donnees";
+          }}
+        >
           <ShieldCheck />
           {t("privacy")}
         </DropdownMenuItem>

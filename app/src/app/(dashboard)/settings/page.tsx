@@ -38,14 +38,14 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("metaTitle") };
 }
 
-const ESSENTIAL = [{ id: "pilote" }, { id: "alertes" }, { id: "agenda" }] as const;
+// What a seller sets on day one: the mailbox tool, their alerts, their calendar
+const ESSENTIAL = [{ id: "extension" }, { id: "alertes" }, { id: "agenda" }] as const;
 
+// The workspace's settings are an owner's or admin's; a member keeps only their data
 const ADVANCED = [
-  { id: "offre" },
-  { id: "liens" },
-  { id: "assistant" },
-  { id: "messages" },
-  { id: "extension" },
+  { id: "offre", managerOnly: true },
+  { id: "liens", managerOnly: true },
+  { id: "integrations", managerOnly: true },
   { id: "equipe", managerOnly: true },
   { id: "donnees" },
 ] as const;
@@ -80,7 +80,7 @@ export default async function SettingsPage() {
     <div className="space-y-10">
       <PageHeader
         title={t("title")}
-        description={t("description")}
+        description={isManager ? undefined : t("teamManaged")}
         action={<LocaleSwitcher />}
       />
 
@@ -93,6 +93,18 @@ export default async function SettingsPage() {
             ).map(({ id }) => ({ id, label: t(`nav.${id}`) }))}
           />
           <div className="space-y-10">
+            {/* Saved on its own, outside the form: it leads because the call alerts depend on it */}
+            <div className="max-w-2xl">
+              <ExtensionTokens
+                tokens={tokens.map((token) => ({
+                  ...token,
+                  createdAt: token.createdAt.toISOString(),
+                  lastUsedAt: token.lastUsedAt?.toISOString() ?? null,
+                }))}
+                chromeStoreUrl={getEnv().EXTENSION_STORE_URL ?? null}
+                probe={extensionProbe(user.email, tokens)}
+              />
+            </div>
             <SettingsForm
               initial={{
                 version: settings.updatedAt.toISOString(),
@@ -138,15 +150,8 @@ export default async function SettingsPage() {
               canEditWorkspace={isManager}
             />
             <AdvancedSettingsBlock className="space-y-10">
-              <ExtensionTokens
-                tokens={tokens.map((token) => ({
-                  ...token,
-                  createdAt: token.createdAt.toISOString(),
-                  lastUsedAt: token.lastUsedAt?.toISOString() ?? null,
-                }))}
-                chromeStoreUrl={getEnv().EXTENSION_STORE_URL ?? null}
-                probe={extensionProbe(user.email, tokens)}
-              />
+              {/* Unlike the form above, no "Enregistrer": said once, where the rule changes */}
+              <p className="text-small text-muted-foreground">{t("instantSave")}</p>
               {team && (
                 <TeamSettings
                   viewer={{ userId: user.id, isOwner: isOwnerRole(role) }}

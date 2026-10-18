@@ -16,10 +16,11 @@ import { cn } from "@/lib/utils";
 /** Sections that wait behind "Réglages avancés". A deep link to one of them opens the fold. */
 export const ADVANCED_IDS = [
   "offre",
-  "liens",
   "assistant",
+  "liens",
+  "pilote",
   "messages",
-  "extension",
+  "integrations",
   "equipe",
   "donnees",
 ] as const;
