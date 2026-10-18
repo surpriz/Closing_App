@@ -58,6 +58,11 @@ export function PrivacyFr() {
         Vous pouvez exporter les données de votre espace et supprimer votre compte ou votre espace depuis Réglages ›
         Données.
       </p>
+      <p>
+        Si vous prenez une offre payante, le paiement passe par Stripe. Vos données de carte sont saisies chez Stripe :
+        Clozer ne les voit pas et ne les stocke pas. Nous conservons le nom et l&apos;adresse de facturation, le numéro
+        de TVA éventuel et l&apos;historique des factures, que la loi nous oblige à garder 10 ans.
+      </p>
 
       <h2>L&apos;extension Chrome et le complément Outlook</h2>
       <p>

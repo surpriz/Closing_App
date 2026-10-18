@@ -7,6 +7,7 @@ import { SITE_URL, alternatesFor } from "@/i18n/seo";
 const PAGES: { path: AppPathname; changeFrequency: "weekly" | "monthly" | "yearly"; priority: number }[] = [
   { path: "/", changeFrequency: "weekly", priority: 1 },
   { path: "/use-cases", changeFrequency: "monthly", priority: 0.8 },
+  { path: "/pricing", changeFrequency: "monthly", priority: 0.8 },
   { path: "/terms", changeFrequency: "yearly", priority: 0.3 },
   { path: "/privacy", changeFrequency: "yearly", priority: 0.3 },
   { path: "/subprocessors", changeFrequency: "yearly", priority: 0.3 },

@@ -53,6 +53,11 @@ export function PrivacyEn() {
         through the links you create.
       </p>
       <p>You can export your workspace data and delete your account or workspace from Settings › Data.</p>
+      <p>
+        If you take a paid plan, payment goes through Stripe. You enter your card details with Stripe: Clozer never
+        sees or stores them. We keep the billing name and address, the VAT number if any and the invoice history,
+        which the law requires us to keep for 10 years.
+      </p>
 
       <h2>The Chrome extension and the Outlook add-in</h2>
       <p>

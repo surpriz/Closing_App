@@ -13,6 +13,7 @@ export const routing = defineRouting({
     "/subprocessors": { en: "/subprocessors", fr: "/sous-traitants" },
     "/support": "/support",
     "/use-cases": { en: "/use-cases", fr: "/cas-d-usage" },
+    "/pricing": { en: "/pricing", fr: "/tarifs" },
   },
   // The pages carry their own hreflang tags (see i18n/seo.ts), no need for the Link header too.
   alternateLinks: false,

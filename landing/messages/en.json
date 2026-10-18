@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Clozer · Know who reads your sales proposals",
-    "description": "Send a tracked link instead of the PDF. Clozer sees who reads what and who else, then drafts the follow-up. Free during the beta.",
+    "description": "Send a tracked link instead of the PDF. Clozer sees who reads what and who else, then drafts the follow-up. 14-day Team trial, no credit card.",
     "shortDescription": "Send a tracked link instead of the PDF. Clozer sees who reads it, then drafts the follow-up.",
     "ogHeadline": "Know who's reading your proposal."
   },
@@ -11,6 +11,7 @@
     "how": "How it works",
     "features": "Features",
     "useCases": "Use cases",
+    "pricing": "Pricing",
     "teams": "For teams",
     "faq": "FAQ",
     "login": "Log in",
@@ -63,7 +64,7 @@
     "hero": {
       "title": "Know who's reading your proposal. Follow up <hot>at the right time</hot>.",
       "lead": "For B2B sales reps and their managers. Send a Clozer link instead of the PDF or the video: see who opens it, what they read and who they forward it to. Clozer drafts the follow-up.",
-      "free": "Free during the beta",
+      "free": "14-day Team trial",
       "noCard": "No credit card",
       "magicLink": "Sign-in link by email"
     },
@@ -223,18 +224,18 @@
     },
     "who": {
       "title": "For the rep, and for the manager.",
-      "beta": "Clozer is free during the beta, no card. If a paid plan comes, you'll hear about it first.",
+      "beta": "A free plan to start, then €19 a month for Solo or €39 per member for Team, excl. VAT. <link>See pricing</link>",
       "team": {
         "name": "Team",
         "who": "SME sales teams with a manager.",
         "body": "Each rep follows their own prospects. The manager sees everything in the Team view: what's moving, what's slipping, and each rep's pipeline.",
-        "offer": "Free during the beta"
+        "offer": "€39 / member / month excl. VAT"
       },
       "solo": {
         "name": "Solo",
         "who": "Freelancers, consultants, small agencies.",
         "body": "One link per client, follow-ups written for you. Sign in with Google or your email.",
-        "offer": "Free during the beta"
+        "offer": "€19 / month excl. VAT"
       },
       "enterprise": {
         "name": "Enterprise",
@@ -274,8 +275,8 @@
         "a": "By default, Clozer writes the follow-up and suggests the day and time to send it; you review it and approve in one click. Later on, you can let it send the simple ones by itself when it's confident. The tricky cases (an objection, a question from the prospect) always wait for you."
       },
       "beta": {
-        "q": "What happens after the beta?",
-        "a": "Prices aren't set yet. You'll hear about any paid plan before it starts."
+        "q": "I'm using Clozer during the beta. What changes?",
+        "a": "Nothing for now. Your workspace stays on Team, for free, until a date we'll announce by email. You'll hear from us before anything changes."
       },
       "data": {
         "q": "Where is my data?",
@@ -466,5 +467,127 @@
         "result": "The Team view shows what's moving, what's slipping, and each rep's pipeline."
       }
     }
+  },
+  "pricing": {
+    "title": "Pricing",
+    "description": "Free to start, Solo at €19 a month, Team at €39 per member per month, excl. VAT. 14-day Team trial, no credit card.",
+    "heading": "Pick the plan that fits.",
+    "lead": "Every new workspace starts with a 14-day Team trial, no credit card. After that, stay on Free or move to a paid plan.",
+    "vat": "Prices exclude VAT.",
+    "interval": {
+      "label": "Billing",
+      "month": "Monthly",
+      "year": "Yearly"
+    },
+    "plans": {
+      "free": {
+        "name": "Free",
+        "who": "To try it on a few deals.",
+        "period": "no time limit",
+        "note": "No card asked.",
+        "features": {
+          "links": "5 links created per month",
+          "tracking": "Reading tracking, heat score and alerts",
+          "followUps": "10 AI-written follow-ups per month, approved by you",
+          "extension": "Gmail and Outlook extension, meeting booking",
+          "video": "1 video pitch",
+          "badge": "\"Sent with Clozer\" note on the prospect page"
+        }
+      },
+      "solo": {
+        "name": "Solo",
+        "who": "For a freelancer or a rep on their own.",
+        "period": "per month, excl. VAT",
+        "monthNote": "Billed every month.",
+        "yearNote": "{total} excl. VAT, billed once a year.",
+        "features": {
+          "links": "Unlimited links",
+          "followUps": "Unlimited AI follow-ups and autopilot",
+          "prospect": "Assistant, translation and voice notes on the prospect page",
+          "video": "Unlimited video pitches",
+          "badge": "No Clozer note"
+        }
+      },
+      "team": {
+        "name": "Team",
+        "who": "For a sales team and its manager.",
+        "period": "per member per month, excl. VAT",
+        "monthNote": "Billed every month, 2 members minimum.",
+        "yearNote": "{total} excl. VAT per member, billed once a year. 2 members minimum.",
+        "trial": "14-day trial included",
+        "features": {
+          "solo": "Everything in Solo, for each rep",
+          "teamView": "Team view for the manager",
+          "invites": "Invite your teammates",
+          "integrations": "Slack alerts and webhooks"
+        }
+      },
+      "enterprise": {
+        "name": "Enterprise",
+        "who": "For several sales teams.",
+        "price": "On quote",
+        "note": "Security, integrations, invoicing: we look at your case together.",
+        "features": {
+          "team": "Everything in Team"
+        }
+      }
+    },
+    "table": {
+      "title": "The details, plan by plan",
+      "caption": "What each plan includes",
+      "feature": "Feature",
+      "included": "Included",
+      "notIncluded": "Not included",
+      "unlimited": "Unlimited",
+      "perMonth": "{count} per month",
+      "rows": {
+        "links": "Links created",
+        "tracking": "Reading tracking, heat score, alerts",
+        "followUps": "AI-written follow-ups",
+        "autopilot": "Autopilot",
+        "extension": "Gmail and Outlook extension",
+        "booking": "Meeting booking",
+        "assistant": "Assistant on the prospect page",
+        "translation": "Document translation",
+        "voice": "Voice notes",
+        "video": "Video pitches",
+        "noBadge": "No \"Sent with Clozer\" note",
+        "teamView": "Team view",
+        "invites": "Invite teammates",
+        "slack": "Slack alerts and webhooks"
+      }
+    },
+    "faq": {
+      "title": "Questions about pricing.",
+      "vat": {
+        "q": "Are prices excluding VAT?",
+        "a": "Yes, every price is excluding VAT. VAT is added depending on your country. In the European Union, with a valid VAT number, the reverse charge applies."
+      },
+      "cancel": {
+        "q": "Can I stop whenever I want?",
+        "a": "Yes. You cancel from the billing settings, with no commitment. Your plan stays active until the end of the period already paid, then your workspace moves to Free."
+      },
+      "members": {
+        "q": "How are Team members counted?",
+        "a": "Everyone in the workspace counts, the manager too, with a minimum of 2. If you add or remove someone during a period, the amount is prorated."
+      },
+      "afterTrial": {
+        "q": "What happens when the trial ends?",
+        "a": "Without a subscription, your workspace moves to Free. Your links keep working and no data is deleted. Paid features unlock as soon as you pick a plan."
+      },
+      "beta": {
+        "q": "I used Clozer during the beta.",
+        "a": "Your workspace stays on Team, for free, until a date we'll announce by email. You'll hear from us before anything changes."
+      },
+      "invoices": {
+        "q": "Where are my invoices?",
+        "a": "In Clozer, under <billing>Settings › Billing</billing>. That's also where you manage your subscription and card."
+      },
+      "payment": {
+        "q": "How can I pay?",
+        "a": "By card, through Stripe. Clozer never sees or stores your card number."
+      }
+    },
+    "final": "Try Clozer on Team for 14 days."
   }
 }

@@ -20,13 +20,14 @@ export async function SiteHeader({ locale, path }: { locale: Locale; path: AppPa
     href: `${home}#${ANCHORS[locale][section]}`,
     label: t(section),
     current: false,
-    // Five links don't fit next to the CTA at 1024px: the FAQ waits for xl, the page ends on it anyway.
-    wide: section === "faq",
+    // Six links don't fit next to the CTA at 1024px: "For teams" and the FAQ wait for xl (pricing covers the first).
+    wide: section === "teams" || section === "faq",
   }));
-  // The one page of its own in the nav, after the features it puts in situation.
+  // The pages of their own in the nav, after the features they put in situation.
   const nav = [
     ...sections.slice(0, 2),
     { href: localizedPath(locale, "/use-cases"), label: t("useCases"), current: path === "/use-cases", wide: false },
+    { href: localizedPath(locale, "/pricing"), label: t("pricing"), current: path === "/pricing", wide: false },
     ...sections.slice(2),
   ];
 

@@ -418,12 +418,20 @@ export default async function Home({ params }: Props) {
           </div>
         </section>
 
-        {/* Segments: the team offer first, with its real screen; no prices exist yet, so none are shown. */}
+        {/* Segments: the team offer first, with its real screen; prices in one line, the details on /pricing. */}
         <section id={anchors.teams} className="scroll-mt-14 border-b border-ink">
           {alias("teams")}
           <div className={`${WRAP} py-20 md:py-28`}>
             <h2 className="condensed max-w-[20ch] text-title font-bold">{t("who.title")}</h2>
-            <p className="mt-6 max-w-[56ch] text-lead text-ink-soft">{t("who.beta")}</p>
+            <p className="mt-6 max-w-[56ch] text-lead text-ink-soft">
+              {t.rich("who.beta", {
+                link: (chunks) => (
+                  <Link href="/pricing" className="font-medium text-ink underline underline-offset-4">
+                    {chunks}
+                  </Link>
+                ),
+              })}
+            </p>
             <div className="mt-14 grid gap-10 border-t border-ink pt-10 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-16">
               <article className="flex flex-col">
                 <h3 className="condensed text-[2.5rem] leading-none font-extrabold tracking-[-0.03em]">{t("who.team.name")}</h3>

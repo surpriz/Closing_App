@@ -5,9 +5,10 @@ import type { AppPathname } from "@/i18n/routing";
 export const UPDATED_AT: Record<AppPathname, Date> = {
   "/": new Date("2026-10-18"),
   "/use-cases": new Date("2026-10-18"),
-  "/terms": new Date("2026-10-16"),
-  "/privacy": new Date("2026-10-13"),
+  "/pricing": new Date("2026-10-18"),
+  "/terms": new Date("2026-10-18"),
+  "/privacy": new Date("2026-10-18"),
   "/legal": new Date("2026-10-16"),
-  "/subprocessors": new Date("2026-10-11"),
+  "/subprocessors": new Date("2026-10-18"),
   "/support": new Date("2026-10-13"),
 };

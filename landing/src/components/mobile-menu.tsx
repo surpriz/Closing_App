@@ -3,7 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 
 /**
- * The only client component of the site: a 44px button that drops the nav under the header on small screens.
+ * A client component (with the pricing page's BillingToggle): a 44px button that drops the nav under the header on small screens.
  * Not a <details>: the /#section anchors must keep working without reloading the page, so we close on hashchange.
  */
 export function MobileMenu({

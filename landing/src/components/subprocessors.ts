@@ -60,6 +60,15 @@ export const SUBPROCESSORS: { name: string; purpose: Localized; location: Locali
     safeguard: { fr: "DPA Twilio, Data Privacy Framework", en: "Twilio DPA, Data Privacy Framework" },
   },
   {
+    name: "Stripe Payments Europe Ltd.",
+    purpose: {
+      fr: "Paiement des abonnements et facturation",
+      en: "Subscription payments and invoicing",
+    },
+    location: { fr: "Union européenne (Irlande)", en: "European Union (Ireland)" },
+    safeguard: { fr: "DPA Stripe, clauses contractuelles types", en: "Stripe DPA, standard contractual clauses" },
+  },
+  {
     name: "Google LLC",
     purpose: {
       fr: "Connexion avec un compte Google, si l'utilisateur la choisit",

@@ -53,17 +53,26 @@ export function TermsEn() {
         the last twelve months.
       </p>
 
-      <h2>6. Term and termination</h2>
+      <h2>6. Paid plans</h2>
+      <p>
+        Prices are shown excluding VAT on the <Link href="/pricing">pricing</Link> page; VAT is added depending on the
+        Customer&apos;s country. The subscription is paid by card and renews every month or every year, as the
+        Customer chooses. It can be cancelled at any time from the billing settings: cancellation takes effect at the
+        end of the current period, and a period already started is not refunded. A change of plan or of the number of
+        members is prorated.
+      </p>
+
+      <h2>7. Term and termination</h2>
       <p>
         The Customer can delete their account or workspace at any time. We may suspend a workspace that breaches
         these terms, after a warning except in an emergency. When a workspace is deleted, its data and files are
         erased.
       </p>
 
-      <h2>7. Changes</h2>
+      <h2>8. Changes</h2>
       <p>We notify the Customer by email at least 30 days before any significant change to these terms.</p>
 
-      <h2>8. Governing law</h2>
+      <h2>9. Governing law</h2>
       <p>
         French law. Failing an amicable settlement, the courts with jurisdiction over Romans-sur-Isère shall have
         jurisdiction.

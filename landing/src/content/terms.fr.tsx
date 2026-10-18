@@ -53,19 +53,28 @@ export function TermsFr() {
         Client sur les douze derniers mois.
       </p>
 
-      <h2>6. Durée et fin</h2>
+      <h2>6. Offres payantes</h2>
+      <p>
+        Les prix sont affichés hors taxes sur la page <Link href="/pricing">tarifs</Link> ; la TVA s&apos;ajoute selon le
+        pays du Client. L&apos;abonnement se paie par carte et se renouvelle chaque mois ou chaque année, selon le
+        choix du Client. Il peut être résilié à tout moment depuis les réglages de facturation : la résiliation prend
+        effet à la fin de la période en cours, et une période commencée n&apos;est pas remboursée. Un changement
+        d&apos;offre ou du nombre de membres est calculé au prorata.
+      </p>
+
+      <h2>7. Durée et fin</h2>
       <p>
         Le Client peut supprimer son compte ou son espace à tout moment. Nous pouvons suspendre un espace qui enfreint
         ces conditions, après avertissement sauf urgence. À la suppression d&apos;un espace, ses données et fichiers
         sont effacés.
       </p>
 
-      <h2>7. Modifications</h2>
+      <h2>8. Modifications</h2>
       <p>
         Nous prévenons le Client par email au moins 30 jours avant tout changement important de ces conditions.
       </p>
 
-      <h2>8. Droit applicable</h2>
+      <h2>9. Droit applicable</h2>
       <p>Droit français. À défaut d&apos;accord amiable, tribunaux compétents du ressort de Romans-sur-Isère.</p>
 
       <h2>Annexe : accord de traitement des données (article 28 du RGPD)</h2>

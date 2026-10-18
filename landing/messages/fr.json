@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Clozer · Sachez qui lit vos propositions commerciales",
-    "description": "Envoyez un lien suivi à la place du PDF. Clozer voit qui lit, quoi et qui d'autre, puis prépare la relance. Gratuit pendant la bêta.",
+    "description": "Envoyez un lien suivi à la place du PDF. Clozer voit qui lit, quoi et qui d'autre, puis prépare la relance. 14 jours d'essai Équipe, sans carte bancaire.",
     "shortDescription": "Envoyez un lien suivi à la place du PDF. Clozer voit qui lit, puis prépare la relance.",
     "ogHeadline": "Sachez qui lit votre proposition."
   },
@@ -11,6 +11,7 @@
     "how": "Comment ça marche",
     "features": "Fonctionnalités",
     "useCases": "Cas d'usage",
+    "pricing": "Tarifs",
     "teams": "Pour les équipes",
     "faq": "Questions",
     "login": "Se connecter",
@@ -63,7 +64,7 @@
     "hero": {
       "title": "Sachez qui lit votre proposition. Relancez <hot>au bon moment</hot>.",
       "lead": "Pour les commerciaux B2B et leurs managers. Envoyez un lien Clozer à la place du PDF ou de la vidéo : vous voyez qui l'ouvre, ce qu'il lit et à qui il le transfère. Clozer prépare la relance.",
-      "free": "Gratuit pendant la bêta",
+      "free": "14 jours d'essai Équipe",
       "noCard": "Sans carte bancaire",
       "magicLink": "Lien de connexion par email"
     },
@@ -223,18 +224,18 @@
     },
     "who": {
       "title": "Pour le commercial, et pour son manager.",
-      "beta": "Clozer est gratuit pendant la bêta, sans carte. Si une offre payante arrive, vous serez prévenu avant.",
+      "beta": "Une offre gratuite pour commencer, puis 19 € par mois en Solo ou 39 € par membre en Équipe, hors TVA. <link>Voir les tarifs</link>",
       "team": {
         "name": "Équipe",
         "who": "Commerciaux de PME avec un manager.",
         "body": "Chacun suit ses prospects. Le manager voit l'ensemble dans la vue Équipe : ce qui avance, ce qui glisse, et le pipeline de chaque commercial.",
-        "offer": "Gratuit pendant la bêta"
+        "offer": "39 € HT / membre / mois"
       },
       "solo": {
         "name": "Solo",
         "who": "Indépendants, consultants, agences de quelques personnes.",
         "body": "Un lien par client, les relances écrites pour vous. Connexion avec Google ou votre email.",
-        "offer": "Gratuit pendant la bêta"
+        "offer": "19 € HT / mois"
       },
       "enterprise": {
         "name": "Entreprise",
@@ -274,8 +275,8 @@
         "a": "Par défaut, Clozer écrit la relance et propose le jour et l'heure d'envoi ; vous la relisez et la validez d'un clic. Vous pouvez ensuite le laisser envoyer seul les messages simples quand il est sûr de lui. Les cas délicats (une objection, une question du prospect) vous attendent toujours."
       },
       "beta": {
-        "q": "Que se passe-t-il après la bêta ?",
-        "a": "Les prix ne sont pas encore fixés. Vous serez prévenu avant toute offre payante."
+        "q": "J'utilise Clozer pendant la bêta. Qu'est-ce qui change ?",
+        "a": "Rien pour l'instant. Votre espace reste en Équipe, gratuitement, jusqu'à une date que nous vous annoncerons par email. Vous serez prévenu avant tout changement."
       },
       "data": {
         "q": "Où sont mes données ?",
@@ -466,5 +467,127 @@
         "result": "La vue Équipe montre ce qui avance, ce qui glisse, et le pipeline de chacun."
       }
     }
+  },
+  "pricing": {
+    "title": "Tarifs",
+    "description": "Gratuit pour commencer, Solo à 19 € par mois, Équipe à 39 € par membre et par mois, hors TVA. 14 jours d'essai Équipe, sans carte bancaire.",
+    "heading": "Choisissez l'offre qui vous va.",
+    "lead": "Chaque nouvel espace démarre avec 14 jours d'essai Équipe, sans carte bancaire. Ensuite, vous restez en Gratuit ou vous passez à une offre payante.",
+    "vat": "Prix hors TVA.",
+    "interval": {
+      "label": "Facturation",
+      "month": "Mensuel",
+      "year": "Annuel"
+    },
+    "plans": {
+      "free": {
+        "name": "Gratuit",
+        "who": "Pour essayer sur quelques deals.",
+        "period": "sans limite de durée",
+        "note": "Aucune carte demandée.",
+        "features": {
+          "links": "5 liens créés par mois",
+          "tracking": "Suivi de lecture, score de chaleur et alertes",
+          "followUps": "10 relances écrites par l'IA par mois, validées par vous",
+          "extension": "Extension Gmail et Outlook, prise de rendez-vous",
+          "video": "1 pitch vidéo",
+          "badge": "Mention « Envoyé avec Clozer » sur la page du prospect"
+        }
+      },
+      "solo": {
+        "name": "Solo",
+        "who": "Pour un indépendant ou un commercial seul.",
+        "period": "HT par mois",
+        "monthNote": "Facturé chaque mois.",
+        "yearNote": "{total} HT facturés une fois par an.",
+        "features": {
+          "links": "Liens illimités",
+          "followUps": "Relances IA illimitées et pilote automatique",
+          "prospect": "Assistant, traduction et vocaux sur la page du prospect",
+          "video": "Pitchs vidéo illimités",
+          "badge": "Sans mention Clozer"
+        }
+      },
+      "team": {
+        "name": "Équipe",
+        "who": "Pour une équipe commerciale et son manager.",
+        "period": "HT par membre et par mois",
+        "monthNote": "Facturé chaque mois, 2 membres minimum.",
+        "yearNote": "{total} HT par membre, facturés une fois par an. 2 membres minimum.",
+        "trial": "14 jours d'essai offerts",
+        "features": {
+          "solo": "Tout Solo, pour chaque commercial",
+          "teamView": "Vue Équipe pour le manager",
+          "invites": "Invitation de vos collègues",
+          "integrations": "Alertes Slack et webhooks"
+        }
+      },
+      "enterprise": {
+        "name": "Entreprise",
+        "who": "Pour plusieurs équipes commerciales.",
+        "price": "Sur devis",
+        "note": "Sécurité, intégrations, facturation : on regarde votre cas ensemble.",
+        "features": {
+          "team": "Tout Équipe"
+        }
+      }
+    },
+    "table": {
+      "title": "Le détail, offre par offre",
+      "caption": "Ce que comprend chaque offre",
+      "feature": "Fonction",
+      "included": "Inclus",
+      "notIncluded": "Non inclus",
+      "unlimited": "Illimité",
+      "perMonth": "{count} par mois",
+      "rows": {
+        "links": "Liens créés",
+        "tracking": "Suivi de lecture, score de chaleur, alertes",
+        "followUps": "Relances écrites par l'IA",
+        "autopilot": "Pilote automatique",
+        "extension": "Extension Gmail et Outlook",
+        "booking": "Prise de rendez-vous",
+        "assistant": "Assistant sur la page du prospect",
+        "translation": "Traduction des documents",
+        "voice": "Commentaires vocaux",
+        "video": "Pitchs vidéo",
+        "noBadge": "Sans mention « Envoyé avec Clozer »",
+        "teamView": "Vue Équipe",
+        "invites": "Invitation de collègues",
+        "slack": "Alertes Slack et webhooks"
+      }
+    },
+    "faq": {
+      "title": "Questions sur les prix.",
+      "vat": {
+        "q": "Les prix sont-ils HT ?",
+        "a": "Oui, tous les prix sont hors taxes. La TVA s'ajoute selon votre pays. Dans l'Union européenne, avec un numéro de TVA intracommunautaire valide, l'autoliquidation s'applique."
+      },
+      "cancel": {
+        "q": "Puis-je arrêter quand je veux ?",
+        "a": "Oui. Vous résiliez depuis les réglages de facturation, sans engagement. L'offre reste active jusqu'à la fin de la période déjà payée, puis votre espace passe en Gratuit."
+      },
+      "members": {
+        "q": "Comment sont comptés les membres en Équipe ?",
+        "a": "Chaque personne de l'espace compte, manager compris, avec un minimum de 2. Si vous ajoutez ou retirez quelqu'un en cours de période, le montant est ajusté au prorata."
+      },
+      "afterTrial": {
+        "q": "Que se passe-t-il à la fin de l'essai ?",
+        "a": "Sans abonnement, votre espace passe en Gratuit. Vos liens continuent de marcher et aucune donnée n'est effacée. Les fonctions payantes se débloquent dès que vous choisissez une offre."
+      },
+      "beta": {
+        "q": "J'utilisais Clozer pendant la bêta.",
+        "a": "Votre espace reste en Équipe, gratuitement, jusqu'à une date que nous vous annoncerons par email. Vous serez prévenu avant tout changement."
+      },
+      "invoices": {
+        "q": "Où trouver mes factures ?",
+        "a": "Dans Clozer, <billing>Réglages › Facturation</billing>. Vous y gérez aussi votre abonnement et votre carte."
+      },
+      "payment": {
+        "q": "Quels moyens de paiement acceptez-vous ?",
+        "a": "La carte bancaire, via Stripe. Clozer ne voit pas votre numéro de carte et ne le stocke pas."
+      }
+    },
+    "final": "Essayez Clozer en Équipe pendant 14 jours."
   }
 }
