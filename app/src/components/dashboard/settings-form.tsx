@@ -9,6 +9,7 @@ import {
   saveWorkspaceSettings,
   type SettingsState,
 } from "@/app/(dashboard)/settings/actions";
+import { openUpgrade } from "@/components/billing/upgrade-dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -196,7 +197,9 @@ export function SettingsForm({
   // Rules only the server knows (a Slack address, a safe webhook) can reject a folded field: show the fold
   useEffect(() => {
     if (state?.ok) toast.success(t("saved"));
-    if (state?.error) {
+    if (state?.upgrade && state.error) {
+      openUpgrade({ error: state.error, upgrade: state.upgrade });
+    } else if (state?.error) {
       toast.error(state.error);
       if (state.workspace) {
         setAdvancedOpen(true);

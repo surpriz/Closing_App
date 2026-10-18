@@ -10,6 +10,7 @@ import {
   setLinkSwitch,
   type LinkSwitch,
 } from "@/app/(dashboard)/links/actions";
+import { isUpgradePrompt, openUpgrade } from "@/components/billing/upgrade-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -130,6 +131,11 @@ export function LinkSettingsPanel({
     startTransition(async () => {
       try {
         const result = await setLinkSwitch(linkId, key, value);
+        if (isUpgradePrompt(result)) {
+          setValues((current) => ({ ...current, [key]: !value }));
+          openUpgrade(result);
+          return;
+        }
         if ("error" in result) throw new Error(result.error);
       } catch {
         setValues((current) => ({ ...current, [key]: !value }));

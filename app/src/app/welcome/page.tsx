@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
+import { UpgradeDialogHost } from "@/components/billing/upgrade-dialog";
 import { OnboardingWizard } from "@/components/onboarding/onboarding-wizard";
 import { ToolSetup } from "@/components/onboarding/tool-setup";
 import { documentUploadPrefix } from "@/lib/blob";
@@ -80,18 +81,21 @@ export default async function WelcomePage(props: PageProps<"/welcome">) {
     : null;
 
   return (
-    <OnboardingWizard
-      firstName={firstName}
-      initialMailClient={parseMailClient(prefs.mailClient) ?? parseMailClient(guessMailClient(user.email))}
-      connected={connected}
-      chromeStoreUrl={getEnv().EXTENSION_STORE_URL ?? null}
-      askOffer={isManagerRole(role) && !settings.offerDescription?.trim()}
-      uploadPrefix={documentUploadPrefix(organization.id)}
-      previous={
-        previous
-          ? { documentId: previous.id, linkId: previous.links[0]?.id ?? null, name: previous.name }
-          : null
-      }
-    />
+    <>
+      <UpgradeDialogHost />
+      <OnboardingWizard
+        firstName={firstName}
+        initialMailClient={parseMailClient(prefs.mailClient) ?? parseMailClient(guessMailClient(user.email))}
+        connected={connected}
+        chromeStoreUrl={getEnv().EXTENSION_STORE_URL ?? null}
+        askOffer={isManagerRole(role) && !settings.offerDescription?.trim()}
+        uploadPrefix={documentUploadPrefix(organization.id)}
+        previous={
+          previous
+            ? { documentId: previous.id, linkId: previous.links[0]?.id ?? null, name: previous.name }
+            : null
+        }
+      />
+    </>
   );
 }

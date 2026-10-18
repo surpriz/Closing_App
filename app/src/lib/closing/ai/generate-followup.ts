@@ -38,9 +38,17 @@ export async function draftFollowup(
     organizationId,
     linkId,
     sellerLocale,
-  }: { sourceText: string; organizationId: string; linkId: string; sellerLocale: UiLocale },
+    forceTemplate = false,
+  }: {
+    sourceText: string;
+    organizationId: string;
+    linkId: string;
+    sellerLocale: UiLocale;
+    /** The plan's AI follow-ups of the month are used up: the template writes it. */
+    forceTemplate?: boolean;
+  },
 ): Promise<GeneratedFollowup> {
-  const llm = getLanguageModel("followup");
+  const llm = forceTemplate ? null : getLanguageModel("followup");
   if (!llm) return fromTemplate(input);
 
   let issues: string[] = [];

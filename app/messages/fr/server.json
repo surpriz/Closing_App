@@ -13,7 +13,9 @@
     "dealNotPending": "Ce prospect n'est plus en attente.",
     "notPdf": "Ce fichier n'est pas un PDF valide.",
     "pdfSaveFailed": "Clozer n'a pas pu enregistrer le PDF. Réessayez.",
-    "codeExpired": "Le code a expiré. Recommencez la connexion."
+    "codeExpired": "Le code a expiré. Recommencez la connexion.",
+    "planLimit": "Vous avez créé vos {max} liens du mois avec l'offre Gratuite. Passez à Solo ou Équipe pour continuer.",
+    "planLimitPitch": "L'offre Gratuite garde une seule vidéo pitch."
   },
   "linkSummary": {
     "perReader": "Un lien par lecteur",
@@ -185,7 +187,8 @@
       "replied": "Le prospect a répondu par email"
     },
     "queue": {
-      "toReview": "À relire : {issues}"
+      "toReview": "À relire : {issues}",
+      "aiQuota": "Les {max} relances IA du mois de l'offre Gratuite sont utilisées : celle-ci vient du modèle."
     },
     "guard": {
       "trackingHint": "Le message laisse deviner que la lecture est suivie (« {hint} »).",

@@ -8,6 +8,7 @@ import { DEFAULT_UI_LOCALE, LOCALE_COOKIE, resolveUiLocale, type UiLocale } from
 import { getTranslator } from "@/i18n/messages";
 import { getPublicAppUrl } from "@/lib/app-origin";
 import { syncSeats } from "@/lib/billing/seats";
+import { getWorkspacePlan } from "@/lib/billing/workspace-plan";
 import { inBackground } from "@/lib/closing/background";
 import { prisma } from "@/lib/db";
 import {
@@ -140,6 +141,13 @@ export const auth = betterAuth({
       cancelPendingInvitationsOnReInvite: true,
       // Team is billed per member: the Stripe quantity follows every arrival and departure
       organizationHooks: {
+        // Inviting is a Team feature (the settings action says it nicer first)
+        beforeCreateInvitation: async ({ organization }) => {
+          const plan = await getWorkspacePlan(organization.id);
+          if (!plan.limits.invites) {
+            throw APIError.from("FORBIDDEN", { code: "PLAN_TEAM_REQUIRED", message: "Inviting teammates needs the Team plan." });
+          }
+        },
         afterAddMember: async ({ organization }) => inBackground("seat-sync", () => syncSeats(organization.id)),
         afterAcceptInvitation: async ({ organization }) => inBackground("seat-sync", () => syncSeats(organization.id)),
         afterRemoveMember: async ({ organization }) => inBackground("seat-sync", () => syncSeats(organization.id)),

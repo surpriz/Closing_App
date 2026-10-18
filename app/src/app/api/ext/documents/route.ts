@@ -2,9 +2,10 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { getTranslator } from "@/i18n/messages";
+import { assertCanCreateLink, PlanLimitError } from "@/lib/billing/workspace-plan";
 import { createFileDocument, DocumentInputError } from "@/lib/closing/documents/create-document";
 import { prisma } from "@/lib/db";
-import { extError, withExtensionAuth } from "@/lib/extension-auth";
+import { extError, extPlanLimit, withExtensionAuth } from "@/lib/extension-auth";
 
 // Documents the seller can pick from the mail composer
 export const GET = withExtensionAuth(async (request, { organization }) => {
@@ -35,6 +36,8 @@ export const POST = withExtensionAuth(async (request, { user, organization }) =>
   if (!parsed.success) return extError(400, "invalid");
 
   try {
+    // The document only exists to be sent: no link left this month, no document either
+    await assertCanCreateLink(organization.id);
     const result = await createFileDocument({
       organizationId: organization.id,
       userId: user.id,
@@ -43,6 +46,7 @@ export const POST = withExtensionAuth(async (request, { user, organization }) =>
     revalidatePath("/documents");
     return Response.json(result, { status: 201 });
   } catch (error) {
+    if (error instanceof PlanLimitError) return extPlanLimit(error, user.locale);
     if (error instanceof DocumentInputError) {
       return extError(400, "not_pdf", getTranslator(user.locale)("server.ext.notPdf"));
     }

@@ -3,10 +3,11 @@ import { z } from "zod";
 
 import { getTranslator } from "@/i18n/messages";
 import { getPublicAppUrl } from "@/lib/app-origin";
+import { PlanLimitError } from "@/lib/billing/workspace-plan";
 import { createDocumentLink } from "@/lib/closing/documents/create-link";
 import { prospectFromRecipient } from "@/lib/closing/prospects/from-recipient";
 import { settingsSummary } from "@/lib/closing/share/summary";
-import { extError, withExtensionAuth } from "@/lib/extension-auth";
+import { extError, extPlanLimit, withExtensionAuth } from "@/lib/extension-auth";
 
 const schema = z.object({
   documentId: z.string().min(1).max(64),
@@ -30,7 +31,11 @@ export const POST = withExtensionAuth(async (request, { user, organization }) =>
     prospect: recipient ? prospectFromRecipient(recipient) : null,
     draft: true,
     source: source === "gmail" ? "extension_gmail" : source === "outlook" ? "extension_outlook" : "outlook_addin",
+  }).catch((error) => {
+    if (error instanceof PlanLimitError) return error;
+    throw error;
   });
+  if (link instanceof PlanLimitError) return extPlanLimit(link, user.locale);
   if (!link) return extError(404, "not_found", getTranslator(user.locale)("server.ext.documentNotFound"));
 
   revalidatePath(`/documents/${documentId}`);

@@ -7,7 +7,8 @@ import { useTranslations } from "next-intl";
 import { useEffect, useEffectEvent, useRef, useState, type DragEvent, type FormEvent } from "react";
 import { toast } from "sonner";
 
-import { createDocument, createWebDocument } from "@/app/(dashboard)/documents/actions";
+import { checkLinkAllowance, createDocument, createWebDocument } from "@/app/(dashboard)/documents/actions";
+import { isUpgradePrompt, openUpgrade } from "@/components/billing/upgrade-dialog";
 import { VideoPitchDialog } from "@/components/dashboard/video-pitch-recorder";
 import { Button } from "@/components/ui/button";
 import {
@@ -87,6 +88,13 @@ function useAddSource(uploadPrefix: string, onDone?: () => void, onCreated?: (ad
 
     setProgress(0);
     try {
+      const refused = await checkLinkAllowance();
+      if (refused) {
+        setProgress(null);
+        onDone?.();
+        openUpgrade(refused);
+        return;
+      }
       const blob = await upload(`${uploadPrefix}${safeFileName(file.name)}`, file, {
         access: "private",
         handleUploadUrl: "/api/upload",
@@ -95,12 +103,18 @@ function useAddSource(uploadPrefix: string, onDone?: () => void, onCreated?: (ad
         onUploadProgress: ({ percentage }) => setProgress(percentage),
       });
 
-      const { id, linkId, reused, waiting } = await createDocument({
+      const created = await createDocument({
         pathname: blob.pathname,
         name: file.name,
         sha256: await sha256Hex(file),
       });
       onDone?.();
+      if ("upgrade" in created) {
+        setProgress(null);
+        openUpgrade(created);
+        return;
+      }
+      const { id, linkId, reused, waiting } = created;
       if (onCreated) {
         setProgress(null);
         onCreated({ documentId: id, linkId, sample });
@@ -124,6 +138,11 @@ function useAddSource(uploadPrefix: string, onDone?: () => void, onCreated?: (ad
     setAddingUrl(true);
     try {
       const result = await createWebDocument({ url: text });
+      if (isUpgradePrompt(result)) {
+        onDone?.();
+        openUpgrade(result);
+        return false;
+      }
       if ("error" in result) {
         toast.error(result.error);
         return false;

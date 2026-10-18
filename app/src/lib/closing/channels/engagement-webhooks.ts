@@ -1,4 +1,5 @@
 import { getPublicAppUrl } from "@/lib/app-origin";
+import { getWorkspacePlan } from "@/lib/billing/workspace-plan";
 import { decryptSecret } from "@/lib/crypto";
 import { prisma } from "@/lib/db";
 
@@ -58,6 +59,7 @@ export async function emitReaderEvent(linkId: string, event: Exclude<ReaderEvent
 
   const settings = await getWorkspaceSettings(link.organizationId);
   if (!settings.outboundWebhookUrl || !settings.webhookSecret) return;
+  if (!(await getWorkspacePlan(link.organizationId)).limits.webhooks) return;
 
   const reading = await readingOfLink(link.id, link.document.id);
   if (event === "reader.hot") {
@@ -101,6 +103,7 @@ export async function emitForwardEvent(forwardId: string) {
   if (!forward) return;
   const settings = await getWorkspaceSettings(forward.link.organizationId);
   if (!settings.outboundWebhookUrl || !settings.webhookSecret) return;
+  if (!(await getWorkspacePlan(forward.link.organizationId)).limits.webhooks) return;
 
   await queueWebhookEvent(forward.linkId, "reader.forwarded", `reader.forwarded:${forwardId}`, {
     linkId: forward.linkId,

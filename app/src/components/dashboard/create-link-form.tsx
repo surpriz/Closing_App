@@ -7,6 +7,7 @@ import { useTransition } from "react";
 import { toast } from "sonner";
 
 import { createQuickLink } from "@/app/(dashboard)/documents/actions";
+import { isUpgradePrompt, openUpgrade } from "@/components/billing/upgrade-dialog";
 import { Button } from "@/components/ui/button";
 
 /**
@@ -35,7 +36,8 @@ export function NewLinkButton({
       onClick={() =>
         startTransition(async () => {
           const result = await createQuickLink(documentId);
-          if ("error" in result) toast.error(result.error);
+          if (isUpgradePrompt(result)) openUpgrade(result);
+          else if ("error" in result) toast.error(result.error);
           else router.push(`/links/${result.linkId}?new=1`);
         })
       }

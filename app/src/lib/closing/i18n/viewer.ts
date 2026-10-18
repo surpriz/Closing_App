@@ -26,6 +26,8 @@ export type ViewerLabels = {
   loadError: string;
   processing: string;
   unavailable: string;
+  /** "via Clozer" badge on Free workspaces' links. */
+  poweredBy: string;
   page: string;
   of: string;
   validate: string;
@@ -173,6 +175,7 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     loadError: "The document could not be loaded. Please refresh the page.",
     processing: "This document is being prepared. Please come back in a moment.",
     unavailable: "This document can't be displayed. Please ask the sender for a new link.",
+    poweredBy: "Sent with Clozer",
     page: "Page",
     of: "of",
     validate: "Accept & sign",
@@ -342,6 +345,7 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     loadError: "Impossible de charger le document. Rechargez la page.",
     processing: "Ce document est en cours de préparation. Revenez dans un instant.",
     unavailable: "Ce document ne peut pas être affiché. Demandez un nouveau lien à l'expéditeur.",
+    poweredBy: "Envoyé avec Clozer",
     page: "Page",
     of: "sur",
     validate: "Valider & signer",
@@ -511,6 +515,7 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     loadError: "No se pudo cargar el documento. Recarga la página.",
     processing: "Este documento se está preparando. Vuelve en un momento.",
     unavailable: "Este documento no se puede mostrar. Pide un nuevo enlace al remitente.",
+    poweredBy: "Enviado con Clozer",
     page: "Página",
     of: "de",
     validate: "Aceptar y firmar",
@@ -680,6 +685,7 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     loadError: "Das Dokument konnte nicht geladen werden. Bitte Seite neu laden.",
     processing: "Dieses Dokument wird vorbereitet. Bitte versuchen Sie es gleich erneut.",
     unavailable: "Dieses Dokument kann nicht angezeigt werden. Bitte fordern Sie beim Absender einen neuen Link an.",
+    poweredBy: "Gesendet mit Clozer",
     page: "Seite",
     of: "von",
     validate: "Annehmen & unterschreiben",

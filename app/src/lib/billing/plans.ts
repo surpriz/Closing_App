@@ -78,6 +78,9 @@ export const MONTHLY_PRICE_CENTS: Record<PaidPlanId, Record<Interval, number>> =
   team: { month: 3900, year: 3200 },
 };
 
+/** Where every upgrade prompt leads: the billing section of the settings. */
+export const BILLING_HREF = "/settings#facturation";
+
 export const TEAM_MIN_SEATS = 2;
 export const TRIAL_DAYS = 14;
 

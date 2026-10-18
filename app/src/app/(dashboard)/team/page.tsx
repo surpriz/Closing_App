@@ -12,6 +12,8 @@ import { DealColumn } from "@/components/dashboard/team/deal-column";
 import { formatMoney, sumMoney } from "@/components/dashboard/team/money";
 import { SellerTable } from "@/components/dashboard/team/seller-table";
 import { buttonVariants } from "@/components/ui/button";
+import { BILLING_HREF } from "@/lib/billing/plans";
+import { planFor } from "@/lib/billing/workspace-plan";
 import { compareDeals } from "@/lib/closing/dashboard/rank";
 import {
   getTeamBoard,
@@ -38,6 +40,25 @@ export default async function TeamPage(props: PageProps<"/team">) {
     getTranslations("labels"),
     getLocale(),
   ]);
+  // Below Team: what the view would show, and where to get it. Nothing is computed
+  if (!planFor(organization).limits.teamView) {
+    const tb = await getTranslations("billing");
+    return (
+      <div className="space-y-8">
+        <PageHeader title={t("title")} description={t("descriptionTeam")} />
+        <EmptyState
+          title={tb("upgrade.title")}
+          description={tb("upgrade.reason.team")}
+          action={
+            <Link href={BILLING_HREF} className={buttonVariants()}>
+              {tb("upgrade.cta")}
+            </Link>
+          }
+        />
+      </div>
+    );
+  }
+
   const now = new Date();
   const board = await getTeamBoard(organization.id, now);
 

@@ -1,5 +1,7 @@
 import type { FollowupChannel, FollowupTrigger, PageTag } from "@/generated/prisma/enums";
 import { getPublicAppUrl } from "@/lib/app-origin";
+import { quota } from "@/lib/billing/plans";
+import { countAiFollowupsThisMonth, getWorkspacePlan } from "@/lib/billing/workspace-plan";
 import { DEFAULT_UI_LOCALE, UI_LOCALES, type UiLocale } from "@/i18n/locale";
 import { MESSAGES, type Messages } from "@/i18n/messages";
 import { prisma } from "@/lib/db";
@@ -135,6 +137,13 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
     valueProps: settings?.valueProps ?? null,
   });
 
+  // The plan, not the stored setting: autopilot comes back by itself on an upgrade
+  const plan = await getWorkspacePlan(link.organizationId);
+  const aiQuota =
+    plan.limits.aiFollowupsPerMonth === null
+      ? null
+      : quota(plan.limits.aiFollowupsPerMonth, await countAiFollowupsThisMonth(link.organizationId, now));
+
   const draft = await draftFollowup(
     {
       trigger: followup.trigger,
@@ -189,6 +198,7 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
       linkId: link.id,
       sourceText,
       sellerLocale,
+      forceTemplate: aiQuota !== null && !aiQuota.allowed,
     },
   );
 
@@ -198,6 +208,7 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
   // "Available again" was just asked for by the seller reopening the link: they read it
   const autopilot =
     settings?.autonomy === "AUTOPILOT" &&
+    plan.limits.autopilot &&
     !instruction &&
     draft.issues.length === 0 &&
     !link.parentLinkId &&
@@ -222,6 +233,7 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
 
   // Nobody reads it before it leaves: a second, model-based check
   const issues = [...draft.issues];
+  if (aiQuota && !aiQuota.allowed) issues.push(t("queue.aiQuota", { max: aiQuota.max ?? 0 }));
   if (sendsAlone && draft.aiProvider !== "template") {
     const review = await reviewFollowupWithLlm(draft, {
       sourceText,

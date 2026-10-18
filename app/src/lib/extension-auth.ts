@@ -1,5 +1,8 @@
 import { pickUiLocale, type UiLocale } from "@/i18n/locale";
 import { getTranslator } from "@/i18n/messages";
+import { getPublicAppUrl } from "@/lib/app-origin";
+import { BILLING_HREF } from "@/lib/billing/plans";
+import type { PlanLimitError } from "@/lib/billing/workspace-plan";
 import { inBackground } from "@/lib/closing/background";
 import { prisma } from "@/lib/db";
 import { hashExtensionToken, parseBearer } from "@/lib/extension-tokens";
@@ -63,6 +66,26 @@ export function requestUiLocale(request: Request) {
 /** `message` is shown as is by the extensions: pass it translated. */
 export function extError(status: number, error: string, message?: string) {
   return Response.json({ error, message: message ?? error }, { status });
+}
+
+/**
+ * A plan limit, 402: older extension builds show `message`; newer ones add a
+ * button to `upgradeUrl`.
+ */
+export function extPlanLimit(error: PlanLimitError, locale: string | null | undefined) {
+  const t = getTranslator(toUiLocale(locale));
+  const message = error.reason === "videoPitch" ? t("server.ext.planLimitPitch") : t("server.ext.planLimit", { max: error.max ?? 0 });
+  return Response.json(
+    {
+      error: "plan_limit",
+      message,
+      limit: error.reason,
+      used: error.used ?? null,
+      max: error.max ?? null,
+      upgradeUrl: `${getPublicAppUrl()}${BILLING_HREF}`,
+    },
+    { status: 402 },
+  );
 }
 
 // Route guard: 401 JSON instead of the dashboard's redirect to /login

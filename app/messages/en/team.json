@@ -72,7 +72,8 @@
       "YOU_CANNOT_LEAVE_THE_ORGANIZATION_WITHOUT_AN_OWNER": "The workspace must keep at least one owner.",
       "YOU_ARE_NOT_ALLOWED_TO_CANCEL_THIS_INVITATION": "You can't cancel this invitation.",
       "MEMBER_NOT_FOUND": "This member is no longer on the team.",
-      "INVITATION_NOT_FOUND": "This invitation is no longer valid."
+      "INVITATION_NOT_FOUND": "This invitation is no longer valid.",
+      "PLAN_TEAM_REQUIRED": "Inviting teammates comes with the Team plan."
     }
   }
 }

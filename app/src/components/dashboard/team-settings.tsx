@@ -11,6 +11,7 @@ import {
   updateMemberRole,
   type TeamActionState,
 } from "@/app/(dashboard)/settings/team-actions";
+import { openUpgrade } from "@/components/billing/upgrade-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -125,7 +126,8 @@ function InviteForm() {
 
   useEffect(() => {
     if (state?.ok) toast.success(t("invitationSent"));
-    if (state?.error) toast.error(state.error);
+    if (state?.upgrade && state.error) openUpgrade({ error: state.error, upgrade: state.upgrade });
+    else if (state?.error) toast.error(state.error);
   }, [state, t]);
 
   return (

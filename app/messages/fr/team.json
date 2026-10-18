@@ -72,7 +72,8 @@
       "YOU_CANNOT_LEAVE_THE_ORGANIZATION_WITHOUT_AN_OWNER": "L'espace doit garder au moins un propriétaire.",
       "YOU_ARE_NOT_ALLOWED_TO_CANCEL_THIS_INVITATION": "Vous ne pouvez pas annuler cette invitation.",
       "MEMBER_NOT_FOUND": "Ce membre n'est plus dans l'équipe.",
-      "INVITATION_NOT_FOUND": "Cette invitation n'est plus valable."
+      "INVITATION_NOT_FOUND": "Cette invitation n'est plus valable.",
+      "PLAN_TEAM_REQUIRED": "Inviter des collègues, c'est avec l'offre Équipe."
     }
   }
 }

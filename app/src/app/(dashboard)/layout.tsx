@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 
 import { ImpersonationBanner } from "@/components/admin/impersonation-banner";
+import { UpgradeDialogHost } from "@/components/billing/upgrade-dialog";
 import { Logo } from "@/components/brand/logo";
 import { CommandMenu, type CommandEntry } from "@/components/dashboard/command-menu";
 import { DashboardNav, MobileNav } from "@/components/dashboard/dashboard-nav";
@@ -107,6 +108,7 @@ export default async function DashboardLayout({
       </main>
       <MobileNav isManager={isManager} hasTeam={hasTeam} />
       <HelpWidget firstName={user.name?.trim().split(/\s+/)[0] || null} />
+      <UpgradeDialogHost />
     </div>
   );
 }

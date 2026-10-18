@@ -13,7 +13,9 @@
     "dealNotPending": "This prospect is no longer pending.",
     "notPdf": "This file isn't a valid PDF.",
     "pdfSaveFailed": "Clozer couldn't save the PDF. Try again.",
-    "codeExpired": "The code has expired. Start the connection again."
+    "codeExpired": "The code has expired. Start the connection again.",
+    "planLimit": "You've created your {max} links for this month on the Free plan. Move to Solo or Team to keep going.",
+    "planLimitPitch": "The Free plan keeps one video pitch."
   },
   "linkSummary": {
     "perReader": "One link per reader",
@@ -185,7 +187,8 @@
       "replied": "The prospect replied by email"
     },
     "queue": {
-      "toReview": "To review: {issues}"
+      "toReview": "To review: {issues}",
+      "aiQuota": "The {max} AI follow-ups of the month on the Free plan are used: this one comes from the template."
     },
     "guard": {
       "trackingHint": "The message hints that reading is tracked (“{hint}”).",

@@ -7,7 +7,8 @@ import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { createVideoDocument } from "@/app/(dashboard)/documents/actions";
+import { checkPitchAllowance, createVideoDocument } from "@/app/(dashboard)/documents/actions";
+import { isUpgradePrompt, openUpgrade } from "@/components/billing/upgrade-dialog";
 import { uploadPoster } from "@/components/media/capture-frame";
 import type { RecorderError } from "@/components/media/use-media-recorder";
 import { canShareScreen, usePitchRecorder, type PitchSource } from "@/components/media/use-pitch-recorder";
@@ -36,6 +37,21 @@ export function VideoPitchDialog({
   uploadPrefix: string;
 }) {
   const t = useTranslations("documents.pitch");
+
+  // Over the plan: say so before the camera turns on, not after the take
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    void checkPitchAllowance().then((refused) => {
+      if (cancelled || !refused) return;
+      onOpenChange(false);
+      openUpgrade(refused);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, onOpenChange]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
@@ -108,6 +124,11 @@ function PitchRecorder({ uploadPrefix, onDone }: { uploadPrefix: string; onDone:
         durationMs: take.durationMs,
         name: title.trim() || undefined,
       });
+      if (isUpgradePrompt(result)) {
+        onDone();
+        openUpgrade(result);
+        return;
+      }
       if ("error" in result) {
         toast.error(result.error);
         setProgress(null);

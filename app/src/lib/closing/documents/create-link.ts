@@ -1,4 +1,5 @@
 import type { DocumentKind } from "@/generated/prisma/enums";
+import { assertCanCreateLink, getWorkspacePlan } from "@/lib/billing/workspace-plan";
 import { prisma } from "@/lib/db";
 import { randomSlug } from "@/lib/ids";
 
@@ -10,7 +11,10 @@ import { linkDefaultsFor } from "./smart-defaults";
 
 export type LinkSource = "extension_gmail" | "extension_outlook" | "outlook_addin" | "prospecting";
 
-// One link = one proposal sent to one prospect company
+/**
+ * One link = one proposal sent to one prospect company.
+ * Throws PlanLimitError past the plan's links of the month (the tour's test link is never counted).
+ */
 export async function createDocumentLink(input: {
   organizationId: string;
   userId: string;
@@ -34,7 +38,8 @@ export async function createDocumentLink(input: {
   /** The seller's own link from the welcome tour: always personal, never counted. */
   onboardingTest?: boolean;
 }) {
-  const [document, settings, timeZone] = await Promise.all([
+  if (!input.onboardingTest) await assertCanCreateLink(input.organizationId);
+  const [document, settings, timeZone, plan] = await Promise.all([
     prisma.document.findFirst({
       where: {
         id: input.documentId,
@@ -46,6 +51,7 @@ export async function createDocumentLink(input: {
     }),
     getWorkspaceSettings(input.organizationId),
     sellerTimeZone(input.userId, input.organizationId),
+    getWorkspacePlan(input.organizationId),
   ]);
   if (!document) return null;
 
@@ -67,8 +73,10 @@ export async function createDocumentLink(input: {
       name: input.name || prospect?.company || prospect?.email || (input.draft ? title : null),
       requireEmail: input.requireEmail ?? defaults.requireEmail,
       expiresAt: input.expiresAt === undefined ? defaults.expiresAt : input.expiresAt,
-      chatEnabled: defaults.chatEnabled,
-      voiceCommentsEnabled: defaults.voiceCommentsEnabled,
+      // Off on the Free plan, for this link only: links sent before keep what they had
+      chatEnabled: defaults.chatEnabled && plan.limits.prospectChat,
+      voiceCommentsEnabled: defaults.voiceCommentsEnabled && plan.limits.voiceComments,
+      translationEnabled: plan.limits.translation,
       followupsEnabled: input.followupsEnabled ?? defaults.followupsEnabled,
       ctaEnabled: defaults.ctaEnabled,
       bookingEnabled: defaults.bookingEnabled,

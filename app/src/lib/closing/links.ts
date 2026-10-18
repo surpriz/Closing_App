@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 
+import { BILLING_SELECT } from "@/lib/billing/workspace-plan";
 import { prisma } from "@/lib/db";
 
 import { isLinkExpired, viewerDeadline } from "./expiry";
@@ -31,7 +32,7 @@ async function findViewerLink(slug: string) {
           archivedAt: true,
         },
       },
-      organization: { select: { suspendedAt: true } },
+      organization: { select: { suspendedAt: true, ...BILLING_SELECT } },
     },
   });
 }

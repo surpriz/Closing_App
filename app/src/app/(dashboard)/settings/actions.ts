@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
+import { getWorkspacePlan, type UpgradeReason } from "@/lib/billing/workspace-plan";
 import { parseOptionalBookingUrl } from "@/lib/closing/booking/url";
 import { isSafeOutboundUrl } from "@/lib/closing/channels/webhooks";
 import { upsertSellerPrefs } from "@/lib/closing/notify/preferences";
@@ -17,7 +18,7 @@ import { isManagerRole } from "@/lib/roles";
 import { requireManager, requireWorkspace } from "@/lib/session";
 
 /** `workspace`: the rejected field is one of the team's settings (they sit under the advanced fold). */
-export type SettingsState = { ok?: boolean; error?: string; workspace?: boolean } | null;
+export type SettingsState = { ok?: boolean; error?: string; workspace?: boolean; upgrade?: UpgradeReason } | null;
 
 // Textareas post line breaks as CRLF: counted once, as the browser's maxLength does
 const optionalText = (max: number) =>
@@ -154,6 +155,21 @@ export async function saveWorkspaceSettings(_prev: SettingsState, formData: Form
   }
 
   const { slackWebhookUrl, removeSlack, ...values } = parsed.data;
+
+  // Switching on what the plan lacks is refused; what was set before stays saved, unused until an upgrade
+  const { limits } = await getWorkspacePlan(organization.id);
+  const locked: UpgradeReason | null =
+    values.autonomy === "AUTOPILOT" && current.autonomy !== "AUTOPILOT" && !limits.autopilot
+      ? "autopilot"
+      : slackWebhookUrl && !removeSlack && !limits.slack
+        ? "slack"
+        : values.outboundWebhookUrl && values.outboundWebhookUrl !== current.outboundWebhookUrl && !limits.webhooks
+          ? "webhooks"
+          : null;
+  if (locked) {
+    const t = await getTranslations("billing.upgrade.reason");
+    return { error: t(locked), workspace: true, upgrade: locked };
+  }
 
   // Empty Slack field keeps the saved URL; only "remove" clears it
   const slack = removeSlack ? null : slackWebhookUrl ? encryptSecret(slackWebhookUrl) : current.slackWebhookUrl;

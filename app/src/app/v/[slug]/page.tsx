@@ -13,10 +13,12 @@ import type { ViewerTranslation } from "@/components/viewer/use-translation";
 import { ForwardHandoff } from "@/components/viewer/forward-handoff";
 import { LinkLocked } from "@/components/viewer/link-locked";
 import { PdfViewer } from "@/components/viewer/pdf-viewer";
+import { PoweredBy } from "@/components/viewer/powered-by";
 import { SmartLinkHandoff } from "@/components/viewer/smart-link-handoff";
 import { VideoViewer } from "@/components/viewer/video-viewer";
 import { WebViewer } from "@/components/viewer/web-viewer";
 import type { DocumentKind } from "@/generated/prisma/enums";
+import { planFor } from "@/lib/billing/workspace-plan";
 import { getLanguageModel } from "@/lib/closing/ai/provider";
 import { bookingUrlForLink } from "@/lib/closing/booking/link-booking";
 import { buildBookingTarget } from "@/lib/closing/booking/url";
@@ -266,6 +268,8 @@ export default async function ViewerPage({
     </SellerNotice>
   );
 
+  const poweredBy = planFor(link.organization).limits.branding && <PoweredBy label={labels.poweredBy} />;
+
   // Ticks down in the page and swaps to the locked screen at zero
   const withExpiry = (viewer: React.ReactNode) =>
     deadline ? (
@@ -285,6 +289,7 @@ export default async function ViewerPage({
     return (
       <>
         {sellerNotice}
+        {poweredBy}
         {withExpiry(
           <VideoViewer
             slug={slug}
@@ -321,6 +326,7 @@ export default async function ViewerPage({
     return (
       <>
         {sellerNotice}
+        {poweredBy}
         {withExpiry(
           <WebViewer
             slug={slug}
@@ -360,6 +366,7 @@ export default async function ViewerPage({
   return (
     <>
       {sellerNotice}
+      {poweredBy}
       {withExpiry(
         <PdfViewer
           slug={slug}

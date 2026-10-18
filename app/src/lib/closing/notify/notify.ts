@@ -1,4 +1,5 @@
 import type { SellerAlertType } from "@/generated/prisma/enums";
+import { getWorkspacePlan } from "@/lib/billing/workspace-plan";
 import { prisma } from "@/lib/db";
 
 import { createAndDeliverAlert, type AlertPayload } from "../alerts/send-alert";
@@ -49,13 +50,19 @@ export async function notifySeller(input: {
         })
       : 0;
 
+  // Slack and webhooks come with Team: still configured, unused below it
+  const { limits } = await getWorkspacePlan(link.organizationId);
+  const workspaceChannels = (link.organization.settings?.alertChannels ?? []).filter(
+    (channel) => (channel !== "SLACK" || limits.slack) && (channel !== "WEBHOOK" || limits.webhooks),
+  );
+
   const decision = input.silent
     ? { channels: [], reason: "muted" as const }
     : prefs
     ? decideChannels({
         type: input.type,
         prefs,
-        workspaceChannels: link.organization.settings?.alertChannels ?? [],
+        workspaceChannels,
         now,
         timezone: sellerTimezone(prefs),
         extensionActive: isExtensionActive(prefs.extensionSeenAt, now),

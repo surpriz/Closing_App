@@ -6,6 +6,7 @@ import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import type { DealCloseReason, DealStatus, MeetingOutcome, ProspectRole } from "@/generated/prisma/enums";
+import { getWorkspacePlan } from "@/lib/billing/workspace-plan";
 import { inBackground } from "@/lib/closing/background";
 import { actOnInsight } from "@/lib/closing/brain/act";
 import { analyzeDeal, markDealDirty } from "@/lib/closing/brain/analyze-deal";
@@ -271,6 +272,13 @@ const LINK_SWITCHES = [
 ] as const;
 export type LinkSwitch = (typeof LINK_SWITCHES)[number];
 
+// Turning these on needs a paid plan; turning them off never does
+const PAID_SWITCHES = {
+  chatEnabled: { limit: "prospectChat", reason: "chat" },
+  voiceCommentsEnabled: { limit: "voiceComments", reason: "voice" },
+  translationEnabled: { limit: "translation", reason: "translation" },
+} as const;
+
 /** One switch of the settings panel, saved as soon as it flips. */
 export async function setLinkSwitch(linkId: string, key: LinkSwitch, value: boolean) {
   const link = await requireOwnedLink(linkId);
@@ -279,6 +287,13 @@ export async function setLinkSwitch(linkId: string, key: LinkSwitch, value: bool
   if (link.shared && field === "requireEmail" && !value) {
     const t = await getTranslations("deal.actions");
     return { error: t("sharedNeedsEmail") };
+  }
+  const paid = PAID_SWITCHES[field as keyof typeof PAID_SWITCHES];
+  if (paid && value) {
+    const plan = await getWorkspacePlan(link.organizationId);
+    if (!plan.limits[paid.limit]) {
+      return { error: (await getTranslations("billing.upgrade.reason"))(paid.reason), upgrade: paid.reason };
+    }
   }
   await prisma.link.update({
     where: { id: link.id },
