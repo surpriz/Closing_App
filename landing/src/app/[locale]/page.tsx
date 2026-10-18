@@ -67,7 +67,7 @@ const TEAM_SCREENS: Record<"desktop" | "mobile", Record<Locale, StaticImageData>
   desktop: { fr: teamFr, en: teamEn },
   mobile: { fr: teamMobileFr, en: teamMobileEn },
 };
-const FAQ = ["informed", "auto", "documents", "ownOpens", "install", "extension", "replies"] as const;
+const FAQ = ["email", "informed", "install", "tools", "auto", "beta", "data"] as const;
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -427,8 +427,22 @@ export default async function Home({ params }: Props) {
           </div>
         </section>
 
-        {/* FAQ */}
+        {/* FAQ, mirrored as FAQPage structured data. */}
         <section id="faq" className="scroll-mt-14 border-b border-ink">
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "FAQPage",
+                mainEntity: FAQ.map((item) => ({
+                  "@type": "Question",
+                  name: t(`faq.${item}.q`),
+                  acceptedAnswer: { "@type": "Answer", text: t.raw(`faq.${item}.a`).replace(/<\/?\w+>/g, "") },
+                })),
+              }).replace(/</g, "\\u003c"),
+            }}
+          />
           <div className={`${WRAP} grid gap-12 py-20 md:py-28 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-20`}>
             <div>
               <h2 className="condensed text-title font-bold">{t("faq.title")}</h2>
@@ -452,7 +466,20 @@ export default async function Home({ params }: Props) {
                       className="size-5 shrink-0 transition-transform duration-300 ease-[var(--ease-out-expo)] group-open:rotate-45"
                     />
                   </summary>
-                  <p className="max-w-[62ch] pb-6 text-body text-ink-soft">{t(`faq.${item}.a`)}</p>
+                  <p className="max-w-[62ch] pb-6 text-body text-ink-soft">
+                    {t.rich(`faq.${item}.a`, {
+                      subprocessors: (chunks) => (
+                        <Link href="/subprocessors" className="font-medium text-ink underline underline-offset-4">
+                          {chunks}
+                        </Link>
+                      ),
+                      privacy: (chunks) => (
+                        <Link href="/privacy" className="font-medium text-ink underline underline-offset-4">
+                          {chunks}
+                        </Link>
+                      ),
+                    })}
+                  </p>
                 </details>
               ))}
             </div>

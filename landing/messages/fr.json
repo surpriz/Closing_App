@@ -220,33 +220,33 @@
     "faq": {
       "title": "Ce qu'on nous demande.",
       "more": "Une autre question ? <link>Écrivez-nous</link>.",
+      "email": {
+        "q": "Le prospect doit-il donner son email pour lire ?",
+        "a": "Non. Un lien fait pour un prospect s'ouvre tout de suite, sans rien remplir. Un lien partagé à plusieurs, comme une plaquette, demande l'email pour savoir qui lit. Avec le Smart Link, l'adresse vient de votre outil d'emailing : pas de formulaire. Vous pouvez aussi demander l'email lien par lien."
+      },
       "informed": {
-        "q": "Le prospect sait-il que sa lecture est suivie ?",
-        "a": "Oui. Une mention claire figure sur la page du document, avec un lien vers notre politique de confidentialité. Les relances, elles, restent naturelles : elles ne citent jamais une page ni un temps de lecture."
-      },
-      "auto": {
-        "q": "Les relances partent-elles toutes seules ?",
-        "a": "Par défaut, Clozer écrit la relance et propose le jour et l'heure d'envoi ; vous la relisez et la validez d'un clic. Vous pouvez ensuite le laisser envoyer seul les messages simples quand il est sûr de lui. Les cas délicats (une objection, une question du prospect) vous attendent toujours."
-      },
-      "documents": {
-        "q": "Quels documents puis-je envoyer ?",
-        "a": "Tout ce que vous envoyez à un client ou un prospect. Un PDF, quel qu'il soit : devis, facture, proposition, présentation, document technique, contrat, CV, plaquette, étude de cas. Clozer reconnaît le type et vous montre la lecture page par page. Une page web (Notion, Loom, Figma, Google Slides, Webflow…) : l'ouverture et le temps passé, et une vue lecture si le site refuse de s'afficher dans Clozer. Un pitch vidéo enregistré dans Clozer, jusqu'à trois minutes : vous savez jusqu'où il a été regardé."
-      },
-      "ownOpens": {
-        "q": "Mes propres ouvertures faussent-elles les chiffres ?",
-        "a": "Non. Quand vous ouvrez vos liens en étant connecté à Clozer, la lecture est ignorée. Les robots sont écartés aussi."
+        "q": "Le prospect sait-il que sa lecture est suivie ?",
+        "a": "Oui. Une mention claire figure sur la page du document, avec un lien vers notre politique de confidentialité. Les relances, elles, restent naturelles : elles ne citent jamais une page ni un temps de lecture."
       },
       "install": {
-        "q": "Faut-il installer quelque chose ?",
-        "a": "Non. Vous vous connectez avec Google ou votre email, sans mot de passe, vous copiez le lien et votre client le lit dans son navigateur, sur ordinateur comme sur téléphone. L'extension pour Gmail et Outlook est un raccourci en plus, pas une obligation."
+        "q": "Faut-il installer quelque chose ?",
+        "a": "Non. Vous vous connectez avec Google ou votre email, sans mot de passe, et votre prospect lit dans son navigateur. L'extension Gmail et Outlook est un raccourci, pas une obligation."
       },
-      "extension": {
-        "q": "Comment installer l'extension Gmail et Outlook ?",
-        "a": "Installez « Clozer » depuis le Chrome Web Store : l'extension marche dans Gmail et dans Outlook ouvert dans le navigateur. Pour Outlook installé sur Windows ou Mac, l'administrateur Microsoft 365 de votre entreprise ajoute le complément pour toute l'équipe ; la marche à suivre est sur la page Support."
+      "tools": {
+        "q": "Ça marche avec mes outils (Gmail, Outlook, lemlist, CRM) ?",
+        "a": "Gmail et Outlook sur le web avec l'extension Chrome, Outlook installé avec le complément Microsoft 365, lemlist et le cold email avec le Smart Link. Il n'y a pas d'intégration CRM native : un webhook envoie vos alertes à l'adresse de votre choix."
       },
-      "replies": {
-        "q": "Le prospect peut-il me répondre ?",
-        "a": "Oui, sans quitter le document. Il peut valider la proposition ou demander un ajustement, prendre rendez-vous dans votre agenda (Calendly, Cal.com…), poser ses questions à l'assistant qui répond à partir de votre offre quand vous n'êtes pas là, ou laisser un vocal sur une page. Vous recevez tout, avec la transcription."
+      "auto": {
+        "q": "Les relances partent-elles toutes seules ?",
+        "a": "Par défaut, Clozer écrit la relance et propose le jour et l'heure d'envoi ; vous la relisez et la validez d'un clic. Vous pouvez ensuite le laisser envoyer seul les messages simples quand il est sûr de lui. Les cas délicats (une objection, une question du prospect) vous attendent toujours."
+      },
+      "beta": {
+        "q": "Que se passe-t-il après la bêta ?",
+        "a": "Les prix ne sont pas encore fixés. Vous serez prévenu avant toute offre payante."
+      },
+      "data": {
+        "q": "Où sont mes données ?",
+        "a": "La liste de nos sous-traitants, avec le pays de chacun, est sur la page <subprocessors>Sous-traitants</subprocessors>. Ce que nous collectons et pourquoi est dans la <privacy>politique de confidentialité</privacy>."
       }
     },
     "final": "Votre prochain document part avec un lien suivi.",
