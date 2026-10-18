@@ -18,7 +18,7 @@ import { PrivacyNotice } from "./privacy-notice";
 import { ReaderArticle } from "./reader-article";
 import { LanguageMenu, TranslationStrip } from "./translation-controls";
 import { usePageTracking } from "./use-page-tracking";
-import { useTranslatedPart, useViewerTranslation, type ViewerTranslation } from "./use-translation";
+import { useTranslatedArticle, useViewerTranslation, type ViewerTranslation } from "./use-translation";
 import { useVideoProgress } from "./use-video-progress";
 import { sendSignal } from "./view-signal";
 import { ViewerHeader } from "./viewer-header";
@@ -86,7 +86,7 @@ export function WebViewer({
   useVideoProgress(iframeRef, provider, watchedRef, markActive);
   const openExternal = useExternalVisit(getViewId);
   const translated = useViewerTranslation(translation, getViewId);
-  const article = useTranslatedPart(slug, reader ? translated.locale : null, null, true, translated.onTranslated);
+  const article = useTranslatedArticle(slug, reader ? translated.locale : null, translated.onTranslated);
   const articleHtml = article?.status === "done" && article.content ? article.content : readerHtml;
   // The bottom bar carries the answers, the booking button, or both
   const barVisible = ctaEnabled || !!booking || !!forward;

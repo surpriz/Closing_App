@@ -61,7 +61,7 @@ type StripProps = {
   target: SupportedLocale | null;
   showOriginal: boolean;
   onToggleOriginal: () => void;
-  /** A document translated in one piece (the web article) says here how it goes. */
+  /** How the translation goes: the whole document is swapped at once, PDF or web article. */
   status?: "loading" | "failed" | null;
   /** Not translated yet: the browser's language, offered once. */
   offer: SupportedLocale | null;

@@ -5,22 +5,23 @@ import { getLanguageModel } from "@/lib/closing/ai/provider";
 import { canTranslate } from "@/lib/closing/brain/budget";
 import { SUPPORTED_LOCALES } from "@/lib/closing/constants";
 import { getLinkForViewer, getViewerAccess } from "@/lib/closing/links";
-import { cachedTranslation, translateArticle, translatePage } from "@/lib/closing/translation/translate";
+import { advanceFileTranslation } from "@/lib/closing/translation/file-translation";
+import { cachedTranslation, translateArticle } from "@/lib/closing/translation/translate";
 import { ARTICLE_PART } from "@/lib/closing/translation/translation";
 import { prisma } from "@/lib/db";
 
 // A long web article is translated in several rounds of calls
 export const maxDuration = 300;
 
-const querySchema = z.object({
-  lang: z.enum(SUPPORTED_LOCALES),
-  page: z.coerce.number().int().min(1).max(10_000).optional(),
-});
+const querySchema = z.object({ lang: z.enum(SUPPORTED_LOCALES) });
+const HEADERS = { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow" };
 
 /**
- * One part of the document in the reader's language: a PDF page (?page=3) or
- * the web article. Translated on first ask and kept, so the next readers get
- * it from the database. { content: "" } for a page with no text.
+ * The document in the reader's language. A PDF is translated by DeepL with its
+ * layout: the answer says where the job stands, and the viewer asks again
+ * until it is done ({ status: "done" }, then /file?lang= serves it). A web
+ * article is translated by the AI and comes back as { content }.
+ * Both are kept, so the next readers get them without waiting.
  */
 export async function GET(request: NextRequest, ctx: RouteContext<"/api/v/[slug]/translation">) {
   const { slug } = await ctx.params;
@@ -36,39 +37,35 @@ export async function GET(request: NextRequest, ctx: RouteContext<"/api/v/[slug]
   if (!access.allowed) return Response.json({ error: "email_required" }, { status: 403 });
 
   const { document } = link;
-  const article = document.kind === "URL";
-  if (document.kind === "VIDEO" || (!article && !parsed.data.page)) {
-    return Response.json({ error: "invalid_query" }, { status: 400 });
+  const scope = { documentId: document.id, organizationId: link.organizationId, linkId: link.id };
+
+  if (document.kind === "FILE") {
+    const state = await advanceFileTranslation(scope, document, lang);
+    if (state.status === "budget") return Response.json({ error: "budget" }, { status: 429 });
+    return Response.json(state, { headers: HEADERS });
   }
-  if (!article && document.numPages && parsed.data.page! > document.numPages) {
+  // A framed site cannot be translated: only the reader view is ours
+  if (document.kind !== "URL" || document.embedUrl || !document.externalUrl) {
     return Response.json({ error: "not_found" }, { status: 404 });
   }
-  const part = article ? ARTICLE_PART : parsed.data.page!;
-  const headers = { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow" };
 
-  const cached = await cachedTranslation(document.id, lang, part);
-  if (cached !== null) return Response.json({ content: cached }, { headers });
+  const cached = await cachedTranslation(document.id, lang, ARTICLE_PART);
+  if (cached !== null) return Response.json({ content: cached }, { headers: HEADERS });
 
   const llm = getLanguageModel("translate");
   if (!llm) return Response.json({ error: "unavailable" }, { status: 503 });
   if (!(await canTranslate(link.organizationId))) return Response.json({ error: "budget" }, { status: 429 });
 
-  const scope = { documentId: document.id, organizationId: link.organizationId, linkId: link.id };
+  const source = await prisma.document.findUnique({ where: { id: document.id }, select: { readerHtml: true } });
+  if (!source?.readerHtml) return Response.json({ error: "not_found" }, { status: 404 });
   try {
-    if (!article) return Response.json({ content: await translatePage(llm, scope, lang, part) }, { headers });
-
-    const source = await prisma.document.findUnique({ where: { id: document.id }, select: { readerHtml: true } });
-    // A framed site cannot be translated: only the reader view is ours
-    if (document.embedUrl || !source?.readerHtml || !document.externalUrl) {
-      return Response.json({ error: "not_found" }, { status: 404 });
-    }
     const content = await translateArticle(llm, scope, lang, {
       readerHtml: source.readerHtml,
       externalUrl: document.externalUrl,
     });
-    return Response.json({ content }, { headers });
+    return Response.json({ content }, { headers: HEADERS });
   } catch (error) {
-    console.error(`[translation] ${document.id} ${lang} part ${part} failed`, error);
+    console.error(`[translation] article ${document.id} ${lang} failed`, error);
     return Response.json({ error: "failed" }, { status: 502 });
   }
 }

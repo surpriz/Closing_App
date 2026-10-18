@@ -526,10 +526,11 @@ model Document {
   // ISO 639-1 code of the content, guessed by the AI reading. Null: unknown, every language is offered
   language          String?
 
-  pages        DocumentPage[]
-  links        Link[]
-  capsules     PageCapsule[]
-  translations DocumentTranslation[]
+  pages            DocumentPage[]
+  links            Link[]
+  capsules         PageCapsule[]
+  translations     DocumentTranslation[]
+  fileTranslations DocumentFileTranslation[]
 
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
@@ -574,6 +575,34 @@ model DocumentTranslation {
 
   @@unique([documentId, locale, part])
   @@map("document_translations")
+}
+
+enum FileTranslationStatus {
+  PENDING // sent to DeepL, or being sent
+  DONE // the translated PDF is in our blob store
+  FAILED
+}
+
+// A PDF translated by DeepL with its layout, one per language. Kept on our side: DeepL lets each result be downloaded once
+model DocumentFileTranslation {
+  id         String   @id @default(cuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  locale           String // SUPPORTED_LOCALES
+  status           FileTranslationStatus @default(PENDING)
+  // Given by DeepL at upload, needed to ask for the status and the result. The key is not kept by DeepL
+  deeplDocumentId  String?
+  deeplDocumentKey String?
+  blobPathname     String?
+  billedCharacters Int?
+  error            String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([documentId, locale])
+  @@map("document_file_translations")
 }
 
 // One link = one proposal sent to one prospect company. Public URL: /v/[slug]

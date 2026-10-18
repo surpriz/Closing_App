@@ -20,7 +20,7 @@ const PARALLEL_CALLS = 4;
 type Llm = NonNullable<ReturnType<typeof getLanguageModel>>;
 type Scope = { documentId: string; organizationId: string; linkId: string };
 
-async function translateText(llm: Llm, scope: Scope, text: string, locale: SupportedLocale, format: "text" | "html") {
+async function translateHtml(llm: Llm, scope: Scope, text: string, locale: SupportedLocale) {
   const startedAt = Date.now();
   const record = (ok: boolean, usage?: LanguageModelUsage) =>
     recordAiUsage({
@@ -38,7 +38,7 @@ async function translateText(llm: Llm, scope: Scope, text: string, locale: Suppo
   try {
     result = await generateText({
       model: llm.model,
-      system: translationSystemPrompt(locale, format),
+      system: translationSystemPrompt(locale),
       prompt: `<document>\n${text}\n</document>`,
       maxOutputTokens: THINKING_ROOM_TOKENS + translationOutputTokens(text.length),
       abortSignal: AbortSignal.timeout(CALL_TIMEOUT_MS),
@@ -73,22 +73,6 @@ export async function cachedTranslation(documentId: string, locale: SupportedLoc
 }
 
 /**
- * One PDF page in the reader's language, translated once and kept. An empty
- * string for a page without text (a picture, a cover): the viewer shows the original.
- */
-export async function translatePage(llm: Llm, scope: Scope, locale: SupportedLocale, pageNumber: number) {
-  const page = await prisma.documentPage.findUnique({
-    where: { documentId_pageNumber: { documentId: scope.documentId, pageNumber } },
-    select: { text: true },
-  });
-  const text = page?.text?.trim();
-  if (!text) return "";
-  const translated = await translateText(llm, scope, text, locale, "text");
-  await store(llm, scope.documentId, locale, pageNumber, translated);
-  return translated;
-}
-
-/**
  * The reader view of a web page in the reader's language. Cut between blocks
  * so each call stays short, then cleaned again: the model's HTML is never trusted.
  */
@@ -103,7 +87,7 @@ export async function translateArticle(
   for (let i = 0; i < chunks.length; i += PARALLEL_CALLS) {
     translated.push(
       ...(await Promise.all(
-        chunks.slice(i, i + PARALLEL_CALLS).map((chunk) => translateText(llm, scope, chunk, locale, "html")),
+        chunks.slice(i, i + PARALLEL_CALLS).map((chunk) => translateHtml(llm, scope, chunk, locale)),
       )),
     );
   }

@@ -62,6 +62,10 @@ export const SUPPORTED_LOCALES = ["en", "fr", "es", "de", "it", "pt"] as const;
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 export const DEFAULT_LOCALE: SupportedLocale = "en";
 
+export function isSupportedLocale(value: unknown): value is SupportedLocale {
+  return typeof value === "string" && (SUPPORTED_LOCALES as readonly string[]).includes(value);
+}
+
 /**
  * "Lu attentivement" on the dashboard funnel. A PDF counts once half of it was
  * reached with some real reading time (maxPageReached alone is a scroll, not a

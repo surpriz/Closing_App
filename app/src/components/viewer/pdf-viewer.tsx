@@ -15,10 +15,9 @@ import { ChatWidget, type ChatWidgetData } from "./chat-widget";
 import { CtaBar } from "./cta-bar";
 import { ExpiryBanner, ExpiryChip } from "./expiry-countdown";
 import { PrivacyNotice } from "./privacy-notice";
-import { TranslatedPdfPage } from "./translated-page";
 import { LanguageMenu, TranslationStrip } from "./translation-controls";
 import { usePageTracking } from "./use-page-tracking";
-import { useViewerTranslation, type ViewerTranslation } from "./use-translation";
+import { useTranslatedFile, useViewerTranslation, type ViewerTranslation } from "./use-translation";
 import { ViewerHeader } from "./viewer-header";
 import { VoiceCommentButton, VoiceCommentPanel } from "./voice-comment-button";
 import type { ForwardOptions } from "./forward-dialog";
@@ -72,11 +71,18 @@ export function PdfViewer({
   voiceComments,
   translation,
 }: Props) {
-  const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null);
+  // Which file it was loaded from: switching to the translation destroys the previous one
+  const [loaded, setLoaded] = useState<{ pdf: PDFDocumentProxy; url: string } | null>(null);
   const [sizes, setSizes] = useState<PageSize[]>([]);
-  const [failed, setFailed] = useState(false);
+  // A translated file that does not open leaves "Show original" to get back to reading
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
   const { currentPage, registerPage, getViewId } = usePageTracking(slug, sizes.length);
   const translated = useViewerTranslation(translation, getViewId);
+  const translatedFile = useTranslatedFile(slug, translated.locale, translated.onTranslated);
+  // The translated PDF replaces the original once ready: same pages, same tracking, same capsules
+  const shownUrl = translatedFile?.status === "done" ? `${fileUrl}?lang=${translated.locale}` : fileUrl;
+  const pdf = loaded?.url === shownUrl ? loaded.pdf : null;
+  const failed = failedUrl === shownUrl;
   // The bottom bar carries the answers, the booking button, or both
   const barVisible = ctaEnabled || !!booking || !!forward;
   // Once the reader has seen the price or the last page, the strip stays open
@@ -104,20 +110,20 @@ export function PdfViewer({
         // copied to /public by scripts/copy-pdf-worker.mjs
         pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
-        loadingTask = pdfjs.getDocument({ url: fileUrl, disableRange: true });
-        const loaded = await loadingTask.promise;
+        loadingTask = pdfjs.getDocument({ url: shownUrl, disableRange: true });
+        const doc = await loadingTask.promise;
         const pageSizes: PageSize[] = [];
-        for (let i = 1; i <= loaded.numPages; i++) {
-          const viewport = (await loaded.getPage(i)).getViewport({ scale: 1 });
+        for (let i = 1; i <= doc.numPages; i++) {
+          const viewport = (await doc.getPage(i)).getViewport({ scale: 1 });
           pageSizes.push({ width: viewport.width, height: viewport.height });
         }
         if (!cancelled) {
-          setPdf(loaded);
+          setLoaded({ pdf: doc, url: shownUrl });
           setSizes(pageSizes);
         }
       } catch (error) {
         console.error(error);
-        if (!cancelled) setFailed(true);
+        if (!cancelled) setFailedUrl(shownUrl);
       }
     })();
 
@@ -125,7 +131,7 @@ export function PdfViewer({
       cancelled = true;
       void loadingTask?.destroy();
     };
-  }, [fileUrl]);
+  }, [shownUrl]);
 
   return (
     <div className="flex min-h-full flex-1 flex-col bg-background selection:bg-foreground/15 selection:text-foreground">
@@ -142,6 +148,7 @@ export function PdfViewer({
             target={translated.target}
             showOriginal={translated.showOriginal}
             onToggleOriginal={translated.toggleOriginal}
+            status={translatedFile?.status === "pending" ? "loading" : translatedFile?.status === "failed" ? "failed" : null}
             offer={translated.offer}
             pending={translated.pending}
             onAccept={translated.choose}
@@ -192,38 +199,23 @@ export function PdfViewer({
           </div>
         )}
         {pdf &&
-          sizes.map((size, index) => {
-            const pageNumber = index + 1;
-            const overlay = countdown?.pricingPages.includes(pageNumber) ? <ExpiryBanner labels={labels} /> : undefined;
-            // With a bar, the mic sits in it; without, in the corner of the page on screen
-            const corner = !barVisible && pageNumber === currentPage ? voiceTrigger("corner") : undefined;
-            const original = <PdfPage pdf={pdf} pageNumber={pageNumber} size={size} overlay={overlay} corner={corner} />;
-            return (
-              // The tracked element stays the same when the reader switches between the original and the translation
-              <div key={pageNumber} ref={(element) => registerPage(pageNumber, element)} data-page={pageNumber}>
-                {translated.locale ? (
-                  <TranslatedPdfPage
-                    slug={slug}
-                    locale={translated.locale}
-                    pageNumber={pageNumber}
-                    size={size}
-                    labels={labels}
-                    original={original}
-                    overlay={overlay}
-                    corner={corner}
-                    onTranslated={translated.onTranslated}
-                  />
-                ) : (
-                  original
-                )}
-              </div>
-            );
-          })}
+          sizes.map((size, index) => (
+            <PdfPage
+              key={index + 1}
+              pdf={pdf}
+              pageNumber={index + 1}
+              size={size}
+              registerPage={registerPage}
+              overlay={countdown?.pricingPages.includes(index + 1) ? <ExpiryBanner labels={labels} /> : undefined}
+              // With a bar, the mic sits in it; without, in the corner of the page on screen
+              corner={!barVisible && index + 1 === currentPage ? voiceTrigger("corner") : undefined}
+            />
+          ))}
         {/* Also shown here because the email gate is optional per link */}
         <PrivacyNotice labels={labels} className="mx-auto border-t border-border px-2 pt-4 text-center" />
       </main>
 
-      {barVisible && pdf && (
+      {barVisible && loaded && (
         <CtaBar
           slug={slug}
           labels={labels}
@@ -252,7 +244,7 @@ export function PdfViewer({
         />
       )}
 
-      {pdf && (
+      {loaded && (
         <CapsuleBubble
           // A page's own clip on its page, the welcome message everywhere else
           capsule={
@@ -279,7 +271,7 @@ export function PdfViewer({
           getViewId={getViewId}
           open={chatOpen}
           onOpenChange={setChatOpen}
-          launcher={barVisible && !!pdf ? "docked" : "floating"}
+          launcher={barVisible && !!loaded ? "docked" : "floating"}
         />
       )}
     </div>

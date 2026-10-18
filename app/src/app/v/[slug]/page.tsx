@@ -16,6 +16,7 @@ import { PdfViewer } from "@/components/viewer/pdf-viewer";
 import { SmartLinkHandoff } from "@/components/viewer/smart-link-handoff";
 import { VideoViewer } from "@/components/viewer/video-viewer";
 import { WebViewer } from "@/components/viewer/web-viewer";
+import type { DocumentKind } from "@/generated/prisma/enums";
 import { getLanguageModel } from "@/lib/closing/ai/provider";
 import { bookingUrlForLink } from "@/lib/closing/booking/link-booking";
 import { buildBookingTarget } from "@/lib/closing/booking/url";
@@ -51,6 +52,7 @@ import { firstNameOf } from "@/lib/closing/share/compose";
 import { viewerSenderName } from "@/lib/closing/sender-name";
 import { parseSmartParams } from "@/lib/closing/shared/smart-params";
 import { VISITOR_COOKIE } from "@/lib/closing/tracking/visitor";
+import { deeplConfig } from "@/lib/closing/translation/deepl";
 import { guessLanguage, translationTarget } from "@/lib/closing/translation/translation";
 import { prisma } from "@/lib/db";
 import { isWorkspaceMember } from "@/lib/session";
@@ -432,10 +434,12 @@ async function loadCapsules(
  * the AI gave their language get a guess from their first pages.
  */
 async function loadTranslation(
-  link: { translationEnabled: boolean; document: { id: string; language: string | null } },
+  link: { translationEnabled: boolean; document: { id: string; kind: DocumentKind; language: string | null } },
   reader: { chosen: SupportedLocale | null; browserLocale: SupportedLocale },
 ): Promise<ViewerTranslation | null> {
-  if (!link.translationEnabled || !getLanguageModel("translate")) return null;
+  // PDFs go to DeepL, which keeps their layout; web articles to the AI
+  const available = link.document.kind === "FILE" ? !!deeplConfig() : !!getLanguageModel("translate");
+  if (!link.translationEnabled || !available) return null;
   let source = link.document.language;
   if (!source) {
     const pages = await prisma.documentPage.findMany({

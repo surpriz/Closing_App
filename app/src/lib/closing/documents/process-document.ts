@@ -46,6 +46,7 @@ export async function processDocument(documentId: string) {
     await prisma.$transaction([
       prisma.documentPage.deleteMany({ where: { documentId } }),
       prisma.documentTranslation.deleteMany({ where: { documentId } }),
+      prisma.documentFileTranslation.deleteMany({ where: { documentId } }),
       prisma.documentPage.createMany({ data: pages }),
       prisma.document.update({
         where: { id: documentId },

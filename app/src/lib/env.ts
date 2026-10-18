@@ -38,8 +38,11 @@ const serverEnvSchema = z.object({
   AI_CHAT_DAILY_BUDGET_USD: z.coerce.number().min(0).default(10),
   // Help assistant for users, across all workspaces, USD per day
   AI_HELP_DAILY_BUDGET_USD: z.coerce.number().min(0).default(5),
-  // Documents translated for readers, per workspace, USD per day. Each page is paid once per language
-  AI_TRANSLATE_DAILY_BUDGET_USD: z.coerce.number().min(0).default(5),
+  // Documents translated for readers, per workspace, USD per day. Each document is paid once per language
+  AI_TRANSLATE_DAILY_BUDGET_USD: z.coerce.number().min(0).default(20),
+  // PDFs are translated by DeepL, layout kept. A key ending in ":fx" is a Free plan key
+  DEEPL_API_KEY: z.string().optional(),
+  DEEPL_PRICE_PER_MILLION_USD: z.coerce.number().min(0).default(25),
   // Where the help assistant sends users' suggestions, bugs and unanswered questions. Unset: stored only
   HELP_INBOX_EMAIL: z.preprocess((value) => value || undefined, z.email().optional()),
 

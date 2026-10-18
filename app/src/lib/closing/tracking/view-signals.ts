@@ -1,6 +1,6 @@
 import type { ViewSignalType } from "@/generated/prisma/enums";
 
-import { SUPPORTED_LOCALES } from "../constants";
+import { isSupportedLocale } from "../constants";
 
 /** Time away from the tab counted as time on the site, at most. Beyond it the reader moved on. */
 export const MAX_EXTERNAL_AWAY_MS = 30 * 60 * 1000;
@@ -26,5 +26,5 @@ export function signalValue(type: ViewSignalType, valueMs: number | undefined): 
  */
 export function signalDetail(type: ViewSignalType, detail: string | undefined): string | null | undefined {
   if (type !== "TRANSLATED") return null;
-  return (SUPPORTED_LOCALES as readonly string[]).includes(detail ?? "") ? detail : undefined;
+  return isSupportedLocale(detail) ? detail : undefined;
 }

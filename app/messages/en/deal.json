@@ -210,7 +210,7 @@
     "voiceCommentsEnabled": "Leave a voice note on a page",
     "voiceCommentsEnabledHint": "You get the audio and its transcript.",
     "translationEnabled": "Read the document in their language",
-    "translationEnabledHint": "Translated by AI when the reader asks, the original stays one click away.",
+    "translationEnabledHint": "Translated when the reader asks, layout included. The original stays one click away.",
     "followupsEnabled": "Follow-ups prepared by Clozer",
     "followupsEnabledHint": "Off: the deal is still tracked, with no follow-ups.",
     "videoCta": "Request a quote",

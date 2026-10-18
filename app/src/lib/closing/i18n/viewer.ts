@@ -1,5 +1,6 @@
 import {
   DEFAULT_LOCALE,
+  isSupportedLocale,
   SUPPORTED_LOCALES,
   type SupportedLocale,
 } from "@/lib/closing/constants";
@@ -828,7 +829,7 @@ export const VIEWER_LOCALE_COOKIE = "clozer_viewer_lang";
 export const VIEWER_LOCALE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 
 export function chosenLocale(cookieValue: string | undefined): SupportedLocale | null {
-  return (SUPPORTED_LOCALES as readonly string[]).includes(cookieValue ?? "") ? (cookieValue as SupportedLocale) : null;
+  return isSupportedLocale(cookieValue) ? cookieValue : null;
 }
 
 export function getViewerLabels(locale: SupportedLocale): ViewerLabels {

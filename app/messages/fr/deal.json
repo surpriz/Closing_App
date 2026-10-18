@@ -210,7 +210,7 @@
     "voiceCommentsEnabled": "Laisser un vocal sur une page",
     "voiceCommentsEnabledHint": "Vous recevez l'audio et sa transcription.",
     "translationEnabled": "Lire le document dans sa langue",
-    "translationEnabledHint": "Traduit par l'IA à la demande du lecteur, l'original reste accessible.",
+    "translationEnabledHint": "Traduit à la demande du lecteur, mise en page comprise. L'original reste à un clic.",
     "followupsEnabled": "Relances préparées par Clozer",
     "followupsEnabledHint": "Coupé : le deal reste suivi, sans relance.",
     "videoCta": "Demander un devis",

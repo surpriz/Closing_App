@@ -18,56 +18,90 @@ export type ViewerTranslation = {
   offer: SupportedLocale | null;
 };
 
-export type PartState = { status: "loading" } | { status: "done"; content: string } | { status: "failed" };
+export type ArticleState = { status: "loading" } | { status: "done"; content: string } | { status: "failed" };
+export type FileState = { status: "pending"; secondsRemaining: number | null } | { status: "done" } | { status: "failed" };
 
-// Shared by every page of the session: scrolling back or toggling never asks twice
-const requests = new Map<string, Promise<string>>();
+// Shared by the whole session: toggling back to the translation never asks twice
+const articles = new Map<string, Promise<string>>();
 
-function fetchPart(slug: string, locale: SupportedLocale, page: number | null) {
-  const query = new URLSearchParams({ lang: locale, ...(page !== null && { page: String(page) }) });
-  const key = `${slug}?${query}`;
-  let request = requests.get(key);
+function fetchArticle(slug: string, locale: SupportedLocale) {
+  const key = `${slug}:${locale}`;
+  let request = articles.get(key);
   if (!request) {
-    request = fetch(`/api/v/${slug}/translation?${query}`).then(async (response) => {
+    request = fetch(`/api/v/${slug}/translation?lang=${locale}`).then(async (response) => {
       if (!response.ok) throw new Error(`translation ${response.status}`);
       return ((await response.json()) as { content: string }).content;
     });
-    // A failure can be tried again on the next visit to the page
-    request.catch(() => requests.delete(key));
-    requests.set(key, request);
+    // A failure can be tried again later
+    request.catch(() => articles.delete(key));
+    articles.set(key, request);
   }
   return request;
 }
 
-/** One part in the reader's language: a PDF page, or the web article (page null). Asked only once `enabled`. */
-export function useTranslatedPart(
-  slug: string,
-  locale: SupportedLocale | null,
-  page: number | null,
-  enabled: boolean,
-  onDone?: () => void,
-): PartState | null {
-  const [state, setState] = useState<{ key: string; value: PartState } | null>(null);
-  const key = `${locale}:${page}`;
+/** The web article in the reader's language, translated by the AI. Null while the original is asked for. */
+export function useTranslatedArticle(slug: string, locale: SupportedLocale | null, onDone: () => void): ArticleState | null {
+  const [state, setState] = useState<{ locale: SupportedLocale; value: ArticleState } | null>(null);
 
   useEffect(() => {
-    if (!locale || !enabled) return;
+    if (!locale) return;
     let cancelled = false;
-    fetchPart(slug, locale, page).then(
+    fetchArticle(slug, locale).then(
       (content) => {
         if (cancelled) return;
-        setState({ key, value: { status: "done", content } });
-        if (content) onDone?.();
+        setState({ locale, value: content ? { status: "done", content } : { status: "failed" } });
+        if (content) onDone();
       },
-      () => !cancelled && setState({ key, value: { status: "failed" } }),
+      () => !cancelled && setState({ locale, value: { status: "failed" } }),
     );
     return () => {
       cancelled = true;
     };
-  }, [slug, locale, page, enabled, key, onDone]);
+  }, [slug, locale, onDone]);
 
-  if (!locale || !enabled) return null;
-  return state?.key === key ? state.value : { status: "loading" };
+  if (!locale) return null;
+  return state?.locale === locale ? state.value : { status: "loading" };
+}
+
+const POLL_MIN_MS = 2000;
+const POLL_MAX_MS = 10_000;
+
+/**
+ * The PDF in the reader's language, translated by DeepL with its layout. The
+ * server moves the job forward each time it is asked: this asks again, sooner
+ * when DeepL says it is nearly done, until the file is ready.
+ */
+export function useTranslatedFile(slug: string, locale: SupportedLocale | null, onDone: () => void): FileState | null {
+  const [state, setState] = useState<{ locale: SupportedLocale; value: FileState } | null>(null);
+
+  useEffect(() => {
+    if (!locale) return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const ask = async () => {
+      let next: FileState;
+      try {
+        const response = await fetch(`/api/v/${slug}/translation?lang=${locale}`);
+        next = response.ok ? ((await response.json()) as FileState) : { status: "failed" };
+      } catch {
+        next = { status: "failed" };
+      }
+      if (cancelled) return;
+      setState({ locale, value: next });
+      if (next.status === "done") onDone();
+      if (next.status !== "pending") return;
+      const hint = (next.secondsRemaining ?? 0) * 1000;
+      timer = setTimeout(ask, Math.min(POLL_MAX_MS, Math.max(POLL_MIN_MS, hint / 2)));
+    };
+    void ask();
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [slug, locale, onDone]);
+
+  if (!locale) return null;
+  return state?.locale === locale ? state.value : { status: "pending", secondsRemaining: null };
 }
 
 /**
