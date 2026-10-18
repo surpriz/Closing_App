@@ -57,7 +57,8 @@
     "analyzeFirst": "Analyze this prospect first.",
     "cannotPrepare": "Couldn't prepare a follow-up.",
     "expiryPast": "Pick a future date.",
-    "expiryTooFar": "One year max."
+    "expiryTooFar": "One year max.",
+    "callScriptFailed": "Couldn't prepare the call right now. Try again in a moment."
   },
   "followupActions": {
     "emptyMessage": "The message is empty.",
@@ -543,5 +544,10 @@
     "meetingQuestion": "Did the meeting happen?",
     "thanks": "Saved",
     "followupsBack": "Saved. Follow-ups can start again."
+  },
+  "callScript": {
+    "label": "Prepare the call",
+    "writing": "Preparing…",
+    "title": "For the call"
   }
 }

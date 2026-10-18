@@ -57,7 +57,8 @@
     "analyzeFirst": "Analysez d'abord ce prospect.",
     "cannotPrepare": "Impossible de préparer une relance.",
     "expiryPast": "Choisissez une date à venir.",
-    "expiryTooFar": "Un an maximum."
+    "expiryTooFar": "Un an maximum.",
+    "callScriptFailed": "Impossible de préparer l'appel pour l'instant, réessayez dans un moment."
   },
   "followupActions": {
     "emptyMessage": "Le message est vide.",
@@ -543,5 +544,10 @@
     "meetingQuestion": "Le rendez-vous a eu lieu ?",
     "thanks": "Noté",
     "followupsBack": "Noté. Les relances peuvent reprendre."
+  },
+  "callScript": {
+    "label": "Préparer l'appel",
+    "writing": "Préparation…",
+    "title": "Pour l'appel"
   }
 }

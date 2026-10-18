@@ -12,6 +12,7 @@ import {
 import { formatRelative } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
+import { CallScriptButton } from "../call-script-button";
 import { CopyButton } from "../copy-button";
 import { Sources } from "../deal-verdict";
 import { LiveDot } from "../heat";
@@ -56,6 +57,11 @@ export function DealNextAction({
     aiAction.type !== "close_lost" &&
     recipientName;
   const brief = insight?.followupBrief ?? null;
+  // A call is the move: the talking points are one click away
+  const callAdvised =
+    action.kind === "call_now" ||
+    action.kind === "call" ||
+    (action.kind === "ai_advice" && action.adviceType === "call");
   const facts = new Map((insight?.facts ?? []).map((fact) => [fact.id, fact]));
   const sentence =
     action.kind === "close_won" && signature
@@ -108,6 +114,11 @@ export function DealNextAction({
               </span>
             )}
           </p>
+        )}
+        {canEdit && callAdvised && insight?.byAi && (
+          <div className="pt-1 pl-7.5">
+            <CallScriptButton linkId={linkId} />
+          </div>
         )}
       </div>
       {canEdit && cta && (

@@ -13,6 +13,7 @@ import { BOOKING_URL_ERROR, parseOptionalBookingUrl } from "@/lib/closing/bookin
 import { editableLinks } from "@/lib/closing/dashboard/queries";
 import { applyDealStatus, setLostReason, setMeetingOutcome } from "@/lib/closing/deals/status";
 import { confirmLinkSent, forgetDraftCopied, markDraftCopied } from "@/lib/closing/documents/create-link";
+import { prepareCallScript } from "@/lib/closing/brain/call-script";
 import { resumeAfterReply } from "@/lib/closing/replies/record";
 import { linkDefaultsFor, SHARED_LINK_SETTINGS } from "@/lib/closing/documents/smart-defaults";
 import { getSellerPrefs, sellerTimezone } from "@/lib/closing/notify/preferences";
@@ -582,6 +583,15 @@ export async function reanalyzeDeal(linkId: string) {
   return errors[outcome] ? { error: errors[outcome] } : { ok: true };
 }
 
+
+/** "Préparer l'appel": talking points from the latest analysis, written once and kept with it. */
+export async function prepareCallScriptForDeal(linkId: string): Promise<{ script?: string; error?: string }> {
+  const link = await requireOwnedLink(linkId);
+  const t = await getTranslations("deal.actions");
+  const result = await prepareCallScript(link.id);
+  if (result.ok) return { script: result.script };
+  return { error: result.reason === "no_ai" ? t("noAi") : result.reason === "budget" ? t("budget") : t("callScriptFailed") };
+}
 
 /** "Préparer une relance": a draft from the latest analysis, whatever it recommended. The policy still applies. */
 export async function prepareFollowupFromInsight(linkId: string) {
