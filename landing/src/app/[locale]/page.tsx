@@ -32,6 +32,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { HeatScale } from "@/components/thermal-plate";
 import { ThermalReading } from "@/components/thermal-reading";
+import { ThermalVideo } from "@/components/thermal-video";
 import { READING_PAGES } from "@/components/thermal-reading-data";
 import { Link } from "@/i18n/navigation";
 import { resolveLocale } from "@/i18n/page";
@@ -63,6 +64,7 @@ const PROSPECT_SCREENS: Record<"actions" | "change", Record<Locale, StaticImageD
   change: { fr: changeFr, en: changeEn },
 };
 const READING_POINTS = ["pages", "readers", "live", "score"] as const;
+const VIDEO_POINTS = ["record", "watched", "transcript", "quote"] as const;
 const GUARANTEES = ["informed", "discreet", "limit", "unsubscribe"] as const;
 const TEAM_SCREENS: Record<"desktop" | "mobile", Record<Locale, StaticImageData>> = {
   desktop: { fr: teamFr, en: teamEn },
@@ -242,6 +244,47 @@ export default async function Home({ params }: Props) {
                   <figcaption className="mt-2 font-mono text-micro text-ink-soft">{t("screen")}</figcaption>
                 </figure>
               ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Video pitch: the same reading, on a recording. Drawn in HTML like the hero. */}
+        <section id={anchors.video} className="scroll-mt-14 border-b border-ink">
+          <div className={`${WRAP} grid gap-12 py-20 md:py-28 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-20`}>
+            <div>
+              <h2 className="condensed max-w-[18ch] text-title font-bold">{t("video.title")}</h2>
+              <p className="mt-6 max-w-[52ch] text-lead text-ink-soft">{t("video.body")}</p>
+              <ul className="mt-10 border-t border-ink">
+                {VIDEO_POINTS.map((point) => (
+                  <li key={point} className="border-b border-rule py-5">
+                    <h3 className="text-[1.125rem] leading-snug font-semibold">{t(`video.${point}.title`)}</h3>
+                    <p className="mt-1 max-w-[52ch] text-body text-ink-soft">{t(`video.${point}.body`)}</p>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-5 max-w-[52ch] text-small text-ink-soft">{t("video.capsules")}</p>
+            </div>
+            <div className="grid content-start gap-6 lg:sticky lg:top-24 lg:self-start">
+              <ThermalVideo
+                name={t("video.name")}
+                caption={t("video.caption")}
+                summary={t("video.summary")}
+                labels={{
+                  example: t("demo"),
+                  skipped: t("video.skipped"),
+                  hottest: t("video.hottest"),
+                  quote: t("video.quoteButton"),
+                  hot: tr("hot"),
+                  cold: tr("cold"),
+                }}
+              />
+              <Link
+                href="/use-cases"
+                className="inline-block justify-self-start text-body font-semibold underline decoration-ink/30 underline-offset-4 transition-colors hover:decoration-ink"
+              >
+                {t("video.useCases")}
+                <Icon name="arrow" className="ml-2 inline size-4 align-[-0.15em]" />
+              </Link>
             </div>
           </div>
         </section>
