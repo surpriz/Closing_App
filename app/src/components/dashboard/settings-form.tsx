@@ -1,6 +1,5 @@
 "use client";
 
-import { ChevronRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -197,7 +196,7 @@ export function SettingsForm({
     if (state?.ok) toast.success(t("saved"));
     if (state?.error) {
       toast.error(state.error);
-      if (canEditWorkspace) setAdvancedOpen(true);
+      if (state.workspace) setAdvancedOpen(true);
     }
   }, [state, t, canEditWorkspace, setAdvancedOpen]);
   // Several hidden invalid fields fire one "invalid" each: point at the first only
@@ -591,12 +590,7 @@ export function SettingsForm({
                     placeholder={t("alerts.ccPlaceholder")}
                   />
                 </div>
-                <details className="group px-5 py-4">
-                  <summary className="flex cursor-pointer list-none items-center gap-1.5 text-body font-medium outline-none focus-visible:underline [&::-webkit-details-marker]:hidden">
-                    <ChevronRight className="size-4 transition-transform group-open:rotate-90" />
-                    {t("alerts.connectSummary")}
-                  </summary>
-                  <div className="mt-4 space-y-5">
+                <div className="space-y-5 px-5 py-4">
                     <div className="space-y-1.5">
                       <Label htmlFor="slackWebhookUrl">
                         {t("alerts.slackLabel")}
@@ -650,8 +644,7 @@ export function SettingsForm({
                         })}
                       </p>
                     </div>
-                  </div>
-                </details>
+                </div>
               </Section>
             </>
         </AdvancedSettingsBlock>

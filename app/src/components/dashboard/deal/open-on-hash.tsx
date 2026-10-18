@@ -14,9 +14,18 @@ export function OpenOnHash({ id }: { id: string }) {
       if (element instanceof HTMLDetailsElement) element.open = true;
       element?.scrollIntoView({ block: "start" });
     };
+    // A second click on the same "#id" link changes no hash: catch the click itself
+    const onClick = (event: MouseEvent) => {
+      const link = (event.target as Element | null)?.closest?.(`a[href$="#${id}"]`);
+      if (link) requestAnimationFrame(open);
+    };
     open();
     window.addEventListener("hashchange", open);
-    return () => window.removeEventListener("hashchange", open);
+    document.addEventListener("click", onClick);
+    return () => {
+      window.removeEventListener("hashchange", open);
+      document.removeEventListener("click", onClick);
+    };
   }, [id]);
   return null;
 }

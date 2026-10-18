@@ -62,7 +62,6 @@
       "externalTool": "External tool",
       "ccLabel": "CC on alert emails",
       "ccPlaceholder": "Optional, e.g. head of sales",
-      "connectSummary": "Connect Slack or an external tool",
       "slackLabel": "Slack webhook URL",
       "slackConfiguredPlaceholder": "Already connected, leave empty to keep it",
       "removeSlack": "Disconnect Slack",

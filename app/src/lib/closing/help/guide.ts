@@ -214,8 +214,8 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
 ## Assistant prospect
 - Sur le document, il répond aux questions du prospect quand vous n'êtes pas là. Il s'appuie sur le document
   (résumés, faits, texte des pages, transcription d'une vidéo), sur votre offre (Réglages → Réglages avancés → Offre et assistant), sur
-  les « Infos pour l'assistant » du document et sur « Ce que l'assistant doit savoir » (Réglages → Offre et
-  assistant, /settings#assistant, 4 000 caractères). Jamais sur un prix ou une condition inventés.
+  les « Infos pour l'assistant » du document et sur « Ce que l'assistant doit savoir » (Réglages → Réglages avancés →
+  Offre et assistant, /settings#assistant, 4 000 caractères). Jamais sur un prix ou une condition inventés.
 - Ce qu'il ne sait pas, il vous le transmet aussitôt : alerte « Question du prospect », question marquée sur
   la fiche et reprise dans le compte rendu du matin.
 - Tout ce que vous écrivez pour l'assistant peut être obtenu par le prospect en posant la question : rien de

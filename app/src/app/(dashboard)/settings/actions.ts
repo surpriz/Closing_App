@@ -16,13 +16,15 @@ import { OFFER_DESCRIPTION_MAX } from "@/lib/onboarding";
 import { isManagerRole } from "@/lib/roles";
 import { requireManager, requireWorkspace } from "@/lib/session";
 
-export type SettingsState = { ok?: boolean; error?: string } | null;
+/** `workspace`: the rejected field is one of the team's settings (they sit under the advanced fold). */
+export type SettingsState = { ok?: boolean; error?: string; workspace?: boolean } | null;
 
+// Textareas post line breaks as CRLF: counted once, as the browser's maxLength does
 const optionalText = (max: number) =>
   z
     .string()
-    .trim()
-    .max(max)
+    .transform((v) => v.replace(/\r\n/g, "\n"))
+    .pipe(z.string().trim().max(max))
     .transform((v) => v || null);
 
 // Only what the seller decides. Timing and limits are the pilot's job: their
@@ -148,7 +150,7 @@ export async function saveWorkspaceSettings(_prev: SettingsState, formData: Form
   });
   if (!parsed.success) {
     const t = await getTranslations("settings.actions");
-    return { error: issueMessage(t, parsed.error.issues[0]?.message, "invalidSettings") };
+    return { error: issueMessage(t, parsed.error.issues[0]?.message, "invalidSettings"), workspace: true };
   }
 
   const { slackWebhookUrl, removeSlack, ...values } = parsed.data;

@@ -517,18 +517,18 @@ export const FAQ: FaqSection[] = [
       {
         id: "demande-prospect",
         q: "Un prospect demande ses données ou leur suppression. Que faire ?",
-        a: "Réglages → Données (propriétaires et admins) : cherchez son email, puis « Exporter » ou « Tout supprimer » (lectures, messages, vocaux, relances). Les validations signées restent 5 ans comme preuve de l'accord. Répondez sous un mois.",
-        link: { href: "/settings#donnees", label: "Réglages → Données" },
+        a: "Réglages → Réglages avancés → Données (propriétaires et admins) : cherchez son email, puis « Exporter » ou « Tout supprimer » (lectures, messages, vocaux, relances). Les validations signées restent 5 ans comme preuve de l'accord. Répondez sous un mois.",
+        link: { href: "/settings#donnees", label: "Réglages → Réglages avancés → Données" },
       },
       {
         id: "exporter",
         q: "Puis-je exporter les données de mon espace ?",
-        a: "Oui : « Exporter l'espace » dans Réglages → Données (propriétaires et admins) : liens, prospects, lectures et messages en JSON.",
+        a: "Oui : « Exporter l'espace » dans Réglages → Réglages avancés → Données (propriétaires et admins) : liens, prospects, lectures et messages en JSON.",
       },
       {
         id: "supprimer-compte",
         q: "Comment supprimer mon compte ou l'espace ?",
-        a: "Réglages → Données :\n- « Supprimer mon compte » (tapez SUPPRIMER) : vos prospects restent dans l'espace, votre accès disparaît ;\n- « Supprimer l'espace » (propriétaire, tapez le nom de l'espace) : tout est effacé, fichiers compris, pour toute l'équipe. C'est irréversible : exportez d'abord.",
+        a: "Réglages → Réglages avancés → Données :\n- « Supprimer mon compte » (tapez SUPPRIMER) : vos prospects restent dans l'espace, votre accès disparaît ;\n- « Supprimer l'espace » (propriétaire, tapez le nom de l'espace) : tout est effacé, fichiers compris, pour toute l'équipe. C'est irréversible : exportez d'abord.",
       },
     ],
   },

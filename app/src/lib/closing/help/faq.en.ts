@@ -501,18 +501,18 @@ export const FAQ_EN: FaqSection[] = [
       {
         id: "demande-prospect",
         q: "A prospect asks for their data or for it to be deleted. What do I do?",
-        a: "Settings → Data (owners and admins): look up their email, then “Export” or “Delete everything” (reads, messages, voice notes, follow-ups). Signed approvals are kept 5 years as proof of the agreement. Reply within a month.",
-        link: { href: "/settings#donnees", label: "Settings → Data" },
+        a: "Settings → Advanced settings → Data (owners and admins): look up their email, then “Export” or “Delete everything” (reads, messages, voice notes, follow-ups). Signed approvals are kept 5 years as proof of the agreement. Reply within a month.",
+        link: { href: "/settings#donnees", label: "Settings → Advanced settings → Data" },
       },
       {
         id: "exporter",
         q: "Can I export my workspace data?",
-        a: "Yes: “Export workspace” in Settings → Data (owners and admins): links, prospects, reads and messages as JSON.",
+        a: "Yes: “Export workspace” in Settings → Advanced settings → Data (owners and admins): links, prospects, reads and messages as JSON.",
       },
       {
         id: "supprimer-compte",
         q: "How do I delete my account or the workspace?",
-        a: "Settings → Data:\n- “Delete my account” (type DELETE): your prospects stay in the workspace, your access goes away;\n- “Delete workspace” (owner, type the workspace name): everything is erased, files included, for the whole team. This can't be undone: export first.",
+        a: "Settings → Advanced settings → Data:\n- “Delete my account” (type DELETE): your prospects stay in the workspace, your access goes away;\n- “Delete workspace” (owner, type the workspace name): everything is erased, files included, for the whole team. This can't be undone: export first.",
       },
     ],
   },

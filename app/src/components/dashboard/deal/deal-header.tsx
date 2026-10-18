@@ -79,21 +79,24 @@ export function DealHeader({ deal, draft = false }: { deal: Deal; draft?: boolea
               !deal.opened && <HeatPill tier={null} />
             )}
             {/* Next to the temperature, what goes with it: sent or not, when they last read, how often */}
-            {link.draftAt ? (
-              <span className="text-muted-foreground">{t("notSent")}</span>
+            {/* Someone reading beats everything, even a link never marked sent: it went out after all */}
+            {deal.readingNow || analytics.viewCount > 0 ? (
+              <span className="text-muted-foreground">
+                {deal.readingNow ? (
+                  <span className="font-medium text-foreground">{t("readingNow")}</span>
+                ) : (
+                  analytics.lastActivityAt &&
+                  t("lastRead", { when: formatRelative(analytics.lastActivityAt, locale, now) })
+                )}
+                {analytics.viewCount > 0 && (
+                  <>
+                    {(deal.readingNow || analytics.lastActivityAt) && " · "}
+                    {t("reads", { count: analytics.viewCount })}
+                  </>
+                )}
+              </span>
             ) : (
-              analytics.viewCount > 0 && (
-                <span className="text-muted-foreground">
-                  {deal.readingNow ? (
-                    <span className="font-medium text-foreground">{t("readingNow")}</span>
-                  ) : (
-                    analytics.lastActivityAt &&
-                    t("lastRead", { when: formatRelative(analytics.lastActivityAt, locale, now) })
-                  )}
-                  {(deal.readingNow || analytics.lastActivityAt) && " · "}
-                  {t("reads", { count: analytics.viewCount })}
-                </span>
-              )
+              link.draftAt && <span className="text-muted-foreground">{t("notSent")}</span>
             )}
             {contactLine && (
               <span className="min-w-0 truncate text-muted-foreground">

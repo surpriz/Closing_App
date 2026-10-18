@@ -62,7 +62,6 @@
       "externalTool": "Outil externe",
       "ccLabel": "Mettre en copie des emails d'alerte",
       "ccPlaceholder": "Facultatif, ex. direction commerciale",
-      "connectSummary": "Brancher Slack ou un outil externe",
       "slackLabel": "Adresse du webhook Slack",
       "slackConfiguredPlaceholder": "Déjà branché, laissez vide pour le garder",
       "removeSlack": "Débrancher Slack",
