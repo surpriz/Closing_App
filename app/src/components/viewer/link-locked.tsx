@@ -1,16 +1,20 @@
 "use client";
 
-import { Check, Hourglass } from "lucide-react";
+import { Archive, Check, Hourglass } from "lucide-react";
 import { useActionState } from "react";
 
-import type { ExtensionState } from "@/app/v/[slug]/actions";
+import type { RevivalState } from "@/app/v/[slug]/actions";
 import { Button } from "@/components/ui/button";
 import type { ViewerLabels } from "@/lib/closing/i18n/viewer";
 
+import { DeadLinkBeacon } from "./dead-link-beacon";
 import { GATE_BOX, GATE_FIELD, GATE_LABEL, GATE_SUBMIT, GateFrame, GateTitle } from "./gate-frame";
 
 type Props = {
-  action: (prev: ExtensionState, formData: FormData) => Promise<ExtensionState>;
+  action: (prev: RevivalState, formData: FormData) => Promise<RevivalState>;
+  /** Expired: more time can open it. Archived: the seller withdrew it, they can send it again. */
+  reason: "expired" | "archived";
+  slug: string;
   documentName: string;
   senderName: string | null;
   labels: ViewerLabels;
@@ -18,36 +22,51 @@ type Props = {
   quote: boolean;
   /** "required" when the link asks for an email and we don't know the reader yet. */
   email: "required" | "optional" | "known";
-  /** This reader already asked for this expiry date. */
+  /** This reader already asked since the link died. */
   alreadyRequested: boolean;
+  /** Tell the seller someone came back. Off for the seller, and when the countdown just ran out mid-read. */
+  signalOpen: boolean;
 };
 
-export function LinkExpired({ action, documentName, senderName, labels, quote, email, alreadyRequested }: Props) {
+export function LinkLocked({
+  action,
+  reason,
+  slug,
+  documentName,
+  senderName,
+  labels,
+  quote,
+  email,
+  alreadyRequested,
+  signalOpen,
+}: Props) {
   const [state, formAction, pending] = useActionState(action, null);
   const sender = senderName ?? labels.chatSenderFallback;
-  const sent = alreadyRequested || state?.ok;
+  const sent = alreadyRequested || !!state?.ok;
   const invalid = state?.error === "invalid_email";
+  const archived = reason === "archived";
+  const Icon = archived ? Archive : Hourglass;
+  const text = archived ? labels.archivedText : quote ? labels.expiredTextQuote : labels.expiredText;
 
   return (
     <GateFrame>
+      {signalOpen && !alreadyRequested && <DeadLinkBeacon slug={slug} disarmed={sent} />}
       <GateTitle documentName={documentName} senderName={senderName} labels={labels} />
 
       <div className="mt-8 border-t border-foreground pt-4">
         <p className="flex items-center gap-2 text-body font-semibold">
-          <Hourglass className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-          {labels.expiredTitle}
+          <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+          {archived ? labels.archivedTitle : labels.expiredTitle}
         </p>
 
         {sent ? (
           <p role="status" className="mt-3 flex gap-2.5 border-l border-foreground/20 pl-3 text-body">
             <Check className="mt-1 size-4 shrink-0 text-success" strokeWidth={2.5} aria-hidden />
-            <span>{labels.extensionRequested.replace("{sender}", sender)}</span>
+            <span>{(archived ? labels.relinkRequested : labels.extensionRequested).replace("{sender}", sender)}</span>
           </p>
         ) : (
           <>
-            <p className="mt-1.5 text-body text-pretty text-muted-foreground">
-              {(quote ? labels.expiredTextQuote : labels.expiredText).replace("{sender}", sender)}
-            </p>
+            <p className="mt-1.5 text-body text-pretty text-muted-foreground">{text.replace("{sender}", sender)}</p>
             <form action={formAction} className="mt-6">
               <div className={GATE_BOX}>
                 {email !== "known" && (
@@ -68,7 +87,7 @@ export function LinkExpired({ action, documentName, senderName, labels, quote, e
                   </>
                 )}
                 <Button type="submit" size="xl" className={GATE_SUBMIT} disabled={pending}>
-                  {labels.requestExtension}
+                  {archived ? labels.requestRelink : labels.requestExtension}
                 </Button>
               </div>
               {invalid && (

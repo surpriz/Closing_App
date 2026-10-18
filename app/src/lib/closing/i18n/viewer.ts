@@ -95,6 +95,11 @@ export type ViewerLabels = {
   extensionEmailOptional: string;
   /** Shown to the seller looking at their own expired link. */
   extensionSellerPreview: string;
+  /** The seller withdrew the link or the document: they can send it again. */
+  archivedTitle: string;
+  archivedText: string;
+  requestRelink: string;
+  relinkRequested: string;
   /** Assistant on the document. {sender} is replaced by the sender's name. */
   chatLauncher: string;
   /** The short form in the call-to-action bar. */
@@ -228,6 +233,10 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     extensionRequested: "Request sent. {sender} has been notified, and you'll get an email as soon as the link is active again.",
     extensionEmailOptional: "Email (optional, to be notified)",
     extensionSellerPreview: "This is what your prospect sees. Your own request isn't sent.",
+    archivedTitle: "This document has been withdrawn",
+    archivedText: "{sender} withdrew this document. You can ask them to send it again.",
+    requestRelink: "Ask for the document again",
+    relinkRequested: "Request sent. {sender} has been notified, and you'll get an email if the document is available again.",
     chatLauncher: "Ask a question",
     chatAsk: "A question?",
     chatExitNudge: "A question before you go?",
@@ -392,6 +401,10 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     extensionRequested: "Demande envoyée. {sender} est prévenu et vous recevrez un email dès que le lien sera réactivé.",
     extensionEmailOptional: "Email (facultatif, pour être prévenu)",
     extensionSellerPreview: "C'est ce que voit votre prospect. Votre propre demande n'est pas envoyée.",
+    archivedTitle: "Ce document a été retiré",
+    archivedText: "{sender} a retiré ce document. Vous pouvez lui demander de vous le renvoyer.",
+    requestRelink: "Redemander le document",
+    relinkRequested: "Demande envoyée. {sender} est prévenu et vous recevrez un email si le document est de nouveau disponible.",
     chatLauncher: "Poser une question",
     chatAsk: "Une question ?",
     chatExitNudge: "Une question avant de partir ?",
@@ -556,6 +569,10 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     extensionRequested: "Solicitud enviada. {sender} ha sido avisado y recibirás un email en cuanto el enlace vuelva a estar activo.",
     extensionEmailOptional: "Email (opcional, para recibir el aviso)",
     extensionSellerPreview: "Esto es lo que ve tu cliente. Tu propia solicitud no se envía.",
+    archivedTitle: "Este documento ha sido retirado",
+    archivedText: "{sender} retiró este documento. Puedes pedirle que te lo vuelva a enviar.",
+    requestRelink: "Volver a pedir el documento",
+    relinkRequested: "Solicitud enviada. {sender} ha sido avisado y recibirás un email si el documento vuelve a estar disponible.",
     chatLauncher: "Hacer una pregunta",
     chatAsk: "¿Alguna pregunta?",
     chatExitNudge: "¿Alguna pregunta antes de irse?",
@@ -720,6 +737,10 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     extensionRequested: "Anfrage gesendet. {sender} wurde benachrichtigt, und Sie erhalten eine E-Mail, sobald der Link wieder aktiv ist.",
     extensionEmailOptional: "E-Mail (optional, um benachrichtigt zu werden)",
     extensionSellerPreview: "So sieht es Ihr Interessent. Ihre eigene Anfrage wird nicht gesendet.",
+    archivedTitle: "Dieses Dokument wurde zurückgezogen",
+    archivedText: "{sender} hat dieses Dokument zurückgezogen. Sie können um erneute Zusendung bitten.",
+    requestRelink: "Dokument erneut anfragen",
+    relinkRequested: "Anfrage gesendet. {sender} wurde benachrichtigt, und Sie erhalten eine E-Mail, sobald das Dokument wieder verfügbar ist.",
     chatLauncher: "Frage stellen",
     chatAsk: "Eine Frage?",
     chatExitNudge: "Noch eine Frage, bevor Sie gehen?",

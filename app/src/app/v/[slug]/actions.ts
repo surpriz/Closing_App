@@ -9,7 +9,7 @@ import { bookingUrlForLink } from "@/lib/closing/booking/link-booking";
 import { analyzeDeal, markDealDirty } from "@/lib/closing/brain/analyze-deal";
 import { HOUR_MS } from "@/lib/closing/constants";
 import { refreshEngagementScore } from "@/lib/closing/engagement/refresh-score";
-import { extensionRequestKey, formatDeadline, isLinkExpired } from "@/lib/closing/expiry";
+import { formatDeadline, isLinkExpired } from "@/lib/closing/expiry";
 import { cancelOpenFollowups } from "@/lib/closing/followups/queue";
 import { pickLocale } from "@/lib/closing/i18n/viewer";
 import { getPublicAppUrl } from "@/lib/app-origin";
@@ -23,6 +23,8 @@ import {
 } from "@/lib/closing/links";
 import { sendProspectEmail } from "@/lib/closing/prospect-email";
 import { readerLinkFor } from "@/lib/closing/shared/reader-link";
+import { deadState, REVIVAL_ACTION, REVIVAL_ALERT, REVIVAL_ALERTS_PER_LINK_HOUR, REVIVAL_RECORDS_PER_LINK_HOUR } from "@/lib/closing/revival";
+import { findRevivalReader, revivalPayload } from "@/lib/closing/revival-reader";
 import { defaultTimezone } from "@/lib/closing/settings";
 import { notifySeller } from "@/lib/closing/notify/notify";
 import { getRequestContext } from "@/lib/closing/tracking/request-context";
@@ -46,8 +48,8 @@ export async function unlockWithEmail(
 ): Promise<UnlockState> {
   const resolved = await resolveViewerLink(slug);
   if (!resolved) return { error: "not_found" };
-  // Expired while the gate was open: the page now shows the locked screen
-  if (resolved.expired) redirect(`/v/${slug}`);
+  // Expired or withdrawn while the gate was open: the page now shows the locked screen
+  if (resolved.state !== "open") redirect(`/v/${slug}`);
   const { link } = resolved;
 
   const parsed = unlockSchema.safeParse({
@@ -76,7 +78,7 @@ export async function unlockWithEmail(
 export async function unlockAsKnown(slug: string): Promise<UnlockState> {
   const resolved = await resolveViewerLink(slug);
   if (!resolved) return { error: "not_found" };
-  if (resolved.expired) redirect(`/v/${slug}`);
+  if (resolved.state !== "open") redirect(`/v/${slug}`);
   const recipient = await knownRecipient(resolved.link.id);
   // The contact changed since the page loaded: back to the plain gate
   if (!recipient) redirect(`/v/${slug}?email=1`);
@@ -84,41 +86,39 @@ export async function unlockAsKnown(slug: string): Promise<UnlockState> {
   redirect(`/v/${slug}`);
 }
 
-export type ExtensionState = {
+export type RevivalState = {
   ok?: true;
   error?: "invalid_email" | "not_found" | "seller_preview";
 } | null;
 
-/** Pushed alerts per link per hour; beyond that they are only stored. */
-const EXTENSION_ALERTS_PER_LINK_HOUR = 3;
-/** Requests recorded per link per hour; beyond that the form says "sent" and does nothing. */
-const EXTENSION_REQUESTS_PER_LINK_HOUR = 20;
-
 /**
- * "Demander une prolongation" on an expired link: the only viewer action that
- * accepts one. Once per person per expiry date; the seller extends from the
- * dashboard and whoever asked gets an email when the link opens again.
+ * "Demander une prolongation" on an expired link, "Redemander le document" on
+ * an archived one: the only viewer action a dead link accepts. Once per person
+ * per death; the seller reopens it from the dashboard and whoever asked gets
+ * an email when the link opens again.
  */
-export async function requestLinkExtension(
+export async function requestLinkRevival(
   slug: string,
-  _prev: ExtensionState,
+  _prev: RevivalState,
   formData: FormData,
-): Promise<ExtensionState> {
+): Promise<RevivalState> {
   const resolved = await resolveViewerLink(slug);
   if (!resolved) return { error: "not_found" };
-  if (!resolved.expired) redirect(`/v/${slug}`);
   const { link } = resolved;
-  const expiresAt = link.expiresAt!;
+  const dead = deadState(link, new Date());
+  if (resolved.state === "open" || !dead) redirect(`/v/${slug}`);
 
   // The seller checking what the prospect sees: no alert to themselves
   if (await isWorkspaceMember(link.organizationId)) return { error: "seller_preview" };
+  // The welcome tour's own test link: nobody to tell
+  if (link.isOnboardingTest) return { ok: true };
 
   // A real buying team asks a handful of times: beyond that it is someone filling the form, store nothing
   const hourAgo = new Date(Date.now() - HOUR_MS);
   const recentRequests = await prisma.prospectAction.count({
-    where: { linkId: link.id, type: "REQUEST_EXTENSION", createdAt: { gte: hourAgo } },
+    where: { linkId: link.id, type: REVIVAL_ACTION[dead.kind], createdAt: { gte: hourAgo } },
   });
-  if (recentRequests >= EXTENSION_REQUESTS_PER_LINK_HOUR) return { ok: true };
+  if (recentRequests >= REVIVAL_RECORDS_PER_LINK_HOUR) return { ok: true };
 
   const access = await getViewerAccess(link);
   let email = access.email;
@@ -131,12 +131,12 @@ export async function requestLinkExtension(
   }
 
   const requestHeaders = await headers();
-  const prospect = email
-    ? await prisma.prospect.findUnique({
-        where: { linkId_email: { linkId: link.id, email } },
-        select: { id: true, name: true, email: true, locale: true },
-      })
-    : null;
+  const { prospect, requestKey, asked } = await findRevivalReader(link, dead, {
+    email,
+    visitorId: (await cookies()).get(VISITOR_COOKIE)?.value,
+    ipHash: getRequestContext(requestHeaders).ipHash,
+  });
+  if (asked) return { ok: true };
   // The reactivation email is written in the language they read in
   if (prospect && !prospect.locale) {
     await prisma.prospect.update({
@@ -145,40 +145,24 @@ export async function requestLinkExtension(
     });
   }
 
-  // One request per person and deadline: known by email, else by browser, else by network
-  const who =
-    prospect?.id ??
-    (await cookies()).get(VISITOR_COOKIE)?.value ??
-    getRequestContext(requestHeaders).ipHash ??
-    "anonymous";
-  const dedupeKey = extensionRequestKey(link.id, expiresAt, who);
-  const already = await prisma.sellerAlert.findUnique({ where: { dedupeKey }, select: { id: true } });
-  if (already) return { ok: true };
-
   await prisma.prospectAction.create({
-    data: { linkId: link.id, prospectId: prospect?.id, type: "REQUEST_EXTENSION" },
+    data: { linkId: link.id, prospectId: prospect?.id, type: REVIVAL_ACTION[dead.kind] },
   });
 
+  const alertType = REVIVAL_ALERT[dead.kind];
   const recent = await prisma.sellerAlert.count({
-    where: {
-      linkId: link.id,
-      type: "LINK_EXTENSION_REQUESTED",
-      createdAt: { gte: hourAgo },
-    },
+    where: { linkId: link.id, type: alertType, createdAt: { gte: hourAgo } },
   });
-  inBackground("extension-request", async () => {
+  inBackground("revival-request", async () => {
     await notifySeller({
       linkId: link.id,
-      type: "LINK_EXTENSION_REQUESTED",
-      dedupeKey,
-      payload: {
-        prospectName: prospect?.name ?? null,
-        prospectEmail: prospect?.email ?? null,
-        expiresAt: expiresAt.toISOString(),
-      },
-      silent: recent >= EXTENSION_ALERTS_PER_LINK_HOUR,
+      type: alertType,
+      dedupeKey: requestKey,
+      payload: revivalPayload(prospect, dead),
+      silent: recent >= REVIVAL_ALERTS_PER_LINK_HOUR,
     });
-    await markDealDirty(link.id);
+    // The analysis skips archived links anyway
+    if (dead.kind === "expired") await markDealDirty(link.id);
   });
 
   return { ok: true };

@@ -26,6 +26,7 @@ export function extensionNotice(
     forwardedTo?: string;
     forwardedToRole?: ProspectRole | null;
     decisionMaker?: boolean;
+    deadState?: "archived" | "expired";
   },
   locale: UiLocale,
   timezone = "Europe/Paris",
@@ -37,6 +38,13 @@ export function extensionNotice(
   switch (type) {
     case "LINK_EXTENSION_REQUESTED":
       return { title: t("notice.linkExtensionRequested.title", { who }), body: t("notice.linkExtensionRequested.body", { doc }) };
+    case "RELINK_REQUESTED":
+      return { title: t("notice.relinkRequested.title", { who }), body: t("notice.relinkRequested.body", { doc }) };
+    case "DEAD_LINK_OPENED":
+      return {
+        title: t("notice.deadLinkOpened.title", { who }),
+        body: t(payload.deadState === "expired" ? "notice.deadLinkOpened.bodyExpired" : "notice.deadLinkOpened.bodyArchived", { doc }),
+      };
     case "LINK_EXPIRING":
       return {
         title: t("notice.linkExpiring.title", { who }),

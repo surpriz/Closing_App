@@ -38,23 +38,29 @@ async function findViewerLink(slug: string) {
 
 export type ViewerLink = NonNullable<Awaited<ReturnType<typeof findViewerLink>>>;
 
+export type ViewerLinkState = "open" | "expired" | "archived";
+
 /**
- * Link as seen by a prospect, expired ones included. Null when unknown or
- * archived. Only the locked page and the extension request read expired links.
+ * Link as seen by a prospect, dead ones included. Null when unknown or the
+ * workspace is suspended. Only the locked pages and the revival request and
+ * signal read a link that is not open.
  */
 export async function resolveViewerLink(slug: string, now = new Date()) {
   if (!SLUG_PATTERN.test(slug)) return null;
   const link = await findViewerLink(slug);
   // A suspended workspace's links read as unknown: no page, no tracking
-  if (!link || link.archivedAt || link.document.archivedAt || link.organization.suspendedAt) return null;
+  if (!link || link.organization.suspendedAt) return null;
+  // Withdrawn wins over expired: more time would not open it
+  if (link.archivedAt || link.document.archivedAt) return { link, state: "archived" as ViewerLinkState };
   // A signed quote stays readable after its deadline: the receipt link keeps working
-  return { link, expired: isLinkExpired({ expiresAt: viewerDeadline(link) }, now) };
+  const expired = isLinkExpired({ expiresAt: viewerDeadline(link) }, now);
+  return { link, state: (expired ? "expired" : "open") as ViewerLinkState };
 }
 
 // Link as seen by a prospect. Null when unknown, archived or expired.
 export async function getLinkForViewer(slug: string) {
   const resolved = await resolveViewerLink(slug);
-  return resolved && !resolved.expired ? resolved.link : null;
+  return resolved?.state === "open" ? resolved.link : null;
 }
 
 export async function getViewerAccess(link: { id: string; requireEmail: boolean }) {
