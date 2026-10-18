@@ -111,7 +111,6 @@ export default async function SettingsPage() {
                 senderSignature: settings.senderSignature ?? "",
                 autonomy: settings.autonomy,
                 chatEnabledByDefault: settings.chatEnabledByDefault,
-                requireEmailByDefault: settings.requireEmailByDefault,
                 voiceCommentsByDefault: settings.voiceCommentsByDefault,
                 followupsByDefault: settings.followupsByDefault,
                 quoteExpiryDays: settings.quoteExpiryDays,
