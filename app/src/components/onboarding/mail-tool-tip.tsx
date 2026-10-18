@@ -22,12 +22,15 @@ export function MailToolTip({
   tool,
   mailbox,
   action,
+  returnTo,
 }: {
   tool: MailToolTipKind;
   /** "Gmail" or "Outlook", for the Chrome extension. */
   mailbox: string;
   /** Replaces the link to the setup step, e.g. when the extension only needs connecting. */
   action?: React.ReactNode;
+  /** Where the setup step's "Terminé" leads back to: the page the tip sits on. */
+  returnTo?: string;
 }) {
   const t = useTranslations("onboarding.mailToolTip");
   const [hidden, setHidden] = useState(false);
@@ -39,7 +42,9 @@ export function MailToolTip({
       <div className="min-w-0 flex-1 space-y-2">
         <p className="text-body">{t(COPY_KEY[tool], { mailbox })}</p>
         {action ?? (
-          <Link href="/welcome?step=tool" className={buttonVariants({ variant: "outline", size: "sm" })}>
+          <Link
+            href={`/welcome?step=tool${returnTo ? `&from=${encodeURIComponent(returnTo)}` : ""}`}
+            className={buttonVariants({ variant: "outline", size: "sm" })}>
             {tool === "unknown" ? t("seeHow") : t("install")}
           </Link>
         )}

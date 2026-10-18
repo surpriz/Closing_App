@@ -1,6 +1,7 @@
 import { getPublicAppUrl } from "@/lib/app-origin";
 import { prisma } from "@/lib/db";
 import { isEmailConfigured, sendEmail } from "@/lib/email";
+import { getEnv } from "@/lib/env";
 import {
   buildOnboardingEmail,
   dueOnboardingEmail,
@@ -8,6 +9,7 @@ import {
   ONBOARDING_EMAIL_KINDS,
   type OnboardingEmailKind,
 } from "@/lib/onboarding-emails";
+import { SAMPLE_DOCUMENT } from "@/lib/onboarding";
 import { toUiLocale } from "@/lib/seller-locale";
 
 import { customLinkName, linkLabelSelect } from "./dashboard/labels";
@@ -87,6 +89,21 @@ export async function sendDueOnboardingEmail(userId: string, organizationId: str
 
   const appUrl = getPublicAppUrl();
   const link = firstRead?.link;
+  // "Not sent yet": straight to the link that waits, not to the dashboard
+  const draft =
+    kind === "not_sent"
+      ? await prisma.link.findFirst({
+          where: {
+            ...mine,
+            draftAt: { not: null },
+            archivedAt: null,
+            shared: false,
+            document: { name: { not: SAMPLE_DOCUMENT.name } },
+          },
+          orderBy: { createdAt: "desc" },
+          select: { id: true },
+        })
+      : null;
   const email = buildOnboardingEmail(kind, {
     appUrl,
     firstName: member.user.name?.trim().split(/\s+/)[0] || null,
@@ -97,6 +114,8 @@ export async function sendDueOnboardingEmail(userId: string, organizationId: str
           url: `${appUrl}/links/${link.id}`,
         }
       : undefined,
+    draftUrl: draft ? `${appUrl}/links/${draft.id}?new=1` : undefined,
+    extension: !!getEnv().EXTENSION_STORE_URL,
   });
   try {
     await sendEmail({ to: member.user.email, ...email });

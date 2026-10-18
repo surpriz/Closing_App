@@ -170,7 +170,9 @@ export default async function LinkDetailPage({
         <ShareMailToolTip
           user={workspace.user}
           organizationId={workspace.organization.id}
+          scope={workspace.scope}
           prefs={deal.sellerPrefs}
+          returnTo={`/links/${link.id}`}
         />
       )}
     </div>

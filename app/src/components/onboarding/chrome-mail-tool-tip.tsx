@@ -9,7 +9,15 @@ import { MailToolTip } from "./mail-tool-tip";
 import { startExtensionConnect, useExtensionState } from "./use-extension-state";
 
 /** The Chrome tip, gone once this browser's extension is in, and one click away when it only needs connecting. */
-export function ChromeMailToolTip({ probe, mailbox }: { probe: ExtensionProbe; mailbox: string }) {
+export function ChromeMailToolTip({
+  probe,
+  mailbox,
+  returnTo,
+}: {
+  probe: ExtensionProbe;
+  mailbox: string;
+  returnTo?: string;
+}) {
   const t = useTranslations("onboarding.chromeTip");
   const { state, extensionId } = useExtensionState(probe);
   if (state === "ok") return null;
@@ -18,6 +26,7 @@ export function ChromeMailToolTip({ probe, mailbox }: { probe: ExtensionProbe; m
     <MailToolTip
       tool="chrome"
       mailbox={mailbox}
+      returnTo={returnTo}
       action={
         connect ? (
           <Button size="sm" variant="outline" onClick={() => startExtensionConnect(connect)}>

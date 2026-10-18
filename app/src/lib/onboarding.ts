@@ -112,7 +112,19 @@ export function isExtensionNudgeSnoozed(hiddenAt: Date | null, now: Date) {
  * Value by doing, tools last: the seller drops a real document straight away and
  * opens it as their prospect would before anything about mailboxes or extensions.
  */
-export const ONBOARDING_STEPS = ["drop", "test", "daily"] as const;
+// The mailbox tools wait for the first link sent: the tour ends on the test read, then sends
+export const ONBOARDING_STEPS = ["drop", "test"] as const;
+
+/**
+ * A path inside the app to come back to, never another site: one leading slash, then no slash
+ * or backslash (browsers read "/\\x" as "//x"), and no backslash, space or control anywhere.
+ */
+export function safeReturnTo(value: unknown) {
+  return typeof value === "string" && /^\/(?![/\\])[^\\\s\u0000-\u001f]*$/.test(value) ? value : null;
+}
+
+/** The tour's ready-made quote, for a seller with no document at hand. Never offered as theirs. */
+export const SAMPLE_DOCUMENT = { url: "/onboarding/exemple-devis.pdf", name: "Devis exemple.pdf" };
 
 export type OnboardingStep = (typeof ONBOARDING_STEPS)[number];
 

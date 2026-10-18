@@ -40,9 +40,10 @@
     "firstRead": {
       "someone": "A prospect",
       "subject": "{label} opened your document",
-      "body": "Your first link was read. On the deal page: the pages read, the time spent, and what Clozer makes of it.",
+      "body": "Your first link was read. On the prospect's page: the pages read, the time spent, and what Clozer makes of it.",
       "followup": "If a follow-up would help, Clozer writes it for you. It waits in “Follow-ups to review”, nothing goes out without you.",
-      "button": "See what they read"
+      "button": "See what they read",
+      "extension": "For next time: in Gmail or Outlook, the Clozer Chrome extension puts the link in place of the attachment, no copy-paste."
     }
   },
   "outlookConnected": {

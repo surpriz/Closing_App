@@ -7,8 +7,7 @@ import { getAppOrigin } from "@/lib/app-origin";
 import { createDocumentLink } from "@/lib/closing/documents/create-link";
 import { upsertSellerPrefs } from "@/lib/closing/notify/preferences";
 import { prisma } from "@/lib/db";
-import { isTestRead, OFFER_DESCRIPTION_MAX, parseMailClient, testLinkName } from "@/lib/onboarding";
-import { isManagerRole } from "@/lib/roles";
+import { isTestRead, parseMailClient, testLinkName } from "@/lib/onboarding";
 import { requireWorkspace } from "@/lib/session";
 
 export async function saveMailClient(value: unknown) {
@@ -36,19 +35,6 @@ export async function hideMailToolTip() {
 export async function snoozeExtensionNudge() {
   const { user, organization } = await requireWorkspace();
   await upsertSellerPrefs(user.id, organization.id, { extensionNudgeHiddenAt: new Date() });
-}
-
-// Only fills an empty offer: the full form lives in the settings
-export async function saveOfferDescription(input: unknown): Promise<{ ok: boolean }> {
-  const { organization, role } = await requireWorkspace();
-  const offerDescription = typeof input === "string" ? input.trim().slice(0, OFFER_DESCRIPTION_MAX) : "";
-  if (!isManagerRole(role) || !offerDescription) return { ok: false };
-  const { count } = await prisma.workspaceSettings.updateMany({
-    where: { organizationId: organization.id, OR: [{ offerDescription: null }, { offerDescription: "" }] },
-    data: { offerDescription, offerInferredFrom: null },
-  });
-  revalidatePath("/settings");
-  return { ok: count > 0 };
 }
 
 /** First visit of the tour, for the getting-started funnel. */
@@ -92,6 +78,8 @@ export async function createOnboardingTestLink(
 export type TestLinkStatus = {
   /** The viewer only tracks a document once it is processed. */
   ready: boolean;
+  /** Processing gave up on it: the tour offers another document. */
+  failed: boolean;
   read: { pages: number; seconds: number } | null;
 };
 
@@ -120,6 +108,7 @@ export async function onboardingTestStatus(linkId: string): Promise<TestLinkStat
   }
   return {
     ready: link.document.status === "READY",
+    failed: link.document.status === "FAILED",
     read: view ? { pages: view.maxPageReached, seconds: Math.round(view.totalDurationMs / 1000) } : null,
   };
 }

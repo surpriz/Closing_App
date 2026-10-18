@@ -1,22 +1,26 @@
 "use client";
 
+import { RotateCcw } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { type AddedSource, UploadDropzone } from "@/components/dashboard/upload-dropzone";
+import { Button } from "@/components/ui/button";
+import { SAMPLE_DOCUMENT } from "@/lib/onboarding";
 
 import { ThermalPlate } from "@/components/brand/thermal-plate";
 
 import { StepHeading } from "./parts";
 
-export const SAMPLE_DOCUMENT = { url: "/onboarding/exemple-devis.pdf", name: "Devis exemple.pdf" };
-
 export function DropStep({
   firstName,
   uploadPrefix,
+  previous,
   onCreated,
 }: {
   firstName: string | null;
   uploadPrefix: string;
+  /** Replaying the tour: the latest document, offered instead of adding it again. */
+  previous: { documentId: string; linkId: string | null; name: string } | null;
   onCreated: (added: AddedSource) => void;
 }) {
   const t = useTranslations("onboarding.drop");
@@ -26,7 +30,6 @@ export function DropStep({
         title={firstName ? t("titleWithName", { firstName }) : t("title")}
         lead={t("lead")}
       />
-      <p className="font-medium">{t("nothingToInstall")}</p>
       <figure className="flex items-center gap-4">
         <span aria-hidden className="grid w-40 shrink-0 grid-cols-6 gap-px">
           {Array.from({ length: 6 }, (_, i) => (
@@ -37,6 +40,17 @@ export function DropStep({
           {t("coldPages")}
         </figcaption>
       </figure>
+      {previous && (
+        <Button
+          variant="outline"
+          size="lg"
+          className="max-w-full"
+          onClick={() => onCreated({ documentId: previous.documentId, linkId: previous.linkId })}
+        >
+          <RotateCcw />
+          <span className="truncate">{t("resume", { name: previous.name })}</span>
+        </Button>
+      )}
       <UploadDropzone uploadPrefix={uploadPrefix} onCreated={onCreated} sample={SAMPLE_DOCUMENT} />
     </div>
   );
