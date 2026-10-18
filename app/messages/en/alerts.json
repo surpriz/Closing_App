@@ -103,6 +103,19 @@
       "subject": "{from} forwarded your proposal to {to}",
       "subjectDecision": "Your proposal is reaching a decision-maker: {to}{role}",
       "line": "{from} forwarded {doc} to {to}{role}{quote}"
+    },
+    "prospectReplied": {
+      "subject": "{who} replied",
+      "line": "{who} replied by email about {doc}",
+      "body": "{who} replied to your follow-up about {doc}. We forwarded the reply to you.",
+      "bodyThread": "{who} replied in your email thread about {doc}.",
+      "stopped": "Automatic follow-ups are off for this deal: it's your conversation now."
+    },
+    "emailBounced": {
+      "subject": "Invalid address: {email}",
+      "line": "The follow-up to {email} ({doc}) couldn't be delivered",
+      "body": "The follow-up sent to {email} about {doc} bounced: the address doesn't exist or rejects email.",
+      "fix": "Nothing more will go to this address. Check it with the prospect and add the right contact to the deal."
     }
   },
   "notice": {
@@ -169,6 +182,13 @@
       "body": "To {to}.",
       "bodyQuote": "To {to}: “{text}”",
       "bodyDecision": "To {to}: a decision-maker joins the loop."
+    },
+    "prospectReplied": {
+      "title": "{who} replied"
+    },
+    "emailBounced": {
+      "title": "Email not delivered",
+      "body": "{email} doesn't exist or rejects email."
     }
   },
   "digest": {

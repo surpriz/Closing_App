@@ -26,6 +26,8 @@ export function extensionNotice(
     forwardedTo?: string;
     forwardedToRole?: ProspectRole | null;
     decisionMaker?: boolean;
+    prospectEmail?: string | null;
+    replyExcerpt?: string | null;
   },
   locale: UiLocale,
   timezone = "Europe/Paris",
@@ -89,6 +91,16 @@ export function extensionNotice(
             : t("notice.documentForwarded.body", { to }),
       };
     }
+    case "PROSPECT_REPLIED":
+      return {
+        title: t("notice.prospectReplied.title", { who }),
+        body: payload.replyExcerpt ? quote(payload.replyExcerpt, 110) : t("notice.on", { doc }),
+      };
+    case "EMAIL_BOUNCED":
+      return {
+        title: t("notice.emailBounced.title"),
+        body: t("notice.emailBounced.body", { email: payload.prospectEmail ?? who }),
+      };
     case "DRAFT_READY":
       return { title: t("notice.draftReady.title"), body: t("notice.draftReady.body", { who }) };
     case "COMMITTEE_LIVE":

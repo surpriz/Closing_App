@@ -45,6 +45,9 @@ export type AlertPayload = {
   forwardedToRole?: ProspectRole | null;
   /** The recipient looks like someone who signs or holds the budget. */
   decisionMaker?: boolean;
+  /** PROSPECT_REPLIED: the start of the answer, and where Clozer caught it. */
+  replyExcerpt?: string | null;
+  replySource?: "INBOUND" | "EXTENSION";
 };
 
 const READER_ALERTS = new Set<SellerAlertType>(["COMMITTEE_LIVE", "DECISION_MAKER_DETECTED", "NEW_READER"]);
@@ -57,6 +60,7 @@ const REPLY_ALERTS = new Set<SellerAlertType>([
   "VOICE_COMMENT",
   "MEETING_BOOKED",
   "DOCUMENT_FORWARDED",
+  "PROSPECT_REPLIED",
 ]);
 
 export type AlertDelivery = {
@@ -297,6 +301,38 @@ export function alertMessage(
         url,
       };
     }
+    case "PROSPECT_REPLIED": {
+      const blocks: EmailBlock[] = [
+        {
+          kind: "text",
+          text: t(payload.replySource === "EXTENSION" ? "message.prospectReplied.bodyThread" : "message.prospectReplied.body", { who, doc }),
+        },
+      ];
+      if (payload.replyExcerpt) blocks.push({ kind: "quote", text: payload.replyExcerpt });
+      blocks.push({ kind: "text", text: t("message.prospectReplied.stopped") });
+      const reply = replyButton(link, payload, t);
+      if (reply) blocks.push(reply);
+      blocks.push(viewDeal);
+      return {
+        subject: t("message.prospectReplied.subject", { who }),
+        line: `${t("message.prospectReplied.line", { who, doc })}${lineQuote(payload.replyExcerpt)}`,
+        blocks,
+        url: linkUrl,
+      };
+    }
+    case "EMAIL_BOUNCED": {
+      const email = payload.prospectEmail ?? who;
+      const blocks: EmailBlock[] = [{ kind: "text", text: t("message.emailBounced.body", { email, doc }) }];
+      if (payload.detail) blocks.push({ kind: "quote", text: payload.detail });
+      blocks.push({ kind: "text", text: t("message.emailBounced.fix") });
+      blocks.push(viewDeal);
+      return {
+        subject: t("message.emailBounced.subject", { email }),
+        line: t("message.emailBounced.line", { email, doc }),
+        blocks,
+        url: linkUrl,
+      };
+    }
     case "DRAFT_READY": {
       const url = `${linkUrl}#relances`;
       return {
@@ -439,6 +475,10 @@ export async function createAndDeliverAlert(input: AlertDelivery) {
                 ? "📅"
               : input.type === "DOCUMENT_FORWARDED"
                 ? "↪️"
+              : input.type === "PROSPECT_REPLIED"
+                ? "💬"
+              : input.type === "EMAIL_BOUNCED"
+                ? "⚠️"
               : input.type === "LINK_EXTENSION_REQUESTED" || input.type === "LINK_EXPIRING"
                 ? "⏳"
                 : input.priority === "ACTION"

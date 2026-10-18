@@ -206,7 +206,9 @@
       "reopenedDays": "a été rouvert après {days} jours de silence",
       "reopened": "a été rouvert après un silence",
       "documentForwardedTo": "a été transféré à {to}",
-      "documentForwarded": "a été transféré"
+      "documentForwarded": "a été transféré",
+      "prospectReplied": "a reçu une réponse du prospect par email",
+      "emailBounced": "a une adresse email invalide"
     },
     "followup": "a reçu une relance {channel}",
     "followupAntiGhosting": "a reçu une relance {channel} (lien pas encore ouvert)",

@@ -141,7 +141,9 @@
       "maxReached": "Already {count} follow-ups in 30 days, the maximum you set.",
       "recentContact": "You were in touch with them less than 48 hours ago.",
       "noChannel": "No sending channel available.",
-      "afterExpiry": "It would go out after the link expires."
+      "afterExpiry": "It would go out after the link expires.",
+      "bounced": "The contact's email address bounced.",
+      "replied": "The prospect replied by email: it's your conversation now."
     },
     "act": {
       "insightNotFound": "Analysis not found.",
@@ -171,7 +173,9 @@
       "documentDeleted": "Document deleted",
       "openedProposal": "The prospect opened the proposal",
       "validatedByProspect": "Proposal approved by the prospect",
-      "changeRequestedByProspect": "Changes requested by the prospect"
+      "changeRequestedByProspect": "Changes requested by the prospect",
+      "bounced": "Invalid email address (bounced)",
+      "replied": "The prospect replied by email"
     },
     "queue": {
       "toReview": "To review: {issues}"

@@ -79,6 +79,10 @@ export async function sendFollowup(
     await finish(followup.id, "SKIPPED", t("unsubscribed"));
     return "skipped";
   }
+  if (prospect.bouncedAt && followup.channel === "EMAIL") {
+    await finish(followup.id, "SKIPPED", t("bounced"));
+    return "skipped";
+  }
   // A message the seller approved stands: they saw the situation when they did
   const sellerApproved = !!followup.approvedAt || !!approvedById;
   if (followup.trigger === "EXPIRY_REMINDER") {

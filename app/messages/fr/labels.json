@@ -70,6 +70,8 @@
     "NEW_READER": "Nouveau lecteur",
     "DECISION_MAKER_DETECTED": "Décideur en lecture",
     "LINK_EXTENSION_REQUESTED": "Demande de prolongation",
+    "PROSPECT_REPLIED": "Réponse du prospect",
+    "EMAIL_BOUNCED": "Email non délivré",
     "LINK_EXPIRING": "Lien bientôt expiré",
     "MEETING_BOOKED": "Rendez-vous pris",
     "DOCUMENT_FORWARDED": "Document transféré"

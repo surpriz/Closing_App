@@ -33,6 +33,7 @@ export async function notifyReactivated(linkId: string, since: Date) {
           createdAt: { gte: since },
           prospect: {
             unsubscribedAt: null,
+            bouncedAt: null,
             OR: [{ origin: "SELLER" }, { views: { some: { isBot: false, startedAt: { lt: since } } } }],
           },
         },

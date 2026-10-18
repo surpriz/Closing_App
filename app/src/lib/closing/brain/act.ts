@@ -83,6 +83,7 @@ export async function actOnInsight(insightId: string, { force = false, now = new
     prospect: prospect
       ? {
           unsubscribed: prospect.unsubscribedAt !== null,
+          bounced: prospect.bouncedAt !== null,
           canWhatsApp: !!prospect.phoneE164 && !!prospect.whatsappOptInAt,
           timezone,
         }

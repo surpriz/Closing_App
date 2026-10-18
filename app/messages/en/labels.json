@@ -70,6 +70,8 @@
     "NEW_READER": "New reader",
     "DECISION_MAKER_DETECTED": "Decision-maker reading",
     "LINK_EXTENSION_REQUESTED": "Extension request",
+    "PROSPECT_REPLIED": "Prospect replied",
+    "EMAIL_BOUNCED": "Email bounced",
     "LINK_EXPIRING": "Link expiring soon",
     "MEETING_BOOKED": "Meeting booked",
     "DOCUMENT_FORWARDED": "Document forwarded"

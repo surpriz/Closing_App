@@ -38,7 +38,7 @@ export async function evaluateHotPricing(viewId: string, now = new Date()) {
   if (pricingPages.length === 0) return;
 
   const prospect = view.prospect ?? link.prospects[0];
-  if (!prospect || prospect.unsubscribedAt) return;
+  if (!prospect || prospect.unsubscribedAt || prospect.bouncedAt) return;
 
   const settings = resolveFollowupSettings(link, await getWorkspaceSettings(link.organizationId));
 

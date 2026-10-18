@@ -141,7 +141,9 @@
       "maxReached": "Déjà {count} relances en 30 jours, le maximum réglé.",
       "recentContact": "Vous avez échangé avec lui il y a moins de 48 h.",
       "noChannel": "Aucun canal d'envoi disponible.",
-      "afterExpiry": "L'envoi tomberait après l'expiration du lien."
+      "afterExpiry": "L'envoi tomberait après l'expiration du lien.",
+      "bounced": "L'adresse email du contact est invalide.",
+      "replied": "Le prospect a répondu par email : la suite est entre vos mains."
     },
     "act": {
       "insightNotFound": "Analyse introuvable.",
@@ -171,7 +173,9 @@
       "documentDeleted": "Document supprimé",
       "openedProposal": "Le prospect a ouvert la proposition",
       "validatedByProspect": "Proposition validée par le prospect",
-      "changeRequestedByProspect": "Ajustement demandé par le prospect"
+      "changeRequestedByProspect": "Ajustement demandé par le prospect",
+      "bounced": "Adresse email invalide (bounce)",
+      "replied": "Le prospect a répondu par email"
     },
     "queue": {
       "toReview": "À relire : {issues}"

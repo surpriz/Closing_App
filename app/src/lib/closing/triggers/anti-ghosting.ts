@@ -24,11 +24,11 @@ export async function scanAntiGhosting(now = new Date()) {
       AND: [{ OR: [{ snoozedUntil: null }, { snoozedUntil: { lte: now } }] }, notExpired(now)],
       sentAt: { lte: new Date(now.getTime() - DAY_MS) },
       views: { none: { isBot: false } },
-      prospects: { some: { unsubscribedAt: null } },
+      prospects: { some: { unsubscribedAt: null, bouncedAt: null } },
       ...ACTIVE_WORKSPACE,
     },
     include: {
-      prospects: { where: { unsubscribedAt: null } },
+      prospects: { where: { unsubscribedAt: null, bouncedAt: null } },
       organization: { include: { settings: true } },
       createdBy: { select: { locale: true } },
     },

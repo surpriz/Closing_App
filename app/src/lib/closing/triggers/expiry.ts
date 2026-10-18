@@ -39,12 +39,12 @@ export async function scanExpiryReminders(now = new Date()) {
       expiresAt: { gt: now, lte: new Date(now.getTime() + REMINDER_DRAFT_LEAD_MS) },
       document: { docType: { in: [...COUNTDOWN_DOC_TYPES] } },
       AND: [{ OR: [{ snoozedUntil: null }, { snoozedUntil: { lte: now } }] }],
-      prospects: { some: { unsubscribedAt: null, origin: "SELLER" } },
+      prospects: { some: { unsubscribedAt: null, bouncedAt: null, origin: "SELLER" } },
       ...ACTIVE_WORKSPACE,
     },
     include: {
       prospects: {
-        where: { unsubscribedAt: null, origin: "SELLER" },
+        where: { unsubscribedAt: null, bouncedAt: null, origin: "SELLER" },
         orderBy: { createdAt: "asc" },
         take: REMINDER_RECIPIENTS,
       },

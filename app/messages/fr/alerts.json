@@ -103,6 +103,19 @@
       "subject": "{from} a transféré votre proposition à {to}",
       "subjectDecision": "Votre proposition arrive chez un décideur : {to}{role}",
       "line": "{from} a transféré {doc} à {to}{role}{quote}"
+    },
+    "prospectReplied": {
+      "subject": "{who} vous a répondu",
+      "line": "{who} a répondu par email au sujet de {doc}",
+      "body": "{who} a répondu à votre relance sur {doc}. Sa réponse vous a été transférée.",
+      "bodyThread": "{who} a répondu dans votre fil d'emails sur {doc}.",
+      "stopped": "Les relances automatiques sont arrêtées : la suite est entre vos mains."
+    },
+    "emailBounced": {
+      "subject": "Adresse invalide : {email}",
+      "line": "La relance envoyée à {email} ({doc}) n'a pas pu être livrée",
+      "body": "La relance envoyée à {email} au sujet de {doc} est revenue : l'adresse n'existe pas ou refuse les emails.",
+      "fix": "Plus rien ne partira à cette adresse. Vérifiez-la avec le prospect et ajoutez le bon contact sur le deal."
     }
   },
   "notice": {
@@ -169,6 +182,13 @@
       "body": "À {to}.",
       "bodyQuote": "À {to} : « {text} »",
       "bodyDecision": "À {to} : un décideur entre dans la boucle."
+    },
+    "prospectReplied": {
+      "title": "{who} vous a répondu"
+    },
+    "emailBounced": {
+      "title": "Email non délivré",
+      "body": "{email} n'existe pas ou refuse les emails."
     }
   },
   "digest": {

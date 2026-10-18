@@ -41,6 +41,8 @@ export type FollowupPolicyInput = {
   };
   prospect: {
     unsubscribed: boolean;
+    /** An email to this address bounced for good. */
+    bounced?: boolean;
     canWhatsApp: boolean;
     timezone: string;
   } | null;
@@ -77,6 +79,7 @@ export function decideFollowup(input: FollowupPolicyInput): FollowupDecision {
   if (deal.quoteRequested) reasons.push(t("quoteRequested"));
   if (!prospect) reasons.push(t("noContact"));
   else if (prospect.unsubscribed) reasons.push(t("unsubscribed"));
+  else if (prospect.bounced && !prospect.canWhatsApp) reasons.push(t("bounced"));
   if (history.approvedPending) reasons.push(t("approvedPending"));
   if (deal.expiresAt && deal.expiresAt <= now) reasons.push(t("expired"));
   if (history.expiryReminderOpen) reasons.push(t("expiryReminderOpen"));
@@ -138,7 +141,7 @@ export function decideFollowup(input: FollowupPolicyInput): FollowupDecision {
 function pickChannel(input: FollowupPolicyInput): "EMAIL" | "WHATSAPP" | null {
   const allowed = input.deal.channels;
   if (input.channel === "WHATSAPP" && allowed.includes("WHATSAPP") && input.prospect?.canWhatsApp) return "WHATSAPP";
-  if (allowed.includes("EMAIL")) return "EMAIL";
+  if (allowed.includes("EMAIL") && !input.prospect?.bounced) return "EMAIL";
   if (allowed.includes("WHATSAPP") && input.prospect?.canWhatsApp) return "WHATSAPP";
   return null;
 }

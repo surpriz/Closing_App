@@ -206,7 +206,9 @@
       "reopenedDays": "was reopened after {days} quiet days",
       "reopened": "was reopened after a quiet spell",
       "documentForwardedTo": "was forwarded to {to}",
-      "documentForwarded": "was forwarded"
+      "documentForwarded": "was forwarded",
+      "prospectReplied": "got an email reply from the prospect",
+      "emailBounced": "has an email address that bounced"
     },
     "followup": "got a follow-up by {channel}",
     "followupAntiGhosting": "got a follow-up by {channel} (link not opened yet)",
