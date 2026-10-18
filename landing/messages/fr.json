@@ -10,6 +10,7 @@
     "home": "Clozer, accueil",
     "how": "Comment ça marche",
     "features": "Fonctionnalités",
+    "useCases": "Cas d'usage",
     "teams": "Pour les équipes",
     "faq": "Questions",
     "login": "Se connecter",
@@ -61,7 +62,7 @@
     "demo": "Exemple de démonstration",
     "hero": {
       "title": "Sachez qui lit votre proposition. Relancez <hot>au bon moment</hot>.",
-      "lead": "Pour les commerciaux B2B et leurs managers. Envoyez un lien Clozer à la place du PDF : vous voyez qui l'ouvre, ce qu'il lit et à qui il le transfère. Clozer prépare la relance.",
+      "lead": "Pour les commerciaux B2B et leurs managers. Envoyez un lien Clozer à la place du PDF ou de la vidéo : vous voyez qui l'ouvre, ce qu'il lit et à qui il le transfère. Clozer prépare la relance.",
       "free": "Gratuit pendant la bêta",
       "noCard": "Sans carte bancaire",
       "magicLink": "Lien de connexion par email"
@@ -114,6 +115,34 @@
         "alt": "Écran de Clozer : une relance écrite après la lecture des tarifs, conseillée pour le lendemain à 9 h, qui attend le bouton Valider."
       },
       "guided": "Après l'inscription, un tour guidé crée avec vous un premier lien de test."
+    },
+    "video": {
+      "title": "Un pitch vidéo, suivi comme une proposition.",
+      "body": "Face caméra ou en partageant votre écran, enregistrez jusqu'à 3 minutes directement dans Clozer. Le prospect la regarde dans son navigateur, et vous voyez ce qu'il en a vraiment vu.",
+      "record": {
+        "title": "Enregistrée dans Clozer",
+        "body": "Pas d'autre outil. Le pitch devient un document, avec un lien par prospect, comme un PDF."
+      },
+      "watched": {
+        "title": "Ce qu'il a vraiment regardé",
+        "body": "Le visionnage se mesure par dixième de la vidéo. Les passages sautés ne comptent pas."
+      },
+      "transcript": {
+        "title": "Une relance qui sait ce que vous avez dit",
+        "body": "La vidéo est transcrite. Les relances et l'assistant savent de quoi vous parlez à chaque passage."
+      },
+      "quote": {
+        "title": "Un bouton « Demander un devis »",
+        "body": "Activez-le sur le lien. S'il clique, vous êtes prévenu et les relances automatiques s'arrêtent."
+      },
+      "capsules": "Sur un PDF, vous pouvez aussi poser une capsule vidéo ou vocale de 90 secondes sur une page, pour expliquer vos tarifs par exemple.",
+      "useCases": "Des idées d'envoi, situation par situation",
+      "name": "Pitch vidéo « Refonte du site e-commerce », 3:00",
+      "caption": "Exemple : visionnage d'un pitch vidéo de 3 minutes, découpé en dix passages. Le prospect a sauté le 3e passage, a revu deux fois le passage sur les tarifs et s'est arrêté à 70 %.",
+      "summary": "Regardé jusqu'à 70 %, tarifs revus 2 fois",
+      "skipped": "Passage sauté",
+      "hottest": "Tarifs, revus 2 fois",
+      "quoteButton": "Demander un devis"
     },
     "followUps": {
       "title": "Clozer prépare la relance. Vous la validez.",
@@ -177,8 +206,8 @@
         "how": "Copiez le lien et collez-le dans la conversation. Il s'ouvre dans le navigateur, sur téléphone comme sur ordinateur."
       },
       "cold": {
-        "name": "lemlist et cold email",
-        "how": "Avec le Smart Link, un seul lien dans votre séquence. Chaque prospect qui clique est reconnu et suivi, sans formulaire."
+        "name": "Outils de cold email",
+        "how": "Avec le Smart Link, un seul lien dans votre séquence, quel que soit l'outil. Chaque prospect qui clique est reconnu et suivi, sans formulaire."
       },
       "store": "Ajouter à Chrome",
       "storeNote": "Gratuit, pour Gmail et Outlook sur le web."
@@ -233,8 +262,8 @@
         "a": "Non. Vous vous connectez avec Google ou votre email, sans mot de passe, et votre prospect lit dans son navigateur. L'extension Gmail et Outlook est un raccourci en option."
       },
       "tools": {
-        "q": "Ça marche avec mes outils (Gmail, Outlook, lemlist, CRM) ?",
-        "a": "Gmail et Outlook sur le web avec l'extension Chrome, Outlook installé avec le complément Microsoft 365, lemlist et le cold email avec le Smart Link. Il n'y a pas d'intégration CRM native : un webhook envoie vos alertes à l'adresse de votre choix."
+        "q": "Ça marche avec mes outils (Gmail, Outlook, CRM, prospection) ?",
+        "a": "Gmail et Outlook sur le web avec l'extension Chrome, Outlook installé avec le complément Microsoft 365, vos séquences de cold email avec le Smart Link. Il n'y a pas d'intégration CRM native : un webhook envoie vos alertes à l'adresse de votre choix."
       },
       "auto": {
         "q": "Les relances partent-elles toutes seules ?",
@@ -303,5 +332,109 @@
     "title": "Page introuvable",
     "body": "Ce lien ne mène nulle part, ou la page a été déplacée.",
     "back": "Retour à l'accueil"
+  },
+  "useCases": {
+    "title": "Cas d'usage",
+    "description": "Un devis qui dort, un décideur invisible, un prospect à l'étranger, un pitch vidéo après un salon : ce qu'on peut envoyer avec Clozer, situation par situation.",
+    "heading": "Des idées pour votre prochain envoi.",
+    "lead": "Un devis qui dort, un décideur que vous ne voyez jamais, un prospect à l'étranger. Voici ce que vous pouvez envoyer avec Clozer, et ce que vous apprenez en retour.",
+    "jump": "Aller à",
+    "send": "Vous envoyez",
+    "result": "Ce qui se passe",
+    "formats": {
+      "pdf": "PDF",
+      "video": "Pitch vidéo",
+      "web": "Page web",
+      "smart": "Smart Link",
+      "capsule": "PDF + capsule",
+      "any": "Tout format",
+      "team": "Vue Équipe"
+    },
+    "moments": {
+      "prospect": {
+        "title": "Prospecter",
+        "body": "Avant le premier rendez-vous."
+      },
+      "propose": {
+        "title": "Proposer",
+        "body": "Une fois la proposition partie."
+      },
+      "close": {
+        "title": "Conclure",
+        "body": "Quand le prospect se décide."
+      },
+      "manage": {
+        "title": "Piloter",
+        "body": "Pour le manager."
+      }
+    },
+    "final": "Commencez par la proposition qui vous inquiète le plus.",
+    "cases": {
+      "fair": {
+        "title": "Après un salon, sortir du lot",
+        "send": "Un pitch vidéo de deux minutes, enregistré le soir même, avec un lien par contact rencontré.",
+        "result": "Vous voyez qui l'a regardé et jusqu'où, et vous rappelez d'abord ceux qui sont allés au bout."
+      },
+      "cold": {
+        "title": "Une campagne de cold email",
+        "send": "Un seul Smart Link dans votre séquence, quel que soit l'outil.",
+        "result": "Chaque prospect qui clique est reconnu, sans formulaire. Un webhook prévient votre outil dès qu'il lit, pour mettre sa séquence en pause."
+      },
+      "chat": {
+        "title": "Un premier échange sur LinkedIn ou WhatsApp",
+        "send": "Le lien, collé dans la conversation.",
+        "result": "Il s'ouvre sur le téléphone du prospect, sans application ni compte. Vous savez s'il l'a lu avant de relancer."
+      },
+      "sleeping": {
+        "title": "Le devis qui dort depuis dix jours",
+        "send": "Le devis en PDF, par un lien au nom du client.",
+        "result": "Vous voyez qu'il a relu les tarifs trois fois hier soir. La relance est prête : vous la relisez et l'envoyez."
+      },
+      "decider": {
+        "title": "La proposition doit monter au décideur",
+        "send": "Votre proposition, comme d'habitude.",
+        "result": "Quand votre contact la transmet, le nouveau lecteur apparaît avec les pages qu'il a lues. Vous savez enfin qui décide."
+      },
+      "price": {
+        "title": "Un prix qui demande une explication",
+        "send": "Le PDF, avec une capsule vidéo ou vocale de 90 secondes sur la page des tarifs.",
+        "result": "Le prospect vous entend expliquer le prix au moment où il le lit. Vous voyez s'il a écouté la capsule."
+      },
+      "abroad": {
+        "title": "Un prospect qui ne lit pas le français",
+        "send": "Votre PDF, en français.",
+        "result": "Il choisit sa langue parmi six et lit la proposition traduite, mise en page comprise. Le suivi ne change pas."
+      },
+      "web": {
+        "title": "Une proposition faite sur Notion, Canva ou Google Slides",
+        "send": "Le lien de la page, collé dans Clozer.",
+        "result": "Vous savez quand elle est ouverte, par qui, et combien de temps elle est lue."
+      },
+      "demo": {
+        "title": "Une démo pour ceux qui ne prennent pas d'appel",
+        "send": "Un partage d'écran de trois minutes, enregistré dans Clozer, qui montre le produit sur leur cas.",
+        "result": "Vous voyez les passages regardés et ceux qu'il a sautés. Ses questions vont à l'assistant, qui répond à partir de ce que vous dites dans la vidéo."
+      },
+      "adjust": {
+        "title": "Le prospect veut ajuster l'offre",
+        "send": "La proposition, avec « Demander un ajustement » en bas du document.",
+        "result": "Il écrit sa demande sur place, par exemple « Peut-on régler en trois fois ? ». Vous êtes prévenu aussitôt."
+      },
+      "tech": {
+        "title": "Les questions de son équipe technique",
+        "send": "La documentation technique en PDF, en plus de la proposition.",
+        "result": "L'assistant répond à partir du document, et vous passe la main quand il ne sait pas."
+      },
+      "ready": {
+        "title": "Il est prêt à avancer",
+        "send": "La proposition, avec votre page Calendly ou Cal.com.",
+        "result": "Il réserve un créneau sans quitter le document, et les relances automatiques s'arrêtent."
+      },
+      "review": {
+        "title": "Voir les deals qui glissent avant la réunion du lundi",
+        "send": "Rien de plus : chaque commercial envoie ses liens comme d'habitude.",
+        "result": "La vue Équipe montre ce qui avance, ce qui glisse, et le pipeline de chacun."
+      }
+    }
   }
 }
