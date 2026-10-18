@@ -1,3 +1,4 @@
+import type { ProspectActionType } from "@/generated/prisma/enums";
 import { getPublicAppUrl } from "@/lib/app-origin";
 import { prisma } from "@/lib/db";
 import { isEmailConfigured } from "@/lib/email";
@@ -9,15 +10,20 @@ import { sendProspectEmail } from "./prospect-email";
 import { defaultTimezone } from "./settings";
 
 /**
- * The seller opened an expired link again: everyone who asked for more time
- * since `since` (the old deadline) hears about it. Returns how many were told.
+ * The seller opened a dead link again: everyone who asked for it since `since`
+ * (the old deadline, or the day it was archived) hears about it. Returns the
+ * prospects told.
  *
  * Only people the seller sent the link to, or who read it before it locked:
  * an email typed on the locked page proves nothing, and must not make us
  * write to a stranger.
  */
-export async function notifyReactivated(linkId: string, since: Date) {
-  if (!isEmailConfigured()) return 0;
+export async function notifyReactivated(
+  linkId: string,
+  since: Date,
+  types: ProspectActionType[] = ["REQUEST_EXTENSION"],
+): Promise<string[]> {
+  if (!isEmailConfigured()) return [];
 
   const link = await prisma.link.findUnique({
     where: { id: linkId },
@@ -29,7 +35,7 @@ export async function notifyReactivated(linkId: string, since: Date) {
       organization: { select: { settings: { select: { senderName: true } } } },
       actions: {
         where: {
-          type: "REQUEST_EXTENSION",
+          type: { in: types },
           createdAt: { gte: since },
           prospect: {
             unsubscribedAt: null,
@@ -40,13 +46,13 @@ export async function notifyReactivated(linkId: string, since: Date) {
       },
     },
   });
-  if (!link) return 0;
+  if (!link) return [];
 
   const prospects = new Map(link.actions.flatMap((a) => (a.prospect ? [[a.prospect.id, a.prospect] as const] : [])));
   const senderName = link.organization.settings?.senderName?.trim() || link.createdBy?.name || null;
   const url = `${getPublicAppUrl()}/v/${link.slug}`;
 
-  let told = 0;
+  const told: string[] = [];
   for (const prospect of prospects.values()) {
     // Unknown prospect language: the seller's, not French by default
     const locale = prospect.locale ?? toUiLocale(link.createdBy?.locale);
@@ -60,7 +66,7 @@ export async function notifyReactivated(linkId: string, since: Date) {
         ...reactivatedEmail(locale, { documentName: link.document.name, senderName, deadline, url }),
         replyTo: link.createdBy?.email,
       });
-      told++;
+      told.push(prospect.id);
     } catch (error) {
       console.error("reactivation email", error);
     }

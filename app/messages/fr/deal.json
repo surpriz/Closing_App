@@ -31,6 +31,7 @@
   "actions": {
     "sharedNeedsEmail": "Un lien partagé demande toujours l'email.",
     "invalidDuration": "Durée invalide.",
+    "reactivateManagerOnly": "Le document est archivé : seul un manager peut le remettre en ligne.",
     "nameTooLong": "Nom trop long.",
     "alreadyForContact": "Ce lien est déjà pour un contact : créez un nouveau lien pour le partager.",
     "sharedNoRecipient": "Un lien partagé n'a pas de destinataire : passez-le en « Pour un prospect ».",
@@ -81,6 +82,11 @@
     "readOnly": "Prospect de {seller}. Vous pouvez le consulter, seuls son commercial et les admins peuvent le modifier.",
     "anotherSeller": "un autre commercial",
     "expiredBanner": "Ce lien a expiré : le prospect ne peut plus l'ouvrir. Prolongez-le pour le réactiver.",
+    "archivedBanner": "Ce lien est archivé : le prospect voit une page « document retiré ».",
+    "archivedBannerReturned": "Ce lien est archivé, et le prospect est revenu dessus {when}. L'intérêt est peut-être là.",
+    "expiredBannerReturned": "Ce lien a expiré, et le prospect est revenu dessus {when}. L'intérêt est peut-être là.",
+    "purgeIn": "Le document sera supprimé définitivement {when} s'il reste archivé.",
+    "reactivateManagerOnly": "Document archivé : un manager peut le remettre en ligne.",
     "report": "Rapport de lecture",
     "sentOn": "Envoyé le {date}",
     "total": "{time} au total"
@@ -400,6 +406,21 @@
     "archiving": "Archivage…",
     "archive": "Archiver le lien"
   },
+  "reactivateLinkButton": {
+    "trigger": "Réactiver le lien",
+    "title": "Réactiver ce lien ?",
+    "description": "Le prospect pourra de nouveau ouvrir le document. Ceux qui l'ont redemandé reçoivent un email.",
+    "daysLabel": "Ouvert pour",
+    "plusDays": "{days} jours",
+    "draft": "Préparer un message de reprise",
+    "draftHint": "Un brouillon vous attend dans Relances, rien ne part sans vous.",
+    "cancel": "Annuler",
+    "confirm": "Réactiver",
+    "reactivating": "Réactivation…",
+    "done": "Lien réactivé",
+    "told": "{count, plural, one {# prospect prévenu} other {# prospects prévenus}}",
+    "drafted": "brouillon en préparation"
+  },
   "prepareFollowupButton": {
     "ready": "Relance prête, relisez-la plus bas",
     "writing": "Rédaction…",
@@ -471,6 +492,9 @@
     "actionSigned": "{name} a signé « Bon pour accord »",
     "actionValidated": "{name} a validé la proposition",
     "actionExtension": "{name} demande une prolongation",
+    "actionRelink": "{name} redemande le document",
+    "deadOpenArchived": "Retour de {name} sur le lien archivé",
+    "deadOpenExpired": "Retour de {name} sur le lien expiré",
     "actionMeeting": "{name} a pris rendez-vous dans votre agenda",
     "actionMeetingClick": "{name} a ouvert votre agenda",
     "actionQuote": "{name} demande un devis",
@@ -527,7 +551,8 @@
       "quote": "Demande un devis",
       "voice": "A laissé un vocal",
       "meeting": "A pris rendez-vous",
-      "extension": "Demande une prolongation"
+      "extension": "Demande une prolongation",
+      "relink": "Redemande le document"
     }
   }
 }

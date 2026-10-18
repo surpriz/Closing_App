@@ -26,6 +26,7 @@ const TRIGGER_GOAL: Record<string, string> = {
   AI_DECISION: "gentle_reminder",
   EXPIRY_REMINDER: "expiry_reminder",
   WARM_READ: "follow_reading",
+  INTEREST_RETURNED: "gentle_reminder",
 };
 const MAX_SECTIONS = 6;
 
