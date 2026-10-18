@@ -2,8 +2,6 @@ import { ArrowLeft, Hourglass } from "lucide-react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 
-import { INTL_LOCALE } from "@/i18n/locale";
-import { formatClock } from "@/lib/closing/dashboard/deal-plates";
 import { dealLabel } from "@/lib/closing/dashboard/labels";
 import { formatRelative } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -34,11 +32,6 @@ export function DealHeader({ deal, draft = false }: { deal: Deal; draft?: boolea
   const t = useTranslations("deal.dealHeader");
   const tl = useTranslations("labels");
   const locale = useLocale();
-  const reportDate = new Intl.DateTimeFormat(INTL_LOCALE[locale], {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
   const expired = !!link.expiresAt && link.expiresAt <= now;
 
   const backLink = (
@@ -69,36 +62,6 @@ export function DealHeader({ deal, draft = false }: { deal: Deal; draft?: boolea
     <header className="space-y-5">
       {backLink}
 
-      <p className="flex flex-wrap gap-x-6 gap-y-1 border-b border-border pb-2 font-mono text-micro text-muted-foreground">
-        <span className="text-foreground">{t("report")}</span>
-        <span>
-          {link.draftAt
-            ? t("notSent")
-            : t("sentOn", {
-                date: reportDate.format(link.sentAt ?? link.createdAt),
-              })}
-        </span>
-        <span>{t("reads", { count: analytics.viewCount })}</span>
-        {analytics.totalDurationMs > 0 && (
-          <span>
-            {t("total", {
-              time: formatClock(analytics.totalDurationMs / 1000),
-            })}
-          </span>
-        )}
-        {deal.readingNow ? (
-          <span className="text-foreground">{t("readingNow")}</span>
-        ) : (
-          analytics.lastActivityAt && (
-            <span>
-              {t("lastRead", {
-                when: formatRelative(analytics.lastActivityAt, locale, now),
-              })}
-            </span>
-          )
-        )}
-      </p>
-
       <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
         <div className="min-w-0 space-y-3">
           <h1 className="condensed text-title break-words text-balance sm:text-display">
@@ -114,6 +77,18 @@ export function DealHeader({ deal, draft = false }: { deal: Deal; draft?: boolea
               />
             ) : (
               !deal.opened && <HeatPill tier={null} />
+            )}
+            {/* Next to the temperature, the one fact that goes with it: when they last read */}
+            {deal.readingNow ? (
+              <span className="font-medium text-foreground">{t("readingNow")}</span>
+            ) : (
+              analytics.lastActivityAt && (
+                <span className="text-muted-foreground">
+                  {t("lastRead", { when: formatRelative(analytics.lastActivityAt, locale, now) })}
+                  {" · "}
+                  {t("reads", { count: analytics.viewCount })}
+                </span>
+              )
             )}
             {contactLine && (
               <span className="min-w-0 truncate text-muted-foreground">

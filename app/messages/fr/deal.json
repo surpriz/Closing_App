@@ -71,11 +71,7 @@
     "cancelledBySeller": "Annulée par le vendeur"
   },
   "dealHeader": {
-    "report": "Rapport de lecture",
-    "notSent": "Pas encore envoyé",
-    "sentOn": "Envoyé le {date}",
     "reads": "{count, plural, one {# lecture} other {# lectures}}",
-    "total": "{time} au total",
     "readingNow": "En lecture",
     "lastRead": "Dernière lecture {when}",
     "viaShared": "via le lien partagé",

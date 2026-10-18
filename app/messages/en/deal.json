@@ -71,11 +71,7 @@
     "cancelledBySeller": "Cancelled by the salesperson"
   },
   "dealHeader": {
-    "report": "Reading report",
-    "notSent": "Not sent yet",
-    "sentOn": "Sent {date}",
     "reads": "{count, plural, one {# read} other {# reads}}",
-    "total": "{time} total",
     "readingNow": "Reading now",
     "lastRead": "Last read {when}",
     "viaShared": "via the shared link",
