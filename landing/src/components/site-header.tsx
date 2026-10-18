@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
 import type { AppPathname, Locale } from "@/i18n/routing";
+import { localizedPath } from "@/i18n/seo";
 
 import { ANCHORS } from "./anchors";
 import { PrimaryCta } from "./cta";
@@ -15,10 +16,19 @@ export async function SiteHeader({ locale, path }: { locale: Locale; path: AppPa
   const t = await getTranslations({ locale, namespace: "nav" });
   // Plain anchors to the home sections: they must work from the legal pages too.
   const home = `/${locale}`;
-  const nav = (["how", "features", "teams", "faq"] as const).map((section) => ({
+  const sections = (["how", "features", "teams", "faq"] as const).map((section) => ({
     href: `${home}#${ANCHORS[locale][section]}`,
     label: t(section),
+    current: false,
+    // Five links don't fit next to the CTA at 1024px: the FAQ waits for xl, the page ends on it anyway.
+    wide: section === "faq",
   }));
+  // The one page of its own in the nav, after the features it puts in situation.
+  const nav = [
+    ...sections.slice(0, 2),
+    { href: localizedPath(locale, "/use-cases"), label: t("useCases"), current: path === "/use-cases", wide: false },
+    ...sections.slice(2),
+  ];
 
   return (
     <header className="sticky top-0 z-30 border-b border-ink bg-paper">
@@ -31,7 +41,8 @@ export async function SiteHeader({ locale, path }: { locale: Locale; path: AppPa
             <a
               key={item.href}
               href={item.href}
-              className="flex items-center border-r border-rule px-4 text-small whitespace-nowrap text-ink-soft transition-colors hover:bg-sheet hover:text-ink"
+              aria-current={item.current ? "page" : undefined}
+              className={`flex items-center border-r border-rule px-4 text-small whitespace-nowrap text-ink-soft transition-colors hover:bg-sheet hover:text-ink aria-[current=page]:bg-sheet aria-[current=page]:font-medium aria-[current=page]:text-ink ${item.wide ? "max-xl:hidden" : ""}`}
             >
               {item.label}
             </a>
