@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
-import { editableLinks } from "@/lib/closing/dashboard/queries";
+import { editableLinks, sellerLinks } from "@/lib/closing/dashboard/queries";
 import { refreshEngagementScore } from "@/lib/closing/engagement/refresh-score";
 import { shiftLinkBack } from "@/lib/closing/testing/time-travel";
 import { runClosingTick } from "@/lib/closing/engine";
@@ -45,6 +45,7 @@ async function requireOwnedFollowup(followupId: string) {
 
 function revalidateFollowup(followup: { link: { id: string; documentId: string } }) {
   revalidatePath(`/links/${followup.link.id}`);
+  revalidatePath("/drafts");
   revalidatePath(`/documents/${followup.link.documentId}`);
   revalidatePath("/dashboard");
 }
@@ -106,6 +107,26 @@ export async function approveFollowup(followupId: string) {
   const ok = await approve(followup.id, followup.userId);
   revalidateFollowup(followup);
   return ok ? { ok: true } : { error: t("notToApprove") };
+}
+
+/** "Tout valider": every draft waiting on the seller's own deals goes to its send slot. */
+export async function approveAllDrafts() {
+  const workspace = await requireWorkspace();
+  const now = new Date();
+  const drafts = await prisma.followup.findMany({
+    where: { status: "DRAFT", link: { organizationId: workspace.organization.id, ...sellerLinks(workspace.scope) } },
+    select: { id: true, link: { select: { id: true, documentId: true, expiresAt: true } } },
+    take: 200,
+  });
+  let approved = 0;
+  for (const draft of drafts) {
+    // A locked link: its message would point to nothing, it stays for the seller to look at
+    if (isLinkExpired(draft.link, now)) continue;
+    if (await approve(draft.id, workspace.user.id, now)) approved++;
+  }
+  revalidatePath("/drafts");
+  revalidatePath("/dashboard");
+  return { approved, skipped: drafts.length - approved };
 }
 
 export async function markFollowupSentByMe(followupId: string) {

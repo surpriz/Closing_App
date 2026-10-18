@@ -1,0 +1,12 @@
+{
+  "metaTitle": "Relances à valider",
+  "title": "Relances à valider",
+  "description": "Tout ce qui attend votre accord avant de partir. Chaque relance est revérifiée au moment de l'envoi : si le prospect a répondu ou ouvert entre-temps, elle ne part pas.",
+  "emptyTitle": "Rien à valider",
+  "emptyDescription": "Les relances préparées par Clozer arriveront ici avant de partir.",
+  "approve": "Valider",
+  "approved": "Relance validée",
+  "approveAll": "Tout valider ({count})",
+  "approvedAll": "{count, plural, =0 {Aucune relance validée} one {# relance validée} other {# relances validées}}",
+  "expired": "Lien expiré : prolongez-le d'abord"
+}
