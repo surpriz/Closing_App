@@ -484,7 +484,8 @@ export default async function DocumentDetailPage({
                       ? t("emptyWeb")
                       : t("emptyPdf")
               }
-              action={linkAction}
+              // The header already carries "Envoyer mon lien": no second one here
+              action={pendingLink ? null : linkAction}
             />
           ) : (
             <DocumentLinks rows={prospectRows} video={isVideo} />
@@ -523,6 +524,62 @@ export default async function DocumentDetailPage({
             </SectionTitle>
             <DocumentPreviewSection document={document} ready={ready} />
           </section>
+          {/* The pages: capsules to record and what the AI could not read stay in sight */}
+          <section>
+            <SectionTitle
+              hint={
+                isVideo ? t("contentHintVideo") : t("contentHintPages")
+              }
+            >
+              {t("contentTitle")}
+            </SectionTitle>
+            {isWeb ? (
+              <div className="space-y-6">
+                <WebPageReading
+                  documentId={document.id}
+                  docPurpose={document.docPurpose}
+                  page={document.pages[0] ?? null}
+                  aiAvailable={getLanguageModel("classify") !== null}
+                />
+                <SellerDescriptionForm
+                  documentId={document.id}
+                  initial={document.sellerDescription ?? ""}
+                />
+              </div>
+            ) : document.pages.length === 0 ? (
+              <p className="border-y border-border py-12 text-center text-body text-muted-foreground">
+                {ready ? t("noPages") : t("analyzingShort")}
+              </p>
+            ) : (
+              <DocumentPages
+                documentId={document.id}
+                pages={document.pages.map((page) => {
+                  const capsule = document.capsules.find(
+                    (c) => c.pageNumber === page.pageNumber,
+                  );
+                  return {
+                    ...page,
+                    capsule: capsule
+                      ? {
+                          id: capsule.id,
+                          kind: capsule.kind,
+                          hookText: capsule.hookText,
+                          durationMs: capsule.durationMs,
+                          plays: capsule._count.plays,
+                        }
+                      : null,
+                  };
+                })}
+                capsuleUploadPrefix={capsuleUploadPrefix(organization.id)}
+                aiRead={document.aiProcessedAt !== null}
+                aiGaveUp={document.aiAttempts >= 3}
+                docType={document.docType}
+                docPurpose={document.docPurpose}
+                aiAvailable={getLanguageModel("classify") !== null}
+                video={isVideo}
+              />
+            )}
+          </section>
           {/* Filled in by Clozer from the file: there to check or correct, not to read first */}
           <details className="group border-t border-border pt-4">
             <summary className="flex cursor-pointer list-none items-center gap-1.5 text-body font-medium outline-none focus-visible:underline [&::-webkit-details-marker]:hidden">
@@ -549,61 +606,6 @@ export default async function DocumentDetailPage({
                   documentId={document.id}
                   initial={document.assistantNotes ?? ""}
                 />
-              </section>
-              <section>
-                <SectionTitle
-                  hint={
-                    isVideo ? t("contentHintVideo") : t("contentHintPages")
-                  }
-                >
-                  {t("contentTitle")}
-                </SectionTitle>
-                {isWeb ? (
-                  <div className="space-y-6">
-                    <WebPageReading
-                      documentId={document.id}
-                      docPurpose={document.docPurpose}
-                      page={document.pages[0] ?? null}
-                      aiAvailable={getLanguageModel("classify") !== null}
-                    />
-                    <SellerDescriptionForm
-                      documentId={document.id}
-                      initial={document.sellerDescription ?? ""}
-                    />
-                  </div>
-                ) : document.pages.length === 0 ? (
-                  <p className="border-y border-border py-12 text-center text-body text-muted-foreground">
-                    {ready ? t("noPages") : t("analyzingShort")}
-                  </p>
-                ) : (
-                  <DocumentPages
-                    documentId={document.id}
-                    pages={document.pages.map((page) => {
-                      const capsule = document.capsules.find(
-                        (c) => c.pageNumber === page.pageNumber,
-                      );
-                      return {
-                        ...page,
-                        capsule: capsule
-                          ? {
-                              id: capsule.id,
-                              kind: capsule.kind,
-                              hookText: capsule.hookText,
-                              durationMs: capsule.durationMs,
-                              plays: capsule._count.plays,
-                            }
-                          : null,
-                      };
-                    })}
-                    capsuleUploadPrefix={capsuleUploadPrefix(organization.id)}
-                    aiRead={document.aiProcessedAt !== null}
-                    aiGaveUp={document.aiAttempts >= 3}
-                    docType={document.docType}
-                    docPurpose={document.docPurpose}
-                    aiAvailable={getLanguageModel("classify") !== null}
-                    video={isVideo}
-                  />
-                )}
               </section>
             </div>
           </details>

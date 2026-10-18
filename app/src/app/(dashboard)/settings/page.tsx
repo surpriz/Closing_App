@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
-import { LocaleSwitcher } from "@/components/locale-switcher";
 import { ExtensionTokens } from "@/components/dashboard/extension-tokens";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { PrivacySettings } from "@/components/dashboard/privacy-settings";
@@ -81,7 +80,6 @@ export default async function SettingsPage() {
       <PageHeader
         title={t("title")}
         description={isManager ? undefined : t("teamManaged")}
-        action={<LocaleSwitcher />}
       />
 
       <AdvancedSettingsProvider>
@@ -149,7 +147,7 @@ export default async function SettingsPage() {
               }}
               canEditWorkspace={isManager}
             />
-            <AdvancedSettingsBlock className="space-y-10">
+            <AdvancedSettingsBlock id="reglages-immediats" className="space-y-10">
               {/* Unlike the form above, no "Enregistrer": said once, where the rule changes */}
               <p className="text-small text-muted-foreground">{t("instantSave")}</p>
               {team && (

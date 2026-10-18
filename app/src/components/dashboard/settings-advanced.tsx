@@ -74,7 +74,8 @@ export function AdvancedSettingsProvider({
   );
 }
 
-export function AdvancedSettingsToggle() {
+/** `controls`: the ids of the blocks it shows, which differ for a member and an admin. */
+export function AdvancedSettingsToggle({ controls }: { controls: string }) {
   const t = useTranslations("settings.advanced");
   const { open, setOpen } = useAdvancedSettings();
   return (
@@ -83,7 +84,7 @@ export function AdvancedSettingsToggle() {
       variant="outline"
       size="lg"
       aria-expanded={open}
-      aria-controls="reglages-avances"
+      aria-controls={controls}
       onClick={() => setOpen(!open)}
       className="bg-card"
     >

@@ -190,23 +190,24 @@ export function SettingsForm({
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty]);
 
-  // A rejected field may sit in the folded part: unfold it so the seller can find it
   const { setOpen: setAdvancedOpen } = useAdvancedSettings();
   useEffect(() => {
     if (state?.ok) toast.success(t("saved"));
-    if (state?.error) {
-      toast.error(state.error);
-      if (canEditWorkspace) setAdvancedOpen(true);
-    }
-  }, [state, t, canEditWorkspace, setAdvancedOpen]);
+    if (state?.error) toast.error(state.error);
+  }, [state, t]);
 
   return (
     <form
       action={formAction}
       onInput={markDirty}
       onChange={markDirty}
-      // The server checks every field: a hidden invalid one must not block the save in silence
-      noValidate
+      // An invalid field in the folded part: unfold it, then let the browser point at it
+      onInvalidCapture={(event) => {
+        const field = event.target as HTMLInputElement;
+        if (field.offsetParent !== null) return;
+        setAdvancedOpen(true);
+        requestAnimationFrame(() => field.reportValidity());
+      }}
       className="max-w-2xl"
     >
       <input ref={timezoneRef} type="hidden" name="timezone" defaultValue="" />
@@ -310,7 +311,9 @@ export function SettingsForm({
         </Section>
 
         <div className="pt-2">
-          <AdvancedSettingsToggle />
+          <AdvancedSettingsToggle
+            controls={canEditWorkspace ? "reglages-avances reglages-immediats" : "reglages-immediats"}
+          />
         </div>
 
         {/* Rendered while folded so their fields stay in the saved FormData */}

@@ -165,7 +165,7 @@
     "pendingTitle": "Your link is ready, it hasn't gone out yet.",
     "pendingDescription": "Send it to your prospect: they'll show up here as soon as they open it.",
     "assistantFold": "What Clozer knows about the document",
-    "assistantFoldHint": "type, notes, page-by-page content"
+    "assistantFoldHint": "type and notes for the assistant"
   },
   "content": {
     "videoRead": "What you say in each part of the video, read by AI from the transcript. Tags tell Clozer when you talk pricing, timeline… Fix them if needed.",
