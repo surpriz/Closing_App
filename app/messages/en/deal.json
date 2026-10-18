@@ -423,7 +423,10 @@
     "pausedToast": "Paused, no follow-ups until then",
     "pauseLabel": "Pause until",
     "pause": "Pause",
-    "pauseHint": "The prospect will get back to you later? Clozer stays quiet until then."
+    "pauseHint": "The prospect will get back to you later? Clozer stays quiet until then.",
+    "repliedStopped": "Email reply on {date}: automatic follow-ups are off.",
+    "repliedResume": "Resume follow-ups",
+    "repliedResumed": "Follow-ups resumed"
   },
   "activityTimeline": {
     "empty": "No activity."
@@ -499,7 +502,12 @@
     "exitAssistant": "opened the assistant on the way out",
     "readTranslated": "read translated into {language}",
     "forwarded": "{from} forwarded the document to {to}",
-    "notDelivered": "Email not delivered"
+    "notDelivered": "Email not delivered",
+    "followupClicked": "opened from this message",
+    "followupReplied": "the prospect replied to it",
+    "followupBounced": "not delivered: invalid address",
+    "replyCaught": "Email reply from {from}",
+    "replySeen": "Reply from {from} seen in your inbox"
   },
   "heat": {
     "notRead": "Not read yet"

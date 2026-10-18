@@ -117,7 +117,10 @@
       "HOT": "chaud",
       "WARM": "tiède",
       "COLD": "froid"
-    }
+    },
+    "followupClicked": " (le prospect a rouvert la proposition depuis ce message)",
+    "followupReplied": " (le prospect y a répondu)",
+    "followupBounced": " (non délivrée : adresse invalide)"
   },
   "insight": {
     "notEngaged": {

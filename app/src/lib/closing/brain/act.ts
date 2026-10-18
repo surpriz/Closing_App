@@ -75,6 +75,8 @@ export async function actOnInsight(insightId: string, { force = false, now = new
       snoozedUntil: link.snoozedUntil,
       meetingBooked: link.meetingBookedAt !== null,
       quoteRequested: link.quoteRequestedAt !== null,
+      // A follow-up the seller asks for is theirs to send
+      replied: !force && link.repliedAt !== null,
       decisionDeadline: link.decisionDeadline,
       expiresAt: link.expiresAt,
       channels: resolved.channels,

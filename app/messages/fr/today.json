@@ -157,7 +157,10 @@
     "sentToday": "Envoyé aujourd'hui, laissez venir.",
     "notOpenedYet": "Pas encore ouvert.",
     "waitWarm": "Lecture régulière, rien à faire pour l'instant.",
-    "wait": "Rien à faire pour l'instant."
+    "wait": "Rien à faire pour l'instant.",
+    "replyEmail": "Il vous a répondu par email : à vous de jouer.",
+    "clickedNotRead": "A cliqué sur le lien, mais n'a pas passé l'écran email.",
+    "nudgeClicked": "A cliqué il y a {days} jours sans aller plus loin : renvoyez-lui le lien."
   },
   "dealCta": {
     "sendQuote": "Envoyer le devis",

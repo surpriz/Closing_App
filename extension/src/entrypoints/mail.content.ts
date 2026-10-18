@@ -11,8 +11,9 @@ import {
   isSendControl,
   press,
 } from "@/adapters/mail";
+import { findThreadReplies } from "@/adapters/threads";
 import { splitChunks } from "@/lib/chunks";
-import { MAX_UPLOAD_BYTES } from "@/lib/config";
+import { API_ORIGIN, MAX_UPLOAD_BYTES } from "@/lib/config";
 import { COPY } from "@/lib/copy";
 import { MAIL_MATCHES, mailHost } from "@/lib/hosts";
 import {
@@ -383,8 +384,25 @@ export default defineContentScript({
       ctx.requestAnimationFrame(follow);
     }
 
+    // An open Gmail thread with a Clozer link: tell the app who answered after it, once per message.
+    // Outlook web is left out: its reading pane gives no stable message ids
+    const reportedReplies = new Set<string>();
+    function scanReplies() {
+      if (host !== "gmail" || !account || document.hidden) return;
+      const main = document.querySelector('[role="main"]');
+      if (!main?.querySelector(`a[href^="${API_ORIGIN}/v/"]`)) return;
+      const fresh = findThreadReplies(main, API_ORIGIN).filter((reply) => !reportedReplies.has(reply.messageKey));
+      if (!fresh.length) return;
+      for (const reply of fresh) reportedReplies.add(reply.messageKey);
+      void ask({ type: "replies", replies: fresh }).catch(() => {
+        // Offline or server error: try again on the next pass
+        for (const reply of fresh) reportedReplies.delete(reply.messageKey);
+      });
+    }
+
     discover();
     ctx.setInterval(discover, 1000);
+    ctx.setInterval(scanReplies, 5000);
     ctx.requestAnimationFrame(follow);
 
     ctx.addEventListener(document, "selectionchange", () => {

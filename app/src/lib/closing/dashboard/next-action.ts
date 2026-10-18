@@ -38,19 +38,23 @@ export type NextActionInput = {
   meetingAt?: Date | null;
   /** The prospect asked for a quote under a video pitch. */
   quoteRequestedAt?: Date | null;
+  /** The prospect answered by email (reply relay or extension). */
+  repliedAt?: Date | null;
+  /** Someone reached the email gate without going through: clicked, did not read. */
+  gateSeenAt?: Date | null;
 };
 
 export type NextAction =
   /** The prospect signed: one click to record the sale. */
   | { kind: "close_won" }
   | { kind: "call_now" }
-  /** A change request, or a quote asked for and not answered yet. */
-  | { kind: "reply"; quote?: boolean }
+  /** A change request, a quote asked for, or an email answer, not answered yet. */
+  | { kind: "reply"; quote?: boolean; email?: boolean }
   | { kind: "review_draft" }
   | { kind: "call"; pricing: boolean }
   | { kind: "followup_planned"; at: Date; opened: boolean }
-  | { kind: "nudge"; days: number; opened: boolean }
-  | { kind: "wait"; days: number; opened: boolean; tier: Tier | null }
+  | { kind: "nudge"; days: number; opened: boolean; clicked?: boolean }
+  | { kind: "wait"; days: number; opened: boolean; tier: Tier | null; clicked?: boolean }
   | { kind: "in_touch"; at: Date }
   /** A meeting is in the seller's calendar: follow-ups stopped, nothing to chase. */
   | { kind: "meeting_booked"; at: Date; meetingAt: Date | null }
@@ -125,6 +129,8 @@ const QUIET_DAYS_BEFORE_NUDGE = 3;
 const PRICING_CALL_WINDOW_MS = 3 * DAY_MS;
 /** After a call or a reply logged by the seller, the ball is in the prospect's court for a while. */
 const IN_TOUCH_WINDOW_MS = 2 * DAY_MS;
+/** An email answer stays the thing to do this long, unless the seller logs a contact after it. */
+const REPLY_WINDOW_MS = 3 * DAY_MS;
 /** A booking leads the deal until the day after the meeting, or this long when its date is unknown. */
 const MEETING_UNKNOWN_DATE_WINDOW_MS = 7 * DAY_MS;
 
@@ -149,6 +155,13 @@ export function computeNextAction(input: NextActionInput): NextAction {
   if (input.quoteRequestedAt && !(input.lastSellerContactAt && input.lastSellerContactAt > input.quoteRequestedAt)) {
     return { kind: "reply", quote: true };
   }
+  if (
+    input.repliedAt &&
+    now.getTime() - input.repliedAt.getTime() < REPLY_WINDOW_MS &&
+    !(input.lastSellerContactAt && input.lastSellerContactAt > input.repliedAt)
+  ) {
+    return { kind: "reply", email: true };
+  }
   if (input.draftToReview) return { kind: "review_draft" };
   if (input.snoozedUntil && input.snoozedUntil > now) return { kind: "snoozed", until: input.snoozedUntil };
   if (input.meetingBookedAt && meetingStillAhead(input)) {
@@ -162,8 +175,9 @@ export function computeNextAction(input: NextActionInput): NextAction {
     // Anti-ghosting follow-ups only exist for links never opened.
     if (input.nextFollowup) return { kind: "followup_planned", at: input.nextFollowup.scheduledFor, opened: false };
     const days = daysSince(input.sentAt, now);
-    if (!input.followupsEnabled && days >= 2) return { kind: "nudge", days, opened: false };
-    return { kind: "wait", days, opened: false, tier: null };
+    const clicked = input.gateSeenAt ? { clicked: true } : {};
+    if (!input.followupsEnabled && days >= 2) return { kind: "nudge", days, opened: false, ...clicked };
+    return { kind: "wait", days, opened: false, tier: null, ...clicked };
   }
 
   const recentPricing =
@@ -189,6 +203,7 @@ export function describeNextAction(action: NextAction, now: Date, i18n: Dashboar
     case "call_now":
       return t("today.nextAction.callNow");
     case "reply":
+      if (action.email) return t("today.nextAction.replyEmail");
       return action.quote ? t("today.nextAction.replyQuote") : t("today.nextAction.reply");
     case "review_draft":
       return t("today.nextAction.reviewDraft");
@@ -214,11 +229,13 @@ export function describeNextAction(action: NextAction, now: Date, i18n: Dashboar
         : t("today.nextAction.followupPlannedUnopened", { when });
     }
     case "nudge":
+      if (action.clicked) return t("today.nextAction.nudgeClicked", { days: action.days });
       return action.opened
         ? t("today.nextAction.nudgeOpened", { days: action.days })
         : t("today.nextAction.nudgeUnopened", { days: action.days });
     case "wait":
       if (!action.opened) {
+        if (action.clicked) return t("today.nextAction.clickedNotRead");
         return action.days === 0 ? t("today.nextAction.sentToday") : t("today.nextAction.notOpenedYet");
       }
       return action.tier === "WARM" ? t("today.nextAction.waitWarm") : t("today.nextAction.wait");

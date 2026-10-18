@@ -7,6 +7,7 @@ import { toUiLocale } from "@/lib/seller-locale";
 import { getNamespaceTranslator } from "@/lib/server-translator";
 
 import { isWhatsAppConfigured, sendWhatsApp } from "../channels/whatsapp";
+import { replyRelayAddress } from "../replies/inbound";
 import { isLinkExpired, REMINDER_MIN_SEND_LEAD_MS } from "../expiry";
 import { sendProspectEmail } from "../prospect-email";
 
@@ -63,6 +64,11 @@ export async function sendFollowup(
   // Even an approved one: the prospect is now in the seller's calendar
   if (link.meetingBookedAt) {
     await finish(followup.id, "CANCELLED", t("meetingBooked"));
+    return "cancelled";
+  }
+  // The prospect answered by email: only a message the seller approved since still goes
+  if (link.repliedAt && !(followup.approvedAt && followup.approvedAt > link.repliedAt) && !approvedById) {
+    await finish(followup.id, "CANCELLED", t("replied"));
     return "cancelled";
   }
   if (link.quoteRequestedAt) {
@@ -152,6 +158,7 @@ export async function sendFollowup(
         subject: followup.subject ?? (followup.locale.toLowerCase().startsWith("fr") ? "Suite à notre proposition" : "Following up on our proposal"),
         body: followup.body,
         replyTo: link.createdBy?.email,
+        replyRelay: replyRelayAddress(followup.id),
       });
       providerMessageId = result.id;
     } else {

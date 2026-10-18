@@ -84,6 +84,13 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
             take: 3,
             select: { message: true, createdAt: true },
           },
+          // Email replies Clozer caught: the prospect's own words too
+          sellerActivities: {
+            where: { type: "EMAIL_REPLY_RECEIVED", source: { not: "MANUAL" }, note: { not: null } },
+            orderBy: { occurredAt: "desc" },
+            take: 2,
+            select: { note: true, occurredAt: true },
+          },
         },
       },
     },
@@ -163,7 +170,10 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
         subject: f.subject,
         excerpt: (f.body ?? "").slice(0, 300),
       })),
-      prospectMessages: link.actions.map((a) => a.message!.slice(0, 600)),
+      prospectMessages: [
+        ...link.actions.map((a) => a.message!.slice(0, 600)),
+        ...link.sellerActivities.map((a) => a.note!.slice(0, 600)),
+      ],
     },
     {
       organizationId: link.organizationId,
@@ -191,7 +201,10 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
         minConfidence: settings.autopilotMinConfidence,
         confidence: followup.confidence ?? 0,
         goal: (brief?.goal ?? null) as Parameters<typeof autopilotEligible>[0]["goal"],
-        lastProspectTextAt: link.actions[0]?.createdAt ?? null,
+        lastProspectTextAt:
+          [link.actions[0]?.createdAt, link.sellerActivities[0]?.occurredAt]
+            .filter((at): at is Date => !!at)
+            .sort((a, b) => b.getTime() - a.getTime())[0] ?? null,
         guardPassedFirstTry: draft.passedFirstTry && draft.aiProvider !== "template",
         offerDescribed: !!settings.offerDescription,
       }));

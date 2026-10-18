@@ -115,6 +115,8 @@ export async function getOpenDeals(
       meetingBookedAt: true,
       meetingAt: true,
       quoteRequestedAt: true,
+      repliedAt: true,
+      gateSeenAt: true,
       engagementScore: { select: { score: true, tier: true, reasons: true } },
       document: { select: { name: true, displayTitle: true, docType: true, numPages: true } },
       prospects: firstProspect,
@@ -125,8 +127,9 @@ export async function getOpenDeals(
         select: { scheduledFor: true, channel: true, timezone: true },
       },
       views: { where: { isBot: false }, orderBy: { lastSeenAt: "desc" }, take: 1, select: { lastSeenAt: true } },
+      // What the seller did: a reply Clozer caught is the prospect's move, not theirs
       sellerActivities: {
-        where: { type: { in: [...CONTACT_ACTIVITY_TYPES] } },
+        where: { type: { in: [...CONTACT_ACTIVITY_TYPES] }, source: "MANUAL" },
         orderBy: { occurredAt: "desc" },
         take: 1,
         select: { occurredAt: true },

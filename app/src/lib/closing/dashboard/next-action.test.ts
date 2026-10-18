@@ -52,6 +52,21 @@ describe("computeNextAction", () => {
     expect(computeNextAction({ ...asked, lastSellerContactAt: ago(0.5) }).kind).not.toBe("reply");
   });
 
+  it("hands an email reply to the seller for a few days, until they log a contact", () => {
+    const replied = { ...base, repliedAt: ago(1) };
+    const action = computeNextAction(replied);
+    expect(action).toEqual({ kind: "reply", email: true });
+    expect(describeNextAction(action, now, i18n)).toBe("Il vous a répondu par email : à vous de jouer.");
+    expect(computeNextAction({ ...replied, lastSellerContactAt: ago(0.5) }).kind).not.toBe("reply");
+    expect(computeNextAction({ ...base, repliedAt: ago(4) }).kind).not.toBe("reply");
+  });
+
+  it("tells a click stopped at the email gate from a link never opened", () => {
+    const action = computeNextAction({ ...base, opened: false, sentAt: ago(1), gateSeenAt: ago(1) });
+    expect(action).toEqual({ kind: "wait", days: 1, opened: false, tier: null, clicked: true });
+    expect(describeNextAction(action, now, en)).toBe("Clicked the link, but stopped at the email screen.");
+  });
+
   it("puts a live reader before anything else", () => {
     expect(computeNextAction({ ...base, readingNow: true, dealStatus: "CHANGE_REQUESTED" })).toEqual({
       kind: "call_now",

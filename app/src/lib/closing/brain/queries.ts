@@ -53,9 +53,9 @@ export async function loadDealForAnalysis(linkId: string, now: Date) {
       followups: {
         where: { status: { in: ["SENT", "DELIVERED"] }, sentAt: { not: null } },
         orderBy: { sentAt: "asc" },
-        select: { sentAt: true, channel: true, subject: true, sentVia: true },
+        select: { sentAt: true, channel: true, subject: true, sentVia: true, clickedAt: true, repliedAt: true, bouncedAt: true },
       },
-      sellerActivities: { orderBy: { occurredAt: "asc" }, select: { type: true, note: true, occurredAt: true } },
+      sellerActivities: { orderBy: { occurredAt: "asc" }, select: { type: true, note: true, occurredAt: true, source: true } },
       engagementScore: { select: { score: true, tier: true } },
     },
   });

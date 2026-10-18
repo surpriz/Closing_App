@@ -31,6 +31,7 @@ export async function evaluateWarmRead(viewId: string, now = new Date()) {
           dealStatus: true,
           archivedAt: true,
           meetingBookedAt: true,
+          repliedAt: true,
           quoteRequestedAt: true,
           snoozedUntil: true,
           expiresAt: true,
@@ -47,7 +48,7 @@ export async function evaluateWarmRead(viewId: string, now = new Date()) {
 
   const { link, prospect } = view;
   if (!link.parentLinkId || prospect?.origin !== "COLD_EMAIL" || prospect.unsubscribedAt || prospect.bouncedAt) return;
-  if (!link.followupsEnabled || link.dealStatus !== "OPEN" || link.archivedAt || link.meetingBookedAt || link.quoteRequestedAt) return;
+  if (!link.followupsEnabled || link.dealStatus !== "OPEN" || link.archivedAt || link.meetingBookedAt || link.quoteRequestedAt || link.repliedAt) return;
   if (link.snoozedUntil && link.snoozedUntil > now) return;
   if (isLinkExpired(link, now)) return;
 

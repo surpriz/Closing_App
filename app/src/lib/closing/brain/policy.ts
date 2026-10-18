@@ -32,6 +32,8 @@ export type FollowupPolicyInput = {
     meetingBooked?: boolean;
     /** The prospect asked for a quote under a video pitch: the seller answers, not a follow-up. */
     quoteRequested?: boolean;
+    /** The prospect answered by email: the seller carries the conversation. */
+    replied?: boolean;
     decisionDeadline: Date | null;
     /** After it the link no longer opens: nothing may land later. */
     expiresAt?: Date | null;
@@ -77,6 +79,7 @@ export function decideFollowup(input: FollowupPolicyInput): FollowupDecision {
   if (deal.snoozedUntil && deal.snoozedUntil > now) reasons.push(t("snoozed"));
   if (deal.meetingBooked) reasons.push(t("meetingBooked"));
   if (deal.quoteRequested) reasons.push(t("quoteRequested"));
+  if (deal.replied) reasons.push(t("replied"));
   if (!prospect) reasons.push(t("noContact"));
   else if (prospect.unsubscribed) reasons.push(t("unsubscribed"));
   else if (prospect.bounced && !prospect.canWhatsApp) reasons.push(t("bounced"));

@@ -26,6 +26,8 @@ export function dealAction(deal: OpenDeal, now: Date, readingNow: boolean) {
       meetingBookedAt: deal.meetingBookedAt,
       meetingAt: deal.meetingAt,
       quoteRequestedAt: deal.quoteRequestedAt,
+      repliedAt: deal.repliedAt,
+      gateSeenAt: deal.gateSeenAt,
     }),
     ai.advice,
   );

@@ -117,7 +117,10 @@
       "HOT": "hot",
       "WARM": "warm",
       "COLD": "cold"
-    }
+    },
+    "followupClicked": " (the prospect reopened the proposal from this message)",
+    "followupReplied": " (the prospect replied to it)",
+    "followupBounced": " (not delivered: invalid address)"
   },
   "insight": {
     "notEngaged": {

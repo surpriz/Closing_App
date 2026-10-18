@@ -168,6 +168,7 @@ export async function loadDeal(
             "LINK_EXTENSION_REQUESTED",
             "VOICE_COMMENT",
             "DOCUMENT_FORWARDED",
+            "PROSPECT_REPLIED",
           ],
         },
       },
@@ -375,9 +376,11 @@ export async function loadDeal(
           )[0] ?? null,
       draftToReview: followups.some((f) => f.status === "DRAFT"),
       lastSellerContactAt:
-        sellerActivities.find((a) =>
-          (CONTACT_ACTIVITY_TYPES as readonly string[]).includes(a.type),
+        sellerActivities.find(
+          (a) => a.source === "MANUAL" && (CONTACT_ACTIVITY_TYPES as readonly string[]).includes(a.type),
         )?.occurredAt ?? null,
+      repliedAt: link.repliedAt,
+      gateSeenAt: link.gateSeenAt,
       snoozedUntil: link.snoozedUntil,
       meetingBookedAt: link.meetingBookedAt,
       meetingAt: link.meetingAt,
@@ -623,7 +626,7 @@ export async function loadDeal(
             }),
     })),
     ...followups
-      .filter((f) => f.sentAt && f.status === "SENT")
+      .filter((f) => f.sentAt && (f.status === "SENT" || f.status === "DELIVERED"))
       .map((f) => ({
         id: `followup-${f.id}`,
         at: f.sentAt!,
@@ -631,19 +634,32 @@ export async function loadDeal(
         title: t("followupSent", {
           trigger: tl(`followupTrigger.${f.trigger}`).toLowerCase(),
         }),
-        detail: t("followupDetail", {
-          channel: tl(`channel.${f.channel}`),
-          recipient: f.prospect.name ?? f.prospect.email,
-        }),
+        detail: [
+          t("followupDetail", {
+            channel: tl(`channel.${f.channel}`),
+            recipient: f.prospect.name ?? f.prospect.email,
+          }),
+          f.bouncedAt
+            ? t("followupBounced")
+            : f.repliedAt
+              ? t("followupReplied")
+              : f.clickedAt
+                ? t("followupClicked")
+                : null,
+        ]
+          .filter(Boolean)
+          .join(" · "),
       })),
     ...sellerActivities.map((activity) => ({
       id: `seller-${activity.id}`,
       at: activity.occurredAt,
       kind: "seller" as const,
-      title: t("sellerNoted", {
-        activity: tl(`sellerActivity.${activity.type}`),
-      }),
-      detail: activity.note,
+      // A reply Clozer caught: the prospect's own words, not the seller's note
+      title:
+        activity.source === "MANUAL"
+          ? t("sellerNoted", { activity: tl(`sellerActivity.${activity.type}`) })
+          : t(activity.source === "INBOUND" ? "replyCaught" : "replySeen", { from: activity.fromEmail ?? "" }),
+      detail: activity.source === "MANUAL" ? activity.note : activity.note && t("quoted", { text: activity.note }),
     })),
     ...forwards.map((forward) => ({
       id: `forward-${forward.id}`,

@@ -423,7 +423,10 @@
     "pausedToast": "En pause, plus de relance d'ici là",
     "pauseLabel": "Mettre en pause jusqu'au",
     "pause": "Pause",
-    "pauseHint": "Le prospect revient vers vous plus tard ? Clozer se tait d'ici là."
+    "pauseHint": "Le prospect revient vers vous plus tard ? Clozer se tait d'ici là.",
+    "repliedStopped": "Réponse par email le {date} : les relances automatiques sont arrêtées.",
+    "repliedResume": "Reprendre les relances",
+    "repliedResumed": "Relances reprises"
   },
   "activityTimeline": {
     "empty": "Aucune activité."
@@ -499,7 +502,12 @@
     "exitAssistant": "a ouvert l'assistant en partant",
     "readTranslated": "lu traduit en {language}",
     "forwarded": "{from} a transféré le document à {to}",
-    "notDelivered": "Email non remis"
+    "notDelivered": "Email non remis",
+    "followupClicked": "rouverte depuis ce message",
+    "followupReplied": "le prospect y a répondu",
+    "followupBounced": "non délivrée : adresse invalide",
+    "replyCaught": "Réponse de {from} par email",
+    "replySeen": "Réponse de {from} vue dans votre boîte mail"
   },
   "heat": {
     "notRead": "Pas encore lu"

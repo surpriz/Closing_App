@@ -13,6 +13,7 @@ import { BOOKING_URL_ERROR, parseOptionalBookingUrl } from "@/lib/closing/bookin
 import { editableLinks } from "@/lib/closing/dashboard/queries";
 import { applyDealStatus } from "@/lib/closing/deals/status";
 import { confirmLinkSent, forgetDraftCopied, markDraftCopied } from "@/lib/closing/documents/create-link";
+import { resumeAfterReply } from "@/lib/closing/replies/record";
 import { linkDefaultsFor, SHARED_LINK_SETTINGS } from "@/lib/closing/documents/smart-defaults";
 import { getSellerPrefs, sellerTimezone } from "@/lib/closing/notify/preferences";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
@@ -534,6 +535,13 @@ export async function snoozeDeal(linkId: string, until: string | null) {
   if (date) await cancelOpenFollowups(link.id, "paused");
   revalidateLink(link);
   return { ok: true };
+}
+
+/** "Reprendre les relances": the prospect replied, the seller hands the deal back to the engine. */
+export async function resumeFollowupsAfterReply(linkId: string) {
+  const link = await requireOwnedLink(linkId);
+  await resumeAfterReply(link.id);
+  revalidateLink(link);
 }
 
 /** "Réanalyser": a fresh reading even when nothing changed, at most every two minutes. */
