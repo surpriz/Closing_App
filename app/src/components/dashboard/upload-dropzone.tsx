@@ -61,7 +61,13 @@ function isTyping(target: EventTarget | null) {
 }
 
 /** What was just added, for a caller that stays on the page instead of opening the share screen. */
-export type AddedSource = { documentId: string; linkId: string };
+export type AddedSource = {
+  documentId: string;
+  /** The link made on drop; null when the tour picks up a document added earlier. */
+  linkId: string | null;
+  /** The ready-made example, not one of the seller's own documents. */
+  sample?: boolean;
+};
 
 function useAddSource(uploadPrefix: string, onDone?: () => void, onCreated?: (added: AddedSource) => void) {
   const t = useTranslations("documents.upload");
@@ -69,7 +75,7 @@ function useAddSource(uploadPrefix: string, onDone?: () => void, onCreated?: (ad
   const [progress, setProgress] = useState<number | null>(null);
   const [addingUrl, setAddingUrl] = useState(false);
 
-  async function handleFile(file: File) {
+  async function handleFile(file: File, { sample = false }: { sample?: boolean } = {}) {
     if (file.type !== "application/pdf") {
       toast.error(t("pdfOnly"));
       return;
@@ -97,7 +103,7 @@ function useAddSource(uploadPrefix: string, onDone?: () => void, onCreated?: (ad
       onDone?.();
       if (onCreated) {
         setProgress(null);
-        onCreated({ documentId: id, linkId });
+        onCreated({ documentId: id, linkId, sample });
         return;
       }
       if (waiting) toast.success(t("alreadyWaiting"));
@@ -346,7 +352,7 @@ function SampleButton({ source, sample }: { source: AddSource; sample: { url: st
       const response = await fetch(sample.url);
       if (!response.ok) throw new Error();
       const blob = await response.blob();
-      await source.handleFile(new File([blob], sample.name, { type: "application/pdf" }));
+      await source.handleFile(new File([blob], sample.name, { type: "application/pdf" }), { sample: true });
     } catch {
       toast.error(t("sampleFailed"));
     } finally {

@@ -9,6 +9,7 @@ import {
   isToolConnected,
   mailToolTip,
   ONBOARDING_STEPS,
+  safeReturnTo,
   parseMailClient,
   shouldForceOnboarding,
   testLinkName,
@@ -49,9 +50,16 @@ describe("onboarding", () => {
     expect(mailToolTip(null, { chrome: false, outlook: true })).toBeNull();
   });
 
-  it("starts with the seller's own document, tools last", () => {
-    expect(ONBOARDING_STEPS[0]).toBe("drop");
-    expect(ONBOARDING_STEPS.at(-1)).toBe("daily");
+  it("only comes back to a path inside the app", () => {
+    expect(safeReturnTo("/links/abc")).toBe("/links/abc");
+    expect(safeReturnTo("/links/abc?new=1")).toBe("/links/abc?new=1");
+    for (const bad of ["//evil.com", "/\\evil.com", "/\\/evil.com", "https://evil.com", "evil.com", "/a b", "/a\nb", "", null, ["/x"]]) {
+      expect(safeReturnTo(bad)).toBeNull();
+    }
+  });
+
+  it("starts with the seller's own document and ends on the test read, tools after the first send", () => {
+    expect(ONBOARDING_STEPS).toEqual(["drop", "test"]);
   });
 
   it("counts the seller's own read of the test link, not a crawler's", () => {

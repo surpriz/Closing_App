@@ -16,7 +16,7 @@ import { MailStep } from "./mail-step";
 
 /**
  * /welcome?step=tool: plugging Clozer into the mailbox, outside the tour
- * (share screen tip, settings, the tour's last step).
+ * (share screen tip). "Terminé" leads back where the seller came from.
  */
 export function ToolSetup({
   firstName,
@@ -24,12 +24,15 @@ export function ToolSetup({
   connected,
   account,
   chromeStoreUrl,
+  returnTo,
 }: {
   firstName: string | null;
   initialMailClient: MailClient | null;
   connected: { chrome: boolean; outlook: boolean };
   account: { email: string; workspace: string };
   chromeStoreUrl: string | null;
+  /** An in-app path, already checked. */
+  returnTo: string;
 }) {
   const t = useTranslations("onboarding.toolSetup");
   const [mailClient, setMailClient] = useState(initialMailClient);
@@ -39,8 +42,8 @@ export function ToolSetup({
     <div className="flex flex-1 flex-col">
       <header className="mx-auto flex h-14 w-full max-w-3xl items-center justify-between gap-6 px-4 sm:px-6">
         <Logo />
-        <Link href="/dashboard" className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}>
-          {t("dashboard")}
+        <Link href={returnTo} className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}>
+          {returnTo === "/dashboard" ? t("dashboard") : t("back")}
         </Link>
       </header>
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 pt-6 pb-16 sm:px-6 sm:pt-10">
@@ -77,7 +80,7 @@ export function ToolSetup({
               {t("continue")}
             </Button>
           ) : (
-            <Link href="/dashboard" className={cn(buttonVariants({ size: "lg" }), "ml-auto")}>
+            <Link href={returnTo} className={cn(buttonVariants({ size: "lg" }), "ml-auto")}>
               {t("done")}
             </Link>
           )}

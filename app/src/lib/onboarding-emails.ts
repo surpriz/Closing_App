@@ -67,6 +67,10 @@ export type OnboardingEmailData = {
   firstName: string | null;
   /** first_read: the deal that was opened. */
   deal?: { label: string | null; url: string };
+  /** not_sent: the share screen of the link waiting to go out. */
+  draftUrl?: string;
+  /** first_read: the Chrome extension is on the store, worth one line for next time. */
+  extension?: boolean;
   locale: UiLocale;
 };
 
@@ -122,7 +126,7 @@ function content(
         blocks: [
           { kind: "text", text: hello },
           { kind: "text", text: t("notSent.body") },
-          { kind: "button", label: t("notSent.button"), href: `${data.appUrl}/dashboard` },
+          { kind: "button", label: t("notSent.button"), href: data.draftUrl ?? `${data.appUrl}/dashboard` },
         ],
       };
     case "first_read": {
@@ -135,6 +139,8 @@ function content(
           { kind: "text", text: t("firstRead.body") },
           { kind: "text", text: t("firstRead.followup") },
           { kind: "button", label: t("firstRead.button"), href: data.deal?.url ?? `${data.appUrl}/dashboard` },
+          // The mailbox tools wait for this moment: the first link was copied by hand
+          ...(data.extension ? [{ kind: "text" as const, text: t("firstRead.extension") }] : []),
         ],
       };
     }

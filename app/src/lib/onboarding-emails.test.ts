@@ -63,6 +63,28 @@ describe("buildOnboardingEmail", () => {
     expect(email.text).toContain("/welcome/emails");
   });
 
+  it("leads a link not sent yet straight to its share screen", () => {
+    const email = buildOnboardingEmail("not_sent", {
+      appUrl: "https://app.clozer.club",
+      firstName: "Marie",
+      draftUrl: "https://app.clozer.club/links/l2?new=1",
+      locale: "fr",
+    });
+    expect(email.html).toContain("https://app.clozer.club/links/l2?new=1");
+    expect(email.html).not.toContain("https://app.clozer.club/dashboard");
+  });
+
+  it("mentions the extension after the first read only when it is on the store", () => {
+    const base = {
+      appUrl: "https://app.clozer.club",
+      firstName: "Marie",
+      deal: { label: "Acme", url: "https://app.clozer.club/links/l1" },
+      locale: "fr" as const,
+    };
+    expect(buildOnboardingEmail("first_read", { ...base, extension: true }).text).toContain("extension Chrome");
+    expect(buildOnboardingEmail("first_read", base).text).not.toContain("extension Chrome");
+  });
+
   it("falls back when the reader has no name", () => {
     const email = buildOnboardingEmail("first_read", {
       appUrl: "https://app.clozer.club",

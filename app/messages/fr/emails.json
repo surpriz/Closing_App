@@ -40,9 +40,10 @@
     "firstRead": {
       "someone": "Un prospect",
       "subject": "{label} a ouvert votre document",
-      "body": "Votre premier lien a été lu. Sur la page du deal : les pages lues, le temps passé, et ce que Clozer en conclut.",
+      "body": "Votre premier lien a été lu. Sur la page du prospect : les pages lues, le temps passé, et ce que Clozer en conclut.",
       "followup": "Si une relance est utile, Clozer l'écrit pour vous. Elle vous attend dans « Relances à valider », rien ne part sans vous.",
-      "button": "Voir ce qu'il a lu"
+      "button": "Voir ce qu'il a lu",
+      "extension": "Pour la prochaine fois : dans Gmail ou Outlook, l'extension Chrome de Clozer met le lien à la place de la pièce jointe, sans copier-coller."
     }
   },
   "outlookConnected": {
