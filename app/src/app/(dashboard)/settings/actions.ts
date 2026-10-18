@@ -43,7 +43,6 @@ const settingsSchema = z.object({
   senderSignature: optionalText(500),
   autonomy: z.enum(["COPILOT", "AUTOPILOT"]),
   chatEnabledByDefault: z.boolean(),
-  requireEmailByDefault: z.boolean(),
   voiceCommentsByDefault: z.boolean(),
   followupsByDefault: z.boolean(),
   quoteExpiryDays: z
@@ -136,7 +135,6 @@ export async function saveWorkspaceSettings(_prev: SettingsState, formData: Form
     senderSignature: String(formData.get("senderSignature") ?? ""),
     autonomy: String(formData.get("autonomy") ?? "COPILOT"),
     chatEnabledByDefault: formData.get("chatEnabledByDefault") === "on",
-    requireEmailByDefault: formData.get("requireEmailByDefault") === "on",
     voiceCommentsByDefault: formData.get("voiceCommentsByDefault") === "on",
     followupsByDefault: formData.get("followupsByDefault") === "on",
     quoteExpiryDays: String(formData.get("quoteExpiryDays") ?? ""),
@@ -162,10 +160,18 @@ export async function saveWorkspaceSettings(_prev: SettingsState, formData: Form
       ? encryptSecret(randomBytes(24).toString("hex"))
       : current.webhookSecret;
 
+  // The offer stays "guessed from the document" until the seller edits it, not on any save.
+  // Textareas post CRLF line breaks: compare without them.
+  const same = (a: string | null, b: string | null) =>
+    (a ?? "").replace(/\r\n/g, "\n").trim() === (b ?? "").replace(/\r\n/g, "\n").trim();
+  const offerEdited =
+    !same(values.offerDescription, current.offerDescription) ||
+    !same(values.targetCustomer, current.targetCustomer) ||
+    !same(values.valueProps, current.valueProps);
+
   await prisma.workspaceSettings.update({
     where: { organizationId: organization.id },
-    // Saving means the seller has seen the offer: it is no longer a guess
-    data: { ...values, slackWebhookUrl: slack, webhookSecret, offerInferredFrom: null },
+    data: { ...values, slackWebhookUrl: slack, webhookSecret, ...(offerEdited && { offerInferredFrom: null }) },
   });
   await upsertSellerPrefs(user.id, organization.id, prefs.data);
   if (current.autonomy === "AUTOPILOT" && values.autonomy === "COPILOT") {

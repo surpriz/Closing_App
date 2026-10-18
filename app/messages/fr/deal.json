@@ -23,7 +23,8 @@
     "capsulesTitle": "Capsules par page",
     "capsulesHint": "enregistrées avant le mot d'accueil",
     "circuitTitle": "Circuit du document",
-    "circuitHint": "qui l'a transmis à qui"
+    "circuitHint": "qui l'a transmis à qui",
+    "showTracking": "Voir la page de suivi"
   },
   "loading": {
     "ariaLabel": "Chargement"
@@ -83,7 +84,8 @@
     "expiresIn": "Expire {when}",
     "readOnly": "Deal de {seller}. Vous pouvez le consulter, seuls son commercial et les admins peuvent le modifier.",
     "anotherSeller": "un autre commercial",
-    "expiredBanner": "Ce lien a expiré : le prospect ne peut plus l'ouvrir. Prolongez-le pour le réactiver."
+    "expiredBanner": "Ce lien a expiré : le prospect ne peut plus l'ouvrir. Prolongez-le pour le réactiver.",
+    "newLink": "Nouveau lien"
   },
   "dealSettings": {
     "title": "Réglages du lien",
@@ -253,14 +255,15 @@
     "ready": "Votre lien est prêt",
     "pasteAndSend": "Collez-le dans votre message et envoyez-le. Le suivi démarre dès qu'il l'ouvre.",
     "confirmSent": "C'est envoyé",
-    "sharedIntro": "Postez-le, mettez-le en signature ou transférez-le : chaque lecteur donne son email et reçoit son propre lien, suivi comme un deal.",
+    "sharedIntro": "Postez-le, mettez-le en signature ou transférez-le : chaque lecteur donne son email et reçoit son propre lien, suivi comme vos autres prospects.",
     "personalIntro": "Il l'ouvre et lit tout de suite, sans rien remplir. Vous saurez quelles pages, combien de temps, et quand relancer.",
     "forRecipient": "Pour <b>{email}</b>",
     "whoLabel": "Pour qui est ce lien ?",
     "optional": "(facultatif)",
     "whoPlaceholder": "Marie Dupont, Acme ou marie@acme.fr",
     "save": "Enregistrer",
-    "whoHint": "Le deal portera ce nom. Avec un email, Clozer pourra le relancer.",
+    "whoHint": "Avec un email, Clozer pourra le relancer pour vous.",
+    "noEmailHint": "Sans email, Clozer ne pourra pas le relancer.",
     "copyTitle": "Copier le lien",
     "copied": "Copié",
     "copyLink": "Copier le lien",
@@ -268,7 +271,7 @@
     "processing": "Clozer lit votre document pour adapter les réglages. Vous pouvez déjà l'envoyer.",
     "welcomeTitle": "Mot d'accueil",
     "welcomeHint": "Une vidéo ou un vocal pour présenter le document : le prospect voit votre bulle dès l'ouverture.",
-    "customize": "Personnaliser",
+    "options": "Options",
     "preview": "Voir ce que verra le prospect",
     "sharedMode": "Lien ouvert à tous : chaque lecteur donne son email et reçoit son propre lien.",
     "backToPersonal": "Revenir à un lien pour une personne",

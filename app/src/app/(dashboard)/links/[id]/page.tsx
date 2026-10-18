@@ -1,4 +1,6 @@
+import { ArrowRight } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 
@@ -74,10 +76,22 @@ export default async function LinkDetailPage({
   searchParams,
 }: PageProps<"/links/[id]">) {
   const { id } = await params;
-  const justCreated = (await searchParams).new === "1";
+  const query = await searchParams;
+  const justCreated = query.new === "1";
   const workspace = await requireWorkspace();
   const deal = await loadDeal(id, workspace, justCreated);
   if (!deal) notFound();
+  // Not sent and nobody opened it: the page is the share screen, the empty report stays one
+  // link away. Stays the full page once confirmed sent, once an open link has readers of its
+  // own, and once expired (the warning and the way to extend live in the full page).
+  const expired = !!deal.link.expiresAt && deal.link.expiresAt <= deal.now;
+  const draftView =
+    deal.sharing &&
+    !!deal.link.draftAt &&
+    !deal.opened &&
+    deal.sharedReaders.length === 0 &&
+    !expired &&
+    query.view !== "full";
 
   const { link, now, canEdit, url, mainProspect, settings, insight } = deal;
   const t = await getTranslations("deal.page");
@@ -104,87 +118,110 @@ export default async function LinkDetailPage({
       t("theProspect"))
     : null;
 
+  const share = deal.sharing && (
+    <div className="space-y-3">
+      <ShareReady
+        // Remount when the server state moves: sent, contact added, settings tuned by the AI
+        key={[
+          !!link.draftAt,
+          !!link.copiedAt,
+          link.prospects.length,
+          link.expiresAt?.getTime(),
+          link.ctaEnabled,
+        ].join("|")}
+        linkId={link.id}
+        url={url}
+        title={linkTitle({
+          ...link.document,
+          company: mainProspect?.company,
+        })}
+        sent={!link.draftAt}
+        copied={!!link.copiedAt}
+        recipient={
+          mainProspect
+            ? {
+                email: mainProspect.email,
+                firstName: firstNameOf(mainProspect.name),
+              }
+            : null
+        }
+        mailClient={
+          deal.sellerPrefs?.mailClient ??
+          guessMailClient(workspace.user.email)
+        }
+        signature={settings.senderSignature}
+        processing={deal.reading}
+        summary={settingsSummary(link, now, locale)}
+        shared={link.shared}
+        welcome={welcome}
+        notice={
+          link.autoSettings &&
+          link.expiresAt &&
+          showsCountdown(link.document.docType)
+            ? t("autoNotice", {
+                docType: tDocs(`docType.${link.document.docType as DocType}`),
+                date: formatDate(link.expiresAt, locale),
+              })
+            : null
+        }
+        settings={deal.settingsPanel}
+      />
+      {deal.sellerPrefs && (
+        <ShareMailToolTip
+          user={workspace.user}
+          organizationId={workspace.organization.id}
+          prefs={deal.sellerPrefs}
+        />
+      )}
+    </div>
+  );
+  const refresh = deal.sharing && deal.reading && <AutoRefresh intervalMs={3000} />;
+
+  if (draftView) {
+    return (
+      <div className="space-y-8">
+        <DealHeader deal={deal} draft />
+        {share}
+        {refresh}
+        <Link
+          href={`/links/${link.id}?view=full`}
+          className="inline-flex items-center gap-1.5 text-small text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:underline"
+        >
+          {t("showTracking")}
+          <ArrowRight className="size-4" aria-hidden />
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-10">
-      {deal.sharing && (
-        <div className="space-y-3">
-          <ShareReady
-            // Remount when the server state moves: sent, contact added, settings tuned by the AI
-            key={[
-              !!link.draftAt,
-              !!link.copiedAt,
-              link.prospects.length,
-              link.expiresAt?.getTime(),
-              link.ctaEnabled,
-            ].join("|")}
-            linkId={link.id}
-            url={url}
-            title={linkTitle({
-              ...link.document,
-              company: mainProspect?.company,
-            })}
-            sent={!link.draftAt}
-            copied={!!link.copiedAt}
-            recipient={
-              mainProspect
-                ? {
-                    email: mainProspect.email,
-                    firstName: firstNameOf(mainProspect.name),
-                  }
-                : null
-            }
-            mailClient={
-              deal.sellerPrefs?.mailClient ??
-              guessMailClient(workspace.user.email)
-            }
-            signature={settings.senderSignature}
-            processing={deal.reading}
-            summary={settingsSummary(link, now, locale)}
-            shared={link.shared}
-            welcome={welcome}
-            notice={
-              link.autoSettings &&
-              link.expiresAt &&
-              showsCountdown(link.document.docType)
-                ? t("autoNotice", {
-                    docType: tDocs(`docType.${link.document.docType as DocType}`),
-                    date: formatDate(link.expiresAt, locale),
-                  })
-                : null
-            }
-            settings={deal.settingsPanel}
-          />
-          {deal.sellerPrefs && (
-            <ShareMailToolTip
-              user={workspace.user}
-              organizationId={workspace.organization.id}
-              prefs={deal.sellerPrefs}
-            />
-          )}
-        </div>
-      )}
-      {deal.sharing && deal.reading && <AutoRefresh intervalMs={3000} />}
+      {share}
+      {refresh}
 
       <div className="space-y-6">
         <DealHeader deal={deal} />
-        <DealNextAction
-          linkId={link.id}
-          url={url}
-          action={deal.nextAction}
-          cta={deal.cta}
-          canEdit={canEdit}
-          insight={insight}
-          recipientName={deal.recipientName}
-          signature={
-            canEdit &&
-            link.dealStatus === "VALIDATED" &&
-            deal.signature &&
-            signer
-              ? { by: signer, at: deal.signature.createdAt }
-              : null
-          }
-          now={now}
-        />
+        {/* Not sent yet: the share screen above is the next action */}
+        {!link.draftAt && (
+          <DealNextAction
+            linkId={link.id}
+            url={url}
+            action={deal.nextAction}
+            cta={deal.cta}
+            canEdit={canEdit}
+            insight={insight}
+            recipientName={deal.recipientName}
+            signature={
+              canEdit &&
+              link.dealStatus === "VALIDATED" &&
+              deal.signature &&
+              signer
+                ? { by: signer, at: deal.signature.createdAt }
+                : null
+            }
+            now={now}
+          />
+        )}
       </div>
 
       {/* Disables every form and button below for a read-only visit */}
@@ -225,6 +262,7 @@ export default async function LinkDetailPage({
               insight={insight}
               score={deal.score}
               opened={deal.opened}
+              analyzable={deal.opened || deal.sharedReaders.length > 0}
               aiAvailable={deal.aiAvailable}
               readSince={
                 !!insight &&

@@ -34,7 +34,6 @@ type Props = {
     senderSignature: string;
     autonomy: "COPILOT" | "AUTOPILOT";
     chatEnabledByDefault: boolean;
-    requireEmailByDefault: boolean;
     voiceCommentsByDefault: boolean;
     followupsByDefault: boolean;
     quoteExpiryDays: number | null;
