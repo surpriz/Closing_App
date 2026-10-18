@@ -7,6 +7,8 @@ import { notifySeller } from "../notify/notify";
 
 /** Deals where a reply still changes something: closed ones only keep the log line. */
 const LIVE_STATUSES = ["OPEN", "CHANGE_REQUESTED"];
+/** A failed reply is retried within this window (SNS retries, the next extension scan). */
+const RETRY_WINDOW_MS = 60 * 60 * 1000;
 /** A reply the extension sees this soon after the relay logged one from the same address is that one. */
 const RELAY_OVERLAP_MS = 14 * 24 * 60 * 60 * 1000;
 
@@ -53,6 +55,8 @@ export async function recordProspectReply(reply: ProspectReply) {
     if (caught) return false;
   }
 
+  // Logged once; a retry after a failure further down still applies what follows (all of it is idempotent)
+  let duplicate = false;
   try {
     await prisma.sellerActivity.create({
       data: {
@@ -67,8 +71,15 @@ export async function recordProspectReply(reply: ProspectReply) {
       },
     });
   } catch (error) {
-    if (isUniqueViolation(error)) return false;
-    throw error;
+    if (!isUniqueViolation(error)) throw error;
+    duplicate = true;
+    // A retry finishes what a failure left undone; the same email seen again later (Gmail reloaded,
+    // after the seller resumed the follow-ups) changes nothing
+    const logged = await prisma.sellerActivity.findUnique({
+      where: { externalKey: reply.externalKey },
+      select: { createdAt: true },
+    });
+    if (!logged || Date.now() - logged.createdAt.getTime() > RETRY_WINDOW_MS) return false;
   }
 
   if (reply.followupId) {
@@ -77,7 +88,7 @@ export async function recordProspectReply(reply: ProspectReply) {
       data: { repliedAt: reply.occurredAt },
     });
   }
-  if (link.archivedAt || !LIVE_STATUSES.includes(link.dealStatus)) return true;
+  if (link.archivedAt || !LIVE_STATUSES.includes(link.dealStatus)) return !duplicate;
 
   if (!link.repliedAt || link.repliedAt < reply.occurredAt) {
     await prisma.link.update({ where: { id: link.id }, data: { repliedAt: reply.occurredAt } });
@@ -95,7 +106,7 @@ export async function recordProspectReply(reply: ProspectReply) {
       replySource: reply.source,
     },
   });
-  return true;
+  return !duplicate;
 }
 
 /** "Reprendre les relances": the seller hands the deal back to the engine after a reply. */

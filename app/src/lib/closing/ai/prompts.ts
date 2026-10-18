@@ -69,8 +69,14 @@ const BRIEF_GOALS: Record<string, string> = {
   reactivate: "Restart a conversation that went quiet, without guilt-tripping, with a simple yes/no question.",
 };
 
+// Prospect and document text can't close the tag it sits in and pass for instructions
+export function untrusted(content: string) {
+  // Our tags are snake_case (<untrusted_prospect_message>, <proposal_sections>…)
+  return content.replace(/<\/?\s*[a-z]+_[a-z_]*\s*>/gi, "");
+}
+
 function block(label: string, content: string | null | undefined) {
-  return content ? `<${label}>\n${content}\n</${label}>` : "";
+  return content ? `<${label}>\n${untrusted(content)}\n</${label}>` : "";
 }
 
 export function buildFollowupPrompt(input: FollowupPromptInput) {

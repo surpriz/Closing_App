@@ -8,6 +8,7 @@ import { DAY_MS } from "../constants";
 import { tagLabels } from "../documents/doc-types";
 import { tagNames } from "../documents/doc-type-names";
 import { reachedLabel, segmentLabel } from "../documents/video-segments";
+import { untrusted } from "../ai/prompts";
 
 /**
  * Turns everything known about a deal into numbered, dated facts the model
@@ -379,7 +380,7 @@ export function buildDealStory(input: DealFactsInput): DealStory {
       }`,
     );
     const message = action.message
-      ? `${t("colon")}<untrusted_prospect_message>${action.message.slice(0, 600)}</untrusted_prospect_message>`
+      ? `${t("colon")}<untrusted_prospect_message>${untrusted(action.message.slice(0, 600))}</untrusted_prospect_message>`
       : "";
     timeline.push({ kind: "PROSPECT_ACTION", at: action.createdAt, text: `[${dayOf(action.createdAt)}] ${who} ${what}${message}`, hashed: true });
   }
@@ -407,7 +408,7 @@ export function buildDealStory(input: DealFactsInput): DealStory {
         !activity.note
           ? ""
           : activity.source && activity.source !== "MANUAL"
-            ? `${t("colon")}<untrusted_prospect_message>${activity.note.slice(0, 600)}</untrusted_prospect_message>`
+            ? `${t("colon")}<untrusted_prospect_message>${untrusted(activity.note.slice(0, 600))}</untrusted_prospect_message>`
             : `${t("colon")}${activity.note.slice(0, 400)}`
       }`,
       hashed: true,

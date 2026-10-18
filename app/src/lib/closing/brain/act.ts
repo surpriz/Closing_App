@@ -121,12 +121,6 @@ export async function actOnInsight(insightId: string, { force = false, now = new
   });
   if (!decision.allowed || !prospect) return { ok: false, reasons: decision.allowed ? [] : decision.reasons };
 
-  // One AI follow-up in flight per deal: the newest reading replaces the older draft (a cold email one too)
-  await prisma.followup.updateMany({
-    where: { linkId: link.id, trigger: { in: ["AI_DECISION", "WARM_READ"] }, status: { in: [...UNAPPROVED] } },
-    data: { status: "CANCELLED", cancelledAt: now, error: t("replaced") },
-  });
-
   const brief: Insight["followupBrief"] = insight.followupBrief ?? {
     goal: "gentle_reminder",
     angle: action.why,
@@ -146,6 +140,18 @@ export async function actOnInsight(insightId: string, { force = false, now = new
     context: { insightId, brief },
   });
   if (!followupId) return { ok: false, reasons: [t("alreadyExists")] };
+
+  // One AI follow-up in flight per deal: the newest reading replaces the older draft (a cold email one too).
+  // Only once the new one exists: a reading already acted on must not leave the deal with none
+  await prisma.followup.updateMany({
+    where: {
+      linkId: link.id,
+      trigger: { in: ["AI_DECISION", "WARM_READ"] },
+      status: { in: [...UNAPPROVED] },
+      id: { not: followupId },
+    },
+    data: { status: "CANCELLED", cancelledAt: now, error: t("replaced") },
+  });
 
   await prisma.followup.update({
     where: { id: followupId },

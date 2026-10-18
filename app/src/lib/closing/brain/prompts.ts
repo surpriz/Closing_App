@@ -5,6 +5,7 @@ import { sellerVoice } from "../ai/seller-language";
 import { docTypeName, tagNames } from "../documents/doc-type-names";
 import { DOC_TYPE_GUIDANCE, type DocType } from "../documents/doc-types";
 import { type Fact, renderFacts } from "./facts";
+import { untrusted } from "../ai/prompts";
 
 /**
  * The deal analyzer: an experienced B2B closer reading the facts of one deal.
@@ -74,7 +75,7 @@ export type AnalyzerDeal = {
 };
 
 function block(tag: string, content: string | null | undefined) {
-  return content?.trim() ? `<${tag}>\n${content.trim()}\n</${tag}>` : "";
+  return content?.trim() ? `<${tag}>\n${untrusted(content.trim())}\n</${tag}>` : "";
 }
 
 const MAX_OUTLINE_PAGES = 40;

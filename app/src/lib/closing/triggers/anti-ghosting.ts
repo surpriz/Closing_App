@@ -9,6 +9,11 @@ import { generateFollowupMessage, queueFollowup } from "../followups/queue";
 import { habitualSendHour, nextSendSlot } from "../scheduling/send-time";
 import { defaultTimezone, resolveFollowupSettings } from "../settings";
 
+/** Links older than this are past any reminder sequence: the scan leaves them out. */
+const MAX_SEQUENCE_DAYS = 32;
+/** Days after a step during which it can still be queued. */
+const STEP_GRACE_DAYS = 2;
+
 const replaced = (locale: string | null | undefined) =>
   getNamespaceTranslator(toUiLocale(locale), "server.followups.act")("replacedStep");
 
@@ -27,7 +32,7 @@ export async function scanAntiGhosting(now = new Date()) {
       repliedAt: null,
       quoteRequestedAt: null,
       AND: [{ OR: [{ snoozedUntil: null }, { snoozedUntil: { lte: now } }] }, notExpired(now)],
-      sentAt: { lte: new Date(now.getTime() - DAY_MS) },
+      sentAt: { lte: new Date(now.getTime() - DAY_MS), gte: new Date(now.getTime() - MAX_SEQUENCE_DAYS * DAY_MS) },
       views: { none: { isBot: false } },
       prospects: { some: { unsubscribedAt: null, bouncedAt: null } },
       ...ACTIVE_WORKSPACE,
@@ -37,6 +42,8 @@ export async function scanAntiGhosting(now = new Date()) {
       organization: { include: { settings: true } },
       createdBy: { select: { locale: true } },
     },
+    // Freshest first: they are the ones with a step due
+    orderBy: { sentAt: "desc" },
     take: 200,
   });
 
@@ -52,6 +59,8 @@ export async function scanAntiGhosting(now = new Date()) {
     const reached = settings.inactivityDays.filter((days) => days <= daysSinceSent);
     if (reached.length === 0) continue;
     const step = Math.max(...reached);
+    // A step is queued while it is fresh: after a deploy or an outage, old links get no catch-up burst
+    if (daysSinceSent > step + STEP_GRACE_DAYS) continue;
     // The last step closes the loop instead of chasing again (only in a sequence of several)
     const final = settings.inactivityDays.length > 1 && step === Math.max(...settings.inactivityDays);
 
@@ -95,6 +104,7 @@ export async function scanAntiGhosting(now = new Date()) {
               linkId: link.id,
               prospectId: prospect.id,
               trigger: "ANTI_GHOSTING",
+              channel,
               status: { in: ["PENDING", "DRAFT"] },
               id: { not: followupId },
             },
