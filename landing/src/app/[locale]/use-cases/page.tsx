@@ -30,6 +30,15 @@ const MOMENT_IDS: Record<Locale, Record<(typeof MOMENTS)[number]["key"], string>
   en: { prospect: "prospect", propose: "propose", close: "close", manage: "manage" },
 };
 
+// Where Clozer sits next to a cold email tool: heat starts when the prospect reads.
+const WORKFLOW = [
+  { key: "sequence", clozer: false },
+  { key: "read", clozer: true },
+  { key: "clozer", clozer: true },
+  { key: "crm", clozer: false },
+] as const;
+const WORKFLOW_ID: Record<Locale, string> = { fr: "ou-se-place-clozer", en: "where-clozer-fits" };
+
 type Props = { params: Promise<{ locale: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -80,6 +89,39 @@ export default async function UseCases({ params }: Props) {
                 </a>
               ))}
             </nav>
+          </div>
+        </section>
+
+        {/* The handoff from the cold email tool, before the cases: one picture of where Clozer starts. */}
+        <section id={WORKFLOW_ID[locale]} className="scroll-mt-14 border-b border-ink bg-sheet">
+          <div className={`${WRAP} py-16 md:py-20`}>
+            <h2 className="condensed max-w-[24ch] text-title font-bold">{t("workflow.title")}</h2>
+            <p className="mt-4 max-w-[60ch] text-lead text-ink-soft">{t("workflow.body")}</p>
+            <figure className="mt-10">
+              <figcaption className="sr-only">{t("workflow.caption")}</figcaption>
+              <ol className="grid border-t border-l border-ink sm:grid-cols-2 lg:grid-cols-4">
+                {WORKFLOW.map((step, index) => (
+                  <li key={step.key} className="flex flex-col border-r border-b border-ink">
+                    {step.clozer ? (
+                      <HeatScale orientation="horizontal" className="[&>div]:h-1.5" />
+                    ) : (
+                      <span aria-hidden className="h-1.5 bg-rule" />
+                    )}
+                    <div className="p-5">
+                      <p className="flex items-baseline justify-between gap-3 font-mono text-micro text-ink-soft">
+                        <span>{t(`workflow.${step.key}.who`)}</span>
+                        <span>{index + 1}/{WORKFLOW.length}</span>
+                      </p>
+                      <h3 className="condensed mt-3 text-[1.5rem] leading-tight font-bold tracking-[-0.02em]">
+                        {t(`workflow.${step.key}.title`)}
+                      </h3>
+                      <p className="mt-2 text-body text-ink-soft">{t(`workflow.${step.key}.body`)}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </figure>
+            <p className="mt-6 max-w-[64ch] text-body">{t("workflow.scope")}</p>
           </div>
         </section>
 

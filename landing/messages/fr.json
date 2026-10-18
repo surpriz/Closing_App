@@ -207,7 +207,7 @@
       },
       "cold": {
         "name": "Outils de cold email",
-        "how": "Avec le Smart Link, un seul lien dans votre séquence, quel que soit l'outil. Chaque prospect qui clique est reconnu et suivi, sans formulaire."
+        "how": "Avec le Smart Link, un seul lien dans votre séquence, quel que soit l'outil. Quand un prospect lit, Clozer prend la suite, et le webhook met sa séquence en pause."
       },
       "store": "Ajouter à Chrome",
       "storeNote": "Gratuit, pour Gmail et Outlook sur le web."
@@ -264,6 +264,10 @@
       "tools": {
         "q": "Ça marche avec mes outils (Gmail, Outlook, CRM, prospection) ?",
         "a": "Gmail et Outlook sur le web avec l'extension Chrome, Outlook installé avec le complément Microsoft 365, vos séquences de cold email avec le Smart Link. Il n'y a pas d'intégration CRM native : un webhook envoie vos alertes à l'adresse de votre choix."
+      },
+      "cold": {
+        "q": "Clozer remplace-t-il mon outil de cold email ?",
+        "a": "Non, il prend le relais. Votre outil envoie la séquence. Dès qu'un prospect ouvre votre document par le Smart Link, Clozer le suit et prépare une relance sur ce qu'il a lu. Branchez le webhook pour que sa séquence se mette en pause à ce moment-là : il ne reçoit pas deux messages."
       },
       "auto": {
         "q": "Les relances partent-elles toutes seules ?",
@@ -341,6 +345,32 @@
     "jump": "Aller à",
     "send": "Vous envoyez",
     "result": "Ce qui se passe",
+    "workflow": {
+      "title": "Où se place Clozer dans votre prospection",
+      "body": "Votre outil de cold email ouvre la porte. Dès qu'un prospect lit votre document, Clozer prend la suite.",
+      "caption": "Le parcours d'un prospect, de la séquence de cold email au deal",
+      "sequence": {
+        "who": "Votre outil de cold email",
+        "title": "La séquence",
+        "body": "Il envoie vos emails à votre liste de prospects, avec le Smart Link dedans."
+      },
+      "read": {
+        "who": "Le passage de relais",
+        "title": "Le prospect lit",
+        "body": "Clozer le reconnaît. Le webhook met sa séquence en pause : il ne reçoit pas deux messages."
+      },
+      "clozer": {
+        "who": "Clozer",
+        "title": "Le suivi",
+        "body": "Ce qu'il a lu, une relance écrite sur ce sujet, le rendez-vous pris dans le document."
+      },
+      "crm": {
+        "who": "Votre CRM",
+        "title": "Le deal",
+        "body": "Les alertes partent par webhook vers votre CRM ou votre outil d'automatisation."
+      },
+      "scope": "Clozer ne gère ni listes ni envoi de masse. Il écrit seulement aux prospects qui ont lu, ou à qui vous avez envoyé une proposition."
+    },
     "formats": {
       "pdf": "PDF",
       "video": "Pitch vidéo",
