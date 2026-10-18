@@ -71,6 +71,7 @@
     "cancelledBySeller": "Cancelled by the salesperson"
   },
   "dealHeader": {
+    "notSent": "Not sent yet",
     "reads": "{count, plural, one {# read} other {# reads}}",
     "readingNow": "Reading now",
     "lastRead": "Last read {when}",

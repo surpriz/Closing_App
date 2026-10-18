@@ -13,6 +13,7 @@ import {
   DealSection,
 } from "@/components/dashboard/deal/deal-section";
 import { DealSettings } from "@/components/dashboard/deal/deal-settings";
+import { OpenOnHash } from "@/components/dashboard/deal/open-on-hash";
 import { loadDeal } from "@/components/dashboard/deal/load-deal";
 import { DealNextAction } from "@/components/dashboard/deal/next-action";
 import { ThermalBand } from "@/components/dashboard/deal/thermal-band";
@@ -360,13 +361,11 @@ export default async function LinkDetailPage({
               </DealSection>
             )}
 
-            <DealSection
-              id="noter"
-              title={t("logTitle")}
-              hint={t("logHint")}
-            >
+            {/* Used after a call, not on every visit: folded, and opened by "#noter" from the next action */}
+            <DealFold id="noter" title={t("logTitle")} hint={t("logHint")}>
               <SellerActivityForm linkId={link.id} />
-            </DealSection>
+            </DealFold>
+            <OpenOnHash id="noter" />
 
             <DealContextSummaryDetails
               summary={dealContextSummary(
@@ -424,6 +423,8 @@ export default async function LinkDetailPage({
 
         {canEdit && (
           <DealSettings
+            // The share screen above already holds them under "Options"
+            withSettings={!deal.sharing}
             summary={settingsSummary(link, now, locale)}
             name={link.name ?? ""}
             panel={deal.settingsPanel}

@@ -484,8 +484,7 @@ export default async function DocumentDetailPage({
                       ? t("emptyWeb")
                       : t("emptyPdf")
               }
-              // The header already carries "Envoyer mon lien": no second one here
-              action={pendingLink ? null : linkAction}
+              // The header right above carries the one button ("Envoyer mon lien" or "Créer le lien")
             />
           ) : (
             <DocumentLinks rows={prospectRows} video={isVideo} />

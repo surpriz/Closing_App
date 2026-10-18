@@ -71,6 +71,7 @@
     "cancelledBySeller": "Annulée par le vendeur"
   },
   "dealHeader": {
+    "notSent": "Pas encore envoyé",
     "reads": "{count, plural, one {# lecture} other {# lectures}}",
     "readingNow": "En lecture",
     "lastRead": "Dernière lecture {when}",

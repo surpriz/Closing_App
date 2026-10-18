@@ -89,7 +89,10 @@
     "remove": "Remove",
     "sentQuestion": "Did you send it?",
     "yes": "Yes",
-    "notYet": "Not yet"
+    "notYet": "Not yet",
+    "removed": "Link removed.",
+    "undo": "Undo",
+    "undoFailed": "Couldn't bring it back. Create a new link from the document."
   },
   "liveStrip": {
     "reading": "Reading now",

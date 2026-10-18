@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import {
   discardDraftLink,
   markLinkCopied,
+  restoreDraftLink,
   markLinkNotSent,
   markLinkSent,
 } from "@/app/(dashboard)/links/actions";
@@ -57,10 +58,21 @@ function ReadyLinkRow({ link }: { link: ReadyLink }) {
     }
   }
 
+  // No confirmation: removing is one click, and so is taking it back
   function discard() {
     startTransition(async () => {
       await discardDraftLink(link.id);
       router.refresh();
+      toast(t("removed"), {
+        action: {
+          label: t("undo"),
+          onClick: () =>
+            void restoreDraftLink(link.id).then(
+              () => router.refresh(),
+              () => toast.error(t("undoFailed")),
+            ),
+        },
+      });
     });
   }
 

@@ -14,6 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { OFFER_DESCRIPTION_MAX } from "@/lib/onboarding";
 import { cn } from "@/lib/utils";
 
 import {
@@ -191,10 +192,16 @@ export function SettingsForm({
   }, [dirty]);
 
   const { setOpen: setAdvancedOpen } = useAdvancedSettings();
+  // Rules only the server knows (a Slack address, a safe webhook) can reject a folded field: show the fold
   useEffect(() => {
     if (state?.ok) toast.success(t("saved"));
-    if (state?.error) toast.error(state.error);
-  }, [state, t]);
+    if (state?.error) {
+      toast.error(state.error);
+      if (canEditWorkspace) setAdvancedOpen(true);
+    }
+  }, [state, t, canEditWorkspace, setAdvancedOpen]);
+  // Several hidden invalid fields fire one "invalid" each: point at the first only
+  const reporting = useRef(false);
 
   return (
     <form
@@ -204,9 +211,13 @@ export function SettingsForm({
       // An invalid field in the folded part: unfold it, then let the browser point at it
       onInvalidCapture={(event) => {
         const field = event.target as HTMLInputElement;
-        if (field.offsetParent !== null) return;
+        if (field.offsetParent !== null || reporting.current) return;
+        reporting.current = true;
         setAdvancedOpen(true);
-        requestAnimationFrame(() => field.reportValidity());
+        requestAnimationFrame(() => {
+          field.form?.reportValidity();
+          reporting.current = false;
+        });
       }}
       className="max-w-2xl"
     >
@@ -337,6 +348,7 @@ export function SettingsForm({
                   <Textarea
                     id="offerDescription"
                     name="offerDescription"
+                    maxLength={OFFER_DESCRIPTION_MAX}
                     rows={3}
                     defaultValue={initial.offerDescription}
                     placeholder={t("offer.whatPlaceholder")}
@@ -347,6 +359,7 @@ export function SettingsForm({
                   <Input
                     id="targetCustomer"
                     name="targetCustomer"
+                    maxLength={500}
                     defaultValue={initial.targetCustomer}
                     placeholder={t("offer.customersPlaceholder")}
                   />
@@ -356,6 +369,7 @@ export function SettingsForm({
                   <Textarea
                     id="valueProps"
                     name="valueProps"
+                    maxLength={1500}
                     rows={2}
                     defaultValue={initial.valueProps}
                     placeholder={t("offer.whyPlaceholder")}
@@ -368,6 +382,7 @@ export function SettingsForm({
                   <Textarea
                     id="commonObjections"
                     name="commonObjections"
+                    maxLength={1500}
                     rows={2}
                     defaultValue={initial.commonObjections}
                     placeholder={t("offer.objectionsPlaceholder")}
@@ -512,6 +527,7 @@ export function SettingsForm({
                       <Input
                         id="senderName"
                         name="senderName"
+                        maxLength={80}
                         defaultValue={initial.senderName}
                         placeholder={t("messages.senderPlaceholder")}
                       />
@@ -521,6 +537,7 @@ export function SettingsForm({
                       <Input
                         id="aiTone"
                         name="aiTone"
+                        maxLength={300}
                         defaultValue={initial.aiTone}
                         placeholder={t("messages.tonePlaceholder")}
                       />
@@ -531,6 +548,7 @@ export function SettingsForm({
                     <Textarea
                       id="senderSignature"
                       name="senderSignature"
+                      maxLength={500}
                       rows={3}
                       defaultValue={initial.senderSignature}
                       placeholder={t("messages.signaturePlaceholder")}
@@ -586,6 +604,8 @@ export function SettingsForm({
                       <Input
                         id="slackWebhookUrl"
                         name="slackWebhookUrl"
+                        // The server only takes Slack's own incoming webhooks
+                        pattern="https://hooks\.slack\.com/.+"
                         type="url"
                         placeholder={
                           initial.slackConfigured

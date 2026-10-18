@@ -252,6 +252,16 @@ export async function markLinkCopied(linkId: string) {
   revalidateLink(link);
 }
 
+/** "Annuler" right after "Retirer": the draft comes back as it was. */
+export async function restoreDraftLink(linkId: string) {
+  const link = await requireOwnedLink(linkId);
+  await prisma.link.updateMany({
+    where: { id: link.id, draftAt: { not: null }, archivedAt: { not: null } },
+    data: { archivedAt: null },
+  });
+  revalidateLink(link);
+}
+
 /** "Retirer" on a link never sent: a duplicate or a test, gone without leaving Aujourd'hui. */
 export async function discardDraftLink(linkId: string) {
   const link = await requireOwnedLink(linkId);
