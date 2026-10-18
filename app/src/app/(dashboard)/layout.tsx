@@ -7,7 +7,6 @@ import { Logo } from "@/components/brand/logo";
 import { CommandMenu, type CommandEntry } from "@/components/dashboard/command-menu";
 import { DashboardNav, MobileNav } from "@/components/dashboard/dashboard-nav";
 import { HelpMenu } from "@/components/dashboard/help-menu";
-import { LocaleMenu } from "@/components/dashboard/locale-menu";
 import { HelpWidget } from "@/components/dashboard/help-widget";
 import { UserMenu } from "@/components/dashboard/user-menu";
 import { DashboardExtensionBanner } from "@/components/onboarding/dashboard-extension-banner";
@@ -88,7 +87,6 @@ export default async function DashboardLayout({
               pitchUploadPrefix={pitchUploadPrefix(organization.id)}
             />
             <CommandMenu entries={entries} />
-            <LocaleMenu />
             <HelpMenu />
             <UserMenu
               name={user.name}

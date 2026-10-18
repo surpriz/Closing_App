@@ -53,8 +53,6 @@
     }
   },
   "helpWidget": {
-    "launcherAria": "Ask Clozer Help a question",
-    "launcher": "Help",
     "title": "Clozer Help",
     "subtitle": "Questions, tips, ideas, bugs",
     "close": "Close",

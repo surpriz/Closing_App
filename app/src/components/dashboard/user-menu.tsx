@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useTransition } from "react";
 
+import { LocaleMenuItems } from "@/components/dashboard/locale-menu";
 import { ThemeMenuItems } from "@/components/theme/theme-menu-items";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -75,6 +76,8 @@ export function UserMenu({
         )}
         <DropdownMenuSeparator />
         <ThemeMenuItems />
+        <DropdownMenuSeparator />
+        <LocaleMenuItems />
         <DropdownMenuSeparator />
         <DropdownMenuItem
           disabled={pending}

@@ -130,21 +130,8 @@ export function HelpWidget({ firstName }: { firstName: string | null }) {
     }
   }
 
-  // Always in reach: a launcher in the corner, above the phone tab bar. Also opened from "?", ⌘K or a help link
-  if (!open) {
-    return (
-      <button
-        type="button"
-        data-help-corner
-        aria-label={t("launcherAria")}
-        onClick={openPanel}
-        className="fixed right-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-40 flex h-11 items-center gap-2 border border-foreground bg-card px-3.5 text-small font-semibold shadow-md transition-colors outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/30 sm:bottom-4"
-      >
-        <LifeBuoy className="size-4" aria-hidden />
-        {t("launcher")}
-      </button>
-    );
-  }
+  // Opened from the "?" in the header, ⌘K or a help link: no corner button competing with the page
+  if (!open) return null;
 
   return (
     <section
