@@ -71,8 +71,8 @@ const BRIEF_GOALS: Record<string, string> = {
 
 // Prospect and document text can't close the tag it sits in and pass for instructions
 export function untrusted(content: string) {
-  // Our tags are snake_case (<untrusted_prospect_message>, <proposal_sections>…)
-  return content.replace(/<\/?\s*[a-z]+_[a-z_]*\s*>/gi, "");
+  // Any tag-like "<" becomes a look-alike: one pass, nothing to rebuild by nesting, every tag name covered
+  return content.replace(/<(?=\s*\/?\s*[a-z])/gi, "‹");
 }
 
 function block(label: string, content: string | null | undefined) {
