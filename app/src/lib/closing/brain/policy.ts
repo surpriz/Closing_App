@@ -2,7 +2,8 @@ import type { UiLocale } from "@/i18n/locale";
 import { getNamespaceTranslator } from "@/lib/server-translator";
 
 import { DAY_MS } from "../constants";
-import { nextBusinessSlot, type BusinessHours } from "../scheduling/business-hours";
+import type { BusinessHours } from "../scheduling/business-hours";
+import { nextSendSlot } from "../scheduling/send-slot";
 import type { FOLLOWUP_GOALS, TIMINGS } from "./schema";
 
 /**
@@ -62,6 +63,9 @@ export type FollowupPolicyInput = {
     minDaysBetweenFollowups: number;
     minDelayAfterReadingHours: number;
     businessHours: BusinessHours;
+    /** The prospect's habitual reading hour (send-time.ts), and what picks the minutes past it. */
+    sendHour?: number | null;
+    seed?: string | null;
   };
 };
 
@@ -110,7 +114,7 @@ export function decideFollowup(input: FollowupPolicyInput): FollowupDecision {
   );
 
   const slot = (from: Date, mode: "asap" | "next-morning") =>
-    nextBusinessSlot(from, prospect.timezone, settings.businessHours, mode);
+    nextSendSlot(from, prospect.timezone, settings.businessHours, mode, settings.sendHour ?? null, settings.seed ?? null);
 
   let target: Date;
   switch (input.timing) {

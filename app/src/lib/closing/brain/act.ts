@@ -6,6 +6,7 @@ import { getNamespaceTranslator } from "@/lib/server-translator";
 import { generateFollowupMessage, queueFollowup } from "../followups/queue";
 import { defaultTimezone, getWorkspaceSettings, resolveFollowupSettings } from "../settings";
 import { toStoredInsight } from "./latest";
+import { habitualSendHour } from "../scheduling/send-time";
 import { decideFollowup } from "./policy";
 import type { Insight } from "./schema";
 
@@ -63,6 +64,11 @@ export async function actOnInsight(insightId: string, { force = false, now = new
     link.prospects.find((p) => p.id === action.prospectId) ?? (force ? link.prospects[0] : undefined) ?? null;
   const timezone = prospect?.timezone ?? defaultTimezone();
 
+  const businessHours = {
+    startHour: resolved.businessHourStart,
+    endHour: resolved.businessHourEnd,
+    days: resolved.businessDays,
+  };
   const decision = decideFollowup({
     now,
     locale,
@@ -102,11 +108,15 @@ export async function actOnInsight(insightId: string, { force = false, now = new
       maxFollowupsPer30Days: workspace.maxFollowupsPer30Days,
       minDaysBetweenFollowups: workspace.minDaysBetweenFollowups,
       minDelayAfterReadingHours: workspace.minDelayAfterReadingHours,
-      businessHours: {
-        startHour: resolved.businessHourStart,
-        endHour: resolved.businessHourEnd,
-        days: resolved.businessDays,
-      },
+      businessHours,
+      sendHour: await habitualSendHour({
+        prospectId: prospect?.id ?? null,
+        organizationId: link.organizationId,
+        timeZone: timezone,
+        hours: businessHours,
+        now,
+      }),
+      seed: `ai:${insightId}`,
     },
   });
   if (!decision.allowed || !prospect) return { ok: false, reasons: decision.allowed ? [] : decision.reasons };

@@ -6,7 +6,7 @@ import { getNamespaceTranslator } from "@/lib/server-translator";
 import { DAY_MS } from "../constants";
 import { notExpired } from "../expiry";
 import { generateFollowupMessage, queueFollowup } from "../followups/queue";
-import { nextBusinessSlot } from "../scheduling/business-hours";
+import { habitualSendHour, nextSendSlot } from "../scheduling/send-time";
 import { defaultTimezone, resolveFollowupSettings } from "../settings";
 
 const replaced = (locale: string | null | undefined) =>
@@ -41,6 +41,7 @@ export async function scanAntiGhosting(now = new Date()) {
   });
 
   let queued = 0;
+  const workspaceHours = new Map<string, number | null>();
 
   for (const link of links) {
     const workspaceSettings = link.organization.settings;
@@ -56,15 +57,23 @@ export async function scanAntiGhosting(now = new Date()) {
 
     for (const prospect of link.prospects) {
       const timezone = prospect.timezone ?? defaultTimezone();
-      const scheduledFor = nextBusinessSlot(
-        now,
-        timezone,
-        { startHour: settings.businessHourStart, endHour: settings.businessHourEnd, days: settings.businessDays },
-        "asap",
-      );
+      const hours = { startHour: settings.businessHourStart, endHour: settings.businessHourEnd, days: settings.businessDays };
 
       for (const channel of settings.channels) {
         if (channel === "WHATSAPP" && (!prospect.phoneE164 || !prospect.whatsappOptInAt)) continue;
+        const dedupeKey = `anti_ghosting:${step}:${prospect.id}:${channel}`;
+        // Every tick sees the same links: only a step not queued yet is worth scheduling
+        if (await prisma.followup.findUnique({ where: { dedupeKey }, select: { id: true } })) continue;
+
+        // Never opened: no habit of their own, the workspace's prospects' hour
+        const hourKey = `${link.organizationId}:${hours.startHour}-${hours.endHour}`;
+        if (!workspaceHours.has(hourKey)) {
+          workspaceHours.set(
+            hourKey,
+            await habitualSendHour({ prospectId: null, organizationId: link.organizationId, timeZone: timezone, hours, now }),
+          );
+        }
+        const scheduledFor = nextSendSlot(now, timezone, hours, "asap", workspaceHours.get(hourKey) ?? null, dedupeKey);
 
         const followupId = await queueFollowup({
           linkId: link.id,
@@ -75,7 +84,7 @@ export async function scanAntiGhosting(now = new Date()) {
           timezone,
           // Unknown prospect language: the seller's, not French by default
           locale: prospect.locale ?? toUiLocale(link.createdBy?.locale),
-          dedupeKey: `anti_ghosting:${step}:${prospect.id}:${channel}`,
+          dedupeKey,
           context: { step, daysSinceSent, clicked: !!link.gateSeenAt, final },
         });
         if (followupId) {
