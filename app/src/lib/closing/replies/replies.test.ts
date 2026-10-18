@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { parseReplyAddress, replyAddress } from "./address";
+import { isProspectSide, senderAuthenticated } from "./inbound";
 import { isAutoReply, replyExcerpt } from "./text";
 
 const secret = "a-test-secret-that-is-long-enough-123";
@@ -39,5 +40,29 @@ describe("reply text", () => {
     expect(isAutoReply({}, "Out of Office: Re: Proposal")).toBe(true);
     expect(isAutoReply({ "auto-submitted": "no" }, "Re: Proposition")).toBe(false);
     expect(isAutoReply({}, "Re: Proposition commerciale")).toBe(false);
+  });
+});
+
+describe("who may count as the prospect answering", () => {
+  const prospects = ["marie@client.fr"];
+  const team = ["paul@acme.fr", "lea@acme.fr"];
+
+  it("takes the contact and their colleagues", () => {
+    expect(isProspectSide("Marie@Client.fr", prospects, team)).toBe(true);
+    expect(isProspectSide("dg@client.fr", prospects, team)).toBe(true);
+  });
+
+  it("never takes the seller's team, nor strangers or free mail look-alikes", () => {
+    expect(isProspectSide("paul@acme.fr", prospects, team)).toBe(false);
+    expect(isProspectSide("boss@acme.fr", prospects, team)).toBe(false);
+    expect(isProspectSide("someone@gmail.com", ["marie@gmail.com"], team)).toBe(false);
+    expect(isProspectSide("x@other.fr", prospects, team)).toBe(false);
+  });
+
+  it("believes the From address only when SPF or DKIM passes and DMARC does not fail", () => {
+    expect(senderAuthenticated({ spfVerdict: { status: "PASS" } })).toBe(true);
+    expect(senderAuthenticated({ dkimVerdict: { status: "PASS" }, dmarcVerdict: { status: "GRAY" } })).toBe(true);
+    expect(senderAuthenticated({ spfVerdict: { status: "PASS" }, dmarcVerdict: { status: "FAIL" } })).toBe(false);
+    expect(senderAuthenticated({ spfVerdict: { status: "FAIL" }, dkimVerdict: { status: "FAIL" } })).toBe(false);
   });
 });

@@ -4,6 +4,8 @@ import { z } from "zod";
 
 import { prisma } from "@/lib/db";
 
+import { emailDomain } from "../committee/reader-map";
+
 import { parseReplyAddress, replyAddress } from "./address";
 import { recordProspectReply } from "./record";
 import { isAutoReply, replyExcerpt } from "./text";
@@ -46,6 +48,9 @@ const receivedSchema = z.object({
     recipients: z.array(z.string()),
     spamVerdict: z.object({ status: z.string() }).optional(),
     virusVerdict: z.object({ status: z.string() }).optional(),
+    spfVerdict: z.object({ status: z.string() }).optional(),
+    dkimVerdict: z.object({ status: z.string() }).optional(),
+    dmarcVerdict: z.object({ status: z.string() }).optional(),
     action: z.object({
       type: z.string(),
       bucketName: z.string().optional(),
@@ -55,7 +60,38 @@ const receivedSchema = z.object({
   }),
 });
 
-export type InboundOutcome = "logged" | "duplicate" | "auto_reply" | "not_a_relay" | "rejected" | "unknown_followup" | "ignored";
+export type InboundOutcome =
+  | "logged"
+  | "duplicate"
+  | "auto_reply"
+  | "not_a_relay"
+  | "rejected"
+  | "unauthenticated"
+  | "not_the_prospect"
+  | "unknown_followup"
+  | "ignored";
+
+/** The From address is only believed when the sender's domain vouches for it. */
+export function senderAuthenticated(receipt: {
+  spfVerdict?: { status: string };
+  dkimVerdict?: { status: string };
+  dmarcVerdict?: { status: string };
+}) {
+  if (receipt.dmarcVerdict?.status === "FAIL") return false;
+  return receipt.spfVerdict?.status === "PASS" || receipt.dkimVerdict?.status === "PASS";
+}
+
+/**
+ * Same rule as the extension: a contact of the deal, or someone of their company. Never the
+ * seller's team, whose reply-all to a follow-up reaches the relay too.
+ */
+export function isProspectSide(fromEmail: string, prospectEmails: string[], teamEmails: string[]) {
+  const from = fromEmail.toLowerCase();
+  const domain = emailDomain(from);
+  const team = teamEmails.map((e) => e.toLowerCase());
+  if (team.includes(from) || (domain && team.some((e) => emailDomain(e) === domain))) return false;
+  return prospectEmails.some((e) => e.toLowerCase() === from || (domain !== null && emailDomain(e) === domain));
+}
 
 let s3: S3Client | undefined;
 
@@ -103,10 +139,21 @@ export async function handleInboundReply(raw: unknown): Promise<InboundOutcome> 
   if (notification.receipt.spamVerdict?.status === "FAIL" || notification.receipt.virusVerdict?.status === "FAIL") {
     return "rejected";
   }
+  if (!senderAuthenticated(notification.receipt)) return "unauthenticated";
 
   const followup = await prisma.followup.findUnique({
     where: { id: followupId },
-    select: { id: true, linkId: true, prospectId: true, link: { select: { prospects: { select: { id: true, email: true } } } } },
+    select: {
+      id: true,
+      linkId: true,
+      prospectId: true,
+      link: {
+        select: {
+          prospects: { select: { id: true, email: true } },
+          organization: { select: { members: { select: { user: { select: { email: true } } } } } },
+        },
+      },
+    },
   });
   if (!followup) return "unknown_followup";
 
@@ -124,6 +171,8 @@ export async function handleInboundReply(raw: unknown): Promise<InboundOutcome> 
   const from = email?.from && "address" in email.from && email.from.address ? email.from : null;
   const fromEmail = (from?.address ?? notification.mail.source ?? "").toLowerCase();
   if (!fromEmail) return "ignored";
+  const teamEmails = followup.link.organization.members.map((m) => m.user.email);
+  if (!isProspectSide(fromEmail, followup.link.prospects.map((p) => p.email), teamEmails)) return "not_the_prospect";
   const prospect = followup.link.prospects.find((p) => p.email.toLowerCase() === fromEmail);
 
   const messageId = email?.messageId ?? headers["message-id"] ?? notification.mail.messageId;

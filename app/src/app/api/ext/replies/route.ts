@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { emailDomain } from "@/lib/closing/committee/reader-map";
+import { isProspectSide } from "@/lib/closing/replies/inbound";
 import { recordProspectReply } from "@/lib/closing/replies/record";
 import { prisma } from "@/lib/db";
 import { extError, withExtensionAuth } from "@/lib/extension-auth";
@@ -32,23 +32,18 @@ export const POST = withExtensionAuth(async (request, { user, organization }) =>
     where: { organizationId: organization.id },
     select: { user: { select: { email: true } } },
   });
-  const teamEmails = new Set([user.email, ...team.map((m) => m.user.email)].map((e) => e.toLowerCase()));
-  const teamDomains = new Set([...teamEmails].map((e) => emailDomain(e)).filter((d): d is string => !!d));
+  const teamEmails = [user.email, ...team.map((m) => m.user.email)];
 
   let logged = 0;
   for (const reply of parsed.data.replies) {
     const fromEmail = reply.fromEmail.toLowerCase();
-    const fromDomain = emailDomain(fromEmail);
-    if (teamEmails.has(fromEmail) || (fromDomain && teamDomains.has(fromDomain))) continue;
-
     const link = await prisma.link.findFirst({
       where: { slug: reply.slug, organizationId: organization.id, archivedAt: null, shared: false },
       select: { id: true, prospects: { select: { id: true, email: true } } },
     });
     if (!link) continue;
+    if (!isProspectSide(fromEmail, link.prospects.map((p) => p.email), teamEmails)) continue;
     const prospect = link.prospects.find((p) => p.email.toLowerCase() === fromEmail);
-    const sameCompany = fromDomain && link.prospects.some((p) => emailDomain(p.email) === fromDomain);
-    if (!prospect && !sameCompany) continue;
 
     const done = await recordProspectReply({
       linkId: link.id,
