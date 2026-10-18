@@ -198,7 +198,11 @@ export function SettingsForm({
     if (state?.ok) toast.success(t("saved"));
     if (state?.error) {
       toast.error(state.error);
-      if (state.workspace) setAdvancedOpen(true);
+      if (state.workspace) {
+        setAdvancedOpen(true);
+        // Slack and the webhook sit in their own fold under the alerts: open it too
+        document.querySelectorAll<HTMLDetailsElement>("#alertes details").forEach((fold) => (fold.open = true));
+      }
     }
   }, [state, t, setAdvancedOpen]);
   // Several hidden invalid fields fire one "invalid" each: point at the first only

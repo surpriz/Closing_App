@@ -83,7 +83,7 @@ export function OnboardingWizard({
     else setTestLink(result);
   }
 
-  // Done once the seller read their test, or leaves the tour: not merely on reaching its last step
+  // Reading the test also counts as done (the last step does too, above)
   function onTestRead() {
     setTestRead(true);
     void completeOnboarding();

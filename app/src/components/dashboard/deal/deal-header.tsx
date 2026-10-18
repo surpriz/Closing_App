@@ -52,7 +52,8 @@ export function DealHeader({ deal }: { deal: Deal }) {
       <p className="flex flex-wrap gap-x-6 gap-y-1 border-b border-border pb-2 font-mono text-micro text-muted-foreground">
         <span className="text-foreground">{t("report")}</span>
         <span>
-          {link.draftAt
+          {/* Never marked sent but read: it went out after all, "not sent" would be wrong */}
+          {link.draftAt && analytics.viewCount === 0 && !deal.readingNow
             ? t("notSent")
             : t("sentOn", {
                 date: reportDate.format(link.sentAt ?? link.createdAt),
