@@ -3,6 +3,7 @@ import { isManagerRole } from "@/lib/roles";
 
 import { DAY_MS } from "../constants";
 import { hasReason } from "../engagement/reasons";
+import { deadState, REVIVAL_ALERT_TYPES, REVIVAL_VISIBLE_DAYS, revivalSignal } from "../revival";
 import type { FeedSource } from "./feed";
 import type { FunnelLinkFacts } from "./funnel";
 import { dealLabel, firstProspect, linkLabelSelect } from "./labels";
@@ -51,12 +52,19 @@ export function canEditDeal(createdById: string | null, editor: DealEditor) {
 /** Deals still in play, with what the "À traiter" list and the temperature bar need. */
 export async function getOpenDeals(
   organizationId: string,
-  scope: { owner?: SellerScope; take?: number; withValidated?: boolean } = {},
+  scope: {
+    owner?: SellerScope;
+    take?: number;
+    withValidated?: boolean;
+    /** Archived deals the prospect came back to lately: the seller's to reopen. */
+    withRevived?: boolean;
+  } = {},
 ) {
+  const now = new Date();
+  const revivedSince = new Date(now.getTime() - REVIVAL_VISIBLE_DAYS * DAY_MS);
   const deals = await prisma.link.findMany({
     where: {
       organizationId,
-      archivedAt: null,
       draftAt: null,
       // A shared link is a source of leads, not a deal; its readers count once they show interest
       shared: false,
@@ -69,6 +77,14 @@ export async function getOpenDeals(
             { engagementScore: { tier: { in: ["HOT", "WARM"] } } },
           ],
         },
+        scope.withRevived
+          ? {
+              OR: [
+                { archivedAt: null },
+                { alerts: { some: { type: { in: [...REVIVAL_ALERT_TYPES] }, createdAt: { gte: revivedSince } } } },
+              ],
+            }
+          : { archivedAt: null },
       ],
       dealStatus: { in: scope.withValidated ? ["OPEN", "CHANGE_REQUESTED", "VALIDATED"] : ["OPEN", "CHANGE_REQUESTED"] },
       ...(scope.owner && sellerLinks(scope.owner)),
@@ -92,8 +108,16 @@ export async function getOpenDeals(
       meetingBookedAt: true,
       meetingAt: true,
       quoteRequestedAt: true,
+      archivedAt: true,
+      expiresAt: true,
       engagementScore: { select: { score: true, tier: true, reasons: true } },
-      document: { select: { name: true, displayTitle: true, docType: true, numPages: true } },
+      document: { select: { name: true, displayTitle: true, docType: true, numPages: true, archivedAt: true } },
+      alerts: {
+        where: { type: { in: [...REVIVAL_ALERT_TYPES] } },
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: { type: true, createdAt: true },
+      },
       prospects: firstProspect,
       followups: {
         where: { status: { in: [...PLANNED_FOLLOWUP_STATUSES] } },
@@ -125,11 +149,12 @@ export async function getOpenDeals(
     },
   });
 
-  return deals.map(({ views, sellerActivities, _count, insights, ...deal }) => {
+  const rows = deals.map(({ views, sellerActivities, _count, insights, alerts, ...deal }) => {
     // .at() keeps "maybe none" in the types, unlike destructuring
     const lastView = views.at(0);
     return {
       ...deal,
+      revival: revivalSignal(deadState(deal, now), alerts.at(0) ?? null),
       insight: insights.at(0) ?? null,
       draftCount: _count.followups,
       lastSellerContactAt: sellerActivities.at(0)?.occurredAt ?? null,
@@ -141,6 +166,8 @@ export async function getOpenDeals(
       pricingFocus: hasReason(deal.engagementScore?.reasons, "pricing_focus"),
     };
   });
+  // An archived deal is only back for a return after it was archived, not one from its previous life
+  return rows.filter((row) => !row.archivedAt || row.revival);
 }
 
 export type OpenDeal = Awaited<ReturnType<typeof getOpenDeals>>[number];
@@ -219,7 +246,8 @@ export async function getFeedSource(
   since: Date | null,
   owner?: SellerScope,
 ): Promise<FeedSource> {
-  const ofWorkspace = { link: { organizationId, archivedAt: null, ...(owner && sellerLinks(owner)) } };
+  const workspaceLinks = { organizationId, ...(owner && sellerLinks(owner)) };
+  const ofWorkspace = { link: { ...workspaceLinks, archivedAt: null } };
 
   const [views, actions, alerts, followups] = await Promise.all([
     prisma.documentView.findMany({
@@ -237,7 +265,12 @@ export async function getFeedSource(
       },
     }),
     prisma.prospectAction.findMany({
-      where: { ...ofWorkspace, ...(since && { createdAt: { gte: since } }) },
+      where: {
+        link: workspaceLinks,
+        // A prospect asking for an archived document again is news, the link's state aside
+        OR: [{ link: { archivedAt: null } }, { type: "REQUEST_RELINK" }],
+        ...(since && { createdAt: { gte: since } }),
+      },
       orderBy: { createdAt: "desc" },
       take: FEED_TAKE,
       select: {
@@ -250,7 +283,14 @@ export async function getFeedSource(
       },
     }),
     prisma.sellerAlert.findMany({
-      where: { ...ofWorkspace, type: { notIn: ["PROSPECT_VALIDATED", "CHANGE_REQUESTED", "QUOTE_REQUESTED", "MEETING_BOOKED", "LINK_EXTENSION_REQUESTED"] }, ...(since && { createdAt: { gte: since } }) },
+      where: {
+        link: workspaceLinks,
+        OR: [{ link: { archivedAt: null } }, { type: "DEAD_LINK_OPENED" }],
+        type: {
+          notIn: ["PROSPECT_VALIDATED", "CHANGE_REQUESTED", "QUOTE_REQUESTED", "MEETING_BOOKED", "LINK_EXTENSION_REQUESTED", "RELINK_REQUESTED"],
+        },
+        ...(since && { createdAt: { gte: since } }),
+      },
       orderBy: { createdAt: "desc" },
       take: FEED_TAKE,
       select: { id: true, createdAt: true, type: true, payload: true, link: { select: linkLabelSelect } },

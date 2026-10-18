@@ -101,3 +101,14 @@ describe("isExtensionActive", () => {
     expect(isExtensionActive(null, DAY)).toBe(false);
   });
 });
+
+describe("decideChannels on dead links", () => {
+  it("passes a request for an archived document on at once, even at night", () => {
+    expect(decideChannels({ ...base, type: "RELINK_REQUESTED", now: NIGHT }).channels).toEqual(["EMAIL", "EXTENSION"]);
+  });
+
+  it("keeps a quiet return for working hours, and never pops it in Chrome", () => {
+    expect(decideChannels({ ...base, type: "DEAD_LINK_OPENED", now: NIGHT })).toEqual({ channels: [], reason: "quiet_hours" });
+    expect(decideChannels({ ...base, type: "DEAD_LINK_OPENED", extensionActive: true }).channels).not.toContain("EXTENSION");
+  });
+});

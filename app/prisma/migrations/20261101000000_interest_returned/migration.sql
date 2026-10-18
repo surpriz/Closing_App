@@ -1,0 +1,9 @@
+-- AlterEnum
+ALTER TYPE "FollowupTrigger" ADD VALUE 'INTEREST_RETURNED';
+
+-- AlterEnum
+ALTER TYPE "ProspectActionType" ADD VALUE 'REQUEST_RELINK';
+
+-- AlterEnum
+ALTER TYPE "SellerAlertType" ADD VALUE 'DEAD_LINK_OPENED';
+ALTER TYPE "SellerAlertType" ADD VALUE 'RELINK_REQUESTED';

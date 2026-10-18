@@ -11,7 +11,7 @@ import { ExpiryGate } from "@/components/viewer/expiry-gate";
 import type { ForwardOptions } from "@/components/viewer/forward-dialog";
 import type { ViewerTranslation } from "@/components/viewer/use-translation";
 import { ForwardHandoff } from "@/components/viewer/forward-handoff";
-import { LinkExpired } from "@/components/viewer/link-expired";
+import { LinkLocked } from "@/components/viewer/link-locked";
 import { PdfViewer } from "@/components/viewer/pdf-viewer";
 import { SmartLinkHandoff } from "@/components/viewer/smart-link-handoff";
 import { VideoViewer } from "@/components/viewer/video-viewer";
@@ -27,11 +27,7 @@ import {
 } from "@/lib/closing/capsules/resolve";
 import { suggestQuestions, toUIMessages } from "@/lib/closing/chat/messages";
 import { loadChatSetup } from "@/lib/closing/chat/queries";
-import {
-  extensionRequestKey,
-  showsCountdown,
-  viewerDeadline,
-} from "@/lib/closing/expiry";
+import { showsCountdown, viewerDeadline } from "@/lib/closing/expiry";
 import type { SupportedLocale } from "@/lib/closing/constants";
 import { canForward } from "@/lib/closing/forward/rules";
 import {
@@ -50,6 +46,8 @@ import {
 import { maskEmail } from "@/lib/closing/prospects/mask-email";
 import { firstNameOf } from "@/lib/closing/share/compose";
 import { viewerSenderName } from "@/lib/closing/sender-name";
+import { deadState, type DeadState } from "@/lib/closing/revival";
+import { findRevivalReader } from "@/lib/closing/revival-reader";
 import { parseSmartParams } from "@/lib/closing/shared/smart-params";
 import { VISITOR_COOKIE } from "@/lib/closing/tracking/visitor";
 import { deeplConfig } from "@/lib/closing/translation/deepl";
@@ -58,7 +56,7 @@ import { prisma } from "@/lib/db";
 import { isWorkspaceMember } from "@/lib/session";
 
 import {
-  requestLinkExtension,
+  requestLinkRevival,
   unlockAsKnown,
   unlockWithEmail,
 } from "./actions";
@@ -85,7 +83,8 @@ export default async function ViewerPage({
   const plainGate = query.email === "1";
   const resolved = await resolveViewerLink(slug);
   if (!resolved) notFound();
-  const { link, expired } = resolved;
+  const { link, state } = resolved;
+  const dead = deadState(link, new Date());
 
   const requestHeaders = await headers();
   const browserLocale = pickLocale(requestHeaders.get("accept-language"));
@@ -117,35 +116,51 @@ export default async function ViewerPage({
   const countdown = showsCountdown(link.document.docType);
   const deadline = viewerDeadline(link);
 
-  const locked = (
-    <LinkExpired
-      action={requestLinkExtension.bind(null, slug)}
-      documentName={link.document.name}
-      senderName={senderName}
-      labels={labels}
-      quote={countdown}
-      email={
-        access.email ? "known" : link.requireEmail ? "required" : "optional"
-      }
-      alreadyRequested={
-        expired && (await alreadyRequestedExtension(link, access.email))
-      }
-    />
-  );
+  const lockedProps = {
+    action: requestLinkRevival.bind(null, slug),
+    slug,
+    documentName: link.document.name,
+    senderName,
+    labels,
+    quote: countdown,
+    email: access.email
+      ? ("known" as const)
+      : link.requireEmail
+        ? ("required" as const)
+        : ("optional" as const),
+  };
 
-  // Before the email gate: there is nothing to unlock any more, only more time to ask for
-  if (expired) {
+  // Before the email gate: there is nothing to unlock any more, only the document to ask for again
+  if (state !== "open") {
+    if (!dead) notFound();
     return (
       <>
         {isSeller && (
           <SellerNotice>
-            Ce lien a expiré pour le prospect : voici ce qu&apos;il voit.
+            {dead.kind === "archived"
+              ? "Ce lien est archivé pour le prospect : voici ce qu'il voit."
+              : "Ce lien a expiré pour le prospect : voici ce qu'il voit."}
           </SellerNotice>
         )}
-        {locked}
+        <LinkLocked
+          {...lockedProps}
+          reason={dead.kind}
+          alreadyRequested={await alreadyRequested(link, dead, access.email)}
+          signalOpen={!isSeller}
+        />
       </>
     );
   }
+
+  // Reached mid-read, when the countdown runs out: the reader was already here, it is no return
+  const locked = (
+    <LinkLocked
+      {...lockedProps}
+      reason="expired"
+      alreadyRequested={false}
+      signalOpen={false}
+    />
+  );
 
   // A shared link is a door: once the reader is known, they read on their own link
   if (link.shared && access.email && !isSeller)
@@ -380,24 +395,16 @@ function SellerNotice({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** This reader already asked for this expiry date: show the confirmation, not the button again. */
-async function alreadyRequestedExtension(
+/** This reader already asked since the link died: show the confirmation, not the button again. */
+async function alreadyRequested(
   link: ViewerLink,
+  dead: DeadState,
   email: string | null,
 ) {
-  const prospect = email
-    ? await prisma.prospect.findUnique({
-        where: { linkId_email: { linkId: link.id, email } },
-        select: { id: true },
-      })
-    : null;
-  const who = prospect?.id ?? (await cookies()).get(VISITOR_COOKIE)?.value;
-  if (!who || !link.expiresAt) return false;
-  const alert = await prisma.sellerAlert.findUnique({
-    where: { dedupeKey: extensionRequestKey(link.id, link.expiresAt, who) },
-    select: { id: true },
-  });
-  return !!alert;
+  const visitorId = (await cookies()).get(VISITOR_COOKIE)?.value;
+  // Nobody known in this browser: "anonymous" would match a stranger's request
+  if (!email && !visitorId) return false;
+  return (await findRevivalReader(link, dead, { email, visitorId })).asked;
 }
 
 /** The seller's clip for each page: this link's own, or the document's. */

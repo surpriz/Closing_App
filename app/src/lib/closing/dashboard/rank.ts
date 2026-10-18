@@ -3,7 +3,7 @@ import { compareByUrgency, type NextAction } from "./next-action";
 /**
  * Order of the "À traiter" list once the deal analysis is in. Pure.
  * What happens right now (a signature to confirm, a reader on the document,
- * a change request, a draft waiting) always comes first. Then the AI priority of each deal, for
+ * a prospect back on a dead link, a change request, a draft waiting) always comes first. Then the AI priority of each deal, for
  * deals whose analysis is still current; deals without one get a priority
  * from the rule-based action, so both kinds sort together.
  */
@@ -16,11 +16,12 @@ type RankedRow = {
   aiPriority: number | null;
 };
 
-const REAL_TIME: NextAction["kind"][] = ["close_won", "call_now", "reply", "review_draft"];
+const REAL_TIME: NextAction["kind"][] = ["close_won", "call_now", "reactivate", "reply", "review_draft"];
 
 const RULE_PRIORITY: Record<NextAction["kind"], number> = {
   close_won: 5,
   call_now: 5,
+  reactivate: 5,
   reply: 5,
   review_draft: 5,
   call: 4,

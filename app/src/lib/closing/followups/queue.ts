@@ -109,7 +109,7 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
     return;
   }
   const deadlineLabel =
-    link.expiresAt && followup.trigger === "EXPIRY_REMINDER"
+    link.expiresAt && (followup.trigger === "EXPIRY_REMINDER" || followup.trigger === "INTEREST_RETURNED")
       ? formatDeadline(link.expiresAt, followup.locale, followup.timezone, { showZone: !prospect.timezone })
       : null;
   // First, so the guard's 6000-character window always holds the real date
@@ -176,12 +176,14 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
   // Autopilot only for messages that need no human eye; a rewrite asked by the seller is always reviewed
   // A shared link's reader typed their address: the seller reads what goes to it
   // "Never opened" is never sent alone: only the seller knows whether the link really went out
+  // "Available again" was just asked for by the seller reopening the link: they read it
   const autopilot =
     settings?.autonomy === "AUTOPILOT" &&
     !instruction &&
     draft.issues.length === 0 &&
     !link.parentLinkId &&
-    followup.trigger !== "ANTI_GHOSTING";
+    followup.trigger !== "ANTI_GHOSTING" &&
+    followup.trigger !== "INTEREST_RETURNED";
   let sendsAlone =
     autopilot &&
     (followup.trigger !== "AI_DECISION" ||
@@ -224,7 +226,8 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
       status: sendsAlone ? "GENERATED" : "DRAFT",
     },
   });
-  if (saved.count > 0 && !sendsAlone && !instruction) {
+  // The seller is on the deal page and the toast already says it: no "draft ready" alert
+  if (saved.count > 0 && !sendsAlone && !instruction && followup.trigger !== "INTEREST_RETURNED") {
     await notifyDraftReady(link.id, link.organizationId, now);
   }
 }

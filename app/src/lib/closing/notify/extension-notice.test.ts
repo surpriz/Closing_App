@@ -72,3 +72,17 @@ describe("extensionNotice for a forward", () => {
     ).toBe("À daf@acme.fr (Finance / achats) : un décideur entre dans la boucle.");
   });
 });
+
+describe("extensionNotice on dead links", () => {
+  it("asks the seller to reactivate an archived document asked for again", () => {
+    expect(extensionNotice("RELINK_REQUESTED", "Acme", "Devis", {}, "fr")).toEqual({
+      title: "Acme redemande le document",
+      body: "« Devis » était archivé. Réactivez-le en un clic.",
+    });
+  });
+
+  it("says which kind of dead link they came back to", () => {
+    expect(extensionNotice("DEAD_LINK_OPENED", "Acme", "Devis", { deadState: "expired" }, "fr").body).toBe("A rouvert « Devis », expiré.");
+    expect(extensionNotice("DEAD_LINK_OPENED", "Acme", "Devis", {}, "en").body).toBe("Reopened “Devis”, archived.");
+  });
+});
