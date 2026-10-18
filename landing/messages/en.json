@@ -68,7 +68,7 @@
     },
     "silence": {
       "title": "You hit send. Then, silence.",
-      "body": "The document is out. Did they open it? Make it to pricing? Forward it to the decision-maker? So you follow up blind: too early and you're a pest, too late and they've signed with someone else.",
+      "body": "The document is out. Did they open it? Forward it to the decision-maker? So you follow up blind: too early and you're a pest, too late and they've signed with someone else.",
       "table": {
         "caption": "What you know after sending: with a PDF attachment, and with a Clozer link (example values).",
         "pdf": "PDF attachment",
@@ -110,17 +110,17 @@
       },
       "followUp": {
         "title": "Approve the follow-up.",
-        "body": "Clozer writes it and picks the time. You read it, you send it.",
+        "body": "Clozer writes it and suggests the time. You read it, you send it.",
         "alt": "Clozer screen: a follow-up written after a pricing read, suggested for 9 AM the next day, waiting for Approve."
       },
       "guided": "After you sign up, a guided tour walks you through a first test link."
     },
     "followUps": {
       "title": "Clozer drafts the <nowrap>follow-up</nowrap>. You approve it.",
-      "body": "Every morning, the list of prospects to follow up with. For each one, a message based on what they read, with the day and time to send it in their time zone.",
+      "body": "Every morning, the list of prospects to follow up with. For each one, a message based on what they read.",
       "brief": {
         "title": "The morning brief",
-        "body": "An email every working day, at the hour you choose: who to follow up with, who answered, which links are about to expire."
+        "body": "An email every working day, at the hour you choose: who to follow up with and which links are about to expire."
       },
       "stuck": {
         "title": "A follow-up that answers what's holding them back",
@@ -134,14 +134,14 @@
         "title": "Delicate cases wait for you",
         "body": "A prospect who wrote to you, a reader who came through a forward, a link never opened. Their follow-up waits for your approval, even in automatic mode."
       },
-      "alt": "Clozer's Today board: 2 hot prospects, Northwind and Acme, each with a follow-up ready to approve, and Atelier Morel reading at a warm pace."
+      "alt": "Clozer's Today board: 2 hot prospects, Northwind and Acme, each with a follow-up ready to approve, and Atelier Morel, warm."
     },
     "prospect": {
       "title": "Your prospect moves forward without waiting on you.",
       "body": "It all happens inside the document. They approve, ask for a change or book a call, and you hear about it right away.",
       "approve": {
         "title": "Approve or ask for a change",
-        "body": "\"Accept & sign\" sits at the end of the document. If they want something changed, they write two lines without digging up your email."
+        "body": "“Accept & sign” sits at the end of the document. If they want something changed, they write it right there in the document."
       },
       "book": {
         "title": "Book a call",
@@ -149,14 +149,14 @@
       },
       "ask": {
         "title": "Ask a question, or leave a voice note",
-        "body": "The assistant answers from your proposal and hands over to you when it doesn't know. On any page, they can also leave a one-minute voice note, transcribed for you."
+        "body": "The assistant answers from your proposal and hands over to you when it doesn't know. On any page, the prospect can also leave a one-minute voice note, transcribed for you."
       },
       "language": {
         "title": "Read it in their language",
         "body": "English, French, Spanish, German, Italian or Portuguese: the PDF is translated with its layout intact."
       },
       "actionsAlt": "Proposal open on a phone, pricing page: at the bottom, Accept & sign, Book a meeting, Request a change, a voice note and forwarding; at the top, a choice of six languages.",
-      "changeAlt": "The prospect asks for a change from inside the proposal: \"Could we pay in three instalments? And start the design in November?\""
+      "changeAlt": "The prospect asks for a change from inside the proposal: “Could we pay in three instalments? And start the design in November?”"
     },
     "channels": {
       "title": "It works where you already send.",
@@ -184,8 +184,8 @@
       "storeNote": "Free, for Gmail and Outlook on the web."
     },
     "trust": {
-      "title": "Track the deal, not the person.",
-      "body": "Your prospects are your future customers. Heat is measured on pages, never on people, and your follow-up still reads like it came from a thoughtful salesperson.",
+      "title": "Tracking without snooping.",
+      "body": "Your prospects are your future customers. Heat comes from what they read, page by page.",
       "informed": "The prospect is told, on the page, what you can see.",
       "discreet": "Your follow-ups talk about the offer, never about what you saw.",
       "limit": "Three follow-ups per contact per month, max, and never right after a read.",
@@ -222,15 +222,15 @@
       "more": "Something else? <link>Email us</link>.",
       "email": {
         "q": "Does the prospect have to enter their email to read?",
-        "a": "No. A link made for one prospect opens right away, with nothing to fill in. A link shared with several people, like a brochure, asks for the email so you know who's reading. With Smart Link, the address comes from your emailing tool, so there's no form. You can also ask for the email link by link."
+        "a": "No. A link made for one prospect opens right away, with nothing to fill in. A link shared with several people, like a brochure, asks for the email so you know who's reading. With Smart Link, the address comes from your emailing tool. You can also ask for the email link by link."
       },
       "informed": {
         "q": "Does the prospect know their reading is tracked?",
-        "a": "Yes. A clear notice sits on the document page, with a link to our privacy policy. Follow-ups, on the other hand, stay natural: they never mention a specific page or reading time."
+        "a": "Yes. A clear notice sits on the document page, with a link to our privacy policy. Follow-ups never mention a specific page or reading time."
       },
       "install": {
         "q": "Do I need to install anything?",
-        "a": "No. Sign in with Google or your email, no password, and your prospect reads in their browser. The Gmail and Outlook extension is a shortcut, not a requirement."
+        "a": "No. Sign in with Google or your email, no password, and your prospect reads in their browser. The Gmail and Outlook extension is an optional shortcut."
       },
       "tools": {
         "q": "Does it work with my tools (Gmail, Outlook, lemlist, CRM)?",
@@ -253,7 +253,7 @@
     "screen": "Real screen, example data",
     "reading": {
       "title": "See who reads what, and who else.",
-      "body": "Every page read, time spent, returns to pricing. When the proposal goes around the buyer's team, every new reader shows up.",
+      "body": "Clozer logs every page read and the time spent on it. When the proposal goes around the buyer's team, every new reader shows up.",
       "pages": {
         "title": "Page by page",
         "body": "How far they got, and which page they stopped on."

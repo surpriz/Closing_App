@@ -1,8 +1,8 @@
 {
   "meta": {
     "title": "Clozer · Sachez qui lit vos documents, relancez au bon moment",
-    "description": "Devis, factures, présentations, docs techniques : envoyez un lien suivi au lieu de la pièce jointe. Clozer voit les pages lues, vous dit qui relancer et écrit la relance.",
-    "shortDescription": "Devis, factures, présentations : envoyez un lien suivi. Clozer vous dit qui relancer et écrit la relance.",
+    "description": "Devis, factures, présentations, docs techniques : envoyez un lien suivi au lieu de la pièce jointe. Clozer voit les pages lues, vous dit qui relancer et écrit la relance.",
+    "shortDescription": "Devis, factures, présentations : envoyez un lien suivi. Clozer vous dit qui relancer et écrit la relance.",
     "ogHeadline": "Voyez où votre document chauffe."
   },
   "nav": {
@@ -68,7 +68,7 @@
     },
     "silence": {
       "title": "Après l'envoi, le silence.",
-      "body": "Le document est parti. A-t-il été ouvert ? Lu jusqu'aux tarifs ? Transmis au décideur ? Vous relancez à l'aveugle : trop tôt, vous agacez ; trop tard, le prospect a signé ailleurs.",
+      "body": "Le document est parti. A-t-il été ouvert ? Transmis au décideur ? Vous relancez à l'aveugle : trop tôt, vous agacez ; trop tard, le prospect a signé ailleurs.",
       "table": {
         "caption": "Ce que vous savez après l'envoi : avec un PDF en pièce jointe, et avec un lien Clozer (valeurs d'exemple).",
         "pdf": "PDF en pièce jointe",
@@ -117,10 +117,10 @@
     },
     "followUps": {
       "title": "Clozer prépare la relance. Vous la validez.",
-      "body": "Chaque matin, la liste des prospects à relancer. Pour chacun, un message écrit à partir de ce qu'il a lu, avec le jour et l'heure d'envoi dans son fuseau.",
+      "body": "Chaque matin, la liste des prospects à relancer. Pour chacun, un message écrit à partir de ce qu'il a lu.",
       "brief": {
         "title": "Le compte rendu du matin",
-        "body": "Un email chaque jour ouvré, à l'heure que vous choisissez : qui relancer, qui a répondu, quels liens expirent."
+        "body": "Un email chaque jour ouvré, à l'heure que vous choisissez : qui relancer et quels liens vont expirer."
       },
       "stuck": {
         "title": "Une relance qui répond à ce qui coince",
@@ -134,14 +134,14 @@
         "title": "Les cas délicats vous attendent",
         "body": "Un prospect qui vous a écrit, un lecteur arrivé par transfert, un lien jamais ouvert. Leur relance attend votre accord, même en mode automatique."
       },
-      "alt": "Tableau Aujourd'hui de Clozer : 2 prospects chauds, Northwind et Acme, chacun avec une relance prête à valider, et Atelier Morel en lecture tiède."
+      "alt": "Tableau Aujourd'hui de Clozer : 2 prospects chauds, Northwind et Acme, chacun avec une relance prête à valider, et Atelier Morel en lecture tiède."
     },
     "prospect": {
       "title": "Votre prospect avance sans vous attendre.",
       "body": "Tout se passe dans le document. Il valide, demande un ajustement ou prend rendez-vous, et vous êtes prévenu aussitôt.",
       "approve": {
         "title": "Valider ou demander un ajustement",
-        "body": "« Valider & signer » l'attend en bas du document. S'il veut changer quelque chose, il l'écrit en deux lignes, sans chercher votre email."
+        "body": "« Valider & signer » l'attend en bas du document. S'il veut changer quelque chose, il l'écrit directement dans le document."
       },
       "book": {
         "title": "Prendre rendez-vous",
@@ -149,14 +149,14 @@
       },
       "ask": {
         "title": "Poser une question, ou laisser un vocal",
-        "body": "L'assistant répond à partir de votre proposition et vous passe la main quand il ne sait pas. Sur une page, il peut aussi laisser un vocal d'une minute, transcrit pour vous."
+        "body": "L'assistant répond à partir de votre proposition et vous passe la main quand il ne sait pas. Sur n'importe quelle page, le prospect peut aussi laisser un vocal d'une minute, transcrit pour vous."
       },
       "language": {
         "title": "Lire dans sa langue",
         "body": "Anglais, français, espagnol, allemand, italien ou portugais : le PDF est traduit en gardant sa mise en page."
       },
-      "actionsAlt": "Proposition ouverte sur mobile, page des tarifs : en bas, Valider & signer, Prendre rendez-vous, Demander un ajustement, un vocal et le transfert ; en haut, le choix entre six langues.",
-      "changeAlt": "Le prospect demande un ajustement depuis la proposition : « Est-il possible de régler en trois fois ? Et de démarrer le design en novembre ? »"
+      "actionsAlt": "Proposition ouverte sur mobile, page des tarifs : en bas, Valider & signer, Prendre rendez-vous, Demander un ajustement, un vocal et le transfert ; en haut, le choix entre six langues.",
+      "changeAlt": "Le prospect demande un ajustement depuis la proposition : « Est-il possible de régler en trois fois ? Et de démarrer le design en novembre ? »"
     },
     "channels": {
       "title": "Ça part d'où vous envoyez déjà.",
@@ -185,7 +185,7 @@
     },
     "trust": {
       "title": "Suivre sans fliquer.",
-      "body": "Vos prospects sont vos futurs clients. La chaleur se mesure sur les pages, jamais sur les personnes, et votre relance reste celle d'un commercial attentif.",
+      "body": "Vos prospects sont vos futurs clients. La chaleur se calcule sur ce qu'ils lisent, page par page.",
       "informed": "Le prospect est informé, sur la page, de ce que vous voyez.",
       "discreet": "Vos relances parlent de l'offre, jamais de ce que vous avez vu.",
       "limit": "Trois relances par mois et par contact au maximum, jamais juste après une lecture.",
@@ -215,22 +215,22 @@
         "action": "Nous écrire",
         "mailSubject": "Clozer pour notre équipe"
       },
-      "teamAlt": "Vue Équipe de Clozer : 7 deals en cours, 4 qui avancent, 141 200 € de pipeline, détaillés pour Léa Fontaine, Hugo Mercier et Sophie Noël."
+      "teamAlt": "Vue Équipe de Clozer : 7 deals en cours, 4 qui avancent, 141 200 € de pipeline, détaillés pour Léa Fontaine, Hugo Mercier et Sophie Noël."
     },
     "faq": {
       "title": "Ce qu'on nous demande.",
-      "more": "Une autre question ? <link>Écrivez-nous</link>.",
+      "more": "Une autre question ? <link>Écrivez-nous</link>.",
       "email": {
         "q": "Le prospect doit-il donner son email pour lire ?",
-        "a": "Non. Un lien fait pour un prospect s'ouvre tout de suite, sans rien remplir. Un lien partagé à plusieurs, comme une plaquette, demande l'email pour savoir qui lit. Avec le Smart Link, l'adresse vient de votre outil d'emailing : pas de formulaire. Vous pouvez aussi demander l'email lien par lien."
+        "a": "Non. Un lien fait pour un prospect s'ouvre tout de suite, sans rien remplir. Un lien partagé à plusieurs, comme une plaquette, demande l'email pour savoir qui lit. Avec le Smart Link, l'adresse vient de votre outil d'emailing. Vous pouvez aussi demander l'email lien par lien."
       },
       "informed": {
         "q": "Le prospect sait-il que sa lecture est suivie ?",
-        "a": "Oui. Une mention claire figure sur la page du document, avec un lien vers notre politique de confidentialité. Les relances, elles, restent naturelles : elles ne citent jamais une page ni un temps de lecture."
+        "a": "Oui. Une mention claire figure sur la page du document, avec un lien vers notre politique de confidentialité. Les relances, elles, ne citent jamais une page ni un temps de lecture."
       },
       "install": {
         "q": "Faut-il installer quelque chose ?",
-        "a": "Non. Vous vous connectez avec Google ou votre email, sans mot de passe, et votre prospect lit dans son navigateur. L'extension Gmail et Outlook est un raccourci, pas une obligation."
+        "a": "Non. Vous vous connectez avec Google ou votre email, sans mot de passe, et votre prospect lit dans son navigateur. L'extension Gmail et Outlook est un raccourci en option."
       },
       "tools": {
         "q": "Ça marche avec mes outils (Gmail, Outlook, lemlist, CRM) ?",
@@ -253,7 +253,7 @@
     "screen": "Écran réel, données d'exemple",
     "reading": {
       "title": "Vous savez qui lit, quoi, et qui d'autre.",
-      "body": "Chaque page lue, le temps passé, les retours sur les tarifs. Quand la proposition circule chez le client, chaque nouveau lecteur apparaît.",
+      "body": "Clozer note chaque page lue et le temps passé dessus. Quand la proposition circule chez le client, chaque nouveau lecteur apparaît.",
       "pages": {
         "title": "Page par page",
         "body": "Jusqu'où il est allé, et sur quelle page il s'est arrêté."
