@@ -135,7 +135,11 @@ export function ChatWidget({
     if (!open) {
       // Back to the trigger when the panel closes: ours, or the bar's button
       if (wasOpen.current) {
-        (launcherRef.current ?? document.querySelector<HTMLElement>("[data-chat-trigger]"))?.focus();
+        // The bar has two triggers (its own button, the phone's "Plus" menu): back to the one on screen
+        (
+          launcherRef.current ??
+          [...document.querySelectorAll<HTMLElement>("[data-chat-trigger]")].find((el) => el.offsetParent !== null)
+        )?.focus();
       }
       return;
     }

@@ -121,6 +121,8 @@ export function PdfViewer({
         }
         if (!cancelled) {
           handedOver = true;
+          // A file that failed before may open now (back to it after "Show original")
+          setFailedUrl((url) => (url === shownUrl ? null : url));
           setLoaded({ pdf: doc, url: shownUrl });
           setSizes(pageSizes);
         }
@@ -340,8 +342,9 @@ export function PdfPage({ pdf, pageNumber, size, registerPage, overlay, corner }
     let cancelled = false;
 
     (async () => {
-      const page = await pdf.getPage(pageNumber);
-      if (cancelled || !canvasRef.current) return;
+      // The file may be swapped (translation) and destroyed while this page was on its way
+      const page = await pdf.getPage(pageNumber).catch(() => null);
+      if (!page || cancelled || !canvasRef.current) return;
 
       const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
       const scale = (width / page.getViewport({ scale: 1 }).width) * pixelRatio;

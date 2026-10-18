@@ -286,6 +286,7 @@ export function CtaBar({
                             icon: MessageSquareText,
                             label: labels.requestChange,
                             onSelect: () => setDialog("change"),
+                            disabled: pending,
                           }]
                         : []),
                     ]
@@ -460,19 +461,19 @@ export function CtaBar({
   );
 }
 
-type MoreItem = { key: string; icon: LucideIcon; label: string; onSelect: () => void };
+type MoreItem = { key: string; icon: LucideIcon; label: string; onSelect: () => void; disabled?: boolean };
 
 /** "Plus" on small screens: the side actions, each with its words, instead of a row of bare icons. */
 function MoreMenu({ label, items, className }: { label: string; items: MoreItem[]; className: string }) {
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="ghost" className={className} />}>
+      <DropdownMenuTrigger render={<Button variant="ghost" className={className} data-chat-trigger />}>
         <MoreHorizontal aria-hidden />
         {label}
       </DropdownMenuTrigger>
       <DropdownMenuContent side="top" align="start" className="w-auto min-w-56">
-        {items.map(({ key, icon: Icon, label: text, onSelect }) => (
-          <DropdownMenuItem key={key} className="min-h-11 gap-2.5" onClick={onSelect}>
+        {items.map(({ key, icon: Icon, label: text, onSelect, disabled }) => (
+          <DropdownMenuItem key={key} className="min-h-11 gap-2.5" onClick={onSelect} disabled={disabled}>
             <Icon aria-hidden />
             {text}
           </DropdownMenuItem>
