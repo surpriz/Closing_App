@@ -4,10 +4,11 @@ import type { ProspectOrigin } from "@/generated/prisma/enums";
  * Who can forward a link and to whom. Pure.
  *
  * A shared link already gives each reader their own link, and an onboarding
- * test is the seller looking at their own page: neither forwards.
+ * test is the seller looking at their own page: neither forwards. The seller
+ * can also turn it off on a confidential document.
  */
-export function canForward(link: { shared: boolean; isOnboardingTest: boolean }) {
-  return !link.shared && !link.isOnboardingTest;
+export function canForward(link: { shared: boolean; isOnboardingTest: boolean; forwardEnabled: boolean }) {
+  return link.forwardEnabled && !link.shared && !link.isOnboardingTest;
 }
 
 export type RecipientRefusal = "self" | "seller" | "unavailable";

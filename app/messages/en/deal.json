@@ -211,6 +211,8 @@
     "voiceCommentsEnabledHint": "You get the audio and its transcript.",
     "translationEnabled": "Read the document in their language",
     "translationEnabledHint": "Translated when the reader asks, layout included. The original stays one click away.",
+    "forwardEnabled": "Forward to a colleague",
+    "forwardEnabledHint": "The reader can send it to their manager: you see who got it and what they read. Turn it off for a confidential document.",
     "followupsEnabled": "Follow-ups prepared by Clozer",
     "followupsEnabledHint": "Off: the prospect is still tracked, with no follow-ups.",
     "videoCta": "Request a quote",

@@ -313,6 +313,7 @@ export async function loadDeal(
       chatEnabled: link.chatEnabled,
       voiceCommentsEnabled: link.voiceCommentsEnabled,
       translationEnabled: link.translationEnabled,
+      forwardEnabled: link.forwardEnabled,
       followupsEnabled: link.followupsEnabled,
     },
     expiresAt: link.expiresAt?.toISOString() ?? null,

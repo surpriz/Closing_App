@@ -4,9 +4,13 @@ import { canForward, containsLink, decideRecipient, forwardTreeParent } from "./
 
 describe("canForward", () => {
   it("is open on a personal link, closed on shared links and onboarding tests", () => {
-    expect(canForward({ shared: false, isOnboardingTest: false })).toBe(true);
-    expect(canForward({ shared: true, isOnboardingTest: false })).toBe(false);
-    expect(canForward({ shared: false, isOnboardingTest: true })).toBe(false);
+    expect(canForward({ shared: false, isOnboardingTest: false, forwardEnabled: true })).toBe(true);
+    expect(canForward({ shared: true, isOnboardingTest: false, forwardEnabled: true })).toBe(false);
+    expect(canForward({ shared: false, isOnboardingTest: true, forwardEnabled: true })).toBe(false);
+  });
+
+  it("is closed when the seller turned it off", () => {
+    expect(canForward({ shared: false, isOnboardingTest: false, forwardEnabled: false })).toBe(false);
   });
 });
 

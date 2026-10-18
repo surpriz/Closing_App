@@ -211,6 +211,8 @@
     "voiceCommentsEnabledHint": "Vous recevez l'audio et sa transcription.",
     "translationEnabled": "Lire le document dans sa langue",
     "translationEnabledHint": "Traduit à la demande du lecteur, mise en page comprise. L'original reste à un clic.",
+    "forwardEnabled": "Transférer à un collègue",
+    "forwardEnabledHint": "Le lecteur peut l'envoyer à son N+1 : vous voyez qui l'a reçu et ce qu'il lit. Coupez-le pour un document confidentiel.",
     "followupsEnabled": "Relances préparées par Clozer",
     "followupsEnabledHint": "Coupé : le prospect reste suivi, sans relance.",
     "videoCta": "Demander un devis",

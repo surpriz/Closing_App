@@ -135,6 +135,7 @@ const LINK_SWITCHES = [
   "chatEnabled",
   "voiceCommentsEnabled",
   "translationEnabled",
+  "forwardEnabled",
   "followupsEnabled",
 ] as const;
 export type LinkSwitch = (typeof LINK_SWITCHES)[number];
