@@ -10,6 +10,7 @@
     "home": "Clozer, home",
     "how": "How it works",
     "features": "Features",
+    "useCases": "Use cases",
     "teams": "For teams",
     "faq": "FAQ",
     "login": "Log in",
@@ -61,7 +62,7 @@
     "demo": "Demo example",
     "hero": {
       "title": "Know who's reading your proposal. Follow up <hot>at the right time</hot>.",
-      "lead": "For B2B sales reps and their managers. Send a Clozer link instead of the PDF: see who opens it, what they read and who they forward it to. Clozer drafts the follow-up.",
+      "lead": "For B2B sales reps and their managers. Send a Clozer link instead of the PDF or the video: see who opens it, what they read and who they forward it to. Clozer drafts the follow-up.",
       "free": "Free during the beta",
       "noCard": "No credit card",
       "magicLink": "Sign-in link by email"
@@ -114,6 +115,34 @@
         "alt": "Clozer screen: a follow-up written after a pricing read, suggested for 9 AM the next day, waiting for Approve."
       },
       "guided": "After you sign up, a guided tour walks you through a first test link."
+    },
+    "video": {
+      "title": "A video pitch, tracked like a proposal.",
+      "body": "On camera or sharing your screen, record up to 3 minutes right in Clozer. The prospect watches it in their browser, and you see how much of it they actually watched.",
+      "record": {
+        "title": "Recorded in Clozer",
+        "body": "No other tool needed. The pitch becomes a document, with one link per prospect, like a PDF."
+      },
+      "watched": {
+        "title": "What they really watched",
+        "body": "Viewing is measured in tenths of the video. Skipped parts don't count."
+      },
+      "transcript": {
+        "title": "Follow-ups that know what you said",
+        "body": "The video is transcribed, so follow-ups and the assistant know what you talk about in each part."
+      },
+      "quote": {
+        "title": "A “Request a quote” button",
+        "body": "Turn it on for the link. If they click it, you're notified and automatic follow-ups stop."
+      },
+      "capsules": "On a PDF, you can also pin a 90-second video or voice capsule to a page, to explain your pricing for example.",
+      "useCases": "Ideas for what to send, case by case",
+      "name": "Video pitch “E-commerce site redesign”, 3:00",
+      "caption": "Example: viewing of a 3-minute video pitch, split into ten parts. The prospect skipped the 3rd part, watched the pricing part twice and stopped at 70%.",
+      "summary": "Watched up to 70%, pricing watched twice",
+      "skipped": "Skipped part",
+      "hottest": "Pricing, watched twice",
+      "quoteButton": "Request a quote"
     },
     "followUps": {
       "title": "Clozer drafts the <nowrap>follow-up</nowrap>. You approve it.",
@@ -303,5 +332,109 @@
     "title": "Page not found",
     "body": "This link doesn't lead anywhere, or the page has moved.",
     "back": "Back to home"
+  },
+  "useCases": {
+    "title": "Use cases",
+    "description": "A quote gathering dust, a decision-maker you never see, a prospect abroad, a video pitch after a trade show: what you can send with Clozer, case by case.",
+    "heading": "Ideas for what you send next.",
+    "lead": "A quote gathering dust, a decision-maker you never see, a prospect abroad. Here's what you can send with Clozer, and what you learn back.",
+    "jump": "Jump to",
+    "send": "You send",
+    "result": "What happens",
+    "formats": {
+      "pdf": "PDF",
+      "video": "Video pitch",
+      "web": "Web page",
+      "smart": "Smart Link",
+      "capsule": "PDF + capsule",
+      "any": "Any format",
+      "team": "Team view"
+    },
+    "moments": {
+      "prospect": {
+        "title": "Prospect",
+        "body": "Before the first meeting."
+      },
+      "propose": {
+        "title": "Propose",
+        "body": "Once the proposal is out."
+      },
+      "close": {
+        "title": "Close",
+        "body": "When the prospect makes up their mind."
+      },
+      "manage": {
+        "title": "Manage",
+        "body": "For the sales manager."
+      }
+    },
+    "final": "Start with the proposal you're most worried about.",
+    "cases": {
+      "fair": {
+        "title": "Standing out after a trade show",
+        "send": "A two-minute video pitch, recorded that same evening, with one link per contact you met.",
+        "result": "You see who watched it and how far, and you call the ones who watched to the end first."
+      },
+      "cold": {
+        "title": "A cold email campaign",
+        "send": "One Smart Link in your sequence, whatever the tool.",
+        "result": "Every prospect who clicks is recognized, no form. A webhook tells your tool as soon as they read, so you can pause their sequence."
+      },
+      "chat": {
+        "title": "A first conversation on LinkedIn or WhatsApp",
+        "send": "The link, pasted into the conversation.",
+        "result": "It opens on the prospect's phone, no app or account needed. You know whether they read it before you follow up."
+      },
+      "sleeping": {
+        "title": "The quote that's been sitting for ten days",
+        "send": "The quote as a PDF, through a link in the client's name.",
+        "result": "You see they reread the pricing three times last night. The follow-up is ready: you read it over and send it."
+      },
+      "decider": {
+        "title": "The proposal has to reach the decision-maker",
+        "send": "Your proposal, as usual.",
+        "result": "When your contact passes it on, the new reader shows up with the pages they read. You finally know who decides."
+      },
+      "price": {
+        "title": "A price that needs explaining",
+        "send": "The PDF, with a 90-second video or voice capsule on the pricing page.",
+        "result": "The prospect hears you explain the price while reading it. You see whether they played the capsule."
+      },
+      "abroad": {
+        "title": "A prospect who doesn't read your language",
+        "send": "Your PDF, as it is.",
+        "result": "They pick one of six languages and read the translated proposal, layout included. Tracking stays the same."
+      },
+      "web": {
+        "title": "A proposal built in Notion, Canva or Google Slides",
+        "send": "The page's link, pasted into Clozer.",
+        "result": "You know when it's opened, by whom, and how long it's read."
+      },
+      "demo": {
+        "title": "A demo for people who won't take a call",
+        "send": "A three-minute screen recording, made in Clozer, showing the product on their use case.",
+        "result": "You see the parts they watched and the ones they skipped. Their questions go to the assistant, which answers from what you say in the video."
+      },
+      "adjust": {
+        "title": "The prospect wants to adjust the offer",
+        "send": "The proposal, with “Ask for a change” at the end of the document.",
+        "result": "They write their request right there, say “Can we pay in three installments?” You're notified right away."
+      },
+      "tech": {
+        "title": "Questions from their technical team",
+        "send": "Your technical documentation as a PDF, alongside the proposal.",
+        "result": "The assistant answers from the document, and hands over to you when it doesn't know."
+      },
+      "ready": {
+        "title": "They're ready to move forward",
+        "send": "The proposal, with your Calendly or Cal.com page.",
+        "result": "They book a slot without leaving the document, and automatic follow-ups stop."
+      },
+      "review": {
+        "title": "Spotting slipping deals before the Monday meeting",
+        "send": "Nothing extra: each rep sends their links as usual.",
+        "result": "The Team view shows what's moving, what's slipping, and each rep's pipeline."
+      }
+    }
   }
 }
