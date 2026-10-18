@@ -130,27 +130,25 @@
       "guided": "After you sign up, a guided tour walks you through a first test link."
     },
     "followUps": {
-      "title": "Follow-ups that write and schedule themselves.",
-      "body": "Clozer starts from what your client actually read and from your offer. It writes a follow-up that tackles whatever is holding them back, and picks the moment: a business day, during office hours, in your client's time zone.",
-      "approve": "Approve in one click, or let the simple ones go out on their own. The tricky ones always wait for you.",
-      "caption": "Example follow-up drafted by Clozer, scheduled for Thursday at 10:30 AM, prospect's time.",
-      "cardTitle": "Follow-up ready · Marie Dupont",
-      "cardStatus": "needs approval",
-      "read": {
-        "label": "What they read",
-        "value": "Pricing read 3 times, Timeline skimmed"
+      "title": "Clozer drafts the <nowrap>follow-up</nowrap>. You approve it.",
+      "body": "Every morning, the list of prospects to follow up with. For each one, a message based on what they read, with the day and time to send it in their time zone.",
+      "brief": {
+        "title": "The morning brief",
+        "body": "An email every working day, at the hour you choose: who to follow up with, who answered, which links are about to expire."
       },
       "stuck": {
-        "label": "What's holding it up",
-        "value": "Price, judging by time spent on the payment schedule"
+        "title": "A follow-up that answers what's holding them back",
+        "body": "The message starts from what the prospect read and from your offer. It lands on a working day, during office hours, in the prospect's time zone."
       },
-      "schedule": {
-        "label": "Suggested send",
-        "value": "Thursday, Oct 22, 10:30 AM, prospect's time"
+      "approve": {
+        "title": "Approved in one click, or sent on its own",
+        "body": "Switch to automatic mode and simple follow-ups go out without you, like a reminder or an offer to talk."
       },
-      "message": "“Hi Marie, to make the decision easier, I can offer to split the payment into three installments. Do you have a few minutes Thursday to talk it over?”",
-      "send": "Approve and send",
-      "edit": "Edit"
+      "delicate": {
+        "title": "Delicate cases wait for you",
+        "body": "A prospect who wrote to you, a reader who came through a forward, a link never opened. Their follow-up waits for your approval, even in automatic mode."
+      },
+      "alt": "Clozer's Today board: 2 hot prospects, Northwind and Acme, each with a follow-up ready to approve, and Atelier Morel reading at a warm pace."
     },
     "trust": {
       "title": "Track the deal, not the person.",

@@ -130,27 +130,25 @@
       "guided": "Après l'inscription, un tour guidé crée avec vous un premier lien de test."
     },
     "followUps": {
-      "title": "Les relances s'écrivent et se programment seules.",
-      "body": "Clozer part de ce que votre client a vraiment lu et de votre offre. Il écrit une relance qui répond à ce qui coince, et choisit le moment : un jour ouvré, en heures de bureau, dans le fuseau de votre client.",
-      "approve": "Vous validez d'un clic, ou vous laissez partir seules les relances simples. Les cas délicats vous attendent toujours.",
-      "caption": "Exemple de relance préparée par Clozer, avec l'envoi proposé jeudi à 10 h 30, heure du prospect.",
-      "cardTitle": "Relance préparée · Marie Dupont",
-      "cardStatus": "à valider",
-      "read": {
-        "label": "Ce qui a été lu",
-        "value": "Tarifs relus 3 fois, Planning survolé"
+      "title": "Clozer prépare la relance. Vous la validez.",
+      "body": "Chaque matin, la liste des prospects à relancer. Pour chacun, un message écrit à partir de ce qu'il a lu, avec le jour et l'heure d'envoi dans son fuseau.",
+      "brief": {
+        "title": "Le compte rendu du matin",
+        "body": "Un email chaque jour ouvré, à l'heure que vous choisissez : qui relancer, qui a répondu, quels liens expirent."
       },
       "stuck": {
-        "label": "Ce qui coince",
-        "value": "Le prix, d'après le temps passé sur l'échéancier"
+        "title": "Une relance qui répond à ce qui coince",
+        "body": "Le message part de ce que le prospect a lu et de votre offre. Il arrive un jour ouvré, en heures de bureau, à l'heure du prospect."
       },
-      "schedule": {
-        "label": "Envoi proposé",
-        "value": "Jeudi 22 oct., 10:30, heure du prospect"
+      "approve": {
+        "title": "Validée d'un clic, ou envoyée seule",
+        "body": "Choisissez le mode automatique, et les relances simples partent sans vous, comme un rappel ou une proposition d'appel."
       },
-      "message": "« Bonjour Marie, pour faciliter la décision, je peux vous proposer un paiement en trois fois. Un créneau jeudi pour en parler ? »",
-      "send": "Valider l'envoi",
-      "edit": "Modifier"
+      "delicate": {
+        "title": "Les cas délicats vous attendent",
+        "body": "Un prospect qui vous a écrit, un lecteur arrivé par transfert, un lien jamais ouvert. Leur relance attend votre accord, même en mode automatique."
+      },
+      "alt": "Tableau Aujourd'hui de Clozer : 2 prospects chauds, Northwind et Acme, chacun avec une relance prête à valider, et Atelier Morel en lecture tiède."
     },
     "trust": {
       "title": "Suivre sans fliquer.",

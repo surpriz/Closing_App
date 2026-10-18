@@ -12,6 +12,10 @@ import sendEn from "@/assets/steps/send-en.png";
 import sendFr from "@/assets/steps/send-fr.png";
 import uploadEn from "@/assets/steps/upload-en.png";
 import uploadFr from "@/assets/steps/upload-fr.png";
+import todayDesktopEn from "@/assets/today/desktop-en.png";
+import todayDesktopFr from "@/assets/today/desktop-fr.png";
+import todayMobileEn from "@/assets/today/mobile-en.png";
+import todayMobileFr from "@/assets/today/mobile-fr.png";
 import { Icon } from "@/components/icons";
 import { CONTACT_EMAIL, EXTENSION_STORE_URL, appUrl } from "@/components/links";
 import { SignupForm } from "@/components/signup-form";
@@ -41,7 +45,11 @@ const SEND_WAYS = [
   { key: "link", available: true, store: false },
   { key: "mail", available: true, store: true },
 ] as const;
-const FOLLOWUP_STEPS = ["read", "stuck", "schedule"] as const;
+const FOLLOWUP_POINTS = ["brief", "stuck", "approve", "delicate"] as const;
+const TODAY_SCREENS: Record<"desktop" | "mobile", Record<Locale, StaticImageData>> = {
+  desktop: { fr: todayDesktopFr, en: todayDesktopEn },
+  mobile: { fr: todayMobileFr, en: todayMobileEn },
+};
 const READING_POINTS = ["pages", "readers", "live", "score"] as const;
 const GUARANTEES = ["informed", "discreet", "limit", "unsubscribe"] as const;
 const SEGMENTS = ["solo", "team", "enterprise"] as const;
@@ -257,41 +265,39 @@ export default async function Home({ params }: Props) {
           </div>
         </section>
 
-        {/* Follow-ups: written, timed and guarded by Clozer, approved by the seller. */}
+        {/* Follow-ups: the Today board as proof, then the four rules it follows. */}
         <section id="relances" className="scroll-mt-14 border-b border-ink">
-          <div className={`${WRAP} grid gap-14 py-20 md:py-28 lg:grid-cols-[minmax(0,6fr)_minmax(0,6fr)] lg:gap-20`}>
-            <div>
-              <h2 className="condensed max-w-[16ch] text-title font-bold">{t("followUps.title")}</h2>
-              <p className="mt-6 max-w-[54ch] text-lead text-ink-soft">{t("followUps.body")}</p>
-              <p className="mt-4 max-w-[54ch] text-lead">{t("followUps.approve")}</p>
-            </div>
-            <figure className="border border-ink bg-sheet lg:self-start">
-              <figcaption className="sr-only">{t("followUps.caption")}</figcaption>
-              <div aria-hidden>
-                <p className="flex items-baseline justify-between gap-4 border-b border-ink px-5 py-3 text-small">
-                  <span className="font-semibold">{t("followUps.cardTitle")}</span>
-                  <span className="text-ink-soft">{t("followUps.cardStatus")}</span>
-                </p>
-                <dl className="divide-y divide-rule border-b border-ink px-5">
-                  {FOLLOWUP_STEPS.map((step) => (
-                    <div key={step} className="grid gap-1 py-3 text-small sm:grid-cols-[9rem_minmax(0,1fr)]">
-                      <dt className="text-ink-soft">{t(`followUps.${step}.label`)}</dt>
-                      <dd className="font-medium">{t(`followUps.${step}.value`)}</dd>
-                    </div>
-                  ))}
-                </dl>
-                <p className="px-5 py-4 text-body">{t("followUps.message")}</p>
-                <div className="flex gap-2 px-5 pb-5 text-small font-semibold">
-                  <span className="bg-ink px-3 py-2 text-sheet">{t("followUps.send")}</span>
-                  <span className="border border-ink px-3 py-2">{t("followUps.edit")}</span>
-                </div>
-              </div>
-              <p className="border-t border-rule px-5 py-2 text-micro text-ink-soft">{t("demo")}</p>
+          <div className={`${WRAP} py-20 md:py-28`}>
+            <h2 className="condensed max-w-[24ch] text-title font-bold">
+              {t.rich("followUps.title", { nowrap: (chunks) => <span className="whitespace-nowrap">{chunks}</span> })}
+            </h2>
+            <p className="mt-6 max-w-[60ch] text-lead text-ink-soft">{t("followUps.body")}</p>
+            <figure className="mt-12 md:mt-14">
+              <Image
+                src={TODAY_SCREENS.mobile[locale]}
+                alt={t("followUps.alt")}
+                sizes="calc(100vw - 2.5rem)"
+                className="mx-auto w-full max-w-[24rem] border border-rule md:hidden"
+              />
+              <Image
+                src={TODAY_SCREENS.desktop[locale]}
+                alt={t("followUps.alt")}
+                sizes="(min-width: 1440px) 85rem, calc(100vw - 4rem)"
+                className="w-full border border-rule max-md:hidden"
+              />
+              <figcaption className="mt-2 font-mono text-micro text-ink-soft">{t("screen")}</figcaption>
             </figure>
+            <ul className="mt-12 grid border-t border-ink md:grid-cols-2 lg:grid-cols-4">
+              {FOLLOWUP_POINTS.map((point) => (
+                <li key={point} className="border-b border-rule py-6 md:pr-8 lg:border-b-0">
+                  <h3 className="text-[1.125rem] leading-snug font-semibold">{t(`followUps.${point}.title`)}</h3>
+                  <p className="mt-2 max-w-[44ch] text-body text-ink-soft">{t(`followUps.${point}.body`)}</p>
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
 
-        {/* What you see: one prospect sheet as the specimen, the readings beside it. */}
         {/* Respect: the one dark band. */}
         <section className="bg-ink text-sheet">
           <div className={`${WRAP} grid gap-12 py-20 md:py-28 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-20`}>
