@@ -207,7 +207,7 @@
       },
       "cold": {
         "name": "Cold email tools",
-        "how": "With Smart Link, one link goes in your sequence, whatever the tool. Every prospect who clicks is recognized and tracked, no form."
+        "how": "With Smart Link, one link goes in your sequence, whatever the tool. When a prospect reads, Clozer takes over, and the webhook pauses their sequence."
       },
       "store": "Add to Chrome",
       "storeNote": "Free, for Gmail and Outlook on the web."
@@ -264,6 +264,10 @@
       "tools": {
         "q": "Does it work with my tools (Gmail, Outlook, CRM, outreach)?",
         "a": "Gmail and Outlook on the web with the Chrome extension, desktop Outlook with the Microsoft 365 add-in, your cold email sequences with Smart Link. There's no native CRM integration: a webhook sends your alerts to the address of your choice."
+      },
+      "cold": {
+        "q": "Does Clozer replace my cold email tool?",
+        "a": "No, it takes over from it. Your tool sends the sequence. As soon as a prospect opens your document through Smart Link, Clozer tracks them and drafts a follow-up on what they read. Connect the webhook so their sequence pauses at that point: they don't get two messages."
       },
       "auto": {
         "q": "Do follow-ups go out on their own?",
@@ -341,6 +345,32 @@
     "jump": "Jump to",
     "send": "You send",
     "result": "What happens",
+    "workflow": {
+      "title": "Where Clozer fits in your outreach",
+      "body": "Your cold email tool opens the door. As soon as a prospect reads your document, Clozer takes over.",
+      "caption": "A prospect's path, from the cold email sequence to the deal",
+      "sequence": {
+        "who": "Your cold email tool",
+        "title": "The sequence",
+        "body": "It sends your emails to your prospect list, with the Smart Link inside."
+      },
+      "read": {
+        "who": "The handoff",
+        "title": "The prospect reads",
+        "body": "Clozer recognizes them. The webhook pauses their sequence: they don't get two messages."
+      },
+      "clozer": {
+        "who": "Clozer",
+        "title": "The follow-through",
+        "body": "What they read, a follow-up written on that topic, the meeting booked inside the document."
+      },
+      "crm": {
+        "who": "Your CRM",
+        "title": "The deal",
+        "body": "Alerts go out by webhook to your CRM or your automation tool."
+      },
+      "scope": "Clozer doesn't handle lists or mass sending. It only writes to prospects who read, or to whom you sent a proposal."
+    },
     "formats": {
       "pdf": "PDF",
       "video": "Video pitch",
