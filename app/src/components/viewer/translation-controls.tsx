@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Globe, Languages } from "lucide-react";
+import { Check, Globe, Languages, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -85,21 +85,25 @@ export function TranslationStrip({
   onDismiss,
 }: StripProps) {
   if (!target && !(offer && source)) return null;
+  // The first translation of a PDF takes a while: say so, or the reader clicks again and again
+  const waiting = !!target && status === "loading" && !showOriginal;
 
   return (
-    <div role="status" className="border-b border-border bg-card">
-      <div className="mx-auto flex max-w-4xl flex-wrap items-center gap-x-3 gap-y-1 py-1.5 pr-2 pl-4 text-small text-muted-foreground sm:pr-3">
-        <Languages className="size-4 shrink-0" aria-hidden />
+    <div role="status" aria-live="polite" className="border-b border-border bg-card">
+      <div
+        className={`mx-auto flex max-w-4xl flex-wrap items-center gap-x-3 gap-y-1 py-1.5 pr-2 pl-4 text-small sm:pr-3 ${waiting ? "text-foreground" : "text-muted-foreground"}`}
+      >
+        {waiting ? (
+          <Loader2 className="size-4 shrink-0 motion-safe:animate-spin" aria-hidden />
+        ) : (
+          <Languages className="size-4 shrink-0" aria-hidden />
+        )}
         {target ? (
           <>
-            <span className="min-w-0 flex-1">
-              {status === "loading" && !showOriginal
-                ? labels.translating
-                : status === "failed"
-                  ? labels.translationFailed
-                  : labels.machineTranslated}
+            <span className="min-w-0 flex-1 text-pretty">
+              {waiting ? labels.translating : status === "failed" ? labels.translationFailed : labels.machineTranslated}
             </span>
-            {status !== "failed" && (
+            {status !== "failed" && !waiting && (
               <Button variant="ghost" size="sm" className="h-9 sm:h-7" onClick={onToggleOriginal}>
                 {showOriginal ? labels.showTranslation : labels.showOriginal}
               </Button>
