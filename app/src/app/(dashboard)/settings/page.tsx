@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
 import { LocaleSwitcher } from "@/components/locale-switcher";
+import { BillingSettings } from "@/components/dashboard/billing-settings";
 import { ExtensionTokens } from "@/components/dashboard/extension-tokens";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { PrivacySettings } from "@/components/dashboard/privacy-settings";
@@ -12,6 +13,7 @@ import {
 } from "@/components/dashboard/settings-advanced";
 import { SettingsForm } from "@/components/dashboard/settings-form";
 import { TeamSettings } from "@/components/dashboard/team-settings";
+import { countAiFollowupsThisMonth, countLinksCreatedThisMonth, countVideoPitches, isBillingEnabled, planFor } from "@/lib/billing/workspace-plan";
 import { getLanguageModel } from "@/lib/closing/ai/provider";
 import { getSellerPrefs } from "@/lib/closing/notify/preferences";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
@@ -39,7 +41,13 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 // Chrome and Outlook lead: the call alerts depend on them
-const ESSENTIAL = [{ id: "extension" }, { id: "pilote" }, { id: "alertes" }, { id: "agenda" }] as const;
+const ESSENTIAL = [
+  { id: "extension" },
+  { id: "pilote" },
+  { id: "alertes" },
+  { id: "agenda" },
+  { id: "facturation" },
+] as const;
 
 const ADVANCED = [
   { id: "offre" },
@@ -53,7 +61,8 @@ const ADVANCED = [
 export default async function SettingsPage() {
   const { user, organization, role } = await requireWorkspace();
   const isManager = isManagerRole(role);
-  const [settings, tokens, prefs, team] = await Promise.all([
+  const billing = planFor(organization);
+  const [settings, tokens, prefs, team, usage] = await Promise.all([
     getWorkspaceSettings(organization.id),
     prisma.extensionToken.findMany({
       where: {
@@ -72,6 +81,7 @@ export default async function SettingsPage() {
     }),
     getSellerPrefs(user.id, organization.id),
     isManager ? getTeam(organization.id) : null,
+    getBillingUsage(organization.id),
   ]);
   const llm = getLanguageModel("followup");
   const t = await getTranslations("settings.page");
@@ -149,6 +159,25 @@ export default async function SettingsPage() {
               }}
               canEditWorkspace={isManager}
             />
+            <BillingSettings
+              plan={billing.plan}
+              source={billing.source}
+              endsAt={billing.endsAt?.toISOString() ?? null}
+              paymentIssue={billing.paymentIssue}
+              subscribed={billing.subscribed}
+              periodEnd={organization.currentPeriodEnd?.toISOString() ?? null}
+              interval={organization.billingInterval === "month" || organization.billingInterval === "year" ? organization.billingInterval : null}
+              seats={organization.seats}
+              members={usage.members}
+              usage={{
+                links: { used: usage.links, max: billing.limits.linksPerMonth },
+                aiFollowups: { used: usage.aiFollowups, max: billing.limits.aiFollowupsPerMonth },
+                videoPitches: { used: usage.videoPitches, max: billing.limits.videoPitches },
+              }}
+              canManage={isManager}
+              billingEnabled={isBillingEnabled()}
+              hasCustomer={!!organization.stripeCustomerId}
+            />
             <AdvancedSettingsBlock className="space-y-10">
               {/* Unlike the form above, no "Enregistrer": said once, where the rule changes */}
               <p className="text-small text-muted-foreground">{t("instantSave")}</p>
@@ -170,6 +199,16 @@ export default async function SettingsPage() {
       </AdvancedSettingsProvider>
     </div>
   );
+}
+
+async function getBillingUsage(organizationId: string) {
+  const [links, aiFollowups, videoPitches, members] = await Promise.all([
+    countLinksCreatedThisMonth(organizationId),
+    countAiFollowupsThisMonth(organizationId),
+    countVideoPitches(organizationId),
+    prisma.member.count({ where: { organizationId } }),
+  ]);
+  return { links, aiFollowups, videoPitches, members };
 }
 
 async function getTeam(organizationId: string) {

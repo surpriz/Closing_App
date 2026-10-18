@@ -1,0 +1,119 @@
+{
+  "title": "Facturation",
+  "description": "Votre offre, ce que vous utilisez ce mois-ci, et vos factures.",
+  "plans": {
+    "free": {
+      "name": "Gratuit",
+      "tagline": "Pour essayer Clozer sur quelques affaires.",
+      "features": {
+        "links": "5 liens suivis par mois",
+        "tracking": "Suivi de lecture, score de chaleur, alertes",
+        "followups": "10 relances IA par mois, validées par vous",
+        "extension": "Extension Gmail et Outlook, prise de rendez-vous"
+      }
+    },
+    "solo": {
+      "name": "Solo",
+      "tagline": "Pour les indépendants et commerciaux seuls.",
+      "features": {
+        "links": "Liens illimités",
+        "followups": "Relances IA illimitées, pilote automatique",
+        "assistant": "Assistant prospect, traduction, messages vocaux",
+        "branding": "Pas de badge Clozer chez vos prospects"
+      }
+    },
+    "team": {
+      "name": "Équipe",
+      "tagline": "Pour les équipes commerciales avec un manager.",
+      "features": {
+        "solo": "Tout Solo, pour chaque commercial",
+        "teamView": "Vue équipe pour le manager",
+        "integrations": "Slack et webhooks",
+        "seats": "Facturé par membre, 2 minimum"
+      }
+    },
+    "enterprise": {
+      "name": "Entreprise",
+      "tagline": "Plusieurs équipes, besoins de sécurité ou d'intégration.",
+      "cta": "Nous écrire",
+      "mailSubject": "Clozer Entreprise"
+    }
+  },
+  "interval": {
+    "month": "Mensuel",
+    "year": "Annuel",
+    "save": "2 mois offerts"
+  },
+  "price": {
+    "perMonth": "{amount} / mois",
+    "perSeat": "{amount} / membre / mois",
+    "billedYearly": "soit {amount} par an",
+    "exclVat": "HT"
+  },
+  "current": {
+    "label": "Offre actuelle",
+    "trial": "Essai Équipe jusqu'au {date}.",
+    "beta": "Équipe, offert aux utilisateurs de la bêta.",
+    "betaUntil": "Équipe, offert aux utilisateurs de la bêta jusqu'au {date}.",
+    "subscription": "Renouvellement le {date}.",
+    "canceling": "Résilié : reste actif jusqu'au {date}.",
+    "comped": "Offert par Clozer.",
+    "free": "Offre gratuite.",
+    "unbilled": "La facturation n'est pas configurée ici : tout est ouvert.",
+    "paymentIssue": "Le dernier paiement a échoué. Stripe va réessayer : mettez à jour votre carte pour garder votre offre.",
+    "seats": "{count, plural, one {# membre} other {# membres}}"
+  },
+  "usage": {
+    "title": "Ce mois-ci",
+    "links": "Liens créés",
+    "aiFollowups": "Relances IA",
+    "videoPitches": "Vidéos pitch",
+    "unlimited": "{used} · illimité",
+    "of": "{used} sur {max}"
+  },
+  "actions": {
+    "choose": "Choisir {plan}",
+    "manage": "Factures et paiement",
+    "current": "Votre offre",
+    "managerOnly": "Seul un propriétaire ou admin de l'espace peut changer d'offre.",
+    "redirecting": "Ouverture de Stripe…"
+  },
+  "checkout": {
+    "success": "Merci ! Votre offre est en cours d'activation.",
+    "pending": "Activation de votre offre…"
+  },
+  "errors": {
+    "disabled": "La facturation n'est pas disponible pour l'instant.",
+    "generic": "Ça n'a pas marché, réessayez.",
+    "soloTeam": "Solo, c'est pour une personne. À plusieurs, choisissez Équipe.",
+    "noCustomer": "Pas encore d'abonnement : choisissez d'abord une offre."
+  },
+  "upgrade": {
+    "title": "Disponible avec une offre payante",
+    "cta": "Voir les offres",
+    "later": "Plus tard",
+    "reason": {
+      "links": "Vous avez créé vos {max} liens du mois avec l'offre Gratuite. Solo et Équipe n'ont pas de limite.",
+      "videoPitch": "L'offre Gratuite garde une vidéo pitch. Archivez-la, ou passez à Solo pour en avoir autant que vous voulez.",
+      "autopilot": "Le pilote automatique envoie les relances pour vous. Il est inclus dans Solo et Équipe.",
+      "chat": "L'assistant prospect est inclus dans Solo et Équipe.",
+      "translation": "La traduction pour vos prospects est incluse dans Solo et Équipe.",
+      "voice": "Les messages vocaux des prospects sont inclus dans Solo et Équipe.",
+      "team": "La vue équipe est incluse dans l'offre Équipe.",
+      "invites": "Inviter des collègues, c'est avec l'offre Équipe.",
+      "slack": "Les alertes Slack sont incluses dans l'offre Équipe.",
+      "webhooks": "Les webhooks sont inclus dans l'offre Équipe."
+    }
+  },
+  "badge": {
+    "solo": "Solo",
+    "team": "Équipe"
+  },
+  "banner": {
+    "trial": "{days, plural, =0 {Votre essai Équipe se termine aujourd'hui.} one {Votre essai Équipe se termine demain.} other {Votre essai Équipe se termine dans # jours.}} Ensuite vous passez en Gratuit, vos liens continuent de marcher.",
+    "beta": "{days, plural, =0 {L'accès offert de la bêta se termine aujourd'hui.} one {L'accès offert de la bêta se termine demain.} other {L'accès offert de la bêta se termine dans # jours.}}",
+    "payment": "Votre dernier paiement a échoué. Mettez à jour votre carte pour garder votre offre.",
+    "canceling": "{days, plural, =0 {Votre offre se termine aujourd'hui.} one {Votre offre se termine demain.} other {Votre offre se termine dans # jours.}}",
+    "cta": "Voir la facturation"
+  }
+}

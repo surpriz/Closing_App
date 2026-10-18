@@ -1,3 +1,6 @@
+import { PAID_STATUSES } from "@/lib/billing/plans";
+import { syncSeats } from "@/lib/billing/seats";
+import { getStripe } from "@/lib/billing/stripe";
 import { listPrivateBlobPaths, organizationPrefix } from "@/lib/blob";
 import { prisma } from "@/lib/db";
 import { isOwnerRole } from "@/lib/roles";
@@ -40,6 +43,7 @@ export async function exportWorkspaceData(organizationId: string) {
 // so nothing stays behind in the store. Members left without a workspace go too.
 export async function deleteWorkspace(organizationId: string) {
   const members = await prisma.member.findMany({ where: { organizationId }, select: { userId: true } });
+  await cancelSubscription(organizationId);
 
   await deleteBlobs(await listPrivateBlobPaths(organizationPrefix(organizationId)));
   await prisma.$transaction([
@@ -78,5 +82,19 @@ export async function accountDeletionBlocker(userId: string) {
 
 // Links and documents stay with the workspace (creator/owner set to null by the schema)
 export async function deleteAccount(userId: string) {
+  const memberships = await prisma.member.findMany({ where: { userId }, select: { organizationId: true } });
   await prisma.user.delete({ where: { id: userId } });
+  // The membership went with the user, no auth hook ran: one Team seat fewer
+  for (const { organizationId } of memberships) {
+    await syncSeats(organizationId).catch((error) => console.error("[billing:seats]", organizationId, error));
+  }
+}
+
+// A deleted workspace must stop being billed, at once and without a refund for the period started
+async function cancelSubscription(organizationId: string) {
+  const stripe = getStripe();
+  const org = await prisma.organization.findUnique({ where: { id: organizationId }, select: { stripeSubscriptionId: true, planStatus: true } });
+  if (!stripe || !org?.stripeSubscriptionId) return;
+  if (!(PAID_STATUSES as readonly (string | null)[]).includes(org.planStatus) && org.planStatus !== "incomplete") return;
+  await stripe.subscriptions.cancel(org.stripeSubscriptionId);
 }

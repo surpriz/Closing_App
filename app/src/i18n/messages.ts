@@ -18,6 +18,7 @@ import en_alerts from "../../messages/en/alerts.json";
 import en_server from "../../messages/en/server.json";
 import en_results from "../../messages/en/results.json";
 import en_drafts from "../../messages/en/drafts.json";
+import en_billing from "../../messages/en/billing.json";
 import fr_common from "../../messages/fr/common.json";
 import fr_meta from "../../messages/fr/meta.json";
 import fr_nav from "../../messages/fr/nav.json";
@@ -36,6 +37,7 @@ import fr_alerts from "../../messages/fr/alerts.json";
 import fr_server from "../../messages/fr/server.json";
 import fr_results from "../../messages/fr/results.json";
 import fr_drafts from "../../messages/fr/drafts.json";
+import fr_billing from "../../messages/fr/billing.json";
 
 import type { UiLocale } from "./locale";
 
@@ -59,6 +61,7 @@ const en = {
   server: en_server,
   results: en_results,
   drafts: en_drafts,
+  billing: en_billing,
 };
 
 const fr = {
@@ -80,6 +83,7 @@ const fr = {
   server: fr_server,
   results: fr_results,
   drafts: fr_drafts,
+  billing: fr_billing,
 };
 
 export type Messages = typeof en;

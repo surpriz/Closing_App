@@ -1,0 +1,119 @@
+{
+  "title": "Billing",
+  "description": "Your plan, what you use this month, and your invoices.",
+  "plans": {
+    "free": {
+      "name": "Free",
+      "tagline": "To try Clozer on a few deals.",
+      "features": {
+        "links": "5 tracked links a month",
+        "tracking": "Reading tracking, heat score, alerts",
+        "followups": "10 AI follow-ups a month, you approve each one",
+        "extension": "Gmail and Outlook extension, booking"
+      }
+    },
+    "solo": {
+      "name": "Solo",
+      "tagline": "For freelancers and solo sellers.",
+      "features": {
+        "links": "Unlimited links",
+        "followups": "Unlimited AI follow-ups, autopilot",
+        "assistant": "Prospect assistant, translation, voice notes",
+        "branding": "No Clozer badge for your prospects"
+      }
+    },
+    "team": {
+      "name": "Team",
+      "tagline": "For sales teams with a manager.",
+      "features": {
+        "solo": "Everything in Solo, for each seller",
+        "teamView": "Team view for the manager",
+        "integrations": "Slack and webhooks",
+        "seats": "Billed per member, 2 minimum"
+      }
+    },
+    "enterprise": {
+      "name": "Enterprise",
+      "tagline": "Several teams, security or integration needs.",
+      "cta": "Write to us",
+      "mailSubject": "Clozer Enterprise"
+    }
+  },
+  "interval": {
+    "month": "Monthly",
+    "year": "Yearly",
+    "save": "2 months free"
+  },
+  "price": {
+    "perMonth": "{amount} / month",
+    "perSeat": "{amount} / seat / month",
+    "billedYearly": "billed {amount} a year",
+    "exclVat": "excl. VAT"
+  },
+  "current": {
+    "label": "Current plan",
+    "trial": "Team trial until {date}.",
+    "beta": "Team, free for beta users.",
+    "betaUntil": "Team, free for beta users until {date}.",
+    "subscription": "Renews on {date}.",
+    "canceling": "Cancelled: stays active until {date}.",
+    "comped": "Granted by Clozer.",
+    "free": "Free plan.",
+    "unbilled": "Billing is not set up here: every feature is open.",
+    "paymentIssue": "The last payment failed. Stripe will try again: update your card to keep your plan.",
+    "seats": "{count, plural, one {# seat} other {# seats}}"
+  },
+  "usage": {
+    "title": "This month",
+    "links": "Links created",
+    "aiFollowups": "AI follow-ups",
+    "videoPitches": "Video pitches",
+    "unlimited": "{used} · unlimited",
+    "of": "{used} of {max}"
+  },
+  "actions": {
+    "choose": "Choose {plan}",
+    "manage": "Invoices and payment",
+    "current": "Your plan",
+    "managerOnly": "Only an owner or admin of the workspace can change the plan.",
+    "redirecting": "Opening Stripe…"
+  },
+  "checkout": {
+    "success": "Thanks! Your plan is being activated.",
+    "pending": "Activating your plan…"
+  },
+  "errors": {
+    "disabled": "Billing is not available right now.",
+    "generic": "That didn't work, try again.",
+    "soloTeam": "Solo is for one person. With several members, choose Team.",
+    "noCustomer": "No subscription yet: choose a plan first."
+  },
+  "upgrade": {
+    "title": "Available on a paid plan",
+    "cta": "See the plans",
+    "later": "Not now",
+    "reason": {
+      "links": "You've created your {max} links for this month on the Free plan. Solo and Team have no limit.",
+      "videoPitch": "The Free plan keeps one video pitch. Archive it, or move to Solo for as many as you need.",
+      "autopilot": "Autopilot sends follow-ups for you. It comes with Solo and Team.",
+      "chat": "The prospect assistant comes with Solo and Team.",
+      "translation": "Translation for your prospects comes with Solo and Team.",
+      "voice": "Voice notes from prospects come with Solo and Team.",
+      "team": "The team view comes with the Team plan.",
+      "invites": "Inviting teammates comes with the Team plan.",
+      "slack": "Slack alerts come with the Team plan.",
+      "webhooks": "Webhooks come with the Team plan."
+    }
+  },
+  "badge": {
+    "solo": "Solo",
+    "team": "Team"
+  },
+  "banner": {
+    "trial": "{days, plural, =0 {Your Team trial ends today.} one {Your Team trial ends tomorrow.} other {Your Team trial ends in # days.}} Then you move to Free, your links keep working.",
+    "beta": "{days, plural, =0 {Free beta access ends today.} one {Free beta access ends tomorrow.} other {Free beta access ends in # days.}}",
+    "payment": "Your last payment failed. Update your card to keep your plan.",
+    "canceling": "{days, plural, =0 {Your plan ends today.} one {Your plan ends tomorrow.} other {Your plan ends in # days.}}",
+    "cta": "See billing"
+  }
+}

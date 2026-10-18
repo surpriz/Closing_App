@@ -7,6 +7,8 @@ import { admin, magicLink, organization } from "better-auth/plugins";
 import { DEFAULT_UI_LOCALE, LOCALE_COOKIE, resolveUiLocale, type UiLocale } from "@/i18n/locale";
 import { getTranslator } from "@/i18n/messages";
 import { getPublicAppUrl } from "@/lib/app-origin";
+import { syncSeats } from "@/lib/billing/seats";
+import { inBackground } from "@/lib/closing/background";
 import { prisma } from "@/lib/db";
 import {
   devMagicLinksEnabled,
@@ -136,6 +138,12 @@ export const auth = betterAuth({
       invitationExpiresIn: 7 * 24 * 60 * 60,
       // Re-inviting someone replaces the pending invitation instead of failing
       cancelPendingInvitationsOnReInvite: true,
+      // Team is billed per member: the Stripe quantity follows every arrival and departure
+      organizationHooks: {
+        afterAddMember: async ({ organization }) => inBackground("seat-sync", () => syncSeats(organization.id)),
+        afterAcceptInvitation: async ({ organization }) => inBackground("seat-sync", () => syncSeats(organization.id)),
+        afterRemoveMember: async ({ organization }) => inBackground("seat-sync", () => syncSeats(organization.id)),
+      },
       sendInvitationEmail: async ({ id, email, organization, inviter }) => {
         const url = `${getPublicAppUrl()}/invitation/${id}`;
         if (!isEmailConfigured()) {
