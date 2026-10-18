@@ -60,9 +60,9 @@ export function UserMenu({
         <DropdownMenuItem
           onClick={() => {
             // Already on the settings: a client push fires no hashchange, the fold would stay shut
-            if (window.location.pathname !== "/settings") return router.push("/settings#donnees");
-            window.history.replaceState(null, "", "/settings");
-            window.location.hash = "donnees";
+            if (!window.location.pathname.startsWith("/settings")) return router.push("/settings#donnees");
+            if (window.location.hash === "#donnees") window.dispatchEvent(new HashChangeEvent("hashchange"));
+            else window.location.hash = "donnees";
           }}
         >
           <ShieldCheck />

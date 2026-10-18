@@ -192,10 +192,10 @@ export function CtaBar({
     ? [{ key: "chat", icon: MessageCircleQuestion, label: labels.chatAsk, onSelect: onAskQuestion }]
     : [];
   const bookingItem: MoreItem[] = booking
-    ? [{ key: "booking", icon: CalendarDays, label: labels.bookMeeting, onSelect: openBooking }]
+    ? [{ key: "booking", icon: CalendarDays, label: labels.bookMeeting, onSelect: openBooking, disabled: pending }]
     : [];
   const forwardItem: MoreItem[] = forward
-    ? [{ key: "forward", icon: Forward, label: labels.forwardButton, onSelect: () => setForwardOpen(true) }]
+    ? [{ key: "forward", icon: Forward, label: labels.forwardButton, onSelect: () => setForwardOpen(true), disabled: pending }]
     : [];
 
   return (
@@ -467,7 +467,16 @@ type MoreItem = { key: string; icon: LucideIcon; label: string; onSelect: () => 
 function MoreMenu({ label, items, className }: { label: string; items: MoreItem[]; className: string }) {
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="ghost" className={className} data-chat-trigger />}>
+      {/* The chat's way back for focus, only when the chat is one of its items */}
+      <DropdownMenuTrigger
+        render={
+          <Button
+            variant="ghost"
+            className={className}
+            data-chat-trigger={items.some((item) => item.key === "chat") || undefined}
+          />
+        }
+      >
         <MoreHorizontal aria-hidden />
         {label}
       </DropdownMenuTrigger>

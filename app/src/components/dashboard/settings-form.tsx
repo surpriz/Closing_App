@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import {
   AdvancedSettingsBlock,
   AdvancedSettingsToggle,
+  useAdvancedSettings,
 } from "./settings-advanced";
 
 type Props = {
@@ -105,6 +106,16 @@ function Row({
   );
 }
 
+/** A block's title inside a merged section: "Pilote automatique" under "Liens et relances". */
+function SubHeading({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-0.5 px-5 pt-5 pb-3">
+      <h3 className="text-body font-semibold">{title}</h3>
+      <p className="text-small text-muted-foreground">{children}</p>
+    </div>
+  );
+}
+
 /** A number typed inside a sentence: "après [90] secondes". */
 function Inline({ className, ...props }: React.ComponentProps<typeof Input>) {
   return (
@@ -179,16 +190,23 @@ export function SettingsForm({
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty]);
 
+  // A rejected field may sit in the folded part: unfold it so the seller can find it
+  const { setOpen: setAdvancedOpen } = useAdvancedSettings();
   useEffect(() => {
     if (state?.ok) toast.success(t("saved"));
-    if (state?.error) toast.error(state.error);
-  }, [state, t]);
+    if (state?.error) {
+      toast.error(state.error);
+      if (canEditWorkspace) setAdvancedOpen(true);
+    }
+  }, [state, t, canEditWorkspace, setAdvancedOpen]);
 
   return (
     <form
       action={formAction}
       onInput={markDirty}
       onChange={markDirty}
+      // The server checks every field: a hidden invalid one must not block the save in silence
+      noValidate
       className="max-w-2xl"
     >
       <input ref={timezoneRef} type="hidden" name="timezone" defaultValue="" />
@@ -296,9 +314,9 @@ export function SettingsForm({
         </div>
 
         {/* Rendered while folded so their fields stay in the saved FormData */}
+        {/* Workspace settings: owners and admins only, a member's page stays theirs */}
+        {canEditWorkspace && (
         <AdvancedSettingsBlock id="reglages-avances" className="space-y-12">
-          {/* Workspace settings: owners and admins only, a member's page stays theirs */}
-          {canEditWorkspace && (
             <>
               <Section
                 id="offre"
@@ -368,9 +386,9 @@ export function SettingsForm({
                 </Row>
                 {/* The assistant answers from the offer: one place for both */}
                 <div id="assistant" className="scroll-mt-24 divide-y divide-border">
-                  <p className="px-5 pt-4 text-small text-muted-foreground">
+                  <SubHeading title={t("assistant.title")}>
                     {providers.ai ? t("assistant.descriptionAi") : t("assistant.descriptionNoAi")}
-                  </p>
+                  </SubHeading>
                   <Row hint={t("assistant.enableHint")}>
                     <label className="flex cursor-pointer items-center gap-2.5">
                       <Checkbox
@@ -443,47 +461,48 @@ export function SettingsForm({
                   </label>
                 </Row>
                 {/* How follow-ups go out, and in whose name: with the links they follow */}
-                <div id="pilote" className="scroll-mt-24">
-                  <p className="px-5 pt-4 text-small text-muted-foreground">
+                <div id="pilote" className="scroll-mt-24 divide-y divide-border">
+                  <SubHeading title={t("pilot.title")}>
                     {providers.ai ? t("pilot.descriptionAi") : t("pilot.descriptionNoAi")}
-                  </p>
-                <Row hint={t("pilot.hint")}>
-                  <span className="mb-1 block">{t("pilot.question")}</span>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="flex cursor-pointer items-start gap-2.5">
-                      <input
-                        type="radio"
-                        name="autonomy"
-                        value="COPILOT"
-                        defaultChecked={initial.autonomy === "COPILOT"}
-                        className="mt-2.5 accent-foreground"
-                      />
-                      <span>
-                        {t("pilot.copilot")}
-                        <span className="block text-small text-muted-foreground">
-                          {t("pilot.copilotHint")}
+                  </SubHeading>
+                  <Row hint={t("pilot.hint")}>
+                    <span className="mb-1 block">{t("pilot.question")}</span>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="flex cursor-pointer items-start gap-2.5">
+                        <input
+                          type="radio"
+                          name="autonomy"
+                          value="COPILOT"
+                          defaultChecked={initial.autonomy === "COPILOT"}
+                          className="mt-2.5 accent-foreground"
+                        />
+                        <span>
+                          {t("pilot.copilot")}
+                          <span className="block text-small text-muted-foreground">
+                            {t("pilot.copilotHint")}
+                          </span>
                         </span>
-                      </span>
-                    </label>
-                    <label className="flex cursor-pointer items-start gap-2.5">
-                      <input
-                        type="radio"
-                        name="autonomy"
-                        value="AUTOPILOT"
-                        defaultChecked={initial.autonomy === "AUTOPILOT"}
-                        className="mt-2.5 accent-foreground"
-                      />
-                      <span>
-                        {t("pilot.autopilot")}
-                        <span className="block text-small text-muted-foreground">
-                          {t("pilot.autopilotHint")}
+                      </label>
+                      <label className="flex cursor-pointer items-start gap-2.5">
+                        <input
+                          type="radio"
+                          name="autonomy"
+                          value="AUTOPILOT"
+                          defaultChecked={initial.autonomy === "AUTOPILOT"}
+                          className="mt-2.5 accent-foreground"
+                        />
+                        <span>
+                          {t("pilot.autopilot")}
+                          <span className="block text-small text-muted-foreground">
+                            {t("pilot.autopilotHint")}
+                          </span>
                         </span>
-                      </span>
-                    </label>
-                  </div>
-                </Row>
+                      </label>
+                    </div>
+                  </Row>
                 </div>
                 <div id="messages" className="scroll-mt-24 divide-y divide-border">
+                  <SubHeading title={t("messages.title")}>{t("messages.description")}</SubHeading>
                   <div className="grid gap-4 px-5 py-4 sm:grid-cols-2">
                     <div className="space-y-1.5">
                       <Label htmlFor="senderName">{t("messages.senderLabel")}</Label>
@@ -612,8 +631,8 @@ export function SettingsForm({
                 </details>
               </Section>
             </>
-          )}
         </AdvancedSettingsBlock>
+        )}
       </div>
 
       <div
