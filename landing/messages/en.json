@@ -33,98 +33,38 @@
     "google": "Continue with Google"
   },
   "reading": {
-    "caption": "Example reading: {name}.",
-    "captionVideo": "The most-watched part is “{title}”, watched {count, plural, one {# time} other {# times}}. The prospect dropped off before the end.",
-    "captionPage": "The most-read page is “{title}”, at {time}.",
-    "tablist": "Document type",
+    "name": "Proposal “E-commerce site redesign”",
+    "caption": "Example: a reading of the “E-commerce site redesign” proposal. The most-read page is “Pricing”, 3:38.",
+    "summary": "Pricing read 3 times, 3:38 in total",
     "hot": "Hot",
     "cold": "Cold",
-    "documents": {
-      "quote": {
-        "tab": "Quote",
-        "name": "“Website redesign” quote",
-        "pages": {
-          "p1": "Cover",
-          "p2": "Context",
-          "p3": "Approach",
-          "p4": "Pricing",
-          "p5": "Timeline",
-          "p6": "Terms"
-        }
+    "pages": {
+      "cover": {
+        "label": "Cover",
+        "heading": "Sales proposal"
       },
-      "deck": {
-        "tab": "Deck",
-        "name": "“2027 Offer” deck",
-        "pages": {
-          "p1": "Cover",
-          "p2": "The problem",
-          "p3": "Demo",
-          "p4": "Results",
-          "p5": "Team",
-          "p6": "Contact"
-        }
+      "scope": {
+        "label": "Scope",
+        "heading": "Project scope"
       },
-      "tech": {
-        "tab": "Tech doc",
-        "name": "“ERP migration” technical brief",
-        "pages": {
-          "p1": "Contents",
-          "p2": "Current setup",
-          "p3": "Architecture",
-          "p4": "Security",
-          "p5": "Timeline",
-          "p6": "Appendices"
-        }
+      "timeline": {
+        "label": "Timeline",
+        "heading": "Timeline"
       },
-      "invoice": {
-        "tab": "Invoice",
-        "name": "Invoice #2026-118",
-        "pages": {
-          "p1": "Summary",
-          "p2": "Line items",
-          "p3": "Discounts",
-          "p4": "Payment schedule",
-          "p5": "Fine print",
-          "p6": "Bank details"
-        }
-      },
-      "video": {
-        "tab": "Video",
-        "name": "“SEO audit” video pitch · 3:00",
-        "pages": {
-          "p1": "Hello",
-          "p2": "The problem",
-          "p3": "Demo",
-          "p4": "Results",
-          "p5": "Pricing",
-          "p6": "Next step"
-        }
+      "pricing": {
+        "label": "Pricing",
+        "heading": "Pricing and terms"
       }
     }
   },
   "home": {
-    "demoBar": {
-      "report": "Reading report #0412",
-      "company": "Atelier Morel"
-    },
     "demo": "Demo example",
     "hero": {
-      "title": "See where your document",
-      "titleHot": "heats up.",
-      "lead": "Quote, invoice, deck, tech doc, contract: send a link instead of an attachment. Clozer tracks reading page by page, tells you who to follow up with, writes the follow-up and picks the time to send it.",
+      "title": "Know who's reading your proposal. Follow up <hot>at the right time</hot>.",
+      "lead": "For B2B sales reps and their managers. Send a Clozer link instead of the PDF: see who opens it, what they read and who they forward it to. Clozer drafts the follow-up.",
       "free": "Free during the beta",
-      "noCard": "No credit card"
-    },
-    "readout": {
-      "prospect": "Prospect",
-      "prospectValue": "Marie Dupont · Atelier Morel",
-      "temperature": "Temperature",
-      "hot": "Hot",
-      "activity": "Activity",
-      "activityValue": "Back 3 times since yesterday",
-      "next": "Next follow-up",
-      "ready": "Ready",
-      "nextTime": "Thu 10:30 AM"
+      "noCard": "No credit card",
+      "magicLink": "Sign-in link by email"
     },
     "silence": {
       "title": "You hit send. Then, silence.",

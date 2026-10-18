@@ -8,7 +8,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { HeatScale, ThermalPlate } from "@/components/thermal-plate";
 import { ThermalReading } from "@/components/thermal-reading";
-import { READING_DOCUMENTS, type ReadingDocument } from "@/components/thermal-reading-data";
+import { READING_PAGES } from "@/components/thermal-reading-data";
 import { resolveLocale } from "@/i18n/page";
 import { alternatesFor } from "@/i18n/seo";
 
@@ -30,7 +30,6 @@ const GUARANTEES = ["informed", "discreet", "limit", "unsubscribe"] as const;
 const SEGMENTS = ["solo", "team", "enterprise"] as const;
 const BETA_INCLUDES = ["formats", "extension", "tracking", "deals", "replies"] as const;
 const FAQ = ["informed", "auto", "documents", "ownOpens", "install", "extension", "replies"] as const;
-const PAGE_KEYS = ["p1", "p2", "p3", "p4", "p5", "p6"] as const;
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -48,23 +47,12 @@ export default async function Home({ params }: Props) {
     getTranslations({ locale, namespace: "reading" }),
   ]);
 
-  const documents: ReadingDocument[] = READING_DOCUMENTS.map((doc) => {
-    const pages = doc.pages.map((page, i) => ({ ...page, title: tr(`documents.${doc.key}.pages.${PAGE_KEYS[i]}`) }));
-    const hot = pages[doc.hottest];
-    const name = tr(`documents.${doc.key}.name`);
-    const video = "video" in doc;
-    const detail = video
-      ? tr("captionVideo", { title: hot.title, count: Number.parseInt(hot.time, 10) })
-      : tr("captionPage", { title: hot.title, time: hot.time });
-    return {
-      tab: tr(`documents.${doc.key}.tab`),
-      name,
-      caption: `${tr("caption", { name })} ${detail}`,
-      video,
-      hottest: doc.hottest,
-      pages,
-    };
-  });
+  const pages = READING_PAGES.map((page) => ({
+    label: tr(`pages.${page.key}.label`),
+    heading: tr(`pages.${page.key}.heading`),
+    time: page.time,
+    heat: page.heat,
+  }));
 
   const segmentHref = (segment: (typeof SEGMENTS)[number]) =>
     segment === "enterprise"
@@ -77,52 +65,39 @@ export default async function Home({ params }: Props) {
 
       <main className="flex-1">
         {/* Report header: the promise, and the signup in the "Client" field. */}
-        <section>
-          <p className={`${WRAP} flex flex-wrap gap-x-6 gap-y-1 border-b border-rule py-3 font-mono text-micro text-ink-soft`}>
-            <span>{t("demoBar.report")}</span>
-            <span>{t("demoBar.company")}</span>
-            <span className="font-sans font-medium text-ink">{t("demo")}</span>
-          </p>
-          <div className={`${WRAP} grid gap-10 pt-10 pb-12 md:pt-14 lg:grid-cols-[minmax(0,1fr)_26rem] lg:items-end lg:gap-16`}>
+        <section className="border-b border-ink">
+          <div className={`${WRAP} grid grid-cols-[minmax(0,1fr)] gap-10 pt-8 pb-12 sm:pt-12 md:pb-16 lg:grid-cols-[minmax(0,7fr)_minmax(0,6fr)] lg:items-center lg:gap-16 lg:pt-16 lg:pb-20`}>
             <div>
-              <h1 className="condensed max-w-[12ch] text-display font-extrabold">
-                {t("hero.title")}{" "}
-                <span className="relative inline-block">
-                  {t("hero.titleHot")}
-                  <HeatScale orientation="horizontal" className="absolute inset-x-0 -bottom-2 sm:-bottom-3" />
-                </span>
+              <h1 className="condensed text-[2.625rem] leading-[0.95] font-extrabold tracking-[-0.03em] sm:text-display lg:text-[clamp(3rem,1rem+3.6vw,4.75rem)]">
+                {t.rich("hero.title", {
+                  hot: (chunks) => (
+                    <span className="relative inline-block">
+                      {chunks}
+                      <HeatScale orientation="horizontal" className="absolute inset-x-0 -bottom-1.5 sm:-bottom-3" />
+                    </span>
+                  ),
+                })}
               </h1>
-              <p className="mt-10 max-w-[54ch] text-lead text-ink-soft">{t("hero.lead")}</p>
+              <p className="mt-6 max-w-[54ch] text-body text-ink-soft sm:mt-8 sm:text-lead">{t("hero.lead")}</p>
+              <div className="mt-8 max-w-[26rem] sm:mt-10">
+                <SignupForm id="email-hero" locale={locale} />
+                <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-small text-ink-soft">
+                  <span>{t("hero.free")}</span>
+                  <span>{t("hero.noCard")}</span>
+                  <span>{t("hero.magicLink")}</span>
+                </p>
+              </div>
             </div>
-            <div>
-              <SignupForm id="email-hero" locale={locale} />
-              <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-small text-ink-soft">
-                <span>{t("hero.free")}</span>
-                <span>{t("hero.noCard")}</span>
-              </p>
-            </div>
-          </div>
-
-          <ThermalReading documents={documents} labels={{ tablist: tr("tablist"), hot: tr("hot"), cold: tr("cold") }} />
-
-          <div className="border-b border-ink">
-          <dl className={`${WRAP} grid grid-cols-2 text-small md:grid-cols-4`}>
-            <Readout label={t("readout.prospect")}>{t("readout.prospectValue")}</Readout>
-            <Readout label={t("readout.temperature")}>
-              <span className="inline-flex items-center gap-2">
-                <span className="size-2.5 bg-iron-2" aria-hidden />
-                {t("readout.hot")} · <span className="font-mono">86/100</span>
-              </span>
-            </Readout>
-            <Readout label={t("readout.activity")}>{t("readout.activityValue")}</Readout>
-            <Readout label={t("readout.next")}>
-              {t("readout.ready")} · <span className="font-mono">{t("readout.nextTime")}</span>
-            </Readout>
-          </dl>
+            <ThermalReading
+              name={tr("name")}
+              caption={tr("caption")}
+              summary={tr("summary")}
+              pages={pages}
+              labels={{ example: t("demo"), hot: tr("hot"), cold: tr("cold") }}
+            />
           </div>
         </section>
 
-        {/* The problem, shown: an attachment measures nothing. */}
         <section className="border-b border-ink">
           <div className={`${WRAP} grid gap-12 py-20 md:py-28 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-20`}>
             <div>
@@ -352,15 +327,6 @@ export default async function Home({ params }: Props) {
 }
 
 type HomeT = Awaited<ReturnType<typeof getTranslations<"home">>>;
-
-function Readout({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="border-rule py-3 odd:pr-4 even:pl-4 max-md:nth-[-n+2]:border-b max-md:odd:border-r md:border-r md:px-4 md:first:pl-0 md:last:border-r-0">
-      <dt className="font-mono text-micro text-ink-soft">{label}</dt>
-      <dd className="mt-1">{children}</dd>
-    </div>
-  );
-}
 
 function Comparison({ label, verdict, children }: { label: string; verdict: string; children: React.ReactNode }) {
   return (

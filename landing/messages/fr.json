@@ -33,98 +33,38 @@
     "google": "Continuer avec Google"
   },
   "reading": {
-    "caption": "Exemple : lecture de « {name} ».",
-    "captionVideo": "Le passage le plus regardé est « {title} », vu {count} fois. Le prospect a décroché avant la fin.",
-    "captionPage": "La page la plus lue est « {title} », {time}.",
-    "tablist": "Type de document",
+    "name": "Proposition « Refonte du site e-commerce »",
+    "caption": "Exemple : lecture de la proposition « Refonte du site e-commerce ». La page la plus lue est « Tarifs », 3 min 38.",
+    "summary": "Tarifs relus 3 fois, 3 min 38 au total",
     "hot": "Chaud",
     "cold": "Froid",
-    "documents": {
-      "quote": {
-        "tab": "Devis",
-        "name": "Devis « Refonte du site »",
-        "pages": {
-          "p1": "Couverture",
-          "p2": "Contexte",
-          "p3": "Méthode",
-          "p4": "Tarifs",
-          "p5": "Planning",
-          "p6": "Conditions"
-        }
+    "pages": {
+      "cover": {
+        "label": "Couverture",
+        "heading": "Proposition commerciale"
       },
-      "deck": {
-        "tab": "Présentation",
-        "name": "Présentation « Offre 2027 »",
-        "pages": {
-          "p1": "Couverture",
-          "p2": "Le constat",
-          "p3": "Démo",
-          "p4": "Résultats",
-          "p5": "Équipe",
-          "p6": "Contact"
-        }
+      "scope": {
+        "label": "Périmètre",
+        "heading": "Périmètre du projet"
       },
-      "tech": {
-        "tab": "Doc technique",
-        "name": "Dossier technique « Migration ERP »",
-        "pages": {
-          "p1": "Sommaire",
-          "p2": "Existant",
-          "p3": "Architecture",
-          "p4": "Sécurité",
-          "p5": "Planning",
-          "p6": "Annexes"
-        }
+      "timeline": {
+        "label": "Planning",
+        "heading": "Planning"
       },
-      "invoice": {
-        "tab": "Facture",
-        "name": "Facture n° 2026-118",
-        "pages": {
-          "p1": "Récapitulatif",
-          "p2": "Détail",
-          "p3": "Remises",
-          "p4": "Échéancier",
-          "p5": "Mentions",
-          "p6": "RIB"
-        }
-      },
-      "video": {
-        "tab": "Vidéo",
-        "name": "Pitch vidéo « Audit SEO » · 3:00",
-        "pages": {
-          "p1": "Bonjour",
-          "p2": "Le constat",
-          "p3": "Démo",
-          "p4": "Résultats",
-          "p5": "Tarif",
-          "p6": "Prochaine étape"
-        }
+      "pricing": {
+        "label": "Tarifs",
+        "heading": "Tarifs et conditions"
       }
     }
   },
   "home": {
-    "demoBar": {
-      "report": "Rapport de lecture n° 0412",
-      "company": "Atelier Morel"
-    },
     "demo": "Exemple de démonstration",
     "hero": {
-      "title": "Voyez où votre document",
-      "titleHot": "chauffe.",
-      "lead": "Devis, facture, présentation, doc technique, contrat : envoyez un lien à la place de la pièce jointe. Clozer mesure la lecture page par page, vous dit qui relancer, écrit la relance et propose l'heure d'envoi.",
+      "title": "Sachez qui lit votre proposition. Relancez <hot>au bon moment</hot>.",
+      "lead": "Pour les commerciaux B2B et leurs managers. Envoyez un lien Clozer à la place du PDF : vous voyez qui l'ouvre, ce qu'il lit et à qui il le transfère. Clozer prépare la relance.",
       "free": "Gratuit pendant la bêta",
-      "noCard": "Sans carte bancaire"
-    },
-    "readout": {
-      "prospect": "Prospect",
-      "prospectValue": "Marie Dupont · Atelier Morel",
-      "temperature": "Température",
-      "hot": "Chaud",
-      "activity": "Activité",
-      "activityValue": "Revenu 3 fois depuis hier",
-      "next": "Prochaine relance",
-      "ready": "Prête",
-      "nextTime": "jeu. 10:30"
+      "noCard": "Sans carte bancaire",
+      "magicLink": "Lien de connexion par email"
     },
     "silence": {
       "title": "Après l'envoi, le silence.",
