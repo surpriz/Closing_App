@@ -50,6 +50,7 @@ export function DealVerdict({
   insight,
   score,
   opened,
+  analyzable,
   aiAvailable,
   readSince,
   now,
@@ -59,6 +60,8 @@ export function DealVerdict({
   insight: StoredInsight | null;
   score: DealScore | null;
   opened: boolean;
+  /** Someone read it: the link itself, or the readers of an open link. Nothing to analyse before. */
+  analyzable: boolean;
   aiAvailable: boolean;
   /** The prospect read again after this analysis: it will be refreshed once they stop. */
   readSince: boolean;
@@ -92,7 +95,7 @@ export function DealVerdict({
               })}
             </span>
           )}
-          {aiAvailable && !insight && <ReanalyzeButton linkId={linkId} label={t("analyzeDeal")} />}
+          {aiAvailable && !insight && analyzable && <ReanalyzeButton linkId={linkId} label={t("analyzeDeal")} />}
         </div>
         {readSince && (
           <p className="bg-muted px-3 py-2 text-small">

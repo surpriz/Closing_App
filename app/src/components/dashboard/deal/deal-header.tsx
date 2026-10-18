@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from "next-intl";
 
 import { INTL_LOCALE } from "@/i18n/locale";
 import { formatClock } from "@/lib/closing/dashboard/deal-plates";
+import { dealLabel } from "@/lib/closing/dashboard/labels";
 import { formatRelative } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -15,9 +16,10 @@ import type { Deal } from "./load-deal";
 
 /**
  * Top of the prospect's report: the reading's reference fields, the prospect
- * as the title, its temperature and the link it reads through.
+ * as the title, its temperature and the link it reads through. `draft` keeps
+ * only the way back and the name: the share screen below does the rest.
  */
-export function DealHeader({ deal }: { deal: Deal }) {
+export function DealHeader({ deal, draft = false }: { deal: Deal; draft?: boolean }) {
   const {
     link,
     analytics,
@@ -39,15 +41,33 @@ export function DealHeader({ deal }: { deal: Deal }) {
   });
   const expired = !!link.expiresAt && link.expiresAt <= now;
 
+  const backLink = (
+    <Link
+      href={`/documents/${link.document.id}`}
+      className="inline-flex max-w-full items-center gap-1.5 text-small text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:underline"
+    >
+      <ArrowLeft className="size-4 shrink-0" aria-hidden />
+      <span className="truncate">{link.document.name}</span>
+    </Link>
+  );
+
+  if (draft) {
+    return (
+      <header className="space-y-3">
+        {backLink}
+        <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-3">
+          <h1 className="condensed min-w-0 text-title break-words text-balance">
+            {dealLabel(link, t("newLink"))}
+          </h1>
+          {canEdit && <ArchiveLinkButton linkId={link.id} />}
+        </div>
+      </header>
+    );
+  }
+
   return (
     <header className="space-y-5">
-      <Link
-        href={`/documents/${link.document.id}`}
-        className="inline-flex max-w-full items-center gap-1.5 text-small text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:underline"
-      >
-        <ArrowLeft className="size-4 shrink-0" aria-hidden />
-        <span className="truncate">{link.document.name}</span>
-      </Link>
+      {backLink}
 
       <p className="flex flex-wrap gap-x-6 gap-y-1 border-b border-border pb-2 font-mono text-micro text-muted-foreground">
         <span className="text-foreground">{t("report")}</span>
@@ -121,7 +141,10 @@ export function DealHeader({ deal }: { deal: Deal }) {
               >
                 {url.replace(/^https?:\/\//, "")}
               </a>
-              <CopyButton value={url} />
+              <CopyButton
+                value={url}
+                draftLinkId={canEdit && link.draftAt ? link.id : undefined}
+              />
             </span>
             {link.expiresAt && canEdit && (
               <a

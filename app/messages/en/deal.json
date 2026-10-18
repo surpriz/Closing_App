@@ -23,7 +23,8 @@
     "capsulesTitle": "Page capsules",
     "capsulesHint": "recorded before the welcome message",
     "circuitTitle": "Document chain",
-    "circuitHint": "who passed it to whom"
+    "circuitHint": "who passed it to whom",
+    "showTracking": "See the tracking page"
   },
   "loading": {
     "ariaLabel": "Loading"
@@ -83,7 +84,8 @@
     "expiresIn": "Expires {when}",
     "readOnly": "{seller}'s deal. You can view it; only its seller and the admins can change it.",
     "anotherSeller": "Another seller",
-    "expiredBanner": "This link has expired: the prospect can no longer open it. Extend it to bring it back."
+    "expiredBanner": "This link has expired: the prospect can no longer open it. Extend it to bring it back.",
+    "newLink": "New link"
   },
   "dealSettings": {
     "title": "Link settings",
@@ -253,14 +255,15 @@
     "ready": "Your link is ready",
     "pasteAndSend": "Paste it into your message and send it. Tracking starts as soon as they open it.",
     "confirmSent": "I sent it",
-    "sharedIntro": "Post it, put it in your signature or forward it: each reader gives their email and gets their own link, tracked like a deal.",
+    "sharedIntro": "Post it, put it in your signature or forward it: each reader gives their email and gets their own link, tracked like your other prospects.",
     "personalIntro": "They open it and read right away, nothing to fill in. You'll see which pages, for how long, and when to follow up.",
     "forRecipient": "For <b>{email}</b>",
     "whoLabel": "Who is this link for?",
     "optional": "(optional)",
     "whoPlaceholder": "Jane Smith, Acme or jane@acme.com",
     "save": "Save",
-    "whoHint": "The deal will carry this name. With an email, Clozer can follow up.",
+    "whoHint": "With an email, Clozer can follow up for you.",
+    "noEmailHint": "Without an email, Clozer can't follow up.",
     "copyTitle": "Copy the link",
     "copied": "Copied",
     "copyLink": "Copy link",
@@ -268,7 +271,7 @@
     "processing": "Clozer is reading your document to tune the settings. You can already send it.",
     "welcomeTitle": "Welcome message",
     "welcomeHint": "A video or a voice note to introduce the document: the prospect sees your bubble on opening.",
-    "customize": "Customize",
+    "options": "Options",
     "preview": "See what the prospect will see",
     "sharedMode": "Open link: each reader gives their email and gets their own link.",
     "backToPersonal": "Back to a link for one person",
