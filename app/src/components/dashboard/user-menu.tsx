@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut, Shield, ShieldCheck } from "lucide-react";
+import { CreditCard, LogOut, Shield, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useTransition } from "react";
@@ -16,6 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth-client";
+import { BILLING_HREF } from "@/lib/billing/plans";
 
 function initials(name: string | null, email: string) {
   const source = name?.trim() || email.split("@")[0];
@@ -28,11 +29,14 @@ export function UserMenu({
   name,
   email,
   workspace,
+  plan,
   isPlatformAdmin = false,
 }: {
   name: string | null;
   email: string;
   workspace: string;
+  /** The plan in force, by name. */
+  plan: string;
   isPlatformAdmin?: boolean;
 }) {
   const router = useRouter();
@@ -54,6 +58,7 @@ export function UserMenu({
       <DropdownMenuContent align="end" className="w-60">
         <div className="px-2 py-1.5">
           <p className="truncate text-small font-semibold">{workspace}</p>
+          <p className="truncate text-micro text-muted-foreground">{plan}</p>
           <p className="truncate text-micro text-muted-foreground">{email}</p>
         </div>
         <DropdownMenuSeparator />
@@ -67,6 +72,15 @@ export function UserMenu({
         >
           <ShieldCheck />
           {t("privacy")}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => {
+            if (window.location.pathname.replace(/\/$/, "") !== "/settings") return router.push(BILLING_HREF);
+            document.getElementById("facturation")?.scrollIntoView({ behavior: "smooth" });
+          }}
+        >
+          <CreditCard />
+          {t("billing")}
         </DropdownMenuItem>
         {isPlatformAdmin && (
           <DropdownMenuItem onClick={() => router.push("/admin")}>

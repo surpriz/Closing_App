@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 
 import { ImpersonationBanner } from "@/components/admin/impersonation-banner";
+import { TrialBanner } from "@/components/billing/trial-banner";
 import { UpgradeDialogHost } from "@/components/billing/upgrade-dialog";
 import { Logo } from "@/components/brand/logo";
 import { CommandMenu, type CommandEntry } from "@/components/dashboard/command-menu";
@@ -12,6 +13,7 @@ import { HelpWidget } from "@/components/dashboard/help-widget";
 import { UserMenu } from "@/components/dashboard/user-menu";
 import { LocaleMenu } from "@/components/dashboard/locale-menu";
 import { DashboardExtensionBanner } from "@/components/onboarding/dashboard-extension-banner";
+import { planFor } from "@/lib/billing/workspace-plan";
 import { dealDocumentMeta, dealLabel, linkLabelSelect } from "@/lib/closing/dashboard/labels";
 import { sellerLinks } from "@/lib/closing/dashboard/queries";
 import { prisma } from "@/lib/db";
@@ -31,6 +33,7 @@ export default async function DashboardLayout({
   const t = await getTranslations();
   const noRecipient = t("today.page.noRecipient");
   const isManager = isManagerRole(role);
+  const plan = planFor(organization);
 
   const [links, documents, memberCount] = await Promise.all([
     prisma.link.findMany({
@@ -73,6 +76,7 @@ export default async function DashboardLayout({
   return (
     <div className="flex flex-1 flex-col">
       <ImpersonationBanner />
+      <TrialBanner plan={plan} now={new Date()} />
       <header className="sticky top-0 z-30 border-b border-foreground bg-background">
         <div className="mx-auto flex h-14 max-w-7xl items-stretch gap-6 px-4 sm:px-6">
           <Link
@@ -95,6 +99,7 @@ export default async function DashboardLayout({
               name={user.name}
               email={user.email}
               workspace={organization.name}
+              plan={t(`billing.plans.${plan.plan}.name`)}
               isPlatformAdmin={isPlatformAdminEmail(user.email)}
             />
           </div>

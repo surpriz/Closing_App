@@ -12,6 +12,7 @@
     "results": "Résultats"
   },
   "userMenu": {
+    "billing": "Facturation",
     "account": "Mon compte",
     "privacy": "Données et confidentialité",
     "admin": "Admin",
