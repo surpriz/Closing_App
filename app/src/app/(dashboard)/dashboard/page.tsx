@@ -114,7 +114,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
       select: { id: true, name: true },
     }),
     // A signed deal stays here until the seller marks it won
-    getOpenDeals(organizationId, { owner: scope, withValidated: true }),
+    getOpenDeals(organizationId, { owner: scope, withValidated: true, withRevived: true }),
     getFunnelFacts(organizationId, since, scope),
     getFeedSource(organizationId, since, scope),
     getUpcomingFollowups(organizationId, scope),

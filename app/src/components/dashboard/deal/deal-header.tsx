@@ -1,4 +1,4 @@
-import { ArrowLeft, Hourglass } from "lucide-react";
+import { Archive, ArrowLeft, Hourglass } from "lucide-react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 
@@ -11,6 +11,7 @@ import { ArchiveLinkButton } from "../archive-link-button";
 import { CopyButton } from "../copy-button";
 import { DealStatusSelect } from "../deal-status-select";
 import { HeatDot, HeatPill } from "../heat";
+import { ReactivateLinkButton } from "../reactivate-link-button";
 import type { Deal } from "./load-deal";
 
 /**
@@ -28,6 +29,11 @@ export function DealHeader({ deal }: { deal: Deal }) {
     canEdit,
     seller,
     score,
+    dead,
+    revival,
+    purgeAt,
+    canReactivate,
+    canDraftOnReactivate,
   } = deal;
   const t = useTranslations("deal.dealHeader");
   const tl = useTranslations("labels");
@@ -38,6 +44,10 @@ export function DealHeader({ deal }: { deal: Deal }) {
     year: "numeric",
   });
   const expired = !!link.expiresAt && link.expiresAt <= now;
+  const returned = revival && formatRelative(revival.at, locale, now);
+  const reactivate = canReactivate && (
+    <ReactivateLinkButton linkId={link.id} expired={expired} canDraft={canDraftOnReactivate} />
+  );
 
   return (
     <header className="space-y-5">
@@ -152,7 +162,8 @@ export function DealHeader({ deal }: { deal: Deal }) {
             {!link.shared && (
               <DealStatusSelect linkId={link.id} status={link.dealStatus} />
             )}
-            <ArchiveLinkButton linkId={link.id} />
+            {/* Already archived: reopening it is the banner's button */}
+            {dead?.kind !== "archived" && <ArchiveLinkButton linkId={link.id} />}
           </div>
         ) : (
           <span className="text-small text-muted-foreground">
@@ -168,14 +179,39 @@ export function DealHeader({ deal }: { deal: Deal }) {
           })}
         </p>
       )}
-      {expired && (
-        <a
-          href="#expiration"
-          className="flex items-center gap-2 bg-destructive/10 px-4 py-3 text-small text-destructive hover:underline"
+      {dead?.kind === "archived" && (
+        <div
+          id="reactiver"
+          className="flex scroll-mt-24 flex-wrap items-center justify-between gap-3 bg-muted px-4 py-3 text-small"
         >
-          <Hourglass className="size-4 shrink-0" aria-hidden />
-          {t("expiredBanner")}
-        </a>
+          <p className="flex min-w-0 items-start gap-2">
+            <Archive className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
+            <span>
+              {returned ? t("archivedBannerReturned", { when: returned }) : t("archivedBanner")}
+              {purgeAt && (
+                <span className="block text-muted-foreground">
+                  {t("purgeIn", { when: formatRelative(purgeAt, locale, now) })}
+                </span>
+              )}
+              {canEdit && !canReactivate && (
+                <span className="block text-muted-foreground">{t("reactivateManagerOnly")}</span>
+              )}
+            </span>
+          </p>
+          {reactivate}
+        </div>
+      )}
+      {dead?.kind === "expired" && (
+        <div
+          id="reactiver"
+          className="flex scroll-mt-24 flex-wrap items-center justify-between gap-3 bg-destructive/10 px-4 py-3 text-small text-destructive"
+        >
+          <a href="#expiration" className="flex min-w-0 items-center gap-2 hover:underline">
+            <Hourglass className="size-4 shrink-0" aria-hidden />
+            {returned ? t("expiredBannerReturned", { when: returned }) : t("expiredBanner")}
+          </a>
+          {reactivate}
+        </div>
       )}
     </header>
   );

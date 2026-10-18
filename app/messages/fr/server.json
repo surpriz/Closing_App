@@ -81,6 +81,7 @@
     "action": {
       "VALIDATE_SIGN": "a cliqué « Valider la proposition »",
       "REQUEST_EXTENSION": "a demandé à rouvrir la proposition expirée",
+      "REQUEST_RELINK": "a redemandé la proposition après son archivage",
       "MEETING_BOOKED": "a réservé un rendez-vous dans l'agenda du vendeur",
       "MEETING_CLICK": "a ouvert l'agenda du vendeur pour prendre rendez-vous",
       "REQUEST_QUOTE": "a demandé un devis après la vidéo",

@@ -81,6 +81,7 @@
     "action": {
       "VALIDATE_SIGN": "clicked “Accept the proposal”",
       "REQUEST_EXTENSION": "asked to reopen the expired proposal",
+      "REQUEST_RELINK": "asked for the proposal again after it was archived",
       "MEETING_BOOKED": "booked a meeting in the salesperson's calendar",
       "MEETING_CLICK": "opened the salesperson's calendar to book a meeting",
       "REQUEST_QUOTE": "asked for a quote after the video",

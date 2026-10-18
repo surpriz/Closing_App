@@ -15,7 +15,7 @@ import { readerName } from "./names";
  * person, the people they forwarded it to with "Transférer".
  */
 
-export type ForwardAction = "signed" | "change" | "quote" | "voice" | "meeting" | "extension";
+export type ForwardAction = "signed" | "change" | "quote" | "voice" | "meeting" | "extension" | "relink";
 
 /** What a prospect action says on a node; opening the booking page says nothing yet. */
 export const FORWARD_ACTION: Partial<Record<ProspectActionType, ForwardAction>> = {
@@ -24,6 +24,7 @@ export const FORWARD_ACTION: Partial<Record<ProspectActionType, ForwardAction>> 
   REQUEST_QUOTE: "quote",
   MEETING_BOOKED: "meeting",
   REQUEST_EXTENSION: "extension",
+  REQUEST_RELINK: "relink",
 };
 
 /** Each person's actions, once each, in the order they happened. */
