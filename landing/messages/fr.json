@@ -150,6 +150,28 @@
       },
       "alt": "Tableau Aujourd'hui de Clozer : 2 prospects chauds, Northwind et Acme, chacun avec une relance prête à valider, et Atelier Morel en lecture tiède."
     },
+    "prospect": {
+      "title": "Votre prospect avance sans vous attendre.",
+      "body": "Tout se passe dans le document. Il valide, demande un ajustement ou prend rendez-vous, et vous êtes prévenu aussitôt.",
+      "approve": {
+        "title": "Valider ou demander un ajustement",
+        "body": "« Valider & signer » l'attend en bas du document. S'il veut changer quelque chose, il l'écrit en deux lignes, sans chercher votre email."
+      },
+      "book": {
+        "title": "Prendre rendez-vous",
+        "body": "Votre page Calendly ou Cal.com s'ouvre dans le document. Dès qu'il réserve, les relances automatiques s'arrêtent."
+      },
+      "ask": {
+        "title": "Poser une question, ou laisser un vocal",
+        "body": "L'assistant répond à partir de votre proposition et vous passe la main quand il ne sait pas. Sur une page, il peut aussi laisser un vocal d'une minute, transcrit pour vous."
+      },
+      "language": {
+        "title": "Lire dans sa langue",
+        "body": "Anglais, français, espagnol, allemand, italien ou portugais : le PDF est traduit en gardant sa mise en page."
+      },
+      "actionsAlt": "Proposition ouverte sur mobile, page des tarifs : en bas, Valider & signer, Prendre rendez-vous, Demander un ajustement, un vocal et le transfert ; en haut, le choix entre six langues.",
+      "changeAlt": "Le prospect demande un ajustement depuis la proposition : « Est-il possible de régler en trois fois ? Et de démarrer le design en novembre ? »"
+    },
     "trust": {
       "title": "Suivre sans fliquer.",
       "body": "Vos prospects sont vos futurs clients. La chaleur se mesure sur les pages, jamais sur les personnes, et votre relance reste celle d'un commercial attentif.",

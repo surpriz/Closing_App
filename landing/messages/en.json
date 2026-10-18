@@ -150,6 +150,28 @@
       },
       "alt": "Clozer's Today board: 2 hot prospects, Northwind and Acme, each with a follow-up ready to approve, and Atelier Morel reading at a warm pace."
     },
+    "prospect": {
+      "title": "Your prospect moves forward without waiting on you.",
+      "body": "It all happens inside the document. They approve, ask for a change or book a call, and you hear about it right away.",
+      "approve": {
+        "title": "Approve or ask for a change",
+        "body": "\"Accept & sign\" sits at the end of the document. If they want something changed, they write two lines without digging up your email."
+      },
+      "book": {
+        "title": "Book a call",
+        "body": "Your Calendly or Cal.com page opens inside the document. As soon as they book, automatic follow-ups stop."
+      },
+      "ask": {
+        "title": "Ask a question, or leave a voice note",
+        "body": "The assistant answers from your proposal and hands over to you when it doesn't know. On any page, they can also leave a one-minute voice note, transcribed for you."
+      },
+      "language": {
+        "title": "Read it in their language",
+        "body": "English, French, Spanish, German, Italian or Portuguese: the PDF is translated with its layout intact."
+      },
+      "actionsAlt": "Proposal open on a phone, pricing page: at the bottom, Accept & sign, Book a meeting, Request a change, a voice note and forwarding; at the top, a choice of six languages.",
+      "changeAlt": "The prospect asks for a change from inside the proposal: \"Could we pay in three instalments? And start the design in November?\""
+    },
     "trust": {
       "title": "Track the deal, not the person.",
       "body": "Your prospects are your future customers. Heat is measured on pages, never on people, and your follow-up still reads like it came from a thoughtful salesperson.",

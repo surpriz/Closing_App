@@ -6,6 +6,10 @@ import chainEn from "@/assets/reading/chain-en.png";
 import chainFr from "@/assets/reading/chain-fr.png";
 import readingEn from "@/assets/reading/reading-en.png";
 import readingFr from "@/assets/reading/reading-fr.png";
+import actionsEn from "@/assets/prospect/actions-en.png";
+import actionsFr from "@/assets/prospect/actions-fr.png";
+import changeEn from "@/assets/prospect/change-en.png";
+import changeFr from "@/assets/prospect/change-fr.png";
 import followUpEn from "@/assets/steps/followUp-en.png";
 import followUpFr from "@/assets/steps/followUp-fr.png";
 import sendEn from "@/assets/steps/send-en.png";
@@ -49,6 +53,11 @@ const FOLLOWUP_POINTS = ["brief", "stuck", "approve", "delicate"] as const;
 const TODAY_SCREENS: Record<"desktop" | "mobile", Record<Locale, StaticImageData>> = {
   desktop: { fr: todayDesktopFr, en: todayDesktopEn },
   mobile: { fr: todayMobileFr, en: todayMobileEn },
+};
+const PROSPECT_POINTS = ["approve", "book", "ask", "language"] as const;
+const PROSPECT_SCREENS: Record<"actions" | "change", Record<Locale, StaticImageData>> = {
+  actions: { fr: actionsFr, en: actionsEn },
+  change: { fr: changeFr, en: changeEn },
 };
 const READING_POINTS = ["pages", "readers", "live", "score"] as const;
 const GUARANTEES = ["informed", "discreet", "limit", "unsubscribe"] as const;
@@ -295,6 +304,37 @@ export default async function Home({ params }: Props) {
                 </li>
               ))}
             </ul>
+          </div>
+        </section>
+
+        {/* Prospect side: two real phone screens, then what the prospect can do without writing to the seller. */}
+        <section id="prospect" className="scroll-mt-14 border-b border-ink bg-sheet">
+          <div className={`${WRAP} grid gap-12 py-20 md:py-28 lg:grid-cols-[minmax(0,6fr)_minmax(0,6fr)] lg:gap-20`}>
+            <div className="lg:order-2">
+              <h2 className="condensed max-w-[18ch] text-title font-bold">{t("prospect.title")}</h2>
+              <p className="mt-6 max-w-[52ch] text-lead text-ink-soft">{t("prospect.body")}</p>
+              <ul className="mt-10 border-t border-ink">
+                {PROSPECT_POINTS.map((point) => (
+                  <li key={point} className="border-b border-rule py-5">
+                    <h3 className="text-[1.125rem] leading-snug font-semibold">{t(`prospect.${point}.title`)}</h3>
+                    <p className="mt-1 max-w-[52ch] text-body text-ink-soft">{t(`prospect.${point}.body`)}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="grid content-start gap-4 sm:grid-cols-2 lg:order-1 lg:sticky lg:top-24 lg:self-start">
+              {(["actions", "change"] as const).map((screen) => (
+                <figure key={screen} className={screen === "change" ? "max-sm:hidden" : "mx-auto w-full max-w-[20rem] sm:max-w-none"}>
+                  <Image
+                    src={PROSPECT_SCREENS[screen][locale]}
+                    alt={t(`prospect.${screen}Alt`)}
+                    sizes="(min-width: 1024px) 18rem, (min-width: 640px) 45vw, 20rem"
+                    className="w-full border border-ink"
+                  />
+                  <figcaption className="mt-2 font-mono text-micro text-ink-soft">{t("screen")}</figcaption>
+                </figure>
+              ))}
+            </div>
           </div>
         </section>
 
