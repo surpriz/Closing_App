@@ -161,7 +161,11 @@
     "fallbackReader": "Reader",
     "anonymousNote": "These readers didn't give their email. Same letter, same browser; two letters, often two people (or the same person on two devices). To know exactly who's reading, turn on “Ask for email before reading” in the link settings.",
     "followupsIntro": "Follow-ups for every prospect of this document. Clozer writes one when it thinks the timing is right; you review it here or on the prospect's page, then approve it.",
-    "alertsTitle": "Alerts"
+    "alertsTitle": "Alerts",
+    "pendingTitle": "Your link is ready, it hasn't gone out yet.",
+    "pendingDescription": "Send it to your prospect: they'll show up here as soon as they open it.",
+    "assistantFold": "What Clozer knows about the document",
+    "assistantFoldHint": "type, notes, page-by-page content"
   },
   "content": {
     "videoRead": "What you say in each part of the video, read by AI from the transcript. Tags tell Clozer when you talk pricing, timeline… Fix them if needed.",

@@ -1,4 +1,4 @@
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft, ChevronRight, ExternalLink } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -472,16 +472,19 @@ export default async function DocumentDetailPage({
 
         <TabsContent value="prospects">
           {document.links.length === 0 ? (
+            // A link made on drop and not sent yet is not "no link": it waits for its prospect
             <EmptyState
-              title={t("emptyTitle")}
+              title={pendingLink ? t("pendingTitle") : t("emptyTitle")}
               description={
-                isVideo
-                  ? t("emptyVideo")
-                  : isWeb
-                    ? t("emptyWeb")
-                    : t("emptyPdf")
+                pendingLink
+                  ? t("pendingDescription")
+                  : isVideo
+                    ? t("emptyVideo")
+                    : isWeb
+                      ? t("emptyWeb")
+                      : t("emptyPdf")
               }
-              action={pendingLink ? null : linkAction}
+              action={linkAction}
             />
           ) : (
             <DocumentLinks rows={prospectRows} video={isVideo} />
@@ -515,85 +518,95 @@ export default async function DocumentDetailPage({
             </section>
           )}
           <section>
-            <SectionTitle hint={t("docTypeHint")}>
-              {t("docTypeTitle")}
-            </SectionTitle>
-            <DocumentTypeSelect
-              documentId={document.id}
-              docType={document.docType}
-              setBySeller={document.docTypeSource === "MANUAL"}
-            />
-          </section>
-          <section>
-            <SectionTitle hint={t("assistantHint")}>
-              {t("assistantTitle")}
-            </SectionTitle>
-            <AssistantNotesForm
-              documentId={document.id}
-              initial={document.assistantNotes ?? ""}
-            />
-          </section>
-          <section>
-            <SectionTitle
-              hint={
-                isVideo ? t("contentHintVideo") : t("contentHintPages")
-              }
-            >
-              {t("contentTitle")}
-            </SectionTitle>
-            {isWeb ? (
-              <div className="space-y-6">
-                <WebPageReading
-                  documentId={document.id}
-                  docPurpose={document.docPurpose}
-                  page={document.pages[0] ?? null}
-                  aiAvailable={getLanguageModel("classify") !== null}
-                />
-                <SellerDescriptionForm
-                  documentId={document.id}
-                  initial={document.sellerDescription ?? ""}
-                />
-              </div>
-            ) : document.pages.length === 0 ? (
-              <p className="border-y border-border py-12 text-center text-body text-muted-foreground">
-                {ready ? t("noPages") : t("analyzingShort")}
-              </p>
-            ) : (
-              <DocumentPages
-                documentId={document.id}
-                pages={document.pages.map((page) => {
-                  const capsule = document.capsules.find(
-                    (c) => c.pageNumber === page.pageNumber,
-                  );
-                  return {
-                    ...page,
-                    capsule: capsule
-                      ? {
-                          id: capsule.id,
-                          kind: capsule.kind,
-                          hookText: capsule.hookText,
-                          durationMs: capsule.durationMs,
-                          plays: capsule._count.plays,
-                        }
-                      : null,
-                  };
-                })}
-                capsuleUploadPrefix={capsuleUploadPrefix(organization.id)}
-                aiRead={document.aiProcessedAt !== null}
-                aiGaveUp={document.aiAttempts >= 3}
-                docType={document.docType}
-                docPurpose={document.docPurpose}
-                aiAvailable={getLanguageModel("classify") !== null}
-                video={isVideo}
-              />
-            )}
-          </section>
-          <section>
             <SectionTitle hint={t("previewHint")}>
               {t("previewTitle")}
             </SectionTitle>
             <DocumentPreviewSection document={document} ready={ready} />
           </section>
+          {/* Filled in by Clozer from the file: there to check or correct, not to read first */}
+          <details className="group border-t border-border pt-4">
+            <summary className="flex cursor-pointer list-none items-center gap-1.5 text-body font-medium outline-none focus-visible:underline [&::-webkit-details-marker]:hidden">
+              <ChevronRight className="size-4 transition-transform group-open:rotate-90" aria-hidden />
+              {t("assistantFold")}
+              <span className="font-normal text-muted-foreground">{t("assistantFoldHint")}</span>
+            </summary>
+            <div className="mt-6 space-y-10">
+              <section>
+                <SectionTitle hint={t("docTypeHint")}>
+                  {t("docTypeTitle")}
+                </SectionTitle>
+                <DocumentTypeSelect
+                  documentId={document.id}
+                  docType={document.docType}
+                  setBySeller={document.docTypeSource === "MANUAL"}
+                />
+              </section>
+              <section>
+                <SectionTitle hint={t("assistantHint")}>
+                  {t("assistantTitle")}
+                </SectionTitle>
+                <AssistantNotesForm
+                  documentId={document.id}
+                  initial={document.assistantNotes ?? ""}
+                />
+              </section>
+              <section>
+                <SectionTitle
+                  hint={
+                    isVideo ? t("contentHintVideo") : t("contentHintPages")
+                  }
+                >
+                  {t("contentTitle")}
+                </SectionTitle>
+                {isWeb ? (
+                  <div className="space-y-6">
+                    <WebPageReading
+                      documentId={document.id}
+                      docPurpose={document.docPurpose}
+                      page={document.pages[0] ?? null}
+                      aiAvailable={getLanguageModel("classify") !== null}
+                    />
+                    <SellerDescriptionForm
+                      documentId={document.id}
+                      initial={document.sellerDescription ?? ""}
+                    />
+                  </div>
+                ) : document.pages.length === 0 ? (
+                  <p className="border-y border-border py-12 text-center text-body text-muted-foreground">
+                    {ready ? t("noPages") : t("analyzingShort")}
+                  </p>
+                ) : (
+                  <DocumentPages
+                    documentId={document.id}
+                    pages={document.pages.map((page) => {
+                      const capsule = document.capsules.find(
+                        (c) => c.pageNumber === page.pageNumber,
+                      );
+                      return {
+                        ...page,
+                        capsule: capsule
+                          ? {
+                              id: capsule.id,
+                              kind: capsule.kind,
+                              hookText: capsule.hookText,
+                              durationMs: capsule.durationMs,
+                              plays: capsule._count.plays,
+                            }
+                          : null,
+                      };
+                    })}
+                    capsuleUploadPrefix={capsuleUploadPrefix(organization.id)}
+                    aiRead={document.aiProcessedAt !== null}
+                    aiGaveUp={document.aiAttempts >= 3}
+                    docType={document.docType}
+                    docPurpose={document.docPurpose}
+                    aiAvailable={getLanguageModel("classify") !== null}
+                    video={isVideo}
+                  />
+                )}
+              </section>
+            </div>
+          </details>
         </TabsContent>
 
         <TabsContent value="reading" className="space-y-10">

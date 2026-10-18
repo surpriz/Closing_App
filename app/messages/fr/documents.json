@@ -161,7 +161,11 @@
     "fallbackReader": "Lecteur",
     "anonymousNote": "Ces lecteurs n'ont pas donné leur email. Une même lettre, c'est un même navigateur ; deux lettres, souvent deux personnes (ou la même sur deux appareils). Pour savoir exactement qui lit, activez « Demander l'email avant lecture » dans les réglages du lien.",
     "followupsIntro": "Les relances de tous les prospects de ce document. Clozer en écrit une quand il juge que c'est le bon moment ; vous la relisez ici ou sur la fiche du prospect, puis vous la validez.",
-    "alertsTitle": "Alertes"
+    "alertsTitle": "Alertes",
+    "pendingTitle": "Votre lien est prêt, il n'est pas encore parti.",
+    "pendingDescription": "Envoyez-le à votre prospect : il apparaîtra ici dès qu'il l'ouvre.",
+    "assistantFold": "Ce que Clozer sait du document",
+    "assistantFoldHint": "type, notes, contenu page par page"
   },
   "content": {
     "videoRead": "Ce que vous dites dans chaque passage de la vidéo, lu par l'IA depuis la transcription. Les étiquettes disent à Clozer quand vous parlez tarifs, planning… Corrigez-les si besoin.",
