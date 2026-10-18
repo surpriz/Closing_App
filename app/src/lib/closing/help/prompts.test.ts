@@ -11,9 +11,9 @@ describe("helpRules", () => {
   });
 
   it("names the screens in the user's language", () => {
-    expect(helpRules("fr")).toContain("Réglages → Réglages avancés → Liens et relances");
+    expect(helpRules("fr")).toContain("Réglages → Pilote automatique");
     expect(helpRules("fr")).toContain('Use "vous"');
-    expect(helpRules("en")).toContain("Settings → Advanced settings → Links and follow-ups");
+    expect(helpRules("en")).toContain("Settings → Autopilot");
     expect(helpRules("en")).toContain("English by default");
   });
 });

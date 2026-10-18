@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -71,22 +72,32 @@ function Section({
   title,
   description,
   id,
+  locked = false,
   children,
 }: {
   title: string;
   description: React.ReactNode;
   id: string;
+  /** Workspace-wide settings a plain member sees but cannot change. */
+  locked?: boolean;
   children: React.ReactNode;
 }) {
+  const t = useTranslations("settings.form");
   return (
     <section id={id} className="scroll-mt-24 space-y-3">
       <div className="space-y-1">
         <h2 className="text-heading">{title}</h2>
         <p className="text-body text-muted-foreground">{description}</p>
+        {locked && (
+          <p className="text-small text-muted-foreground">{t("lockedNote")}</p>
+        )}
       </div>
-      <div className="min-w-0 divide-y divide-border border-y border-foreground bg-card">
+      <fieldset
+        disabled={locked}
+        className="min-w-0 divide-y divide-border border-y border-foreground bg-card disabled:opacity-60"
+      >
         {children}
-      </div>
+      </fieldset>
     </section>
   );
 }
@@ -102,16 +113,6 @@ function Row({
     <div className="space-y-1.5 px-5 py-4">
       <div className="text-body leading-9">{children}</div>
       {hint && <p className="text-small text-muted-foreground">{hint}</p>}
-    </div>
-  );
-}
-
-/** A block's title inside a merged section: "Pilote automatique" under "Liens et relances". */
-function SubHeading({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-0.5 px-5 pt-5 pb-3">
-      <h3 className="text-body font-semibold">{title}</h3>
-      <p className="text-small text-muted-foreground">{children}</p>
     </div>
   );
 }
@@ -165,6 +166,7 @@ export function SettingsForm({
   canEditWorkspace,
 }: Props) {
   const t = useTranslations("settings.form");
+  const locked = !canEditWorkspace;
   const [state, formAction, pending] = useActionState<SettingsState, FormData>(
     saveWorkspaceSettings,
     null,
@@ -198,7 +200,7 @@ export function SettingsForm({
       toast.error(state.error);
       if (state.workspace) setAdvancedOpen(true);
     }
-  }, [state, t, canEditWorkspace, setAdvancedOpen]);
+  }, [state, t, setAdvancedOpen]);
   // Several hidden invalid fields fire one "invalid" each: point at the first only
   const reporting = useRef(false);
 
@@ -207,12 +209,15 @@ export function SettingsForm({
       action={formAction}
       onInput={markDirty}
       onChange={markDirty}
-      // An invalid field in the folded part: unfold it, then let the browser point at it
+      // An invalid field in a closed fold: open its folds, then let the browser point at it
       onInvalidCapture={(event) => {
         const field = event.target as HTMLInputElement;
         if (field.offsetParent !== null || reporting.current) return;
         reporting.current = true;
         setAdvancedOpen(true);
+        for (let fold = field.closest("details"); fold; fold = fold.parentElement?.closest("details") ?? null) {
+          fold.open = true;
+        }
         requestAnimationFrame(() => {
           field.form?.reportValidity();
           reporting.current = false;
@@ -223,6 +228,53 @@ export function SettingsForm({
       <input ref={timezoneRef} type="hidden" name="timezone" defaultValue="" />
       {/* Remount the fields after each save so uncontrolled inputs show stored values */}
       <div key={initial.version} className="space-y-12">
+        <Section
+          id="pilote"
+          locked={locked}
+          title={t("pilot.title")}
+          description={
+            providers.ai
+              ? t("pilot.descriptionAi")
+              : t("pilot.descriptionNoAi")
+          }
+        >
+          <Row hint={t("pilot.hint")}>
+            <span className="mb-1 block">{t("pilot.question")}</span>
+            <div className="flex flex-col gap-1.5">
+              <label className="flex cursor-pointer items-start gap-2.5">
+                <input
+                  type="radio"
+                  name="autonomy"
+                  value="COPILOT"
+                  defaultChecked={initial.autonomy === "COPILOT"}
+                  className="mt-2.5 accent-foreground"
+                />
+                <span>
+                  {t("pilot.copilot")}
+                  <span className="block text-small text-muted-foreground">
+                    {t("pilot.copilotHint")}
+                  </span>
+                </span>
+              </label>
+              <label className="flex cursor-pointer items-start gap-2.5">
+                <input
+                  type="radio"
+                  name="autonomy"
+                  value="AUTOPILOT"
+                  defaultChecked={initial.autonomy === "AUTOPILOT"}
+                  className="mt-2.5 accent-foreground"
+                />
+                <span>
+                  {t("pilot.autopilot")}
+                  <span className="block text-small text-muted-foreground">
+                    {t("pilot.autopilotHint")}
+                  </span>
+                </span>
+              </label>
+            </div>
+          </Row>
+        </Section>
+
         <Section
           id="alertes"
           title={t("alerts.title")}
@@ -296,6 +348,102 @@ export function SettingsForm({
               </span>
             </label>
           </Row>
+          {/* Team-wide channels, in the middle of the seller's own notifications */}
+          <fieldset
+            disabled={locked}
+            className="min-w-0 divide-y divide-border disabled:opacity-60"
+          >
+            <Row hint={locked ? t("lockedNote") : undefined}>
+              <span className="mb-1 block">{t("alerts.teamChannels")}</span>
+              <div className="flex flex-wrap gap-x-6 gap-y-2">
+                <ChannelBox
+                  name="alertChannels"
+                  value="SLACK"
+                  label="Slack"
+                  defaultChecked={initial.alertChannels.includes("SLACK")}
+                  onChange={markDirty}
+                />
+                <ChannelBox
+                  name="alertChannels"
+                  value="WEBHOOK"
+                  label={t("alerts.externalTool")}
+                  defaultChecked={initial.alertChannels.includes("WEBHOOK")}
+                  onChange={markDirty}
+                />
+              </div>
+            </Row>
+            <div className="space-y-1.5 px-5 py-4">
+              <Label htmlFor="alertEmail">{t("alerts.ccLabel")}</Label>
+              <Input
+                id="alertEmail"
+                name="alertEmail"
+                type="email"
+                defaultValue={initial.alertEmail}
+                placeholder={t("alerts.ccPlaceholder")}
+              />
+            </div>
+            <details className="group px-5 py-4">
+              <summary className="flex cursor-pointer list-none items-center gap-1.5 text-body font-medium outline-none focus-visible:underline [&::-webkit-details-marker]:hidden">
+                <ChevronRight className="size-4 transition-transform group-open:rotate-90" />
+                {t("alerts.connectSummary")}
+              </summary>
+              <div className="mt-4 space-y-5">
+                <div className="space-y-1.5">
+                  <Label htmlFor="slackWebhookUrl">
+                    {t("alerts.slackLabel")}
+                  </Label>
+                  <Input
+                    id="slackWebhookUrl"
+                    name="slackWebhookUrl"
+                    // The server only takes Slack's own incoming webhooks
+                    pattern="https://hooks\.slack\.com/.+"
+                    type="url"
+                    placeholder={
+                      initial.slackConfigured
+                        ? t("alerts.slackConfiguredPlaceholder")
+                        : "https://hooks.slack.com/services/…"
+                    }
+                  />
+                  {initial.slackConfigured && (
+                    <label className="flex items-center gap-2 text-small text-muted-foreground">
+                      <Checkbox
+                        name="removeSlack"
+                        onCheckedChange={markDirty}
+                      />{" "}
+                      {t("alerts.removeSlack")}
+                    </label>
+                  )}
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="outboundWebhookUrl">
+                    {t("alerts.webhookLabel")}
+                  </Label>
+                  <Input
+                    id="outboundWebhookUrl"
+                    name="outboundWebhookUrl"
+                    type="url"
+                    defaultValue={initial.outboundWebhookUrl}
+                    placeholder="https://…"
+                  />
+                  {initial.webhookSecret && (
+                    <p className="text-small text-muted-foreground">
+                      {t.rich("alerts.webhookSigned", {
+                        code: (chunks) => <code>{chunks}</code>,
+                      })}{" "}
+                      <code className="break-all text-foreground">
+                        {initial.webhookSecret}
+                      </code>
+                    </p>
+                  )}
+                  <p className="text-small text-muted-foreground">
+                    {t.rich("alerts.smartLink", {
+                      code: (chunks) => <code>{chunks}</code>,
+                    })}
+                  </p>
+                </div>
+              </div>
+            </details>
+          </fieldset>
         </Section>
 
         <Section
@@ -321,334 +469,208 @@ export function SettingsForm({
         </Section>
 
         <div className="pt-2">
-          <AdvancedSettingsToggle
-            controls={canEditWorkspace ? "reglages-avances reglages-immediats" : "reglages-immediats"}
-          />
+          <AdvancedSettingsToggle />
         </div>
 
         {/* Rendered while folded so their fields stay in the saved FormData */}
-        {/* Workspace settings: owners and admins only, a member's page stays theirs */}
-        {canEditWorkspace && (
         <AdvancedSettingsBlock id="reglages-avances" className="space-y-12">
-            <>
-              <Section
-                id="offre"
-                title={t("offer.title")}
-                description={
-                  initial.offerInferredFrom
-                    ? t("offer.descriptionInferred", {
-                        document: initial.offerInferredFrom,
-                      })
-                    : t("offer.description")
-                }
-              >
-                <div className="space-y-1.5 px-5 py-4">
-                  <Label htmlFor="offerDescription">{t("offer.whatLabel")}</Label>
-                  <Textarea
-                    id="offerDescription"
-                    name="offerDescription"
-                    maxLength={OFFER_DESCRIPTION_MAX}
-                    rows={3}
-                    defaultValue={initial.offerDescription}
-                    placeholder={t("offer.whatPlaceholder")}
-                  />
-                </div>
-                <div className="space-y-1.5 px-5 py-4">
-                  <Label htmlFor="targetCustomer">{t("offer.customersLabel")}</Label>
-                  <Input
-                    id="targetCustomer"
-                    name="targetCustomer"
-                    maxLength={500}
-                    defaultValue={initial.targetCustomer}
-                    placeholder={t("offer.customersPlaceholder")}
-                  />
-                </div>
-                <div className="space-y-1.5 px-5 py-4">
-                  <Label htmlFor="valueProps">{t("offer.whyLabel")}</Label>
-                  <Textarea
-                    id="valueProps"
-                    name="valueProps"
-                    maxLength={1500}
-                    rows={2}
-                    defaultValue={initial.valueProps}
-                    placeholder={t("offer.whyPlaceholder")}
-                  />
-                </div>
-                <div className="space-y-1.5 px-5 py-4">
-                  <Label htmlFor="commonObjections">
-                    {t("offer.objectionsLabel")}
-                  </Label>
-                  <Textarea
-                    id="commonObjections"
-                    name="commonObjections"
-                    maxLength={1500}
-                    rows={2}
-                    defaultValue={initial.commonObjections}
-                    placeholder={t("offer.objectionsPlaceholder")}
-                  />
-                </div>
-                <Row>
-                  <label htmlFor="avgSalesCycleDays">
-                    {t("offer.cycleBefore")}
-                  </label>
-                  <Inline
-                    id="avgSalesCycleDays"
-                    name="avgSalesCycleDays"
-                    type="number"
-                    min={1}
-                    max={730}
-                    defaultValue={initial.avgSalesCycleDays}
-                  />
-                  {t("offer.cycleAfter")}
-                </Row>
-                {/* The assistant answers from the offer: one place for both */}
-                <div id="assistant" className="scroll-mt-24 divide-y divide-border">
-                  <SubHeading title={t("assistant.title")}>
-                    {providers.ai ? t("assistant.descriptionAi") : t("assistant.descriptionNoAi")}
-                  </SubHeading>
-                  <Row hint={t("assistant.enableHint")}>
-                    <label className="flex cursor-pointer items-center gap-2.5">
-                      <Checkbox
-                        name="chatEnabledByDefault"
-                        defaultChecked={initial.chatEnabledByDefault}
-                        onCheckedChange={markDirty}
-                      />
-                      <span>{t("assistant.enableLabel")}</span>
-                    </label>
-                  </Row>
-                  <div className="space-y-1.5 px-5 py-4">
-                    <Label htmlFor="assistantKnowledge">
-                      {t("assistant.knowledgeLabel")}
-                    </Label>
-                    <Textarea
-                      id="assistantKnowledge"
-                      name="assistantKnowledge"
-                      rows={6}
-                      maxLength={4000}
-                      defaultValue={initial.assistantKnowledge}
-                      placeholder={t("assistant.knowledgePlaceholder")}
-                    />
-                    <p className="text-small text-muted-foreground">
-                      {t("assistant.knowledgeHint")}
-                    </p>
-                  </div>
-                </div>
-              </Section>
+          <Section
+            id="offre"
+            locked={locked}
+            title={t("offer.title")}
+            description={
+              initial.offerInferredFrom
+                ? t("offer.descriptionInferred", {
+                    document: initial.offerInferredFrom,
+                  })
+                : t("offer.description")
+            }
+          >
+            <div className="space-y-1.5 px-5 py-4">
+              <Label htmlFor="offerDescription">{t("offer.whatLabel")}</Label>
+              <Textarea
+                id="offerDescription"
+                name="offerDescription"
+                maxLength={OFFER_DESCRIPTION_MAX}
+                rows={3}
+                defaultValue={initial.offerDescription}
+                placeholder={t("offer.whatPlaceholder")}
+              />
+            </div>
+            <div className="space-y-1.5 px-5 py-4">
+              <Label htmlFor="targetCustomer">{t("offer.customersLabel")}</Label>
+              <Input
+                id="targetCustomer"
+                name="targetCustomer"
+                maxLength={500}
+                defaultValue={initial.targetCustomer}
+                placeholder={t("offer.customersPlaceholder")}
+              />
+            </div>
+            <div className="space-y-1.5 px-5 py-4">
+              <Label htmlFor="valueProps">{t("offer.whyLabel")}</Label>
+              <Textarea
+                id="valueProps"
+                name="valueProps"
+                maxLength={1500}
+                rows={2}
+                defaultValue={initial.valueProps}
+                placeholder={t("offer.whyPlaceholder")}
+              />
+            </div>
+            <div className="space-y-1.5 px-5 py-4">
+              <Label htmlFor="commonObjections">
+                {t("offer.objectionsLabel")}
+              </Label>
+              <Textarea
+                id="commonObjections"
+                name="commonObjections"
+                maxLength={1500}
+                rows={2}
+                defaultValue={initial.commonObjections}
+                placeholder={t("offer.objectionsPlaceholder")}
+              />
+            </div>
+            <Row>
+              <label htmlFor="avgSalesCycleDays">
+                {t("offer.cycleBefore")}
+              </label>
+              <Inline
+                id="avgSalesCycleDays"
+                name="avgSalesCycleDays"
+                type="number"
+                min={1}
+                max={730}
+                defaultValue={initial.avgSalesCycleDays}
+              />
+              {t("offer.cycleAfter")}
+            </Row>
+          </Section>
 
-              <Section
-                id="liens"
-                title={t("links.title")}
-                description={t("links.description")}
-              >
-                <Row hint={t("links.expiryHint")}>
-                  <span>
-                    {t("links.expiryLabel")}
-                    <select
-                      name="quoteExpiryDays"
-                      defaultValue={initial.quoteExpiryDays?.toString() ?? ""}
-                      className="mx-1.5 h-8 rounded-lg border border-input bg-card px-2 tabular-nums outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/20"
-                    >
-                      {QUOTE_EXPIRY_CHOICES.map((days) => (
-                        <option key={days} value={days}>
-                          {t("links.expiryDays", { days })}
-                        </option>
-                      ))}
-                      <option value="">{t("links.expiryNever")}</option>
-                    </select>
-                  </span>
-                </Row>
-                <Row>
-                  <label className="flex cursor-pointer items-center gap-2.5">
-                    <Checkbox
-                      name="voiceCommentsByDefault"
-                      defaultChecked={initial.voiceCommentsByDefault}
-                      onCheckedChange={markDirty}
-                    />
-                    <span>{t("links.voiceComments")}</span>
-                  </label>
-                </Row>
-                <Row>
-                  <label className="flex cursor-pointer items-center gap-2.5">
-                    <Checkbox
-                      name="followupsByDefault"
-                      defaultChecked={initial.followupsByDefault}
-                      onCheckedChange={markDirty}
-                    />
-                    <span>{t("links.followups")}</span>
-                  </label>
-                </Row>
-                {/* How follow-ups go out, and in whose name: with the links they follow */}
-                <div id="pilote" className="scroll-mt-24 divide-y divide-border">
-                  <SubHeading title={t("pilot.title")}>
-                    {providers.ai ? t("pilot.descriptionAi") : t("pilot.descriptionNoAi")}
-                  </SubHeading>
-                  <Row hint={t("pilot.hint")}>
-                    <span className="mb-1 block">{t("pilot.question")}</span>
-                    <div className="flex flex-col gap-1.5">
-                      <label className="flex cursor-pointer items-start gap-2.5">
-                        <input
-                          type="radio"
-                          name="autonomy"
-                          value="COPILOT"
-                          defaultChecked={initial.autonomy === "COPILOT"}
-                          className="mt-2.5 accent-foreground"
-                        />
-                        <span>
-                          {t("pilot.copilot")}
-                          <span className="block text-small text-muted-foreground">
-                            {t("pilot.copilotHint")}
-                          </span>
-                        </span>
-                      </label>
-                      <label className="flex cursor-pointer items-start gap-2.5">
-                        <input
-                          type="radio"
-                          name="autonomy"
-                          value="AUTOPILOT"
-                          defaultChecked={initial.autonomy === "AUTOPILOT"}
-                          className="mt-2.5 accent-foreground"
-                        />
-                        <span>
-                          {t("pilot.autopilot")}
-                          <span className="block text-small text-muted-foreground">
-                            {t("pilot.autopilotHint")}
-                          </span>
-                        </span>
-                      </label>
-                    </div>
-                  </Row>
-                </div>
-                <div id="messages" className="scroll-mt-24 divide-y divide-border">
-                  <SubHeading title={t("messages.title")}>{t("messages.description")}</SubHeading>
-                  <div className="grid gap-4 px-5 py-4 sm:grid-cols-2">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="senderName">{t("messages.senderLabel")}</Label>
-                      <Input
-                        id="senderName"
-                        name="senderName"
-                        maxLength={80}
-                        defaultValue={initial.senderName}
-                        placeholder={t("messages.senderPlaceholder")}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="aiTone">{t("messages.toneLabel")}</Label>
-                      <Input
-                        id="aiTone"
-                        name="aiTone"
-                        maxLength={300}
-                        defaultValue={initial.aiTone}
-                        placeholder={t("messages.tonePlaceholder")}
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-1.5 px-5 py-4">
-                    <Label htmlFor="senderSignature">{t("messages.signatureLabel")}</Label>
-                    <Textarea
-                      id="senderSignature"
-                      name="senderSignature"
-                      maxLength={500}
-                      rows={3}
-                      defaultValue={initial.senderSignature}
-                      placeholder={t("messages.signaturePlaceholder")}
-                    />
-                  </div>
-                </div>
-              </Section>
+          <Section
+            id="liens"
+            locked={locked}
+            title={t("links.title")}
+            description={t("links.description")}
+          >
+            <Row hint={t("links.expiryHint")}>
+              <span>
+                {t("links.expiryLabel")}
+                <select
+                  name="quoteExpiryDays"
+                  defaultValue={initial.quoteExpiryDays?.toString() ?? ""}
+                  className="mx-1.5 h-8 rounded-lg border border-input bg-card px-2 tabular-nums outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/20"
+                >
+                  {QUOTE_EXPIRY_CHOICES.map((days) => (
+                    <option key={days} value={days}>
+                      {t("links.expiryDays", { days })}
+                    </option>
+                  ))}
+                  <option value="">{t("links.expiryNever")}</option>
+                </select>
+              </span>
+            </Row>
+            <Row>
+              <label className="flex cursor-pointer items-center gap-2.5">
+                <Checkbox
+                  name="voiceCommentsByDefault"
+                  defaultChecked={initial.voiceCommentsByDefault}
+                  onCheckedChange={markDirty}
+                />
+                <span>{t("links.voiceComments")}</span>
+              </label>
+            </Row>
+            <Row>
+              <label className="flex cursor-pointer items-center gap-2.5">
+                <Checkbox
+                  name="followupsByDefault"
+                  defaultChecked={initial.followupsByDefault}
+                  onCheckedChange={markDirty}
+                />
+                <span>{t("links.followups")}</span>
+              </label>
+            </Row>
+          </Section>
 
-              <Section
-                id="integrations"
-                title={t("integrations.title")}
-                description={t("integrations.description")}
-              >
-                <Row>
-                  <span className="mb-1 block">{t("alerts.teamChannels")}</span>
-                  <div className="flex flex-wrap gap-x-6 gap-y-2">
-                    <ChannelBox
-                      name="alertChannels"
-                      value="SLACK"
-                      label="Slack"
-                      defaultChecked={initial.alertChannels.includes("SLACK")}
-                      onChange={markDirty}
-                    />
-                    <ChannelBox
-                      name="alertChannels"
-                      value="WEBHOOK"
-                      label={t("alerts.externalTool")}
-                      defaultChecked={initial.alertChannels.includes("WEBHOOK")}
-                      onChange={markDirty}
-                    />
-                  </div>
-                </Row>
-                <div className="space-y-1.5 px-5 py-4">
-                  <Label htmlFor="alertEmail">{t("alerts.ccLabel")}</Label>
-                  <Input
-                    id="alertEmail"
-                    name="alertEmail"
-                    type="email"
-                    defaultValue={initial.alertEmail}
-                    placeholder={t("alerts.ccPlaceholder")}
-                  />
-                </div>
-                <div className="space-y-5 px-5 py-4">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="slackWebhookUrl">
-                        {t("alerts.slackLabel")}
-                      </Label>
-                      <Input
-                        id="slackWebhookUrl"
-                        name="slackWebhookUrl"
-                        // The server only takes Slack's own incoming webhooks
-                        pattern="https://hooks\.slack\.com/.+"
-                        type="url"
-                        placeholder={
-                          initial.slackConfigured
-                            ? t("alerts.slackConfiguredPlaceholder")
-                            : "https://hooks.slack.com/services/…"
-                        }
-                      />
-                      {initial.slackConfigured && (
-                        <label className="flex items-center gap-2 text-small text-muted-foreground">
-                          <Checkbox
-                            name="removeSlack"
-                            onCheckedChange={markDirty}
-                          />{" "}
-                          {t("alerts.removeSlack")}
-                        </label>
-                      )}
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="outboundWebhookUrl">
-                        {t("alerts.webhookLabel")}
-                      </Label>
-                      <Input
-                        id="outboundWebhookUrl"
-                        name="outboundWebhookUrl"
-                        type="url"
-                        defaultValue={initial.outboundWebhookUrl}
-                        placeholder="https://…"
-                      />
-                      {initial.webhookSecret && (
-                        <p className="text-small text-muted-foreground">
-                          {t.rich("alerts.webhookSigned", {
-                            code: (chunks) => <code>{chunks}</code>,
-                          })}{" "}
-                          <code className="break-all text-foreground">
-                            {initial.webhookSecret}
-                          </code>
-                        </p>
-                      )}
-                      <p className="text-small text-muted-foreground">
-                        {t.rich("alerts.smartLink", {
-                          code: (chunks) => <code>{chunks}</code>,
-                        })}
-                      </p>
-                    </div>
-                </div>
-              </Section>
-            </>
+          <Section
+            id="assistant"
+            locked={locked}
+            title={t("assistant.title")}
+            description={
+              providers.ai
+                ? t("assistant.descriptionAi")
+                : t("assistant.descriptionNoAi")
+            }
+          >
+            <Row hint={t("assistant.enableHint")}>
+              <label className="flex cursor-pointer items-center gap-2.5">
+                <Checkbox
+                  name="chatEnabledByDefault"
+                  defaultChecked={initial.chatEnabledByDefault}
+                  onCheckedChange={markDirty}
+                />
+                <span>{t("assistant.enableLabel")}</span>
+              </label>
+            </Row>
+            <div className="space-y-1.5 px-5 py-4">
+              <Label htmlFor="assistantKnowledge">
+                {t("assistant.knowledgeLabel")}
+              </Label>
+              <Textarea
+                id="assistantKnowledge"
+                name="assistantKnowledge"
+                rows={6}
+                maxLength={4000}
+                defaultValue={initial.assistantKnowledge}
+                placeholder={t("assistant.knowledgePlaceholder")}
+              />
+              <p className="text-small text-muted-foreground">
+                {t("assistant.knowledgeHint")}
+              </p>
+            </div>
+          </Section>
+
+          <Section
+            id="messages"
+            locked={locked}
+            title={t("messages.title")}
+            description={t("messages.description")}
+          >
+            <div className="grid gap-4 px-5 py-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="senderName">{t("messages.senderLabel")}</Label>
+                <Input
+                  id="senderName"
+                  name="senderName"
+                  maxLength={80}
+                  defaultValue={initial.senderName}
+                  placeholder={t("messages.senderPlaceholder")}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="aiTone">{t("messages.toneLabel")}</Label>
+                <Input
+                  id="aiTone"
+                  name="aiTone"
+                  maxLength={300}
+                  defaultValue={initial.aiTone}
+                  placeholder={t("messages.tonePlaceholder")}
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5 px-5 py-4">
+              <Label htmlFor="senderSignature">{t("messages.signatureLabel")}</Label>
+              <Textarea
+                id="senderSignature"
+                name="senderSignature"
+                maxLength={500}
+                rows={3}
+                defaultValue={initial.senderSignature}
+                placeholder={t("messages.signaturePlaceholder")}
+              />
+            </div>
+          </Section>
         </AdvancedSettingsBlock>
-        )}
       </div>
 
       <div

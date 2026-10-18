@@ -79,7 +79,7 @@ export function ShareReady({
   const t = useTranslations("deal.shareReady");
   const locale = useLocale();
   const [copied, setCopied] = useState(false);
-  const [showOptions, setShowOptions] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [who, setWho] = useState("");
   const [pending, startTransition] = useTransition();
 
@@ -246,43 +246,33 @@ export function ShareReady({
           {t("processing")}
         </p>
       )}
-      {/* An open link changes who receives it: that stays in sight, not in the options */}
-      {!sent && shared && (
-        <p className="flex items-start gap-2 text-small text-muted-foreground">
-          <Users className="mt-0.5 size-4 shrink-0" aria-hidden />
-          <span>
-            {t("sharedMode")}{" "}
-            <button
-              type="button"
-              disabled={pending}
-              onClick={() => switchMode(false)}
-              className="font-medium text-foreground underline underline-offset-4"
-            >
-              {t("backToPersonal")}
-            </button>
-          </span>
+      {notice && (
+        <p className="flex items-center gap-2 text-small">
+          <Sparkles className="size-4 shrink-0" aria-hidden />
+          {notice}
         </p>
       )}
 
-      {/* Everything optional sits behind one fold: copying stays the only obvious move */}
-      <div className="space-y-5 border-t border-border pt-4">
+      <div className="space-y-2 border-t border-border pt-4">
+        <p className="text-body font-medium">
+          {t("welcomeTitle")}{" "}
+          <span className="font-normal text-muted-foreground">
+            {t("optional")}
+          </span>
+        </p>
+        <p className="text-small text-muted-foreground">
+          {t("welcomeHint")}
+        </p>
+        {welcome}
+      </div>
+
+      <div className="space-y-4">
         <button
           type="button"
-          onClick={() => setShowOptions((open) => !open)}
-          aria-expanded={showOptions}
-          aria-controls="share-options"
+          onClick={() => setShowSettings((open) => !open)}
+          aria-expanded={showSettings}
           className="flex w-full flex-wrap items-center gap-x-1.5 gap-y-1 text-left text-small"
         >
-          <span className="inline-flex items-center gap-1 pr-1 font-medium text-foreground">
-            {t("options")}
-            <ChevronDown
-              className={cn(
-                "size-4 transition-transform",
-                showOptions && "rotate-180",
-              )}
-              aria-hidden
-            />
-          </span>
           {summary.map((item) => (
             <span
               key={item}
@@ -291,63 +281,64 @@ export function ShareReady({
               {item}
             </span>
           ))}
+          <span className="inline-flex items-center gap-1 px-1 text-muted-foreground hover:text-foreground">
+            {t("customize")}
+            <ChevronDown
+              className={cn(
+                "size-4 transition-transform",
+                showSettings && "rotate-180",
+              )}
+              aria-hidden
+            />
+          </span>
         </button>
-
-        {showOptions && (
-          <div id="share-options" className="space-y-6">
-            {notice && (
-              <p className="flex items-center gap-2 text-small">
-                <Sparkles className="size-4 shrink-0" aria-hidden />
-                {notice}
-              </p>
-            )}
-
-            <div className="space-y-2">
-              <p className="text-body font-medium">
-                {t("welcomeTitle")}{" "}
-                <span className="font-normal text-muted-foreground">
-                  {t("optional")}
-                </span>
-              </p>
-              <p className="text-small text-muted-foreground">
-                {t("welcomeHint")}
-              </p>
-              {welcome}
-            </div>
-
-            <LinkSettingsPanel {...settings} />
-
-            <a
-              href={url}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 text-small text-muted-foreground hover:text-foreground"
-            >
-              <Eye className="size-4" aria-hidden />
-              {t("preview")}
-            </a>
-
-            {/* The everyday case is one link for one person; broadcasting is the exception */}
-            {!sent && !shared && (
-              <p className="flex items-start gap-2 border-t border-border pt-4 text-small text-muted-foreground">
-                <Users className="mt-0.5 size-4 shrink-0" aria-hidden />
-                <span>
-                  {t("broadcastAsk")}{" "}
-                  <button
-                    type="button"
-                    disabled={pending}
-                    onClick={() => switchMode(true)}
-                    className="font-medium text-foreground underline underline-offset-4"
-                  >
-                    {t("makeOpen")}
-                  </button>
-                  {t("makeOpenAfter")}
-                </span>
-              </p>
-            )}
-          </div>
-        )}
+        {showSettings && <LinkSettingsPanel {...settings} />}
       </div>
+
+      <a
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+        className="inline-flex items-center gap-1.5 text-small text-muted-foreground hover:text-foreground"
+      >
+        <Eye className="size-4" aria-hidden />
+        {t("preview")}
+      </a>
+
+      {/* The everyday case is one link for one person; broadcasting is the exception, one line away */}
+      {!sent && (
+        <p className="flex items-start gap-2 border-t border-border pt-4 text-small text-muted-foreground">
+          <Users className="mt-0.5 size-4 shrink-0" aria-hidden />
+          <span>
+            {shared ? (
+              <>
+                {t("sharedMode")}{" "}
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => switchMode(false)}
+                  className="font-medium text-foreground underline underline-offset-4"
+                >
+                  {t("backToPersonal")}
+                </button>
+              </>
+            ) : (
+              <>
+                {t("broadcastAsk")}{" "}
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => switchMode(true)}
+                  className="font-medium text-foreground underline underline-offset-4"
+                >
+                  {t("makeOpen")}
+                </button>
+                {t("makeOpenAfter")}
+              </>
+            )}
+          </span>
+        </p>
+      )}
     </section>
   );
 }

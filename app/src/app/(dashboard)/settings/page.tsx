@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
+import { LocaleSwitcher } from "@/components/locale-switcher";
 import { ExtensionTokens } from "@/components/dashboard/extension-tokens";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { PrivacySettings } from "@/components/dashboard/privacy-settings";
@@ -37,14 +38,14 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("metaTitle") };
 }
 
-// What a seller sets on day one: the mailbox tool, their alerts, their calendar
-const ESSENTIAL = [{ id: "extension" }, { id: "alertes" }, { id: "agenda" }] as const;
+// Chrome and Outlook lead: the call alerts depend on them
+const ESSENTIAL = [{ id: "extension" }, { id: "pilote" }, { id: "alertes" }, { id: "agenda" }] as const;
 
-// The workspace's settings are an owner's or admin's; a member keeps only their data
 const ADVANCED = [
-  { id: "offre", managerOnly: true },
-  { id: "liens", managerOnly: true },
-  { id: "integrations", managerOnly: true },
+  { id: "offre" },
+  { id: "liens" },
+  { id: "assistant" },
+  { id: "messages" },
   { id: "equipe", managerOnly: true },
   { id: "donnees" },
 ] as const;
@@ -79,7 +80,8 @@ export default async function SettingsPage() {
     <div className="space-y-10">
       <PageHeader
         title={t("title")}
-        description={isManager ? undefined : t("teamManaged")}
+        description={t("description")}
+        action={<LocaleSwitcher />}
       />
 
       <AdvancedSettingsProvider>
@@ -147,7 +149,7 @@ export default async function SettingsPage() {
               }}
               canEditWorkspace={isManager}
             />
-            <AdvancedSettingsBlock id="reglages-immediats" className="space-y-10">
+            <AdvancedSettingsBlock className="space-y-10">
               {/* Unlike the form above, no "Enregistrer": said once, where the rule changes */}
               <p className="text-small text-muted-foreground">{t("instantSave")}</p>
               {team && (

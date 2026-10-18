@@ -11,11 +11,13 @@ import {
   startOnboarding,
 } from "@/app/welcome/actions";
 import { Logo } from "@/components/brand/logo";
+import { LocaleMenu } from "@/components/dashboard/locale-menu";
 import type { AddedSource } from "@/components/dashboard/upload-dropzone";
 import { Button } from "@/components/ui/button";
-import { ONBOARDING_STEPS } from "@/lib/onboarding";
+import { ONBOARDING_STEPS, type MailClient } from "@/lib/onboarding";
 import { cn } from "@/lib/utils";
 
+import { DailyStep } from "./daily-step";
 import { DropStep } from "./drop-step";
 import { TestStep } from "./test-step";
 
@@ -24,16 +26,22 @@ const LAST = ONBOARDING_STEPS.length - 1;
 type TestLink = { linkId: string; url: string };
 
 /**
- * Two steps to a first real send: drop a document, read it as the prospect.
- * The mailbox tools (extension, add-in) wait until a first link went out.
+ * Drop a document, read it as the prospect, plug the mailbox in (the Chrome
+ * extension or the Outlook add-in), then send for real.
  */
 export function OnboardingWizard({
   firstName,
   uploadPrefix,
   previous,
+  initialMailClient,
+  connected,
+  chromeStoreUrl,
 }: {
   firstName: string | null;
   uploadPrefix: string;
+  initialMailClient: MailClient | null;
+  connected: { chrome: boolean; outlook: boolean };
+  chromeStoreUrl: string | null;
   /** Replaying the tour: the latest document, so it is not added again. */
   previous: { documentId: string; linkId: string | null; name: string } | null;
 }) {
@@ -55,6 +63,11 @@ export function OnboardingWizard({
   useEffect(() => {
     void startOnboarding();
   }, []);
+
+  // Reaching the last step counts as done too: the seller has seen everything
+  useEffect(() => {
+    if (index === LAST) void completeOnboarding();
+  }, [index]);
 
   function go(to: number) {
     setIndex(Math.max(0, Math.min(LAST, to)));
@@ -109,28 +122,27 @@ export function OnboardingWizard({
     : added
       ? `/documents/${added.documentId}`
       : "/dashboard";
-  const restart = !!added?.sample || documentFailed;
-  const finalLabel = documentFailed
-    ? t("otherDocument")
-    : added?.sample
-      ? t("ownDocument")
-      : testRead
-        ? t("sendToProspect")
-        : t("continueWithoutTest");
+  const restart = !!added?.sample;
+  const finalLabel = added?.sample ? t("ownDocument") : added ? t("sendToProspect") : t("goToDashboard");
 
   return (
     <div className="flex flex-1 flex-col">
       <header className="border-b border-foreground">
         <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-6 px-4 sm:px-6">
           <Logo />
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={leaving}
-            onClick={() => leave("/dashboard")}
-          >
-            {t("skip")}
-          </Button>
+          <div className="flex items-center gap-2">
+            <LocaleMenu />
+            {index < LAST && (
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={leaving}
+                onClick={() => leave("/dashboard")}
+              >
+                {t("skip")}
+              </Button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -184,6 +196,13 @@ export function OnboardingWizard({
                 onDocumentFailed={() => setDocumentFailed(true)}
               />
             )}
+            {step === "daily" && (
+              <DailyStep
+                initialMailClient={initialMailClient}
+                connected={connected}
+                chromeStoreUrl={chromeStoreUrl}
+              />
+            )}
           </div>
 
           {/* Nothing to go back to or on with before a document is in: no empty footer rule. */}
@@ -209,15 +228,32 @@ export function OnboardingWizard({
               {step === "test" && (
                 <Button
                   size="lg"
-                  // Primary once there is something to act on: the read, or a reason to start over
-                  variant={testRead || restart ? "default" : "ghost"}
+                  // A document that could not be read: start over with another, else on to the mailbox
+                  variant={testRead || documentFailed ? "default" : "ghost"}
                   className="ml-auto"
-                  disabled={leaving}
-                  onClick={() => (restart ? dropAnother() : leave(sendTo))}
+                  onClick={() => (documentFailed ? dropAnother() : go(index + 1))}
                 >
-                  {finalLabel}
+                  {documentFailed ? t("otherDocument") : testRead ? t("continue") : t("skipStep")}
                   <ArrowRight />
                 </Button>
+              )}
+              {step === "daily" && (
+                <div className="ml-auto flex flex-wrap justify-end gap-2">
+                  {added && (
+                    <Button size="lg" variant="ghost" disabled={leaving} onClick={() => leave("/dashboard")}>
+                      {t("dashboard")}
+                    </Button>
+                  )}
+                  <Button
+                    size="lg"
+                    disabled={leaving}
+                    // After the sample: the seller's own document; else the real share screen
+                    onClick={() => (restart ? dropAnother() : leave(sendTo))}
+                  >
+                    {finalLabel}
+                    <ArrowRight />
+                  </Button>
+                </div>
               )}
             </footer>
           )}

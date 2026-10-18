@@ -4,7 +4,6 @@ import {
   CalendarDays,
   Check,
   Download,
-  Forward,
   MessageCircleQuestion,
   MessageSquareText,
   MoreHorizontal,
@@ -194,9 +193,6 @@ export function CtaBar({
   const bookingItem: MoreItem[] = booking
     ? [{ key: "booking", icon: CalendarDays, label: labels.bookMeeting, onSelect: openBooking, disabled: pending }]
     : [];
-  const forwardItem: MoreItem[] = forward
-    ? [{ key: "forward", icon: Forward, label: labels.forwardButton, onSelect: () => setForwardOpen(true), disabled: pending }]
-    : [];
 
   return (
     <>
@@ -221,7 +217,7 @@ export function CtaBar({
                 </div>
               </div>
               {/* Signed: still a question to ask or a meeting to book, and the moment it goes to finance or legal */}
-              {moreMenu([...chatItem, ...bookingItem, ...forwardItem])}
+              {moreMenu([...chatItem, ...bookingItem])}
               {onAskQuestion && (
                 <Button
                   variant="ghost"
@@ -245,7 +241,8 @@ export function CtaBar({
                   <span className="hidden md:inline">{labels.bookMeeting}</span>
                 </Button>
               )}
-              {forwardButton(cn(STRIP_CELL, "w-14 gap-2 max-sm:hidden md:w-auto md:px-5"))}
+              {/* Always in sight, phones included: the seller follows who it was passed on to */}
+              {forwardButton(cn(STRIP_CELL, "w-14 gap-2 md:w-auto md:px-5"))}
               {downloadUrl && (
                 <Button
                   variant="ghost"
@@ -279,7 +276,6 @@ export function CtaBar({
                   ? [
                       ...chatItem,
                       ...(bookingIsPrimary ? [] : bookingItem),
-                      ...forwardItem,
                       ...(answers
                         ? [{
                             key: "change",
@@ -305,7 +301,7 @@ export function CtaBar({
                 </Button>
               )}
               {voice && <div className={cn("flex", expanded && "max-sm:order-2")}>{voice}</div>}
-              {forwardButton(cn(toolCell, inMenu, "md:w-auto md:px-4"))}
+              {forwardButton(cn(toolCell, "md:w-auto md:px-4"))}
               {booking &&
                 (bookingIsPrimary ? (
                   <Button className={primaryCell} onClick={openBooking}>

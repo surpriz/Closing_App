@@ -13,7 +13,7 @@ export const HELP_GUIDE_EN = `## What Clozer is
   LinkedIn).
 - Main navigation (tabs at the top, bar at the bottom on phone): Today (/dashboard), Documents (/documents),
   Settings (/settings). Team (/team) is added for owners and admins as soon as the workspace has a second
-  member (otherwise: Settings → Advanced settings → Team → “Invite a sales rep”, and /team stays reachable by its URL).
+  member (otherwise: Settings → Team → “Invite a sales rep”, and /team stays reachable by its URL).
   Prospecting (/prospecting) only exists for workspaces where it's turned on.
 - “?” button at the top right: Ask a question (the help assistant, also for suggestions and bugs), How it works
   (/how-it-works), FAQ (/faq), Replay onboarding (/welcome).
@@ -162,14 +162,12 @@ export const HELP_GUIDE_EN = `## What Clozer is
 - Archive link: the prospect can no longer open the document, scheduled follow-ups are canceled.
 
 ## Settings (/settings)
-- The essentials are visible right away: Chrome and Outlook, Notifications, Your calendar. The “Advanced
-  settings” button expands the rest: Offer and assistant, Links and follow-ups, Integrations, Team (owners and
-  admins), Data (everyone). A direct link to an advanced section (/settings#offre…) expands it on its own.
-- A member only sees Chrome and Outlook, Notifications, Your calendar, and Data under “Advanced settings”.
+- The essentials are visible right away: Chrome and Outlook, Autopilot, Notifications, Your calendar. The
+  “Advanced settings” button expands the rest: Your offer, Your links, Prospect assistant, Your messages, Team, Data. A
+  direct link to an advanced section (/settings#offre…) expands it on its own.
 
 ## Follow-ups and Autopilot
-- Settings → Advanced settings → Links and follow-ups, Autopilot part (/settings#pilote), set by owners and
-  admins for the whole workspace. Two modes:
+- Settings → Autopilot (/settings#pilote), set by owners and admins for the whole workspace. Two modes:
   - “I review and approve” (Copilot, default, recommended to start): email + follow-up in “Follow-ups to
     review” and on the prospect's page, Follow-ups section.
   - “It goes out on its own when Clozer is confident” (Autopilot): tricky cases (objection, message from the
@@ -187,18 +185,18 @@ export const HELP_GUIDE_EN = `## What Clozer is
 - An unsubscribe link is added to every send.
 - Stop follow-ups: for the whole workspace, “Review everything myself” on Today or switch back to “I review and
   approve”; for one prospect, the “Follow-ups” toggle (document's Prospects tab) or “Follow-ups prepared by Clozer”
-  in the link settings, “Pause until”, or a status other than Open. For new links: Settings → Advanced settings → Links and follow-ups →
+  in the link settings, “Pause until”, or a status other than Open. For new links: Settings → Your links →
   “Prepare follow-ups”.
 
 ## Prospect assistant
 - On the document, it answers the prospect's questions when you're not around. It relies on the document
-  (summaries, facts, page text, video transcript), your offer (Settings → Advanced settings → Offer and assistant), the document's “Info for
-  the assistant” and “What the assistant should know” (Settings → Advanced settings → Offer and assistant, /settings#assistant,
+  (summaries, facts, page text, video transcript), your offer (Settings → Your offer), the document's “Info for
+  the assistant” and “What the assistant should know” (Settings → Prospect assistant, /settings#assistant,
   4,000 characters). Never on a made-up price or term.
 - Whatever it doesn't know, it passes to you right away: “Prospect question” alert, question flagged on the
   prospect's page and included in the morning digest.
 - Anything you write for the assistant can be obtained by the prospect by asking: nothing confidential.
-- Turning it on: “Turn on the assistant for new links” in Settings → Advanced settings → Offer and assistant, then link by link (“Ask the assistant”).
+- Turning it on: “Turn on the assistant for new links” in Settings, then link by link (“Ask the assistant”).
   With no AI configured, the assistant stays hidden.
 - Conversations show up on the prospect's page, “Prospect questions” section. Your own tests on your link don't
   count.
@@ -210,7 +208,7 @@ export const HELP_GUIDE_EN = `## What Clozer is
 - Page capsules: older page-by-page explanations, still played on their page.
 - Voice comments: the prospect records a voice note on a page (60 s max); you get the audio and its transcript
   (“Voice comments” section + alert). Turn it on with “Let the prospect record a voice note on a page” (Settings
-  → Links and follow-ups) or link by link.
+  → Your links) or link by link.
 
 ## Chrome extension and Outlook add-in
 - Settings → Chrome and Outlook (/settings#extension). How it works: you attach a PDF in Gmail or Outlook,
@@ -236,32 +234,26 @@ export const HELP_GUIDE_EN = `## What Clozer is
     evening or on weekends, 4 per hour at most.
   - “A digest every morning at” 6 to 10 a.m.: who to get back to today and why, then yesterday's replies and
     reads. Monday to Friday, nothing if there's nothing to say.
-- For the whole team: see Integrations below.
+- For the whole team (owners and admins): “For the whole team, also notify in” Slack and/or External tool;
+  “CC on alert emails”; “Connect Slack or an external tool”: Slack webhook URL, and Webhook (CRM, Zapier,
+  Make…) signed with HMAC SHA-256 (header X-Closing-Signature).
 - Your calendar (/settings#agenda, personal): booking link. Calendly and Cal.com show up inside the page your
   prospect reads (name and email prefilled); others (HubSpot, Google Calendar…) open in a tab. Empty: no “Book a meeting”
   button.
 
-## Other workspace settings (Advanced settings, owners and admins)
-- Offer and assistant (/settings#offre): your offer (What you sell, Your customers, Why they pick you,
-  Objections you often hear, usual length of a sale in days; optional, Clozer prefills it when it reads your
-  first document) and the Prospect assistant (/settings#assistant).
-- Links and follow-ups (/settings#liens): your links, Autopilot (/settings#pilote) and your messages
-  (/settings#messages).
-- Your links: what each new link offers by default. “Ask the reader for their email before
+## Other workspace settings
+- Your offer (/settings#offre): What you sell, Your customers, Why they pick you, Objections you often hear,
+  usual length of a sale in days. Optional: Clozer prefills it when it reads your first document.
+- Your links (/settings#liens): what each new link offers by default. “Ask the reader for their email before
   opening”, expiration for a quote or a proposal (7, 15, 30 days or never; the countdown only shows on quotes and
   proposals), voice notes, “Prepare follow-ups”. Can be changed afterward link by link.
-- Your messages: Signed by, Tone (e.g. “direct, friendly, no jargon”), Signature.
-- Integrations (/settings#integrations, “Team integrations”): “For the whole team, also notify in” Slack and/or
-  External tool; “CC on alert emails”; “Connect Slack or an external tool”: Slack webhook URL, and Webhook
-  (CRM, Zapier, Make…) signed with HMAC SHA-256 (header X-Closing-Signature); Smart Link (reader.opened as soon
-  as a prospect who came from a cold email starts reading).
+- Your messages (/settings#messages): Signed by, Tone (e.g. “direct, friendly, no jargon”), Signature.
 - After a change: “Save settings”.
 
 ## Team and roles
 - Roles: Owner, Admin, Member.
 - Member: sees their own prospects on Today, views coworkers' prospects without editing them, sets their own
-  notifications and calendar. Doesn't see workspace settings: only Chrome and Outlook, Notifications, Your
-  calendar, and Data under “Advanced settings”.
+  notifications and calendar. Workspace settings grayed out (“Set by a workspace admin.”).
 - Admin: sees the whole team on the Team page, configures the workspace, edits every prospect, deletes documents,
   invites and removes members.
 - Owner: same as an admin, plus links without an assigned sales rep, the ability to make someone else owner and
@@ -269,7 +261,7 @@ export const HELP_GUIDE_EN = `## What Clozer is
 - Team page (/team): Open, Moving, Slipping, To close out, Pipeline figures; “By sales rep” table (click to
   filter); columns Moving (watch closely), Slipping (cooling down), To close out (one last follow-up, or close
   it). These words describe the sale's life; the temperature (Hot, Warm, Cold) stays the dashboard's.
-- Invite: “Invite a sales rep” or Settings → Advanced settings → Team (/settings#equipe), email + role (Member or Admin), “Invite”.
+- Invite: “Invite a sales rep” or Settings → Team (/settings#equipe), email + role (Member or Admin), “Invite”.
   Change a role, “Remove” a member, cancel an invitation.
 
 ## Data and privacy (/settings#donnees)
@@ -297,7 +289,7 @@ export const HELP_GUIDE_EN = `## What Clozer is
 ## Tips for getting the most out of Clozer
 - One link per prospect: you'll know who's reading. Shared link only for wide distribution (brochure, post).
 - Send the link instead of the attachment, not on top of it.
-- Fill in your offer (Offer and assistant) and your messages (Links and follow-ups): follow-ups are more accurate and signed like you.
+- Fill in Your offer and Your messages: follow-ups are more accurate and signed like you.
 - Start with “I review and approve”, switch to Autopilot once you trust the drafts.
 - Log your calls, meetings and replies: Clozer avoids following up at the wrong moment and the analysis stays
   accurate.

@@ -58,8 +58,8 @@ describe("onboarding", () => {
     }
   });
 
-  it("starts with the seller's own document and ends on the test read, tools after the first send", () => {
-    expect(ONBOARDING_STEPS).toEqual(["drop", "test"]);
+  it("starts with the seller's own document, the mailbox tools last", () => {
+    expect(ONBOARDING_STEPS).toEqual(["drop", "test", "daily"]);
   });
 
   it("counts the seller's own read of the test link, not a crawler's", () => {

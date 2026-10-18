@@ -1,6 +1,4 @@
-import { ArrowRight } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 
@@ -77,22 +75,10 @@ export default async function LinkDetailPage({
   searchParams,
 }: PageProps<"/links/[id]">) {
   const { id } = await params;
-  const query = await searchParams;
-  const justCreated = query.new === "1";
+  const justCreated = (await searchParams).new === "1";
   const workspace = await requireWorkspace();
   const deal = await loadDeal(id, workspace, justCreated);
   if (!deal) notFound();
-  // Not sent and nobody opened it: the page is the share screen, the empty report stays one
-  // link away. Stays the full page once confirmed sent, once an open link has readers of its
-  // own, and once expired (the warning and the way to extend live in the full page).
-  const expired = !!deal.link.expiresAt && deal.link.expiresAt <= deal.now;
-  const draftView =
-    deal.sharing &&
-    !!deal.link.draftAt &&
-    !deal.opened &&
-    deal.sharedReaders.length === 0 &&
-    !expired &&
-    query.view !== "full";
 
   const { link, now, canEdit, url, mainProspect, settings, insight } = deal;
   const t = await getTranslations("deal.page");
@@ -171,7 +157,6 @@ export default async function LinkDetailPage({
         <ShareMailToolTip
           user={workspace.user}
           organizationId={workspace.organization.id}
-          scope={workspace.scope}
           prefs={deal.sellerPrefs}
           returnTo={`/links/${link.id}`}
         />
@@ -179,23 +164,6 @@ export default async function LinkDetailPage({
     </div>
   );
   const refresh = deal.sharing && deal.reading && <AutoRefresh intervalMs={3000} />;
-
-  if (draftView) {
-    return (
-      <div className="space-y-8">
-        <DealHeader deal={deal} draft />
-        {share}
-        {refresh}
-        <Link
-          href={`/links/${link.id}?view=full`}
-          className="inline-flex items-center gap-1.5 text-small text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:underline"
-        >
-          {t("showTracking")}
-          <ArrowRight className="size-4" aria-hidden />
-        </Link>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-10">

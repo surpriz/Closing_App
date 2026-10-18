@@ -117,8 +117,8 @@ export async function saveWorkspaceSettings(_prev: SettingsState, formData: Form
     return { error: issueMessage(t, prefs.error.issues[0]?.message, "invalidNotifications") };
   }
 
-  // A plain member only owns their notifications. The form does not render the
-  // workspace fields for them, and whatever they post here is ignored: parsing
+  // A plain member only owns their notifications. Their workspace fields are
+  // disabled, so not even sent, and whatever they post here is ignored: parsing
   // absent fields would wipe the saved values.
   if (!isManagerRole(role)) {
     await upsertSellerPrefs(user.id, organization.id, prefs.data);

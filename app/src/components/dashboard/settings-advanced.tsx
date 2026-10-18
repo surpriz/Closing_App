@@ -16,11 +16,9 @@ import { cn } from "@/lib/utils";
 /** Sections that wait behind "Réglages avancés". A deep link to one of them opens the fold. */
 export const ADVANCED_IDS = [
   "offre",
-  "assistant",
   "liens",
-  "pilote",
+  "assistant",
   "messages",
-  "integrations",
   "equipe",
   "donnees",
 ] as const;
@@ -74,8 +72,7 @@ export function AdvancedSettingsProvider({
   );
 }
 
-/** `controls`: the ids of the blocks it shows, which differ for a member and an admin. */
-export function AdvancedSettingsToggle({ controls }: { controls: string }) {
+export function AdvancedSettingsToggle() {
   const t = useTranslations("settings.advanced");
   const { open, setOpen } = useAdvancedSettings();
   return (
@@ -84,7 +81,7 @@ export function AdvancedSettingsToggle({ controls }: { controls: string }) {
       variant="outline"
       size="lg"
       aria-expanded={open}
-      aria-controls={controls}
+      aria-controls="reglages-avances"
       onClick={() => setOpen(!open)}
       className="bg-card"
     >

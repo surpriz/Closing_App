@@ -23,8 +23,7 @@
     "capsulesTitle": "Page capsules",
     "capsulesHint": "recorded before the welcome message",
     "circuitTitle": "Document chain",
-    "circuitHint": "who passed it to whom",
-    "showTracking": "See the tracking page"
+    "circuitHint": "who passed it to whom"
   },
   "loading": {
     "ariaLabel": "Loading"
@@ -82,7 +81,9 @@
     "readOnly": "{seller}'s prospect. You can view it; only its seller and the admins can change it.",
     "anotherSeller": "Another seller",
     "expiredBanner": "This link has expired: the prospect can no longer open it. Extend it to bring it back.",
-    "newLink": "New link"
+    "report": "Reading report",
+    "sentOn": "Sent {date}",
+    "total": "{time} total"
   },
   "dealSettings": {
     "title": "Link settings",
@@ -268,7 +269,7 @@
     "processing": "Clozer is reading your document to tune the settings. You can already send it.",
     "welcomeTitle": "Welcome message",
     "welcomeHint": "A video or a voice note to introduce the document: the prospect sees your bubble on opening.",
-    "options": "Options",
+    "customize": "Customize",
     "preview": "See what the prospect will see",
     "sharedMode": "Open link: each reader gives their email and gets their own link.",
     "backToPersonal": "Back to a link for one person",

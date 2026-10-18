@@ -5,6 +5,7 @@ import { OnboardingWizard } from "@/components/onboarding/onboarding-wizard";
 import { ToolSetup } from "@/components/onboarding/tool-setup";
 import { documentUploadPrefix } from "@/lib/blob";
 import { getSellerPrefs } from "@/lib/closing/notify/preferences";
+import { guessMailClient } from "@/lib/closing/share/compose";
 import { prisma } from "@/lib/db";
 import { getEnv } from "@/lib/env";
 import { connectedClients } from "@/lib/extension-tokens";
@@ -21,20 +22,23 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function WelcomePage(props: PageProps<"/welcome">) {
   const { user, organization } = await requireWorkspace("/welcome");
   const query = await props.searchParams;
-  const prefs = await getSellerPrefs(user.id, organization.id);
+  const [prefs, tokens] = await Promise.all([
+    getSellerPrefs(user.id, organization.id),
+    prisma.extensionToken.findMany({
+      where: { userId: user.id, organizationId: organization.id, revokedAt: null },
+      select: { label: true },
+    }),
+  ]);
   const firstName = user.name?.trim().split(/\s+/)[0] ?? null;
+  const connected = connectedClients(tokens);
 
   // Plugging in the mailbox, from the share screen tip: back to that screen when done
   if (query.step === "tool") {
-    const tokens = await prisma.extensionToken.findMany({
-      where: { userId: user.id, organizationId: organization.id, revokedAt: null },
-      select: { label: true },
-    });
     return (
       <ToolSetup
         firstName={firstName}
         initialMailClient={parseMailClient(prefs.mailClient)}
-        connected={connectedClients(tokens)}
+        connected={connected}
         account={{ email: user.email, workspace: organization.name }}
         chromeStoreUrl={getEnv().EXTENSION_STORE_URL ?? null}
         returnTo={safeReturnTo(query.from) ?? "/dashboard"}
@@ -75,6 +79,9 @@ export default async function WelcomePage(props: PageProps<"/welcome">) {
   return (
     <OnboardingWizard
       firstName={firstName}
+      initialMailClient={parseMailClient(prefs.mailClient) ?? parseMailClient(guessMailClient(user.email))}
+      connected={connected}
+      chromeStoreUrl={getEnv().EXTENSION_STORE_URL ?? null}
       uploadPrefix={documentUploadPrefix(organization.id)}
       previous={
         previous

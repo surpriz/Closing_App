@@ -3,7 +3,8 @@
   "documentNotFound": "Document not found.",
   "steps": {
     "drop": "Your document",
-    "test": "Prospect's view"
+    "test": "Prospect's view",
+    "daily": "Day to day"
   },
   "mailClients": {
     "gmail": {
@@ -29,9 +30,12 @@
     "back": "Back",
     "continueWithDocument": "Continue with this document",
     "sendToProspect": "Send to a real prospect",
-    "continueWithoutTest": "Go on without testing",
     "ownDocument": "Drop my own document",
-    "otherDocument": "Drop another document"
+    "otherDocument": "Drop another document",
+    "continue": "Continue",
+    "skipStep": "Skip this step",
+    "dashboard": "Dashboard",
+    "goToDashboard": "Go to my dashboard"
   },
   "drop": {
     "titleWithName": "Welcome, {firstName}. Drop in a document.",
@@ -161,5 +165,21 @@
     "line": "In this browser: {label}.",
     "connect": "Connect",
     "update": "Update"
+  },
+  "daily": {
+    "title": "Now, for real.",
+    "lead": "Day to day, you sell like you always have. Clozer does the tracking.",
+    "mailQuestion": "You write your emails in…",
+    "optional": "(optional)",
+    "mailboxAria": "Your email app",
+    "hintManual": "Perfect: pasting the link into your email is all it takes.",
+    "hintConnected": "Your email is already connected to Clozer.",
+    "hintSoon": "Soon, Clozer will put the link in your emails for you. Until then, copy-paste does the job.",
+    "hintInstall": "Clozer can put the link in your emails for you. <link>Set it up in 2 minutes</link>. Nothing required: copy-paste works too.",
+    "extensionTitle": "{mailbox}: attach your PDF as usual",
+    "extensionBody": "The Clozer extension swaps it for a link and tells you when your prospect reads it. Without it, copy-pasting the link works too.",
+    "addToChrome": "Add to Chrome",
+    "thenConnect": "Then connect it, step by step",
+    "desktopOnly": "It installs from Chrome or Edge on a computer. Open Clozer there when you want to add it."
   }
 }

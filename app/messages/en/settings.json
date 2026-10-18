@@ -2,17 +2,19 @@
   "metaTitle": "Settings",
   "page": {
     "title": "Settings",
+    "description": "The essentials first. Everything else waits under Advanced settings.",
     "nav": {
-      "extension": "Chrome and Outlook",
+      "pilote": "Autopilot",
       "alertes": "Notifications",
       "agenda": "Your calendar",
-      "offre": "Offer and assistant",
-      "liens": "Links and follow-ups",
-      "integrations": "Integrations",
+      "offre": "Your offer",
+      "liens": "Your links",
+      "assistant": "Prospect assistant",
+      "messages": "Your messages",
+      "extension": "Chrome and Outlook",
       "equipe": "Team",
       "donnees": "Data"
     },
-    "teamManaged": "The team's offer, links and follow-ups are set by an admin.",
     "instantSave": "These sections save as soon as you change them."
   },
   "advanced": {
@@ -29,6 +31,7 @@
     "invalidSettings": "Invalid settings."
   },
   "form": {
+    "lockedNote": "Set by a workspace admin.",
     "saved": "Settings saved",
     "unsaved": "Unsaved changes",
     "saving": "Saving…",
@@ -62,6 +65,7 @@
       "externalTool": "External tool",
       "ccLabel": "CC on alert emails",
       "ccPlaceholder": "Optional, e.g. head of sales",
+      "connectSummary": "Connect Slack or an external tool",
       "slackLabel": "Slack webhook URL",
       "slackConfiguredPlaceholder": "Already connected, leave empty to keep it",
       "removeSlack": "Disconnect Slack",
@@ -77,7 +81,7 @@
       "hint": "Calendly and Cal.com open inside the prospect's page, with their name and email already filled in. HubSpot, Google Calendar, Microsoft Bookings and the rest open in a new tab. Empty: no \"Book a meeting\" button."
     },
     "offer": {
-      "title": "Your offer and the assistant",
+      "title": "Your offer",
       "descriptionInferred": "Prefilled by Clozer from \"{document}\". Fix what needs fixing and save: your follow-ups will only get sharper.",
       "description": "Optional. With nothing here, Clozer relies on your documents; it prefills this part when it reads the first one.",
       "whatLabel": "What you sell",
@@ -92,7 +96,7 @@
       "cycleAfter": "days"
     },
     "links": {
-      "title": "Links and follow-ups",
+      "title": "Your links",
       "description": "What every new link offers by default. Clozer adapts it to the document (the countdown only applies to quotes and proposals), and you can change it all link by link.",
       "expiryHint": "After that date, the prospect sees the document locked and can ask you for an extension.",
       "expiryLabel": "A quote or proposal expires after",
@@ -120,10 +124,6 @@
       "tonePlaceholder": "direct, friendly, no jargon",
       "signatureLabel": "Signature",
       "signaturePlaceholder": "Alex Morgan\nStudio Nova, (555) 123-4567"
-    },
-    "integrations": {
-      "title": "Team integrations",
-      "description": "For the whole team: every alert also in Slack, in an external tool (CRM, Zapier…) or by email in copy."
     }
   },
   "privacy": {

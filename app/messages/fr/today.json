@@ -20,7 +20,9 @@
     "prospectTime": "{time}, heure du prospect",
     "stateUnopened": "Pas encore ouvert",
     "stateOpened": "Ouvert",
-    "noRecipient": "Sans destinataire"
+    "noRecipient": "Sans destinataire",
+    "mailClientQuestion": "Vous envoyez depuis Gmail ou Outlook ?",
+    "mailClientLink": "Clozer peut créer le lien directement dans vos emails"
   },
   "period": {
     "7d": {

@@ -53,6 +53,8 @@
     }
   },
   "helpWidget": {
+    "launcherAria": "Poser une question à l'aide Clozer",
+    "launcher": "Aide",
     "title": "Aide Clozer",
     "subtitle": "Questions, conseils, idées, bugs",
     "close": "Fermer",

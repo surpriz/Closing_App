@@ -3,7 +3,8 @@
   "documentNotFound": "Document introuvable.",
   "steps": {
     "drop": "Votre document",
-    "test": "Côté prospect"
+    "test": "Côté prospect",
+    "daily": "Au quotidien"
   },
   "mailClients": {
     "gmail": {
@@ -29,9 +30,12 @@
     "back": "Retour",
     "continueWithDocument": "Continuer avec ce document",
     "sendToProspect": "Envoyer à un vrai prospect",
-    "continueWithoutTest": "Continuer sans tester",
     "ownDocument": "Déposer mon propre document",
-    "otherDocument": "Déposer un autre document"
+    "otherDocument": "Déposer un autre document",
+    "continue": "Continuer",
+    "skipStep": "Passer cette étape",
+    "dashboard": "Tableau de bord",
+    "goToDashboard": "Aller à mon tableau de bord"
   },
   "drop": {
     "titleWithName": "Bienvenue, {firstName}. Déposez un document.",
@@ -161,5 +165,21 @@
     "line": "Sur ce navigateur : {label}.",
     "connect": "Connecter",
     "update": "Mettre à jour"
+  },
+  "daily": {
+    "title": "Maintenant, pour de vrai.",
+    "lead": "Au quotidien, vous vendez comme avant. Clozer fait le suivi.",
+    "mailQuestion": "Vous écrivez vos emails depuis…",
+    "optional": "(facultatif)",
+    "mailboxAria": "Votre messagerie",
+    "hintManual": "Parfait : copier-coller le lien dans votre email suffit.",
+    "hintConnected": "Votre messagerie est déjà reliée à Clozer.",
+    "hintSoon": "Bientôt, Clozer mettra le lien dans vos emails tout seul. En attendant, le copier-coller suffit.",
+    "hintInstall": "Clozer peut mettre le lien dans vos emails tout seul. <link>L'installer, 2 minutes</link>. Rien d'obligatoire : le copier-coller marche aussi.",
+    "extensionTitle": "{mailbox} : joignez votre PDF comme d'habitude",
+    "extensionBody": "L'extension Clozer le remplace par un lien et vous prévient quand votre prospect le lit. Sans elle, le copier-coller du lien marche aussi.",
+    "addToChrome": "Ajouter à Chrome",
+    "thenConnect": "Puis la connecter, pas à pas",
+    "desktopOnly": "Elle s'installe depuis Chrome ou Edge, sur ordinateur. Rouvrez Clozer là-bas quand vous voudrez l'ajouter."
   }
 }

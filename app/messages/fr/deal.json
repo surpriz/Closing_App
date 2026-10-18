@@ -23,8 +23,7 @@
     "capsulesTitle": "Capsules par page",
     "capsulesHint": "enregistrées avant le mot d'accueil",
     "circuitTitle": "Circuit du document",
-    "circuitHint": "qui l'a transmis à qui",
-    "showTracking": "Voir la page de suivi"
+    "circuitHint": "qui l'a transmis à qui"
   },
   "loading": {
     "ariaLabel": "Chargement"
@@ -82,7 +81,9 @@
     "readOnly": "Prospect de {seller}. Vous pouvez le consulter, seuls son commercial et les admins peuvent le modifier.",
     "anotherSeller": "un autre commercial",
     "expiredBanner": "Ce lien a expiré : le prospect ne peut plus l'ouvrir. Prolongez-le pour le réactiver.",
-    "newLink": "Nouveau lien"
+    "report": "Rapport de lecture",
+    "sentOn": "Envoyé le {date}",
+    "total": "{time} au total"
   },
   "dealSettings": {
     "title": "Réglages du lien",
@@ -268,7 +269,7 @@
     "processing": "Clozer lit votre document pour adapter les réglages. Vous pouvez déjà l'envoyer.",
     "welcomeTitle": "Mot d'accueil",
     "welcomeHint": "Une vidéo ou un vocal pour présenter le document : le prospect voit votre bulle dès l'ouverture.",
-    "options": "Options",
+    "customize": "Personnaliser",
     "preview": "Voir ce que verra le prospect",
     "sharedMode": "Lien ouvert à tous : chaque lecteur donne son email et reçoit son propre lien.",
     "backToPersonal": "Revenir à un lien pour une personne",

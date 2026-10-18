@@ -2,7 +2,8 @@ import { ArrowLeft, Hourglass } from "lucide-react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 
-import { dealLabel } from "@/lib/closing/dashboard/labels";
+import { INTL_LOCALE } from "@/i18n/locale";
+import { formatClock } from "@/lib/closing/dashboard/deal-plates";
 import { formatRelative } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -14,10 +15,9 @@ import type { Deal } from "./load-deal";
 
 /**
  * Top of the prospect's report: the reading's reference fields, the prospect
- * as the title, its temperature and the link it reads through. `draft` keeps
- * only the way back and the name: the share screen below does the rest.
+ * as the title, its temperature and the link it reads through.
  */
-export function DealHeader({ deal, draft = false }: { deal: Deal; draft?: boolean }) {
+export function DealHeader({ deal }: { deal: Deal }) {
   const {
     link,
     analytics,
@@ -32,35 +32,52 @@ export function DealHeader({ deal, draft = false }: { deal: Deal; draft?: boolea
   const t = useTranslations("deal.dealHeader");
   const tl = useTranslations("labels");
   const locale = useLocale();
+  const reportDate = new Intl.DateTimeFormat(INTL_LOCALE[locale], {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
   const expired = !!link.expiresAt && link.expiresAt <= now;
-
-  const backLink = (
-    <Link
-      href={`/documents/${link.document.id}`}
-      className="inline-flex max-w-full items-center gap-1.5 text-small text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:underline"
-    >
-      <ArrowLeft className="size-4 shrink-0" aria-hidden />
-      <span className="truncate">{link.document.name}</span>
-    </Link>
-  );
-
-  if (draft) {
-    return (
-      <header className="space-y-3">
-        {backLink}
-        <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-3">
-          <h1 className="condensed min-w-0 text-title break-words text-balance">
-            {dealLabel(link, t("newLink"))}
-          </h1>
-          {canEdit && <ArchiveLinkButton linkId={link.id} />}
-        </div>
-      </header>
-    );
-  }
 
   return (
     <header className="space-y-5">
-      {backLink}
+      <Link
+        href={`/documents/${link.document.id}`}
+        className="inline-flex max-w-full items-center gap-1.5 text-small text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:underline"
+      >
+        <ArrowLeft className="size-4 shrink-0" aria-hidden />
+        <span className="truncate">{link.document.name}</span>
+      </Link>
+
+      <p className="flex flex-wrap gap-x-6 gap-y-1 border-b border-border pb-2 font-mono text-micro text-muted-foreground">
+        <span className="text-foreground">{t("report")}</span>
+        <span>
+          {link.draftAt
+            ? t("notSent")
+            : t("sentOn", {
+                date: reportDate.format(link.sentAt ?? link.createdAt),
+              })}
+        </span>
+        <span>{t("reads", { count: analytics.viewCount })}</span>
+        {analytics.totalDurationMs > 0 && (
+          <span>
+            {t("total", {
+              time: formatClock(analytics.totalDurationMs / 1000),
+            })}
+          </span>
+        )}
+        {deal.readingNow ? (
+          <span className="text-foreground">{t("readingNow")}</span>
+        ) : (
+          analytics.lastActivityAt && (
+            <span>
+              {t("lastRead", {
+                when: formatRelative(analytics.lastActivityAt, locale, now),
+              })}
+            </span>
+          )
+        )}
+      </p>
 
       <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
         <div className="min-w-0 space-y-3">
@@ -77,26 +94,6 @@ export function DealHeader({ deal, draft = false }: { deal: Deal; draft?: boolea
               />
             ) : (
               !deal.opened && <HeatPill tier={null} />
-            )}
-            {/* Next to the temperature, what goes with it: sent or not, when they last read, how often */}
-            {/* Someone reading beats everything, even a link never marked sent: it went out after all */}
-            {deal.readingNow || analytics.viewCount > 0 ? (
-              <span className="text-muted-foreground">
-                {deal.readingNow ? (
-                  <span className="font-medium text-foreground">{t("readingNow")}</span>
-                ) : (
-                  analytics.lastActivityAt &&
-                  t("lastRead", { when: formatRelative(analytics.lastActivityAt, locale, now) })
-                )}
-                {analytics.viewCount > 0 && (
-                  <>
-                    {(deal.readingNow || analytics.lastActivityAt) && " · "}
-                    {t("reads", { count: analytics.viewCount })}
-                  </>
-                )}
-              </span>
-            ) : (
-              link.draftAt && <span className="text-muted-foreground">{t("notSent")}</span>
             )}
             {contactLine && (
               <span className="min-w-0 truncate text-muted-foreground">

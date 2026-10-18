@@ -112,8 +112,8 @@ export function isExtensionNudgeSnoozed(hiddenAt: Date | null, now: Date) {
  * Value by doing, tools last: the seller drops a real document straight away and
  * opens it as their prospect would before anything about mailboxes or extensions.
  */
-// The mailbox tools wait for the first link sent: the tour ends on the test read, then sends
-export const ONBOARDING_STEPS = ["drop", "test"] as const;
+// Drop, read it as the prospect, then plug the mailbox in (the extension, for links without copy-paste)
+export const ONBOARDING_STEPS = ["drop", "test", "daily"] as const;
 
 /**
  * A path inside the app to come back to, never another site: one leading slash, then no slash
