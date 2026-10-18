@@ -28,9 +28,8 @@ import {
 } from "@/components/dashboard/today/todo-list";
 import { buildTodayHeadline } from "@/components/dashboard/today-headline";
 import { UploadDropzone } from "@/components/dashboard/upload-dropzone";
-import { INTL_LOCALE, type UiLocale } from "@/i18n/locale";
 import { getAppOrigin } from "@/lib/app-origin";
-import { documentUploadPrefix, pitchUploadPrefix } from "@/lib/blob";
+import { documentUploadPrefix } from "@/lib/blob";
 import { dealAction } from "@/lib/closing/dashboard/deal-action";
 import { buildFeed } from "@/lib/closing/dashboard/feed";
 import {
@@ -49,10 +48,12 @@ import {
   getFunnelFacts,
   getOpenDeals,
   getPageReadings,
+  getSellerProgress,
   getUpcomingFollowups,
   sellerLinks,
   type OpenDeal,
 } from "@/lib/closing/dashboard/queries";
+import { sellerStage } from "@/lib/closing/dashboard/seller-stage";
 import { catchUpInBackground } from "@/lib/closing/catch-up";
 import { getWorkspaceLiveState } from "@/lib/closing/live";
 import { getSellerPrefs } from "@/lib/closing/notify/preferences";
@@ -62,6 +63,7 @@ import { formatInTimeZone, formatRelative } from "@/lib/format";
 import { shouldForceOnboarding } from "@/lib/onboarding";
 import { isManagerRole } from "@/lib/roles";
 import { requireWorkspace } from "@/lib/session";
+import { cn } from "@/lib/utils";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("today.page");
@@ -76,7 +78,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
   // A seller's day is their own deals; the team view is /team
   const { user, organization, role, scope } = await requireWorkspace();
   const organizationId = organization.id;
-  const { mailClient, onboardingCompletedAt } = await getSellerPrefs(
+  const { onboardingCompletedAt } = await getSellerPrefs(
     user.id,
     organizationId,
   );
@@ -102,6 +104,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
     settings,
     sentAlone,
     readyDrafts,
+    progress,
   ] = await Promise.all([
     prisma.document.count({ where: { organizationId, archivedAt: null } }),
     prisma.document.findFirst({
@@ -150,13 +153,15 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
         },
       },
     }),
+    getSellerProgress(organizationId, scope),
   ]);
   // A fresh seller is walked through a first document once; anyone joining a workspace in use is not
   if (shouldForceOnboarding({ onboardingCompletedAt, documentCount }))
     redirect("/welcome");
   const uploadPrefix = documentUploadPrefix(organizationId);
-  const pitchPrefix = pitchUploadPrefix(organizationId);
 
+  // Dropping a document is the one thing to do: the video pitch and the mailbox tools wait
+  // (the header's "Ajouter" keeps the pitch one click away)
   if (documentCount === 0) {
     return (
       <div className="space-y-8">
@@ -172,28 +177,12 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
           hasDocument={false}
           hasLink={false}
           hasRead={false}
-          action={
-            <UploadDropzone
-              uploadPrefix={uploadPrefix}
-              pitchUploadPrefix={pitchPrefix}
-            />
-          }
+          action={<UploadDropzone uploadPrefix={uploadPrefix} />}
         />
-        {!mailClient && (
-          <p className="text-sm text-muted-foreground">
-            {t("today.page.mailClientQuestion")}{" "}
-            <Link
-              href="/welcome?step=tool"
-              className="text-foreground underline underline-offset-4"
-            >
-              {t("today.page.mailClientLink")}
-            </Link>
-            .
-          </p>
-        )}
       </div>
     );
   }
+  const stage = sellerStage(progress);
   // Never copied: still to send. Copied: gone out as far as the seller sees, it waits for its first
   // opening with the other unopened links, and after two days Clozer asks whether it really left
   const readyLinks: ReadyLink[] = readyDrafts
@@ -268,9 +257,10 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
       .filter((row) => row.dealStatus === "CHANGE_REQUESTED")
       .map((row) => row.label),
     freshValidations,
-    activeCount: deals.length,
+    // A copied link went out as far as the seller knows: it waits for its opening, it is not "to create"
+    activeCount: deals.length + copiedRows.length,
     documentCount,
-    unopenedCount: distribution.unopened,
+    unopenedCount: distribution.unopened + copiedRows.length,
     nextFollowupLabel: upcomingFollowups[0]
       ? formatRelative(upcomingFollowups[0].scheduledFor, locale, now)
       : null,
@@ -284,15 +274,24 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
   });
 
   const periodHint = t(`today.period.${period}.hint`);
+  // Until a first reading, the checklist leads and the empty figures stay out of sight. A deal
+  // already to handle (marked validated after a call, say) ends that, read or not.
+  const firstRun = stage !== "reading" && activeRows.length === 0;
+  const nothingToHandle = rows.length === 0 && copiedRows.length === 0;
+  const showAside =
+    !firstRun || drafts.length > 0 || upcomingFollowups.length > 0;
+  // No link out yet and none waiting under "À envoyer": the checklist carries the button
+  const createLink =
+    readyLinks.length === 0 && latestReadyDocument ? (
+      <NewLinkButton
+        documentId={latestReadyDocument.id}
+        label={t("today.page.createLink")}
+      />
+    ) : null;
 
   return (
     <div className="space-y-10">
       <section className="space-y-6">
-        <p className="flex flex-wrap gap-x-6 gap-y-1 border-b border-border pb-2 font-mono text-micro text-muted-foreground">
-          <span className="text-foreground">{t("today.page.reportTitle")}</span>
-          <span>{reportDate(now, locale)}</span>
-          <span>{t("today.page.dealsInProgress", { count: deals.length })}</span>
-        </p>
         <div className="flex flex-col-reverse gap-6 sm:flex-row sm:items-end sm:justify-between">
           <div className="max-w-3xl space-y-3">
             <h1 className="condensed text-title text-balance sm:text-display">
@@ -310,146 +309,157 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
         )}
       </section>
 
-      <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1fr)_18rem]">
+      <div
+        className={cn(
+          "grid grid-cols-1 gap-12",
+          showAside && "lg:grid-cols-[minmax(0,1fr)_18rem]",
+        )}
+      >
         <div className="min-w-0 space-y-12">
+          {firstRun && (
+            <FirstSteps
+              hasDocument
+              hasLink={stage === "waiting"}
+              hasRead={false}
+              readyLinks={readyLinks.length}
+              action={stage === "unsent" ? createLink : null}
+            />
+          )}
           {readyLinks.length > 0 && (
             <section id="a-envoyer" className="scroll-mt-20">
-              <SectionTitle hint={t("today.page.toSendHint")}>
-                {t("today.page.toSend")}
-              </SectionTitle>
+              <SectionTitle>{t("today.page.toSend")}</SectionTitle>
               <ReadyLinks links={readyLinks} />
             </section>
           )}
-          <section>
-            <SectionTitle hint={t("today.page.toHandleHint")}>
-              {t("today.page.toHandle")}
-            </SectionTitle>
-            {rows.length === 0 && copiedRows.length === 0 ? (
-              <EmptyState
-                title={t("today.page.emptyTitle")}
-                description={t("today.page.emptyDescription")}
-                action={
-                  // "À envoyer" above already carries the action when a link is waiting
-                  readyLinks.length === 0 &&
-                  latestReadyDocument && (
-                    <NewLinkButton
-                      documentId={latestReadyDocument.id}
-                      variant="outline"
-                      label={t("today.page.createLink")}
+          {/* Before a first reading, an empty list only repeats the checklist */}
+          {!(firstRun && nothingToHandle) && (
+            <section>
+              <SectionTitle>{t("today.page.toHandle")}</SectionTitle>
+              {nothingToHandle ? (
+                <EmptyState
+                  title={t("today.page.emptyTitle")}
+                  description={t("today.page.emptyDescription")}
+                  action={createLink}
+                />
+              ) : (
+                <>
+                  {activeRows.length > 0 && (
+                    <TodoList
+                      rows={activeRows.slice(0, TODO_LIMIT)}
+                      now={now}
+                      headlineDealId={focus?.id ?? null}
                     />
-                  )
-                }
-              />
-            ) : (
-              <>
-                {activeRows.length > 0 && (
-                  <TodoList
-                    rows={activeRows.slice(0, TODO_LIMIT)}
-                    now={now}
-                    headlineDealId={focus?.id ?? null}
-                  />
-                )}
-                {activeRows.length > TODO_LIMIT && (
-                  <p className="mt-3 text-small text-muted-foreground">
-                    {t("today.page.moreDeals", { count: activeRows.length - TODO_LIMIT })}
-                  </p>
-                )}
-                {waitingRows.length > 0 && <UnopenedDeals rows={waitingRows} />}
-              </>
-            )}
-          </section>
+                  )}
+                  {activeRows.length > TODO_LIMIT && (
+                    <p className="mt-3 text-small text-muted-foreground">
+                      {t("today.page.moreDeals", { count: activeRows.length - TODO_LIMIT })}
+                    </p>
+                  )}
+                  {waitingRows.length > 0 && <UnopenedDeals rows={waitingRows} />}
+                </>
+              )}
+            </section>
+          )}
 
-          <section>
-            <SectionTitle
-              hint={t("today.page.sendsHint", { period: periodHint })}
-              action={<PeriodTabs current={period} />}
-            >
-              {t("today.page.sends")}
-            </SectionTitle>
-            <FunnelStrip funnel={funnel} />
-          </section>
+          {!firstRun && (
+            <section>
+              <SectionTitle
+                hint={t("today.page.sendsHint", { period: periodHint })}
+                action={<PeriodTabs current={period} />}
+              >
+                {t("today.page.sends")}
+              </SectionTitle>
+              <FunnelStrip funnel={funnel} />
+            </section>
+          )}
         </div>
 
-        <aside className="space-y-10">
-          <section>
-            <SectionTitle hint={t("today.page.openDealsHint")}>{t("today.page.openDeals")}</SectionTitle>
-            <HeatDistributionBar distribution={distribution} />
-          </section>
-
-          {drafts.length > 0 && (
-            <section>
-              <SectionTitle hint={t("today.page.draftsHint")}>
-                {t("today.page.draftsTitle")}
-              </SectionTitle>
-              <ul className="space-y-3 text-sm">
-                {drafts.map((draft) => (
-                  <li key={draft.id} className="flex gap-3">
-                    <PenLine className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
-                    <div className="min-w-0">
-                      <Link
-                        href={`/links/${draft.link.id}#relances`}
-                        className="font-medium hover:underline"
-                      >
-                        {draft.prospect.company ??
-                          draft.prospect.name ??
-                          draft.prospect.email}
-                      </Link>
-                      <p className="truncate text-muted-foreground">
-                        {t(`labels.channel.${draft.channel}`)}
-                        {draft.subject ? ` : ${draft.subject}` : ""}
-                      </p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-
-          <section>
-            <SectionTitle hint={periodHint}>
-              {t("today.page.feedTitle")}
-            </SectionTitle>
-            {feed.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                {t("today.page.feedEmpty")}
-              </p>
-            ) : (
-              <ActivityFeed items={feed} now={now} />
+        {showAside && (
+          <aside className="space-y-10">
+            {!firstRun && (
+              <section>
+                <SectionTitle>{t("today.page.openDeals")}</SectionTitle>
+                <HeatDistributionBar distribution={distribution} />
+              </section>
             )}
-          </section>
 
-          {upcomingFollowups.length > 0 && (
-            <section>
-              <SectionTitle>{t("today.page.upcomingTitle")}</SectionTitle>
-              <ul className="space-y-3 text-sm">
-                {upcomingFollowups.map((followup) => (
-                  <li key={followup.id} className="flex gap-3">
-                    <Send className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
-                    <div className="min-w-0">
-                      <Link
-                        href={`/links/${followup.link.id}`}
-                        className="font-medium hover:underline"
-                      >
-                        {followup.prospect.company ??
-                          followup.prospect.name ??
-                          followup.prospect.email}
-                      </Link>
-                      <p
-                        className="text-muted-foreground"
-                        title={t("today.page.prospectTime", {
-                          time: formatInTimeZone(followup.scheduledFor, followup.timezone, locale),
-                        })}
-                      >
-                        {t(`labels.channel.${followup.channel}`)}{" "}
-                        {formatRelative(followup.scheduledFor, locale, now)}
-                      </p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-        </aside>
+            {drafts.length > 0 && (
+              <section>
+                <SectionTitle hint={t("today.page.draftsHint")}>
+                  {t("today.page.draftsTitle")}
+                </SectionTitle>
+                <ul className="space-y-3 text-sm">
+                  {drafts.map((draft) => (
+                    <li key={draft.id} className="flex gap-3">
+                      <PenLine className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+                      <div className="min-w-0">
+                        <Link
+                          href={`/links/${draft.link.id}#relances`}
+                          className="font-medium hover:underline"
+                        >
+                          {draft.prospect.company ??
+                            draft.prospect.name ??
+                            draft.prospect.email}
+                        </Link>
+                        <p className="truncate text-muted-foreground">
+                          {t(`labels.channel.${draft.channel}`)}
+                          {draft.subject ? ` : ${draft.subject}` : ""}
+                        </p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            {!firstRun && (
+              <section>
+                <SectionTitle hint={periodHint}>
+                  {t("today.page.feedTitle")}
+                </SectionTitle>
+                {feed.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    {t("today.page.feedEmpty")}
+                  </p>
+                ) : (
+                  <ActivityFeed items={feed} now={now} />
+                )}
+              </section>
+            )}
+
+            {upcomingFollowups.length > 0 && (
+              <section>
+                <SectionTitle>{t("today.page.upcomingTitle")}</SectionTitle>
+                <ul className="space-y-3 text-sm">
+                  {upcomingFollowups.map((followup) => (
+                    <li key={followup.id} className="flex gap-3">
+                      <Send className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+                      <div className="min-w-0">
+                        <Link
+                          href={`/links/${followup.link.id}`}
+                          className="font-medium hover:underline"
+                        >
+                          {followup.prospect.company ??
+                            followup.prospect.name ??
+                            followup.prospect.email}
+                        </Link>
+                        <p
+                          className="text-muted-foreground"
+                          title={t("today.page.prospectTime", {
+                            time: formatInTimeZone(followup.scheduledFor, followup.timezone, locale),
+                          })}
+                        >
+                          {t(`labels.channel.${followup.channel}`)}{" "}
+                          {formatRelative(followup.scheduledFor, locale, now)}
+                        </p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+          </aside>
+        )}
       </div>
     </div>
   );
@@ -499,16 +509,6 @@ function toTodoRow(
     url: `${origin}/v/${deal.slug}`,
     heat: pages ? pageHeat(pages, deal.document.numPages) : null,
   };
-}
-
-// Sellers are in France for now; the date only labels the report.
-function reportDate(now: Date, locale: UiLocale) {
-  return new Intl.DateTimeFormat(INTL_LOCALE[locale], {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    timeZone: "Europe/Paris",
-  }).format(now);
 }
 
 function dealState(

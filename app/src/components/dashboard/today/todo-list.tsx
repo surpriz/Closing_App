@@ -89,14 +89,16 @@ export function TodoList({
           >
             <HeatStrip heat={row.heat} className="col-span-2 sm:col-span-1" />
             <div className="min-w-0 space-y-1.5">
-              <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
-                <Link
-                  href={`/links/${row.id}`}
-                  className="min-w-0 truncate font-semibold outline-none after:absolute after:inset-0 focus-visible:after:ring-3 focus-visible:after:ring-ring/30 focus-visible:after:ring-inset"
+              {/* Temperature first: the word and its colour, the one signal the row is read for */}
+              <div className="flex items-center gap-x-3">
+                <span
+                  className={cn(
+                    "inline-flex shrink-0 items-center gap-1.5 rounded-sm bg-muted px-2 py-0.5 text-small",
+                    row.tier || row.dealStatus !== "OPEN"
+                      ? "font-medium text-foreground"
+                      : "text-muted-foreground",
+                  )}
                 >
-                  {row.label}
-                </Link>
-                <span className="flex shrink-0 items-center gap-1.5 text-small text-muted-foreground">
                   <span
                     aria-hidden
                     className={cn(
@@ -108,17 +110,19 @@ export function TodoList({
                           : "bg-foreground/25",
                     )}
                   />
-                  <span
-                    className={cn(
-                      row.tier || row.dealStatus !== "OPEN"
-                        ? "font-medium text-foreground"
-                        : "",
-                    )}
-                  >
-                    {row.state}
-                  </span>
-                  {read && <span>· {read}</span>}
+                  {row.state}
                 </span>
+                <Link
+                  href={`/links/${row.id}`}
+                  className="min-w-0 truncate font-semibold outline-none after:absolute after:inset-0 focus-visible:after:ring-3 focus-visible:after:ring-ring/30 focus-visible:after:ring-inset"
+                >
+                  {row.label}
+                </Link>
+                {read && (
+                  <span className="shrink-0 text-small text-muted-foreground">
+                    {read}
+                  </span>
+                )}
               </div>
               {(meta || row.heat?.hottest) && (
                 <p className="flex flex-wrap gap-x-2 text-small text-muted-foreground">
@@ -156,7 +160,8 @@ export function TodoList({
                     className="mt-0.5 size-3.5 shrink-0"
                     aria-label={t("today.todo.aiAnalysis")}
                   />
-                  <span className="line-clamp-2">
+                  {/* One line: the full reading is on the prospect's page */}
+                  <span className="line-clamp-1">
                     {tidyEllipsis(row.insightHeadline)}
                   </span>
                 </p>

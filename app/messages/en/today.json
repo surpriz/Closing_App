@@ -3,22 +3,15 @@
     "metaTitle": "Today",
     "welcomeTitle": "Welcome to Clozer.",
     "welcomeBody": "Drop a document (quote, invoice, deck…): the link to send is ready in a second.",
-    "mailClientQuestion": "Sending from Gmail or Outlook?",
-    "mailClientLink": "Clozer can create the link right inside your emails",
-    "reportTitle": "Today's report",
-    "dealsInProgress": "{count, plural, one {# open deal} other {# open deals}}",
     "toSend": "To send",
-    "toSendHint": "not copied or sent yet",
     "toHandle": "To do",
-    "toHandleHint": "most urgent first",
-    "emptyTitle": "No open deals.",
-    "emptyDescription": "As soon as a link you sent is opened, the deal shows up here with what to do next.",
+    "emptyTitle": "No prospects to handle.",
+    "emptyDescription": "As soon as a prospect opens their link, they show up here with what to do next.",
     "createLink": "Create a link",
-    "moreDeals": "And {count} more open deals, less urgent.",
+    "moreDeals": "And {count} more prospects, less urgent.",
     "sends": "Your sends",
     "sendsHint": "where your sent links stand, {period}",
-    "openDeals": "Open deals",
-    "openDealsHint": "right now",
+    "openDeals": "Active prospects",
     "draftsTitle": "Follow-ups to approve",
     "draftsHint": "nothing goes out without you",
     "feedTitle": "What happened",
@@ -113,7 +106,7 @@
       "sent": "Links created in the period.",
       "opened": "At least one read, bots aside.",
       "deep": "Half the PDF with at least 30 s of reading, a minute on a web link, or a long read of the pricing.",
-      "validated": "“Approve & sign” clicked, or deal marked approved or won."
+      "validated": "“Approve & sign” clicked, or prospect marked approved or won."
     },
     "heat": {
       "HOT": "hot",
@@ -121,7 +114,7 @@
       "COLD": "cold",
       "unopened": "not opened yet"
     },
-    "noOpenDeals": "No open deals."
+    "noOpenDeals": "No active prospects."
   },
   "autopilot": {
     "mode": "Autopilot.",
@@ -132,7 +125,7 @@
   },
   "nextAction": {
     "aiWait": "Nothing to do for now, Clozer is watching.",
-    "aiCloseLost": "Deal probably lost: close it?",
+    "aiCloseLost": "Prospect probably lost: close it?",
     "aiAdvice": "{verb} {timing}.",
     "aiAdviceNoTiming": "{verb}.",
     "closeWon": "Approved by the prospect: confirm the sale.",
@@ -213,7 +206,7 @@
     "stops": "{count} of {total} prospects stop at page {page}: the rest goes unread.",
     "stopsAbout": "{count} of {total} prospects stop at page {page} ({about}): the rest goes unread.",
     "allFinished": "All {count} prospects who opened it read to the end.",
-    "aiFriction": "The analysis sees {friction} as a blocker on {count} deals.",
+    "aiFriction": "The analysis sees {friction} as a blocker for {count} prospects.",
     "names": {
       "PRICE": "price",
       "SCOPE": "scope",
