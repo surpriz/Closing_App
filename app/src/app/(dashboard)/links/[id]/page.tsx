@@ -391,8 +391,6 @@ export default async function LinkDetailPage({
 
         {canEdit && (
           <DealSettings
-            // The share screen above already holds them under "Options"
-            withSettings={!deal.sharing}
             summary={settingsSummary(link, now, locale)}
             name={link.name ?? ""}
             panel={deal.settingsPanel}

@@ -361,7 +361,18 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
               <EmptyState
                 title={t("today.page.emptyTitle")}
                 description={t("today.page.emptyDescription")}
-                action={createLink}
+                // The checklist above already carries the button while it is shown
+                action={
+                  !firstRun &&
+                  readyLinks.length === 0 &&
+                  latestReadyDocument && (
+                    <NewLinkButton
+                      documentId={latestReadyDocument.id}
+                      variant="outline"
+                      label={t("today.page.createLink")}
+                    />
+                  )
+                }
               />
             ) : (
               <>

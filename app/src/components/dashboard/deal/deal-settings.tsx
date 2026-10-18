@@ -15,7 +15,6 @@ export function DealSettings({
   panel,
   welcome,
   capsules,
-  withSettings = true,
 }: {
   /** "Email demandé", "Expire dans 15 j"… */
   summary: string[];
@@ -25,21 +24,16 @@ export function DealSettings({
   welcome: React.ReactNode;
   /** Page capsules recorded before the welcome message, null when there are none. */
   capsules: React.ReactNode;
-  /** False while the share screen shows the same settings: no second copy below. */
-  withSettings?: boolean;
 }) {
   const t = useTranslations("deal.dealSettings");
-  if (!withSettings && !welcome && !capsules) return null;
   return (
     <DealSection id="reglages" title={t("title")} hint={t("hint")}>
-      {withSettings && (
-        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-border py-3">
-          <p className="text-small text-muted-foreground">
-            {summary.join(" · ")}
-          </p>
-          <LinkSettingsDialog name={name} {...panel} />
-        </div>
-      )}
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-border py-3">
+        <p className="text-small text-muted-foreground">
+          {summary.join(" · ")}
+        </p>
+        <LinkSettingsDialog name={name} {...panel} />
+      </div>
       {welcome && (
         <DealFold
           id="mot-accueil"
