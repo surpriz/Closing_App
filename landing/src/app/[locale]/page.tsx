@@ -70,7 +70,7 @@ const TEAM_SCREENS: Record<"desktop" | "mobile", Record<Locale, StaticImageData>
   desktop: { fr: teamFr, en: teamEn },
   mobile: { fr: teamMobileFr, en: teamMobileEn },
 };
-const FAQ = ["email", "informed", "install", "tools", "auto", "beta", "data"] as const;
+const FAQ = ["email", "informed", "install", "tools", "cold", "auto", "beta", "data"] as const;
 
 type Props = { params: Promise<{ locale: string }> };
 
