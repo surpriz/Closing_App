@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowRight } from "lucide-react";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 
 import type { UnlockState } from "@/app/v/[slug]/actions";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { GATE_BOX, GATE_FIELD, GATE_LABEL, GATE_SUBMIT, GateFrame, GateTitle } f
 import { PrivacyNotice } from "./privacy-notice";
 
 type Props = {
+  slug: string;
   action: (prev: UnlockState, formData: FormData) => Promise<UnlockState>;
   /** The person the seller sent the link to: one click instead of a form. */
   known: { firstName: string | null; maskedEmail: string; unlock: () => Promise<UnlockState> } | null;
@@ -19,12 +20,17 @@ type Props = {
   labels: ViewerLabels;
 };
 
-export function EmailGate({ action, known, documentName, senderName, labels }: Props) {
+export function EmailGate({ slug, action, known, documentName, senderName, labels }: Props) {
   const [state, formAction, pending] = useActionState(action, null);
   const [knownState, unlockKnown, unlocking] = useActionState(async () => known!.unlock(), null);
   const [notMe, setNotMe] = useState(false);
   const invalid = state?.error === "invalid_email";
   const greet = known && !notMe && !knownState?.error;
+
+  // Shown in a real browser: the link was clicked, whether or not the reader goes on
+  useEffect(() => {
+    navigator.sendBeacon?.("/api/track/gate", new Blob([JSON.stringify({ slug })], { type: "application/json" }));
+  }, [slug]);
 
   return (
     <GateFrame>

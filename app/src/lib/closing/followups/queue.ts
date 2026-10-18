@@ -104,7 +104,12 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
   const t = getNamespaceTranslator(sellerLocale, "server.followups");
   const settings = link.organization.settings;
   const pages = link.document.pages;
-  const context = (followup.context ?? {}) as { brief?: FollowupPromptInput["brief"]; readTags?: PageTag[] };
+  const context = (followup.context ?? {}) as {
+    brief?: FollowupPromptInput["brief"];
+    readTags?: PageTag[];
+    clicked?: boolean;
+    final?: boolean;
+  };
   const brief = followup.trigger === "AI_DECISION" ? (context.brief ?? null) : null;
   const now = new Date();
   // The link no longer opens: a message pointing to it would be off-key, and the writer call wasted
@@ -142,6 +147,8 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
       senderSignature: settings?.senderSignature ?? null,
       daysSinceSent: link.sentAt ? Math.floor((now.getTime() - link.sentAt.getTime()) / DAY_MS) : null,
       deadlineLabel,
+      sequence:
+        followup.trigger === "ANTI_GHOSTING" ? { clicked: !!context.clicked, final: !!context.final } : null,
       aiTone: settings?.aiTone ?? null,
       // Web links have no text: the seller's description stands in for the first page
       documentIntro: (pages[0]?.text ?? link.document.sellerDescription)?.slice(0, 600) ?? null,

@@ -31,6 +31,23 @@ describe("follow-up prompts", () => {
   });
 });
 
+describe("never-opened sequence", () => {
+  const reminder = { ...input, trigger: "ANTI_GHOSTING" as const, pricingExcerpt: null };
+
+  it("closes the loop on the last step", () => {
+    expect(buildFollowupPrompt({ ...reminder, sequence: { clicked: false, final: true } })).toContain("last reminder");
+    const draft = templateFollowup({ ...reminder, sequence: { clicked: false, final: true } });
+    expect(draft.body).toContain("pas maintenant");
+    expect(draft.body).toContain(reminder.proposalUrl);
+  });
+
+  it("makes the way in easy after a click that went no further, without saying so", () => {
+    const prompt = buildFollowupPrompt({ ...reminder, sequence: { clicked: true, final: false } });
+    expect(prompt).toContain("Send the link again");
+    expect(prompt).toContain("Never say or hint");
+  });
+});
+
 describe("templateFollowup", () => {
   it("writes French with the link and signature, without tracking details", () => {
     const draft = templateFollowup(input);

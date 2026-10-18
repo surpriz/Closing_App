@@ -154,7 +154,8 @@
       "linkNotFound": "Link not found.",
       "replaced": "Replaced by a newer analysis",
       "alreadyExists": "A follow-up already exists for this analysis.",
-      "preparedOnRequest": "Prepared at your request. {headline}"
+      "preparedOnRequest": "Prepared at your request. {headline}",
+      "replacedStep": "Replaced by the next reminder"
     },
     "dispatch": {
       "followupsOff": "Follow-ups turned off on this link",

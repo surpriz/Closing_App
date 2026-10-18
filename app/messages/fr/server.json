@@ -154,7 +154,8 @@
       "linkNotFound": "Lien introuvable.",
       "replaced": "Remplacée par une analyse plus récente",
       "alreadyExists": "Une relance existe déjà pour cette analyse.",
-      "preparedOnRequest": "Préparée à votre demande. {headline}"
+      "preparedOnRequest": "Préparée à votre demande. {headline}",
+      "replacedStep": "Remplacée par le rappel suivant"
     },
     "dispatch": {
       "followupsOff": "Relances désactivées sur ce lien",
