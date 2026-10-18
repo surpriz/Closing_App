@@ -52,5 +52,39 @@
     "ifYou": "Si c'est vous, rien à faire.",
     "otherwise": "Sinon, révoquez-le tout de suite dans Réglages › Chrome et Outlook : {url}",
     "otherwiseHtml": "Sinon, révoquez-le tout de suite dans <a>Réglages › Chrome et Outlook</a>."
+  },
+  "billing": {
+    "helloName": "Bonjour {name},",
+    "hello": "Bonjour,",
+    "afterFree": "Ensuite, votre espace passe en offre Gratuite : vos liens continuent de marcher et vous gardez toutes vos données. En Gratuit : 5 nouveaux liens par mois, 10 relances IA, pas d'assistant prospect ni de vue équipe.",
+    "choose": "Choisir une offre",
+    "seePlans": "Voir les offres",
+    "trialEnding": {
+      "subject": "{days, plural, one {Votre essai Équipe se termine demain} other {Votre essai Équipe se termine dans # jours}}",
+      "title": "Votre essai se termine le {date}",
+      "body": "Vous avez eu tout Clozer pendant deux semaines. Pour le garder, choisissez Solo (19 € par mois) ou Équipe (39 € par membre)."
+    },
+    "trialEnded": {
+      "subject": "Votre essai Clozer est terminé",
+      "title": "Vous êtes en offre Gratuite",
+      "body": "Votre essai Équipe vient de se terminer. Rien n'a été supprimé, et vous pouvez passer à Solo ou Équipe quand vous voulez."
+    },
+    "betaNotice": {
+      "subject": "Clozer sort de la bêta",
+      "title": "Les offres payantes commencent le {date}",
+      "body": "Merci d'avoir utilisé Clozer pendant la bêta. Comme promis, vous êtes prévenu en premier : les offres payantes démarrent le {date}. D'ici là, votre espace reste en Équipe, gratuitement.",
+      "prices": "Solo coûte 19 € par mois (15 € en annuel), Équipe 39 € par membre (32 € en annuel). Prix HT."
+    },
+    "betaEnding": {
+      "subject": "Votre accès bêta gratuit se termine le {date}",
+      "title": "Plus qu'une semaine de bêta",
+      "body": "Votre espace reste en Équipe jusqu'au {date}. Choisissez une offre d'ici là si vous voulez tout garder."
+    },
+    "paymentFailed": {
+      "subject": "Votre paiement Clozer n'est pas passé",
+      "title": "Votre carte a été refusée",
+      "body": "Stripe va réessayer dans les prochains jours. Mettez à jour votre carte pour garder votre offre, ça prend une minute.",
+      "button": "Mettre à jour ma carte"
+    }
   }
 }

@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 
 import { seatQuantity, subscriptionFields } from "./plans";
 import { syncSeats } from "./seats";
+import { sendPaymentFailedEmail } from "./send-emails";
 
 const idOf = (value: string | { id: string } | null | undefined) => (typeof value === "string" ? value : (value?.id ?? null));
 
@@ -54,8 +55,15 @@ async function handle(stripe: Stripe, event: Stripe.Event): Promise<string | nul
     case "customer.subscription.deleted":
       return syncSubscription(stripe, event.data.object.id);
     case "invoice.payment_failed": {
-      const organizationId = await orgIdForCustomer(event.data.object.customer);
-      if (organizationId) await prisma.organization.update({ where: { id: organizationId }, data: { paymentFailedAt: new Date() } });
+      const invoice = event.data.object;
+      const organizationId = await orgIdForCustomer(invoice.customer);
+      if (organizationId) {
+        await prisma.organization.update({ where: { id: organizationId }, data: { paymentFailedAt: new Date() } });
+        // Stripe's own retries come with new events: one email per invoice
+        if (invoice.id) {
+          await sendPaymentFailedEmail(organizationId, invoice.id).catch((error) => console.error("[billing:payment-email]", error));
+        }
+      }
       return organizationId;
     }
     case "invoice.paid": {

@@ -1,3 +1,5 @@
+import { reconcileSeats } from "@/lib/billing/seats";
+import { sendBillingEmails } from "@/lib/billing/send-emails";
 import { ACTIVE_WORKSPACE } from "@/lib/closing/active-workspace";
 import { prisma } from "@/lib/db";
 import { runProspectingTick } from "@/lib/prospecting/tick";
@@ -77,6 +79,12 @@ export async function runClosingTick(now = new Date()) {
     console.error("[closing:prospecting]", error);
     return null;
   });
+  // Billing: Stripe or SES down must not stop the closing engine either
+  const billingEmails = await sendBillingEmails(now).catch((error) => {
+    console.error("[closing:billing-emails]", error);
+    return null;
+  });
+  await reconcileSeats().catch((error) => console.error("[closing:seats]", error));
   return {
     expiredCancelled,
     antiGhostingQueued,
@@ -93,5 +101,6 @@ export async function runClosingTick(now = new Date()) {
     draftsArchived,
     purged,
     prospecting,
+    billingEmails,
   };
 }

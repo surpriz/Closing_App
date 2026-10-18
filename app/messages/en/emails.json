@@ -52,5 +52,39 @@
     "ifYou": "If that was you, nothing to do.",
     "otherwise": "Otherwise, revoke it right away in Settings › Chrome and Outlook: {url}",
     "otherwiseHtml": "Otherwise, revoke it right away in <a>Settings › Chrome and Outlook</a>."
+  },
+  "billing": {
+    "helloName": "Hi {name},",
+    "hello": "Hi,",
+    "afterFree": "After that, your workspace moves to the Free plan: your links keep working and you keep all your data. Free means 5 new links a month, 10 AI follow-ups, no prospect assistant and no team view.",
+    "choose": "Choose a plan",
+    "seePlans": "See the plans",
+    "trialEnding": {
+      "subject": "{days, plural, one {Your Team trial ends tomorrow} other {Your Team trial ends in # days}}",
+      "title": "Your trial ends on {date}",
+      "body": "You've had everything in Clozer for two weeks. To keep it, pick Solo (19 € a month) or Team (39 € per member)."
+    },
+    "trialEnded": {
+      "subject": "Your Clozer trial is over",
+      "title": "You're on the Free plan now",
+      "body": "Your Team trial just ended. Nothing was deleted, and you can move to Solo or Team whenever you like."
+    },
+    "betaNotice": {
+      "subject": "Clozer is leaving beta",
+      "title": "Paid plans start on {date}",
+      "body": "Thanks for using Clozer during the beta. As promised, you hear it first: paid plans start on {date}. Until then your workspace stays on Team, for free.",
+      "prices": "Solo is 19 € a month (15 € billed yearly), Team 39 € per member (32 € billed yearly). Prices excl. VAT."
+    },
+    "betaEnding": {
+      "subject": "Your free beta access ends on {date}",
+      "title": "One week left on the beta",
+      "body": "Your workspace stays on Team until {date}. Pick a plan before then if you want to keep everything."
+    },
+    "paymentFailed": {
+      "subject": "Your Clozer payment didn't go through",
+      "title": "Your card was declined",
+      "body": "Stripe will try again over the next few days. Update your card to keep your plan, it takes a minute.",
+      "button": "Update my card"
+    }
   }
 }
