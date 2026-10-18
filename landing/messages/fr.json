@@ -34,7 +34,7 @@
   },
   "reading": {
     "name": "Proposition « Refonte du site e-commerce »",
-    "caption": "Exemple : lecture de la proposition « Refonte du site e-commerce ». La page la plus lue est « Tarifs », 3 min 38.",
+    "caption": "Exemple : lecture de la proposition « Refonte du site e-commerce ». La page la plus lue est « Tarifs », 3 min 38.",
     "summary": "Tarifs relus 3 fois, 3 min 38 au total",
     "hot": "Chaud",
     "cold": "Froid",
@@ -61,19 +61,40 @@
     "demo": "Exemple de démonstration",
     "hero": {
       "title": "Sachez qui lit votre proposition. Relancez <hot>au bon moment</hot>.",
-      "lead": "Pour les commerciaux B2B et leurs managers. Envoyez un lien Clozer à la place du PDF : vous voyez qui l'ouvre, ce qu'il lit et à qui il le transfère. Clozer prépare la relance.",
+      "lead": "Pour les commerciaux B2B et leurs managers. Envoyez un lien Clozer à la place du PDF : vous voyez qui l'ouvre, ce qu'il lit et à qui il le transfère. Clozer prépare la relance.",
       "free": "Gratuit pendant la bêta",
       "noCard": "Sans carte bancaire",
       "magicLink": "Lien de connexion par email"
     },
     "silence": {
       "title": "Après l'envoi, le silence.",
-      "body": "Le document est parti. A-t-il été ouvert ? Lu jusqu'aux tarifs ? Transmis au décideur ? Vous relancez à l'aveugle : trop tôt, vous agacez ; trop tard, le prospect a signé ailleurs.",
-      "answer": "Clozer remplace la pièce jointe par un lien, et le doute par ce qui s'est vraiment passé.",
-      "pdf": "Pièce jointe PDF",
-      "pdfVerdict": "Aucune mesure",
-      "link": "Lien Clozer",
-      "linkVerdict": "Tarifs lus 3 min 38"
+      "body": "Le document est parti. A-t-il été ouvert ? Lu jusqu'aux tarifs ? Transmis au décideur ? Vous relancez à l'aveugle : trop tôt, vous agacez ; trop tard, le prospect a signé ailleurs.",
+      "table": {
+        "caption": "Ce que vous savez après l'envoi : avec un PDF en pièce jointe, et avec un lien Clozer (valeurs d'exemple).",
+        "pdf": "PDF en pièce jointe",
+        "link": "Lien Clozer",
+        "example": "Exemple",
+        "opened": {
+          "label": "Ouvert ?",
+          "pdf": "Vous ne savez pas",
+          "link": "Mardi, 9 h 12"
+        },
+        "depth": {
+          "label": "Lu jusqu'où ?",
+          "pdf": "Vous ne savez pas",
+          "link": "Tarifs relus 3 fois"
+        },
+        "forwarded": {
+          "label": "Transmis ?",
+          "pdf": "Vous ne savez pas",
+          "link": "Ouvert par un 2e lecteur"
+        },
+        "reply": {
+          "label": "Il peut répondre ?",
+          "pdf": "Par email, s'il y pense",
+          "link": "Il valide ou prend RDV dans le document"
+        }
+      }
     },
     "send": {
       "title": "Deux façons d'envoyer. Aucune à apprendre.",

@@ -13,6 +13,7 @@ import { resolveLocale } from "@/i18n/page";
 import { alternatesFor } from "@/i18n/seo";
 
 // Copy lives in messages/<locale>.json under "home"; these keys set the order on the page.
+const SILENCE_ROWS = ["opened", "depth", "forwarded", "reply"] as const;
 const STEPS = ["upload", "send", "followUp"] as const;
 const SEND_WAYS = [
   { key: "link", available: true, store: false },
@@ -103,20 +104,34 @@ export default async function Home({ params }: Props) {
             <div>
               <h2 className="condensed text-title font-bold">{t("silence.title")}</h2>
               <p className="mt-6 max-w-[56ch] text-lead text-ink-soft">{t("silence.body")}</p>
-              <p className="mt-4 max-w-[56ch] text-lead">{t("silence.answer")}</p>
             </div>
-            <div className="grid gap-8 self-center">
-              <Comparison label={t("silence.pdf")} verdict={t("silence.pdfVerdict")}>
-                {Array.from({ length: 6 }, (_, i) => (
-                  <div key={i} className="aspect-[3/4] border border-rule bg-sheet" />
+            <table className="w-full table-fixed border-collapse self-center text-left text-small sm:text-body">
+              <caption className="sr-only">{t("silence.table.caption")}</caption>
+              <thead>
+                <tr className="border-b border-ink align-bottom">
+                  <td className="w-[30%] sm:w-[34%]" />
+                  <th scope="col" className="pr-4 pb-3 font-medium text-ink-soft">
+                    {t("silence.table.pdf")}
+                  </th>
+                  <th scope="col" className="bg-sheet px-4 pt-4 pb-3 font-semibold">
+                    {t("silence.table.link")}
+                    <span className="mt-0.5 block text-micro font-normal text-ink-soft">{t("silence.table.example")}</span>
+                    <HeatScale orientation="horizontal" className="mt-2 h-1.5" />
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {SILENCE_ROWS.map((row) => (
+                  <tr key={row} className="border-b border-rule align-top">
+                    <th scope="row" className="py-4 pr-4 font-medium">
+                      {t(`silence.table.${row}.label`)}
+                    </th>
+                    <td className="py-4 pr-4 text-ink-soft">{t(`silence.table.${row}.pdf`)}</td>
+                    <td className="bg-sheet px-4 py-4 font-medium">{t(`silence.table.${row}.link`)}</td>
+                  </tr>
                 ))}
-              </Comparison>
-              <Comparison label={t("silence.link")} verdict={t("silence.linkVerdict")}>
-                {[0.3, 0.5, 0.68, 1, 0.38, 0].map((heat, i) => (
-                  <ThermalPlate key={i} heat={heat} seed={i} className="aspect-[3/4]" />
-                ))}
-              </Comparison>
-            </div>
+              </tbody>
+            </table>
           </div>
         </section>
 
@@ -327,18 +342,6 @@ export default async function Home({ params }: Props) {
 }
 
 type HomeT = Awaited<ReturnType<typeof getTranslations<"home">>>;
-
-function Comparison({ label, verdict, children }: { label: string; verdict: string; children: React.ReactNode }) {
-  return (
-    <figure>
-      <figcaption className="mb-3 flex items-baseline justify-between gap-4 border-b border-ink pb-2 text-small">
-        <span className="font-semibold">{label}</span>
-        <span className="text-ink-soft">{verdict}</span>
-      </figcaption>
-      <div className="grid grid-cols-6 gap-2">{children}</div>
-    </figure>
-  );
-}
 
 function ProspectSheet({ t }: { t: HomeT }) {
   return (

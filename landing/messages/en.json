@@ -69,11 +69,32 @@
     "silence": {
       "title": "You hit send. Then, silence.",
       "body": "The document is out. Did they open it? Make it to pricing? Forward it to the decision-maker? So you follow up blind: too early and you're a pest, too late and they've signed with someone else.",
-      "answer": "Clozer swaps the attachment for a link, and the guesswork for what actually happened.",
-      "pdf": "PDF attachment",
-      "pdfVerdict": "Nothing measured",
-      "link": "Clozer link",
-      "linkVerdict": "Pricing read for 3:38"
+      "table": {
+        "caption": "What you know after sending: with a PDF attachment, and with a Clozer link (example values).",
+        "pdf": "PDF attachment",
+        "link": "Clozer link",
+        "example": "Example",
+        "opened": {
+          "label": "Opened?",
+          "pdf": "You don't know",
+          "link": "Tuesday, 9:12 AM"
+        },
+        "depth": {
+          "label": "How far?",
+          "pdf": "You don't know",
+          "link": "Pricing read 3 times"
+        },
+        "forwarded": {
+          "label": "Forwarded?",
+          "pdf": "You don't know",
+          "link": "Opened by a 2nd reader"
+        },
+        "reply": {
+          "label": "Can they reply?",
+          "pdf": "By email, if they think of it",
+          "link": "They approve or book a call in the document"
+        }
+      }
     },
     "send": {
       "title": "Two ways to send. Nothing to learn.",
