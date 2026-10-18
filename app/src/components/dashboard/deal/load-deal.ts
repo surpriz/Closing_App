@@ -22,6 +22,7 @@ import {
   WELCOME_PAGE,
 } from "@/lib/closing/capsules/resolve";
 import { catchUpInBackground } from "@/lib/closing/catch-up";
+import { DAY_MS } from "@/lib/closing/constants";
 import { getReaderMap } from "@/lib/closing/committee/queries";
 import { getLinkAnalytics } from "@/lib/closing/analytics";
 import { dealCta } from "@/lib/closing/dashboard/deal-cta";
@@ -56,6 +57,8 @@ import { rankSharedReaders } from "@/lib/closing/shared/hot-readers";
 import { readingByLink } from "@/lib/closing/shared/reading-time";
 import { languageName } from "@/lib/closing/translation/translation";
 import { getLanguageModel } from "@/lib/closing/ai/provider";
+import { ARCHIVE_GRACE_DAYS } from "@/lib/closing/retention/purge";
+import { canDraftInterestFollowup, deadState, REVIVAL_ALERT_TYPES, revivalSignal } from "@/lib/closing/revival";
 import type { EngagementReason } from "@/lib/closing/types";
 import { prisma } from "@/lib/db";
 import { formatDate, formatDuration, formatRelative } from "@/lib/format";
@@ -67,7 +70,8 @@ type LoadDealT = Awaited<ReturnType<typeof getTranslations<"deal.loadDeal">>>;
 
 /**
  * Everything the deal page shows about one link, read and shaped on the
- * server. Null when the link is not in this workspace or was archived.
+ * server. Null when the link is not in this workspace. An archived link still
+ * opens: the prospect may come back to it, and the seller reopens it here.
  */
 export async function loadDeal(
   id: string,
@@ -83,12 +87,13 @@ export async function loadDeal(
   ]);
 
   const link = await prisma.link.findFirst({
-    where: { id, organizationId: organization.id, archivedAt: null },
+    where: { id, organizationId: organization.id },
     include: {
       document: {
         select: {
           id: true,
           name: true,
+          archivedAt: true,
           kind: true,
           embedUrl: true,
           status: true,
@@ -144,6 +149,7 @@ export async function loadDeal(
     voiceRows,
     forwards,
     prospectPages,
+    revivalAlert,
   ] = await Promise.all([
     getLinkAnalytics(link.id),
     getWorkspaceSettings(organization.id),
@@ -168,6 +174,7 @@ export async function loadDeal(
             "LINK_EXTENSION_REQUESTED",
             "VOICE_COMMENT",
             "DOCUMENT_FORWARDED",
+            "RELINK_REQUESTED",
           ],
         },
       },
@@ -281,6 +288,11 @@ export async function loadDeal(
       take: 2000,
       select: { pageNumber: true, totalDurationMs: true, view: { select: { prospectId: true } } },
     }),
+    prisma.sellerAlert.findFirst({
+      where: { linkId: link.id, type: { in: [...REVIVAL_ALERT_TYPES] } },
+      orderBy: { createdAt: "desc" },
+      select: { type: true, createdAt: true },
+    }),
   ]);
   const insightRecipient = insight?.recommendedAction.prospectId
     ? link.prospects.find((p) => p.id === insight.recommendedAction.prospectId)
@@ -291,8 +303,19 @@ export async function loadDeal(
   const url = `${origin}/v/${link.slug}`;
   const now = new Date();
 
+  // Archived, or past its deadline: what the prospect gets is a locked page
+  const dead = deadState(link, now);
+  const revival = revivalSignal(dead, revivalAlert);
+  // Bringing a document back is a manager's call, like archiving it
+  const canReactivate = canEdit && !!dead && (!link.document.archivedAt || isManagerRole(workspace.role));
+  const canDraftOnReactivate = canDraftInterestFollowup(link);
+  // An archived document is deleted for good after the grace period: the seller should know the clock
+  const purgeAt = link.document.archivedAt
+    ? new Date(link.document.archivedAt.getTime() + ARCHIVE_GRACE_DAYS * DAY_MS)
+    : null;
+
   // Just dropped, or not sent yet: the share screen leads the page
-  const sharing = canEdit && (justCreated || !!link.draftAt);
+  const sharing = canEdit && !dead && (justCreated || !!link.draftAt);
   // The AI has not said what the document is yet: the settings may still follow it (a few seconds)
   const reading =
     link.document.status === "PROCESSING" ||
@@ -382,6 +405,7 @@ export async function loadDeal(
       meetingBookedAt: link.meetingBookedAt,
       meetingAt: link.meetingAt,
       quoteRequestedAt: link.quoteRequestedAt,
+      revival,
     }),
     insightCurrent && insight
       ? {
@@ -568,13 +592,15 @@ export async function loadDeal(
             : "actionValidated"
           : action.type === "REQUEST_EXTENSION"
             ? "actionExtension"
-            : action.type === "MEETING_BOOKED"
-              ? "actionMeeting"
-              : action.type === "MEETING_CLICK"
-                ? "actionMeetingClick"
-                : action.type === "REQUEST_QUOTE"
-                  ? "actionQuote"
-                  : "actionChange",
+            : action.type === "REQUEST_RELINK"
+              ? "actionRelink"
+              : action.type === "MEETING_BOOKED"
+                ? "actionMeeting"
+                : action.type === "MEETING_CLICK"
+                  ? "actionMeetingClick"
+                  : action.type === "REQUEST_QUOTE"
+                    ? "actionQuote"
+                    : "actionChange",
         {
           name:
             action.signerName ??
@@ -662,7 +688,21 @@ export async function loadDeal(
         liveViewers?: number;
         inactiveDays?: number;
         reason?: string;
+        prospectName?: string | null;
+        prospectEmail?: string | null;
+        deadState?: "archived" | "expired";
       };
+      if (alert.type === "DEAD_LINK_OPENED") {
+        return {
+          id: `alert-${alert.id}`,
+          at: alert.createdAt,
+          kind: "relink" as const,
+          title: t(payload.deadState === "expired" ? "deadOpenExpired" : "deadOpenArchived", {
+            name: payload.prospectName ?? payload.prospectEmail ?? t("theProspect"),
+          }),
+          detail: null,
+        };
+      }
       return {
         id: `alert-${alert.id}`,
         at: alert.createdAt,
@@ -738,6 +778,11 @@ export async function loadDeal(
     mainProspect,
     contactLine,
     sharing,
+    dead,
+    canReactivate,
+    canDraftOnReactivate,
+    revival,
+    purgeAt,
     reading,
     sellerPrefs,
     settingsPanel,
