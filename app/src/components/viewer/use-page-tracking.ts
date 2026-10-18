@@ -9,6 +9,8 @@ import {
 } from "@/lib/closing/constants";
 import type { TrackingBatch, TrackingEvent } from "@/lib/closing/types";
 
+import { sendSignal } from "./view-signal";
+
 type Pending = { ms: number; depth: number };
 
 // One start request per slug per page load, even with StrictMode double effects
@@ -252,6 +254,21 @@ export function usePageTracking(
       flush(true, true);
     };
   }, [pageCount, flush, embedded, countTime, manual, depthRef, markActive]);
+
+  // Copying a passage or printing: the reader takes the content elsewhere, often to show it internally
+  useEffect(() => {
+    const onCopy = () => {
+      const copied = document.getSelection()?.toString().trim().length ?? 0;
+      if (copied > 0) sendSignal(viewIdRef.current, "COPY_TEXT", copied, String(currentPageRef.current));
+    };
+    const onPrint = () => sendSignal(viewIdRef.current, "PRINT");
+    document.addEventListener("copy", onCopy);
+    window.addEventListener("beforeprint", onPrint);
+    return () => {
+      document.removeEventListener("copy", onCopy);
+      window.removeEventListener("beforeprint", onPrint);
+    };
+  }, []);
 
   return { currentPage, registerPage, getViewId, markActive, setPage, setActive };
 }

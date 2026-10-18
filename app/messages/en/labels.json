@@ -109,7 +109,9 @@
     "change_requested": "Changes requested",
     "quote_requested": "Asked for a quote",
     "meeting_clicked": "Opened your calendar",
-    "meeting_booked": "Meeting booked"
+    "meeting_booked": "Meeting booked",
+    "content_taken": "Copied or printed a passage",
+    "email_replied": "Replied by email"
   },
   "stage": {
     "NOT_ENGAGED": "Not engaged yet",

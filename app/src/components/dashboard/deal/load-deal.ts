@@ -126,6 +126,11 @@ export async function loadDeal(
     linkId: link.id,
     documentId: link.document.id,
   });
+  // The seller came to look: how long the alerts that called for them waited (team reaction time)
+  await prisma.sellerAlert.updateMany({
+    where: { linkId: link.id, userId: workspace.user.id, seenAt: null, priority: { in: ["ACTION", "CALL"] } },
+    data: { seenAt: new Date() },
+  });
 
   const [
     analytics,
@@ -897,6 +902,9 @@ function signalDetails(
   }
   if (signals.some((s) => s.type === "DOWNLOAD"))
     details.push(t("pdfDownloaded"));
+  const copiedPages = [...new Set(signals.filter((s) => s.type === "COPY_TEXT" && s.detail).map((s) => s.detail!))];
+  if (copiedPages.length > 0) details.push(t("textCopied", { pages: copiedPages.join(", ") }));
+  if (signals.some((s) => s.type === "PRINT")) details.push(t("printed"));
   if (signals.some((s) => s.type === "EXIT_PROMPT_OPENED"))
     details.push(t("exitAssistant"));
   for (const s of signals) {

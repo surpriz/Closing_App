@@ -507,7 +507,9 @@
     "followupReplied": "le prospect y a répondu",
     "followupBounced": "non délivrée : adresse invalide",
     "replyCaught": "Réponse de {from} par email",
-    "replySeen": "Réponse de {from} vue dans votre boîte mail"
+    "replySeen": "Réponse de {from} vue dans votre boîte mail",
+    "textCopied": "texte copié (p. {pages})",
+    "printed": "imprimé"
   },
   "heat": {
     "notRead": "Pas encore lu"

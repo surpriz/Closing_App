@@ -19,6 +19,8 @@ export type EngagementInput = {
   meetingClicked?: boolean; // opened the seller's booking page
   meetingBooked?: boolean; // and the widget confirmed a booking
   quoteRequested?: boolean; // asked for a quote under a video pitch
+  contentTaken?: boolean; // copied a passage or printed: taking it elsewhere, often to show it internally
+  replied?: boolean; // answered by email
 };
 
 export type EngagementResult = {
@@ -82,6 +84,9 @@ export function computeEngagementScore(input: EngagementInput): EngagementResult
   if (input.dealStatus === "CHANGE_REQUESTED") add("change_requested", 10);
   // As strong as a booking: the prospect asks to go further
   if (input.quoteRequested) add("quote_requested", 25);
+
+  if (input.contentTaken) add("content_taken", 8);
+  if (input.replied) add("email_replied", 20);
 
   // A booking replaces the intent: it is the same gesture, carried through
   if (input.meetingBooked) add("meeting_booked", 25);

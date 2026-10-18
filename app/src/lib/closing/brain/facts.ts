@@ -228,6 +228,9 @@ function signalNotes(signals: { type: ViewSignalType; valueMs: number | null }[]
     notes.push(awayMs > 0 ? t("externalAway", { duration: fmtDuration(awayMs, locale) }) : t("external"));
   }
   if (signals.some((s) => s.type === "DOWNLOAD")) notes.push(t("download"));
+  const copied = signals.filter((s) => s.type === "COPY_TEXT");
+  if (copied.length > 0) notes.push(t("copied", { count: copied.length }));
+  if (signals.some((s) => s.type === "PRINT")) notes.push(t("printed"));
   if (signals.some((s) => s.type === "EXIT_PROMPT_OPENED")) notes.push(t("exitPrompt"));
   return notes;
 }

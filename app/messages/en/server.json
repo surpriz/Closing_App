@@ -120,7 +120,9 @@
     },
     "followupClicked": " (the prospect reopened the proposal from this message)",
     "followupReplied": " (the prospect replied to it)",
-    "followupBounced": " (not delivered: invalid address)"
+    "followupBounced": " (not delivered: invalid address)",
+    "copied": "copied text ({count, plural, one {# passage} other {# passages}})",
+    "printed": "printed the document"
   },
   "insight": {
     "notEngaged": {

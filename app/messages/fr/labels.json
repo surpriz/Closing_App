@@ -109,7 +109,9 @@
     "change_requested": "Ajustement demandé",
     "quote_requested": "A demandé un devis",
     "meeting_clicked": "A ouvert votre agenda",
-    "meeting_booked": "Rendez-vous pris"
+    "meeting_booked": "Rendez-vous pris",
+    "content_taken": "A copié ou imprimé un passage",
+    "email_replied": "A répondu par email"
   },
   "stage": {
     "NOT_ENGAGED": "Pas encore engagé",

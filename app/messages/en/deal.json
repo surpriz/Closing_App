@@ -507,7 +507,9 @@
     "followupReplied": "the prospect replied to it",
     "followupBounced": "not delivered: invalid address",
     "replyCaught": "Email reply from {from}",
-    "replySeen": "Reply from {from} seen in your inbox"
+    "replySeen": "Reply from {from} seen in your inbox",
+    "textCopied": "text copied (p. {pages})",
+    "printed": "printed"
   },
   "heat": {
     "notRead": "Not read yet"

@@ -5,7 +5,7 @@ import { ViewSignalType } from "@/generated/prisma/enums";
 import { inBackground } from "@/lib/closing/background";
 import { markDealDirty } from "@/lib/closing/brain/analyze-deal";
 import { refreshEngagementScore } from "@/lib/closing/engagement/refresh-score";
-import { MAX_SIGNALS_PER_VIEW, ONCE_PER_VIEW, signalDetail, signalValue } from "@/lib/closing/tracking/view-signals";
+import { MAX_SIGNALS_PER_VIEW, ONCE_PER_DETAIL, ONCE_PER_VIEW, signalDetail, signalValue } from "@/lib/closing/tracking/view-signals";
 import { VISITOR_COOKIE } from "@/lib/closing/tracking/visitor";
 import { prisma } from "@/lib/db";
 
@@ -16,7 +16,7 @@ const signalSchema = z.object({
   detail: z.string().max(16).optional(),
 });
 
-// What the reader did around the content: opened the site, came back, downloaded, translated (sendBeacon)
+// What the reader did around the content: opened the site, came back, downloaded, translated, copied, printed (sendBeacon)
 export async function POST(request: Request) {
   let payload: unknown;
   try {
@@ -53,7 +53,7 @@ export async function POST(request: Request) {
   if (existing.length >= MAX_SIGNALS_PER_VIEW) return new Response(null, { status: 204 });
   // Once per session, and a translation once per language
   if (
-    (ONCE_PER_VIEW.includes(type) || type === "TRANSLATED") &&
+    (ONCE_PER_VIEW.includes(type) || ONCE_PER_DETAIL.includes(type)) &&
     existing.some((signal) => signal.type === type && signal.detail === detail)
   ) {
     return new Response(null, { status: 204 });
