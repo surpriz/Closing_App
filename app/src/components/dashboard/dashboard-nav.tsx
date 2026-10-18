@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, Settings2, Sun, Telescope, Users } from "lucide-react";
+import { ChartColumn, FileText, Settings2, Sun, Telescope, Users } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 type Item = {
   href: string;
   /** Key in "nav.dashboardNav". */
-  label: "today" | "team" | "documents" | "prospecting" | "settings";
+  label: "today" | "team" | "documents" | "results" | "prospecting" | "settings";
   icon: typeof Sun;
   match: string[];
   /** Owners and admins only. */
@@ -25,6 +25,7 @@ const ITEMS: Item[] = [
   { href: "/dashboard", label: "today", icon: Sun, match: ["/dashboard", "/links"] },
   { href: "/team", label: "team", icon: Users, match: ["/team"], managerOnly: true, teamOnly: true },
   { href: "/documents", label: "documents", icon: FileText, match: ["/documents"] },
+  { href: "/results", label: "results", icon: ChartColumn, match: ["/results"] },
   { href: "/prospecting", label: "prospecting", icon: Telescope, match: ["/prospecting"], prospectingOnly: true },
   { href: "/settings", label: "settings", icon: Settings2, match: ["/settings"] },
 ];
@@ -81,7 +82,7 @@ export function MobileNav({ isManager, hasTeam }: { isManager: boolean; hasTeam:
       aria-label={t("mainNav")}
       className="fixed inset-x-0 bottom-0 z-40 border-t border-foreground bg-background pb-[env(safe-area-inset-bottom)] sm:hidden"
     >
-      <div className={cn("grid", items.length === 4 ? "grid-cols-4" : "grid-cols-3")}>
+      <div className={cn("grid", items.length === 5 ? "grid-cols-5" : items.length === 4 ? "grid-cols-4" : "grid-cols-3")}>
         {items.map((item) => {
           const active = isActive(item.match);
           const Icon = item.icon;

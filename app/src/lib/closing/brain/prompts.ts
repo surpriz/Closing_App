@@ -55,6 +55,8 @@ export type AnalyzerProfile = {
   valueProps: string | null;
   commonObjections: string | null;
   avgSalesCycleDays: number | null;
+  /** Per follow-up goal, the share answered or followed by a meeting in this workspace (results/stats.ts). */
+  followupLearnings?: string | null;
 };
 
 export type AnalyzerDeal = {
@@ -97,6 +99,8 @@ export function buildAnalyzerPrompt(profile: AnalyzerProfile, deal: AnalyzerDeal
       profile.valueProps && `Why customers choose them: ${profile.valueProps}`,
       profile.commonObjections && `Frequent objections: ${profile.commonObjections}`,
       profile.avgSalesCycleDays && `Usual sales cycle: ${profile.avgSalesCycleDays} days`,
+      profile.followupLearnings &&
+        `What got answers in this workspace (follow-up goal: share answered or followed by a meeting, messages sent): ${profile.followupLearnings}. When several goals fit this deal, prefer the one that worked.`,
     ]
       .filter(Boolean)
       .join("\n") || "Not described yet.",

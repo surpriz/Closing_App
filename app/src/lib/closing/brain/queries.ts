@@ -5,6 +5,7 @@ import { toUiLocale } from "@/lib/seller-locale";
 
 import { DAY_MS } from "../constants";
 import { videoProvider } from "../documents/web-link";
+import { workspaceLearnings } from "../results/queries";
 import type { DealFactsInput } from "./facts";
 import type { AnalyzerDeal, AnalyzerProfile } from "./prompts";
 
@@ -117,6 +118,7 @@ export async function loadDealForAnalysis(linkId: string, now: Date) {
     valueProps: settings?.valueProps ?? null,
     commonObjections: settings?.commonObjections ?? null,
     avgSalesCycleDays: settings?.avgSalesCycleDays ?? null,
+    followupLearnings: await workspaceLearnings(link.organizationId, now),
   };
 
   const deal: AnalyzerDeal = {
