@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { ImageResponse } from "next/og";
 
 import { BRAND } from "@/components/brand-colors";
+import { READING_PAGES } from "@/components/thermal-reading-data";
 import { routing } from "@/i18n/routing";
 
 const size = { width: 1200, height: 630 };
@@ -17,8 +18,6 @@ export async function generateImageMetadata({ params }: { params: { locale: stri
   return [{ id: "card", alt: t("title"), size, contentType: "image/png" }];
 }
 
-// Heat per page of the example quote, as on the home page.
-const PLATES = [0.3, 0.5, 0.68, 1, 0.38, 0];
 
 function plateBackground(heat: number) {
   if (heat === 0) return BRAND.iron0;
@@ -35,6 +34,7 @@ function plateBackground(heat: number) {
 export default async function OpengraphImage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const t = await getTranslations({ locale: localeOf(locale), namespace: "meta" });
+  const tr = await getTranslations({ locale: localeOf(locale), namespace: "reading" });
   return new ImageResponse(
     (
       <div
@@ -62,8 +62,23 @@ export default async function OpengraphImage({ params }: { params: Promise<{ loc
           </div>
         </div>
         <div style={{ display: "flex", gap: 2, background: BRAND.ink, borderTop: `2px solid ${BRAND.ink}`, height: 230 }}>
-          {PLATES.map((heat, i) => (
-            <div key={i} style={{ display: "flex", flex: 1, backgroundImage: plateBackground(heat), backgroundColor: BRAND.iron0 }} />
+          {/* The four pages of the sample proposal, heated as in the hero. */}
+          {READING_PAGES.map((page) => (
+            <div
+              key={page.key}
+              style={{
+                display: "flex",
+                flex: 1,
+                padding: "22px 24px",
+                backgroundImage: plateBackground(page.heat),
+                backgroundColor: BRAND.iron0,
+                color: BRAND.sheet,
+                fontSize: 26,
+                fontWeight: 600,
+              }}
+            >
+              {tr(`pages.${page.key}.heading`)}
+            </div>
           ))}
         </div>
       </div>
