@@ -177,8 +177,8 @@
         "how": "Copy the link and paste it into the conversation. It opens in the browser, on a phone or a computer."
       },
       "cold": {
-        "name": "lemlist and cold email",
-        "how": "With Smart Link, one link goes in your sequence. Every prospect who clicks is recognized and tracked, no form."
+        "name": "Cold email tools",
+        "how": "With Smart Link, one link goes in your sequence, whatever the tool. Every prospect who clicks is recognized and tracked, no form."
       },
       "store": "Add to Chrome",
       "storeNote": "Free, for Gmail and Outlook on the web."
@@ -233,8 +233,8 @@
         "a": "No. Sign in with Google or your email, no password, and your prospect reads in their browser. The Gmail and Outlook extension is an optional shortcut."
       },
       "tools": {
-        "q": "Does it work with my tools (Gmail, Outlook, lemlist, CRM)?",
-        "a": "Gmail and Outlook on the web with the Chrome extension, desktop Outlook with the Microsoft 365 add-in, lemlist and cold email with Smart Link. There's no native CRM integration: a webhook sends your alerts to the address of your choice."
+        "q": "Does it work with my tools (Gmail, Outlook, CRM, outreach)?",
+        "a": "Gmail and Outlook on the web with the Chrome extension, desktop Outlook with the Microsoft 365 add-in, your cold email sequences with Smart Link. There's no native CRM integration: a webhook sends your alerts to the address of your choice."
       },
       "auto": {
         "q": "Do follow-ups go out on their own?",

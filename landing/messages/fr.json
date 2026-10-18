@@ -177,8 +177,8 @@
         "how": "Copiez le lien et collez-le dans la conversation. Il s'ouvre dans le navigateur, sur téléphone comme sur ordinateur."
       },
       "cold": {
-        "name": "lemlist et cold email",
-        "how": "Avec le Smart Link, un seul lien dans votre séquence. Chaque prospect qui clique est reconnu et suivi, sans formulaire."
+        "name": "Outils de cold email",
+        "how": "Avec le Smart Link, un seul lien dans votre séquence, quel que soit l'outil. Chaque prospect qui clique est reconnu et suivi, sans formulaire."
       },
       "store": "Ajouter à Chrome",
       "storeNote": "Gratuit, pour Gmail et Outlook sur le web."
@@ -233,8 +233,8 @@
         "a": "Non. Vous vous connectez avec Google ou votre email, sans mot de passe, et votre prospect lit dans son navigateur. L'extension Gmail et Outlook est un raccourci en option."
       },
       "tools": {
-        "q": "Ça marche avec mes outils (Gmail, Outlook, lemlist, CRM) ?",
-        "a": "Gmail et Outlook sur le web avec l'extension Chrome, Outlook installé avec le complément Microsoft 365, lemlist et le cold email avec le Smart Link. Il n'y a pas d'intégration CRM native : un webhook envoie vos alertes à l'adresse de votre choix."
+        "q": "Ça marche avec mes outils (Gmail, Outlook, CRM, prospection) ?",
+        "a": "Gmail et Outlook sur le web avec l'extension Chrome, Outlook installé avec le complément Microsoft 365, vos séquences de cold email avec le Smart Link. Il n'y a pas d'intégration CRM native : un webhook envoie vos alertes à l'adresse de votre choix."
       },
       "auto": {
         "q": "Les relances partent-elles toutes seules ?",
