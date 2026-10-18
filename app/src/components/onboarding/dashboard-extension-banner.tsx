@@ -11,16 +11,19 @@ import { ExtensionBanner } from "./extension-banner";
 
 /**
  * The extension banner, for sellers whose mailbox it works with and who haven't closed it lately.
- * Not before a first link went out: until then, the one thing to do is to send it.
+ * Not before a seller's first link went out: until then, the one thing to do is to send it.
+ * Managers see it either way.
  */
 export async function DashboardExtensionBanner({
   user,
   organizationId,
   scope,
+  isManager,
 }: {
   user: { id: string; email: string };
   organizationId: string;
   scope: SellerScope;
+  isManager: boolean;
 }) {
   const storeUrl = getEnv().EXTENSION_STORE_URL;
   if (!storeUrl) return null;
@@ -29,8 +32,10 @@ export async function DashboardExtensionBanner({
   // Unknown mailbox counts: most sellers on Chrome write from Gmail or Outlook on the web
   const client = parseMailClient(prefs.mailClient ?? guessMailClient(user.email));
   if (client && toolFor(client) !== "chrome") return null;
-  const stage = sellerStage(await getSellerProgress(organizationId, scope));
-  if (stage === "empty" || stage === "unsent") return null;
+  if (!isManager) {
+    const stage = sellerStage(await getSellerProgress(organizationId, scope));
+    if (stage === "empty" || stage === "unsent") return null;
+  }
 
   const tokens = await prisma.extensionToken.findMany({
     where: { userId: user.id, organizationId, revokedAt: null },
