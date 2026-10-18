@@ -1,4 +1,5 @@
 import type { UiLocale } from "@/i18n/locale";
+import { DAY_MS } from "@/lib/closing/constants";
 import { renderEmail, type EmailBlock } from "@/lib/email-layout";
 import { getNamespaceTranslator } from "@/lib/server-translator";
 
@@ -18,8 +19,6 @@ export const BILLING_EMAIL_KINDS = [
 ] as const;
 
 export type BillingEmailKind = (typeof BILLING_EMAIL_KINDS)[number] | "billing_payment_failed";
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 export const TRIAL_ENDING_DAYS = 3;
 /** Past this, "your trial is over" is old news. */

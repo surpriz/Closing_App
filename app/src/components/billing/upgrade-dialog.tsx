@@ -15,11 +15,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { BILLING_HREF } from "@/lib/billing/plans";
+import type { UpgradePrompt } from "@/lib/billing/workspace-plan";
 
 const OPEN_UPGRADE_EVENT = "clozer:upgrade";
 
-/** A server answer that hit a plan limit: `error` is the message to show. */
-export type UpgradePrompt = { error: string; upgrade: string };
 
 export function isUpgradePrompt(value: unknown): value is UpgradePrompt {
   return typeof value === "object" && value !== null && "upgrade" in value && "error" in value;

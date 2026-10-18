@@ -6,7 +6,7 @@ import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import type { DealCloseReason, DealStatus, MeetingOutcome, ProspectRole } from "@/generated/prisma/enums";
-import { getWorkspacePlan } from "@/lib/billing/workspace-plan";
+import { getWorkspacePlan, upgradePrompt } from "@/lib/billing/workspace-plan";
 import { inBackground } from "@/lib/closing/background";
 import { actOnInsight } from "@/lib/closing/brain/act";
 import { analyzeDeal, markDealDirty } from "@/lib/closing/brain/analyze-deal";
@@ -292,7 +292,7 @@ export async function setLinkSwitch(linkId: string, key: LinkSwitch, value: bool
   if (paid && value) {
     const plan = await getWorkspacePlan(link.organizationId);
     if (!plan.limits[paid.limit]) {
-      return { error: (await getTranslations("billing.upgrade.reason"))(paid.reason), upgrade: paid.reason };
+      return upgradePrompt(paid.reason);
     }
   }
   await prisma.link.update({

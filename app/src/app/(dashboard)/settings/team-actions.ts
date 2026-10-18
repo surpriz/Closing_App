@@ -8,7 +8,7 @@ import { z } from "zod";
 
 import { getAppOrigin } from "@/lib/app-origin";
 import { auth } from "@/lib/auth";
-import { planFor } from "@/lib/billing/workspace-plan";
+import { planFor, upgradePrompt, type UpgradeReason } from "@/lib/billing/workspace-plan";
 import { prisma } from "@/lib/db";
 import { devMagicLinksEnabled } from "@/lib/dev-magic-links";
 import { requireManager } from "@/lib/session";
@@ -20,7 +20,7 @@ import { requireManager } from "@/lib/session";
  * active organization.
  */
 
-export type TeamActionState = { ok?: boolean; error?: string; devUrl?: string; upgrade?: "invites" } | null;
+export type TeamActionState = { ok?: boolean; error?: string; devUrl?: string; upgrade?: UpgradeReason } | null;
 
 type TeamT = Awaited<ReturnType<typeof getTranslations<"team.actions">>>;
 
@@ -56,7 +56,7 @@ export async function inviteMember(_prev: TeamActionState, formData: FormData): 
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? t("invalidInvitation") };
   // Checked again by the auth hook; here it opens the upgrade dialog instead of a bare error
   if (!planFor(organization).limits.invites) {
-    return { error: (await getTranslations("billing.upgrade.reason"))("invites"), upgrade: "invites" };
+    return upgradePrompt("invites");
   }
 
   try {

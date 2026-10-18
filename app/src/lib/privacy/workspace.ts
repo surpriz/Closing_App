@@ -1,4 +1,6 @@
-import { PAID_STATUSES } from "@/lib/billing/plans";
+import Stripe from "stripe";
+
+import { isPaidStatus } from "@/lib/billing/plans";
 import { syncSeats } from "@/lib/billing/seats";
 import { getStripe } from "@/lib/billing/stripe";
 import { listPrivateBlobPaths, organizationPrefix } from "@/lib/blob";
@@ -95,6 +97,15 @@ async function cancelSubscription(organizationId: string) {
   const stripe = getStripe();
   const org = await prisma.organization.findUnique({ where: { id: organizationId }, select: { stripeSubscriptionId: true, planStatus: true } });
   if (!stripe || !org?.stripeSubscriptionId) return;
-  if (!(PAID_STATUSES as readonly (string | null)[]).includes(org.planStatus) && org.planStatus !== "incomplete") return;
-  await stripe.subscriptions.cancel(org.stripeSubscriptionId);
+  if (!isPaidStatus(org.planStatus) && org.planStatus !== "incomplete") return;
+  try {
+    await stripe.subscriptions.cancel(org.stripeSubscriptionId);
+  } catch (error) {
+    // Already over on Stripe's side (a missed webhook): nothing left to stop. Anything else blocks the deletion
+    if (error instanceof Stripe.errors.StripeInvalidRequestError) {
+      console.warn("[billing] subscription already gone", org.stripeSubscriptionId, error.message);
+      return;
+    }
+    throw error;
+  }
 }

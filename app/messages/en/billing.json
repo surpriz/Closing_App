@@ -40,6 +40,7 @@
     }
   },
   "interval": {
+    "label": "Billing period",
     "month": "Monthly",
     "year": "Yearly",
     "save": "2 months free"

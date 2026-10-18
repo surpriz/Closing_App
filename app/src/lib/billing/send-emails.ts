@@ -1,4 +1,5 @@
 import { getPublicAppUrl } from "@/lib/app-origin";
+import { DAY_MS } from "@/lib/closing/constants";
 import { prisma } from "@/lib/db";
 import { isEmailConfigured, sendEmail } from "@/lib/email";
 import { getEnv } from "@/lib/env";
@@ -8,7 +9,6 @@ import { toUiLocale } from "@/lib/seller-locale";
 import { BILLING_EMAIL_KINDS, buildBillingEmail, dueBillingEmail, type BillingEmailKind } from "./emails";
 import { COMPED_STATUS, PAID_STATUSES } from "./plans";
 
-const DAY_MS = 24 * 60 * 60 * 1000;
 const BATCH = 50;
 
 async function owners(organizationId: string) {

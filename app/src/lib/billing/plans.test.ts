@@ -135,7 +135,7 @@ describe("subscriptionFields", () => {
 
   it("maps an active yearly Team subscription", () => {
     expect(
-      subscriptionFields({ id: "sub_1", status: "active", cancel_at_period_end: false, items: { data: [item("clozer_team_yearly", 3)] } }),
+      subscriptionFields({ id: "sub_1", status: "active", cancel_at_period_end: false, items: { data: [item("clozer_team_yearly", 3)] } }, "free"),
     ).toEqual({
       plan: "team",
       planStatus: "active",
@@ -148,11 +148,17 @@ describe("subscriptionFields", () => {
   });
 
   it("falls back to Free once the subscription is over", () => {
-    const fields = subscriptionFields({ id: "sub_1", status: "canceled", cancel_at_period_end: true, items: { data: [item("clozer_solo_monthly")] } });
+    const fields = subscriptionFields({ id: "sub_1", status: "canceled", cancel_at_period_end: true, items: { data: [item("clozer_solo_monthly")] } }, "solo");
     expect(fields).toMatchObject({ plan: "free", planStatus: "canceled", cancelAtPeriodEnd: false });
   });
 
-  it("does not grant a plan for an unknown price", () => {
-    expect(subscriptionFields({ id: "sub_1", status: "active", cancel_at_period_end: false, items: { data: [item("unknown")] } }).plan).toBe("free");
+  it("keeps a payer's plan when their price lost its lookup key", () => {
+    const sub = { id: "sub_1", status: "active", cancel_at_period_end: false, items: { data: [item("")] } };
+    expect(subscriptionFields(sub, "team").plan).toBe("team");
+    expect(subscriptionFields({ ...sub, metadata: { plan: "solo" } }, "free").plan).toBe("solo");
+  });
+
+  it("grants nothing for an unknown price on a workspace that never paid", () => {
+    expect(subscriptionFields({ id: "sub_1", status: "active", cancel_at_period_end: false, items: { data: [item("unknown")] } }, "free").plan).toBe("free");
   });
 });

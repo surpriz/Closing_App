@@ -1,10 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 
 import { parseReason, type AdminActionState } from "@/lib/admin/action-state";
 import { logAdminAction } from "@/lib/admin/audit";
-import { COMPED_STATUS, isPlanId } from "@/lib/billing/plans";
+import { COMPED_STATUS } from "@/lib/billing/plans";
+import { DAY_MS } from "@/lib/closing/constants";
 import { prisma } from "@/lib/db";
 import { requirePlatformAdmin } from "@/lib/session";
 
@@ -58,44 +60,47 @@ export async function reactivateWorkspace(organizationId: string): Promise<Admin
   return { ok: true };
 }
 
-const DAY_MS = 24 * 60 * 60 * 1000;
+const billingSchema = z.object({
+  grant: z.enum(["", "solo", "team", "enterprise", "none"], "Plan invalide."),
+  trialDays: z
+    .string()
+    .trim()
+    .transform((v) => (v === "" ? null : Number(v)))
+    .pipe(z.number("Durée d'essai invalide (0 à 365 jours).").int().min(0).max(365).nullable()),
+});
 
 /**
- * Grants a plan without Stripe (Enterprise, partners) or sets the trial end.
+ * Grants a plan without Stripe (Enterprise, partners) or sets the trial end (0 days ends it now).
  * A workspace that pays through Stripe is managed there, not here.
  */
 export async function setWorkspaceBilling(organizationId: string, formData: FormData): Promise<AdminActionState> {
   const admin = await requirePlatformAdmin();
-  const parsed = parseReason(formData);
-  if ("error" in parsed) return parsed;
-  const grant = String(formData.get("grant") ?? "");
-  const trialDays = String(formData.get("trialDays") ?? "").trim();
+  const reason = parseReason(formData);
+  if ("error" in reason) return reason;
+  const parsed = billingSchema.safeParse({ grant: formData.get("grant") ?? "", trialDays: formData.get("trialDays") ?? "" });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Valeurs invalides." };
+  const { grant, trialDays } = parsed.data;
+  if (!grant && trialDays === null) return { error: "Rien à changer." };
 
   const org = await prisma.organization.findUnique({ where: { id: organizationId }, select: { planStatus: true } });
   if (!org) return { error: "Espace introuvable." };
+  if (grant && org.planStatus && org.planStatus !== COMPED_STATUS) return { error: "Abonnement Stripe en cours : à gérer dans Stripe." };
 
-  const data: { plan?: string; planStatus?: string | null; trialEndsAt?: Date | null } = {};
-  if (grant) {
-    if (org.planStatus && org.planStatus !== COMPED_STATUS) return { error: "Abonnement Stripe en cours : à gérer dans Stripe." };
-    if (grant === "none") Object.assign(data, { plan: "free", planStatus: null });
-    else if (isPlanId(grant) && grant !== "free") Object.assign(data, { plan: grant, planStatus: COMPED_STATUS });
-    else return { error: "Plan invalide." };
-  }
-  if (trialDays) {
-    const days = Number(trialDays);
-    if (!Number.isInteger(days) || days < 0 || days > 365) return { error: "Durée d'essai invalide (0 à 365 jours)." };
-    data.trialEndsAt = days === 0 ? new Date() : new Date(Date.now() + days * DAY_MS);
-  }
-  if (Object.keys(data).length === 0) return { error: "Rien à changer." };
-
-  await prisma.organization.update({ where: { id: organizationId }, data });
+  await prisma.organization.update({
+    where: { id: organizationId },
+    data: {
+      ...(grant === "none" && { plan: "free", planStatus: null }),
+      ...(grant && grant !== "none" && { plan: grant, planStatus: COMPED_STATUS }),
+      ...(trialDays !== null && { trialEndsAt: new Date(Date.now() + trialDays * DAY_MS) }),
+    },
+  });
   await logAdminAction({
     actorId: admin.id,
     action: "organization.billing",
     targetType: "organization",
     targetId: organizationId,
-    reason: parsed.reason,
-    metadata: { grant: grant || null, trialDays: trialDays || null },
+    reason: reason.reason,
+    metadata: { grant: grant || null, trialDays },
   });
   refresh(organizationId);
   return { ok: true };

@@ -121,13 +121,12 @@ export function BillingSettings(props: BillingSettingsProps) {
 
       {props.billingEnabled && (
         <div className="space-y-3 pt-2">
-          <div role="radiogroup" className="inline-flex rounded-lg border border-input p-0.5 text-small">
+          <div role="group" aria-label={t("interval.label")} className="inline-flex rounded-lg border border-input p-0.5 text-small">
             {(["month", "year"] as const).map((value) => (
               <button
                 key={value}
                 type="button"
-                role="radio"
-                aria-checked={interval === value}
+                aria-pressed={interval === value}
                 onClick={() => setInterval(value)}
                 className={cn("rounded-md px-3 py-1", interval === value ? "bg-foreground text-background" : "text-muted-foreground")}
               >

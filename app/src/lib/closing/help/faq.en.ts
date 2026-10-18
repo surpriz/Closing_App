@@ -545,7 +545,8 @@ export const FAQ_EN: FaqSection[] = [
       {
         id: "prix",
         q: "How much does Clozer cost?",
-        a: "Clozer is free during the beta.",
+        a: "Four plans, prices excluding VAT:\n- Free: 5 links created per month, 10 AI-written follow-ups per month, reading tracking and alerts;\n- Solo: €19 per month, or €15 per month billed yearly. Unlimited links and follow-ups, autopilot, assistant, translation and voice notes on the prospect page;\n- Team: €39 per member per month, or €32 billed yearly, 2 members minimum. Everything in Solo, plus the Team view, invites, Slack and webhooks;\n- Enterprise: on quote.\n\nEvery new workspace starts with a 14-day Team trial, no card needed. After that it moves to Free: your links keep working and nothing is deleted.\n\nUsed Clozer during the beta? Your workspace stays on Team for free until the date announced by email. You'll hear from us before anything changes.\n\nCard payment, cancel anytime. Subscription and invoices: Settings → Billing.",
+        link: { href: "/settings#facturation", label: "Settings → Billing" },
       },
     ],
   },

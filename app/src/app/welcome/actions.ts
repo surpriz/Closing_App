@@ -75,6 +75,13 @@ export async function createOnboardingTestLink(
   const t = await getTranslations("onboarding");
   if (!document) return { error: t("documentNotFound") };
 
+  // One test link per seller and document: it is never counted against the plan, so it is never multiplied
+  const existing = await prisma.link.findFirst({
+    where: { organizationId: organization.id, createdById: user.id, documentId: document.id, isOnboardingTest: true, archivedAt: null },
+    select: { id: true, slug: true },
+  });
+  if (existing) return { linkId: existing.id, url: `${await getAppOrigin()}/v/${existing.slug}` };
+
   const link = await createDocumentLink({
     userId: user.id,
     organizationId: organization.id,

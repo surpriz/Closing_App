@@ -4,7 +4,7 @@ import type Stripe from "stripe";
 import { isUniqueViolation } from "@/lib/closing/followups/queue";
 import { prisma } from "@/lib/db";
 
-import { seatQuantity, subscriptionFields } from "./plans";
+import { isPaidStatus, seatQuantity, subscriptionFields } from "./plans";
 import { syncSeats } from "./seats";
 import { sendPaymentFailedEmail } from "./send-emails";
 
@@ -17,24 +17,38 @@ async function orgIdForCustomer(customer: string | { id: string } | null | undef
   return org?.id ?? null;
 }
 
+const ORG_BILLING = {
+  id: true,
+  plan: true,
+  planStatus: true,
+  stripeSubscriptionId: true,
+  _count: { select: { members: true } },
+} as const;
+
 /** Writes the subscription as Stripe has it now: whatever order events arrive in, the latest state wins. */
 async function syncSubscription(stripe: Stripe, subscriptionId: string) {
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-  const organizationId = subscription.metadata.organizationId || (await orgIdForCustomer(subscription.customer));
-  if (!organizationId) {
+  const customerId = idOf(subscription.customer);
+  // The workspace may be gone (deleted, which cancelled the subscription): nothing to write, no retry
+  const org =
+    (subscription.metadata.organizationId &&
+      (await prisma.organization.findUnique({ where: { id: subscription.metadata.organizationId }, select: ORG_BILLING }))) ||
+    (customerId && (await prisma.organization.findUnique({ where: { stripeCustomerId: customerId }, select: ORG_BILLING })));
+  if (!org) {
     console.warn("[billing] subscription without a workspace", subscription.id);
     return null;
   }
 
-  const fields = subscriptionFields(subscription);
-  const org = await prisma.organization.update({
-    where: { id: organizationId },
-    data: { ...fields, stripeCustomerId: idOf(subscription.customer) },
-    select: { _count: { select: { members: true } } },
-  });
+  // A late event about an old subscription must not overwrite the one now paid for
+  const replaced =
+    org.stripeSubscriptionId && org.stripeSubscriptionId !== subscription.id && isPaidStatus(org.planStatus);
+  if (replaced && !isPaidStatus(subscription.status)) return org.id;
+
+  const fields = subscriptionFields(subscription, org.plan);
+  await prisma.organization.update({ where: { id: org.id }, data: { ...fields, stripeCustomerId: customerId } });
   // Switched from Solo to Team in the portal: one seat billed, bring it to the member count
-  if (fields.plan === "team" && fields.seats !== seatQuantity(org._count.members)) await syncSeats(organizationId);
-  return organizationId;
+  if (fields.plan === "team" && fields.seats !== seatQuantity(org._count.members)) await syncSeats(org.id);
+  return org.id;
 }
 
 async function handle(stripe: Stripe, event: Stripe.Event): Promise<string | null> {

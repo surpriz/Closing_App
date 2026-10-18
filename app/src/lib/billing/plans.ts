@@ -1,3 +1,5 @@
+import { DAY_MS } from "@/lib/closing/constants";
+
 /**
  * Plans and what each one allows. Pure: the plan a workspace is on right now
  * comes from its billing columns, the date and two settings passed in, so
@@ -84,8 +86,6 @@ export const BILLING_HREF = "/settings#facturation";
 export const TEAM_MIN_SEATS = 2;
 export const TRIAL_DAYS = 14;
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-
 export const LOOKUP_KEYS: Record<PaidPlanId, Record<Interval, string>> = {
   solo: { month: "clozer_solo_monthly", year: "clozer_solo_yearly" },
   team: { month: "clozer_team_monthly", year: "clozer_team_yearly" },
@@ -146,7 +146,7 @@ export type EffectivePlan = {
   subscribed: PlanId | null;
 };
 
-function isPaidStatus(status: string | null): boolean {
+export function isPaidStatus(status: string | null): boolean {
   return !!status && (PAID_STATUSES as readonly string[]).includes(status);
 }
 
@@ -203,14 +203,15 @@ export type BannerKind = "trial" | "beta" | "payment" | "canceling";
 /** Days before an end date when the dashboard starts saying so. */
 export const BANNER_DAYS = 7;
 
+const BANNER_KIND: Partial<Record<PlanSource, BannerKind>> = { trial: "trial", beta: "beta", subscription: "canceling" };
+
 /** What the dashboard banner says, if anything: a payment issue first, then an end coming up. */
 export function bannerFor(plan: EffectivePlan, now: Date): { kind: BannerKind; daysLeft: number | null } | null {
   if (plan.paymentIssue) return { kind: "payment", daysLeft: null };
   if (!plan.endsAt) return null;
   const daysLeft = Math.max(0, Math.ceil((plan.endsAt.getTime() - now.getTime()) / DAY_MS));
   if (daysLeft > BANNER_DAYS) return null;
-  const kind: BannerKind | null =
-    plan.source === "trial" ? "trial" : plan.source === "beta" ? "beta" : plan.source === "subscription" ? "canceling" : null;
+  const kind = BANNER_KIND[plan.source];
   return kind ? { kind, daysLeft } : null;
 }
 
@@ -219,6 +220,7 @@ export type SubscriptionLike = {
   id: string;
   status: string;
   cancel_at_period_end: boolean;
+  metadata?: Record<string, string> | null;
   items: {
     data: { quantity?: number | null; current_period_end?: number | null; price: { lookup_key?: string | null; recurring?: { interval?: string } | null } }[];
   };
@@ -226,14 +228,24 @@ export type SubscriptionLike = {
 
 const ENDED_STATUSES = ["canceled", "incomplete_expired", "unpaid"];
 
-/** The Organization columns a Stripe subscription maps to. Since API "basil" the period sits on the item. */
-export function subscriptionFields(sub: SubscriptionLike) {
+export function isEndedStatus(status: string) {
+  return ENDED_STATUSES.includes(status);
+}
+
+/**
+ * The Organization columns a Stripe subscription maps to. Since API "basil" the period sits on the item.
+ * The plan comes from the price's lookup key; a price replaced since (its key moved to the new one)
+ * falls back on the plan written at checkout, then on the plan already stored: a payer never drops to Free.
+ */
+export function subscriptionFields(sub: SubscriptionLike, currentPlan: string) {
   const item = sub.items.data[0];
   const priced = planFromLookupKey(item?.price.lookup_key);
-  const ended = ENDED_STATUSES.includes(sub.status);
+  const ended = isEndedStatus(sub.status);
   const interval = priced?.interval ?? (item?.price.recurring?.interval === "year" ? "year" : "month");
+  const fromCheckout = sub.metadata?.plan;
+  const plan = ended ? "free" : (priced?.plan ?? (isPaidPlanId(fromCheckout) ? fromCheckout : currentPlan));
   return {
-    plan: ended || !priced ? "free" : priced.plan,
+    plan,
     planStatus: sub.status,
     stripeSubscriptionId: sub.id,
     billingInterval: interval,

@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { cache } from "react";
 
 import { prisma } from "@/lib/db";
@@ -61,6 +62,15 @@ export type UpgradeReason =
   | "invites"
   | "slack"
   | "webhooks";
+
+/** A server answer over the plan: the client opens the upgrade dialog with `error` (components/billing/upgrade-dialog). */
+export type UpgradePrompt = { error: string; upgrade: UpgradeReason };
+
+/** The upgrade message for a limit, in the request's language. */
+export async function upgradePrompt(reason: UpgradeReason, values?: { max: number }): Promise<UpgradePrompt> {
+  const t = await getTranslations("billing.upgrade.reason");
+  return { error: t(reason, { max: values?.max ?? 0 }), upgrade: reason };
+}
 
 /** A plan limit stopped a creation: callers turn it into an upgrade prompt. */
 export class PlanLimitError extends Error {

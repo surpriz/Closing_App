@@ -5,6 +5,7 @@ import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { getPublicAppUrl } from "@/lib/app-origin";
+import { PlanLimitError, upgradePrompt } from "@/lib/billing/workspace-plan";
 import { inBackground } from "@/lib/closing/background";
 import { confirmLinkSent, createDocumentLink } from "@/lib/closing/documents/create-link";
 import { unsubscribePageUrl } from "@/lib/closing/unsubscribe";
@@ -296,10 +297,12 @@ export async function createOutreachLinkAction(suggestionId: string, documentId:
       source: "prospecting",
       followupsEnabled: false,
       draft: true,
-    }).catch(() => null);
-    await prisma.prospectSuggestion.update({ where: { id: suggestion.id }, data: { linkId: link?.id ?? null } });
-    if (!link) return { error: t("documentNotFound") };
-    linkId = link.id;
+    }).catch((error) => (error instanceof PlanLimitError ? error : null));
+    const created = link instanceof PlanLimitError ? null : link;
+    await prisma.prospectSuggestion.update({ where: { id: suggestion.id }, data: { linkId: created?.id ?? null } });
+    if (link instanceof PlanLimitError) return upgradePrompt("links", { max: link.max ?? 0 });
+    if (!created) return { error: t("documentNotFound") };
+    linkId = created.id;
   } else if (linkId === CREATING) {
     return { error: t("linkBeingCreated") };
   }

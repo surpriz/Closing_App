@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
-import { getWorkspacePlan, type UpgradeReason } from "@/lib/billing/workspace-plan";
+import { getWorkspacePlan, upgradePrompt, type UpgradeReason } from "@/lib/billing/workspace-plan";
 import { parseOptionalBookingUrl } from "@/lib/closing/booking/url";
 import { isSafeOutboundUrl } from "@/lib/closing/channels/webhooks";
 import { upsertSellerPrefs } from "@/lib/closing/notify/preferences";
@@ -166,10 +166,7 @@ export async function saveWorkspaceSettings(_prev: SettingsState, formData: Form
         : values.outboundWebhookUrl && values.outboundWebhookUrl !== current.outboundWebhookUrl && !limits.webhooks
           ? "webhooks"
           : null;
-  if (locked) {
-    const t = await getTranslations("billing.upgrade.reason");
-    return { error: t(locked), workspace: true, upgrade: locked };
-  }
+  if (locked) return { ...(await upgradePrompt(locked)), workspace: true };
 
   // Empty Slack field keeps the saved URL; only "remove" clears it
   const slack = removeSlack ? null : slackWebhookUrl ? encryptSecret(slackWebhookUrl) : current.slackWebhookUrl;

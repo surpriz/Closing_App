@@ -4,14 +4,20 @@ import { redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { getAppOrigin } from "@/lib/app-origin";
-import { PAID_STATUSES, isPaidPlanId, seatQuantity, type Interval } from "@/lib/billing/plans";
+import { BILLING_HREF, isPaidPlanId, isPaidStatus, seatQuantity, type Interval } from "@/lib/billing/plans";
 import { getStripe, resolvePrice } from "@/lib/billing/stripe";
 import { prisma } from "@/lib/db";
 import { requireManager } from "@/lib/session";
 
 export type BillingState = { error?: string } | null;
 
-const BILLING_PATH = "/settings";
+// Back from Stripe on the billing section; ?billing=success shows the "activating" state
+const [BILLING_PATH, BILLING_ANCHOR] = BILLING_HREF.split("#");
+
+// Stripe pages in the seller's UI language
+async function stripeLocale() {
+  return (await getLocale()) === "fr" ? "fr" : "en";
+}
 
 /** The Stripe customer for this workspace, created once (the idempotency key covers double clicks). */
 async function ensureCustomer(organizationId: string, name: string, email: string) {
@@ -19,7 +25,7 @@ async function ensureCustomer(organizationId: string, name: string, email: strin
   const org = await prisma.organization.findUniqueOrThrow({ where: { id: organizationId }, select: { stripeCustomerId: true } });
   if (org.stripeCustomerId) return org.stripeCustomerId;
   const customer = await stripe.customers.create(
-    { name, email, preferred_locales: [await getLocale()], metadata: { organizationId } },
+    { name, email, preferred_locales: [await stripeLocale()], metadata: { organizationId } },
     { idempotencyKey: `customer-${organizationId}` },
   );
   await prisma.organization.update({ where: { id: organizationId }, data: { stripeCustomerId: customer.id } });
@@ -33,8 +39,8 @@ export async function startCheckout(plan: string, interval: Interval): Promise<B
   if (!stripe) return { error: t("disabled") };
   if (!isPaidPlanId(plan) || (interval !== "month" && interval !== "year")) return { error: t("generic") };
 
-  // Already subscribed: changes happen in the portal, never a second subscription
-  if ((PAID_STATUSES as readonly (string | null)[]).includes(organization.planStatus) && organization.stripeSubscriptionId) {
+  // Already subscribed: changes happen in the portal, never a second subscription (it redirects there)
+  if (isPaidStatus(organization.planStatus) && organization.stripeSubscriptionId) {
     return openBillingPortal();
   }
   const members = await prisma.member.count({ where: { organizationId: organization.id } });
@@ -53,10 +59,11 @@ export async function startCheckout(plan: string, interval: Interval): Promise<B
       customer_update: { address: "auto", name: "auto" },
       billing_address_collection: "required",
       allow_promotion_codes: true,
-      subscription_data: { metadata: { organizationId: organization.id } },
-      locale: (await getLocale()) === "fr" ? "fr" : "en",
-      success_url: `${origin}${BILLING_PATH}?billing=success#facturation`,
-      cancel_url: `${origin}${BILLING_PATH}#facturation`,
+      // The plan too: read back if this price is ever replaced and loses its lookup key
+      subscription_data: { metadata: { organizationId: organization.id, plan } },
+      locale: await stripeLocale(),
+      success_url: `${origin}${BILLING_PATH}?billing=success#${BILLING_ANCHOR}`,
+      cancel_url: `${origin}${BILLING_HREF}`,
     });
     url = session.url;
   } catch (error) {
@@ -78,8 +85,8 @@ export async function openBillingPortal(): Promise<BillingState> {
   try {
     const session = await stripe.billingPortal.sessions.create({
       customer: organization.stripeCustomerId,
-      return_url: `${await getAppOrigin()}${BILLING_PATH}#facturation`,
-      locale: (await getLocale()) === "fr" ? "fr" : "en",
+      return_url: `${await getAppOrigin()}${BILLING_HREF}`,
+      locale: await stripeLocale(),
     });
     url = session.url;
   } catch (error) {

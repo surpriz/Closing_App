@@ -40,6 +40,7 @@
     }
   },
   "interval": {
+    "label": "Période de facturation",
     "month": "Mensuel",
     "year": "Annuel",
     "save": "2 mois offerts"

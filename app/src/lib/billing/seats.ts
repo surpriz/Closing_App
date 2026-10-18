@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 
-import { PAID_STATUSES, seatQuantity } from "./plans";
+import { PAID_STATUSES, isPaidStatus, seatQuantity } from "./plans";
 import { getStripe } from "./stripe";
 
 /**
@@ -15,7 +15,7 @@ export async function syncSeats(organizationId: string) {
     select: { plan: true, planStatus: true, stripeSubscriptionId: true, seats: true, _count: { select: { members: true } } },
   });
   if (!org?.stripeSubscriptionId || org.plan !== "team") return;
-  if (!(PAID_STATUSES as readonly (string | null)[]).includes(org.planStatus)) return;
+  if (!isPaidStatus(org.planStatus)) return;
 
   const quantity = seatQuantity(org._count.members);
   if (quantity === org.seats) return;

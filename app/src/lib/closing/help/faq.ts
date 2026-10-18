@@ -561,7 +561,8 @@ export const FAQ: FaqSection[] = [
       {
         id: "prix",
         q: "Combien coûte Clozer ?",
-        a: "Clozer est gratuit pendant la bêta.",
+        a: "Quatre offres, prix hors TVA :\n- Gratuit : 5 liens créés par mois, 10 relances écrites par l'IA par mois, suivi de lecture et alertes ;\n- Solo : 19 € par mois, ou 15 € par mois en annuel. Liens et relances illimités, pilote automatique, assistant, traduction et vocaux sur la page du prospect ;\n- Équipe : 39 € par membre et par mois, ou 32 € en annuel, 2 membres minimum. Tout Solo, plus la vue Équipe, les invitations, Slack et les webhooks ;\n- Entreprise : sur devis.\n\nChaque nouvel espace démarre avec 14 jours d'essai Équipe, sans carte. Ensuite, il passe en Gratuit : vos liens continuent de marcher et rien n'est effacé.\n\nVous utilisiez Clozer pendant la bêta ? Votre espace reste en Équipe gratuitement jusqu'à la date annoncée par email. Vous serez prévenu avant tout changement.\n\nPaiement par carte, résiliable à tout moment. Abonnement et factures : Réglages → Facturation.",
+        link: { href: "/settings#facturation", label: "Réglages → Facturation" },
       },
     ],
   },

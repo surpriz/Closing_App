@@ -8,7 +8,7 @@ import { z } from "zod";
 
 import { INTL_LOCALE } from "@/i18n/locale";
 import { getAppOrigin } from "@/lib/app-origin";
-import { linkQuota, videoPitchQuota, type UpgradeReason } from "@/lib/billing/workspace-plan";
+import { linkQuota, upgradePrompt, videoPitchQuota, type UpgradePrompt } from "@/lib/billing/workspace-plan";
 import { deletePrivateBlob, headPrivateBlob, pitchUploadPrefix } from "@/lib/blob";
 import { inBackground } from "@/lib/closing/background";
 import { createFileDocument } from "@/lib/closing/documents/create-document";
@@ -44,34 +44,28 @@ async function draftLinkFor(documentId: string, workspace: { userId: string; org
   return link.id;
 }
 
-/** Over the plan: the client opens the upgrade dialog with this message. */
-export type UpgradeError = { error: string; upgrade: UpgradeReason };
-
 // Checked before anything is created: no document is left without its link
-async function linkLimitError(organizationId: string): Promise<UpgradeError | null> {
+async function linkLimitError(organizationId: string): Promise<UpgradePrompt | null> {
   const links = await linkQuota(organizationId);
-  if (links.allowed) return null;
-  const t = await getTranslations("billing.upgrade.reason");
-  return { error: t("links", { max: links.max ?? 0 }), upgrade: "links" };
+  return links.allowed ? null : upgradePrompt("links", { max: links.max ?? 0 });
 }
 
 /** Asked when the recorder opens: no take recorded for a pitch the plan would refuse. */
-export async function checkPitchAllowance(): Promise<UpgradeError | null> {
+export async function checkPitchAllowance(): Promise<UpgradePrompt | null> {
   const { organization } = await requireWorkspace();
   return pitchLimitError(organization.id);
 }
 
 /** Asked before uploading a file: no upload for a link the plan would refuse. */
-export async function checkLinkAllowance(): Promise<UpgradeError | null> {
+export async function checkLinkAllowance(): Promise<UpgradePrompt | null> {
   const { organization } = await requireWorkspace();
   return linkLimitError(organization.id);
 }
 
-async function pitchLimitError(organizationId: string): Promise<UpgradeError | null> {
+async function pitchLimitError(organizationId: string): Promise<UpgradePrompt | null> {
   const [limit, pitches] = await Promise.all([linkLimitError(organizationId), videoPitchQuota(organizationId)]);
   if (limit) return limit;
-  if (pitches.allowed) return null;
-  return { error: (await getTranslations("billing.upgrade.reason"))("videoPitch"), upgrade: "videoPitch" };
+  return pitches.allowed ? null : upgradePrompt("videoPitch");
 }
 
 // Called by the browser once the PDF is in Blob storage. Same file as before: the existing document gets a new link.
@@ -114,7 +108,7 @@ export async function createDocument(input: { pathname: string; name: string; sh
   return { id: document.id, linkId, reused, waiting: !!waiting };
 }
 
-export type CreateWebDocumentResult = { id: string; linkId: string } | { error: string } | UpgradeError;
+export type CreateWebDocumentResult = { id: string; linkId: string } | { error: string } | UpgradePrompt;
 
 // A pasted URL (Notion, Loom, Figma...). Ready at once, its text is read in the background.
 export async function createWebDocument(input: { url: string }): Promise<CreateWebDocumentResult> {
@@ -173,7 +167,7 @@ async function checkedPitchFile(
  */
 export async function createVideoDocument(
   input: z.input<typeof createVideoSchema>,
-): Promise<{ id: string; linkId: string } | { error: string } | UpgradeError> {
+): Promise<{ id: string; linkId: string } | { error: string } | UpgradePrompt> {
   const { user, organization } = await requireWorkspace();
   const [t, locale] = await Promise.all([getTranslations("documents.actions"), getLocale()]);
   const parsed = createVideoSchema.safeParse(input);
@@ -257,7 +251,7 @@ export async function createVideoDocument(
 }
 
 /** "Nouveau lien" on a document: a fresh draft, set up on the share screen. */
-export async function createQuickLink(documentId: string): Promise<{ linkId: string } | { error: string } | UpgradeError> {
+export async function createQuickLink(documentId: string): Promise<{ linkId: string } | { error: string } | UpgradePrompt> {
   const { user, organization } = await requireWorkspace();
   const limit = await linkLimitError(organization.id);
   if (limit) return limit;
