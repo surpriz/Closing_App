@@ -137,6 +137,8 @@
     "aiAdviceNoTiming": "{verb}.",
     "closeWon": "Approved by the prospect: confirm the sale.",
     "callNow": "Reading right now: call now.",
+    "reactivateAsked": "Document asked for again {when}: reactivate the link.",
+    "reactivateReturned": "Back on the link {when}: reactivate it.",
     "replyQuote": "Quote requested: send it.",
     "reply": "Change request waiting: reply.",
     "reviewDraft": "Follow-up ready: review and approve it.",
@@ -167,7 +169,8 @@
     "copyLink": "Copy link",
     "call": "Call",
     "logCall": "Log the call",
-    "followUpByEmail": "Follow up by email"
+    "followUpByEmail": "Follow up by email",
+    "reactivate": "Reactivate the link"
   },
   "feed": {
     "openedDocument": "opened the document",
@@ -176,6 +179,7 @@
     "action": {
       "VALIDATE_SIGN": "approved the proposal",
       "REQUEST_EXTENSION": "is asking for an extension",
+      "REQUEST_RELINK": "is asking for the document again",
       "MEETING_BOOKED": "booked a meeting",
       "MEETING_CLICK": "opened your calendar",
       "REQUEST_QUOTE": "is asking for a quote",
@@ -194,6 +198,9 @@
       "multiViewer": "is being read by several people",
       "draftReady": "has a follow-up ready to approve",
       "extensionRequested": "expired: the prospect is asking for an extension",
+      "relinkRequested": "was archived: the prospect is asking for it again",
+      "deadLinkOpenedArchived": "was archived: the prospect came back to it",
+      "deadLinkOpenedExpired": "has expired: the prospect came back to it",
       "linkExpiring": "expires in less than 24 h",
       "committeeLive": "is being read by {count} people at once (committee)",
       "committeeLiveSeveral": "is being read by several people at once (committee)",

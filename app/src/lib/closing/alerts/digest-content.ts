@@ -21,7 +21,7 @@ export type DigestData = {
   /** Prospect answers, and questions the assistant passed on to the seller. */
   actions: {
     label: string;
-    kind: "validated" | "change" | "quote" | "extension" | "meeting" | "question";
+    kind: "validated" | "change" | "quote" | "extension" | "relink" | "meeting" | "question";
     message: string | null;
     url: string;
   }[];

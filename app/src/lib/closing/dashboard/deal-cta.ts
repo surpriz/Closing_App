@@ -29,6 +29,7 @@ export const DEAL_ANCHORS = {
   followups: "#relances",
   log: "#noter",
   activity: "#activite",
+  reactivate: "#reactiver",
 } as const;
 
 export function dealCta(
@@ -42,6 +43,8 @@ export function dealCta(
     case "call_now":
     case "call":
       return callCta(ctx, t);
+    case "reactivate":
+      return { kind: "href", label: t("today.dealCta.reactivate"), href: DEAL_ANCHORS.reactivate };
     case "reply":
       return ctx.email
         ? {

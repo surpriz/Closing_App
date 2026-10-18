@@ -140,3 +140,30 @@ describe("feedContext", () => {
     expect(feedContext("Norda", "Norda", null)).toBeNull();
   });
 });
+
+describe("buildFeed on dead links", () => {
+  const alert = (type: FeedSource["alerts"][number]["type"], payload: unknown) => ({
+    id: "a1",
+    createdAt: at(1),
+    linkId: "l1",
+    linkLabel: "Acme",
+    documentName: "Devis 2026",
+    type,
+    payload,
+  });
+
+  it("shows a request for an archived document as a relink", () => {
+    const action = { id: "x1", createdAt: at(1), linkId: "l1", who: "Acme", linkLabel: "Acme", type: "REQUEST_RELINK" as const, documentName: "Devis 2026", message: null };
+    expect(buildFeed({ ...empty, actions: [action] }, 10)[0]).toMatchObject({ kind: "relink", what: "redemande le document" });
+  });
+
+  it("words a return on a dead link by its state, never as a reopening", () => {
+    expect(buildFeed({ ...empty, alerts: [alert("DEAD_LINK_OPENED", { deadState: "expired" })] }, 10)[0]).toMatchObject({
+      kind: "relink",
+      what: "a expiré : le prospect est revenu dessus",
+    });
+    expect(buildFeed({ ...empty, alerts: [alert("DEAD_LINK_OPENED", {})] }, 10)[0].what).toBe(
+      "était archivé : le prospect est revenu dessus",
+    );
+  });
+});

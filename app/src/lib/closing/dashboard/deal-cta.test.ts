@@ -96,3 +96,13 @@ describe("dealCta", () => {
     expect(dealCta({ kind: "snoozed", until: new Date() }, ctx)).toBeNull();
   });
 });
+
+describe("dealCta on a dead link", () => {
+  it("leads to the reactivation banner", () => {
+    expect(dealCta({ kind: "reactivate", at: new Date(), asked: true, state: "archived" }, ctx)).toEqual({
+      kind: "href",
+      label: "Réactiver le lien",
+      href: "#reactiver",
+    });
+  });
+});
