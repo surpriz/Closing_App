@@ -193,38 +193,29 @@
       "subprocessors": "See our subprocessors and where your data lives"
     },
     "who": {
-      "title": "One tool, from solo shop to sales team.",
-      "beta": "Clozer is in beta: everything is unlocked, no credit card required. If a paid plan comes along, you'll hear about it first.",
-      "solo": {
-        "name": "Solo",
-        "who": "Freelancers, contractors, consultants, small agencies.",
-        "body": "Quotes, invoices, decks: one link per client, follow-ups written for you. Sign in with Google or your email and send your first link in minutes.",
-        "offer": "Free during the beta",
-        "action": "Create my account"
-      },
+      "title": "For the rep, and for the manager.",
+      "beta": "Clozer is free during the beta, no card. If a paid plan comes, you'll hear about it first.",
       "team": {
         "name": "Team",
-        "who": "Sales reps at small and midsize companies, with a manager.",
-        "body": "Invite your team: everyone tracks their own deals, and the manager sees the full picture in the Team view. Alerts by email, Slack, Chrome or Outlook.",
-        "offer": "Free during the beta",
-        "action": "Create the team space"
+        "who": "SME sales teams with a manager.",
+        "body": "Each rep follows their own prospects. The manager sees everything in the Team view: what's moving, what's slipping, and each rep's pipeline.",
+        "offer": "Free during the beta"
+      },
+      "solo": {
+        "name": "Solo",
+        "who": "Freelancers, consultants, small agencies.",
+        "body": "One link per client, follow-ups written for you. Sign in with Google or your email.",
+        "offer": "Free during the beta"
       },
       "enterprise": {
         "name": "Enterprise",
-        "who": "Large sales organizations.",
-        "body": "Rolling out across several teams, or have security or integration requirements? We'll look at your setup together before opening access.",
+        "who": "Several sales teams.",
+        "body": "Security or integration needs? We look at your case together.",
         "offer": "Let's talk",
-        "action": "Email us",
+        "action": "Write to us",
         "mailSubject": "Clozer for our team"
       },
-      "includedLabel": "Included during the beta:",
-      "included": {
-        "formats": "PDFs, web pages and video pitches",
-        "extension": "Gmail and Outlook extension",
-        "tracking": "Page-by-page tracking, live alerts",
-        "deals": "Deal reads, follow-ups drafted for you",
-        "replies": "Meetings, assistant and voice notes from prospects"
-      }
+      "teamAlt": "Clozer's Team view: 7 open deals, 4 moving, a €141,200 pipeline, broken down for Léa Fontaine, Hugo Mercier and Sophie Noël."
     },
     "faq": {
       "title": "Questions we get.",

@@ -193,38 +193,29 @@
       "subprocessors": "Voir nos sous-traitants et où sont vos données"
     },
     "who": {
-      "title": "Un seul outil, de l'artisan à l'équipe.",
-      "beta": "Clozer est en bêta : tout est ouvert, sans carte bancaire. Si une offre payante arrive, vous serez prévenu avant.",
-      "solo": {
-        "name": "Solo",
-        "who": "Indépendants, artisans, consultants, agences de quelques personnes.",
-        "body": "Devis, factures, présentations : un lien par client, les relances écrites pour vous. Connexion avec Google ou votre email, premier lien en quelques minutes.",
-        "offer": "Gratuit pendant la bêta",
-        "action": "Créer mon compte"
-      },
+      "title": "Pour le commercial, et pour son manager.",
+      "beta": "Clozer est gratuit pendant la bêta, sans carte. Si une offre payante arrive, vous serez prévenu avant.",
       "team": {
         "name": "Équipe",
         "who": "Commerciaux de PME avec un manager.",
-        "body": "Invitez l'équipe : chacun suit ses deals, le manager voit l'ensemble dans la vue Équipe. Alertes par email, Slack, Chrome ou Outlook.",
-        "offer": "Gratuit pendant la bêta",
-        "action": "Créer l'espace d'équipe"
+        "body": "Chacun suit ses prospects. Le manager voit l'ensemble dans la vue Équipe : ce qui avance, ce qui glisse, et le pipeline de chaque commercial.",
+        "offer": "Gratuit pendant la bêta"
+      },
+      "solo": {
+        "name": "Solo",
+        "who": "Indépendants, consultants, agences de quelques personnes.",
+        "body": "Un lien par client, les relances écrites pour vous. Connexion avec Google ou votre email.",
+        "offer": "Gratuit pendant la bêta"
       },
       "enterprise": {
         "name": "Entreprise",
-        "who": "Grandes équipes commerciales.",
-        "body": "Déploiement à plusieurs équipes, besoins de sécurité ou d'intégration : on regarde votre cas ensemble avant de vous ouvrir l'accès.",
+        "who": "Plusieurs équipes commerciales.",
+        "body": "Des besoins de sécurité ou d'intégration ? On regarde votre cas ensemble.",
         "offer": "Sur échange",
         "action": "Nous écrire",
         "mailSubject": "Clozer pour notre équipe"
       },
-      "includedLabel": "Inclus pendant la bêta :",
-      "included": {
-        "formats": "PDF, pages web et pitchs vidéo",
-        "extension": "Extension Gmail et Outlook",
-        "tracking": "Suivi page par page, alertes en direct",
-        "deals": "Lecture des deals, relances préparées",
-        "replies": "Rendez-vous, assistant et vocaux du prospect"
-      }
+      "teamAlt": "Vue Équipe de Clozer : 7 deals en cours, 4 qui avancent, 141 200 € de pipeline, détaillés pour Léa Fontaine, Hugo Mercier et Sophie Noël."
     },
     "faq": {
       "title": "Ce qu'on nous demande.",

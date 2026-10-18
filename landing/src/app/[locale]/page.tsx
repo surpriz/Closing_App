@@ -16,6 +16,10 @@ import sendEn from "@/assets/steps/send-en.png";
 import sendFr from "@/assets/steps/send-fr.png";
 import uploadEn from "@/assets/steps/upload-en.png";
 import uploadFr from "@/assets/steps/upload-fr.png";
+import teamEn from "@/assets/team/team-en.png";
+import teamFr from "@/assets/team/team-fr.png";
+import teamMobileEn from "@/assets/team/team-mobile-en.png";
+import teamMobileFr from "@/assets/team/team-mobile-fr.png";
 import todayDesktopEn from "@/assets/today/desktop-en.png";
 import todayDesktopFr from "@/assets/today/desktop-fr.png";
 import todayMobileEn from "@/assets/today/mobile-en.png";
@@ -59,8 +63,10 @@ const PROSPECT_SCREENS: Record<"actions" | "change", Record<Locale, StaticImageD
 };
 const READING_POINTS = ["pages", "readers", "live", "score"] as const;
 const GUARANTEES = ["informed", "discreet", "limit", "unsubscribe"] as const;
-const SEGMENTS = ["solo", "team", "enterprise"] as const;
-const BETA_INCLUDES = ["formats", "extension", "tracking", "deals", "replies"] as const;
+const TEAM_SCREENS: Record<"desktop" | "mobile", Record<Locale, StaticImageData>> = {
+  desktop: { fr: teamFr, en: teamEn },
+  mobile: { fr: teamMobileFr, en: teamMobileEn },
+};
 const FAQ = ["informed", "auto", "documents", "ownOpens", "install", "extension", "replies"] as const;
 
 type Props = { params: Promise<{ locale: string }> };
@@ -86,11 +92,6 @@ export default async function Home({ params }: Props) {
     time: page.time,
     heat: page.heat,
   }));
-
-  const segmentHref = (segment: (typeof SEGMENTS)[number]) =>
-    segment === "enterprise"
-      ? `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(t("who.enterprise.mailSubject"))}`
-      : appUrl(locale);
 
   return (
     <div className="flex min-h-full flex-col overflow-x-clip">
@@ -364,39 +365,65 @@ export default async function Home({ params }: Props) {
           </div>
         </section>
 
-        {/* Segments: no prices exist yet, so none are shown. */}
+        {/* Segments: the team offer first, with its real screen; no prices exist yet, so none are shown. */}
         <section id="pour-qui" className="scroll-mt-14 border-b border-ink">
           <div className={`${WRAP} py-20 md:py-28`}>
-            <div className="flex flex-wrap items-end justify-between gap-6">
-              <h2 className="condensed max-w-[16ch] text-title font-bold">{t("who.title")}</h2>
-              <p className="max-w-[40ch] text-body text-ink-soft">{t("who.beta")}</p>
+            <h2 className="condensed max-w-[20ch] text-title font-bold">{t("who.title")}</h2>
+            <p className="mt-6 max-w-[56ch] text-lead text-ink-soft">{t("who.beta")}</p>
+            <div className="mt-14 grid gap-10 border-t border-ink pt-10 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-16">
+              <article className="flex flex-col">
+                <h3 className="condensed text-[2.5rem] leading-none font-extrabold tracking-[-0.03em]">{t("who.team.name")}</h3>
+                <p className="mt-4 font-medium">{t("who.team.who")}</p>
+                <p className="mt-2 text-body text-ink-soft">{t("who.team.body")}</p>
+                <p className="mt-8 text-small font-semibold">{t("who.team.offer")}</p>
+                <a
+                  href={appUrl(locale)}
+                  className="group mt-3 flex h-12 items-center justify-between bg-ink px-4 font-semibold text-sheet transition-colors hover:bg-ink/90"
+                >
+                  {ts("submit")}
+                  <Icon name="arrow" className="size-5 transition-transform duration-300 ease-[var(--ease-out-expo)] group-hover:translate-x-1" />
+                </a>
+              </article>
+              <figure>
+                <Image
+                  src={TEAM_SCREENS.mobile[locale]}
+                  alt={t("who.teamAlt")}
+                  sizes="calc(100vw - 2.5rem)"
+                  className="mx-auto w-full max-w-[24rem] border border-rule md:hidden"
+                />
+                <Image
+                  src={TEAM_SCREENS.desktop[locale]}
+                  alt={t("who.teamAlt")}
+                  sizes="(min-width: 1440px) 56rem, (min-width: 1024px) 62vw, calc(100vw - 4rem)"
+                  className="w-full border border-rule max-md:hidden"
+                />
+                <figcaption className="mt-2 font-mono text-micro text-ink-soft">{t("screen")}</figcaption>
+              </figure>
             </div>
-            <div className="mt-14 grid border-t border-ink md:grid-cols-3">
-              {SEGMENTS.map((segment) => (
+            <div className="mt-14 grid border-t border-ink md:grid-cols-2">
+              {(["solo", "enterprise"] as const).map((segment) => (
                 <article
                   key={segment}
-                  className="flex flex-col border-b border-rule py-8 md:border-r md:border-b-0 md:px-8 md:first:pl-0 md:last:border-r-0 md:last:pr-0"
+                  className="flex flex-col border-b border-rule py-8 md:border-b-0 md:px-8 md:first:border-r md:first:pl-0 md:last:pr-0"
                 >
-                  <h3 className="condensed text-[2.5rem] leading-none font-extrabold tracking-[-0.03em]">{t(`who.${segment}.name`)}</h3>
+                  <h3 className="condensed text-[2rem] leading-none font-extrabold tracking-[-0.03em]">{t(`who.${segment}.name`)}</h3>
                   <p className="mt-4 font-medium">{t(`who.${segment}.who`)}</p>
                   <p className="mt-2 flex-1 text-body text-ink-soft">{t(`who.${segment}.body`)}</p>
-                  <p className="mt-8 text-small font-semibold">{t(`who.${segment}.offer`)}</p>
+                  <p className="mt-6 text-small font-semibold">{t(`who.${segment}.offer`)}</p>
                   <a
-                    href={segmentHref(segment)}
-                    className="group mt-3 flex h-12 items-center justify-between border border-ink px-4 font-semibold transition-colors hover:bg-ink hover:text-sheet"
+                    href={
+                      segment === "enterprise"
+                        ? `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(t("who.enterprise.mailSubject"))}`
+                        : appUrl(locale)
+                    }
+                    className="group mt-3 flex h-12 max-w-sm items-center justify-between border border-ink px-4 font-semibold transition-colors hover:bg-ink hover:text-sheet"
                   >
-                    {t(`who.${segment}.action`)}
+                    {segment === "enterprise" ? t("who.enterprise.action") : ts("submit")}
                     <Icon name="arrow" className="size-5 transition-transform duration-300 ease-[var(--ease-out-expo)] group-hover:translate-x-1" />
                   </a>
                 </article>
               ))}
             </div>
-            <p className="mt-10 flex flex-wrap gap-x-6 gap-y-2 text-small text-ink-soft">
-              <span className="font-medium text-ink">{t("who.includedLabel")}</span>
-              {BETA_INCLUDES.map((item) => (
-                <span key={item}>{t(`who.included.${item}`)}</span>
-              ))}
-            </p>
           </div>
         </section>
 
