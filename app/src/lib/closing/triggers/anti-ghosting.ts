@@ -10,7 +10,7 @@ import { defaultTimezone, resolveFollowupSettings } from "../settings";
 
 /**
  * Links never opened N days after being sent (N from the inactivity steps,
- * e.g. 3 then 5). Only the latest reached step is queued, once per prospect.
+ * e.g. 3, 7 then 14). Only the latest reached step is queued, once per prospect.
  * Returns the number of follow-ups queued.
  */
 export async function scanAntiGhosting(now = new Date()) {

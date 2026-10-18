@@ -327,6 +327,29 @@ enum SellerActivityType {
   MANUAL_SEND
 }
 
+// Who logged a seller activity: the seller, or Clozer noticing a reply on its own
+enum ActivitySource {
+  MANUAL // typed by the seller
+  INBOUND // a reply to an email Clozer sent, caught by the reply relay
+  EXTENSION // a reply seen by the extension in the seller's Gmail or Outlook thread
+}
+
+// Why a deal was lost, picked by the seller in one click
+enum DealCloseReason {
+  PRICE
+  TIMING
+  COMPETITOR
+  NO_DECISION
+  NO_NEED
+  OTHER
+}
+
+enum MeetingOutcome {
+  HELD
+  NO_SHOW
+  CANCELLED
+}
+
 enum InsightTrigger {
   SESSION_ENDED // a prospect closed the document
   PROSPECT_ACTION // validation or change request
@@ -358,6 +381,8 @@ enum SellerAlertType {
   MEETING_BOOKED // the prospect booked a meeting in the seller's calendar from the viewer
   QUOTE_REQUESTED // the prospect asked for a quote under a video pitch
   DOCUMENT_FORWARDED // a reader passed the proposal on with "Transférer"
+  PROSPECT_REPLIED // the prospect answered by email: automatic follow-ups stopped
+  EMAIL_BOUNCED // an email Clozer sent to the prospect bounced: the address is wrong
 }
 
 // Role of a prospect contact in the buying committee, set by the seller.
@@ -401,6 +426,8 @@ enum ViewSignalType {
   EXIT_PROMPT_SHOWN // about to leave: the assistant offered to answer a question
   EXIT_PROMPT_OPENED // and the reader took it
   TRANSLATED // read the document translated; detail = the language
+  COPY_TEXT // copied text from the document; detail = the page, valueMs = characters copied
+  PRINT // printed the document
 }
 
 enum ProspectActionType {
@@ -435,7 +462,7 @@ model WorkspaceSettings {
 
   defaultChannels           FollowupChannel[] @default([EMAIL])
   hotPricingThresholdSec    Int               @default(90)
-  inactivityDays            Int[]             @default([3, 5]) // anti-ghosting steps, days since link was sent
+  inactivityDays            Int[]             @default([3, 7, 14]) // anti-ghosting steps, days since link was sent; the last one closes the loop
   businessHourStart         Int               @default(9) // prospect local hour, inclusive
   businessHourEnd           Int               @default(18) // prospect local hour, exclusive
   businessDays              Int[]             @default([1, 2, 3, 4, 5]) // ISO weekday, 1 = Monday
@@ -637,6 +664,14 @@ model Link {
   meetingAt            DateTime? // start of the latest booked meeting, when the widget gave it (Cal.com)
   // The prospect asked for a quote under a video pitch: the seller answers, automatic follow-ups stop for good
   quoteRequestedAt     DateTime?
+  // The prospect answered by email (reply relay or extension): the conversation is the seller's, automatic follow-ups stop
+  repliedAt            DateTime?
+  // Did the booked meeting take place? Asked to the seller once meetingAt has passed
+  meetingOutcome       MeetingOutcome?
+  meetingOutcomeAt     DateTime?
+  // Someone reached the email gate without typing an address: clicked, but did not read
+  gateSeenAt           DateTime?
+  gateVisits           Int               @default(0)
 
   followupsEnabled       Boolean           @default(true)
   channels               FollowupChannel[] // empty = workspace defaults
@@ -649,6 +684,9 @@ model Link {
   sentAt         DateTime? // baseline for anti-ghosting
   lastActivityAt DateTime? // last tracked page view, used for reopen detection
   closedAt       DateTime?
+  // Picked by the seller when the deal is lost, for the "what works" stats
+  closedReason   DealCloseReason?
+  closedNote     String?
   archivedAt     DateTime?
 
   // Deal context typed by the seller. sellerNotes is private: never sent to the message writer.
@@ -722,6 +760,11 @@ model Prospect {
   unsubscribedAt  DateTime?
   role            ProspectRole? // set by the seller, wins over the guess from the email
   origin          ProspectOrigin @default(SELLER)
+  // An email Clozer sent bounced for good: nothing more goes to this address (SES notification)
+  bouncedAt       DateTime?
+  bounceDetail    String?
+  // Marked one of our emails as spam: treated as an unsubscribe
+  complainedAt    DateTime?
 
   // detected on first view (x-vercel-ip-timezone, accept-language), editable by seller
   locale      String?
@@ -764,6 +807,9 @@ model DocumentView {
   documentId String
   prospectId String?
   prospect   Prospect? @relation(fields: [prospectId], references: [id], onDelete: SetNull)
+  // Opened from the link in a follow-up (?f= in the URL): what brought the reader back
+  followupId String?
+  followup   Followup? @relation(fields: [followupId], references: [id], onDelete: SetNull)
 
   visitorId String // anonymous id kept in a first-party cookie
   email     String?
@@ -895,11 +941,19 @@ model Followup {
   regenerateInstruction String?
 
   triggerRunId      String?
-  providerMessageId String? // Resend email id or Twilio message SID
+  providerMessageId String? // SES message id or Twilio message SID
   error             String?
   dedupeKey         String    @unique // e.g. hot_pricing:<prospectId>:<yyyy-mm-dd>
   sentAt            DateTime?
   cancelledAt       DateTime?
+
+  // What the message did, for the "what works" stats (SES notifications, ?f= in the link, reply relay)
+  deliveredAt DateTime?
+  bouncedAt   DateTime?
+  clickedAt   DateTime? // first opening of the link from this message
+  repliedAt   DateTime? // the prospect answered this message
+
+  views DocumentView[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -907,6 +961,7 @@ model Followup {
   @@index([status, scheduledFor])
   @@index([linkId, createdAt(sort: Desc)])
   @@index([prospectId])
+  @@index([providerMessageId])
   @@map("followups_queue")
 }
 
@@ -926,6 +981,8 @@ model SellerAlert {
   userId   String?
   user     User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
   priority AlertPriority @default(INFO)
+  // First time the seller opened the deal after the alert: how fast they react
+  seenAt   DateTime?
 
   createdAt DateTime @default(now())
 
@@ -1010,6 +1067,11 @@ model SellerActivity {
   note       String?
   occurredAt DateTime           @default(now())
 
+  // A reply Clozer caught on its own: who wrote it, and a key so the same email is logged once
+  source      ActivitySource @default(MANUAL)
+  fromEmail   String?
+  externalKey String?        @unique
+
   createdAt DateTime @default(now())
 
   @@index([linkId, occurredAt(sort: Desc)])
@@ -1039,7 +1101,8 @@ model DealInsight {
   followupBrief     Json? // { goal, angle, topics, avoid }
   scoreNuance       String?
   factsSnapshot     Json // the facts the model saw, for audit and evals
-
+  // "Préparer l'appel": talking points written on demand for the seller, kept with the reading they came from
+  callScript        String?
   provider  String? // null: written by rules (deal never opened)
   model     String?
   tokensIn  Int     @default(0)
