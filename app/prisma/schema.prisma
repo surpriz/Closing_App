@@ -295,6 +295,7 @@ enum FollowupTrigger {
   AI_DECISION // decided by the deal analysis
   EXPIRY_REMINDER // the link expires soon (quotes and proposals)
   WARM_READ // a cold email reader read for a while without answering
+  INTEREST_RETURNED // the seller reopened a dead link the prospect had come back to
 }
 
 enum FollowupStatus {
@@ -358,6 +359,8 @@ enum SellerAlertType {
   MEETING_BOOKED // the prospect booked a meeting in the seller's calendar from the viewer
   QUOTE_REQUESTED // the prospect asked for a quote under a video pitch
   DOCUMENT_FORWARDED // a reader passed the proposal on with "Transférer"
+  DEAD_LINK_OPENED // the prospect came back to an archived or expired link without asking anything
+  RELINK_REQUESTED // the link was archived and the prospect asked for the document again
 }
 
 // Role of a prospect contact in the buying committee, set by the seller.
@@ -410,6 +413,7 @@ enum ProspectActionType {
   MEETING_CLICK // opened the seller's booking page (once per view)
   MEETING_BOOKED // the booking widget reported a confirmed meeting
   REQUEST_QUOTE // "Demander un devis" under a video pitch
+  REQUEST_RELINK // the link was archived, the prospect asked for the document again
 }
 
 enum ChatRole {
