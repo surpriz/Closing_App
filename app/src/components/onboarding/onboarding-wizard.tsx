@@ -36,12 +36,15 @@ export function OnboardingWizard({
   initialMailClient,
   connected,
   chromeStoreUrl,
+  askOffer,
 }: {
   firstName: string | null;
   uploadPrefix: string;
   initialMailClient: MailClient | null;
   connected: { chrome: boolean; outlook: boolean };
   chromeStoreUrl: string | null;
+  /** A manager whose workspace has no offer yet: the last step asks for one line. */
+  askOffer: boolean;
   /** Replaying the tour: the latest document, so it is not added again. */
   previous: { documentId: string; linkId: string | null; name: string } | null;
 }) {
@@ -198,6 +201,7 @@ export function OnboardingWizard({
             )}
             {step === "daily" && (
               <DailyStep
+                askOffer={askOffer}
                 initialMailClient={initialMailClient}
                 connected={connected}
                 chromeStoreUrl={chromeStoreUrl}

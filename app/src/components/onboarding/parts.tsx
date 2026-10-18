@@ -1,3 +1,5 @@
+import type { LucideIcon } from "lucide-react";
+
 export function StepHeading({ title, lead }: { title: React.ReactNode; lead?: React.ReactNode }) {
   return (
     <div className="space-y-3">
@@ -23,5 +25,20 @@ export function Instructions({ items }: { items: { text: React.ReactNode; extra?
         </li>
       ))}
     </ol>
+  );
+}
+
+/** An icon, a title, a sentence: the building block of the explanation screens. */
+export function IconRow({ icon: Icon, title, children }: { icon: LucideIcon; title: string; children: React.ReactNode }) {
+  return (
+    <li className="grid grid-cols-[2.5rem_minmax(0,1fr)] gap-x-4">
+      <span className="flex size-10 items-center justify-center border border-border">
+        <Icon className="size-[18px]" aria-hidden />
+      </span>
+      <div className="space-y-1 pt-1.5">
+        <p className="font-medium">{title}</p>
+        <p className="text-body text-muted-foreground">{children}</p>
+      </div>
+    </li>
   );
 }

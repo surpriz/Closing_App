@@ -22,7 +22,12 @@
     "stateOpened": "Ouvert",
     "noRecipient": "Sans destinataire",
     "mailClientQuestion": "Vous envoyez depuis Gmail ou Outlook ?",
-    "mailClientLink": "Clozer peut créer le lien directement dans vos emails"
+    "mailClientLink": "Clozer peut créer le lien directement dans vos emails",
+    "reportTitle": "Rapport du jour",
+    "toSendHint": "pas encore copiés ni envoyés",
+    "toHandleHint": "du plus urgent au moins urgent",
+    "openDealsHint": "en ce moment",
+    "dealsInProgress": "{count, plural, one {# prospect en cours} other {# prospects en cours}}"
   },
   "period": {
     "7d": {

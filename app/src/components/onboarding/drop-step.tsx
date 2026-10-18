@@ -30,6 +30,7 @@ export function DropStep({
         title={firstName ? t("titleWithName", { firstName }) : t("title")}
         lead={t("lead")}
       />
+      <p className="font-medium">{t("nothingToInstall")}</p>
       <figure className="flex items-center gap-4">
         <span aria-hidden className="grid w-40 shrink-0 grid-cols-6 gap-px">
           {Array.from({ length: 6 }, (_, i) => (

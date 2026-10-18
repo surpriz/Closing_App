@@ -11,7 +11,6 @@ import {
   DealSection,
 } from "@/components/dashboard/deal/deal-section";
 import { DealSettings } from "@/components/dashboard/deal/deal-settings";
-import { OpenOnHash } from "@/components/dashboard/deal/open-on-hash";
 import { loadDeal } from "@/components/dashboard/deal/load-deal";
 import { DealNextAction } from "@/components/dashboard/deal/next-action";
 import { ThermalBand } from "@/components/dashboard/deal/thermal-band";
@@ -233,7 +232,6 @@ export default async function LinkDetailPage({
               insight={insight}
               score={deal.score}
               opened={deal.opened}
-              analyzable={deal.opened || deal.sharedReaders.length > 0}
               aiAvailable={deal.aiAvailable}
               readSince={
                 !!insight &&
@@ -329,11 +327,13 @@ export default async function LinkDetailPage({
               </DealSection>
             )}
 
-            {/* Used after a call, not on every visit: folded, and opened by "#noter" from the next action */}
-            <DealFold id="noter" title={t("logTitle")} hint={t("logHint")}>
+            <DealSection
+              id="noter"
+              title={t("logTitle")}
+              hint={t("logHint")}
+            >
               <SellerActivityForm linkId={link.id} />
-            </DealFold>
-            <OpenOnHash id="noter" />
+            </DealSection>
 
             <DealContextSummaryDetails
               summary={dealContextSummary(

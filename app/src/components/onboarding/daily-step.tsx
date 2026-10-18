@@ -1,25 +1,35 @@
 "use client";
 
-import { ExternalLink } from "lucide-react";
+import { BellRing, Check, ExternalLink, PenLine, Send } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { useState, useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore, useTransition } from "react";
+import { toast } from "sonner";
 
-import { saveMailClient } from "@/app/welcome/actions";
-import { buttonVariants } from "@/components/ui/button";
-import { canInstallChromeExtension, MAIL_CLIENTS, toolFor, type MailClient } from "@/lib/onboarding";
+import { saveMailClient, saveOfferDescription } from "@/app/welcome/actions";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  canInstallChromeExtension,
+  MAIL_CLIENTS,
+  OFFER_DESCRIPTION_MAX,
+  toolFor,
+  type MailClient,
+} from "@/lib/onboarding";
 import { cn } from "@/lib/utils";
 
-import { StepHeading } from "./parts";
+import { IconRow, StepHeading } from "./parts";
 
 type DailyT = ReturnType<typeof useTranslations<"onboarding.daily">>;
 
-/** The tour's last step: plug the mailbox in, so the next links go out without copy-paste. */
 export function DailyStep({
+  askOffer,
   initialMailClient,
   connected,
   chromeStoreUrl,
 }: {
+  askOffer: boolean;
   initialMailClient: MailClient | null;
   connected: { chrome: boolean; outlook: boolean };
   chromeStoreUrl: string | null;
@@ -27,13 +37,32 @@ export function DailyStep({
   const t = useTranslations("onboarding.daily");
   return (
     <div className="space-y-10">
-      <StepHeading title={t("title")} lead={t("lead")} />
-      <MailClientQuestion initial={initialMailClient} connected={connected} chromeStoreUrl={chromeStoreUrl} />
+      <StepHeading
+        title={t("title")}
+        lead={t("lead")}
+      />
+      <ol className="space-y-6">
+        <IconRow icon={Send} title={t("sendTitle")}>
+          {t("sendBody")}
+        </IconRow>
+        <IconRow icon={BellRing} title={t("alertTitle")}>
+          {t("alertBody")}
+        </IconRow>
+        <IconRow icon={PenLine} title={t("approveTitle")}>
+          {t("approveBody")}
+        </IconRow>
+      </ol>
+      <MailClientQuestion
+        initial={initialMailClient}
+        connected={connected}
+        chromeStoreUrl={chromeStoreUrl}
+      />
+      {askOffer && <OfferField />}
     </div>
   );
 }
 
-/** Lets the seller know whether there is something to plug into their mailbox, today or later. */
+/** Optional: lets the seller know whether there is something to plug into their mailbox, today or later. */
 function MailClientQuestion({
   initial,
   connected,
@@ -109,7 +138,7 @@ function mailToolHint(
 
 const noSubscribe = () => () => {};
 
-/** Gmail or Outlook on the web, store live, not paired yet: the extension is worth a real offer. */
+/** Gmail or Outlook on the web, store live, not paired yet: the extension is worth a real offer. Still optional. */
 function ExtensionOffer({ mailbox, storeUrl }: { mailbox: string; storeUrl: string }) {
   const t = useTranslations("onboarding.daily");
   // The user agent only exists in the browser: say nothing about it on the server
@@ -137,7 +166,57 @@ function ExtensionOffer({ mailbox, storeUrl }: { mailbox: string; storeUrl: stri
           </Link>
         </div>
       )}
-      {canInstall === false && <p className="text-small">{t("desktopOnly")}</p>}
+      {canInstall === false && (
+        <p className="text-small">{t("desktopOnly")}</p>
+      )}
+    </div>
+  );
+}
+
+function OfferField() {
+  const t = useTranslations("onboarding.daily");
+  const [value, setValue] = useState("");
+  const [saved, setSaved] = useState(false);
+  const [pending, startTransition] = useTransition();
+
+  function save() {
+    startTransition(async () => {
+      const result = await saveOfferDescription(value);
+      if (result.ok) setSaved(true);
+      else toast.error(t("offerSaveFailed"));
+    });
+  }
+
+  if (saved) {
+    return (
+      <p className="flex items-center gap-2 text-body text-muted-foreground">
+        <Check className="size-4 text-success" aria-hidden />
+        {t("offerSaved")}
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <Label htmlFor="offer">
+        {t("offerLabel")} <span className="font-normal text-muted-foreground">{t("optional")}</span>
+      </Label>
+      <Textarea
+        id="offer"
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+        maxLength={OFFER_DESCRIPTION_MAX}
+        rows={3}
+        placeholder={t("offerPlaceholder")}
+      />
+      <div className="flex items-center justify-between gap-4">
+        <p className="text-small text-muted-foreground">
+          {t("offerHint")}
+        </p>
+        <Button variant="outline" size="sm" disabled={pending || !value.trim()} onClick={save}>
+          {t("save")}
+        </Button>
+      </div>
     </div>
   );
 }

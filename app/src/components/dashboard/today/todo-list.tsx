@@ -160,8 +160,7 @@ export function TodoList({
                     className="mt-0.5 size-3.5 shrink-0"
                     aria-label={t("today.todo.aiAnalysis")}
                   />
-                  {/* One line: the full reading is on the prospect's page */}
-                  <span className="line-clamp-1">
+                  <span className="line-clamp-2">
                     {tidyEllipsis(row.insightHeadline)}
                   </span>
                 </p>

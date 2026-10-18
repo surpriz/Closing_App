@@ -139,8 +139,6 @@ export type ViewerLabels = {
   playVideo: string;
   /** "Transférer": the reader sends the link to a colleague. {sender}, {email}. */
   forwardButton: string;
-  /** Small screens: the menu holding the actions that don't fit in the bar. */
-  moreActions: string;
   forwardTitle: string;
   forwardDescription: string;
   forwardToEmail: string;
@@ -268,7 +266,6 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     videoError: "This video can't play in this browser. Try another one, or contact the sender.",
     playVideo: "Play the video",
     forwardButton: "Forward",
-    moreActions: "More",
     forwardTitle: "Forward the document",
     forwardDescription: "We email it to them on your behalf.",
     forwardToEmail: "Their email",
@@ -434,7 +431,6 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     videoError: "Cette vidéo ne s'ouvre pas dans ce navigateur. Essayez-en un autre, ou contactez l'expéditeur.",
     playVideo: "Lire la vidéo",
     forwardButton: "Transférer",
-    moreActions: "Plus",
     forwardTitle: "Transférer le document",
     forwardDescription: "Nous lui envoyons le document par email, de votre part.",
     forwardToEmail: "Son email",
@@ -600,7 +596,6 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     videoError: "Este vídeo no se puede reproducir en este navegador. Prueba con otro o contacta con el remitente.",
     playVideo: "Reproducir el vídeo",
     forwardButton: "Reenviar",
-    moreActions: "Más",
     forwardTitle: "Reenviar el documento",
     forwardDescription: "Se lo enviamos por email en tu nombre.",
     forwardToEmail: "Su email",
@@ -766,7 +761,6 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     videoError: "Dieses Video kann in diesem Browser nicht abgespielt werden. Versuchen Sie einen anderen oder kontaktieren Sie den Absender.",
     playVideo: "Video abspielen",
     forwardButton: "Weiterleiten",
-    moreActions: "Mehr",
     forwardTitle: "Dokument weiterleiten",
     forwardDescription: "Wir senden es per E-Mail in Ihrem Namen.",
     forwardToEmail: "E-Mail des Empfängers",

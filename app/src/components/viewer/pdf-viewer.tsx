@@ -170,10 +170,9 @@ export function PdfViewer({
         aside={
           <>
             {countdown && countdown.pricingPages.length === 0 && <ExpiryChip labels={labels} />}
-            {/* On a phone the progress rule says where the reader is: the title keeps the room */}
             {sizes.length > 0 && (
               <span className="shrink-0 font-mono text-micro text-muted-foreground tabular-nums">
-                <span aria-hidden className="max-sm:hidden">
+                <span aria-hidden>
                   P.{currentPage}/{sizes.length}
                 </span>
                 <span className="sr-only">

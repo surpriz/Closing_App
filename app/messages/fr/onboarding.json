@@ -42,7 +42,8 @@
     "title": "Bienvenue. Déposez un document.",
     "lead": "Le dernier que vous avez envoyé fait très bien l'affaire : personne ne le recevra pendant ce test. Dans une minute, vous le verrez chauffer comme votre prospect le lira.",
     "coldPages": "Vos pages, encore froides. Elles chaufferont à chaque lecture de votre prospect.",
-    "resume": "Reprendre avec « {name} »"
+    "resume": "Reprendre avec « {name} »",
+    "nothingToInstall": "Rien à installer pour commencer. Tout se passe ici, dans votre navigateur."
   },
   "test": {
     "title": "Ouvrez-le comme votre prospect",
@@ -169,6 +170,12 @@
   "daily": {
     "title": "Maintenant, pour de vrai.",
     "lead": "Au quotidien, vous vendez comme avant. Clozer fait le suivi.",
+    "sendTitle": "Vous envoyez le lien à votre prospect",
+    "sendBody": "Copiez le lien de votre document et collez-le dans votre email, à la place de la pièce jointe. Ou cliquez sur « Envoyer par email » : le message est déjà prêt.",
+    "alertTitle": "Vous êtes prévenu quand il lit",
+    "alertBody": "Par email, et en direct sur votre tableau de bord. C'est le bon moment pour appeler.",
+    "approveTitle": "Vous validez les relances",
+    "approveBody": "Clozer les écrit au bon moment. Vous les retrouvez dans « Relances à valider ».",
     "mailQuestion": "Vous écrivez vos emails depuis…",
     "optional": "(facultatif)",
     "mailboxAria": "Votre messagerie",
@@ -180,6 +187,12 @@
     "extensionBody": "L'extension Clozer le remplace par un lien et vous prévient quand votre prospect le lit. Sans elle, le copier-coller du lien marche aussi.",
     "addToChrome": "Ajouter à Chrome",
     "thenConnect": "Puis la connecter, pas à pas",
-    "desktopOnly": "Elle s'installe depuis Chrome ou Edge, sur ordinateur. Rouvrez Clozer là-bas quand vous voudrez l'ajouter."
+    "desktopOnly": "Elle s'installe depuis Chrome ou Edge, sur ordinateur. Rouvrez Clozer là-bas quand vous voudrez l'ajouter.",
+    "offerSaveFailed": "Impossible d'enregistrer. Vous pourrez le faire dans les réglages.",
+    "offerSaved": "Offre enregistrée. Vous pourrez la compléter dans les réglages.",
+    "offerLabel": "Ce que vous vendez",
+    "offerPlaceholder": "Ex. : un logiciel de planning pour les cabinets d'architectes, de 200 à 800 € par mois.",
+    "offerHint": "Clozer s'en sert pour écrire vos relances. Laissé vide, il déduit votre offre de votre premier document.",
+    "save": "Enregistrer"
   }
 }

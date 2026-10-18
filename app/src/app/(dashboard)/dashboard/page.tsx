@@ -28,6 +28,7 @@ import {
 } from "@/components/dashboard/today/todo-list";
 import { buildTodayHeadline } from "@/components/dashboard/today-headline";
 import { UploadDropzone } from "@/components/dashboard/upload-dropzone";
+import { INTL_LOCALE, type UiLocale } from "@/i18n/locale";
 import { getAppOrigin } from "@/lib/app-origin";
 import { documentUploadPrefix, pitchUploadPrefix } from "@/lib/blob";
 import { dealAction } from "@/lib/closing/dashboard/deal-action";
@@ -305,6 +306,11 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
   return (
     <div className="space-y-10">
       <section className="space-y-6">
+        <p className="flex flex-wrap gap-x-6 gap-y-1 border-b border-border pb-2 font-mono text-micro text-muted-foreground">
+          <span className="text-foreground">{t("today.page.reportTitle")}</span>
+          <span>{reportDate(now, locale)}</span>
+          <span>{t("today.page.dealsInProgress", { count: deals.length })}</span>
+        </p>
         <div className="flex flex-col-reverse gap-6 sm:flex-row sm:items-end sm:justify-between">
           <div className="max-w-3xl space-y-3">
             <h1 className="condensed text-title text-balance sm:text-display">
@@ -340,13 +346,17 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
           )}
           {readyLinks.length > 0 && (
             <section id="a-envoyer" className="scroll-mt-20">
-              <SectionTitle>{t("today.page.toSend")}</SectionTitle>
+              <SectionTitle hint={t("today.page.toSendHint")}>
+                {t("today.page.toSend")}
+              </SectionTitle>
               <ReadyLinks links={readyLinks} />
             </section>
           )}
 
           <section>
-            <SectionTitle>{t("today.page.toHandle")}</SectionTitle>
+            <SectionTitle hint={t("today.page.toHandleHint")}>
+              {t("today.page.toHandle")}
+            </SectionTitle>
             {nothingToHandle ? (
               <EmptyState
                 title={t("today.page.emptyTitle")}
@@ -385,7 +395,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
 
         <aside className="space-y-10">
           <section>
-            <SectionTitle>{t("today.page.openDeals")}</SectionTitle>
+            <SectionTitle hint={t("today.page.openDealsHint")}>{t("today.page.openDeals")}</SectionTitle>
             <HeatDistributionBar distribution={distribution} />
           </section>
 
@@ -466,6 +476,16 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
       </div>
     </div>
   );
+}
+
+// Sellers are in France for now; the date only labels the report.
+function reportDate(now: Date, locale: UiLocale) {
+  return new Intl.DateTimeFormat(INTL_LOCALE[locale], {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    timeZone: "Europe/Paris",
+  }).format(now);
 }
 
 function toTodoRow(

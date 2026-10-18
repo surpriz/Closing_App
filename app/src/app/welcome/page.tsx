@@ -5,11 +5,13 @@ import { OnboardingWizard } from "@/components/onboarding/onboarding-wizard";
 import { ToolSetup } from "@/components/onboarding/tool-setup";
 import { documentUploadPrefix } from "@/lib/blob";
 import { getSellerPrefs } from "@/lib/closing/notify/preferences";
+import { getWorkspaceSettings } from "@/lib/closing/settings";
 import { guessMailClient } from "@/lib/closing/share/compose";
 import { prisma } from "@/lib/db";
 import { getEnv } from "@/lib/env";
 import { connectedClients } from "@/lib/extension-tokens";
 import { parseMailClient, safeReturnTo, SAMPLE_DOCUMENT } from "@/lib/onboarding";
+import { isManagerRole } from "@/lib/roles";
 import { requireWorkspace } from "@/lib/session";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -20,14 +22,15 @@ export async function generateMetadata(): Promise<Metadata> {
 // Opens on its own the first time a seller lands on /dashboard, and stays
 // reachable from the account menu for whoever wants the tour again
 export default async function WelcomePage(props: PageProps<"/welcome">) {
-  const { user, organization } = await requireWorkspace("/welcome");
+  const { user, organization, role } = await requireWorkspace("/welcome");
   const query = await props.searchParams;
-  const [prefs, tokens] = await Promise.all([
+  const [prefs, tokens, settings] = await Promise.all([
     getSellerPrefs(user.id, organization.id),
     prisma.extensionToken.findMany({
       where: { userId: user.id, organizationId: organization.id, revokedAt: null },
       select: { label: true },
     }),
+    getWorkspaceSettings(organization.id),
   ]);
   const firstName = user.name?.trim().split(/\s+/)[0] ?? null;
   const connected = connectedClients(tokens);
@@ -82,6 +85,7 @@ export default async function WelcomePage(props: PageProps<"/welcome">) {
       initialMailClient={parseMailClient(prefs.mailClient) ?? parseMailClient(guessMailClient(user.email))}
       connected={connected}
       chromeStoreUrl={getEnv().EXTENSION_STORE_URL ?? null}
+      askOffer={isManagerRole(role) && !settings.offerDescription?.trim()}
       uploadPrefix={documentUploadPrefix(organization.id)}
       previous={
         previous

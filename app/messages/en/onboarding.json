@@ -42,7 +42,8 @@
     "title": "Welcome. Drop in a document.",
     "lead": "The last one you sent works great: nobody gets it during this test. In a minute, you'll watch it heat up the way your prospect will read it.",
     "coldPages": "Your pages, still cold. They heat up every time your prospect reads them.",
-    "resume": "Pick up “{name}” again"
+    "resume": "Pick up “{name}” again",
+    "nothingToInstall": "Nothing to install to get started. It all happens here, in your browser."
   },
   "test": {
     "title": "Open it like your prospect",
@@ -169,6 +170,12 @@
   "daily": {
     "title": "Now, for real.",
     "lead": "Day to day, you sell like you always have. Clozer does the tracking.",
+    "sendTitle": "You send the link to your prospect",
+    "sendBody": "Copy your document's link and paste it into your email instead of the attachment. Or click “Send by email”: the message is already written.",
+    "alertTitle": "You get notified when they read",
+    "alertBody": "By email, and live on your dashboard. That's the right time to call.",
+    "approveTitle": "You approve the follow-ups",
+    "approveBody": "Clozer writes them at the right time. You'll find them in “Follow-ups to approve”.",
     "mailQuestion": "You write your emails in…",
     "optional": "(optional)",
     "mailboxAria": "Your email app",
@@ -180,6 +187,12 @@
     "extensionBody": "The Clozer extension swaps it for a link and tells you when your prospect reads it. Without it, copy-pasting the link works too.",
     "addToChrome": "Add to Chrome",
     "thenConnect": "Then connect it, step by step",
-    "desktopOnly": "It installs from Chrome or Edge on a computer. Open Clozer there when you want to add it."
+    "desktopOnly": "It installs from Chrome or Edge on a computer. Open Clozer there when you want to add it.",
+    "offerSaveFailed": "Couldn't save. You can do it in Settings.",
+    "offerSaved": "Offer saved. You can add to it in Settings.",
+    "offerLabel": "What you sell",
+    "offerPlaceholder": "E.g. scheduling software for architecture firms, $200 to $800 a month.",
+    "offerHint": "Clozer uses it to write your follow-ups. Left empty, it works out your offer from your first document.",
+    "save": "Save"
   }
 }

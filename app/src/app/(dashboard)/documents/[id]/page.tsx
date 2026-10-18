@@ -1,4 +1,4 @@
-import { ArrowLeft, ChevronRight, ExternalLink } from "lucide-react";
+import { ArrowLeft, ExternalLink } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -484,7 +484,7 @@ export default async function DocumentDetailPage({
                       ? t("emptyWeb")
                       : t("emptyPdf")
               }
-              // The header right above carries the one button ("Envoyer mon lien" or "Créer le lien")
+              action={pendingLink ? null : linkAction}
             />
           ) : (
             <DocumentLinks rows={prospectRows} video={isVideo} />
@@ -518,12 +518,24 @@ export default async function DocumentDetailPage({
             </section>
           )}
           <section>
-            <SectionTitle hint={t("previewHint")}>
-              {t("previewTitle")}
+            <SectionTitle hint={t("docTypeHint")}>
+              {t("docTypeTitle")}
             </SectionTitle>
-            <DocumentPreviewSection document={document} ready={ready} />
+            <DocumentTypeSelect
+              documentId={document.id}
+              docType={document.docType}
+              setBySeller={document.docTypeSource === "MANUAL"}
+            />
           </section>
-          {/* The pages: capsules to record and what the AI could not read stay in sight */}
+          <section>
+            <SectionTitle hint={t("assistantHint")}>
+              {t("assistantTitle")}
+            </SectionTitle>
+            <AssistantNotesForm
+              documentId={document.id}
+              initial={document.assistantNotes ?? ""}
+            />
+          </section>
           <section>
             <SectionTitle
               hint={
@@ -579,35 +591,12 @@ export default async function DocumentDetailPage({
               />
             )}
           </section>
-          {/* Filled in by Clozer from the file: there to check or correct, not to read first */}
-          <details className="group border-t border-border pt-4">
-            <summary className="flex cursor-pointer list-none items-center gap-1.5 text-body font-medium outline-none focus-visible:underline [&::-webkit-details-marker]:hidden">
-              <ChevronRight className="size-4 transition-transform group-open:rotate-90" aria-hidden />
-              {t("assistantFold")}
-              <span className="font-normal text-muted-foreground">{t("assistantFoldHint")}</span>
-            </summary>
-            <div className="mt-6 space-y-10">
-              <section>
-                <SectionTitle hint={t("docTypeHint")}>
-                  {t("docTypeTitle")}
-                </SectionTitle>
-                <DocumentTypeSelect
-                  documentId={document.id}
-                  docType={document.docType}
-                  setBySeller={document.docTypeSource === "MANUAL"}
-                />
-              </section>
-              <section>
-                <SectionTitle hint={t("assistantHint")}>
-                  {t("assistantTitle")}
-                </SectionTitle>
-                <AssistantNotesForm
-                  documentId={document.id}
-                  initial={document.assistantNotes ?? ""}
-                />
-              </section>
-            </div>
-          </details>
+          <section>
+            <SectionTitle hint={t("previewHint")}>
+              {t("previewTitle")}
+            </SectionTitle>
+            <DocumentPreviewSection document={document} ready={ready} />
+          </section>
         </TabsContent>
 
         <TabsContent value="reading" className="space-y-10">
