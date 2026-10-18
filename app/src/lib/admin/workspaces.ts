@@ -1,3 +1,4 @@
+import type { PlanSource } from "@/lib/billing/plans";
 import { DAY_MS } from "@/lib/closing/constants";
 import { prisma } from "@/lib/db";
 
@@ -5,6 +6,15 @@ export const WORKSPACE_FILTERS = {
   actif: { label: "Actifs", where: { suspendedAt: null } },
   suspendu: { label: "Suspendus", where: { suspendedAt: { not: null } } },
 } as const;
+
+export const PLAN_SOURCE_LABELS: Record<PlanSource, string> = {
+  subscription: "abonné",
+  comped: "accordé",
+  trial: "essai",
+  beta: "bêta",
+  free: "gratuit",
+  unbilled: "facturation inactive",
+};
 
 const last30Days = (now: Date) => ({ createdAt: { gte: new Date(now.getTime() - 30 * DAY_MS) } });
 

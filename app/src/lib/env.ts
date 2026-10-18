@@ -77,6 +77,13 @@ const serverEnvSchema = z.object({
   LEMLIST_API_KEY: z.string().optional(),
   PROSPECTING_DAILY_REVEAL_LIMIT: z.coerce.number().int().min(0).default(50),
   PROSPECTING_MOCK: z.enum(["true", "false"]).optional(),
+
+  // Billing: unset key means billing off and no plan limit (lib/billing/plans.ts)
+  STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  // Beta workspaces keep Team until then. Unset: not announced yet, the grace goes on
+  BETA_GRACE_UNTIL: z.preprocess((value) => value || undefined, z.coerce.date().optional()),
+  BETA_NOTICE_DAYS: z.coerce.number().int().min(1).default(30),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;

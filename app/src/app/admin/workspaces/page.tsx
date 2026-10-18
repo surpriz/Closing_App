@@ -15,7 +15,8 @@ import {
   parseFilter,
   parsePage,
 } from "@/lib/admin/format";
-import { WORKSPACE_FILTERS, aiCostLast30Days } from "@/lib/admin/workspaces";
+import { PLAN_SOURCE_LABELS, WORKSPACE_FILTERS, aiCostLast30Days } from "@/lib/admin/workspaces";
+import { BILLING_SELECT, planFor } from "@/lib/billing/workspace-plan";
 import { prisma } from "@/lib/db";
 import { requirePlatformAdmin } from "@/lib/session";
 
@@ -49,7 +50,7 @@ export default async function AdminWorkspacesPage({ searchParams }: PageProps<"/
       select: {
         id: true,
         name: true,
-        plan: true,
+        ...BILLING_SELECT,
         createdAt: true,
         suspendedAt: true,
         members: { where: { role: { contains: "owner" } }, take: 1, select: { user: { select: { email: true } } } },
@@ -97,7 +98,9 @@ export default async function AdminWorkspacesPage({ searchParams }: PageProps<"/
                 <TableCell className="text-right tabular-nums">{workspace._count.members}</TableCell>
                 <TableCell className="text-right tabular-nums">{workspace._count.links}</TableCell>
                 <TableCell className="text-right tabular-nums">{formatMicroUsd(costs.get(workspace.id) ?? 0)}</TableCell>
-                <TableCell className="text-muted-foreground">{workspace.plan}</TableCell>
+                <TableCell className="text-muted-foreground">
+                  {planFor(workspace).plan} · {PLAN_SOURCE_LABELS[planFor(workspace).source]}
+                </TableCell>
                 <TableCell className="text-muted-foreground">{adminDate.format(workspace.createdAt)}</TableCell>
                 <TableCell className="pr-4">
                   <WorkspaceStatusBadge suspended={workspace.suspendedAt !== null} />

@@ -5,6 +5,7 @@ import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
 
 import { auth } from "@/lib/auth";
+import { trialEndsAtFor } from "@/lib/billing/plans";
 import { inBackground } from "@/lib/closing/background";
 import type { SellerScope } from "@/lib/closing/dashboard/queries";
 import { sendDueOnboardingEmail } from "@/lib/closing/onboarding-emails";
@@ -80,6 +81,7 @@ const resolveWorkspace = cache(async (): Promise<Resolved> => {
       name: user.name?.trim() || user.email.split("@")[0],
       slug: `ws-${randomSlug(10).toLowerCase()}`,
       createdAt: now,
+      trialEndsAt: trialEndsAtFor(now),
       members: {
         create: {
           id: randomUUID(),

@@ -113,8 +113,23 @@ model Organization {
   documents        Document[]
   links            Link[]
   stripeCustomerId String?            @unique
+  // What is paid for or granted: free | solo | team | enterprise. The plan in force is computed (lib/billing/plans.ts)
   plan             String             @default("free")
   extensionTokens  ExtensionToken[]
+
+  // Mirror of the Stripe subscription; "comped" when granted by the platform admin. Null: never subscribed
+  planStatus           String?
+  stripeSubscriptionId String?   @unique
+  billingInterval      String? // month | year
+  seats                Int?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean   @default(false)
+  paymentFailedAt      DateTime?
+  // Reverse trial: Team until then, no card
+  trialEndsAt          DateTime?
+  // Created during the beta: Team until BETA_GRACE_UNTIL
+  betaGrace            Boolean   @default(false)
+  stripeEvents         StripeEvent[]
 
   // Suspended by the platform admin: members locked out, cron and public links stopped
   suspendedAt     DateTime?
@@ -1571,4 +1586,16 @@ model OnboardingEmail {
 
   @@unique([userId, organizationId, kind])
   @@map("onboarding_emails")
+}
+
+// Stripe webhook events already handled: Stripe delivers at least once
+model StripeEvent {
+  id             String        @id // evt_…
+  type           String
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  receivedAt     DateTime      @default(now())
+
+  @@index([organizationId, receivedAt])
+  @@map("stripe_events")
 }

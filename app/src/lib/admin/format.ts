@@ -27,6 +27,7 @@ export const ADMIN_ACTION_LABELS = {
   "user.delete": "Compte supprimé",
   "organization.suspend": "Espace suspendu",
   "organization.reactivate": "Espace réactivé",
+  "organization.billing": "Plan modifié",
   "settings.signup_mode": "Mode d'inscription changé",
   "settings.allow_email": "Email autorisé",
   "settings.disallow_email": "Email retiré des autorisés",

@@ -7,10 +7,12 @@ import { AuditList } from "@/components/admin/audit-list";
 import { AdminSection } from "@/components/admin/section";
 import { UserStatusBadge, WorkspaceStatusBadge } from "@/components/admin/status-badge";
 import { WorkspaceActions } from "@/components/admin/workspace-actions";
+import { WorkspaceBillingForm } from "@/components/admin/workspace-billing";
 import { loadAuditEntries } from "@/lib/admin/audit";
 import { adminDate, adminDateTime, adminRoleLabel, formatMicroUsd } from "@/lib/admin/format";
 import { loadBlockedEmails, statusOf } from "@/lib/admin/users";
-import { aiCostLast30Days } from "@/lib/admin/workspaces";
+import { aiCostLast30Days, PLAN_SOURCE_LABELS } from "@/lib/admin/workspaces";
+import { planFor } from "@/lib/billing/workspace-plan";
 import { prisma } from "@/lib/db";
 import { requirePlatformAdmin } from "@/lib/session";
 
@@ -38,6 +40,7 @@ export default async function AdminWorkspacePage({ params }: PageProps<"/admin/w
   ]);
   const blocked = new Set(blockedEmails);
   const suspended = workspace.suspendedAt !== null;
+  const billing = planFor(workspace);
 
   return (
     <>
@@ -54,7 +57,7 @@ export default async function AdminWorkspacePage({ params }: PageProps<"/admin/w
           <WorkspaceStatusBadge suspended={suspended} />
         </div>
         <p className="text-small text-muted-foreground">
-          Créé le {adminDate.format(workspace.createdAt)} · plan {workspace.plan} · {workspace._count.documents}{" "}
+          Créé le {adminDate.format(workspace.createdAt)} · plan {billing.plan} ({PLAN_SOURCE_LABELS[billing.source]}) · {workspace._count.documents}{" "}
           documents · {workspace._count.links} liens · IA 30 j {formatMicroUsd(costs.get(workspace.id) ?? 0)}
         </p>
         {suspended && workspace.suspendedAt && (
@@ -83,6 +86,47 @@ export default async function AdminWorkspacePage({ params }: PageProps<"/admin/w
             </li>
           ))}
         </ul>
+      </AdminSection>
+
+      <AdminSection title="Facturation">
+        <dl className="grid gap-x-6 gap-y-1 px-5 py-4 text-body sm:grid-cols-2">
+          <div>
+            <dt className="inline text-muted-foreground">En vigueur : </dt>
+            <dd className="inline">
+              {billing.plan} ({PLAN_SOURCE_LABELS[billing.source]}
+              {billing.endsAt && <> jusqu&apos;au {adminDate.format(billing.endsAt)}</>})
+            </dd>
+          </div>
+          <div>
+            <dt className="inline text-muted-foreground">Abonnement : </dt>
+            <dd className="inline">
+              {workspace.planStatus
+                ? `${workspace.plan} · ${workspace.planStatus}${workspace.seats ? ` · ${workspace.seats} sièges` : ""}${workspace.billingInterval ? ` · ${workspace.billingInterval === "year" ? "annuel" : "mensuel"}` : ""}`
+                : "aucun"}
+            </dd>
+          </div>
+          <div>
+            <dt className="inline text-muted-foreground">Essai : </dt>
+            <dd className="inline">{workspace.trialEndsAt ? `jusqu'au ${adminDate.format(workspace.trialEndsAt)}` : "aucun"}</dd>
+          </div>
+          <div>
+            <dt className="inline text-muted-foreground">Bêta : </dt>
+            <dd className="inline">{workspace.betaGrace ? "oui" : "non"}</dd>
+          </div>
+          {workspace.stripeCustomerId && (
+            <div>
+              <a
+                href={`https://dashboard.stripe.com/customers/${workspace.stripeCustomerId}`}
+                target="_blank"
+                rel="noreferrer"
+                className="hover:underline"
+              >
+                Client Stripe ↗
+              </a>
+            </div>
+          )}
+        </dl>
+        <WorkspaceBillingForm id={workspace.id} />
       </AdminSection>
 
       <AdminSection title="Journal">
