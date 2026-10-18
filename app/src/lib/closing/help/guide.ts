@@ -18,7 +18,7 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
   LinkedIn).
 - Navigation principale (onglets en haut, barre en bas sur téléphone) : Aujourd'hui (/dashboard), Documents
   (/documents), Réglages (/settings). Équipe (/team) s'ajoute pour les propriétaires et admins dès que
-  l'espace a un deuxième membre (sinon : Réglages → Équipe → « Inviter un commercial », et /team reste
+  l'espace a un deuxième membre (sinon : Réglages → Réglages avancés → Équipe → « Inviter un commercial », et /team reste
   accessible par son adresse). Prospection (/prospecting) n'existe que pour les espaces où elle est activée.
 - Bouton « ? » en haut à droite : Poser une question (l'assistant d'aide, aussi pour les suggestions et les
   bugs), Comment ça marche (/how-it-works), Questions fréquentes (/faq), Revoir la prise en main
@@ -182,12 +182,14 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
 - Archiver le lien : le prospect ne peut plus ouvrir le document, les relances prévues sont annulées.
 
 ## Réglages (/settings)
-- L'essentiel est visible d'emblée : Pilote automatique, Être prévenu, Votre agenda. Le bouton « Réglages
-  avancés » déplie le reste : Votre offre, Vos liens, Assistant prospect, Vos messages, Chrome et Outlook,
-  Équipe, Données. Un lien direct vers une section avancée (/settings#offre…) la déplie tout seul.
+- L'essentiel est visible d'emblée : Chrome et Outlook, Être prévenu, Votre agenda. Le bouton « Réglages
+  avancés » déplie le reste : Offre et assistant, Liens et relances, Intégrations, Équipe (propriétaires et
+  admins), Données (tout le monde). Un lien direct vers une section avancée (/settings#offre…) la déplie tout
+  seul.
+- Un membre ne voit que Chrome et Outlook, Être prévenu, Votre agenda et Données.
 
 ## Relances et pilote automatique
-- Réglages → Pilote automatique (/settings#pilote), réglé par les propriétaires et admins pour tout l'espace.
+- Réglages → Réglages avancés → Liens et relances, partie Pilote automatique (/settings#pilote), réglé par les propriétaires et admins pour tout l'espace.
   Deux modes :
   - « Je la relis et je valide » (copilote, par défaut, recommandé pour commencer) : email + relance dans «
     Relances à valider » et sur la fiche, rubrique Relances.
@@ -207,18 +209,18 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
 - Arrêter les relances : pour tout l'espace, « Tout valider moi-même » sur Aujourd'hui ou repasser sur « Je la
   relis et je valide » ; pour un prospect, l'interrupteur « Relances » (onglet Prospects du document) ou «
   Relances préparées par Clozer » dans les réglages du lien, la pause « Mettre en pause jusqu'au », ou un
-  statut autre que En cours. Pour les nouveaux liens : Réglages → Vos liens → « Préparer les relances ».
+  statut autre que En cours. Pour les nouveaux liens : Réglages → Liens et relances → « Préparer les relances ».
 
 ## Assistant prospect
 - Sur le document, il répond aux questions du prospect quand vous n'êtes pas là. Il s'appuie sur le document
-  (résumés, faits, texte des pages, transcription d'une vidéo), sur votre offre (Réglages → Votre offre), sur
-  les « Infos pour l'assistant » du document et sur « Ce que l'assistant doit savoir » (Réglages → Assistant
-  prospect, /settings#assistant, 4 000 caractères). Jamais sur un prix ou une condition inventés.
+  (résumés, faits, texte des pages, transcription d'une vidéo), sur votre offre (Réglages → Offre et assistant), sur
+  les « Infos pour l'assistant » du document et sur « Ce que l'assistant doit savoir » (Réglages → Offre et
+  assistant, /settings#assistant, 4 000 caractères). Jamais sur un prix ou une condition inventés.
 - Ce qu'il ne sait pas, il vous le transmet aussitôt : alerte « Question du prospect », question marquée sur
   la fiche et reprise dans le compte rendu du matin.
 - Tout ce que vous écrivez pour l'assistant peut être obtenu par le prospect en posant la question : rien de
   confidentiel.
-- Activation : « Activer l'assistant sur les nouveaux liens » dans Réglages, puis lien par lien (« Poser ses
+- Activation : « Activer l'assistant sur les nouveaux liens » dans Réglages → Offre et assistant, puis lien par lien (« Poser ses
   questions à l'assistant »). Sans IA configurée, l'assistant reste masqué.
 - Les conversations apparaissent sur la fiche, rubrique « Questions du prospect ». Vos propres tests sur votre
   lien ne sont pas comptés.
@@ -231,7 +233,7 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
 - Capsules par page : anciennes explications page par page, toujours jouées sur leur page.
 - Commentaires vocaux : le prospect enregistre un vocal sur une page (60 s max) ; vous recevez l'audio et sa
   transcription (rubrique « Commentaires vocaux » + alerte). À activer avec « Laisser le prospect enregistrer
-  un vocal sur une page » (Réglages → Vos liens) ou lien par lien.
+  un vocal sur une page » (Réglages → Liens et relances) ou lien par lien.
 
 ## Extension Chrome et add-in Outlook
 - Réglages → Chrome et Outlook (/settings#extension). Principe : vous joignez un PDF dans Gmail ou Outlook,
@@ -245,7 +247,7 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
   Dans un nouvel email, cliquez « Clozer » dans le ruban : un code s'affiche ; saisissez-le sur la page «
   Connecter Outlook » (Code affiché dans Outlook). L'informatique peut le déployer pour toute l'équipe via le
   centre d'administration Microsoft 365.
-- Connexions listées dans Réglages → Réglages avancés → Chrome et Outlook (une carte Chrome, une carte Outlook), avec « Révoquer » (confirmation demandée).
+- Connexions listées dans Réglages → Chrome et Outlook (une carte Chrome, une carte Outlook), avec « Révoquer » (confirmation demandée).
 - Pas encore couvert : pièces jointes depuis Drive ou OneDrive, pièces jointes transférées. Utilisez le bouton
   « C » ou déposez le PDF dans Clozer.
 - Autre messagerie : déposez le PDF dans Clozer, puis copiez le lien ou « Envoyer par email ».
@@ -259,27 +261,32 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
     lecture à plusieurs. Jamais le soir ni le week-end, 4 par heure au plus.
   - « Un compte rendu chaque matin à » 6 h à 10 h : qui recontacter aujourd'hui et pourquoi, puis réponses et
     lectures de la veille. Du lundi au vendredi, rien s'il n'y a rien à dire.
-- Pour toute l'équipe (propriétaires et admins) : « Pour toute l'équipe, prévenir aussi sur » Slack et/ou
-  Outil externe ; « Mettre en copie des emails d'alerte » ; « Brancher Slack ou un outil externe » : adresse
-  du webhook Slack, et Webhook (CRM, Zapier, Make…) signé HMAC SHA-256 (en-tête X-Closing-Signature).
+- Pour toute l'équipe : voir Intégrations ci-dessous.
 - Votre agenda (/settings#agenda, personnel) : lien de prise de rendez-vous. Calendly et Cal.com s'affichent
   dans la page que lit votre prospect (nom et email pré-remplis) ; les autres (HubSpot, Google Agenda…) s'ouvrent dans un
   onglet. Vide : pas de bouton « Prendre rendez-vous ».
 
-## Autres réglages de l'espace
-- Votre offre (/settings#offre) : Ce que vous vendez, Vos clients, Pourquoi ils vous choisissent, Les
-  objections que vous entendez souvent, durée habituelle d'une vente en jours. Facultatif : Clozer la
-  pré-remplit à la lecture du premier document.
-- Vos liens (/settings#liens) : ce que chaque nouveau lien propose d'office. « Demander son email au lecteur
+## Autres réglages de l'espace (Réglages avancés, propriétaires et admins)
+- Offre et assistant (/settings#offre) : votre offre (Ce que vous vendez, Vos clients, Pourquoi ils vous
+  choisissent, Les objections que vous entendez souvent, durée habituelle d'une vente en jours ; facultatif,
+  Clozer la pré-remplit à la lecture du premier document) et l'Assistant prospect (/settings#assistant).
+- Liens et relances (/settings#liens) : vos liens, le Pilote automatique (/settings#pilote) et vos messages
+  (/settings#messages).
+- Vos liens : ce que chaque nouveau lien propose d'office. « Demander son email au lecteur
   avant d'ouvrir », expiration d'un devis ou d'une proposition (7, 15, 30 jours ou jamais ; le décompte ne va
   que sur les devis et propositions), vocaux, « Préparer les relances ». Modifiable ensuite lien par lien.
-- Vos messages (/settings#messages) : Signé par, Ton (ex. « direct, vouvoiement, sans jargon »), Signature.
+- Vos messages : Signé par, Ton (ex. « direct, vouvoiement, sans jargon »), Signature.
+- Intégrations (/settings#integrations, « Intégrations de l'équipe ») : « Pour toute l'équipe, prévenir aussi
+  sur » Slack et/ou Outil externe ; « Mettre en copie des emails d'alerte » ; « Brancher Slack ou un outil
+  externe » : adresse du webhook Slack, et Webhook (CRM, Zapier, Make…) signé HMAC SHA-256 (en-tête
+  X-Closing-Signature) ; Smart Link (reader.opened dès qu'un prospect venu d'un cold email se met à lire).
 - Après une modification : « Enregistrer les réglages ».
 
 ## Équipe et rôles
 - Rôles : Propriétaire, Admin, Membre.
 - Membre : voit ses propres prospects sur Aujourd'hui, consulte ceux des collègues sans les modifier, règle ses
-  notifications et son agenda. Réglages de l'espace grisés (« Réglé par un administrateur de l'espace. »).
+  notifications et son agenda. Ne voit pas les réglages de l'espace : seulement Chrome et Outlook, Être
+  prévenu, Votre agenda et Données.
 - Admin : voit toute l'équipe sur la page Équipe, règle l'espace, modifie tous les prospects, supprime les
   documents, invite et retire des membres.
 - Propriétaire : comme un admin, plus les liens sans commercial attitré, la possibilité de nommer un autre
@@ -288,7 +295,7 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
   commercial » (cliquez pour filtrer) ; colonnes Ça avance (à suivre de près), Ça glisse (en train de
   refroidir), À classer (à relancer une dernière fois ou à classer). Ces mots décrivent la vie de la vente ; la
   température (Chaud, Tiède, Froid) reste celle du dashboard.
-- Inviter : « Inviter un commercial » ou Réglages → Équipe (/settings#equipe), email + rôle (Membre ou Admin),
+- Inviter : « Inviter un commercial » ou Réglages → Réglages avancés → Équipe (/settings#equipe), email + rôle (Membre ou Admin),
   « Inviter ». Changer un rôle, « Retirer » un membre, annuler une invitation.
 
 ## Données et confidentialité (/settings#donnees)
@@ -319,7 +326,7 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
 - Un lien par prospect : vous saurez qui lit. Lien partagé seulement pour une diffusion large (plaquette,
   post).
 - Envoyez le lien à la place de la pièce jointe, pas en plus.
-- Remplissez Votre offre et Vos messages : les relances sont plus justes et signées comme vous.
+- Remplissez votre offre (Offre et assistant) et vos messages (Liens et relances) : les relances sont plus justes et signées comme vous.
 - Commencez en « Je la relis et je valide », passez en automatique une fois en confiance avec les brouillons.
 - Notez vos appels, rendez-vous et réponses : Clozer évite de relancer à contretemps et l'analyse reste juste.
 - Renseignez le Contexte commercial (montant, échéance, décideur) : meilleure analyse, pipeline juste.

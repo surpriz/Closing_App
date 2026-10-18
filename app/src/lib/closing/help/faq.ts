@@ -34,7 +34,7 @@ export const FAQ: FaqSection[] = [
       {
         id: "par-ou-commencer",
         q: "Par où commencer ?",
-        a: "Trois étapes, cochées automatiquement sur Aujourd'hui dans « Premiers pas » : déposez un document, envoyez le lien, le prospect l'ouvre.\n\nEnsuite, prenez cinq minutes pour remplir Réglages → Réglages avancés → Votre offre et Vos messages : les relances seront plus justes et signées comme vous.",
+        a: "Trois étapes, cochées automatiquement sur Aujourd'hui dans « Premiers pas » : déposez un document, envoyez le lien, le prospect l'ouvre.\n\nEnsuite, prenez cinq minutes pour remplir Réglages → Réglages avancés → Offre et assistant, puis Liens et relances : les relances seront plus justes et signées comme vous.",
         link: { href: "/documents", label: "Déposer un document" },
       },
       {
@@ -149,7 +149,7 @@ export const FAQ: FaqSection[] = [
       {
         id: "expiration",
         q: "Comment fonctionne l'expiration d'un lien ?",
-        a: "Sur la fiche du prospect, « Réglages du lien » → Expiration : Aucune, 48 h, 7, 15 ou 30 jours, ou une date précise. Pour un devis ou une proposition, le prospect voit un décompte. Après l'échéance, le lien ne s'ouvre plus.\n\nLe réglage par défaut se fait dans Réglages → Réglages avancés → Vos liens (7, 15, 30 jours ou jamais).",
+        a: "Sur la fiche du prospect, « Réglages du lien » → Expiration : Aucune, 48 h, 7, 15 ou 30 jours, ou une date précise. Pour un devis ou une proposition, le prospect voit un décompte. Après l'échéance, le lien ne s'ouvre plus.\n\nLe réglage par défaut se fait dans Réglages → Réglages avancés → Liens et relances (7, 15, 30 jours ou jamais).",
       },
       {
         id: "prolonger",
@@ -274,7 +274,7 @@ export const FAQ: FaqSection[] = [
         id: "relances-seules",
         q: "Les relances partent-elles toutes seules ?",
         a: "Pas par défaut. En mode « Je la relis et je valide » (copilote), chaque relance vous attend : vous recevez un email et elle apparaît dans « Relances à valider » et sur la fiche.\n\nEn mode « Elle part seule quand Clozer est sûr de lui », seules les relances sûres partent seules ; les cas délicats (objection, message du prospect, doute) attendent votre accord.",
-        link: { href: "/settings#pilote", label: "Réglages → Pilote automatique" },
+        link: { href: "/settings#pilote", label: "Réglages → Réglages avancés → Liens et relances" },
       },
       {
         id: "copilote-ou-auto",
@@ -314,13 +314,13 @@ export const FAQ: FaqSection[] = [
       {
         id: "arreter",
         q: "Comment arrêter les relances ?",
-        a: "Pour tout l'espace : « Tout valider moi-même » sur Aujourd'hui, ou repasser en « Je la relis et je valide ».\n\nPour un prospect : l'interrupteur « Relances » (onglet Prospects du document), « Relances préparées par Clozer » dans les réglages du lien, « Mettre en pause jusqu'au », ou un statut autre que En cours.\n\nPour les nouveaux liens : Réglages → Réglages avancés → Vos liens → « Préparer les relances ».",
+        a: "Pour tout l'espace : « Tout valider moi-même » sur Aujourd'hui, ou repasser en « Je la relis et je valide ».\n\nPour un prospect : l'interrupteur « Relances » (onglet Prospects du document), « Relances préparées par Clozer » dans les réglages du lien, « Mettre en pause jusqu'au », ou un statut autre que En cours.\n\nPour les nouveaux liens : Réglages → Réglages avancés → Liens et relances → « Préparer les relances ».",
       },
       {
         id: "ton-signature",
         q: "Comment faire pour que les relances me ressemblent ?",
-        a: "Réglages → Réglages avancés → Vos messages : « Signé par », le ton (par exemple « direct, vouvoiement, sans jargon ») et votre signature. Remplissez aussi Votre offre : Clozer s'en sert pour écrire.",
-        link: { href: "/settings#messages", label: "Réglages → Réglages avancés → Vos messages" },
+        a: "Réglages → Réglages avancés → Liens et relances : « Signé par », le ton (par exemple « direct, vouvoiement, sans jargon ») et votre signature. Remplissez aussi votre offre (Offre et assistant) : Clozer s'en sert pour écrire.",
+        link: { href: "/settings#messages", label: "Réglages → Réglages avancés → Liens et relances" },
       },
       {
         id: "whatsapp",
@@ -336,7 +336,7 @@ export const FAQ: FaqSection[] = [
       {
         id: "assistant-quoi",
         q: "Qu'est-ce que l'assistant prospect ?",
-        a: "Sur votre document, il répond aux questions du prospect quand vous n'êtes pas là. Il s'appuie sur le document, votre offre, les « Infos pour l'assistant » du document et « Ce que l'assistant doit savoir » (Réglages → Réglages avancés → Assistant prospect). Il n'invente jamais un prix ou une condition.",
+        a: "Sur votre document, il répond aux questions du prospect quand vous n'êtes pas là. Il s'appuie sur le document, votre offre, les « Infos pour l'assistant » du document et « Ce que l'assistant doit savoir » (Réglages → Réglages avancés → Offre et assistant). Il n'invente jamais un prix ou une condition.",
       },
       {
         id: "assistant-ne-sait-pas",
@@ -346,13 +346,13 @@ export const FAQ: FaqSection[] = [
       {
         id: "assistant-nourrir",
         q: "Comment le rendre plus utile ?",
-        a: "Ajoutez vos modalités, garanties et questions fréquentes dans Réglages → Réglages avancés → Assistant prospect (pour tous les documents) ou dans « Infos pour l'assistant » sur la page d'un document. Puis lisez les questions posées : elles révèlent les objections.\n\nAttention : tout ce que vous écrivez pour l'assistant peut être obtenu par le prospect. Rien de confidentiel.",
-        link: { href: "/settings#assistant", label: "Réglages → Réglages avancés → Assistant prospect" },
+        a: "Ajoutez vos modalités, garanties et questions fréquentes dans Réglages → Réglages avancés → Offre et assistant (pour tous les documents) ou dans « Infos pour l'assistant » sur la page d'un document. Puis lisez les questions posées : elles révèlent les objections.\n\nAttention : tout ce que vous écrivez pour l'assistant peut être obtenu par le prospect. Rien de confidentiel.",
+        link: { href: "/settings#assistant", label: "Réglages → Réglages avancés → Offre et assistant" },
       },
       {
         id: "assistant-activer",
         q: "Comment l'activer ou le désactiver ?",
-        a: "« Activer l'assistant sur les nouveaux liens » dans Réglages, puis lien par lien avec « Poser ses questions à l'assistant » dans les réglages du lien.",
+        a: "« Activer l'assistant sur les nouveaux liens » dans Réglages → Réglages avancés → Offre et assistant, puis lien par lien avec « Poser ses questions à l'assistant » dans les réglages du lien.",
       },
       {
         id: "assistant-conversations",
@@ -378,7 +378,7 @@ export const FAQ: FaqSection[] = [
       {
         id: "vocaux",
         q: "Le prospect peut-il me laisser un message vocal ?",
-        a: "Oui, sur une page d'un PDF (60 secondes maximum). Vous recevez l'audio et sa transcription, sur la fiche (Commentaires vocaux) et par une alerte. À activer dans Réglages → Réglages avancés → Vos liens, ou lien par lien avec « Laisser un vocal sur une page ».",
+        a: "Oui, sur une page d'un PDF (60 secondes maximum). Vous recevez l'audio et sa transcription, sur la fiche (Commentaires vocaux) et par une alerte. À activer dans Réglages → Réglages avancés → Liens et relances, ou lien par lien avec « Laisser un vocal sur une page ».",
       },
       {
         id: "capsules",
@@ -395,7 +395,7 @@ export const FAQ: FaqSection[] = [
         id: "outil-pourquoi",
         q: "À quoi servent l'extension et le complément Outlook ?",
         a: "Vous joignez un PDF dans Gmail ou Outlook comme d'habitude : Clozer le remplace par un lien suivi, avec le premier destinataire comme prospect. Le bouton « C » dans l'email permet aussi de choisir un document existant.",
-        link: { href: "/settings#extension", label: "Réglages → Réglages avancés → Chrome et Outlook" },
+        link: { href: "/settings#extension", label: "Réglages → Chrome et Outlook" },
       },
       {
         id: "chrome",
@@ -405,7 +405,7 @@ export const FAQ: FaqSection[] = [
       {
         id: "outlook",
         q: "Comment installer le complément Outlook (Windows ou Mac) ?",
-        a: "Téléchargez le fichier manifeste (lien dans Réglages → Réglages avancés → Chrome et Outlook ou dans la prise en main), puis dans Outlook : Compléments → Mes compléments → Ajouter à partir d'un fichier. Dans un nouvel email, cliquez « Clozer » dans le ruban : un code s'affiche ; saisissez-le sur la page « Connecter Outlook ».\n\nVotre service informatique peut aussi le déployer pour toute l'équipe depuis le centre d'administration Microsoft 365.",
+        a: "Téléchargez le fichier manifeste (lien dans Réglages → Chrome et Outlook ou dans la prise en main), puis dans Outlook : Compléments → Mes compléments → Ajouter à partir d'un fichier. Dans un nouvel email, cliquez « Clozer » dans le ruban : un code s'affiche ; saisissez-le sur la page « Connecter Outlook ».\n\nVotre service informatique peut aussi le déployer pour toute l'équipe depuis le centre d'administration Microsoft 365.",
       },
       {
         id: "autre-messagerie",
@@ -420,7 +420,7 @@ export const FAQ: FaqSection[] = [
       {
         id: "deconnecter-outil",
         q: "Comment déconnecter l'extension ou Outlook ?",
-        a: "Réglages → Réglages avancés → Chrome et Outlook : une carte Chrome, une carte Outlook, chacune avec ses connexions et un bouton « Révoquer » (une confirmation est demandée).",
+        a: "Réglages → Chrome et Outlook : une carte Chrome, une carte Outlook, chacune avec ses connexions et un bouton « Révoquer » (une confirmation est demandée).",
       },
     ],
   },
@@ -452,7 +452,8 @@ export const FAQ: FaqSection[] = [
       {
         id: "slack",
         q: "Comment être prévenu sur Slack ou dans mon CRM ?",
-        a: "Réglages → Être prévenu, partie équipe (propriétaires et admins) : « Brancher Slack ou un outil externe » avec l'adresse du webhook Slack, ou un webhook (CRM, Zapier, Make…) signé HMAC SHA-256, en-tête X-Closing-Signature. Puis choisissez de prévenir toute l'équipe sur Slack et/ou l'outil externe.",
+        a: "Réglages → Réglages avancés → Intégrations (propriétaires et admins) : « Brancher Slack ou un outil externe » avec l'adresse du webhook Slack, ou un webhook (CRM, Zapier, Make…) signé HMAC SHA-256, en-tête X-Closing-Signature. Puis choisissez de prévenir toute l'équipe sur Slack et/ou l'outil externe.",
+        link: { href: "/settings#integrations", label: "Réglages → Réglages avancés → Intégrations" },
       },
       {
         id: "agenda",
@@ -490,7 +491,7 @@ export const FAQ: FaqSection[] = [
       {
         id: "reglages-grises",
         q: "Pourquoi certains réglages sont grisés ?",
-        a: "Les réglages de l'espace sont réservés aux propriétaires et admins (« Réglé par un administrateur de l'espace »). Un membre règle seulement ses notifications et son agenda.",
+        a: "Les réglages de l'espace sont réservés aux propriétaires et admins. Un membre ne les voit pas : il a seulement Chrome et Outlook, Être prévenu, Votre agenda et Données.",
       },
     ],
   },
@@ -539,13 +540,13 @@ export const FAQ: FaqSection[] = [
         id: "votre-offre",
         q: "À quoi sert « Votre offre » ?",
         a: "Ce que vous vendez, vos clients, pourquoi ils vous choisissent, les objections fréquentes et la durée habituelle d'une vente. Clozer s'en sert pour analyser et rédiger. C'est facultatif : Clozer la pré-remplit à la lecture du premier document. Pensez à « Enregistrer les réglages ».",
-        link: { href: "/settings#offre", label: "Réglages → Réglages avancés → Votre offre" },
+        link: { href: "/settings#offre", label: "Réglages → Réglages avancés → Offre et assistant" },
       },
       {
         id: "vos-liens",
         q: "Comment changer les réglages par défaut des nouveaux liens ?",
-        a: "Réglages → Réglages avancés → Vos liens : expiration des devis et propositions, vocaux, préparer les relances. Chaque lien reste modifiable ensuite.",
-        link: { href: "/settings#liens", label: "Réglages → Réglages avancés → Vos liens" },
+        a: "Réglages → Réglages avancés → Liens et relances : expiration des devis et propositions, vocaux, préparer les relances. Chaque lien reste modifiable ensuite.",
+        link: { href: "/settings#liens", label: "Réglages → Réglages avancés → Liens et relances" },
       },
       {
         id: "theme",

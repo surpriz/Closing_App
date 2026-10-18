@@ -18,7 +18,7 @@ export const FAQ_EN: FaqSection[] = [
       {
         id: "par-ou-commencer",
         q: "Where do I start?",
-        a: "Three steps, checked off automatically on Today under “Getting started”: upload a document, send the link, the prospect opens it.\n\nThen take five minutes to fill in Settings → Advanced settings → Your offer and Your messages: follow-ups will be more accurate and signed like you.",
+        a: "Three steps, checked off automatically on Today under “Getting started”: upload a document, send the link, the prospect opens it.\n\nThen take five minutes to fill in Settings → Advanced settings → Offer and assistant, then Links and follow-ups: follow-ups will be more accurate and signed like you.",
         link: { href: "/documents", label: "Upload a document" },
       },
       {
@@ -133,7 +133,7 @@ export const FAQ_EN: FaqSection[] = [
       {
         id: "expiration",
         q: "How does link expiration work?",
-        a: "On the prospect's page, “Link settings” → Expiration: None, 48 h, 7, 15 or 30 days, or a specific date. For a quote or a proposal, the prospect sees a countdown. After the deadline, the link no longer opens.\n\nThe default is set in Settings → Advanced settings → Your links (7, 15, 30 days or never).",
+        a: "On the prospect's page, “Link settings” → Expiration: None, 48 h, 7, 15 or 30 days, or a specific date. For a quote or a proposal, the prospect sees a countdown. After the deadline, the link no longer opens.\n\nThe default is set in Settings → Advanced settings → Links and follow-ups (7, 15, 30 days or never).",
       },
       {
         id: "prolonger",
@@ -258,7 +258,7 @@ export const FAQ_EN: FaqSection[] = [
         id: "relances-seules",
         q: "Do follow-ups go out on their own?",
         a: "Not by default. In “I review and approve” mode (Copilot), every follow-up waits for you: you get an email and it shows up in “Follow-ups to review” and on the prospect's page.\n\nIn “It goes out on its own when Clozer is confident” mode, only confident follow-ups go out on their own; tricky cases (objection, message from the prospect, doubt) wait for your approval.",
-        link: { href: "/settings#pilote", label: "Settings → Autopilot" },
+        link: { href: "/settings#pilote", label: "Settings → Advanced settings → Links and follow-ups" },
       },
       {
         id: "copilote-ou-auto",
@@ -298,13 +298,13 @@ export const FAQ_EN: FaqSection[] = [
       {
         id: "arreter",
         q: "How do I stop follow-ups?",
-        a: "For the whole workspace: “Review everything myself” on Today, or switch back to “I review and approve”.\n\nFor one prospect: the “Follow-ups” toggle (document's Prospects tab), “Follow-ups prepared by Clozer” in the link settings, “Pause until”, or a status other than Open.\n\nFor new links: Settings → Advanced settings → Your links → “Prepare follow-ups”.",
+        a: "For the whole workspace: “Review everything myself” on Today, or switch back to “I review and approve”.\n\nFor one prospect: the “Follow-ups” toggle (document's Prospects tab), “Follow-ups prepared by Clozer” in the link settings, “Pause until”, or a status other than Open.\n\nFor new links: Settings → Advanced settings → Links and follow-ups → “Prepare follow-ups”.",
       },
       {
         id: "ton-signature",
         q: "How do I make follow-ups sound like me?",
-        a: "Settings → Advanced settings → Your messages: “Signed by”, the tone (for example “direct, friendly, no jargon”) and your signature. Fill in Your offer too: Clozer uses it to write.",
-        link: { href: "/settings#messages", label: "Settings → Advanced settings → Your messages" },
+        a: "Settings → Advanced settings → Links and follow-ups: “Signed by”, the tone (for example “direct, friendly, no jargon”) and your signature. Fill in your offer too (Offer and assistant): Clozer uses it to write.",
+        link: { href: "/settings#messages", label: "Settings → Advanced settings → Links and follow-ups" },
       },
       {
         id: "whatsapp",
@@ -320,7 +320,7 @@ export const FAQ_EN: FaqSection[] = [
       {
         id: "assistant-quoi",
         q: "What is the prospect assistant?",
-        a: "On your document, it answers the prospect's questions when you're not around. It relies on the document, your offer, the document's “Info for the assistant” and “What the assistant should know” (Settings → Advanced settings → Prospect assistant). It never makes up a price or a term.",
+        a: "On your document, it answers the prospect's questions when you're not around. It relies on the document, your offer, the document's “Info for the assistant” and “What the assistant should know” (Settings → Advanced settings → Offer and assistant). It never makes up a price or a term.",
       },
       {
         id: "assistant-ne-sait-pas",
@@ -330,13 +330,13 @@ export const FAQ_EN: FaqSection[] = [
       {
         id: "assistant-nourrir",
         q: "How do I make it more useful?",
-        a: "Add your terms, guarantees and common questions in Settings → Advanced settings → Prospect assistant (for all documents) or in “Info for the assistant” on a document's page. Then read the questions asked: they reveal the objections.\n\nHeads up: anything you write for the assistant can be pulled out by the prospect. Nothing confidential.",
-        link: { href: "/settings#assistant", label: "Settings → Advanced settings → Prospect assistant" },
+        a: "Add your terms, guarantees and common questions in Settings → Advanced settings → Offer and assistant (for all documents) or in “Info for the assistant” on a document's page. Then read the questions asked: they reveal the objections.\n\nHeads up: anything you write for the assistant can be pulled out by the prospect. Nothing confidential.",
+        link: { href: "/settings#assistant", label: "Settings → Advanced settings → Offer and assistant" },
       },
       {
         id: "assistant-activer",
         q: "How do I turn it on or off?",
-        a: "“Turn on the assistant for new links” in Settings, then link by link with “Ask the assistant” in the link settings.",
+        a: "“Turn on the assistant for new links” in Settings → Advanced settings → Offer and assistant, then link by link with “Ask the assistant” in the link settings.",
       },
       {
         id: "assistant-conversations",
@@ -362,7 +362,7 @@ export const FAQ_EN: FaqSection[] = [
       {
         id: "vocaux",
         q: "Can the prospect leave me a voice message?",
-        a: "Yes, on a page of a PDF (60 seconds max). You get the audio and its transcript, on the prospect's page (Voice comments) and through an alert. Turn it on in Settings → Advanced settings → Your links, or link by link with “Leave a voice note on a page”.",
+        a: "Yes, on a page of a PDF (60 seconds max). You get the audio and its transcript, on the prospect's page (Voice comments) and through an alert. Turn it on in Settings → Advanced settings → Links and follow-ups, or link by link with “Leave a voice note on a page”.",
       },
       {
         id: "capsules",
@@ -379,7 +379,7 @@ export const FAQ_EN: FaqSection[] = [
         id: "outil-pourquoi",
         q: "What are the extension and the Outlook add-in for?",
         a: "You attach a PDF in Gmail or Outlook as usual: Clozer swaps it for a tracked link, with the first recipient as the prospect. The “C” button in the email also lets you pick an existing document.",
-        link: { href: "/settings#extension", label: "Settings → Advanced settings → Chrome and Outlook" },
+        link: { href: "/settings#extension", label: "Settings → Chrome and Outlook" },
       },
       {
         id: "chrome",
@@ -389,7 +389,7 @@ export const FAQ_EN: FaqSection[] = [
       {
         id: "outlook",
         q: "How do I install the Outlook add-in (Windows or Mac)?",
-        a: "Download the manifest file (link in Settings → Advanced settings → Chrome and Outlook or in the onboarding), then in Outlook: Add-ins → My add-ins → Add from file. In a new email, click “Clozer” in the ribbon: a code shows up; enter it on the “Connect Outlook” page.\n\nYour IT team can also deploy it for the whole team from the Microsoft 365 admin center.",
+        a: "Download the manifest file (link in Settings → Chrome and Outlook or in the onboarding), then in Outlook: Add-ins → My add-ins → Add from file. In a new email, click “Clozer” in the ribbon: a code shows up; enter it on the “Connect Outlook” page.\n\nYour IT team can also deploy it for the whole team from the Microsoft 365 admin center.",
       },
       {
         id: "autre-messagerie",
@@ -404,7 +404,7 @@ export const FAQ_EN: FaqSection[] = [
       {
         id: "deconnecter-outil",
         q: "How do I disconnect the extension or Outlook?",
-        a: "Settings → Advanced settings → Chrome and Outlook: one Chrome card, one Outlook card, each with its connections and a “Revoke” button (you're asked to confirm).",
+        a: "Settings → Chrome and Outlook: one Chrome card, one Outlook card, each with its connections and a “Revoke” button (you're asked to confirm).",
       },
     ],
   },
@@ -436,7 +436,8 @@ export const FAQ_EN: FaqSection[] = [
       {
         id: "slack",
         q: "How do I get notified in Slack or my CRM?",
-        a: "Settings → Notifications, team section (owners and admins): “Connect Slack or an external tool” with the Slack webhook URL, or a webhook (CRM, Zapier, Make…) signed with HMAC SHA-256, header X-Closing-Signature. Then choose to notify the whole team in Slack and/or the external tool.",
+        a: "Settings → Advanced settings → Integrations (owners and admins): “Connect Slack or an external tool” with the Slack webhook URL, or a webhook (CRM, Zapier, Make…) signed with HMAC SHA-256, header X-Closing-Signature. Then choose to notify the whole team in Slack and/or the external tool.",
+        link: { href: "/settings#integrations", label: "Settings → Advanced settings → Integrations" },
       },
       {
         id: "agenda",
@@ -474,7 +475,7 @@ export const FAQ_EN: FaqSection[] = [
       {
         id: "reglages-grises",
         q: "Why are some settings grayed out?",
-        a: "Workspace settings are reserved for owners and admins (“Set by a workspace admin”). A member only sets their own notifications and calendar.",
+        a: "Workspace settings are reserved for owners and admins. Members don't see them: they only get Chrome and Outlook, Notifications, Your calendar and Data.",
       },
     ],
   },
@@ -523,13 +524,13 @@ export const FAQ_EN: FaqSection[] = [
         id: "votre-offre",
         q: "What is “Your offer” for?",
         a: "What you sell, your customers, why they pick you, common objections and the usual length of a sale. Clozer uses it to analyze and write. It's optional: Clozer prefills it when it reads your first document. Remember to click “Save settings”.",
-        link: { href: "/settings#offre", label: "Settings → Advanced settings → Your offer" },
+        link: { href: "/settings#offre", label: "Settings → Advanced settings → Offer and assistant" },
       },
       {
         id: "vos-liens",
         q: "How do I change the default settings for new links?",
-        a: "Settings → Advanced settings → Your links: expiration for quotes and proposals, voice notes, prepare follow-ups. Each link can still be changed afterward.",
-        link: { href: "/settings#liens", label: "Settings → Advanced settings → Your links" },
+        a: "Settings → Advanced settings → Links and follow-ups: expiration for quotes and proposals, voice notes, prepare follow-ups. Each link can still be changed afterward.",
+        link: { href: "/settings#liens", label: "Settings → Advanced settings → Links and follow-ups" },
       },
       {
         id: "theme",

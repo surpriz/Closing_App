@@ -10,8 +10,8 @@ import type { UiLocale } from "@/i18n/locale";
 
 // The UI labels the user sees, in their language
 const UI = {
-  fr: { path: "Réglages → Pilote automatique", faq: "Questions fréquentes", team: "Équipe", ask: "Je transmets à l'équipe ?" },
-  en: { path: "Settings → Autopilot", faq: "Frequently asked questions", team: "Team", ask: "Shall I pass this on to the team?" },
+  fr: { path: "Réglages → Réglages avancés → Liens et relances", faq: "Questions fréquentes", team: "Équipe", ask: "Je transmets à l'équipe ?" },
+  en: { path: "Settings → Advanced settings → Links and follow-ups", faq: "Frequently asked questions", team: "Team", ask: "Shall I pass this on to the team?" },
 } satisfies Record<UiLocale, Record<string, string>>;
 
 const LANGUAGE_RULE: Record<UiLocale, string> = {
