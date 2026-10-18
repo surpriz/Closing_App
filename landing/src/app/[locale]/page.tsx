@@ -25,7 +25,7 @@ import todayDesktopFr from "@/assets/today/desktop-fr.png";
 import todayMobileEn from "@/assets/today/mobile-en.png";
 import todayMobileFr from "@/assets/today/mobile-fr.png";
 import { Icon } from "@/components/icons";
-import { ANCHORS } from "@/components/anchors";
+import { ANCHORS, LEGACY_ANCHORS } from "@/components/anchors";
 import { CONTACT_EMAIL, EXTENSION_STORE_URL, appUrl } from "@/components/links";
 import { SignupForm } from "@/components/signup-form";
 import { SiteFooter } from "@/components/site-footer";
@@ -88,6 +88,9 @@ export default async function Home({ params }: Props) {
   ]);
 
   const anchors = ANCHORS[locale];
+  const legacy = LEGACY_ANCHORS[locale];
+  const alias = (section: keyof typeof anchors) =>
+    legacy[section] ? <span id={legacy[section]} aria-hidden className="block scroll-mt-14" /> : null;
   const pages = READING_PAGES.map((page) => ({
     label: tr(`pages.${page.key}.label`),
     heading: tr(`pages.${page.key}.heading`),
@@ -172,6 +175,7 @@ export default async function Home({ params }: Props) {
 
         {/* How it works: the protocol, three rows. */}
         <section id={anchors.how} className="scroll-mt-14 border-b border-ink">
+          {alias("how")}
           <div className={`${WRAP} py-20 md:py-28`}>
             <h2 className="condensed max-w-[22ch] text-title font-bold">{t("steps.title")}</h2>
             <ol className="mt-12 border-t border-ink md:mt-14">
@@ -181,7 +185,7 @@ export default async function Home({ params }: Props) {
                   className="grid gap-6 border-b border-rule py-10 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:items-center md:gap-12 lg:gap-20"
                 >
                   <div>
-                    <span className="font-mono text-small text-ink-soft">{index + 1}/3</span>
+                    <span className="font-mono text-small text-ink-soft">{index + 1}/{STEPS.length}</span>
                     <h3 className="condensed mt-3 text-[1.75rem] leading-tight font-bold tracking-[-0.02em]">{t(`steps.${step}.title`)}</h3>
                     <p className="mt-3 max-w-[48ch] text-body text-ink-soft">{t(`steps.${step}.body`)}</p>
                   </div>
@@ -211,6 +215,7 @@ export default async function Home({ params }: Props) {
         </section>
 
         <section id={anchors.features} className="scroll-mt-14 border-b border-ink bg-sheet">
+          {alias("features")}
           <div className={`${WRAP} grid gap-12 py-20 md:py-28 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-20`}>
             <div className="lg:sticky lg:top-24 lg:self-start">
               <h2 className="condensed max-w-[16ch] text-title font-bold">{t("reading.title")}</h2>
@@ -243,6 +248,7 @@ export default async function Home({ params }: Props) {
 
         {/* Follow-ups: the Today board as proof, then the four rules it follows. */}
         <section id={anchors.followUps} className="scroll-mt-14 border-b border-ink">
+          {alias("followUps")}
           <div className={`${WRAP} py-20 md:py-28`}>
             <h2 className="condensed max-w-[24ch] text-title font-bold">
               {t.rich("followUps.title", { nowrap: (chunks) => <span className="whitespace-nowrap">{chunks}</span> })}
@@ -276,6 +282,7 @@ export default async function Home({ params }: Props) {
 
         {/* Prospect side: two real phone screens, then what the prospect can do without writing to the seller. */}
         <section id={anchors.prospect} className="scroll-mt-14 border-b border-ink bg-sheet">
+          {alias("prospect")}
           <div className={`${WRAP} grid gap-12 py-20 md:py-28 lg:grid-cols-[minmax(0,6fr)_minmax(0,6fr)] lg:gap-20`}>
             <div className="lg:order-2">
               <h2 className="condensed max-w-[18ch] text-title font-bold">{t("prospect.title")}</h2>
@@ -307,6 +314,7 @@ export default async function Home({ params }: Props) {
 
         {/* Channels: where the link goes out, one row each; the only other button on the page leads to the store. */}
         <section id={anchors.channels} className="scroll-mt-14 border-b border-ink">
+          {alias("channels")}
           <div className={`${WRAP} grid gap-12 py-20 md:py-28 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-20`}>
             <div>
               <h2 className="condensed max-w-[16ch] text-title font-bold">{t("channels.title")}</h2>
@@ -369,6 +377,7 @@ export default async function Home({ params }: Props) {
 
         {/* Segments: the team offer first, with its real screen; no prices exist yet, so none are shown. */}
         <section id={anchors.teams} className="scroll-mt-14 border-b border-ink">
+          {alias("teams")}
           <div className={`${WRAP} py-20 md:py-28`}>
             <h2 className="condensed max-w-[20ch] text-title font-bold">{t("who.title")}</h2>
             <p className="mt-6 max-w-[56ch] text-lead text-ink-soft">{t("who.beta")}</p>
@@ -431,6 +440,7 @@ export default async function Home({ params }: Props) {
 
         {/* FAQ, mirrored as FAQPage structured data. */}
         <section id={anchors.faq} className="scroll-mt-14 border-b border-ink">
+          {alias("faq")}
           <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{
@@ -440,7 +450,7 @@ export default async function Home({ params }: Props) {
                 mainEntity: FAQ.map((item) => ({
                   "@type": "Question",
                   name: t(`faq.${item}.q`),
-                  acceptedAnswer: { "@type": "Answer", text: t.raw(`faq.${item}.a`).replace(/<\/?\w+>/g, "") },
+                  acceptedAnswer: { "@type": "Answer", text: t.markup(`faq.${item}.a`, { subprocessors: (chunks) => chunks, privacy: (chunks) => chunks }) },
                 })),
               }).replace(/</g, "\\u003c"),
             }}

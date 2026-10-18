@@ -23,3 +23,9 @@ export const ANCHORS: Record<Locale, Record<Section, string>> = {
     faq: "faq",
   },
 };
+
+/** Ids the page used before they were translated, kept so links already shared still land on their section. */
+export const LEGACY_ANCHORS: Record<Locale, Partial<Record<Section, string>>> = {
+  fr: { teams: "pour-qui", faq: "faq" },
+  en: { how: "comment", followUps: "relances", channels: "envoi", teams: "pour-qui" },
+};

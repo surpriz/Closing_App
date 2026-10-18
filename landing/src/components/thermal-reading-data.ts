@@ -6,6 +6,6 @@ export const READING_PAGES = [
   { key: "pricing", time: "3:38", heat: 1 },
 ] as const;
 
-export const HOTTEST_PAGE = 3;
+export const HOTTEST_PAGE = READING_PAGES.reduce((hottest, page, i) => (page.heat > READING_PAGES[hottest].heat ? i : hottest), 0);
 
 export type ReadingPage = { label: string; heading: string; time: string; heat: number };
