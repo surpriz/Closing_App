@@ -14,6 +14,25 @@ type Pending = { ms: number; depth: number };
 // One start request per slug per page load, even with StrictMode double effects
 const startRequests = new Map<string, Promise<string | null>>();
 
+const FOLLOWUP_KEY = (slug: string) => `clozer-r-${slug}`;
+
+/**
+ * The follow-up this visit came from (?r= on the link it carries). Kept for the tab, because the
+ * email gate reloads the page without it.
+ */
+export function followupOfVisit(slug: string) {
+  try {
+    const fromUrl = new URLSearchParams(window.location.search).get("r");
+    if (fromUrl && /^[a-z0-9]{8,40}$/.test(fromUrl)) {
+      sessionStorage.setItem(FOLLOWUP_KEY(slug), fromUrl);
+      return fromUrl;
+    }
+    return sessionStorage.getItem(FOLLOWUP_KEY(slug));
+  } catch {
+    return null;
+  }
+}
+
 function startView(slug: string) {
   let request = startRequests.get(slug);
   if (!request) {
@@ -24,6 +43,7 @@ function startView(slug: string) {
         slug,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         locale: navigator.language,
+        followupId: followupOfVisit(slug),
       }),
     })
       .then((res) => (res.ok ? res.json() : null))

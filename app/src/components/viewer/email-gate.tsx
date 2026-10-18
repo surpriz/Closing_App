@@ -7,6 +7,7 @@ import type { UnlockState } from "@/app/v/[slug]/actions";
 import { Button } from "@/components/ui/button";
 import type { ViewerLabels } from "@/lib/closing/i18n/viewer";
 
+import { followupOfVisit } from "./use-page-tracking";
 import { GATE_BOX, GATE_FIELD, GATE_LABEL, GATE_SUBMIT, GateFrame, GateTitle } from "./gate-frame";
 import { PrivacyNotice } from "./privacy-notice";
 
@@ -29,7 +30,8 @@ export function EmailGate({ slug, action, known, documentName, senderName, label
 
   // Shown in a real browser: the link was clicked, whether or not the reader goes on
   useEffect(() => {
-    navigator.sendBeacon?.("/api/track/gate", new Blob([JSON.stringify({ slug })], { type: "application/json" }));
+    const body = JSON.stringify({ slug, followupId: followupOfVisit(slug) });
+    navigator.sendBeacon?.("/api/track/gate", new Blob([body], { type: "application/json" }));
   }, [slug]);
 
   return (

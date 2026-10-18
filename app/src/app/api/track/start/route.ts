@@ -20,6 +20,7 @@ import {
   VISITOR_COOKIE,
   VISITOR_COOKIE_MAX_AGE,
 } from "@/lib/closing/tracking/visitor";
+import { followupOfLink, markFollowupClicked } from "@/lib/closing/followups/attribution";
 import { evaluateReaders } from "@/lib/closing/triggers/committee";
 import { evaluateHotLead } from "@/lib/closing/triggers/hot-lead";
 import { prisma } from "@/lib/db";
@@ -29,6 +30,8 @@ const bodySchema = z.object({
   slug: z.string().min(1).max(64),
   timezone: z.string().max(64).optional(),
   locale: z.string().max(35).optional(),
+  // ?r= on the link of a follow-up: the message that brought the reader back
+  followupId: z.string().max(40).nullish(),
 });
 
 // Opens (or resumes) a reading session and returns its id
@@ -113,6 +116,7 @@ export async function POST(request: NextRequest) {
           userAgent: context.userAgent,
           isBot: excluded,
           fromSeller,
+          followupId: excluded ? null : await followupOfLink(parsed.data.followupId, link.id),
         },
         select: { id: true },
       })
@@ -133,6 +137,7 @@ export async function POST(request: NextRequest) {
 
   if (!excluded) {
     await confirmDraftOnOpen(link.id, now);
+    if (parsed.data.followupId) await markFollowupClicked(parsed.data.followupId, link.id, now);
     inBackground("view-started", async () => {
       await cancelOpenFollowups(link.id, "openedProposal", ["ANTI_GHOSTING"]);
       // A new reader, a decision maker or a committee says more than a plain call moment
