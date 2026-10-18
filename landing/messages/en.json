@@ -127,7 +127,6 @@
         "body": "Clozer writes it and picks the time. You read it, you send it.",
         "alt": "Clozer screen: a follow-up written after a pricing read, suggested for 9 AM the next day, waiting for Approve."
       },
-      "screen": "Real screen, example data",
       "guided": "After you sign up, a guided tour walks you through a first test link."
     },
     "followUps": {
@@ -152,40 +151,6 @@
       "message": "“Hi Marie, to make the decision easier, I can offer to split the payment into three installments. Do you have a few minutes Thursday to talk it over?”",
       "send": "Approve and send",
       "edit": "Edit"
-    },
-    "readings": {
-      "title": "A brief on every prospect, every morning.",
-      "pages": {
-        "title": "Page by page",
-        "body": "Pages read, time spent on each one, return visits to pricing, number of readers. For a video, which parts got watched and where the prospect dropped off. You can tell when the document is making the rounds internally."
-      },
-      "live": {
-        "title": "Live",
-        "body": "A notification in Chrome, or at the top of Gmail and Outlook, the moment a prospect is reading. You get an alert when they come back after a long silence or when several people are reading."
-      },
-      "score": {
-        "title": "A temperature that explains itself",
-        "body": "Cold, warm, hot: a score out of 100 where every point comes with a reason you can read. No black box."
-      },
-      "deal": {
-        "title": "A read on every deal",
-        "body": "Where the prospect stands, what's holding things up, what to do and when. Every claim points back to a measured fact, or it gets thrown out."
-      },
-      "reply": {
-        "title": "The prospect replies right in the document",
-        "body": "Accept the proposal, ask for a change, book a meeting on your calendar, ask the assistant a question or leave a voice note on a page. It all lands at the top of your dashboard."
-      }
-    },
-    "sheet": {
-      "caption": "Example prospect brief: Marie Dupont, hot, 86 out of 100, with the score breakdown.",
-      "proposal": "Atelier Morel · “Website redesign” proposal",
-      "score": "/100 · hot",
-      "reasons": {
-        "pricing": "Read pricing for 3:38",
-        "back": "Back 3 times since yesterday",
-        "forwarded": "Forwarded to a 2nd reader",
-        "method": "Read the whole approach"
-      }
     },
     "trust": {
       "title": "Track the deal, not the person.",
@@ -261,7 +226,31 @@
         "a": "Yes, without leaving the document. They can accept the proposal or ask for a change, book a meeting on your calendar (Calendly, Cal.com…), ask the assistant, which answers from your offer when you're not around, or leave a voice note on a page. You get all of it, with the transcript."
       }
     },
-    "final": "Send your next document as a tracked link."
+    "final": "Send your next document as a tracked link.",
+    "screen": "Real screen, example data",
+    "reading": {
+      "title": "See who reads what, and who else.",
+      "body": "Every page read, time spent, returns to pricing. When the proposal goes around the buyer's team, every new reader shows up.",
+      "pages": {
+        "title": "Page by page",
+        "body": "How far they got, and which page they stopped on."
+      },
+      "readers": {
+        "title": "Who else reads",
+        "body": "Each new reader's name or email, and the pages they read."
+      },
+      "live": {
+        "title": "An alert when they read",
+        "body": "In Chrome, at the top of Gmail and Outlook, or in Slack."
+      },
+      "score": {
+        "title": "A temperature that explains itself",
+        "body": "A score out of 100, every point with its reason."
+      },
+      "ownOpens": "Your own opens and bots don't count.",
+      "readingAlt": "Clozer screen: a proposal read page by page, with Pricing the most read page at 2:50, then a Hot temperature of 92 out of 100 and its breakdown: read in the last 24 h, repeat visits, long pricing read, several readers.",
+      "chainAlt": "Clozer screen: the document chain. Sarah Collins opened it, then a second reader at the same company, james.porter@northwind.example, read it too."
+    }
   },
   "legal": {
     "updatedAt": "Last updated {date}.",

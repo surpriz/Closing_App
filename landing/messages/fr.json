@@ -127,7 +127,6 @@
         "body": "Clozer l'écrit et propose l'heure. Vous relisez, vous envoyez.",
         "alt": "Écran de Clozer : une relance écrite après la lecture des tarifs, conseillée pour le lendemain à 9 h, qui attend le bouton Valider."
       },
-      "screen": "Écran réel, données d'exemple",
       "guided": "Après l'inscription, un tour guidé crée avec vous un premier lien de test."
     },
     "followUps": {
@@ -152,40 +151,6 @@
       "message": "« Bonjour Marie, pour faciliter la décision, je peux vous proposer un paiement en trois fois. Un créneau jeudi pour en parler ? »",
       "send": "Valider l'envoi",
       "edit": "Modifier"
-    },
-    "readings": {
-      "title": "Une fiche par prospect, chaque matin.",
-      "pages": {
-        "title": "Page par page",
-        "body": "Pages lues, temps passé sur chacune, retours sur les tarifs, nombre de lecteurs. Pour une vidéo, les passages regardés et où le prospect a décroché. Vous voyez si le document circule en interne."
-      },
-      "live": {
-        "title": "En direct",
-        "body": "Une notification dans Chrome, ou en haut de Gmail et Outlook, quand un prospect lit. Une alerte part s'il revient après un long silence ou s'il lit à plusieurs."
-      },
-      "score": {
-        "title": "Une température qui s'explique",
-        "body": "Froid, tiède, chaud : un score sur 100 dont chaque point a une raison lisible. Pas de boîte noire."
-      },
-      "deal": {
-        "title": "Une lecture de chaque deal",
-        "body": "Où en est le prospect, ce qui coince, quoi faire et quand. Chaque affirmation renvoie à un fait mesuré, sinon elle est écartée."
-      },
-      "reply": {
-        "title": "Le prospect répond dans le document",
-        "body": "Valider la proposition, demander un ajustement, prendre rendez-vous dans votre agenda, poser une question à l'assistant ou laisser un vocal sur une page. Tout remonte en tête de votre tableau de bord."
-      }
-    },
-    "sheet": {
-      "caption": "Exemple de fiche prospect : Marie Dupont, chaude, 86 sur 100, avec le détail du score.",
-      "proposal": "Atelier Morel · proposition « Refonte du site »",
-      "score": "/100 · chaud",
-      "reasons": {
-        "pricing": "Tarifs lus 3 min 38",
-        "back": "Revenu 3 fois depuis hier",
-        "forwarded": "Transmis à un 2e lecteur",
-        "method": "Méthode lue en entier"
-      }
     },
     "trust": {
       "title": "Suivre sans fliquer.",
@@ -261,7 +226,31 @@
         "a": "Oui, sans quitter le document. Il peut valider la proposition ou demander un ajustement, prendre rendez-vous dans votre agenda (Calendly, Cal.com…), poser ses questions à l'assistant qui répond à partir de votre offre quand vous n'êtes pas là, ou laisser un vocal sur une page. Vous recevez tout, avec la transcription."
       }
     },
-    "final": "Votre prochain document part avec un lien suivi."
+    "final": "Votre prochain document part avec un lien suivi.",
+    "screen": "Écran réel, données d'exemple",
+    "reading": {
+      "title": "Vous savez qui lit, quoi, et qui d'autre.",
+      "body": "Chaque page lue, le temps passé, les retours sur les tarifs. Quand la proposition circule chez le client, chaque nouveau lecteur apparaît.",
+      "pages": {
+        "title": "Page par page",
+        "body": "Jusqu'où il est allé, et sur quelle page il s'est arrêté."
+      },
+      "readers": {
+        "title": "Qui d'autre lit",
+        "body": "Le nom ou l'email de chaque nouveau lecteur, et les pages qu'il a lues."
+      },
+      "live": {
+        "title": "Une alerte quand il lit",
+        "body": "Dans Chrome, en haut de Gmail et d'Outlook, ou dans Slack."
+      },
+      "score": {
+        "title": "Une température qui s'explique",
+        "body": "Un score sur 100, et chaque point a sa raison."
+      },
+      "ownOpens": "Vos propres ouvertures et les robots ne comptent pas.",
+      "readingAlt": "Écran de Clozer : la lecture page par page d'une proposition, la page Tarifs la plus lue avec 2 min 50, puis la température Chaud à 92 sur 100 et le détail des points : lu dans les dernières 24 h, visites répétées, longue lecture des tarifs, plusieurs lecteurs.",
+      "chainAlt": "Écran de Clozer : le circuit du document. Marie Martin l'a ouvert, puis un 2e lecteur chez le même client, julien.bernard@acme.example, l'a lu à son tour."
+    }
   },
   "legal": {
     "updatedAt": "Mise à jour le {date}.",

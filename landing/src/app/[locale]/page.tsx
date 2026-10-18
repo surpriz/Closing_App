@@ -2,6 +2,10 @@ import type { Metadata } from "next";
 import Image, { type StaticImageData } from "next/image";
 import { getTranslations } from "next-intl/server";
 
+import chainEn from "@/assets/reading/chain-en.png";
+import chainFr from "@/assets/reading/chain-fr.png";
+import readingEn from "@/assets/reading/reading-en.png";
+import readingFr from "@/assets/reading/reading-fr.png";
 import followUpEn from "@/assets/steps/followUp-en.png";
 import followUpFr from "@/assets/steps/followUp-fr.png";
 import sendEn from "@/assets/steps/send-en.png";
@@ -13,7 +17,7 @@ import { CONTACT_EMAIL, EXTENSION_STORE_URL, appUrl } from "@/components/links";
 import { SignupForm } from "@/components/signup-form";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { HeatScale, ThermalPlate } from "@/components/thermal-plate";
+import { HeatScale } from "@/components/thermal-plate";
 import { ThermalReading } from "@/components/thermal-reading";
 import { READING_PAGES } from "@/components/thermal-reading-data";
 import { resolveLocale } from "@/i18n/page";
@@ -29,18 +33,16 @@ const STEP_SCREENS: Record<(typeof STEPS)[number], Record<Locale, StaticImageDat
   send: { fr: sendFr, en: sendEn },
   followUp: { fr: followUpFr, en: followUpEn },
 };
+const READING_SCREENS: Record<"reading" | "chain", Record<Locale, StaticImageData>> = {
+  reading: { fr: readingFr, en: readingEn },
+  chain: { fr: chainFr, en: chainEn },
+};
 const SEND_WAYS = [
   { key: "link", available: true, store: false },
   { key: "mail", available: true, store: true },
 ] as const;
 const FOLLOWUP_STEPS = ["read", "stuck", "schedule"] as const;
-const READINGS = ["pages", "live", "score", "deal", "reply"] as const;
-const SCORE_REASONS = [
-  { points: "+34", key: "pricing" },
-  { points: "+22", key: "back" },
-  { points: "+18", key: "forwarded" },
-  { points: "+12", key: "method" },
-] as const;
+const READING_POINTS = ["pages", "readers", "live", "score"] as const;
 const GUARANTEES = ["informed", "discreet", "limit", "unsubscribe"] as const;
 const SEGMENTS = ["solo", "team", "enterprise"] as const;
 const BETA_INCLUDES = ["formats", "extension", "tracking", "deals", "replies"] as const;
@@ -206,7 +208,7 @@ export default async function Home({ params }: Props) {
                       sizes="(min-width: 768px) 37rem, calc(100vw - 2.5rem)"
                       className="w-full border border-rule"
                     />
-                    <figcaption className="mt-2 font-mono text-micro text-ink-soft">{t("steps.screen")}</figcaption>
+                    <figcaption className="mt-2 font-mono text-micro text-ink-soft">{t("screen")}</figcaption>
                   </figure>
                 </li>
               ))}
@@ -220,6 +222,37 @@ export default async function Home({ params }: Props) {
                 {ts("submit")}
                 <Icon name="arrow" className="size-5 transition-transform duration-300 ease-[var(--ease-out-expo)] group-hover:translate-x-1" />
               </a>
+            </div>
+          </div>
+        </section>
+
+        <section id="fonctionnalites" className="scroll-mt-14 border-b border-ink bg-sheet">
+          <div className={`${WRAP} grid gap-12 py-20 md:py-28 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-20`}>
+            <div className="lg:sticky lg:top-24 lg:self-start">
+              <h2 className="condensed max-w-[16ch] text-title font-bold">{t("reading.title")}</h2>
+              <p className="mt-6 max-w-[52ch] text-lead text-ink-soft">{t("reading.body")}</p>
+              <ul className="mt-10 border-t border-ink">
+                {READING_POINTS.map((point) => (
+                  <li key={point} className="border-b border-rule py-5">
+                    <h3 className="text-[1.125rem] leading-snug font-semibold">{t(`reading.${point}.title`)}</h3>
+                    <p className="mt-1 max-w-[52ch] text-body text-ink-soft">{t(`reading.${point}.body`)}</p>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-5 text-small text-ink-soft">{t("reading.ownOpens")}</p>
+            </div>
+            <div className="grid content-start gap-8">
+              {(["reading", "chain"] as const).map((screen) => (
+                <figure key={screen} className="w-full max-w-[39rem] lg:justify-self-end">
+                  <Image
+                    src={READING_SCREENS[screen][locale]}
+                    alt={t(`reading.${screen}Alt`)}
+                    sizes="(min-width: 1024px) 39rem, calc(100vw - 2.5rem)"
+                    className="w-full border border-rule"
+                  />
+                  <figcaption className="mt-2 font-mono text-micro text-ink-soft">{t("screen")}</figcaption>
+                </figure>
+              ))}
             </div>
           </div>
         </section>
@@ -259,23 +292,6 @@ export default async function Home({ params }: Props) {
         </section>
 
         {/* What you see: one prospect sheet as the specimen, the readings beside it. */}
-        <section id="releves" className="scroll-mt-14 border-b border-ink bg-sheet">
-          <div className={`${WRAP} grid gap-14 py-20 md:py-28 lg:grid-cols-[minmax(0,6fr)_minmax(0,7fr)] lg:gap-20`}>
-            <div className="lg:sticky lg:top-24 lg:self-start">
-              <h2 className="condensed max-w-[16ch] text-title font-bold">{t("readings.title")}</h2>
-              <ProspectSheet t={t} />
-            </div>
-            <ul className="border-t border-ink lg:mt-2">
-              {READINGS.map((item) => (
-                <li key={item} className="border-b border-rule py-7">
-                  <h3 className="text-[1.25rem] leading-snug font-semibold tracking-[-0.01em]">{t(`readings.${item}.title`)}</h3>
-                  <p className="mt-2 max-w-[62ch] text-body text-ink-soft">{t(`readings.${item}.body`)}</p>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-
         {/* Respect: the one dark band. */}
         <section className="bg-ink text-sheet">
           <div className={`${WRAP} grid gap-12 py-20 md:py-28 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-20`}>
@@ -373,41 +389,5 @@ export default async function Home({ params }: Props) {
 
       <SiteFooter locale={locale} path="/" />
     </div>
-  );
-}
-
-type HomeT = Awaited<ReturnType<typeof getTranslations<"home">>>;
-
-function ProspectSheet({ t }: { t: HomeT }) {
-  return (
-    <figure className="mt-10 border border-ink bg-paper">
-      <figcaption className="sr-only">{t("sheet.caption")}</figcaption>
-      <div aria-hidden>
-        <div className="flex items-start justify-between gap-4 border-b border-ink p-5">
-          <div>
-            <p className="text-lead font-semibold">Marie Dupont</p>
-            <p className="text-small text-ink-soft">{t("sheet.proposal")}</p>
-          </div>
-          <div className="text-right">
-            <p className="condensed text-[2.75rem] leading-none font-extrabold">86</p>
-            <p className="font-mono text-micro text-ink-soft">{t("sheet.score")}</p>
-          </div>
-        </div>
-        <div className="grid grid-cols-6 gap-1 border-b border-ink p-5">
-          {[0.3, 0.5, 0.68, 1, 0.38, 0].map((heat, i) => (
-            <ThermalPlate key={i} heat={heat} seed={i} className="aspect-[3/4]" />
-          ))}
-        </div>
-        <ul className="divide-y divide-rule px-5">
-          {SCORE_REASONS.map((reason) => (
-            <li key={reason.key} className="flex items-baseline gap-4 py-2.5 text-small">
-              <span className="w-8 font-mono">{reason.points}</span>
-              {t(`sheet.reasons.${reason.key}`)}
-            </li>
-          ))}
-        </ul>
-      </div>
-      <p className="border-t border-rule px-5 py-2 text-micro text-ink-soft">{t("demo")}</p>
-    </figure>
   );
 }
