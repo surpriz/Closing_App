@@ -204,5 +204,10 @@
     "statusChanged": "Status changed to “{status}”",
     "replacedByReminder": "Replaced by the deadline reminder"
   },
-  "staleDeployment": "A new version of Clozer just went live. Reload the page to continue."
+  "staleDeployment": "A new version of Clozer just went live. Reload the page to continue.",
+  "outcome": {
+    "HELD": "The meeting took place",
+    "NO_SHOW": "The prospect didn't show up to the meeting",
+    "CANCELLED": "The meeting was cancelled"
+  }
 }

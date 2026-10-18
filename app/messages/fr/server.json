@@ -204,5 +204,10 @@
     "statusChanged": "Statut passé à « {status} »",
     "replacedByReminder": "Remplacée par le rappel d'échéance"
   },
-  "staleDeployment": "Une nouvelle version de Clozer vient d'être mise en ligne. Rechargez la page pour continuer."
+  "staleDeployment": "Une nouvelle version de Clozer vient d'être mise en ligne. Rechargez la page pour continuer.",
+  "outcome": {
+    "HELD": "Le rendez-vous a eu lieu",
+    "NO_SHOW": "Le prospect n'est pas venu au rendez-vous",
+    "CANCELLED": "Le rendez-vous a été annulé"
+  }
 }

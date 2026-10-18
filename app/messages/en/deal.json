@@ -537,5 +537,11 @@
       "meeting": "Booked a meeting",
       "extension": "Asked for more time"
     }
+  },
+  "outcome": {
+    "lostQuestion": "Lost: why?",
+    "meetingQuestion": "Did the meeting happen?",
+    "thanks": "Saved",
+    "followupsBack": "Saved. Follow-ups can start again."
   }
 }

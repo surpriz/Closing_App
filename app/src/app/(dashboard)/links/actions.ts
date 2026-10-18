@@ -5,13 +5,13 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
-import type { DealStatus, ProspectRole } from "@/generated/prisma/enums";
+import type { DealCloseReason, DealStatus, MeetingOutcome, ProspectRole } from "@/generated/prisma/enums";
 import { inBackground } from "@/lib/closing/background";
 import { actOnInsight } from "@/lib/closing/brain/act";
 import { analyzeDeal } from "@/lib/closing/brain/analyze-deal";
 import { BOOKING_URL_ERROR, parseOptionalBookingUrl } from "@/lib/closing/booking/url";
 import { editableLinks } from "@/lib/closing/dashboard/queries";
-import { applyDealStatus } from "@/lib/closing/deals/status";
+import { applyDealStatus, setLostReason, setMeetingOutcome } from "@/lib/closing/deals/status";
 import { confirmLinkSent, forgetDraftCopied, markDraftCopied } from "@/lib/closing/documents/create-link";
 import { resumeAfterReply } from "@/lib/closing/replies/record";
 import { linkDefaultsFor, SHARED_LINK_SETTINGS } from "@/lib/closing/documents/smart-defaults";
@@ -53,6 +53,23 @@ const dealStatusSchema = z.enum(["OPEN", "VALIDATED", "CHANGE_REQUESTED", "WON",
 export async function updateDealStatus(linkId: string, status: DealStatus) {
   const link = await requireOwnedLink(linkId);
   await applyDealStatus(link.id, dealStatusSchema.parse(status));
+  revalidateLink(link);
+}
+
+const closeReasonSchema = z.enum(["PRICE", "TIMING", "COMPETITOR", "NO_DECISION", "NO_NEED", "OTHER"]);
+
+export async function updateLostReason(linkId: string, reason: DealCloseReason, note: string | null = null) {
+  const link = await requireOwnedLink(linkId);
+  await setLostReason(link.id, closeReasonSchema.parse(reason), note);
+  revalidateLink(link);
+}
+
+const meetingOutcomeSchema = z.enum(["HELD", "NO_SHOW", "CANCELLED"]);
+
+export async function updateMeetingOutcome(linkId: string, outcome: MeetingOutcome) {
+  const link = await requireOwnedLink(linkId);
+  const { user } = await requireWorkspace();
+  await setMeetingOutcome(link.id, meetingOutcomeSchema.parse(outcome), user.id);
   revalidateLink(link);
 }
 

@@ -113,6 +113,19 @@
     "content_taken": "Copied or printed a passage",
     "email_replied": "Replied by email"
   },
+  "closeReason": {
+    "PRICE": "Price",
+    "TIMING": "Bad timing",
+    "COMPETITOR": "Competitor",
+    "NO_DECISION": "No decision",
+    "NO_NEED": "No need",
+    "OTHER": "Other"
+  },
+  "meetingOutcome": {
+    "HELD": "It happened",
+    "NO_SHOW": "No-show",
+    "CANCELLED": "Cancelled"
+  },
   "stage": {
     "NOT_ENGAGED": "Not engaged yet",
     "DISCOVERING": "Discovering the offer",

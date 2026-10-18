@@ -537,5 +537,11 @@
       "meeting": "A pris rendez-vous",
       "extension": "Demande une prolongation"
     }
+  },
+  "outcome": {
+    "lostQuestion": "Perdu, pourquoi ?",
+    "meetingQuestion": "Le rendez-vous a eu lieu ?",
+    "thanks": "Noté",
+    "followupsBack": "Noté. Les relances peuvent reprendre."
   }
 }
