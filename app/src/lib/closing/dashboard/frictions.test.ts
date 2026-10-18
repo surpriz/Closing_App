@@ -41,12 +41,12 @@ describe("buildDocumentFrictions", () => {
       aiFrictions: [["PRICE", "PRICE"], ["PRICE", "TIMING"], ["TIMING"], ["TRUST"]],
     });
     expect(lines).toEqual([
-      "L'analyse voit le prix comme un frein sur 2 deals.",
-      "L'analyse voit le calendrier comme un frein sur 2 deals.",
+      "L'analyse voit le prix comme un frein chez 2 prospects.",
+      "L'analyse voit le calendrier comme un frein chez 2 prospects.",
     ]);
     const en = createTranslator({ locale: "en", messages: MESSAGES.en });
     expect(build({ ...base, aiFrictions: [["PRICE"], ["PRICE"]] }, en)).toEqual([
-      "The analysis sees price as a blocker on 2 deals.",
+      "The analysis sees price as a blocker for 2 prospects.",
     ]);
   });
 });

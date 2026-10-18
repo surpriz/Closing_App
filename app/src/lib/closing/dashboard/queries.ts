@@ -1,3 +1,5 @@
+import { cache } from "react";
+
 import { prisma } from "@/lib/db";
 import { isManagerRole } from "@/lib/roles";
 
@@ -7,6 +9,7 @@ import type { FeedSource } from "./feed";
 import type { FunnelLinkFacts } from "./funnel";
 import { dealLabel, firstProspect, linkLabelSelect } from "./labels";
 import type { OpenDealStatus } from "./next-action";
+import type { SellerProgress } from "./seller-stage";
 
 /**
  * Every read of the "Aujourd'hui" page. Scoped to the workspace, or to one
@@ -32,6 +35,26 @@ export function sellerLinks(scope: SellerScope) {
     ? { OR: [{ createdById: scope.userId }, { createdById: null }] }
     : { createdById: scope.userId };
 }
+
+/**
+ * What sellerStage() reads: documents in, links gone out, links opened. The seller's own personal
+ * links: onboarding tests and open links aside (an open link's readers get links of their own).
+ * Archived ones count, they did go out. Counts stop at one where that is enough. Cached per request:
+ * the layout's banner and the page both ask.
+ */
+export const getSellerProgress = cache(async function getSellerProgress(
+  organizationId: string,
+  scope: SellerScope,
+): Promise<SellerProgress> {
+  const mine = { organizationId, isOnboardingTest: false, shared: false, ...sellerLinks(scope) };
+  const [documents, sent, read] = await Promise.all([
+    prisma.document.count({ where: { organizationId, archivedAt: null } }),
+    // Copied counts as gone out, as on "Aujourd'hui"; a link without draftAt was sent
+    prisma.link.count({ where: { ...mine, AND: { OR: [{ draftAt: null }, { copiedAt: { not: null } }] } }, take: 1 }),
+    prisma.link.count({ where: { ...mine, views: { some: { isBot: false } } }, take: 1 }),
+  ]);
+  return { documents, sent, read };
+});
 
 /** Anyone in the workspace may read a deal; only its seller and the managers change it. */
 type DealEditor = { role: string; scope: SellerScope };

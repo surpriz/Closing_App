@@ -100,7 +100,7 @@ export default async function DashboardLayout({
         </div>
       </header>
       <Suspense>
-        <DashboardExtensionBanner user={user} organizationId={organization.id} />
+        <DashboardExtensionBanner user={user} organizationId={organization.id} scope={scope} />
       </Suspense>
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 pt-8 pb-28 sm:px-6 sm:pt-10 sm:pb-16">
         {children}

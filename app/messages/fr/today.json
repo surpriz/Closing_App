@@ -3,22 +3,15 @@
     "metaTitle": "Aujourd'hui",
     "welcomeTitle": "Bienvenue sur Clozer.",
     "welcomeBody": "Déposez un document (devis, facture, présentation…) : le lien à envoyer est prêt dans la seconde.",
-    "mailClientQuestion": "Vous envoyez depuis Gmail ou Outlook ?",
-    "mailClientLink": "Clozer peut créer le lien directement dans vos emails",
-    "reportTitle": "Rapport du jour",
-    "dealsInProgress": "{count, plural, one {# deal en cours} other {# deals en cours}}",
     "toSend": "À envoyer",
-    "toSendHint": "pas encore copiés ni envoyés",
     "toHandle": "À traiter",
-    "toHandleHint": "du plus urgent au moins urgent",
-    "emptyTitle": "Aucun deal en cours.",
-    "emptyDescription": "Dès qu'un lien envoyé est ouvert, le deal apparaît ici avec ce qu'il y a à faire.",
+    "emptyTitle": "Aucun prospect à traiter.",
+    "emptyDescription": "Dès qu'un prospect ouvre son lien, il apparaît ici avec ce qu'il y a à faire.",
     "createLink": "Créer un lien",
-    "moreDeals": "Et {count} autres deals en cours, moins urgents.",
+    "moreDeals": "Et {count} autres prospects, moins urgents.",
     "sends": "Vos envois",
     "sendsHint": "où en sont les liens envoyés, {period}",
-    "openDeals": "Deals en cours",
-    "openDealsHint": "en ce moment",
+    "openDeals": "Prospects en cours",
     "draftsTitle": "Relances à valider",
     "draftsHint": "rien ne part sans vous",
     "feedTitle": "Ce qui s'est passé",
@@ -113,7 +106,7 @@
       "sent": "Liens créés sur la période.",
       "opened": "Au moins une lecture, hors robots.",
       "deep": "La moitié du PDF avec au moins 30 s de lecture, une minute sur un lien web, ou une longue lecture des tarifs.",
-      "validated": "« Valider & signer » cliqué, ou deal marqué validé ou gagné."
+      "validated": "« Valider & signer » cliqué, ou prospect marqué validé ou gagné."
     },
     "heat": {
       "HOT": "{count, plural, =1 {chaud} other {chauds}}",
@@ -121,7 +114,7 @@
       "COLD": "{count, plural, =1 {froid} other {froids}}",
       "unopened": "{count, plural, =1 {pas encore ouvert} other {pas encore ouverts}}"
     },
-    "noOpenDeals": "Aucun deal en cours."
+    "noOpenDeals": "Aucun prospect en cours."
   },
   "autopilot": {
     "mode": "Mode automatique.",
@@ -132,7 +125,7 @@
   },
   "nextAction": {
     "aiWait": "Rien à faire pour l'instant, Clozer surveille.",
-    "aiCloseLost": "Deal sans doute perdu : à classer ?",
+    "aiCloseLost": "Prospect sans doute perdu : à classer ?",
     "aiAdvice": "{verb} {timing}.",
     "aiAdviceNoTiming": "{verb}.",
     "closeWon": "Validé par le prospect : confirmez la vente.",
@@ -213,7 +206,7 @@
     "stops": "{count} prospects sur {total} s'arrêtent à la page {page} : la suite n'est pas lue.",
     "stopsAbout": "{count} prospects sur {total} s'arrêtent à la page {page} ({about}) : la suite n'est pas lue.",
     "allFinished": "Les {count} prospects qui ont ouvert sont allés jusqu'au bout.",
-    "aiFriction": "L'analyse voit {friction} comme un frein sur {count} deals.",
+    "aiFriction": "L'analyse voit {friction} comme un frein chez {count} prospects.",
     "names": {
       "PRICE": "le prix",
       "SCOPE": "le périmètre",
