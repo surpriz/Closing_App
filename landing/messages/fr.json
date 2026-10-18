@@ -96,20 +96,6 @@
         }
       }
     },
-    "send": {
-      "title": "Deux façons d'envoyer. Aucune à apprendre.",
-      "link": {
-        "name": "Le lien",
-        "status": "Disponible",
-        "body": "Déposez le document : le lien est prêt dans la seconde. Collez-le où vous écrivez déjà à vos clients, email, WhatsApp, LinkedIn, SMS. Votre client l'ouvre dans son navigateur, sur ordinateur comme sur téléphone, sans rien installer."
-      },
-      "mail": {
-        "name": "Depuis Gmail ou Outlook",
-        "status": "Disponible",
-        "body": "Joignez votre PDF comme d'habitude. Au moment d'envoyer, l'extension le remplace par un lien Clozer, et vous prévient en haut de votre boîte quand il est lu. L'extension Chrome marche dans Gmail et dans Outlook ouvert dans le navigateur ; pour Outlook installé, votre administrateur Microsoft 365 ajoute le complément.",
-        "action": "Ajouter à Chrome"
-      }
-    },
     "steps": {
       "title": "Trois étapes, rien à installer pour commencer.",
       "upload": {
@@ -171,6 +157,31 @@
       },
       "actionsAlt": "Proposition ouverte sur mobile, page des tarifs : en bas, Valider & signer, Prendre rendez-vous, Demander un ajustement, un vocal et le transfert ; en haut, le choix entre six langues.",
       "changeAlt": "Le prospect demande un ajustement depuis la proposition : « Est-il possible de régler en trois fois ? Et de démarrer le design en novembre ? »"
+    },
+    "channels": {
+      "title": "Ça part d'où vous envoyez déjà.",
+      "body": "Gardez votre boîte mail et vos outils de prospection. Clozer se branche dessus.",
+      "caption": "Où envoyer un lien Clozer, et comment",
+      "where": "Où vous envoyez",
+      "how": "Ce qui se passe",
+      "web": {
+        "name": "Gmail et Outlook sur le web",
+        "how": "Joignez le PDF comme d'habitude. L'extension Chrome propose de le remplacer par un lien au nom du destinataire, puis vous prévient quand il lit."
+      },
+      "outlook": {
+        "name": "Outlook installé",
+        "how": "Sur Windows et Mac, votre administrateur Microsoft 365 ajoute le complément pour toute l'équipe. Le PDF joint devient un lien de la même façon."
+      },
+      "chat": {
+        "name": "WhatsApp, LinkedIn, SMS",
+        "how": "Copiez le lien et collez-le dans la conversation. Il s'ouvre dans le navigateur, sur téléphone comme sur ordinateur."
+      },
+      "cold": {
+        "name": "lemlist et cold email",
+        "how": "Avec le Smart Link, un seul lien dans votre séquence. Chaque prospect qui clique est reconnu et suivi, sans formulaire."
+      },
+      "store": "Ajouter à Chrome",
+      "storeNote": "Gratuit, pour Gmail et Outlook sur le web."
     },
     "trust": {
       "title": "Suivre sans fliquer.",

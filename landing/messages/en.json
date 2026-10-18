@@ -96,20 +96,6 @@
         }
       }
     },
-    "send": {
-      "title": "Two ways to send. Nothing to learn.",
-      "link": {
-        "name": "The link",
-        "status": "Available",
-        "body": "Upload the document and your link is ready in a second. Paste it wherever you already talk to clients: email, WhatsApp, LinkedIn, text. Your client opens it in the browser, on desktop or phone, with nothing to install."
-      },
-      "mail": {
-        "name": "From Gmail or Outlook",
-        "status": "Available",
-        "body": "Attach your PDF like you always do. When you hit send, the extension swaps it for a Clozer link, then pings you at the top of your inbox when it gets read. The Chrome extension works in Gmail and in Outlook on the web; for desktop Outlook, your Microsoft 365 admin adds the add-in.",
-        "action": "Add to Chrome"
-      }
-    },
     "steps": {
       "title": "Three steps. Nothing to install to get started.",
       "upload": {
@@ -170,7 +156,32 @@
         "body": "English, French, Spanish, German, Italian or Portuguese: the PDF is translated with its layout intact."
       },
       "actionsAlt": "Proposal open on a phone, pricing page: at the bottom, Accept & sign, Book a meeting, Request a change, a voice note and forwarding; at the top, a choice of six languages.",
-      "changeAlt": "The prospect asks for a change from inside the proposal: \"Could we pay in three instalments? And start the design in November?\""
+      "changeAlt": "The prospect asks for a change from inside the proposal: \"Could we pay in three installments? And start the design in November?\""
+    },
+    "channels": {
+      "title": "It works where you already send.",
+      "body": "Keep your inbox and your outreach tools. Clozer plugs into them.",
+      "caption": "Where to send a Clozer link, and how",
+      "where": "Where you send",
+      "how": "What happens",
+      "web": {
+        "name": "Gmail and Outlook on the web",
+        "how": "Attach the PDF as usual. The Chrome extension offers to swap it for a link in the recipient's name, then tells you when they read it."
+      },
+      "outlook": {
+        "name": "Outlook desktop",
+        "how": "On Windows and Mac, your Microsoft 365 admin adds the add-in for the whole team. An attached PDF becomes a link the same way."
+      },
+      "chat": {
+        "name": "WhatsApp, LinkedIn, SMS",
+        "how": "Copy the link and paste it into the conversation. It opens in the browser, on a phone or a computer."
+      },
+      "cold": {
+        "name": "lemlist and cold email",
+        "how": "With Smart Link, one link goes in your sequence. Every prospect who clicks is recognized and tracked, no form."
+      },
+      "store": "Add to Chrome",
+      "storeNote": "Free, for Gmail and Outlook on the web."
     },
     "trust": {
       "title": "Track the deal, not the person.",

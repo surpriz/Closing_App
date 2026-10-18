@@ -45,10 +45,7 @@ const READING_SCREENS: Record<"reading" | "chain", Record<Locale, StaticImageDat
   reading: { fr: readingFr, en: readingEn },
   chain: { fr: chainFr, en: chainEn },
 };
-const SEND_WAYS = [
-  { key: "link", available: true, store: false },
-  { key: "mail", available: true, store: true },
-] as const;
+const CHANNELS = ["web", "outlook", "chat", "cold"] as const;
 const FOLLOWUP_POINTS = ["brief", "stuck", "approve", "delicate"] as const;
 const TODAY_SCREENS: Record<"desktop" | "mobile", Record<Locale, StaticImageData>> = {
   desktop: { fr: todayDesktopFr, en: todayDesktopEn },
@@ -166,40 +163,6 @@ export default async function Home({ params }: Props) {
                 ))}
               </tbody>
             </table>
-          </div>
-        </section>
-
-        {/* Two ways to send: the link, or the mailbox extension. */}
-        <section id="envoi" className="scroll-mt-14 border-b border-ink bg-sheet">
-          <div className={`${WRAP} py-20 md:py-28`}>
-            <h2 className="condensed max-w-[20ch] text-title font-bold">{t("send.title")}</h2>
-            <div className="mt-14 grid border-t border-ink md:grid-cols-2">
-              {SEND_WAYS.map((way) => (
-                <article
-                  key={way.key}
-                  className="border-b border-rule py-8 md:border-b-0 md:px-8 md:first:border-r md:first:pl-0 md:last:pr-0"
-                >
-                  <div className="flex items-baseline justify-between gap-4">
-                    <h3 className="condensed text-[2rem] leading-none font-extrabold tracking-[-0.03em]">{t(`send.${way.key}.name`)}</h3>
-                    <span
-                      className={`px-2 py-0.5 text-small font-semibold ${way.available ? "bg-ink text-sheet" : "border border-ink"}`}
-                    >
-                      {t(`send.${way.key}.status`)}
-                    </span>
-                  </div>
-                  <p className="mt-4 max-w-[58ch] text-body text-ink-soft">{t(`send.${way.key}.body`)}</p>
-                  {way.store && (
-                    <a
-                      href={EXTENSION_STORE_URL}
-                      className="group mt-6 flex h-12 max-w-xs items-center justify-between border border-ink px-4 font-semibold transition-colors hover:bg-ink hover:text-sheet"
-                    >
-                      {t("send.mail.action")}
-                      <Icon name="arrow" className="size-5 transition-transform duration-300 ease-[var(--ease-out-expo)] group-hover:translate-x-1" />
-                    </a>
-                  )}
-                </article>
-              ))}
-            </div>
           </div>
         </section>
 
@@ -335,6 +298,43 @@ export default async function Home({ params }: Props) {
                 </figure>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* Channels: where the link goes out, one row each; the only other button on the page leads to the store. */}
+        <section id="envoi" className="scroll-mt-14 border-b border-ink">
+          <div className={`${WRAP} grid gap-12 py-20 md:py-28 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-20`}>
+            <div>
+              <h2 className="condensed max-w-[16ch] text-title font-bold">{t("channels.title")}</h2>
+              <p className="mt-6 max-w-[44ch] text-lead text-ink-soft">{t("channels.body")}</p>
+              <a
+                href={EXTENSION_STORE_URL}
+                className="group mt-10 flex h-12 max-w-xs items-center justify-between border border-ink px-4 font-semibold transition-colors hover:bg-ink hover:text-sheet"
+              >
+                {t("channels.store")}
+                <Icon name="arrow" className="size-5 transition-transform duration-300 ease-[var(--ease-out-expo)] group-hover:translate-x-1" />
+              </a>
+              <p className="mt-3 text-small text-ink-soft">{t("channels.storeNote")}</p>
+            </div>
+            <table className="w-full border-t border-ink text-left">
+              <caption className="sr-only">{t("channels.caption")}</caption>
+              <thead className="sr-only">
+                <tr>
+                  <th scope="col">{t("channels.where")}</th>
+                  <th scope="col">{t("channels.how")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {CHANNELS.map((channel) => (
+                  <tr key={channel} className="grid gap-2 border-b border-rule py-6 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-8">
+                    <th scope="row" className="condensed text-[1.5rem] leading-tight font-bold tracking-[-0.02em]">
+                      {t(`channels.${channel}.name`)}
+                    </th>
+                    <td className="max-w-[52ch] text-body text-ink-soft">{t(`channels.${channel}.how`)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </section>
 
