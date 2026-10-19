@@ -21,7 +21,7 @@ function parseReply(response: unknown): ExtensionReply | null {
 
 type Found = { id: string | null; reply: ExtensionReply | null };
 
-async function probeExtension(ids: string[]): Promise<Found> {
+export async function probeExtension(ids: string[]): Promise<Found> {
   const replies = await Promise.all(
     ids.map(async (id) => ({ id, reply: parseReply(await askExtension(id, { type: "clozer:status" }, 3000)) })),
   );

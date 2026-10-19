@@ -9,23 +9,30 @@ import {
   enableCallMomentEmails,
   revokeExtensionToken,
 } from "@/app/extension/actions";
+import {
+  probeExtension,
+  startExtensionConnect,
+} from "@/components/onboarding/use-extension-state";
 import { Button } from "@/components/ui/button";
 import { sendToExtension } from "@/lib/extension-bridge";
 
 export function ExtensionConnect({
   nonce,
   extensionIds,
+  storeUrl,
   account,
 }: {
   nonce: string | null;
   extensionIds: string[];
+  storeUrl: string;
   account: { email: string; workspace: string };
 }) {
   const t = useTranslations("settings.extensionConnect");
-  const [status, setStatus] = useState<"idle" | "pending" | "done" | "missing">(
-    "idle",
-  );
+  const [status, setStatus] = useState<
+    "idle" | "pending" | "done" | "missing" | "expired" | "restarted"
+  >("idle");
   const [connectedId, setConnectedId] = useState<string | null>(null);
+  const [answeringId, setAnsweringId] = useState<string | null>(null);
 
   async function connect() {
     setStatus("pending");
@@ -42,7 +49,17 @@ export function ExtensionConnect({
     }
     // Nobody took it: don't leave a live token behind
     await revokeExtensionToken(id);
-    setStatus("missing");
+    // An extension that answers but refused the token lost the nonce: it
+    // reloaded for an update, or another connect tab replaced it
+    const found = await probeExtension(extensionIds);
+    setAnsweringId(found.id);
+    setStatus(found.id ? "expired" : "missing");
+  }
+
+  async function restart() {
+    if (!answeringId) return;
+    await startExtensionConnect(answeringId);
+    setStatus("restarted");
   }
 
   if (!nonce) {
@@ -79,12 +96,32 @@ export function ExtensionConnect({
       </p>
       {status === "missing" && (
         <p role="alert" className="text-small text-destructive">
-          {t("missing")}
+          {t.rich("missing", {
+            link: (chunks) => (
+              <a className="underline" href={storeUrl} target="_blank" rel="noreferrer">
+                {chunks}
+              </a>
+            ),
+          })}
         </p>
       )}
-      <Button onClick={connect} disabled={status === "pending"}>
-        {status === "pending" ? t("connecting") : t("connect")}
-      </Button>
+      {status === "expired" && (
+        <p role="alert" className="text-small text-destructive">
+          {t("expired")}
+        </p>
+      )}
+      {status === "restarted" && (
+        <p className="text-small text-muted-foreground">{t("restarted")}</p>
+      )}
+      {status === "expired" || status === "restarted" ? (
+        <Button onClick={restart} disabled={status === "restarted"}>
+          {t("restart")}
+        </Button>
+      ) : (
+        <Button onClick={connect} disabled={status === "pending"}>
+          {status === "pending" ? t("connecting") : t("connect")}
+        </Button>
+      )}
     </div>
   );
 }
