@@ -2,7 +2,8 @@ import type { UiLocale } from "@/i18n/locale";
 import { getNamespaceTranslator } from "@/lib/server-translator";
 
 import { DAY_MS } from "../constants";
-import { nextBusinessSlot, type BusinessHours } from "../scheduling/business-hours";
+import type { BusinessHours } from "../scheduling/business-hours";
+import { nextSendSlot } from "../scheduling/send-slot";
 import type { FOLLOWUP_GOALS, TIMINGS } from "./schema";
 
 /**
@@ -32,6 +33,8 @@ export type FollowupPolicyInput = {
     meetingBooked?: boolean;
     /** The prospect asked for a quote under a video pitch: the seller answers, not a follow-up. */
     quoteRequested?: boolean;
+    /** The prospect answered by email: the seller carries the conversation. */
+    replied?: boolean;
     decisionDeadline: Date | null;
     /** After it the link no longer opens: nothing may land later. */
     expiresAt?: Date | null;
@@ -41,6 +44,8 @@ export type FollowupPolicyInput = {
   };
   prospect: {
     unsubscribed: boolean;
+    /** An email to this address bounced for good. */
+    bounced?: boolean;
     canWhatsApp: boolean;
     timezone: string;
   } | null;
@@ -58,6 +63,9 @@ export type FollowupPolicyInput = {
     minDaysBetweenFollowups: number;
     minDelayAfterReadingHours: number;
     businessHours: BusinessHours;
+    /** The prospect's habitual reading hour (send-time.ts), and what picks the minutes past it. */
+    sendHour?: number | null;
+    seed?: string | null;
   };
 };
 
@@ -75,8 +83,10 @@ export function decideFollowup(input: FollowupPolicyInput): FollowupDecision {
   if (deal.snoozedUntil && deal.snoozedUntil > now) reasons.push(t("snoozed"));
   if (deal.meetingBooked) reasons.push(t("meetingBooked"));
   if (deal.quoteRequested) reasons.push(t("quoteRequested"));
+  if (deal.replied) reasons.push(t("replied"));
   if (!prospect) reasons.push(t("noContact"));
   else if (prospect.unsubscribed) reasons.push(t("unsubscribed"));
+  else if (prospect.bounced && !prospect.canWhatsApp) reasons.push(t("bounced"));
   if (history.approvedPending) reasons.push(t("approvedPending"));
   if (deal.expiresAt && deal.expiresAt <= now) reasons.push(t("expired"));
   if (history.expiryReminderOpen) reasons.push(t("expiryReminderOpen"));
@@ -104,7 +114,7 @@ export function decideFollowup(input: FollowupPolicyInput): FollowupDecision {
   );
 
   const slot = (from: Date, mode: "asap" | "next-morning") =>
-    nextBusinessSlot(from, prospect.timezone, settings.businessHours, mode);
+    nextSendSlot(from, prospect.timezone, settings.businessHours, mode, settings.sendHour ?? null, settings.seed ?? null);
 
   let target: Date;
   switch (input.timing) {
@@ -138,7 +148,7 @@ export function decideFollowup(input: FollowupPolicyInput): FollowupDecision {
 function pickChannel(input: FollowupPolicyInput): "EMAIL" | "WHATSAPP" | null {
   const allowed = input.deal.channels;
   if (input.channel === "WHATSAPP" && allowed.includes("WHATSAPP") && input.prospect?.canWhatsApp) return "WHATSAPP";
-  if (allowed.includes("EMAIL")) return "EMAIL";
+  if (allowed.includes("EMAIL") && !input.prospect?.bounced) return "EMAIL";
   if (allowed.includes("WHATSAPP") && input.prospect?.canWhatsApp) return "WHATSAPP";
   return null;
 }

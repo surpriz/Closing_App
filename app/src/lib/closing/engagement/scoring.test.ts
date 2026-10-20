@@ -17,6 +17,11 @@ const base: EngagementInput = {
 };
 
 describe("computeEngagementScore", () => {
+  it("counts a passage taken away and an email answer", () => {
+    const codes = computeEngagementScore({ ...base, contentTaken: true, replied: true }).reasons.map((r) => r.code);
+    expect(codes).toEqual(["content_taken", "email_replied"]);
+  });
+
   it("is COLD with no activity", () => {
     expect(computeEngagementScore(base)).toEqual({ score: 0, tier: "COLD", reasons: [] });
   });

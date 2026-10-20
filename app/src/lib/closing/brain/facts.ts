@@ -8,6 +8,7 @@ import { DAY_MS } from "../constants";
 import { tagLabels } from "../documents/doc-types";
 import { tagNames } from "../documents/doc-type-names";
 import { reachedLabel, segmentLabel } from "../documents/video-segments";
+import { untrusted } from "../ai/prompts";
 
 /**
  * Turns everything known about a deal into numbered, dated facts the model
@@ -93,11 +94,17 @@ export type DealFactsInput = {
     channel: "EMAIL" | "WHATSAPP";
     subject: string | null;
     sentVia: "PLATFORM" | "MANUAL" | null;
+    /** What the message did: reopened from its link, answered, or bounced. */
+    clickedAt?: Date | null;
+    repliedAt?: Date | null;
+    bouncedAt?: Date | null;
   }[];
   sellerActivities: {
     type: "CALL" | "EMAIL_REPLY_RECEIVED" | "MEETING" | "NOTE" | "MANUAL_SEND";
     note: string | null;
     occurredAt: Date;
+    /** INBOUND and EXTENSION: caught by Clozer, the note is the prospect's own words. */
+    source?: "MANUAL" | "INBOUND" | "EXTENSION";
   }[];
   score: { score: number; tier: "HOT" | "WARM" | "COLD" } | null;
 };
@@ -222,6 +229,9 @@ function signalNotes(signals: { type: ViewSignalType; valueMs: number | null }[]
     notes.push(awayMs > 0 ? t("externalAway", { duration: fmtDuration(awayMs, locale) }) : t("external"));
   }
   if (signals.some((s) => s.type === "DOWNLOAD")) notes.push(t("download"));
+  const copied = signals.filter((s) => s.type === "COPY_TEXT");
+  if (copied.length > 0) notes.push(t("copied", { count: copied.length }));
+  if (signals.some((s) => s.type === "PRINT")) notes.push(t("printed"));
   if (signals.some((s) => s.type === "EXIT_PROMPT_OPENED")) notes.push(t("exitPrompt"));
   return notes;
 }
@@ -370,7 +380,7 @@ export function buildDealStory(input: DealFactsInput): DealStory {
       }`,
     );
     const message = action.message
-      ? `${t("colon")}<untrusted_prospect_message>${action.message.slice(0, 600)}</untrusted_prospect_message>`
+      ? `${t("colon")}<untrusted_prospect_message>${untrusted(action.message.slice(0, 600))}</untrusted_prospect_message>`
       : "";
     timeline.push({ kind: "PROSPECT_ACTION", at: action.createdAt, text: `[${dayOf(action.createdAt)}] ${who} ${what}${message}`, hashed: true });
   }
@@ -385,7 +395,7 @@ export function buildDealStory(input: DealFactsInput): DealStory {
         channel,
         how,
         subject: followup.subject ? t("followupSubject", { subject: followup.subject.slice(0, 120) }) : "",
-      })}`,
+      })}${followup.bouncedAt ? t("followupBounced") : followup.repliedAt ? t("followupReplied") : followup.clickedAt ? t("followupClicked") : ""}`,
       hashed: true,
     });
   }
@@ -394,7 +404,13 @@ export function buildDealStory(input: DealFactsInput): DealStory {
     timeline.push({
       kind: "SELLER_ACTIVITY",
       at: activity.occurredAt,
-      text: `[${dayOf(activity.occurredAt)}] ${t(`activity.${activity.type}`)}${activity.note ? `${t("colon")}${activity.note.slice(0, 400)}` : ""}`,
+      text: `[${dayOf(activity.occurredAt)}] ${t(`activity.${activity.type}`)}${
+        !activity.note
+          ? ""
+          : activity.source && activity.source !== "MANUAL"
+            ? `${t("colon")}<untrusted_prospect_message>${untrusted(activity.note.slice(0, 600))}</untrusted_prospect_message>`
+            : `${t("colon")}${activity.note.slice(0, 400)}`
+      }`,
       hashed: true,
     });
   }

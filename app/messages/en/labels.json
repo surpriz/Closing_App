@@ -71,6 +71,8 @@
     "NEW_READER": "New reader",
     "DECISION_MAKER_DETECTED": "Decision-maker reading",
     "LINK_EXTENSION_REQUESTED": "Extension request",
+    "PROSPECT_REPLIED": "Prospect replied",
+    "EMAIL_BOUNCED": "Email bounced",
     "LINK_EXPIRING": "Link expiring soon",
     "MEETING_BOOKED": "Meeting booked",
     "DOCUMENT_FORWARDED": "Document forwarded",
@@ -110,7 +112,22 @@
     "change_requested": "Changes requested",
     "quote_requested": "Asked for a quote",
     "meeting_clicked": "Opened your calendar",
-    "meeting_booked": "Meeting booked"
+    "meeting_booked": "Meeting booked",
+    "content_taken": "Copied or printed a passage",
+    "email_replied": "Replied by email"
+  },
+  "closeReason": {
+    "PRICE": "Price",
+    "TIMING": "Bad timing",
+    "COMPETITOR": "Competitor",
+    "NO_DECISION": "No decision",
+    "NO_NEED": "No need",
+    "OTHER": "Other"
+  },
+  "meetingOutcome": {
+    "HELD": "It happened",
+    "NO_SHOW": "No-show",
+    "CANCELLED": "Cancelled"
   },
   "stage": {
     "NOT_ENGAGED": "Not engaged yet",

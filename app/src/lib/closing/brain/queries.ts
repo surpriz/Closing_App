@@ -5,6 +5,7 @@ import { toUiLocale } from "@/lib/seller-locale";
 
 import { DAY_MS } from "../constants";
 import { videoProvider } from "../documents/web-link";
+import { workspaceLearnings } from "../results/queries";
 import type { DealFactsInput } from "./facts";
 import type { AnalyzerDeal, AnalyzerProfile } from "./prompts";
 
@@ -53,9 +54,9 @@ export async function loadDealForAnalysis(linkId: string, now: Date) {
       followups: {
         where: { status: { in: ["SENT", "DELIVERED"] }, sentAt: { not: null } },
         orderBy: { sentAt: "asc" },
-        select: { sentAt: true, channel: true, subject: true, sentVia: true },
+        select: { sentAt: true, channel: true, subject: true, sentVia: true, clickedAt: true, repliedAt: true, bouncedAt: true },
       },
-      sellerActivities: { orderBy: { occurredAt: "asc" }, select: { type: true, note: true, occurredAt: true } },
+      sellerActivities: { orderBy: { occurredAt: "asc" }, select: { type: true, note: true, occurredAt: true, source: true } },
       engagementScore: { select: { score: true, tier: true } },
     },
   });
@@ -117,6 +118,7 @@ export async function loadDealForAnalysis(linkId: string, now: Date) {
     valueProps: settings?.valueProps ?? null,
     commonObjections: settings?.commonObjections ?? null,
     avgSalesCycleDays: settings?.avgSalesCycleDays ?? null,
+    followupLearnings: await workspaceLearnings(link.organizationId, now),
   };
 
   const deal: AnalyzerDeal = {

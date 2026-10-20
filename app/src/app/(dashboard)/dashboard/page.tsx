@@ -258,6 +258,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
   const focus =
     rows.find((row) => (row.aiPriority ?? 0) >= 4 && row.insightHeadline) ??
     null;
+  const draftsToReview = deals.reduce((sum, deal) => sum + deal.draftCount, 0);
   const { headline, hint } = buildTodayHeadline(t, {
     // "Hot" by the score alone, unless the analysis reads the deal as calm
     hotProspects: rows
@@ -283,7 +284,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
     aiFocus: focus
       ? { label: focus.label, headline: focus.insightHeadline! }
       : null,
-    draftsToReview: deals.reduce((sum, deal) => sum + deal.draftCount, 0),
+    draftsToReview,
     readyLinks: readyLinks.length
       ? { count: readyLinks.length, documentName: readyLinks[0].documentName }
       : null,
@@ -320,6 +321,15 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
           </div>
         </div>
         <LiveStrip key={live.stamp} initial={live} />
+        {draftsToReview > 1 && (
+          <Link
+            href="/drafts"
+            className="flex items-center justify-between gap-3 border-y border-foreground bg-card px-4 py-3 text-body hover:bg-muted/50"
+          >
+            <span>{t("alerts.digest.draftsLine", { count: draftsToReview })}</span>
+            <span className="font-medium">{t("alerts.digest.reviewButton")} →</span>
+          </Link>
+        )}
         {settings.autonomy === "AUTOPILOT" && (
           <AutopilotBanner
             sentToday={sentAlone}

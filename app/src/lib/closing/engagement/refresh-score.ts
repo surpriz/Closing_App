@@ -15,6 +15,7 @@ export async function refreshEngagementScore(linkId: string, now = new Date()) {
       hotPricingThresholdSec: true,
       meetingBookedAt: true,
       quoteRequestedAt: true,
+      repliedAt: true,
       document: {
         select: {
           kind: true,
@@ -32,7 +33,7 @@ export async function refreshEngagementScore(linkId: string, now = new Date()) {
   const viewWhere = { linkId, isBot: false };
   const isVideo = link.document.kind === "URL" && videoProvider(link.document.embedUrl) !== null;
 
-  const [totals, visitors, pricing, meetingClicks, depth, external] = await Promise.all([
+  const [totals, visitors, pricing, meetingClicks, depth, external, taken] = await Promise.all([
     prisma.documentView.aggregate({
       where: viewWhere,
       _count: { _all: true },
@@ -55,6 +56,7 @@ export async function refreshEngagementScore(linkId: string, now = new Date()) {
         })
       : null,
     prisma.viewSignal.aggregate({ where: { linkId, type: "EXTERNAL_RETURN" }, _sum: { valueMs: true } }),
+    prisma.viewSignal.count({ where: { linkId, type: { in: ["COPY_TEXT", "PRINT"] } } }),
   ]);
 
   const result = computeEngagementScore({
@@ -77,6 +79,8 @@ export async function refreshEngagementScore(linkId: string, now = new Date()) {
     meetingClicked: meetingClicks > 0,
     meetingBooked: link.meetingBookedAt !== null,
     quoteRequested: link.quoteRequestedAt !== null,
+    contentTaken: taken > 0,
+    replied: link.repliedAt !== null,
   });
 
   const data = {

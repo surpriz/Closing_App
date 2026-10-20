@@ -13,6 +13,11 @@ import { DealStatusSelect } from "../deal-status-select";
 import { HeatDot, HeatPill } from "../heat";
 import { ReactivateLinkButton } from "../reactivate-link-button";
 import type { Deal } from "./load-deal";
+import { LostReasonPrompt, MeetingOutcomePrompt } from "./outcome-prompts";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+/** Without a date from the booking widget, the meeting is asked about this long after the booking. */
+const UNDATED_MEETING_ASK_MS = 3 * DAY_MS;
 
 /**
  * Top of the prospect's report: the reading's reference fields, the prospect
@@ -44,6 +49,12 @@ export function DealHeader({ deal }: { deal: Deal }) {
     year: "numeric",
   });
   const expired = !!link.expiresAt && link.expiresAt <= now;
+  const meetingPassed =
+    !!link.meetingBookedAt &&
+    !link.meetingOutcome &&
+    (link.meetingAt
+      ? link.meetingAt <= now
+      : now.getTime() - link.meetingBookedAt.getTime() > UNDATED_MEETING_ASK_MS);
   const returned = revival && formatRelative(revival.at, locale, now);
   const reactivate = canReactivate && (
     <ReactivateLinkButton linkId={link.id} expired={expired} canDraft={canDraftOnReactivate} />
@@ -171,6 +182,11 @@ export function DealHeader({ deal }: { deal: Deal }) {
           </span>
         )}
       </div>
+
+      {canEdit && link.dealStatus === "LOST" && !link.closedReason && <LostReasonPrompt linkId={link.id} />}
+      {canEdit && meetingPassed && link.dealStatus !== "LOST" && link.dealStatus !== "WON" && (
+        <MeetingOutcomePrompt linkId={link.id} />
+      )}
 
       {!canEdit && (
         <p className="bg-muted px-4 py-3 text-small text-muted-foreground">

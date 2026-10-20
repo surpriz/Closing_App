@@ -6,6 +6,7 @@ import { getNamespaceTranslator } from "@/lib/server-translator";
 import { generateFollowupMessage, queueFollowup } from "../followups/queue";
 import { defaultTimezone, getWorkspaceSettings, resolveFollowupSettings } from "../settings";
 import { toStoredInsight } from "./latest";
+import { habitualSendHour } from "../scheduling/send-time";
 import { decideFollowup } from "./policy";
 import type { Insight } from "./schema";
 
@@ -63,6 +64,11 @@ export async function actOnInsight(insightId: string, { force = false, now = new
     link.prospects.find((p) => p.id === action.prospectId) ?? (force ? link.prospects[0] : undefined) ?? null;
   const timezone = prospect?.timezone ?? defaultTimezone();
 
+  const businessHours = {
+    startHour: resolved.businessHourStart,
+    endHour: resolved.businessHourEnd,
+    days: resolved.businessDays,
+  };
   const decision = decideFollowup({
     now,
     locale,
@@ -75,6 +81,8 @@ export async function actOnInsight(insightId: string, { force = false, now = new
       snoozedUntil: link.snoozedUntil,
       meetingBooked: link.meetingBookedAt !== null,
       quoteRequested: link.quoteRequestedAt !== null,
+      // A follow-up the seller asks for is theirs to send
+      replied: !force && link.repliedAt !== null,
       decisionDeadline: link.decisionDeadline,
       expiresAt: link.expiresAt,
       channels: resolved.channels,
@@ -83,6 +91,7 @@ export async function actOnInsight(insightId: string, { force = false, now = new
     prospect: prospect
       ? {
           unsubscribed: prospect.unsubscribedAt !== null,
+          bounced: prospect.bouncedAt !== null,
           canWhatsApp: !!prospect.phoneE164 && !!prospect.whatsappOptInAt,
           timezone,
         }
@@ -99,20 +108,18 @@ export async function actOnInsight(insightId: string, { force = false, now = new
       maxFollowupsPer30Days: workspace.maxFollowupsPer30Days,
       minDaysBetweenFollowups: workspace.minDaysBetweenFollowups,
       minDelayAfterReadingHours: workspace.minDelayAfterReadingHours,
-      businessHours: {
-        startHour: resolved.businessHourStart,
-        endHour: resolved.businessHourEnd,
-        days: resolved.businessDays,
-      },
+      businessHours,
+      sendHour: await habitualSendHour({
+        prospectId: prospect?.id ?? null,
+        organizationId: link.organizationId,
+        timeZone: timezone,
+        hours: businessHours,
+        now,
+      }),
+      seed: `ai:${insightId}`,
     },
   });
   if (!decision.allowed || !prospect) return { ok: false, reasons: decision.allowed ? [] : decision.reasons };
-
-  // One AI follow-up in flight per deal: the newest reading replaces the older draft (a cold email one too)
-  await prisma.followup.updateMany({
-    where: { linkId: link.id, trigger: { in: ["AI_DECISION", "WARM_READ"] }, status: { in: [...UNAPPROVED] } },
-    data: { status: "CANCELLED", cancelledAt: now, error: t("replaced") },
-  });
 
   const brief: Insight["followupBrief"] = insight.followupBrief ?? {
     goal: "gentle_reminder",
@@ -133,6 +140,18 @@ export async function actOnInsight(insightId: string, { force = false, now = new
     context: { insightId, brief },
   });
   if (!followupId) return { ok: false, reasons: [t("alreadyExists")] };
+
+  // One AI follow-up in flight per deal: the newest reading replaces the older draft (a cold email one too).
+  // Only once the new one exists: a reading already acted on must not leave the deal with none
+  await prisma.followup.updateMany({
+    where: {
+      linkId: link.id,
+      trigger: { in: ["AI_DECISION", "WARM_READ"] },
+      status: { in: [...UNAPPROVED] },
+      id: { not: followupId },
+    },
+    data: { status: "CANCELLED", cancelledAt: now, error: t("replaced") },
+  });
 
   await prisma.followup.update({
     where: { id: followupId },

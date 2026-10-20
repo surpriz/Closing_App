@@ -108,7 +108,7 @@ export function buildDigest(data: DigestData) {
 
   if (data.drafts) {
     blocks.push({ kind: "text", text: t("draftsLine", { count: data.drafts }) });
-    blocks.push({ kind: "button", label: t("reviewButton"), href: `${data.appUrl}/dashboard` });
+    blocks.push({ kind: "button", label: t("reviewButton"), href: `${data.appUrl}/drafts` });
   } else {
     blocks.push({ kind: "button", label: t("openButton"), href: `${data.appUrl}/dashboard` });
   }

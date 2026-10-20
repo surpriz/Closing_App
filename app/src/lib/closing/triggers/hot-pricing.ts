@@ -2,7 +2,7 @@ import { prisma } from "@/lib/db";
 
 import { isLinkExpired } from "../expiry";
 import { generateFollowupMessage, queueFollowup } from "../followups/queue";
-import { nextBusinessSlot } from "../scheduling/business-hours";
+import { habitualSendHour, nextSendSlot } from "../scheduling/send-time";
 import { defaultTimezone, getWorkspaceSettings, resolveFollowupSettings } from "../settings";
 
 /**
@@ -30,7 +30,7 @@ export async function evaluateHotPricing(viewId: string, now = new Date()) {
   if (!view || view.isBot) return;
 
   const { link } = view;
-  if (!link.followupsEnabled || link.dealStatus !== "OPEN" || link.archivedAt || link.meetingBookedAt || link.quoteRequestedAt) return;
+  if (!link.followupsEnabled || link.dealStatus !== "OPEN" || link.archivedAt || link.meetingBookedAt || link.quoteRequestedAt || link.repliedAt) return;
   if (link.snoozedUntil && link.snoozedUntil > now) return;
   if (isLinkExpired(link, now)) return;
 
@@ -38,7 +38,7 @@ export async function evaluateHotPricing(viewId: string, now = new Date()) {
   if (pricingPages.length === 0) return;
 
   const prospect = view.prospect ?? link.prospects[0];
-  if (!prospect || prospect.unsubscribedAt) return;
+  if (!prospect || prospect.unsubscribedAt || prospect.bouncedAt) return;
 
   const settings = resolveFollowupSettings(link, await getWorkspaceSettings(link.organizationId));
 
@@ -56,12 +56,9 @@ export async function evaluateHotPricing(viewId: string, now = new Date()) {
 
   const timezone = prospect.timezone ?? view.timezone ?? defaultTimezone();
   const locale = prospect.locale ?? view.locale ?? "en";
-  const scheduledFor = nextBusinessSlot(
-    now,
-    timezone,
-    { startHour: settings.businessHourStart, endHour: settings.businessHourEnd, days: settings.businessDays },
-    "next-morning",
-  );
+  const hours = { startHour: settings.businessHourStart, endHour: settings.businessHourEnd, days: settings.businessDays };
+  const sendHour = await habitualSendHour({ prospectId: prospect.id, organizationId: link.organizationId, timeZone: timezone, hours, now });
+  const scheduledFor = nextSendSlot(now, timezone, hours, "next-morning", sendHour, `hot_pricing:${prospect.id}`);
 
   for (const channel of settings.channels) {
     if (channel === "WHATSAPP" && (!prospect.phoneE164 || !prospect.whatsappOptInAt)) continue;

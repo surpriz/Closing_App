@@ -1,0 +1,12 @@
+{
+  "metaTitle": "Follow-ups to review",
+  "title": "Follow-ups to review",
+  "description": "Everything waiting for your OK before it goes out. Each follow-up is checked again at send time: if the prospect replied or opened it in the meantime, it doesn't go.",
+  "emptyTitle": "Nothing to review",
+  "emptyDescription": "Follow-ups Clozer prepares show up here before they go out.",
+  "approve": "Approve",
+  "approved": "Follow-up approved",
+  "approveAll": "Approve all ({count})",
+  "approvedAll": "{count, plural, =0 {No follow-up approved} one {# follow-up approved} other {# follow-ups approved}}",
+  "expired": "Link expired: extend it first"
+}

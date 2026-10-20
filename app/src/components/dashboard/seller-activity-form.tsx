@@ -4,7 +4,12 @@ import { useLocale, useTranslations } from "next-intl";
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 
-import { logSellerActivity, snoozeDeal, type LinkFormState } from "@/app/(dashboard)/links/actions";
+import {
+  logSellerActivity,
+  resumeFollowupsAfterReply,
+  snoozeDeal,
+  type LinkFormState,
+} from "@/app/(dashboard)/links/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -109,5 +114,33 @@ export function SnoozeControl({ linkId, snoozedUntil }: { linkId: string; snooze
       </div>
       <p className="text-small text-muted-foreground">{t("pauseHint")}</p>
     </form>
+  );
+}
+
+// The prospect answered by email: automatic follow-ups stopped, the seller can hand the deal back
+export function RepliedNotice({ linkId, repliedAt }: { linkId: string; repliedAt: string }) {
+  const [pending, startTransition] = useTransition();
+  const t = useTranslations("deal.sellerActivityForm");
+  const locale = useLocale();
+  const date = new Intl.DateTimeFormat(INTL_LOCALE[locale], { day: "numeric", month: "long" }).format(new Date(repliedAt));
+
+  return (
+    <div className="flex flex-col gap-2 text-small text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+      <p>{t("repliedStopped", { date })}</p>
+      <Button
+        size="sm"
+        variant="outline"
+        className="self-start sm:self-auto"
+        disabled={pending}
+        onClick={() =>
+          startTransition(async () => {
+            await resumeFollowupsAfterReply(linkId);
+            toast.success(t("repliedResumed"));
+          })
+        }
+      >
+        {t("repliedResume")}
+      </Button>
+    </div>
   );
 }

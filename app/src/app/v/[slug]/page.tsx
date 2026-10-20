@@ -184,6 +184,7 @@ export default async function ViewerPage({
     const recipient = plainGate ? null : await knownRecipient(link.id);
     return (
       <EmailGate
+        slug={slug}
         action={unlockWithEmail.bind(null, slug)}
         known={
           recipient && {

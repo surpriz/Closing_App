@@ -44,7 +44,7 @@ export async function exportProspectData(organizationId: string, rawEmail: strin
   const email = normalizeEmail(rawEmail);
   const { prospectIds, viewIds } = await findTrail(organizationId, email);
 
-  const [prospects, views, chatMessages, voiceComments, actions, followups, alerts] = await Promise.all([
+  const [prospects, views, chatMessages, voiceComments, actions, followups, alerts, replies] = await Promise.all([
     prisma.prospect.findMany({
       where: { id: { in: prospectIds } },
       include: { link: { select: { name: true, document: { select: { name: true } } } } },
@@ -72,6 +72,11 @@ export async function exportProspectData(organizationId: string, rawEmail: strin
       select: { channel: true, subject: true, body: true, sentAt: true },
     }),
     prisma.sellerAlert.count({ where: alertsWhere(organizationId, email, viewIds) }),
+    // Email replies Clozer caught (reply relay, extension): their own words
+    prisma.sellerActivity.findMany({
+      where: { link: { organizationId }, source: { not: "MANUAL" }, OR: [{ prospectId: { in: prospectIds } }, { fromEmail: email }] },
+      select: { note: true, occurredAt: true, source: true },
+    }),
   ]);
 
   return {
@@ -83,6 +88,7 @@ export async function exportProspectData(organizationId: string, rawEmail: strin
     voiceComments,
     actions,
     followupsSent: followups,
+    emailReplies: replies,
     sellerAlerts: alerts,
   };
 }
@@ -120,7 +126,9 @@ export async function eraseProspectData(organizationId: string, rawEmail: string
     prisma.pageView.deleteMany({ where: { viewId: { in: viewIds } } }),
     prisma.prospectAction.deleteMany({ where: { ...byReader, type: { notIn: [...KEPT_ACTION_TYPES] } } }),
     prisma.sellerAlert.deleteMany({ where: alertsWhere(organizationId, email, viewIds) }),
-    prisma.sellerActivity.deleteMany({ where: { prospectId: { in: prospectIds } } }),
+    prisma.sellerActivity.deleteMany({
+      where: { OR: [{ prospectId: { in: prospectIds } }, { link: { organizationId }, fromEmail: email }] },
+    }),
     prisma.documentView.deleteMany({ where: { id: { in: viewIds } } }),
     prisma.prospect.deleteMany({ where: { id: { in: prospectIds } } }),
     prisma.dealInsight.deleteMany({ where: { linkId: { in: linkIds } } }),

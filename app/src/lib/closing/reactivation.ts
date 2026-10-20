@@ -39,6 +39,7 @@ export async function notifyReactivated(
           createdAt: { gte: since },
           prospect: {
             unsubscribedAt: null,
+            bouncedAt: null,
             OR: [{ origin: "SELLER" }, { views: { some: { isBot: false, startedAt: { lt: since } } } }],
           },
         },

@@ -26,6 +26,7 @@ import { LiveActivity } from "@/components/dashboard/live-activity";
 import { PageTimeChart } from "@/components/dashboard/page-time-chart";
 import { ProspectPanel } from "@/components/dashboard/prospect-panel";
 import {
+  RepliedNotice,
   SellerActivityForm,
   SnoozeControl,
 } from "@/components/dashboard/seller-activity-form";
@@ -191,6 +192,9 @@ export default async function LinkDetailPage({
             }
             now={now}
           />
+        )}
+        {canEdit && link.repliedAt && link.followupsEnabled && (
+          <RepliedNotice linkId={link.id} repliedAt={link.repliedAt.toISOString()} />
         )}
       </div>
 

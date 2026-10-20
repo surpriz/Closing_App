@@ -71,6 +71,8 @@
     "NEW_READER": "Nouveau lecteur",
     "DECISION_MAKER_DETECTED": "Décideur en lecture",
     "LINK_EXTENSION_REQUESTED": "Demande de prolongation",
+    "PROSPECT_REPLIED": "Réponse du prospect",
+    "EMAIL_BOUNCED": "Email non délivré",
     "LINK_EXPIRING": "Lien bientôt expiré",
     "MEETING_BOOKED": "Rendez-vous pris",
     "DOCUMENT_FORWARDED": "Document transféré",
@@ -110,7 +112,22 @@
     "change_requested": "Ajustement demandé",
     "quote_requested": "A demandé un devis",
     "meeting_clicked": "A ouvert votre agenda",
-    "meeting_booked": "Rendez-vous pris"
+    "meeting_booked": "Rendez-vous pris",
+    "content_taken": "A copié ou imprimé un passage",
+    "email_replied": "A répondu par email"
+  },
+  "closeReason": {
+    "PRICE": "Prix",
+    "TIMING": "Pas le moment",
+    "COMPETITOR": "Concurrent",
+    "NO_DECISION": "Pas de décision",
+    "NO_NEED": "Pas de besoin",
+    "OTHER": "Autre"
+  },
+  "meetingOutcome": {
+    "HELD": "Il a eu lieu",
+    "NO_SHOW": "Pas venu",
+    "CANCELLED": "Annulé"
   },
   "stage": {
     "NOT_ENGAGED": "Pas encore engagé",

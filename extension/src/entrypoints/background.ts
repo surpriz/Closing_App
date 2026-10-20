@@ -98,6 +98,8 @@ async function handle(request: Request): Promise<unknown> {
       return api(`/api/ext/links/${encodeURIComponent(request.linkId)}/sent`, { body: { recipient: request.recipient } });
     case "markWon":
       return api(`/api/ext/links/${encodeURIComponent(request.linkId)}/won`, { method: "POST" });
+    case "replies":
+      return api("/api/ext/replies", { body: { replies: request.replies.slice(0, 20) } });
     case "update":
       return update();
   }

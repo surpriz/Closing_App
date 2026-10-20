@@ -19,6 +19,13 @@ const serverEnvSchema = z.object({
   AUTH_EMAIL_FROM: z.string().optional(),
   FOLLOWUP_EMAIL_FROM: z.string().optional(),
   FOLLOWUP_EMAIL_REPLY_TO: z.string().optional(),
+  // ?token= on the SNS subscriptions of /api/webhooks/ses (deliveries, bounces) and /api/webhooks/ses-inbound (replies)
+  SES_WEBHOOK_TOKEN: z.string().min(24).optional(),
+  // Replies to Clozer emails go to r-<id>@<this domain> (MX to SES inbound), are logged, then passed to the seller.
+  // Unset: replies go straight to the seller, and Clozer only learns of them through the extension
+  INBOUND_REPLY_DOMAIN: z.string().optional(),
+  // The S3 bucket the SES receipt rule writes the replies to, read with the SES_* credentials
+  INBOUND_REPLY_BUCKET: z.string().optional(),
 
   // Never fatal: see resolveAiProvider. The raw value is normalised once the keys are known (below)
   AI_PROVIDER: z.string().optional(),

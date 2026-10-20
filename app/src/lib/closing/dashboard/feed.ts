@@ -132,6 +132,8 @@ function describeAlert(type: SellerAlertType, payload: unknown, t: AppT) {
   if (type === "PROSPECT_QUESTION") return t("today.feed.alert.prospectQuestion");
   if (type === "VOICE_COMMENT") return t("today.feed.alert.voiceComment");
   if (type === "MEETING_BOOKED") return t("today.feed.alert.meetingBooked");
+  if (type === "PROSPECT_REPLIED") return t("today.feed.alert.prospectReplied");
+  if (type === "EMAIL_BOUNCED") return t("today.feed.alert.emailBounced");
   if (type === "DOCUMENT_FORWARDED") {
     return forwardedTo
       ? t("today.feed.alert.documentForwardedTo", { to: forwardedTo })

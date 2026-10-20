@@ -9,10 +9,31 @@ import {
 } from "@/lib/closing/constants";
 import type { TrackingBatch, TrackingEvent } from "@/lib/closing/types";
 
+import { sendSignal } from "./view-signal";
+
 type Pending = { ms: number; depth: number };
 
 // One start request per slug per page load, even with StrictMode double effects
 const startRequests = new Map<string, Promise<string | null>>();
+
+const FOLLOWUP_KEY = (slug: string) => `clozer-r-${slug}`;
+
+/**
+ * The follow-up this visit came from (?r= on the link it carries). Kept for the tab, because the
+ * email gate reloads the page without it.
+ */
+export function followupOfVisit(slug: string) {
+  try {
+    const fromUrl = new URLSearchParams(window.location.search).get("r");
+    if (fromUrl && /^[a-z0-9]{8,40}$/.test(fromUrl)) {
+      sessionStorage.setItem(FOLLOWUP_KEY(slug), fromUrl);
+      return fromUrl;
+    }
+    return sessionStorage.getItem(FOLLOWUP_KEY(slug));
+  } catch {
+    return null;
+  }
+}
 
 function startView(slug: string) {
   let request = startRequests.get(slug);
@@ -24,6 +45,7 @@ function startView(slug: string) {
         slug,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         locale: navigator.language,
+        followupId: followupOfVisit(slug),
       }),
     })
       .then((res) => (res.ok ? res.json() : null))
@@ -232,6 +254,21 @@ export function usePageTracking(
       flush(true, true);
     };
   }, [pageCount, flush, embedded, countTime, manual, depthRef, markActive]);
+
+  // Copying a passage or printing: the reader takes the content elsewhere, often to show it internally
+  useEffect(() => {
+    const onCopy = () => {
+      const copied = document.getSelection()?.toString().trim().length ?? 0;
+      if (copied > 0) sendSignal(viewIdRef.current, "COPY_TEXT", copied, String(currentPageRef.current));
+    };
+    const onPrint = () => sendSignal(viewIdRef.current, "PRINT");
+    document.addEventListener("copy", onCopy);
+    window.addEventListener("beforeprint", onPrint);
+    return () => {
+      document.removeEventListener("copy", onCopy);
+      window.removeEventListener("beforeprint", onPrint);
+    };
+  }, []);
 
   return { currentPage, registerPage, getViewId, markActive, setPage, setActive };
 }

@@ -131,6 +131,11 @@ export async function loadDeal(
     linkId: link.id,
     documentId: link.document.id,
   });
+  // The seller came to look: how long the alerts that called for them waited (team reaction time)
+  await prisma.sellerAlert.updateMany({
+    where: { linkId: link.id, userId: workspace.user.id, seenAt: null, priority: { in: ["ACTION", "CALL"] } },
+    data: { seenAt: new Date() },
+  });
 
   const [
     analytics,
@@ -174,6 +179,7 @@ export async function loadDeal(
             "LINK_EXTENSION_REQUESTED",
             "VOICE_COMMENT",
             "DOCUMENT_FORWARDED",
+            "PROSPECT_REPLIED",
             "RELINK_REQUESTED",
           ],
         },
@@ -399,9 +405,11 @@ export async function loadDeal(
           )[0] ?? null,
       draftToReview: followups.some((f) => f.status === "DRAFT"),
       lastSellerContactAt:
-        sellerActivities.find((a) =>
-          (CONTACT_ACTIVITY_TYPES as readonly string[]).includes(a.type),
+        sellerActivities.find(
+          (a) => a.source === "MANUAL" && (CONTACT_ACTIVITY_TYPES as readonly string[]).includes(a.type),
         )?.occurredAt ?? null,
+      repliedAt: link.repliedAt,
+      gateSeenAt: link.gateSeenAt,
       snoozedUntil: link.snoozedUntil,
       meetingBookedAt: link.meetingBookedAt,
       meetingAt: link.meetingAt,
@@ -650,7 +658,7 @@ export async function loadDeal(
             }),
     })),
     ...followups
-      .filter((f) => f.sentAt && f.status === "SENT")
+      .filter((f) => f.sentAt && (f.status === "SENT" || f.status === "DELIVERED"))
       .map((f) => ({
         id: `followup-${f.id}`,
         at: f.sentAt!,
@@ -658,19 +666,32 @@ export async function loadDeal(
         title: t("followupSent", {
           trigger: tl(`followupTrigger.${f.trigger}`).toLowerCase(),
         }),
-        detail: t("followupDetail", {
-          channel: tl(`channel.${f.channel}`),
-          recipient: f.prospect.name ?? f.prospect.email,
-        }),
+        detail: [
+          t("followupDetail", {
+            channel: tl(`channel.${f.channel}`),
+            recipient: f.prospect.name ?? f.prospect.email,
+          }),
+          f.bouncedAt
+            ? t("followupBounced")
+            : f.repliedAt
+              ? t("followupReplied")
+              : f.clickedAt
+                ? t("followupClicked")
+                : null,
+        ]
+          .filter(Boolean)
+          .join(" · "),
       })),
     ...sellerActivities.map((activity) => ({
       id: `seller-${activity.id}`,
       at: activity.occurredAt,
       kind: "seller" as const,
-      title: t("sellerNoted", {
-        activity: tl(`sellerActivity.${activity.type}`),
-      }),
-      detail: activity.note,
+      // A reply Clozer caught: the prospect's own words, not the seller's note
+      title:
+        activity.source === "MANUAL"
+          ? t("sellerNoted", { activity: tl(`sellerActivity.${activity.type}`) })
+          : t(activity.source === "INBOUND" ? "replyCaught" : "replySeen", { from: activity.fromEmail ?? "" }),
+      detail: activity.source === "MANUAL" ? activity.note : activity.note && t("quoted", { text: activity.note }),
     })),
     ...forwards.map((forward) => ({
       id: `forward-${forward.id}`,
@@ -927,6 +948,9 @@ function signalDetails(
   }
   if (signals.some((s) => s.type === "DOWNLOAD"))
     details.push(t("pdfDownloaded"));
+  const copiedPages = [...new Set(signals.filter((s) => s.type === "COPY_TEXT" && s.detail).map((s) => s.detail!))];
+  if (copiedPages.length > 0) details.push(t("textCopied", { pages: copiedPages.join(", ") }));
+  if (signals.some((s) => s.type === "PRINT")) details.push(t("printed"));
   if (signals.some((s) => s.type === "EXIT_PROMPT_OPENED"))
     details.push(t("exitAssistant"));
   for (const s of signals) {

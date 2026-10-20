@@ -1,7 +1,7 @@
 // Keep in sync with the @default values of WorkspaceSettings in prisma/schema.prisma
 export const WORKSPACE_DEFAULTS = {
   hotPricingThresholdSec: 90,
-  inactivityDays: [3, 5],
+  inactivityDays: [3, 7, 14],
   businessHourStart: 9,
   businessHourEnd: 18,
   businessDays: [1, 2, 3, 4, 5],

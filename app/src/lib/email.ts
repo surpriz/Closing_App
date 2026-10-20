@@ -6,7 +6,8 @@ type EmailInput = {
   html: string;
   text?: string;
   from?: string;
-  replyTo?: string;
+  /** Several addresses: the reply goes to all of them (the seller, and the reply relay). */
+  replyTo?: string | string[];
   headers?: Record<string, string>;
 };
 
@@ -45,7 +46,7 @@ export async function sendEmail(input: EmailInput) {
     new SendEmailCommand({
       FromEmailAddress: from,
       Destination: { ToAddresses: [input.to] },
-      ReplyToAddresses: input.replyTo ? [input.replyTo] : undefined,
+      ReplyToAddresses: input.replyTo ? [input.replyTo].flat() : undefined,
       ConfigurationSetName: process.env.SES_CONFIGURATION_SET || undefined,
       Content: {
         Simple: {

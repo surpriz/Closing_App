@@ -55,6 +55,12 @@ const GOALS: Record<FollowupDraftInput["trigger"], string> = {
     "The prospect came from a cold email and has not answered yet. Write a short, relevant follow-up about one topic from the given sections that matters to a company like theirs, and end with one simple question (for example whether it is a priority this quarter). It is an early conversation: no hard sell, no call request in the first line.",
 };
 
+// "Never opened" steps: the last one closes the loop, a click that stopped at the email screen needs the way in made easy
+const LAST_REMINDER_GOAL =
+  "This is the last reminder of the sequence. Close the loop politely: say you do not want to chase them, and ask a simple yes/no question (for example whether the topic is still relevant or should be put aside). No guilt, no pressure, keep it very short.";
+const CLICKED_REMINDER_GOAL =
+  "Send the link again in a short, friendly message and make it easy to get to the content: offer to walk them through it in a short call, or to answer by email if that is simpler. Never say or hint that you know whether they opened it.";
+
 const BRIEF_GOALS: Record<string, string> = {
   gentle_reminder: "Gently bring the proposal back to mind and make it easy to answer.",
   clarify_pricing: "Offer to clarify the budget side: options, phasing or payment schedule, as stated in the proposal.",
@@ -65,8 +71,14 @@ const BRIEF_GOALS: Record<string, string> = {
   reactivate: "Restart a conversation that went quiet, without guilt-tripping, with a simple yes/no question.",
 };
 
+// Prospect and document text can't close the tag it sits in and pass for instructions
+export function untrusted(content: string) {
+  // Any tag-like "<" becomes a look-alike: one pass, nothing to rebuild by nesting, every tag name covered
+  return content.replace(/<(?=\s*\/?\s*[a-z])/gi, "‹");
+}
+
 function block(label: string, content: string | null | undefined) {
-  return content ? `<${label}>\n${content}\n</${label}>` : "";
+  return content ? `<${label}>\n${untrusted(content)}\n</${label}>` : "";
 }
 
 export function buildFollowupPrompt(input: FollowupPromptInput) {
@@ -76,7 +88,13 @@ export function buildFollowupPrompt(input: FollowupPromptInput) {
       ? `Goal: ${BRIEF_GOALS[brief.goal] ?? GOALS[input.trigger]}\nAngle: ${brief.angle}${
           brief.topics.length ? `\nTopics to raise: ${brief.topics.join("; ")}` : ""
         }${brief.avoid.length ? `\nAvoid: ${brief.avoid.join("; ")}` : ""}`
-      : `Goal: ${GOALS[input.trigger]}`,
+      : `Goal: ${
+          input.trigger === "ANTI_GHOSTING" && input.sequence?.final
+            ? LAST_REMINDER_GOAL
+            : input.trigger === "ANTI_GHOSTING" && input.sequence?.clicked
+              ? CLICKED_REMINDER_GOAL
+              : GOALS[input.trigger]
+        }`,
     `Channel: ${input.channel}`,
     `Locale: ${input.locale}`,
     `Prospect name: ${input.prospectName ?? "unknown"}`,

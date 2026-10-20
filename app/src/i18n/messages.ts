@@ -16,6 +16,8 @@ import en_auth from "../../messages/en/auth.json";
 import en_emails from "../../messages/en/emails.json";
 import en_alerts from "../../messages/en/alerts.json";
 import en_server from "../../messages/en/server.json";
+import en_results from "../../messages/en/results.json";
+import en_drafts from "../../messages/en/drafts.json";
 import fr_common from "../../messages/fr/common.json";
 import fr_meta from "../../messages/fr/meta.json";
 import fr_nav from "../../messages/fr/nav.json";
@@ -32,6 +34,8 @@ import fr_auth from "../../messages/fr/auth.json";
 import fr_emails from "../../messages/fr/emails.json";
 import fr_alerts from "../../messages/fr/alerts.json";
 import fr_server from "../../messages/fr/server.json";
+import fr_results from "../../messages/fr/results.json";
+import fr_drafts from "../../messages/fr/drafts.json";
 
 import type { UiLocale } from "./locale";
 
@@ -53,6 +57,8 @@ const en = {
   emails: en_emails,
   alerts: en_alerts,
   server: en_server,
+  results: en_results,
+  drafts: en_drafts,
 };
 
 const fr = {
@@ -72,6 +78,8 @@ const fr = {
   emails: fr_emails,
   alerts: fr_alerts,
   server: fr_server,
+  results: fr_results,
+  drafts: fr_drafts,
 };
 
 export type Messages = typeof en;

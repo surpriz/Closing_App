@@ -159,7 +159,10 @@
     "sentToday": "Sent today, give it time.",
     "notOpenedYet": "Not opened yet.",
     "waitWarm": "Steady reading, nothing to do for now.",
-    "wait": "Nothing to do for now."
+    "wait": "Nothing to do for now.",
+    "replyEmail": "They replied by email: your move.",
+    "clickedNotRead": "Clicked the link, but stopped at the email screen.",
+    "nudgeClicked": "Clicked {days} days ago and went no further: send the link again."
   },
   "dealCta": {
     "sendQuote": "Send the quote",
@@ -213,7 +216,9 @@
       "reopenedDays": "was reopened after {days} quiet days",
       "reopened": "was reopened after a quiet spell",
       "documentForwardedTo": "was forwarded to {to}",
-      "documentForwarded": "was forwarded"
+      "documentForwarded": "was forwarded",
+      "prospectReplied": "got an email reply from the prospect",
+      "emailBounced": "has an email address that bounced"
     },
     "followup": "got a follow-up by {channel}",
     "followupAntiGhosting": "got a follow-up by {channel} (link not opened yet)",

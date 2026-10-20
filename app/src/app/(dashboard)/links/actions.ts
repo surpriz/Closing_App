@@ -5,14 +5,16 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
-import type { DealStatus, ProspectRole } from "@/generated/prisma/enums";
+import type { DealCloseReason, DealStatus, MeetingOutcome, ProspectRole } from "@/generated/prisma/enums";
 import { inBackground } from "@/lib/closing/background";
 import { actOnInsight } from "@/lib/closing/brain/act";
 import { analyzeDeal, markDealDirty } from "@/lib/closing/brain/analyze-deal";
 import { BOOKING_URL_ERROR, parseOptionalBookingUrl } from "@/lib/closing/booking/url";
 import { editableLinks } from "@/lib/closing/dashboard/queries";
-import { applyDealStatus } from "@/lib/closing/deals/status";
+import { applyDealStatus, setLostReason, setMeetingOutcome } from "@/lib/closing/deals/status";
 import { confirmLinkSent, forgetDraftCopied, markDraftCopied } from "@/lib/closing/documents/create-link";
+import { prepareCallScript } from "@/lib/closing/brain/call-script";
+import { resumeAfterReply } from "@/lib/closing/replies/record";
 import { linkDefaultsFor, SHARED_LINK_SETTINGS } from "@/lib/closing/documents/smart-defaults";
 import { getSellerPrefs, sellerTimezone } from "@/lib/closing/notify/preferences";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
@@ -62,6 +64,23 @@ const dealStatusSchema = z.enum(["OPEN", "VALIDATED", "CHANGE_REQUESTED", "WON",
 export async function updateDealStatus(linkId: string, status: DealStatus) {
   const link = await requireOwnedLink(linkId);
   await applyDealStatus(link.id, dealStatusSchema.parse(status));
+  revalidateLink(link);
+}
+
+const closeReasonSchema = z.enum(["PRICE", "TIMING", "COMPETITOR", "NO_DECISION", "NO_NEED", "OTHER"]);
+
+export async function updateLostReason(linkId: string, reason: DealCloseReason, note: string | null = null) {
+  const link = await requireOwnedLink(linkId);
+  await setLostReason(link.id, closeReasonSchema.parse(reason), note);
+  revalidateLink(link);
+}
+
+const meetingOutcomeSchema = z.enum(["HELD", "NO_SHOW", "CANCELLED"]);
+
+export async function updateMeetingOutcome(linkId: string, outcome: MeetingOutcome) {
+  const link = await requireOwnedLink(linkId);
+  const { user } = await requireWorkspace();
+  await setMeetingOutcome(link.id, meetingOutcomeSchema.parse(outcome), user.id);
   revalidateLink(link);
 }
 
@@ -649,6 +668,13 @@ export async function snoozeDeal(linkId: string, until: string | null) {
   return { ok: true };
 }
 
+/** "Reprendre les relances": the prospect replied, the seller hands the deal back to the engine. */
+export async function resumeFollowupsAfterReply(linkId: string) {
+  const link = await requireOwnedLink(linkId);
+  await resumeAfterReply(link.id);
+  revalidateLink(link);
+}
+
 /** "Réanalyser": a fresh reading even when nothing changed, at most every two minutes. */
 export async function reanalyzeDeal(linkId: string) {
   const link = await requireOwnedLink(linkId);
@@ -670,6 +696,15 @@ export async function reanalyzeDeal(linkId: string) {
   return errors[outcome] ? { error: errors[outcome] } : { ok: true };
 }
 
+
+/** "Préparer l'appel": talking points from the latest analysis, written once and kept with it. */
+export async function prepareCallScriptForDeal(linkId: string): Promise<{ script?: string; error?: string }> {
+  const link = await requireOwnedLink(linkId);
+  const t = await getTranslations("deal.actions");
+  const result = await prepareCallScript(link.id);
+  if (result.ok) return { script: result.script };
+  return { error: result.reason === "no_ai" ? t("noAi") : result.reason === "budget" ? t("budget") : t("callScriptFailed") };
+}
 
 /** "Préparer une relance": a draft from the latest analysis, whatever it recommended. The policy still applies. */
 export async function prepareFollowupFromInsight(linkId: string) {

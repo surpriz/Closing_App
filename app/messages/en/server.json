@@ -118,7 +118,12 @@
       "HOT": "hot",
       "WARM": "warm",
       "COLD": "cold"
-    }
+    },
+    "followupClicked": " (the prospect reopened the proposal from this message)",
+    "followupReplied": " (the prospect replied to it)",
+    "followupBounced": " (not delivered: invalid address)",
+    "copied": "copied text ({count, plural, one {# passage} other {# passages}})",
+    "printed": "printed the document"
   },
   "insight": {
     "notEngaged": {
@@ -142,7 +147,9 @@
       "maxReached": "Already {count} follow-ups in 30 days, the maximum you set.",
       "recentContact": "You were in touch with them less than 48 hours ago.",
       "noChannel": "No sending channel available.",
-      "afterExpiry": "It would go out after the link expires."
+      "afterExpiry": "It would go out after the link expires.",
+      "bounced": "The contact's email address bounced.",
+      "replied": "The prospect replied by email: it's your conversation now."
     },
     "act": {
       "insightNotFound": "Analysis not found.",
@@ -150,7 +157,8 @@
       "linkNotFound": "Link not found.",
       "replaced": "Replaced by a newer analysis",
       "alreadyExists": "A follow-up already exists for this analysis.",
-      "preparedOnRequest": "Prepared at your request. {headline}"
+      "preparedOnRequest": "Prepared at your request. {headline}",
+      "replacedStep": "Replaced by the next reminder"
     },
     "dispatch": {
       "followupsOff": "Follow-ups turned off on this link",
@@ -172,7 +180,9 @@
       "documentDeleted": "Document deleted",
       "openedProposal": "The prospect opened the proposal",
       "validatedByProspect": "Proposal approved by the prospect",
-      "changeRequestedByProspect": "Changes requested by the prospect"
+      "changeRequestedByProspect": "Changes requested by the prospect",
+      "bounced": "Invalid email address (bounced)",
+      "replied": "The prospect replied by email"
     },
     "queue": {
       "toReview": "To review: {issues}"
@@ -195,5 +205,10 @@
     "statusChanged": "Status changed to “{status}”",
     "replacedByReminder": "Replaced by the deadline reminder"
   },
-  "staleDeployment": "A new version of Clozer just went live. Reload the page to continue."
+  "staleDeployment": "A new version of Clozer just went live. Reload the page to continue.",
+  "outcome": {
+    "HELD": "The meeting took place",
+    "NO_SHOW": "The prospect didn't show up to the meeting",
+    "CANCELLED": "The meeting was cancelled"
+  }
 }

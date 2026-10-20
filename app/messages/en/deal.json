@@ -58,7 +58,8 @@
     "analyzeFirst": "Analyze this prospect first.",
     "cannotPrepare": "Couldn't prepare a follow-up.",
     "expiryPast": "Pick a future date.",
-    "expiryTooFar": "One year max."
+    "expiryTooFar": "One year max.",
+    "callScriptFailed": "Couldn't prepare the call right now. Try again in a moment."
   },
   "followupActions": {
     "emptyMessage": "The message is empty.",
@@ -446,7 +447,10 @@
     "pausedToast": "Paused, no follow-ups until then",
     "pauseLabel": "Pause until",
     "pause": "Pause",
-    "pauseHint": "The prospect will get back to you later? Clozer stays quiet until then."
+    "pauseHint": "The prospect will get back to you later? Clozer stays quiet until then.",
+    "repliedStopped": "Email reply on {date}: automatic follow-ups are off.",
+    "repliedResume": "Resume follow-ups",
+    "repliedResumed": "Follow-ups resumed"
   },
   "activityTimeline": {
     "empty": "No activity."
@@ -525,7 +529,14 @@
     "exitAssistant": "opened the assistant on the way out",
     "readTranslated": "read translated into {language}",
     "forwarded": "{from} forwarded the document to {to}",
-    "notDelivered": "Email not delivered"
+    "notDelivered": "Email not delivered",
+    "followupClicked": "opened from this message",
+    "followupReplied": "the prospect replied to it",
+    "followupBounced": "not delivered: invalid address",
+    "replyCaught": "Email reply from {from}",
+    "replySeen": "Reply from {from} seen in your inbox",
+    "textCopied": "text copied (p. {pages})",
+    "printed": "printed"
   },
   "heat": {
     "notRead": "Not read yet"
@@ -554,5 +565,16 @@
       "extension": "Asked for more time",
       "relink": "Asked for the document again"
     }
+  },
+  "outcome": {
+    "lostQuestion": "Lost: why?",
+    "meetingQuestion": "Did the meeting happen?",
+    "thanks": "Saved",
+    "followupsBack": "Saved. Follow-ups can start again."
+  },
+  "callScript": {
+    "label": "Prepare the call",
+    "writing": "Preparing…",
+    "title": "For the call"
   }
 }

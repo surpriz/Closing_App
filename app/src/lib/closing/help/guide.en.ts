@@ -34,7 +34,8 @@ export const HELP_GUIDE_EN = `## What Clozer is
 6. By default the follow-up waits for you (email + “Follow-ups to review”). On Autopilot, only confident
    follow-ups go out on their own. The prospect's replies land in your inbox.
 7. It keeps watching: 3 days of silence, 7 days, it takes stock again and adjusts what comes next. Link never
-   opened: a gentle reminder after a few days. The prospect clicks “Approve” or “Request changes”: everything
+   opened: reminders on day 3 and day 7, then on day 14 a last message offering to close the file (always
+   approved by you). If they clicked but stopped at the email screen, the reminder makes it easy to get in. The prospect clicks “Approve” or “Request changes”: everything
    stops and you get notified.
 - Prospect statuses: Open, Approved, Changes requested, Won, Lost.
 
@@ -183,6 +184,14 @@ export const HELP_GUIDE_EN = `## What Clozer is
   zone); “Send now”; “Copy” or “Open in my email app” then “I sent it myself”; “Cancel”. An expired link must
   be extended before following up.
 - An unsubscribe link is added to every send.
+- Send time: the hour this prospect usually reads (otherwise your prospects' hour), within their business hours,
+  a few minutes past the hour.
+- Prospect replies: Clozer spots them when the prospect answers a follow-up (you still get the reply as before)
+  or, with the extension, when you open the thread in Gmail. Automatic follow-ups stop, and the prospect's page
+  shows “Email reply on…” with “Resume follow-ups”. Invalid address (bounce): nothing more goes to it and
+  you're told.
+- Follow-ups to review (/drafts): every follow-up waiting for your OK, “Approve” one by one or “Approve all”.
+  Each one is checked again at send time.
 - Stop follow-ups: for the whole workspace, “Review everything myself” on Today or switch back to “I review and
   approve”; for one prospect, the “Follow-ups” toggle (document's Prospects tab) or “Follow-ups prepared by Clozer”
   in the link settings, “Pause until”, or a status other than Open. For new links: Settings → Your links →
@@ -264,6 +273,16 @@ export const HELP_GUIDE_EN = `## What Clozer is
 - Invite: “Invite a sales rep” or Settings → Team (/settings#equipe), email + role (Member or Admin), “Invite”.
   Change a role, “Remove” a member, cancel an invitation.
 
+## Results (/results)
+- What gets your prospects to answer, over 90 days: by follow-up type, by AI goal and by time received, how many
+  were sent, reopened from the follow-up, answered, and followed by a meeting within 14 days.
+- Won and lost deals (180 days, medians): reading time, visits, readers, pricing read, time to decide. Why deals
+  were lost: picked in one click when you mark a deal Lost.
+- Alert response time: how long before the deal was opened after an alert. A seller sees their own deals; an
+  admin sees the team or “My deals”.
+- Once a booked meeting's date has passed, the prospect's page asks whether it happened: “No-show” or
+  “Cancelled” puts follow-ups back on. “Prepare the call” on the prospect's page gives what to say, ask and answer.
+
 ## Data and privacy (/settings#donnees)
 - The prospect is informed: a clear notice appears on the document page, with a link to the privacy policy.
   Follow-ups never mention a page or a reading time.
@@ -280,7 +299,8 @@ export const HELP_GUIDE_EN = `## What Clozer is
 
 ## Known limits
 - Follow-ups are sent from Clozer's address, with your email as the reply-to.
-- Clozer doesn't see email replies yet: log them on the prospect's page (“Log an interaction” → Reply received).
+- Email replies: seen for follow-ups Clozer sent and, with the extension, in your Gmail threads. A reply to your
+  own email in Outlook isn't seen: log it (“Log an interaction” → Reply received).
 - WhatsApp follow-ups are coming soon.
 - Files: PDF only, 25 MB max. On a web link, no page-by-page detail.
 - AI: Claude Haiku (by Anthropic) reads documents and runs the second check before every automatic send; Claude

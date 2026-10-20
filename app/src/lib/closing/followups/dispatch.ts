@@ -7,6 +7,7 @@ import { toUiLocale } from "@/lib/seller-locale";
 import { getNamespaceTranslator } from "@/lib/server-translator";
 
 import { isWhatsAppConfigured, sendWhatsApp } from "../channels/whatsapp";
+import { replyRelayAddress } from "../replies/inbound";
 import { isLinkExpired, REMINDER_MIN_SEND_LEAD_MS } from "../expiry";
 import { sendProspectEmail } from "../prospect-email";
 
@@ -65,6 +66,11 @@ export async function sendFollowup(
     await finish(followup.id, "CANCELLED", t("meetingBooked"));
     return "cancelled";
   }
+  // The prospect answered by email: only a message the seller approved since still goes
+  if (link.repliedAt && !(followup.approvedAt && followup.approvedAt > link.repliedAt) && !approvedById) {
+    await finish(followup.id, "CANCELLED", t("replied"));
+    return "cancelled";
+  }
   if (link.quoteRequestedAt) {
     await finish(followup.id, "CANCELLED", t("quoteRequested"));
     return "cancelled";
@@ -77,6 +83,10 @@ export async function sendFollowup(
   }
   if (prospect.unsubscribedAt) {
     await finish(followup.id, "SKIPPED", t("unsubscribed"));
+    return "skipped";
+  }
+  if (prospect.bouncedAt && followup.channel === "EMAIL") {
+    await finish(followup.id, "SKIPPED", t("bounced"));
     return "skipped";
   }
   // A message the seller approved stands: they saw the situation when they did
@@ -148,6 +158,7 @@ export async function sendFollowup(
         subject: followup.subject ?? (followup.locale.toLowerCase().startsWith("fr") ? "Suite à notre proposition" : "Following up on our proposal"),
         body: followup.body,
         replyTo: link.createdBy?.email,
+        replyRelay: replyRelayAddress(followup.id),
       });
       providerMessageId = result.id;
     } else {

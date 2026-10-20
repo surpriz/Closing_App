@@ -1,6 +1,8 @@
 import { browser } from "wxt/browser";
 
 import { COPY } from "./copy";
+import type { ThreadReply } from "@/adapters/threads";
+
 import type { Recipient } from "./recipients";
 
 export type MailHost = "gmail" | "outlook";
@@ -34,6 +36,8 @@ export type Request =
   | { type: "sent"; linkId: string; recipient: Recipient | null }
   // "Marquer gagné" on a "validé" banner
   | { type: "markWon"; linkId: string }
+  // Someone answered in a thread carrying a Clozer link (who, never what)
+  | { type: "replies"; replies: ThreadReply[] }
   // Popup: who is reading now, and the "notify me" switch
   | { type: "readers" }
   | { type: "callMoments"; enabled?: boolean }

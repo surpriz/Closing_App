@@ -5,6 +5,7 @@ import { sellerVoice } from "../ai/seller-language";
 import { docTypeName, tagNames } from "../documents/doc-type-names";
 import { DOC_TYPE_GUIDANCE, type DocType } from "../documents/doc-types";
 import { type Fact, renderFacts } from "./facts";
+import { untrusted } from "../ai/prompts";
 
 /**
  * The deal analyzer: an experienced B2B closer reading the facts of one deal.
@@ -55,6 +56,8 @@ export type AnalyzerProfile = {
   valueProps: string | null;
   commonObjections: string | null;
   avgSalesCycleDays: number | null;
+  /** Per follow-up goal, the share answered or followed by a meeting in this workspace (results/stats.ts). */
+  followupLearnings?: string | null;
 };
 
 export type AnalyzerDeal = {
@@ -72,7 +75,7 @@ export type AnalyzerDeal = {
 };
 
 function block(tag: string, content: string | null | undefined) {
-  return content?.trim() ? `<${tag}>\n${content.trim()}\n</${tag}>` : "";
+  return content?.trim() ? `<${tag}>\n${untrusted(content.trim())}\n</${tag}>` : "";
 }
 
 const MAX_OUTLINE_PAGES = 40;
@@ -97,6 +100,8 @@ export function buildAnalyzerPrompt(profile: AnalyzerProfile, deal: AnalyzerDeal
       profile.valueProps && `Why customers choose them: ${profile.valueProps}`,
       profile.commonObjections && `Frequent objections: ${profile.commonObjections}`,
       profile.avgSalesCycleDays && `Usual sales cycle: ${profile.avgSalesCycleDays} days`,
+      profile.followupLearnings &&
+        `What got answers in this workspace (follow-up goal: share answered or followed by a meeting, messages sent): ${profile.followupLearnings}. When several goals fit this deal, prefer the one that worked.`,
     ]
       .filter(Boolean)
       .join("\n") || "Not described yet.",

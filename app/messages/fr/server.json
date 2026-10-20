@@ -118,7 +118,12 @@
       "HOT": "chaud",
       "WARM": "tiède",
       "COLD": "froid"
-    }
+    },
+    "followupClicked": " (le prospect a rouvert la proposition depuis ce message)",
+    "followupReplied": " (le prospect y a répondu)",
+    "followupBounced": " (non délivrée : adresse invalide)",
+    "copied": "a copié du texte ({count, plural, one {# passage} other {# passages}})",
+    "printed": "a imprimé le document"
   },
   "insight": {
     "notEngaged": {
@@ -142,7 +147,9 @@
       "maxReached": "Déjà {count} relances en 30 jours, le maximum réglé.",
       "recentContact": "Vous avez échangé avec lui il y a moins de 48 h.",
       "noChannel": "Aucun canal d'envoi disponible.",
-      "afterExpiry": "L'envoi tomberait après l'expiration du lien."
+      "afterExpiry": "L'envoi tomberait après l'expiration du lien.",
+      "bounced": "L'adresse email du contact est invalide.",
+      "replied": "Le prospect a répondu par email : la suite est entre vos mains."
     },
     "act": {
       "insightNotFound": "Analyse introuvable.",
@@ -150,7 +157,8 @@
       "linkNotFound": "Lien introuvable.",
       "replaced": "Remplacée par une analyse plus récente",
       "alreadyExists": "Une relance existe déjà pour cette analyse.",
-      "preparedOnRequest": "Préparée à votre demande. {headline}"
+      "preparedOnRequest": "Préparée à votre demande. {headline}",
+      "replacedStep": "Remplacée par le rappel suivant"
     },
     "dispatch": {
       "followupsOff": "Relances désactivées sur ce lien",
@@ -172,7 +180,9 @@
       "documentDeleted": "Document supprimé",
       "openedProposal": "Le prospect a ouvert la proposition",
       "validatedByProspect": "Proposition validée par le prospect",
-      "changeRequestedByProspect": "Ajustement demandé par le prospect"
+      "changeRequestedByProspect": "Ajustement demandé par le prospect",
+      "bounced": "Adresse email invalide (bounce)",
+      "replied": "Le prospect a répondu par email"
     },
     "queue": {
       "toReview": "À relire : {issues}"
@@ -195,5 +205,10 @@
     "statusChanged": "Statut passé à « {status} »",
     "replacedByReminder": "Remplacée par le rappel d'échéance"
   },
-  "staleDeployment": "Une nouvelle version de Clozer vient d'être mise en ligne. Rechargez la page pour continuer."
+  "staleDeployment": "Une nouvelle version de Clozer vient d'être mise en ligne. Rechargez la page pour continuer.",
+  "outcome": {
+    "HELD": "Le rendez-vous a eu lieu",
+    "NO_SHOW": "Le prospect n'est pas venu au rendez-vous",
+    "CANCELLED": "Le rendez-vous a été annulé"
+  }
 }

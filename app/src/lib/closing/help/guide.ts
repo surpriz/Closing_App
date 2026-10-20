@@ -41,7 +41,8 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
 6. Par défaut la relance vous attend (email + « Relances à valider »). En mode automatique, seules les
    relances sûres partent seules. Les réponses du prospect arrivent dans votre boîte mail.
 7. Il continue de surveiller : silence de 3 jours, de 7 jours, il refait le point et adapte la suite. Lien
-   jamais ouvert : rappel discret après quelques jours. Le prospect clique « Valider » ou « Demander un
+   jamais ouvert : rappels à J+3 et J+7, puis à J+14 un dernier message qui propose de classer le dossier
+   (toujours à valider par vous). S'il a cliqué sans passer l'écran email, le rappel lui facilite l'accès. Le prospect clique « Valider » ou « Demander un
    ajustement » : tout s'arrête et vous êtes prévenu.
 - Statuts d'un prospect : En cours, Validé, Ajustement demandé, Gagné, Perdu.
 
@@ -204,6 +205,14 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
   heure du prospect) ; « Envoyer maintenant » ; « Copier » ou « Ouvrir dans ma messagerie » puis « Je l'ai
   envoyée moi-même » ; « Annuler ». Un lien expiré doit être prolongé avant de relancer.
 - Un lien de désinscription est ajouté à chaque envoi.
+- Heure d'envoi : celle où ce prospect lit d'habitude (sinon celle de vos prospects), dans ses heures de bureau,
+  quelques minutes après l'heure pile.
+- Réponse du prospect : Clozer la repère quand il répond à une relance (la réponse vous arrive comme avant) ou,
+  avec l'extension, quand vous ouvrez le fil dans Gmail. Les relances automatiques s'arrêtent, la fiche affiche
+  « Réponse par email le… » avec « Reprendre les relances ». Adresse invalide (bounce) : plus rien ne part à
+  cette adresse et vous êtes prévenu.
+- Relances à valider (/drafts) : toutes les relances qui attendent votre accord, « Valider » une par une ou «
+  Tout valider ». Chaque relance est revérifiée au moment de l'envoi.
 - Arrêter les relances : pour tout l'espace, « Tout valider moi-même » sur Aujourd'hui ou repasser sur « Je la
   relis et je valide » ; pour un prospect, l'interrupteur « Relances » (onglet Prospects du document) ou «
   Relances préparées par Clozer » dans les réglages du lien, la pause « Mettre en pause jusqu'au », ou un
@@ -291,6 +300,16 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
 - Inviter : « Inviter un commercial » ou Réglages → Équipe (/settings#equipe), email + rôle (Membre ou Admin),
   « Inviter ». Changer un rôle, « Retirer » un membre, annuler une invitation.
 
+## Résultats (/results)
+- Ce qui fait répondre vos prospects, sur 90 jours : par type de relance, par objectif de l'IA et par heure de
+  réception, le nombre envoyé, rouvertes depuis la relance, réponses, rendez-vous pris sous 14 jours.
+- Deals gagnés et perdus (180 jours, médianes) : temps de lecture, visites, lecteurs, lecture des tarifs, délai
+  de décision. Raisons de perte : choisies en un clic quand vous marquez un deal Perdu.
+- Réactivité aux alertes : délai avant d'ouvrir le deal après une alerte. Un vendeur voit ses deals ; un admin
+  voit l'équipe ou « Mes deals ».
+- Après la date d'un rendez-vous pris, la fiche demande s'il a eu lieu : « Pas venu » ou « Annulé » relancent
+  les relances. « Préparer l'appel » sur la fiche donne quoi dire, demander et répondre.
+
 ## Données et confidentialité (/settings#donnees)
 - Le prospect est informé : une mention claire figure sur la page du document, avec un lien vers la politique
   de confidentialité. Les relances ne citent jamais une page ni un temps de lecture.
@@ -307,8 +326,9 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
 
 ## Limites connues
 - Les relances partent de l'adresse de Clozer, avec votre email en adresse de réponse.
-- Clozer ne voit pas encore les réponses reçues par email : notez-les sur la fiche (« Noter un échange » →
-  Réponse reçue).
+- Réponses par email : vues pour les relances envoyées par Clozer et, avec l'extension, dans vos fils Gmail.
+  Une réponse à votre propre email dans Outlook n'est pas vue : notez-la (« Noter un échange » → Réponse
+  reçue).
 - Les relances WhatsApp arrivent bientôt.
 - Fichiers : PDF uniquement, 25 Mo maximum. Sur un lien web, pas de détail page par page.
 - IA : Claude Haiku (d'Anthropic) lit les documents et fait le second contrôle avant tout envoi automatique ;
