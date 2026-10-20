@@ -295,6 +295,7 @@ enum FollowupTrigger {
   AI_DECISION // decided by the deal analysis
   EXPIRY_REMINDER // the link expires soon (quotes and proposals)
   WARM_READ // a cold email reader read for a while without answering
+  INTEREST_RETURNED // the seller reopened a dead link the prospect had come back to
 }
 
 enum FollowupStatus {
@@ -383,6 +384,8 @@ enum SellerAlertType {
   DOCUMENT_FORWARDED // a reader passed the proposal on with "Transférer"
   PROSPECT_REPLIED // the prospect answered by email: automatic follow-ups stopped
   EMAIL_BOUNCED // an email Clozer sent to the prospect bounced: the address is wrong
+  DEAD_LINK_OPENED // the prospect came back to an archived or expired link without asking anything
+  RELINK_REQUESTED // the link was archived and the prospect asked for the document again
 }
 
 // Role of a prospect contact in the buying committee, set by the seller.
@@ -437,6 +440,7 @@ enum ProspectActionType {
   MEETING_CLICK // opened the seller's booking page (once per view)
   MEETING_BOOKED // the booking widget reported a confirmed meeting
   REQUEST_QUOTE // "Demander un devis" under a video pitch
+  REQUEST_RELINK // the link was archived, the prospect asked for the document again
 }
 
 enum ChatRole {
@@ -657,6 +661,8 @@ model Link {
   bookingEnabled       Boolean    @default(true)
   // the reader can pick a language and read the document translated by the AI (PDF and web reader view)
   translationEnabled   Boolean    @default(true)
+  // "Transférer" in the viewer: a reader passes the document on (personal links only)
+  forwardEnabled       Boolean    @default(true)
   // Booking page shown to the prospect; null = the link creator's (NotificationPreference.bookingUrl)
   bookingUrl           String?
   // The prospect booked a meeting from the viewer: automatic follow-ups stop for good

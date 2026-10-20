@@ -37,7 +37,8 @@
     "MANUAL": "Relance manuelle",
     "AI_DECISION": "Conseillée par l'analyse",
     "EXPIRY_REMINDER": "Rappel avant expiration",
-    "WARM_READ": "Après un clic de cold email"
+    "WARM_READ": "Après un clic de cold email",
+    "INTEREST_RETURNED": "Reprise après réactivation"
   },
   "sellerActivity": {
     "CALL": "Appel",
@@ -74,7 +75,9 @@
     "EMAIL_BOUNCED": "Email non délivré",
     "LINK_EXPIRING": "Lien bientôt expiré",
     "MEETING_BOOKED": "Rendez-vous pris",
-    "DOCUMENT_FORWARDED": "Document transféré"
+    "DOCUMENT_FORWARDED": "Document transféré",
+    "DEAD_LINK_OPENED": "Retour sur un lien inactif",
+    "RELINK_REQUESTED": "Document redemandé"
   },
   "prospectRole": {
     "DECISION_MAKER": "Décideur",

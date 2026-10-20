@@ -1,19 +1,20 @@
 {
   "meta": {
-    "title": "Clozer · Know who reads your documents, follow up at the right time",
-    "description": "Quotes, invoices, decks, technical docs: send a tracked link instead of an attachment. Clozer sees which pages get read, tells you who to follow up with, and writes the follow-up.",
-    "shortDescription": "Quotes, invoices, decks: send a tracked link. Clozer tells you who to follow up with and writes the follow-up.",
-    "ogHeadline": "See where your document heats up."
+    "title": "Clozer · Know who reads your sales proposals",
+    "description": "Send a tracked link instead of the PDF. Clozer sees who reads what and who else, then drafts the follow-up. Free during the beta.",
+    "shortDescription": "Send a tracked link instead of the PDF. Clozer sees who reads it, then drafts the follow-up.",
+    "ogHeadline": "Know who's reading your proposal."
   },
   "nav": {
     "label": "Navigation",
     "home": "Clozer, home",
     "how": "How it works",
-    "followUps": "Follow-ups",
-    "who": "Who it's for",
+    "features": "Features",
+    "useCases": "Use cases",
+    "teams": "For teams",
     "faq": "FAQ",
     "login": "Log in",
-    "try": "Try it",
+    "try": "Create a link",
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
     "language": "Language"
@@ -33,272 +34,279 @@
     "google": "Continue with Google"
   },
   "reading": {
-    "caption": "Example reading: {name}.",
-    "captionVideo": "The most-watched part is “{title}”, watched {count, plural, one {# time} other {# times}}. The prospect dropped off before the end.",
-    "captionPage": "The most-read page is “{title}”, at {time}.",
-    "tablist": "Document type",
+    "name": "Proposal “E-commerce site redesign”",
+    "caption": "Example: a reading of the “E-commerce site redesign” proposal. The most-read page is “Pricing”, 3:38.",
+    "summary": "Pricing read 3 times, 3:38 in total",
     "hot": "Hot",
     "cold": "Cold",
-    "documents": {
-      "quote": {
-        "tab": "Quote",
-        "name": "“Website redesign” quote",
-        "pages": {
-          "p1": "Cover",
-          "p2": "Context",
-          "p3": "Approach",
-          "p4": "Pricing",
-          "p5": "Timeline",
-          "p6": "Terms"
-        }
+    "pages": {
+      "cover": {
+        "label": "Cover",
+        "heading": "Sales proposal"
       },
-      "deck": {
-        "tab": "Deck",
-        "name": "“2027 Offer” deck",
-        "pages": {
-          "p1": "Cover",
-          "p2": "The problem",
-          "p3": "Demo",
-          "p4": "Results",
-          "p5": "Team",
-          "p6": "Contact"
-        }
+      "scope": {
+        "label": "Scope",
+        "heading": "Project scope"
       },
-      "tech": {
-        "tab": "Tech doc",
-        "name": "“ERP migration” technical brief",
-        "pages": {
-          "p1": "Contents",
-          "p2": "Current setup",
-          "p3": "Architecture",
-          "p4": "Security",
-          "p5": "Timeline",
-          "p6": "Appendices"
-        }
+      "timeline": {
+        "label": "Timeline",
+        "heading": "Timeline"
       },
-      "invoice": {
-        "tab": "Invoice",
-        "name": "Invoice #2026-118",
-        "pages": {
-          "p1": "Summary",
-          "p2": "Line items",
-          "p3": "Discounts",
-          "p4": "Payment schedule",
-          "p5": "Fine print",
-          "p6": "Bank details"
-        }
-      },
-      "video": {
-        "tab": "Video",
-        "name": "“SEO audit” video pitch · 3:00",
-        "pages": {
-          "p1": "Hello",
-          "p2": "The problem",
-          "p3": "Demo",
-          "p4": "Results",
-          "p5": "Pricing",
-          "p6": "Next step"
-        }
+      "pricing": {
+        "label": "Pricing",
+        "heading": "Pricing and terms"
       }
     }
   },
   "home": {
-    "demoBar": {
-      "report": "Reading report #0412",
-      "company": "Atelier Morel"
-    },
     "demo": "Demo example",
     "hero": {
-      "title": "See where your document",
-      "titleHot": "heats up.",
-      "lead": "Quote, invoice, deck, tech doc, contract: send a link instead of an attachment. Clozer tracks reading page by page, tells you who to follow up with, writes the follow-up and picks the time to send it.",
+      "title": "Know who's reading your proposal. Follow up <hot>at the right time</hot>.",
+      "lead": "For B2B sales reps and their managers. Send a Clozer link instead of the PDF or the video: see who opens it, what they read and who they forward it to. Clozer drafts the follow-up.",
       "free": "Free during the beta",
-      "noCard": "No credit card"
-    },
-    "readout": {
-      "prospect": "Prospect",
-      "prospectValue": "Marie Dupont · Atelier Morel",
-      "temperature": "Temperature",
-      "hot": "Hot",
-      "activity": "Activity",
-      "activityValue": "Back 3 times since yesterday",
-      "next": "Next follow-up",
-      "ready": "Ready",
-      "nextTime": "Thu 10:30 AM"
+      "noCard": "No credit card",
+      "magicLink": "Sign-in link by email"
     },
     "silence": {
       "title": "You hit send. Then, silence.",
-      "body": "The document is out. Did they open it? Make it to pricing? Forward it to the decision-maker? So you follow up blind: too early and you're a pest, too late and they've signed with someone else.",
-      "answer": "Clozer swaps the attachment for a link, and the guesswork for what actually happened.",
-      "pdf": "PDF attachment",
-      "pdfVerdict": "Nothing measured",
-      "link": "Clozer link",
-      "linkVerdict": "Pricing read for 3:38"
-    },
-    "send": {
-      "title": "Two ways to send. Nothing to learn.",
-      "link": {
-        "name": "The link",
-        "status": "Available",
-        "body": "Upload the document and your link is ready in a second. Paste it wherever you already talk to clients: email, WhatsApp, LinkedIn, text. Your client opens it in the browser, on desktop or phone, with nothing to install."
-      },
-      "mail": {
-        "name": "From Gmail or Outlook",
-        "status": "Available",
-        "body": "Attach your PDF like you always do. When you hit send, the extension swaps it for a Clozer link, then pings you at the top of your inbox when it gets read. The Chrome extension works in Gmail and in Outlook on the web; for desktop Outlook, your Microsoft 365 admin adds the add-in.",
-        "action": "Add to Chrome"
+      "body": "The document is out. Did they open it? Forward it to the decision-maker? So you follow up blind: too early and you're a pest, too late and they've signed with someone else.",
+      "table": {
+        "caption": "What you know after sending: with a PDF attachment, and with a Clozer link (example values).",
+        "pdf": "PDF attachment",
+        "link": "Clozer link",
+        "example": "Example",
+        "opened": {
+          "label": "Opened?",
+          "pdf": "You don't know",
+          "link": "Tuesday, 9:12 AM"
+        },
+        "depth": {
+          "label": "How far?",
+          "pdf": "You don't know",
+          "link": "Pricing read 3 times"
+        },
+        "forwarded": {
+          "label": "Forwarded?",
+          "pdf": "You don't know",
+          "link": "Opened by a 2nd reader"
+        },
+        "reply": {
+          "label": "Can they reply?",
+          "pdf": "By email, if they think of it",
+          "link": "They approve or book a call in the document"
+        }
       }
     },
     "steps": {
-      "title": "Three steps, once per document.",
+      "title": "Three steps. Nothing to install to get started.",
       "upload": {
-        "title": "Upload your document",
-        "body": "A PDF, a web page (Notion, Loom, Figma…) or a three-minute video pitch. Clozer figures out whether it's a quote, an invoice, a deck or a résumé, and reads every page accordingly: on a résumé, “Pricing” becomes your day rate.",
-        "measure": "10 document types"
+        "title": "Drop your proposal.",
+        "body": "A PDF, a web page (Notion, Google Slides, Figma…) or a 3-minute video pitch.",
+        "alt": "Clozer screen: the area to drop a PDF, and the field to paste a web page link."
       },
       "send": {
-        "title": "Send the link",
-        "body": "Paste it into your email, WhatsApp or LinkedIn, or let the Gmail and Outlook extension replace the attachment for you. One link per recipient: you know who's reading, and who's sitting on it.",
-        "measure": "1 link = 1 reader"
+        "title": "Send the link.",
+        "body": "Paste it into your email, or let the Gmail and Outlook extension swap the attachment. One link per prospect.",
+        "alt": "Clozer screen: the link is ready for Sarah Collins, with Copy link and Send by email buttons."
       },
       "followUp": {
-        "title": "Let Clozer follow up",
-        "body": "It sees who read what, writes the follow-up and suggests the day and time to send it. You approve in one click.",
-        "measure": "You approve every follow-up"
-      }
+        "title": "Approve the follow-up.",
+        "body": "Clozer writes it and suggests the time. You read it, you send it.",
+        "alt": "Clozer screen: a follow-up written after a pricing read, suggested for 9 AM the next day, waiting for Approve."
+      },
+      "guided": "After you sign up, a guided tour walks you through a first test link."
+    },
+    "video": {
+      "title": "A video pitch, tracked like a proposal.",
+      "body": "On camera or sharing your screen, record up to 3 minutes right in Clozer. The prospect watches it in their browser, and you see how much of it they actually watched.",
+      "record": {
+        "title": "Recorded in Clozer",
+        "body": "No other tool needed. The pitch becomes a document, with one link per prospect, like a PDF."
+      },
+      "watched": {
+        "title": "What they really watched",
+        "body": "Viewing is measured in tenths of the video. Skipped parts don't count."
+      },
+      "transcript": {
+        "title": "Follow-ups that know what you said",
+        "body": "The video is transcribed, so follow-ups and the assistant know what you talk about in each part."
+      },
+      "quote": {
+        "title": "A “Request a quote” button",
+        "body": "Turn it on for the link. If they click it, you're notified and automatic follow-ups stop."
+      },
+      "capsules": "On a PDF, you can also pin a 90-second video or voice capsule to a page, to explain your pricing for example.",
+      "useCases": "Ideas for what to send, case by case",
+      "name": "Video pitch “E-commerce site redesign”, 3:00",
+      "caption": "Example: viewing of a 3-minute video pitch, split into ten parts. The prospect skipped the 3rd part, watched the pricing part twice and stopped at 70%.",
+      "summary": "Watched up to 70%, pricing watched twice",
+      "skipped": "Skipped part",
+      "hottest": "Pricing, watched twice",
+      "quoteButton": "Request a quote"
     },
     "followUps": {
-      "title": "Follow-ups that write and schedule themselves.",
-      "body": "Clozer starts from what your client actually read and from your offer. It writes a follow-up that tackles whatever is holding them back, and picks the moment: a business day, during office hours, in your client's time zone.",
-      "approve": "Approve in one click, or let the simple ones go out on their own. The tricky ones always wait for you.",
-      "caption": "Example follow-up drafted by Clozer, scheduled for Thursday at 10:30 AM, prospect's time.",
-      "cardTitle": "Follow-up ready · Marie Dupont",
-      "cardStatus": "needs approval",
-      "read": {
-        "label": "What they read",
-        "value": "Pricing read 3 times, Timeline skimmed"
+      "title": "Clozer drafts the <nowrap>follow-up</nowrap>. You approve it.",
+      "body": "Every morning, the list of prospects to follow up with. For each one, a message based on what they read.",
+      "brief": {
+        "title": "The morning brief",
+        "body": "An email every working day, at the hour you choose: who to follow up with and which links are about to expire."
       },
       "stuck": {
-        "label": "What's holding it up",
-        "value": "Price, judging by time spent on the payment schedule"
+        "title": "A follow-up that answers what's holding them back",
+        "body": "The message starts from what the prospect read and from your offer. It lands on a working day, during office hours, in the prospect's time zone."
       },
-      "schedule": {
-        "label": "Suggested send",
-        "value": "Thursday, Oct 22, 10:30 AM, prospect's time"
+      "approve": {
+        "title": "Approved in one click, or sent on its own",
+        "body": "Switch to automatic mode and simple follow-ups go out without you, like a reminder or an offer to talk."
       },
-      "message": "“Hi Marie, to make the decision easier, I can offer to split the payment into three installments. Do you have a few minutes Thursday to talk it over?”",
-      "send": "Approve and send",
-      "edit": "Edit"
+      "delicate": {
+        "title": "Delicate cases wait for you",
+        "body": "A prospect who wrote to you, a reader who came through a forward, a link never opened. Their follow-up waits for your approval, even in automatic mode."
+      },
+      "alt": "Clozer's Today board: 2 hot prospects, Northwind and Acme, each with a follow-up ready to approve, and Atelier Morel, warm."
     },
-    "readings": {
-      "title": "A brief on every prospect, every morning.",
-      "pages": {
-        "title": "Page by page",
-        "body": "Pages read, time spent on each one, return visits to pricing, number of readers. For a video, which parts got watched and where the prospect dropped off. You can tell when the document is making the rounds internally."
+    "prospect": {
+      "title": "Your prospect moves forward without waiting on you.",
+      "body": "It all happens inside the document. They approve, ask for a change or book a call, and you hear about it right away.",
+      "approve": {
+        "title": "Approve or ask for a change",
+        "body": "“Accept & sign” sits at the end of the document. If they want something changed, they write it right there in the document."
       },
-      "live": {
-        "title": "Live",
-        "body": "A notification in Chrome, or at the top of Gmail and Outlook, the moment a prospect is reading. You get an alert when they come back after a long silence or when several people are reading."
+      "book": {
+        "title": "Book a call",
+        "body": "Your Calendly or Cal.com page opens inside the document. As soon as they book, automatic follow-ups stop."
       },
-      "score": {
-        "title": "A temperature that explains itself",
-        "body": "Cold, warm, hot: a score out of 100 where every point comes with a reason you can read. No black box."
+      "ask": {
+        "title": "Ask a question, or leave a voice note",
+        "body": "The assistant answers from your proposal and hands over to you when it doesn't know. On any page, the prospect can also leave a one-minute voice note, transcribed for you."
       },
-      "deal": {
-        "title": "A read on every deal",
-        "body": "Where the prospect stands, what's holding things up, what to do and when. Every claim points back to a measured fact, or it gets thrown out."
+      "language": {
+        "title": "Read it in their language",
+        "body": "English, French, Spanish, German, Italian or Portuguese: the PDF is translated with its layout intact."
       },
-      "reply": {
-        "title": "The prospect replies right in the document",
-        "body": "Accept the proposal, ask for a change, book a meeting on your calendar, ask the assistant a question or leave a voice note on a page. It all lands at the top of your dashboard."
-      }
+      "actionsAlt": "Proposal open on a phone, pricing page: at the bottom, Accept & sign, Book a meeting, Request a change, a voice note and forwarding; at the top, a choice of six languages.",
+      "changeAlt": "The prospect asks for a change from inside the proposal: “Could we pay in three instalments? And start the design in November?”"
     },
-    "sheet": {
-      "caption": "Example prospect brief: Marie Dupont, hot, 86 out of 100, with the score breakdown.",
-      "proposal": "Atelier Morel · “Website redesign” proposal",
-      "score": "/100 · hot",
-      "reasons": {
-        "pricing": "Read pricing for 3:38",
-        "back": "Back 3 times since yesterday",
-        "forwarded": "Forwarded to a 2nd reader",
-        "method": "Read the whole approach"
-      }
+    "channels": {
+      "title": "It works where you already send.",
+      "body": "Keep your inbox and your outreach tools. Clozer plugs into them.",
+      "caption": "Where to send a Clozer link, and how",
+      "where": "Where you send",
+      "how": "What happens",
+      "web": {
+        "name": "Gmail and Outlook on the web",
+        "how": "Attach the PDF as usual. The Chrome extension offers to swap it for a link in the recipient's name, then tells you when they read it."
+      },
+      "outlook": {
+        "name": "Outlook desktop",
+        "how": "On Windows and Mac, your Microsoft 365 admin adds the add-in for the whole team. An attached PDF becomes a link the same way."
+      },
+      "chat": {
+        "name": "WhatsApp, LinkedIn, SMS",
+        "how": "Copy the link and paste it into the conversation. It opens in the browser, on a phone or a computer."
+      },
+      "cold": {
+        "name": "Cold email tools",
+        "how": "With Smart Link, one link goes in your sequence, whatever the tool. When a prospect reads, Clozer takes over, and the webhook pauses their sequence."
+      },
+      "store": "Add to Chrome",
+      "storeNote": "Free, for Gmail and Outlook on the web."
     },
     "trust": {
-      "title": "Track the deal, not the person.",
-      "body": "Your prospects are your future customers. Heat is measured on pages, never on people, and your follow-up still reads like it came from a thoughtful salesperson.",
-      "informed": "The prospect is told, right on the page, what the sender can see.",
-      "discreet": "A follow-up never lets on that you're tracking what they read.",
+      "title": "Tracking without snooping.",
+      "body": "Your prospects are your future customers. Heat comes from what they read, page by page.",
+      "informed": "The prospect is told, on the page, what you can see.",
+      "discreet": "Your follow-ups talk about the offer, never about what you saw.",
       "limit": "Three follow-ups per contact per month, max, and never right after a read.",
-      "unsubscribe": "An unsubscribe link in every follow-up. IP addresses are never stored in the clear."
+      "unsubscribe": "An unsubscribe link in every follow-up, and IP addresses are never stored in the clear.",
+      "subprocessors": "See our subprocessors and where your data lives"
     },
     "who": {
-      "title": "One tool, from solo shop to sales team.",
-      "beta": "Clozer is in beta: everything is unlocked, no credit card required. If a paid plan comes along, you'll hear about it first.",
-      "solo": {
-        "name": "Solo",
-        "who": "Freelancers, contractors, consultants, small agencies.",
-        "body": "Quotes, invoices, decks: one link per client, follow-ups written for you. Sign in with Google or your email and send your first link in minutes.",
-        "offer": "Free during the beta",
-        "action": "Create my account"
-      },
+      "title": "For the rep, and for the manager.",
+      "beta": "Clozer is free during the beta, no card. If a paid plan comes, you'll hear about it first.",
       "team": {
         "name": "Team",
-        "who": "Sales reps at small and midsize companies, with a manager.",
-        "body": "Invite your team: everyone tracks their own deals, and the manager sees the full picture in the Team view. Alerts by email, Slack, Chrome or Outlook.",
-        "offer": "Free during the beta",
-        "action": "Create the team space"
+        "who": "SME sales teams with a manager.",
+        "body": "Each rep follows their own prospects. The manager sees everything in the Team view: what's moving, what's slipping, and each rep's pipeline.",
+        "offer": "Free during the beta"
+      },
+      "solo": {
+        "name": "Solo",
+        "who": "Freelancers, consultants, small agencies.",
+        "body": "One link per client, follow-ups written for you. Sign in with Google or your email.",
+        "offer": "Free during the beta"
       },
       "enterprise": {
         "name": "Enterprise",
-        "who": "Large sales organizations.",
-        "body": "Rolling out across several teams, or have security or integration requirements? We'll look at your setup together before opening access.",
+        "who": "Several sales teams.",
+        "body": "Security or integration needs? We look at your case together.",
         "offer": "Let's talk",
-        "action": "Email us",
+        "action": "Write to us",
         "mailSubject": "Clozer for our team"
       },
-      "includedLabel": "Included during the beta:",
-      "included": {
-        "formats": "PDFs, web pages and video pitches",
-        "extension": "Gmail and Outlook extension",
-        "tracking": "Page-by-page tracking, live alerts",
-        "deals": "Deal reads, follow-ups drafted for you",
-        "replies": "Meetings, assistant and voice notes from prospects"
-      }
+      "teamAlt": "Clozer's Team view: 7 open deals, 4 moving, a €141,200 pipeline, broken down for Léa Fontaine, Hugo Mercier and Sophie Noël."
     },
     "faq": {
       "title": "Questions we get.",
       "more": "Something else? <link>Email us</link>.",
+      "email": {
+        "q": "Does the prospect have to enter their email to read?",
+        "a": "No. A link made for one prospect opens right away, with nothing to fill in. A link shared with several people, like a brochure, asks for the email so you know who's reading. With Smart Link, the address comes from your emailing tool. You can also ask for the email link by link."
+      },
       "informed": {
         "q": "Does the prospect know their reading is tracked?",
-        "a": "Yes. A clear notice sits on the document page, with a link to our privacy policy. Follow-ups, on the other hand, stay natural: they never mention a specific page or reading time."
+        "a": "Yes. A clear notice sits on the document page, with a link to our privacy policy. Follow-ups never mention a specific page or reading time."
+      },
+      "install": {
+        "q": "Do I need to install anything?",
+        "a": "No. Sign in with Google or your email, no password, and your prospect reads in their browser. The Gmail and Outlook extension is an optional shortcut."
+      },
+      "tools": {
+        "q": "Does it work with my tools (Gmail, Outlook, CRM, outreach)?",
+        "a": "Gmail and Outlook on the web with the Chrome extension, desktop Outlook with the Microsoft 365 add-in, your cold email sequences with Smart Link. There's no native CRM integration: a webhook sends your alerts to the address of your choice."
+      },
+      "cold": {
+        "q": "Does Clozer replace my cold email tool?",
+        "a": "No, it takes over from it. Your tool sends the sequence. As soon as a prospect opens your document through Smart Link, Clozer tracks them and drafts a follow-up on what they read. Connect the webhook so their sequence pauses at that point: they don't get two messages."
       },
       "auto": {
         "q": "Do follow-ups go out on their own?",
         "a": "By default, Clozer writes the follow-up and suggests the day and time to send it; you review it and approve in one click. Later on, you can let it send the simple ones by itself when it's confident. The tricky cases (an objection, a question from the prospect) always wait for you."
       },
-      "documents": {
-        "q": "What can I send?",
-        "a": "Anything you send to a client or prospect. Any PDF: quote, invoice, proposal, deck, technical document, contract, résumé, brochure, case study. Clozer recognizes the type and shows you how it was read, page by page. A web page (Notion, Loom, Figma, Google Slides, Webflow…): opens and time spent, plus a reader view if the site won't display inside Clozer. A video pitch recorded in Clozer, up to three minutes: you know how far they watched."
+      "beta": {
+        "q": "What happens after the beta?",
+        "a": "Prices aren't set yet. You'll hear about any paid plan before it starts."
       },
-      "ownOpens": {
-        "q": "Do my own opens skew the numbers?",
-        "a": "No. When you open your own links while signed in to Clozer, the read is ignored. Bots are filtered out too."
-      },
-      "install": {
-        "q": "Do I need to install anything?",
-        "a": "No. Sign in with Google or your email, no password, copy the link, and your client reads it in their browser, on desktop or phone. The Gmail and Outlook extension is a handy shortcut, not a requirement."
-      },
-      "extension": {
-        "q": "How do I install the Gmail and Outlook extension?",
-        "a": "Install “Clozer” from the Chrome Web Store: it works in Gmail and in Outlook on the web. For desktop Outlook on Windows or Mac, your company's Microsoft 365 admin adds the add-in for the whole team; the steps are on the Support page."
-      },
-      "replies": {
-        "q": "Can the prospect get back to me?",
-        "a": "Yes, without leaving the document. They can accept the proposal or ask for a change, book a meeting on your calendar (Calendly, Cal.com…), ask the assistant, which answers from your offer when you're not around, or leave a voice note on a page. You get all of it, with the transcript."
+      "data": {
+        "q": "Where is my data?",
+        "a": "Our subprocessors, with the country of each, are listed on the <subprocessors>Subprocessors</subprocessors> page. What we collect and why is in the <privacy>privacy policy</privacy>."
       }
     },
-    "final": "Send your next document as a tracked link."
+    "final": "Send your next proposal as a tracked link.",
+    "screen": "Real screen, example data",
+    "reading": {
+      "title": "See who reads what, and who else.",
+      "body": "Clozer logs every page read and the time spent on it. When the proposal goes around the buyer's team, every new reader shows up.",
+      "pages": {
+        "title": "Page by page",
+        "body": "How far they got, and which page they stopped on."
+      },
+      "readers": {
+        "title": "Who else reads",
+        "body": "Each new reader's name or email, and the pages they read."
+      },
+      "live": {
+        "title": "An alert when they read",
+        "body": "In Chrome, at the top of Gmail and Outlook, or in Slack."
+      },
+      "score": {
+        "title": "A temperature that explains itself",
+        "body": "A score out of 100, every point with its reason."
+      },
+      "ownOpens": "Your own opens and bots don't count.",
+      "readingAlt": "Clozer screen: a proposal read page by page, with Pricing the most read page at 2:50, then a Hot temperature of 92 out of 100 and its breakdown: read in the last 24 h, repeat visits, long pricing read, several readers.",
+      "chainAlt": "Clozer screen: the document chain. Sarah Collins opened it, then a second reader at the same company, james.porter@northwind.example, read it too."
+    }
   },
   "legal": {
     "updatedAt": "Last updated {date}.",
@@ -328,5 +336,135 @@
     "title": "Page not found",
     "body": "This link doesn't lead anywhere, or the page has moved.",
     "back": "Back to home"
+  },
+  "useCases": {
+    "title": "Use cases",
+    "description": "A quote gathering dust, a decision-maker you never see, a prospect abroad, a video pitch after a trade show: what you can send with Clozer, case by case.",
+    "heading": "Ideas for what you send next.",
+    "lead": "A quote gathering dust, a decision-maker you never see, a prospect abroad. Here's what you can send with Clozer, and what you learn back.",
+    "jump": "Jump to",
+    "send": "You send",
+    "result": "What happens",
+    "workflow": {
+      "title": "Where Clozer fits in your outreach",
+      "body": "Your cold email tool opens the door. As soon as a prospect reads your document, Clozer takes over.",
+      "caption": "A prospect's path, from the cold email sequence to the deal",
+      "sequence": {
+        "who": "Your cold email tool",
+        "title": "The sequence",
+        "body": "It sends your emails to your prospect list, with the Smart Link inside."
+      },
+      "read": {
+        "who": "The handoff",
+        "title": "The prospect reads",
+        "body": "Clozer recognizes them. The webhook pauses their sequence: they don't get two messages."
+      },
+      "clozer": {
+        "who": "Clozer",
+        "title": "The follow-through",
+        "body": "What they read, a follow-up written on that topic, the meeting booked inside the document."
+      },
+      "crm": {
+        "who": "Your CRM",
+        "title": "The deal",
+        "body": "Alerts go out by webhook to your CRM or your automation tool."
+      },
+      "scope": "Clozer doesn't handle lists or mass sending. It only writes to prospects who read, or to whom you sent a proposal."
+    },
+    "formats": {
+      "pdf": "PDF",
+      "video": "Video pitch",
+      "web": "Web page",
+      "smart": "Smart Link",
+      "capsule": "PDF + capsule",
+      "any": "Any format",
+      "team": "Team view"
+    },
+    "moments": {
+      "prospect": {
+        "title": "Prospect",
+        "body": "Before the first meeting."
+      },
+      "propose": {
+        "title": "Propose",
+        "body": "Once the proposal is out."
+      },
+      "close": {
+        "title": "Close",
+        "body": "When the prospect makes up their mind."
+      },
+      "manage": {
+        "title": "Manage",
+        "body": "For the sales manager."
+      }
+    },
+    "final": "Start with the proposal you're most worried about.",
+    "cases": {
+      "fair": {
+        "title": "Standing out after a trade show",
+        "send": "A two-minute video pitch, recorded that same evening, with one link per contact you met.",
+        "result": "You see who watched it and how far, and you call the ones who watched to the end first."
+      },
+      "cold": {
+        "title": "A cold email campaign",
+        "send": "One Smart Link in your sequence, whatever the tool.",
+        "result": "Every prospect who clicks is recognized, no form. A webhook tells your tool as soon as they read, so you can pause their sequence."
+      },
+      "chat": {
+        "title": "A first conversation on LinkedIn or WhatsApp",
+        "send": "The link, pasted into the conversation.",
+        "result": "It opens on the prospect's phone, no app or account needed. You know whether they read it before you follow up."
+      },
+      "sleeping": {
+        "title": "The quote that's been sitting for ten days",
+        "send": "The quote as a PDF, through a link in the client's name.",
+        "result": "You see they reread the pricing three times last night. The follow-up is ready: you read it over and send it."
+      },
+      "decider": {
+        "title": "The proposal has to reach the decision-maker",
+        "send": "Your proposal, as usual.",
+        "result": "When your contact passes it on, the new reader shows up with the pages they read. You finally know who decides."
+      },
+      "price": {
+        "title": "A price that needs explaining",
+        "send": "The PDF, with a 90-second video or voice capsule on the pricing page.",
+        "result": "The prospect hears you explain the price while reading it. You see whether they played the capsule."
+      },
+      "abroad": {
+        "title": "A prospect who doesn't read your language",
+        "send": "Your PDF, as it is.",
+        "result": "They pick one of six languages and read the translated proposal, layout included. Tracking stays the same."
+      },
+      "web": {
+        "title": "A proposal built in Notion, Canva or Google Slides",
+        "send": "The page's link, pasted into Clozer.",
+        "result": "You know when it's opened, by whom, and how long it's read."
+      },
+      "demo": {
+        "title": "A demo for people who won't take a call",
+        "send": "A three-minute screen recording, made in Clozer, showing the product on their use case.",
+        "result": "You see the parts they watched and the ones they skipped. Their questions go to the assistant, which answers from what you say in the video."
+      },
+      "adjust": {
+        "title": "The prospect wants to adjust the offer",
+        "send": "The proposal, with “Ask for a change” at the end of the document.",
+        "result": "They write their request right there, say “Can we pay in three installments?” You're notified right away."
+      },
+      "tech": {
+        "title": "Questions from their technical team",
+        "send": "Your technical documentation as a PDF, alongside the proposal.",
+        "result": "The assistant answers from the document, and hands over to you when it doesn't know."
+      },
+      "ready": {
+        "title": "They're ready to move forward",
+        "send": "The proposal, with your Calendly or Cal.com page.",
+        "result": "They book a slot without leaving the document, and automatic follow-ups stop."
+      },
+      "review": {
+        "title": "Spotting slipping deals before the Monday meeting",
+        "send": "Nothing extra: each rep sends their links as usual.",
+        "result": "The Team view shows what's moving, what's slipping, and each rep's pipeline."
+      }
+    }
   }
 }

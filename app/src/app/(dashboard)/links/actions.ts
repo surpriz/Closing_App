@@ -8,7 +8,7 @@ import { z } from "zod";
 import type { DealCloseReason, DealStatus, MeetingOutcome, ProspectRole } from "@/generated/prisma/enums";
 import { inBackground } from "@/lib/closing/background";
 import { actOnInsight } from "@/lib/closing/brain/act";
-import { analyzeDeal } from "@/lib/closing/brain/analyze-deal";
+import { analyzeDeal, markDealDirty } from "@/lib/closing/brain/analyze-deal";
 import { BOOKING_URL_ERROR, parseOptionalBookingUrl } from "@/lib/closing/booking/url";
 import { editableLinks } from "@/lib/closing/dashboard/queries";
 import { applyDealStatus, setLostReason, setMeetingOutcome } from "@/lib/closing/deals/status";
@@ -18,12 +18,14 @@ import { resumeAfterReply } from "@/lib/closing/replies/record";
 import { linkDefaultsFor, SHARED_LINK_SETTINGS } from "@/lib/closing/documents/smart-defaults";
 import { getSellerPrefs, sellerTimezone } from "@/lib/closing/notify/preferences";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
-import { EXTENSION_DAYS, expiryError, extendExpiry, reactivates } from "@/lib/closing/expiry";
+import { EXTENSION_DAYS, expiryError, extendExpiry, isLinkExpired, reactivates, viewerDeadline } from "@/lib/closing/expiry";
 import { cancelOpenFollowups, isUniqueViolation } from "@/lib/closing/followups/queue";
 import { prospectFromRecipient } from "@/lib/closing/prospects/from-recipient";
 import { notifyReactivated } from "@/lib/closing/reactivation";
+import { deadState, interestFollowupTarget } from "@/lib/closing/revival";
 import { parseShareRecipient } from "@/lib/closing/share/compose";
 import { onLinkExpiryChanged } from "@/lib/closing/triggers/expiry";
+import { queueInterestFollowup } from "@/lib/closing/triggers/interest-returned";
 import { prisma } from "@/lib/db";
 import { isManagerRole } from "@/lib/roles";
 import { requireWorkspace } from "@/lib/session";
@@ -37,7 +39,15 @@ async function requireOwnedLink(linkId: string) {
   const workspace = await requireWorkspace();
   const link = await prisma.link.findFirst({
     where: { id: linkId, organizationId: workspace.organization.id, ...editableLinks(workspace) },
-    select: { id: true, documentId: true, expiresAt: true, shared: true, organizationId: true },
+    select: {
+      id: true,
+      documentId: true,
+      expiresAt: true,
+      shared: true,
+      organizationId: true,
+      archivedAt: true,
+      document: { select: { archivedAt: true } },
+    },
   });
   if (!link) throw new Error("Lien introuvable");
   return link;
@@ -98,6 +108,11 @@ export async function archiveLink(linkId: string) {
   redirect(`/documents/${link.documentId}`);
 }
 
+// Still withdrawn whatever its date: telling someone it opens again would be false
+function isArchived(link: { archivedAt: Date | null; document: { archivedAt: Date | null } }) {
+  return !!(link.archivedAt ?? link.document.archivedAt);
+}
+
 const checkbox = z.literal("on").optional().transform((v) => v === "on");
 
 /**
@@ -105,7 +120,12 @@ const checkbox = z.literal("on").optional().transform((v) => v === "on");
  * again, and whoever asked for more time hears the link opens again.
  * Returns how many prospects were told.
  */
-async function applyExpiryChange(link: { id: string; expiresAt: Date | null }, next: Date | null, now: Date) {
+async function applyExpiryChange(
+  link: { id: string; expiresAt: Date | null },
+  next: Date | null,
+  now: Date,
+  { notify = true }: { notify?: boolean } = {},
+) {
   if (link.expiresAt?.getTime() === next?.getTime()) return 0;
   // The seller chose: the document type no longer moves it
   await prisma.link.update({ where: { id: link.id }, data: { expiresAt: next, autoSettings: false } });
@@ -119,7 +139,8 @@ async function applyExpiryChange(link: { id: string; expiresAt: Date | null }, n
     await prisma.link.updateMany({ where: { id: { in: readers.map((r) => r.id) } }, data: { expiresAt: next } });
     for (const reader of readers) await onLinkExpiryChanged(reader.id, now);
   }
-  return reactivates(link.expiresAt, next, now) ? notifyReactivated(link.id, link.expiresAt!) : 0;
+  if (!notify || !reactivates(link.expiresAt, next, now)) return 0;
+  return (await notifyReactivated(link.id, link.expiresAt!)).length;
 }
 
 /** An ISO date computed in the seller's browser time zone, or null to remove the deadline. */
@@ -129,7 +150,7 @@ export async function setLinkExpiry(linkId: string, expiresAt: string | null): P
   const date = expiresAt ? new Date(expiresAt) : null;
   const error = date && expiryError(date, now);
   if (error) return { error: (await getTranslations("deal.actions"))(error) };
-  const told = await applyExpiryChange(link, date, now);
+  const told = await applyExpiryChange(link, date, now, { notify: !isArchived(link) });
   revalidateLink(link);
   return { ok: true, told };
 }
@@ -142,9 +163,100 @@ export async function extendLink(linkId: string, days: number): Promise<ExpiryCh
     return { error: t("invalidDuration") };
   }
   const now = new Date();
-  const told = await applyExpiryChange(link, extendExpiry(link.expiresAt, now, days), now);
+  const told = await applyExpiryChange(link, extendExpiry(link.expiresAt, now, days), now, { notify: !isArchived(link) });
   revalidateLink(link);
   return { ok: true, told };
+}
+
+/** `told`: prospects emailed that it opens again. `drafted`: an "available again" draft is being written. */
+export type ReactivateResult = { ok: true; told: number; drafted: boolean } | { error: string };
+
+/**
+ * "Réactiver le lien" on a link the prospect came back to: it opens again
+ * (unarchived, and given more time if it had expired), whoever asked hears
+ * about it, and an "available again" draft waits in Relances if asked for.
+ */
+export async function reactivateLink(
+  linkId: string,
+  options: { days?: number; draft: boolean },
+): Promise<ReactivateResult> {
+  const owned = await requireOwnedLink(linkId);
+  const workspace = await requireWorkspace();
+  const t = await getTranslations("deal.actions");
+  const link = await prisma.link.findUniqueOrThrow({
+    where: { id: owned.id },
+    select: {
+      id: true,
+      documentId: true,
+      archivedAt: true,
+      expiresAt: true,
+      dealStatus: true,
+      followupsEnabled: true,
+      meetingBookedAt: true,
+      quoteRequestedAt: true,
+      document: { select: { archivedAt: true } },
+      prospects: { select: { id: true, origin: true, unsubscribedAt: true }, orderBy: { createdAt: "asc" } },
+    },
+  });
+  // Bringing a document back is a manager's call, like archiving it
+  if (link.document.archivedAt && !isManagerRole(workspace.role)) return { error: t("reactivateManagerOnly") };
+  const days = options.days ?? 7;
+  if (!(EXTENSION_DAYS as readonly number[]).includes(days)) return { error: t("invalidDuration") };
+
+  const now = new Date();
+  const dead = deadState(link, now);
+  if (!dead) return { ok: true, told: 0, drafted: false };
+
+  await prisma.$transaction([
+    // Readers of a shared link archived with it come back with it
+    prisma.link.updateMany({
+      where: {
+        OR: [{ id: link.id }, ...(link.archivedAt ? [{ parentLinkId: link.id, archivedAt: link.archivedAt }] : [])],
+      },
+      data: { archivedAt: null },
+    }),
+    // Out of the purge too. The document's other links stay archived
+    ...(link.document.archivedAt
+      ? [prisma.document.update({ where: { id: link.documentId }, data: { archivedAt: null } })]
+      : []),
+  ]);
+  // A signed deal has no deadline for the prospect: nothing to move
+  const deadline = viewerDeadline(link);
+  if (isLinkExpired({ expiresAt: deadline }, now)) {
+    await applyExpiryChange(link, extendExpiry(link.expiresAt, now, days), now, { notify: false });
+  }
+
+  // Expired, then archived: every request since it first stopped opening, one email each
+  const since = deadline && deadline < dead.since ? deadline : dead.since;
+  const told = await notifyReactivated(link.id, since, ["REQUEST_EXTENSION", "REQUEST_RELINK"]);
+
+  let drafted = false;
+  if (options.draft) {
+    const [actions, opens] = await Promise.all([
+      prisma.prospectAction.findMany({
+        where: { linkId: link.id, type: { in: ["REQUEST_EXTENSION", "REQUEST_RELINK"] }, createdAt: { gte: since } },
+        select: { prospectId: true },
+      }),
+      prisma.sellerAlert.findMany({
+        where: { linkId: link.id, type: "DEAD_LINK_OPENED", createdAt: { gte: since } },
+        select: { payload: true },
+      }),
+    ]);
+    const returned = [
+      ...actions.map((a) => a.prospectId),
+      ...opens.map((o) => (o.payload as { prospectId?: string | null }).prospectId),
+    ].filter((id): id is string => !!id);
+    const target = interestFollowupTarget({ ...link, told, returned });
+    if (target) {
+      drafted = true;
+      inBackground("interest-followup", () => queueInterestFollowup(link.id, target, dead, now));
+    }
+  }
+
+  inBackground("reactivated-analysis", () => markDealDirty(link.id));
+  revalidateLink(link);
+  revalidatePath("/documents");
+  return { ok: true, told: told.length, drafted };
 }
 
 const LINK_SWITCHES = [
@@ -154,6 +266,7 @@ const LINK_SWITCHES = [
   "chatEnabled",
   "voiceCommentsEnabled",
   "translationEnabled",
+  "forwardEnabled",
   "followupsEnabled",
 ] as const;
 export type LinkSwitch = (typeof LINK_SWITCHES)[number];

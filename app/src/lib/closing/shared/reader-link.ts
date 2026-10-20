@@ -29,6 +29,7 @@ export async function readerLinkFor(
     chatEnabled: boolean;
     voiceCommentsEnabled: boolean;
     translationEnabled: boolean;
+    forwardEnabled: boolean;
     followupsEnabled: boolean;
     expiresAt: Date | null;
     hotPricingThresholdSec: number | null;
@@ -73,6 +74,7 @@ export async function readerLinkFor(
       chatEnabled: parent.chatEnabled,
       voiceCommentsEnabled: parent.voiceCommentsEnabled,
       translationEnabled: parent.translationEnabled,
+      forwardEnabled: parent.forwardEnabled,
       followupsEnabled: parent.followupsEnabled,
       hotPricingThresholdSec: parent.hotPricingThresholdSec,
       channels: parent.channels,

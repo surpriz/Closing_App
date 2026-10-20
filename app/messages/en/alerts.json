@@ -17,6 +17,21 @@
       "subject": "{who} is asking for more time",
       "line": "{who} is asking for more time on {doc}, which has expired"
     },
+    "relinkRequested": {
+      "body": "{doc} was archived. {who} is asking to get it again.",
+      "button": "Reactivate the link",
+      "email": "Their email: {email}",
+      "subject": "{who} is asking for your document again",
+      "line": "{who} is asking again for {doc}, which you archived"
+    },
+    "deadLinkOpened": {
+      "subject": "{who} came back to your document",
+      "lineArchived": "{who} reopened {doc}, which you archived",
+      "lineExpired": "{who} reopened {doc}, which has expired",
+      "bodyArchived": "{who} tried to reopen {doc}, which you archived. Nothing asked yet, but the interest may be back.",
+      "bodyExpired": "{who} tried to reopen {doc}, which has expired. No extension asked yet, but the interest may be back.",
+      "button": "Reactivate the link"
+    },
     "linkExpiring": {
       "subject": "{who}'s link expires tomorrow",
       "lineDate": "{doc} ({who}) expires on {date}",
@@ -124,6 +139,15 @@
       "title": "{who} wants more time",
       "body": "{doc} has expired. Extend it in one click."
     },
+    "relinkRequested": {
+      "title": "{who} wants the document again",
+      "body": "{doc} was archived. Reactivate it in one click."
+    },
+    "deadLinkOpened": {
+      "title": "{who} came back",
+      "bodyArchived": "Reopened {doc}, archived.",
+      "bodyExpired": "Reopened {doc}, expired."
+    },
     "linkExpiring": {
       "title": "Expiring soon: {who}",
       "bodyDate": "{doc} expires on {date}. Extend or follow up.",
@@ -204,6 +228,7 @@
       "change": "{label} is asking for a change",
       "quote": "{label} is asking for a quote",
       "extension": "{label} is asking for more time",
+      "relink": "{label} is asking for the document again",
       "meeting": "{label} booked a meeting",
       "question": "{label} asked a question"
     },

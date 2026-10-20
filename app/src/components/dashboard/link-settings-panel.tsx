@@ -53,6 +53,7 @@ const groups = (t: PanelT): { id: "access" | "prospect" | "tracking"; title: str
       item(t, "chatEnabled"),
       item(t, "voiceCommentsEnabled", { pdfOnly: true }),
       item(t, "translationEnabled", { noVideo: true }),
+      item(t, "forwardEnabled", { personalOnly: true }),
     ],
   },
   {

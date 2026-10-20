@@ -42,6 +42,8 @@ export type NextActionInput = {
   repliedAt?: Date | null;
   /** Someone reached the email gate without going through: clicked, did not read. */
   gateSeenAt?: Date | null;
+  /** The prospect came back to the link after it was archived or expired (revival.ts). */
+  revival?: { at: Date; asked: boolean; state: "archived" | "expired" } | null;
 };
 
 export type NextAction =
@@ -50,6 +52,8 @@ export type NextAction =
   | { kind: "call_now" }
   /** A change request, a quote asked for, or an email answer, not answered yet. */
   | { kind: "reply"; quote?: boolean; email?: boolean }
+  /** The link no longer opens and the prospect came back to it: reopen it while the interest is there. */
+  | { kind: "reactivate"; at: Date; asked: boolean; state: "archived" | "expired" }
   | { kind: "review_draft" }
   | { kind: "call"; pricing: boolean }
   | { kind: "followup_planned"; at: Date; opened: boolean }
@@ -66,6 +70,7 @@ export type NextAction =
 const URGENCY: NextAction["kind"][] = [
   "close_won",
   "call_now",
+  "reactivate",
   "reply",
   "review_draft",
   "call",
@@ -88,6 +93,7 @@ export function isUrgent(action: NextAction) {
 const FACTUAL: NextAction["kind"][] = [
   "close_won",
   "call_now",
+  "reactivate",
   "reply",
   "review_draft",
   "meeting_booked",
@@ -150,6 +156,8 @@ export function computeNextAction(input: NextActionInput): NextAction {
   const { now } = input;
   if (input.dealStatus === "VALIDATED") return { kind: "close_won" };
   if (input.readingNow) return { kind: "call_now" };
+  // Nothing else can happen on a link that does not open: reopening it comes first
+  if (input.revival) return { kind: "reactivate", ...input.revival };
   if (input.dealStatus === "CHANGE_REQUESTED") return { kind: "reply" };
   // Answered once the seller logs a call or a message after it
   if (input.quoteRequestedAt && !(input.lastSellerContactAt && input.lastSellerContactAt > input.quoteRequestedAt)) {
@@ -202,6 +210,10 @@ export function describeNextAction(action: NextAction, now: Date, i18n: Dashboar
       return t("today.nextAction.closeWon");
     case "call_now":
       return t("today.nextAction.callNow");
+    case "reactivate":
+      return action.asked
+        ? t("today.nextAction.reactivateAsked", { when: formatRelative(action.at, locale, now) })
+        : t("today.nextAction.reactivateReturned", { when: formatRelative(action.at, locale, now) });
     case "reply":
       if (action.email) return t("today.nextAction.replyEmail");
       return action.quote ? t("today.nextAction.replyQuote") : t("today.nextAction.reply");

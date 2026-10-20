@@ -48,6 +48,9 @@ export type AlertPayload = {
   /** PROSPECT_REPLIED: the start of the answer, and where Clozer caught it. */
   replyExcerpt?: string | null;
   replySource?: "INBOUND" | "EXTENSION";
+  /** Revival alerts: who came back, and why the link no longer opened. */
+  prospectId?: string | null;
+  deadState?: "archived" | "expired";
 };
 
 const READER_ALERTS = new Set<SellerAlertType>(["COMMITTEE_LIVE", "DECISION_MAKER_DETECTED", "NEW_READER"]);
@@ -61,6 +64,7 @@ const REPLY_ALERTS = new Set<SellerAlertType>([
   "MEETING_BOOKED",
   "DOCUMENT_FORWARDED",
   "PROSPECT_REPLIED",
+  "RELINK_REQUESTED",
 ]);
 
 export type AlertDelivery = {
@@ -147,6 +151,38 @@ export function alertMessage(
         subject: t("message.linkExtensionRequested.subject", { who }),
         line: t("message.linkExtensionRequested.line", { who, doc }),
         blocks,
+        url,
+      };
+    }
+    case "RELINK_REQUESTED": {
+      const url = `${linkUrl}#reactiver`;
+      const blocks: EmailBlock[] = [
+        { kind: "text", text: t("message.relinkRequested.body", { doc, who }) },
+        { kind: "button", label: t("message.relinkRequested.button"), href: url },
+      ];
+      if (payload.prospectEmail) {
+        blocks.push({ kind: "text", text: t("message.relinkRequested.email", { email: payload.prospectEmail }) });
+      }
+      return {
+        subject: t("message.relinkRequested.subject", { who }),
+        line: t("message.relinkRequested.line", { who, doc }),
+        blocks,
+        url,
+      };
+    }
+    case "DEAD_LINK_OPENED": {
+      const url = `${linkUrl}#reactiver`;
+      const archived = payload.deadState !== "expired";
+      return {
+        subject: t("message.deadLinkOpened.subject", { who }),
+        line: t(archived ? "message.deadLinkOpened.lineArchived" : "message.deadLinkOpened.lineExpired", { who, doc }),
+        blocks: [
+          {
+            kind: "text",
+            text: t(archived ? "message.deadLinkOpened.bodyArchived" : "message.deadLinkOpened.bodyExpired", { who, doc }),
+          },
+          { kind: "button", label: t("message.deadLinkOpened.button"), href: url },
+        ],
         url,
       };
     }
@@ -479,6 +515,8 @@ export async function createAndDeliverAlert(input: AlertDelivery) {
                 ? "💬"
               : input.type === "EMAIL_BOUNCED"
                 ? "⚠️"
+              : input.type === "RELINK_REQUESTED" || input.type === "DEAD_LINK_OPENED"
+                ? "🔁"
               : input.type === "LINK_EXTENSION_REQUESTED" || input.type === "LINK_EXPIRING"
                 ? "⏳"
                 : input.priority === "ACTION"

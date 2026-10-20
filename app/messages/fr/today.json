@@ -140,6 +140,8 @@
     "aiAdviceNoTiming": "{verb}.",
     "closeWon": "Validé par le prospect : confirmez la vente.",
     "callNow": "Lecture en cours : appelez maintenant.",
+    "reactivateAsked": "Document redemandé {when} : réactivez le lien.",
+    "reactivateReturned": "Retour sur le lien {when} : réactivez-le.",
     "replyQuote": "Devis demandé : envoyez-le.",
     "reply": "Demande d'ajustement en attente : répondez.",
     "reviewDraft": "Relance prête : relisez-la et validez.",
@@ -173,7 +175,8 @@
     "copyLink": "Copier le lien",
     "call": "Appeler",
     "logCall": "Noter l'appel",
-    "followUpByEmail": "Relancer par email"
+    "followUpByEmail": "Relancer par email",
+    "reactivate": "Réactiver le lien"
   },
   "feed": {
     "openedDocument": "a ouvert le document",
@@ -182,6 +185,7 @@
     "action": {
       "VALIDATE_SIGN": "a validé la proposition",
       "REQUEST_EXTENSION": "demande une prolongation",
+      "REQUEST_RELINK": "redemande le document",
       "MEETING_BOOKED": "a pris rendez-vous",
       "MEETING_CLICK": "a ouvert votre agenda",
       "REQUEST_QUOTE": "demande un devis",
@@ -200,6 +204,9 @@
       "multiViewer": "est lu à plusieurs",
       "draftReady": "a une relance prête à valider",
       "extensionRequested": "a expiré : le prospect demande une prolongation",
+      "relinkRequested": "était archivé : le prospect le redemande",
+      "deadLinkOpenedArchived": "était archivé : le prospect est revenu dessus",
+      "deadLinkOpenedExpired": "a expiré : le prospect est revenu dessus",
       "linkExpiring": "expire dans moins de 24 h",
       "committeeLive": "est lu par {count} personnes en même temps (comité)",
       "committeeLiveSeveral": "est lu par plusieurs personnes en même temps (comité)",

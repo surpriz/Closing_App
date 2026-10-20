@@ -1,4 +1,4 @@
-import { BellRing, CalendarCheck, CalendarDays, Check, Eye, Hourglass, MessageSquare, Receipt, Send } from "lucide-react";
+import { BellRing, CalendarCheck, CalendarDays, Check, Eye, Hourglass, MessageSquare, Receipt, RotateCcw, Send } from "lucide-react";
 import Link from "next/link";
 import { useLocale } from "next-intl";
 
@@ -11,6 +11,7 @@ const ICONS: Record<FeedKind, React.ReactNode> = {
   change: <MessageSquare />,
   quote: <Receipt />,
   extension: <Hourglass />,
+  relink: <RotateCcw />,
   meeting: <CalendarCheck />,
   meeting_click: <CalendarDays />,
   alert: <BellRing className="text-foreground" />,
@@ -18,7 +19,7 @@ const ICONS: Record<FeedKind, React.ReactNode> = {
 };
 
 /** Answers from prospects stand out; readings and follow-ups stay quiet. */
-const STRONG: FeedKind[] = ["validated", "change", "quote", "extension", "meeting"];
+const STRONG: FeedKind[] = ["validated", "change", "quote", "extension", "relink", "meeting"];
 
 export function ActivityFeed({ items, now }: { items: FeedItem[]; now: Date }) {
   const locale = useLocale();

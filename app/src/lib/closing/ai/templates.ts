@@ -39,6 +39,8 @@ export function templateFollowup(input: FollowupDraftInput): FollowupDraft {
     const body =
       input.trigger === "ANTI_GHOSTING" && input.sequence?.final
         ? `${hello}\n\nJe ne veux pas vous relancer pour rien au sujet de « ${input.documentName} ». Si ce n'est pas le bon moment, aucun souci : un simple « pas maintenant » me suffit et je classe le dossier.\n\nLe document reste ici : ${input.proposalUrl}`
+        : input.trigger === "INTEREST_RETURNED"
+        ? `${hello}\n\n« ${input.documentName} » est de nouveau accessible${input.deadlineLabel ? `, jusqu'au ${input.deadlineLabel}` : ""}. Si vous avez des questions, je suis disponible pour en parler rapidement.\n\nLe document : ${input.proposalUrl}`
         : input.trigger === "EXPIRY_REMINDER" && input.deadlineLabel
         ? `${hello}\n\nPetit rappel : « ${input.documentName} » reste accessible jusqu'au ${input.deadlineLabel}. Si vous avez des questions ou besoin d'un peu plus de temps, dites-le-moi d'ici là.\n\nLe document : ${input.proposalUrl}`
         : input.trigger === "HOT_PRICING"
@@ -55,6 +57,8 @@ export function templateFollowup(input: FollowupDraftInput): FollowupDraft {
   const body =
     input.trigger === "ANTI_GHOSTING" && input.sequence?.final
       ? `${hello}\n\nI don't want to keep chasing you about "${input.documentName}". If now isn't the right time, no problem at all: a quick "not now" is enough and I'll close the file.\n\nThe link is still here: ${input.proposalUrl}`
+      : input.trigger === "INTEREST_RETURNED"
+      ? `${hello}\n\n"${input.documentName}" is available again${input.deadlineLabel ? `, until ${input.deadlineLabel}` : ""}. If you have any questions, happy to talk them through.\n\nThe link: ${input.proposalUrl}`
       : input.trigger === "EXPIRY_REMINDER" && input.deadlineLabel
       ? `${hello}\n\nA quick reminder: "${input.documentName}" stays available until ${input.deadlineLabel}. If you have questions or need a bit more time, just let me know before then.\n\nThe link: ${input.proposalUrl}`
       : input.trigger === "HOT_PRICING"

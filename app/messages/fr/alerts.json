@@ -17,6 +17,21 @@
       "subject": "{who} demande une prolongation",
       "line": "{who} demande une prolongation de {doc}, qui a expiré"
     },
+    "relinkRequested": {
+      "body": "{doc} était archivé. {who} demande à le recevoir de nouveau.",
+      "button": "Réactiver le lien",
+      "email": "Son email : {email}",
+      "subject": "{who} redemande votre document",
+      "line": "{who} redemande {doc}, que vous aviez archivé"
+    },
+    "deadLinkOpened": {
+      "subject": "{who} est revenu sur votre document",
+      "lineArchived": "{who} a rouvert {doc}, que vous aviez archivé",
+      "lineExpired": "{who} a rouvert {doc}, qui a expiré",
+      "bodyArchived": "{who} a essayé de rouvrir {doc}, que vous aviez archivé, sans rien demander. L'intérêt est peut-être revenu.",
+      "bodyExpired": "{who} a essayé de rouvrir {doc}, qui a expiré, sans demander de prolongation. L'intérêt est peut-être revenu.",
+      "button": "Réactiver le lien"
+    },
     "linkExpiring": {
       "subject": "Le lien de {who} expire demain",
       "lineDate": "{doc} ({who}) expire le {date}",
@@ -124,6 +139,15 @@
       "title": "{who} demande plus de temps",
       "body": "{doc} a expiré. Prolongez-le en un clic."
     },
+    "relinkRequested": {
+      "title": "{who} redemande le document",
+      "body": "{doc} était archivé. Réactivez-le en un clic."
+    },
+    "deadLinkOpened": {
+      "title": "{who} est revenu",
+      "bodyArchived": "A rouvert {doc}, archivé.",
+      "bodyExpired": "A rouvert {doc}, expiré."
+    },
     "linkExpiring": {
       "title": "Expire bientôt : {who}",
       "bodyDate": "{doc} expire le {date}. Prolongez ou relancez.",
@@ -204,6 +228,7 @@
       "change": "{label} demande un ajustement",
       "quote": "{label} demande un devis",
       "extension": "{label} demande une prolongation",
+      "relink": "{label} redemande le document",
       "meeting": "{label} a pris rendez-vous",
       "question": "{label} a posé une question"
     },

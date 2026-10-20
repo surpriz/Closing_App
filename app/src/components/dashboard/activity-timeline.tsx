@@ -13,6 +13,7 @@ import {
   Phone,
   PlayCircle,
   Receipt,
+  RotateCcw,
   Send,
 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
@@ -29,6 +30,7 @@ export type TimelineItem = {
     | "change"
     | "quote"
     | "extension"
+    | "relink"
     | "meeting"
     | "meeting_click"
     | "question"
@@ -49,6 +51,7 @@ const ICONS: Record<TimelineItem["kind"], React.ReactNode> = {
   change: <MessageSquare className="size-3.5" />,
   quote: <Receipt className="size-3.5" />,
   extension: <Hourglass className="size-3.5" />,
+  relink: <RotateCcw className="size-3.5" />,
   meeting: <CalendarCheck className="size-3.5" />,
   meeting_click: <CalendarDays className="size-3.5" />,
   question: <MessageCircleQuestion className="size-3.5" />,

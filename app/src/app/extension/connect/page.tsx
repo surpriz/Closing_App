@@ -3,7 +3,7 @@ import { getTranslations } from "next-intl/server";
 
 import { Logo } from "@/components/brand/logo";
 import { ExtensionConnect } from "@/components/dashboard/extension-connect";
-import { allowedExtensionIds } from "@/lib/extension-config";
+import { allowedExtensionIds, STORE_EXTENSION_URL } from "@/lib/extension-config";
 import { requireWorkspace } from "@/lib/session";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -33,6 +33,7 @@ export default async function ExtensionConnectPage({ searchParams }: PageProps<"
         <ExtensionConnect
           nonce={safeNonce}
           extensionIds={allowedExtensionIds()}
+          storeUrl={STORE_EXTENSION_URL}
           account={{ email: user.email, workspace: organization.name }}
         />
       </div>

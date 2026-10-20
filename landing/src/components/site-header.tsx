@@ -2,7 +2,9 @@ import { getTranslations } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
 import type { AppPathname, Locale } from "@/i18n/routing";
+import { localizedPath } from "@/i18n/seo";
 
+import { ANCHORS } from "./anchors";
 import { PrimaryCta } from "./cta";
 import { appUrl } from "./links";
 import { LocaleSwitcher } from "./locale-switcher";
@@ -14,11 +16,18 @@ export async function SiteHeader({ locale, path }: { locale: Locale; path: AppPa
   const t = await getTranslations({ locale, namespace: "nav" });
   // Plain anchors to the home sections: they must work from the legal pages too.
   const home = `/${locale}`;
+  const sections = (["how", "features", "teams", "faq"] as const).map((section) => ({
+    href: `${home}#${ANCHORS[locale][section]}`,
+    label: t(section),
+    current: false,
+    // Five links don't fit next to the CTA at 1024px: the FAQ waits for xl, the page ends on it anyway.
+    wide: section === "faq",
+  }));
+  // The one page of its own in the nav, after the features it puts in situation.
   const nav = [
-    { href: `${home}#comment`, label: t("how") },
-    { href: `${home}#relances`, label: t("followUps") },
-    { href: `${home}#pour-qui`, label: t("who") },
-    { href: `${home}#faq`, label: t("faq") },
+    ...sections.slice(0, 2),
+    { href: localizedPath(locale, "/use-cases"), label: t("useCases"), current: path === "/use-cases", wide: false },
+    ...sections.slice(2),
   ];
 
   return (
@@ -27,12 +36,13 @@ export async function SiteHeader({ locale, path }: { locale: Locale; path: AppPa
         <Link href="/" aria-label={t("home")} className="flex items-center pr-6">
           <Logo />
         </Link>
-        <nav aria-label={t("label")} className="hidden items-stretch border-l border-rule md:flex">
+        <nav aria-label={t("label")} className="hidden items-stretch border-l border-rule lg:flex">
           {nav.map((item) => (
             <a
               key={item.href}
               href={item.href}
-              className="flex items-center border-r border-rule px-4 text-small text-ink-soft transition-colors hover:bg-sheet hover:text-ink"
+              aria-current={item.current ? "page" : undefined}
+              className={`flex items-center border-r border-rule px-4 text-small whitespace-nowrap text-ink-soft transition-colors hover:bg-sheet hover:text-ink aria-[current=page]:bg-sheet aria-[current=page]:font-medium aria-[current=page]:text-ink ${item.wide ? "max-xl:hidden" : ""}`}
             >
               {item.label}
             </a>
@@ -42,7 +52,7 @@ export async function SiteHeader({ locale, path }: { locale: Locale; path: AppPa
           <LocaleSwitcher locale={locale} path={path} className="hidden px-3 text-small text-ink-soft sm:flex" />
           <a
             href={appUrl(locale)}
-            className="hidden h-10 items-center px-3 text-small font-medium text-ink-soft transition-colors hover:text-ink sm:inline-flex"
+            className="hidden h-10 items-center px-3 text-small font-medium whitespace-nowrap text-ink-soft transition-colors hover:text-ink sm:inline-flex"
           >
             {t("login")}
           </a>

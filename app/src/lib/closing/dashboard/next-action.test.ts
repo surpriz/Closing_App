@@ -272,3 +272,23 @@ describe("withAiAdvice", () => {
     expect(withAiAdvice(rule, null)).toBe(rule);
   });
 });
+
+describe("reactivate", () => {
+  const revival = { at: ago(1), asked: true, state: "archived" as const };
+
+  it("leads once the prospect came back to a dead link, above a draft or a request", () => {
+    const action = computeNextAction({ ...base, revival, draftToReview: true, dealStatus: "CHANGE_REQUESTED" });
+    expect(action).toEqual({ kind: "reactivate", ...revival });
+    expect(isUrgent(action)).toBe(true);
+    expect(withAiAdvice(action, { type: "wait", timing: "now", priority: 1 })).toEqual(action);
+  });
+
+  it("still lets a signature come first", () => {
+    expect(computeNextAction({ ...base, revival, dealStatus: "VALIDATED" })).toEqual({ kind: "close_won" });
+  });
+
+  it("says whether they asked or only came back", () => {
+    expect(describeNextAction({ kind: "reactivate", ...revival }, now, i18n)).toMatch(/^Document redemandé .+ : réactivez le lien\.$/);
+    expect(describeNextAction({ kind: "reactivate", ...revival, asked: false }, now, en)).toMatch(/^Back on the link .+: reactivate it\.$/);
+  });
+});

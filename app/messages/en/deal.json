@@ -31,6 +31,7 @@
   "actions": {
     "sharedNeedsEmail": "A shared link always asks for the email.",
     "invalidDuration": "Invalid duration.",
+    "reactivateManagerOnly": "The document is archived: only a manager can bring it back.",
     "nameTooLong": "Name too long.",
     "alreadyForContact": "This link is already for a contact: create a new link to share it.",
     "sharedNoRecipient": "A shared link has no recipient: switch it to “For one prospect”.",
@@ -82,6 +83,11 @@
     "readOnly": "{seller}'s prospect. You can view it; only its seller and the admins can change it.",
     "anotherSeller": "Another seller",
     "expiredBanner": "This link has expired: the prospect can no longer open it. Extend it to bring it back.",
+    "archivedBanner": "This link is archived: the prospect sees a \"document withdrawn\" page.",
+    "archivedBannerReturned": "This link is archived, and the prospect came back to it {when}. The interest may be there.",
+    "expiredBannerReturned": "This link has expired, and the prospect came back to it {when}. The interest may be there.",
+    "purgeIn": "The document will be deleted for good {when} if it stays archived.",
+    "reactivateManagerOnly": "Archived document: a manager can bring it back.",
     "report": "Reading report",
     "sentOn": "Sent {date}",
     "total": "{time} total"
@@ -212,6 +218,8 @@
     "voiceCommentsEnabledHint": "You get the audio and its transcript.",
     "translationEnabled": "Read the document in their language",
     "translationEnabledHint": "Translated when the reader asks, layout included. The original stays one click away.",
+    "forwardEnabled": "Forward to a colleague",
+    "forwardEnabledHint": "The reader can send it to their manager: you see who got it and what they read. Turn it off for a confidential document.",
     "followupsEnabled": "Follow-ups prepared by Clozer",
     "followupsEnabledHint": "Off: the prospect is still tracked, with no follow-ups.",
     "videoCta": "Request a quote",
@@ -399,6 +407,21 @@
     "archiving": "Archiving…",
     "archive": "Archive the link"
   },
+  "reactivateLinkButton": {
+    "trigger": "Reactivate the link",
+    "title": "Reactivate this link?",
+    "description": "The prospect can open the document again. Whoever asked for it gets an email.",
+    "daysLabel": "Open for",
+    "plusDays": "{days} days",
+    "draft": "Prepare a follow-up",
+    "draftHint": "A draft waits for you in Follow-ups, nothing goes out without you.",
+    "cancel": "Cancel",
+    "confirm": "Reactivate",
+    "reactivating": "Reactivating…",
+    "done": "Link reactivated",
+    "told": "{count, plural, one {# prospect told} other {# prospects told}}",
+    "drafted": "draft on its way"
+  },
   "prepareFollowupButton": {
     "ready": "Follow-up ready, review it below",
     "writing": "Writing…",
@@ -473,6 +496,9 @@
     "actionSigned": "{name} signed “Approved”",
     "actionValidated": "{name} approved the proposal",
     "actionExtension": "{name} is asking for an extension",
+    "actionRelink": "{name} is asking for the document again",
+    "deadOpenArchived": "{name} came back to the archived link",
+    "deadOpenExpired": "{name} came back to the expired link",
     "actionMeeting": "{name} booked a meeting in your calendar",
     "actionMeetingClick": "{name} opened your calendar",
     "actionQuote": "{name} is asking for a quote",
@@ -536,7 +562,8 @@
       "quote": "Asked for a quote",
       "voice": "Left a voice note",
       "meeting": "Booked a meeting",
-      "extension": "Asked for more time"
+      "extension": "Asked for more time",
+      "relink": "Asked for the document again"
     }
   },
   "outcome": {

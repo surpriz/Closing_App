@@ -7,13 +7,15 @@ import { getLocalParts } from "../scheduling/business-hours";
  *
  * - ACTION (the prospect validated, asked for a change, asked the assistant
  *   a question it could not answer, asked for more time on an expired
- *   link, left a voice comment, booked a meeting, forwarded the proposal or
- *   answered by email; an email to them bounced):
- *   always, day or night.
+ *   link, asked for an archived document again, left a voice comment,
+ *   booked a meeting, forwarded the proposal or answered by email; an email
+ *   to them bounced): always, day or night.
  * - CALL (reading right now): the extension first; email only when asked for
  *   and the extension is not running. Never outside working hours, at most a
  *   few per hour.
- * - INFO: working hours only, otherwise it waits for the morning digest.
+ * - INFO (a draft to review, a link about to expire, someone back on a dead
+ *   link without asking): working hours only, otherwise it waits for the
+ *   morning digest.
  *
  * Slack and the outbound webhook are team channels set on the workspace.
  */
@@ -29,6 +31,7 @@ export const ALERT_PRIORITY: Record<SellerAlertType, AlertPriority> = {
   DOCUMENT_FORWARDED: "ACTION",
   PROSPECT_REPLIED: "ACTION",
   EMAIL_BOUNCED: "ACTION",
+  RELINK_REQUESTED: "ACTION",
   CALL_MOMENT: "CALL",
   MULTI_VIEWER: "CALL",
   REOPENED_AFTER_INACTIVITY: "CALL",
@@ -37,6 +40,7 @@ export const ALERT_PRIORITY: Record<SellerAlertType, AlertPriority> = {
   DECISION_MAKER_DETECTED: "CALL",
   DRAFT_READY: "INFO",
   LINK_EXPIRING: "INFO",
+  DEAD_LINK_OPENED: "INFO",
 };
 
 export type SellerPrefs = {

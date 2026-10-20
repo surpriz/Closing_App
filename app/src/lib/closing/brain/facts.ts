@@ -374,7 +374,7 @@ export function buildDealStory(input: DealFactsInput): DealStory {
     const who = reader ? t("reader", { label: reader.label }) : t("theProspect");
     const what = t(
       `action.${
-        (["VALIDATE_SIGN", "REQUEST_EXTENSION", "MEETING_BOOKED", "MEETING_CLICK", "REQUEST_QUOTE"] as const).find(
+        (["VALIDATE_SIGN", "REQUEST_EXTENSION", "REQUEST_RELINK", "MEETING_BOOKED", "MEETING_CLICK", "REQUEST_QUOTE"] as const).find(
           (type) => type === action.type,
         ) ?? "REQUEST_CHANGE"
       }`,

@@ -43,3 +43,12 @@ describe("compareDeals", () => {
     expect(order([row("cold", wait, 3, 20), row("hot", wait, 3, 80)])).toEqual(["hot", "cold"]);
   });
 });
+
+describe("compareDeals and dead links", () => {
+  it("puts a prospect back on a dead link right after a live reader", () => {
+    const reactivate: NextAction = { kind: "reactivate", at: new Date(), asked: false, state: "expired" };
+    expect(
+      order([row("reply", { kind: "reply" }, null), row("back", reactivate, null), row("live", { kind: "call_now" }, null)]),
+    ).toEqual(["live", "back", "reply"]);
+  });
+});
