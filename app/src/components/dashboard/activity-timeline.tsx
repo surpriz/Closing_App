@@ -7,6 +7,7 @@ import {
   Forward,
   Hourglass,
   Link2,
+  Mail,
   MessageCircleQuestion,
   MessageSquare,
   Mic,
@@ -39,6 +40,7 @@ export type TimelineItem = {
     | "followup"
     | "alert"
     | "seller"
+    | "reply"
     | "forward";
   title: string;
   detail?: string | null;
@@ -60,6 +62,7 @@ const ICONS: Record<TimelineItem["kind"], React.ReactNode> = {
   followup: <Send className="size-3.5" />,
   alert: <BellRing className="size-3.5" />,
   seller: <Phone className="size-3.5" />,
+  reply: <Mail className="size-3.5" />,
   forward: <Forward className="size-3.5" />,
 };
 

@@ -685,7 +685,7 @@ export async function loadDeal(
     ...sellerActivities.map((activity) => ({
       id: `seller-${activity.id}`,
       at: activity.occurredAt,
-      kind: "seller" as const,
+      kind: activity.source === "MANUAL" ? ("seller" as const) : ("reply" as const),
       // A reply Clozer caught: the prospect's own words, not the seller's note
       title:
         activity.source === "MANUAL"
