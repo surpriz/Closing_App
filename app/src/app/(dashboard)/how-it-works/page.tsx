@@ -35,6 +35,9 @@ const STEPS = [
 
 const GUARDRAILS = ["noHint", "noInvented", "cap", "timing", "single", "privateNotes"] as const;
 
+const SENT_WAYS = ["extension", "button", "opened"] as const;
+const AFTER_SEND_CASES = ["notSent", "unopened", "clicked", "read", "replied", "decided", "bounced", "expiring"] as const;
+
 function Step({ icon: Icon, id, index }: (typeof STEPS)[number] & { index: number }) {
   const t = useTranslations("help.howItWorks.steps");
   return (
@@ -77,6 +80,31 @@ export default async function HowItWorksPage() {
 
       <section>
         <p className="text-heading text-balance">{t("intro")}</p>
+      </section>
+
+      <section id="apres-envoi" className="space-y-6">
+        <SectionTitle hint={t("afterSend.hint")}>{t("afterSend.title")}</SectionTitle>
+        <Surface className="space-y-2.5 p-5">
+          <p className="text-body font-semibold">{t("afterSend.sentTitle")}</p>
+          <p className="text-body text-muted-foreground">{t("afterSend.sentBody")}</p>
+          <ul className="list-inside list-disc space-y-1.5 text-body">
+            {SENT_WAYS.map((way) => (
+              <li key={way}>{t(`afterSend.sentWays.${way}`)}</li>
+            ))}
+          </ul>
+        </Surface>
+        <div className="space-y-3">
+          <p className="text-body font-semibold">{t("afterSend.casesTitle")}</p>
+          <dl className="divide-y divide-border border-y border-foreground">
+            {AFTER_SEND_CASES.map((item) => (
+              <div key={item} className="grid gap-x-6 gap-y-1 py-4 sm:grid-cols-[13rem_minmax(0,1fr)]">
+                <dt className="text-body font-semibold">{t(`afterSend.cases.${item}.title`)}</dt>
+                <dd className="text-body text-muted-foreground">{t(`afterSend.cases.${item}.body`)}</dd>
+              </div>
+            ))}
+          </dl>
+          <p className="text-small text-muted-foreground">{t("afterSend.casesNote")}</p>
+        </div>
       </section>
 
       <section>

@@ -6,6 +6,53 @@
     "faq": "FAQ",
     "replayTour": "Replay the tour",
     "intro": "Clozer sees how your prospect reads your document, understands where the sale stands the way a seasoned salesperson would, and gets the right follow-up ready at the right time. You approve, and you call the ones who are ready.",
+    "afterSend": {
+      "title": "After you send: what happens",
+      "hint": "link sent, opened or not",
+      "sentTitle": "How Clozer knows the link went out",
+      "sentBody": "Copying the link isn't enough: until Clozer knows it went out, it follows up with no one. The link counts as sent when:",
+      "sentWays": {
+        "extension": "you send it from Gmail or Outlook with the extension or the Outlook add-in: it's picked up on its own;",
+        "button": "you click “I sent it” on the prospect's page (Clozer asks you on Today after a copy);",
+        "opened": "the prospect opens it: the first opening counts as sent, even if you confirmed nothing."
+      },
+      "casesTitle": "Then, depending on what the prospect does",
+      "cases": {
+        "notSent": {
+          "title": "Not sent yet",
+          "body": "Nothing goes to the prospect. The link stays under “To send” on Today."
+        },
+        "unopened": {
+          "title": "Sent, never opened",
+          "body": "A reminder 3, 7 then 14 days after sending. The last one simply offers to close the file. A reminder you didn't approve is replaced by the next one, they don't pile up."
+        },
+        "clicked": {
+          "title": "Clicked without reading",
+          "body": "They stopped at the screen asking for their email: the reminder takes it into account and sends the link again without pushing."
+        },
+        "read": {
+          "title": "Opened and read",
+          "body": "No more “never opened” reminders. Clozer analyses how they read and prepares the follow-up that fits, at the right time. You're told about the readings that matter."
+        },
+        "replied": {
+          "title": "They reply by email",
+          "body": "The reply lands in your inbox as usual. Clozer sees it too, when it answers a Clozer follow-up or a Gmail thread with the extension: automatic follow-ups stop and you're notified. “Resume follow-ups” on the prospect's page turns them back on."
+        },
+        "decided": {
+          "title": "They approve, ask for a change or book a meeting",
+          "body": "Everything stops and you're notified right away: your move."
+        },
+        "bounced": {
+          "title": "Invalid address",
+          "body": "The reminder couldn't be delivered: no more email goes to that address and you're notified so you can fix it on the prospect's page."
+        },
+        "expiring": {
+          "title": "The link is about to expire",
+          "body": "For a quote or a proposal, a reminder about two days before the deadline."
+        }
+      },
+      "casesNote": "In copilot mode (the default), every follow-up waits for you in “Follow-ups to approve”: nothing goes out without you."
+    },
     "journeyHint": "what happens when you send a link",
     "journeyTitle": "A prospect's journey",
     "steps": {
@@ -35,7 +82,7 @@
       },
       "watch": {
         "title": "And it keeps watching",
-        "body": "3 days of silence, 7 days: it takes stock again and adjusts what's next. Link never opened: a gentle reminder after a few days. The prospect clicks “Approve” or “Ask for a change”: everything stops and you're notified. You got them on the phone: log the call in one click, Clozer takes it into account."
+        "body": "Silence after a reading: it takes stock again and adjusts what's next. Link never opened: a reminder 3, 7 then 14 days after sending. The prospect replies by email, clicks “Approve” or “Ask for a change”: everything stops and you're notified. You got them on the phone: log the call in one click, Clozer takes it into account."
       }
     },
     "indicatorsTitle": "Two indicators, two questions",
@@ -62,7 +109,7 @@
     "underTheHood2": "No email address or IP address is sent to the AI: readers go by a letter (reader A, reader B…). An analysis only reruns when something new has happened.",
     "notYetTitle": "What's not there yet",
     "notYet1": "Follow-ups go out from Clozer's address, with your email as the reply-to.",
-    "notYet2": "Clozer can't see email replies yet: log them on the prospect's page.",
+    "notYet2": "Replies to your own email (not a Clozer follow-up) are only seen with the extension, in Gmail: otherwise, log them on the prospect's page.",
     "notYet3": "WhatsApp follow-ups are coming soon."
   },
   "faq": {

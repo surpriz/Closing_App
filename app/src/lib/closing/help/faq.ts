@@ -137,6 +137,12 @@ export const FAQ: FaqSection[] = [
         a: "Sur l'écran de partage : « Copier le lien » pour le coller dans votre email, ou « Envoyer par email ». Le champ « Pour qui ? » accepte un email (le contact est ajouté) ou un nom (le lien est juste nommé).\n\nEnvoyez le lien à la place de la pièce jointe, pas en plus.",
       },
       {
+        id: "lien-envoye",
+        q: "Comment Clozer sait-il que mon lien est parti ?",
+        a: "Copier le lien ne suffit pas. Il compte comme envoyé quand vous l'envoyez depuis Gmail ou Outlook avec l'extension ou le complément Outlook (détecté tout seul), quand vous cliquez « C'est envoyé » sur la fiche du prospect, ou quand le prospect l'ouvre.\n\nTant qu'il n'est pas envoyé, Clozer ne relance personne : il reste dans « À envoyer » sur Aujourd'hui. Une fois envoyé et jamais ouvert, un rappel part à J+3, J+7 puis J+14.",
+        link: { href: "/how-it-works#apres-envoi", label: "Après l'envoi : ce qui se passe" },
+      },
+      {
         id: "voir-comme-prospect",
         q: "Comment voir ce que verra le prospect ?",
         a: "« Voir ce que verra le prospect » sur l'écran de partage, ou l'Aperçu dans l'onglet Le document de la page du document.",
@@ -309,7 +315,7 @@ export const FAQ: FaqSection[] = [
       {
         id: "reponses",
         q: "Clozer voit-il les réponses de mes prospects ?",
-        a: "Pas encore. Notez-les sur la fiche (Noter un échange → Réponse reçue) : Clozer adapte la suite et ne relance pas à contretemps.",
+        a: "Oui, dans deux cas. Quand le prospect répond à une relance envoyée par Clozer : la réponse arrive dans votre boîte comme d'habitude, et Clozer en reçoit une copie. Et dans Gmail avec l'extension, quand un fil qui contient votre lien Clozer reçoit une réponse du prospect.\n\nLa réponse s'affiche sur la fiche, les relances automatiques s'arrêtent et vous êtes prévenu. « Reprendre les relances » sur la fiche pour les relancer.\n\nUne réponse que Clozer ne peut pas voir (Outlook, téléphone) : notez-la sur la fiche (Noter un échange → Réponse reçue).",
       },
       {
         id: "arreter",

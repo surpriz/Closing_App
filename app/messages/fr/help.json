@@ -6,6 +6,53 @@
     "faq": "Questions fréquentes",
     "replayTour": "Revoir la prise en main",
     "intro": "Clozer voit comment votre prospect lit votre document, comprend où en est la vente comme le ferait un commercial expérimenté, et prépare la bonne relance au bon moment. Vous validez et vous appelez ceux qui sont prêts.",
+    "afterSend": {
+      "title": "Après l'envoi : ce qui se passe",
+      "hint": "lien envoyé, ouvert ou non",
+      "sentTitle": "Comment Clozer sait que le lien est parti",
+      "sentBody": "Copier le lien ne suffit pas : tant que Clozer ne sait pas qu'il est parti, il ne relance personne. Le lien compte comme envoyé quand :",
+      "sentWays": {
+        "extension": "vous l'envoyez depuis Gmail ou Outlook avec l'extension ou le complément Outlook : c'est détecté tout seul ;",
+        "button": "vous cliquez « C'est envoyé » sur la fiche du prospect (Clozer vous le demande sur Aujourd'hui après une copie) ;",
+        "opened": "le prospect l'ouvre : la première ouverture vaut envoi, même si vous n'avez rien confirmé."
+      },
+      "casesTitle": "Ensuite, selon ce que fait le prospect",
+      "cases": {
+        "notSent": {
+          "title": "Pas encore envoyé",
+          "body": "Rien ne part vers le prospect. Le lien reste dans « À envoyer » sur Aujourd'hui."
+        },
+        "unopened": {
+          "title": "Envoyé, jamais ouvert",
+          "body": "Un rappel à J+3, J+7 puis J+14 après l'envoi. Le dernier propose simplement de classer le dossier. Un rappel non validé est remplacé par le suivant, ils ne s'empilent pas."
+        },
+        "clicked": {
+          "title": "A cliqué sans lire",
+          "body": "Il s'est arrêté sur l'écran qui demande son email : le rappel en tient compte et lui renvoie le lien sans insister."
+        },
+        "read": {
+          "title": "Ouvert et lu",
+          "body": "Plus de rappels « jamais ouvert ». Clozer analyse sa lecture et prépare la relance qui colle à ce qu'il a lu, au bon moment. Vous êtes prévenu des lectures qui comptent."
+        },
+        "replied": {
+          "title": "Il répond par email",
+          "body": "La réponse arrive dans votre boîte, comme d'habitude. Clozer la voit aussi, quand elle répond à une relance de Clozer ou à un fil Gmail avec l'extension : les relances automatiques s'arrêtent et vous êtes prévenu. « Reprendre les relances » sur la fiche pour les relancer."
+        },
+        "decided": {
+          "title": "Il valide, demande un ajustement ou prend rendez-vous",
+          "body": "Tout s'arrête et vous êtes prévenu tout de suite : c'est à vous de jouer."
+        },
+        "bounced": {
+          "title": "Adresse invalide",
+          "body": "Le rappel n'a pas pu être livré : plus aucun email ne part à cette adresse et vous êtes prévenu pour la corriger sur la fiche."
+        },
+        "expiring": {
+          "title": "Le lien va expirer",
+          "body": "Pour un devis ou une proposition, un rappel environ deux jours avant l'échéance."
+        }
+      },
+      "casesNote": "En mode copilote (par défaut), chaque relance vous attend dans « Relances à valider » : rien ne part sans vous."
+    },
     "journeyHint": "ce qui se passe quand vous envoyez un lien",
     "journeyTitle": "Le parcours d'un prospect",
     "steps": {
@@ -35,7 +82,7 @@
       },
       "watch": {
         "title": "Et il continue de surveiller",
-        "body": "Silence de 3 jours, de 7 jours : il refait le point et adapte la suite. Lien jamais ouvert : un rappel discret après quelques jours. Le prospect clique « Valider » ou « Demander un ajustement » : tout s'arrête et vous êtes prévenu. Vous l'avez eu au téléphone : notez l'échange en un clic, Clozer en tient compte."
+        "body": "Silence après une lecture : il refait le point et adapte la suite. Lien jamais ouvert : un rappel à J+3, J+7 puis J+14. Le prospect répond par email, clique « Valider » ou « Demander un ajustement » : tout s'arrête et vous êtes prévenu. Vous l'avez eu au téléphone : notez l'échange en un clic, Clozer en tient compte."
       }
     },
     "indicatorsTitle": "Deux indicateurs, deux questions",
@@ -62,7 +109,7 @@
     "underTheHood2": "Aucune adresse email ni adresse IP n'est envoyée à l'IA : les lecteurs sont désignés par une lettre (lecteur A, lecteur B…). Une analyse n'est relancée que s'il s'est passé quelque chose de nouveau.",
     "notYetTitle": "Ce qui n'est pas encore là",
     "notYet1": "Les relances partent de l'adresse de Clozer, avec votre email en adresse de réponse.",
-    "notYet2": "Clozer ne voit pas encore les réponses reçues par email : notez-les sur la fiche du prospect.",
+    "notYet2": "Les réponses envoyées à votre propre email (hors relance Clozer) ne sont vues qu'avec l'extension, dans Gmail : sinon, notez-les sur la fiche du prospect.",
     "notYet3": "Les relances WhatsApp arrivent bientôt."
   },
   "faq": {

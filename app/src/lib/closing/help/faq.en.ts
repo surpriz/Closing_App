@@ -121,6 +121,12 @@ export const FAQ_EN: FaqSection[] = [
         a: "On the share screen: “Copy link” to paste it into your email, or “Send by email”. The “Who is it for?” field takes an email (the contact is added) or a name (the link is just named).\n\nSend the link instead of the attachment, not on top of it.",
       },
       {
+        id: "lien-envoye",
+        q: "How does Clozer know my link went out?",
+        a: "Copying the link isn't enough. It counts as sent when you send it from Gmail or Outlook with the extension or the Outlook add-in (picked up on its own), when you click “I sent it” on the prospect's page, or when the prospect opens it.\n\nUntil it's sent, Clozer follows up with no one: it stays under “To send” on Today. Once sent and never opened, a reminder goes out 3, 7 then 14 days later.",
+        link: { href: "/how-it-works#apres-envoi", label: "After you send: what happens" },
+      },
+      {
         id: "voir-comme-prospect",
         q: "How do I see what the prospect will see?",
         a: "“See what the prospect will see” on the share screen, or Preview in The document tab of the document page.",
@@ -293,7 +299,7 @@ export const FAQ_EN: FaqSection[] = [
       {
         id: "reponses",
         q: "Does Clozer see my prospects' replies?",
-        a: "Not yet. Log them on the prospect's page (Log an interaction → Reply received): Clozer adjusts what comes next and won't follow up at the wrong moment.",
+        a: "Yes, in two cases. When the prospect replies to a follow-up sent by Clozer: the reply lands in your inbox as usual, and Clozer gets a copy. And in Gmail with the extension, when a thread holding your Clozer link gets a reply from the prospect.\n\nThe reply shows on the prospect's page, automatic follow-ups stop and you're notified. “Resume follow-ups” on the page turns them back on.\n\nA reply Clozer can't see (Outlook, phone): log it on the prospect's page (Log an interaction → Reply received).",
       },
       {
         id: "arreter",
