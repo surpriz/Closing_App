@@ -28,6 +28,11 @@ export function SupportFr() {
         </li>
       </ol>
       <p>
+        Chrome affiche « Extension non approuvée par la navigation sécurisée avec protection renforcée » ? C&apos;est
+        normal pour un nouvel éditeur : l&apos;extension a été validée par Google et publiée sur le Chrome Web Store. Le
+        message disparaîtra de lui-même, et il ne s&apos;affiche que si vous avez activé la protection renforcée.
+      </p>
+      <p>
         Pour la retirer : clic droit sur l&apos;icône Clozer › Supprimer de Chrome. La connexion se révoque aussi dans
         Clozer, Réglages › Chrome et Outlook.
       </p>

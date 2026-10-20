@@ -28,6 +28,11 @@ export function SupportEn() {
         </li>
       </ol>
       <p>
+        Chrome says &ldquo;Not trusted by Enhanced Safe Browsing&rdquo;? That&apos;s normal for a new publisher: the
+        extension was reviewed by Google and is published on the Chrome Web Store. The message will go away on its own,
+        and it only shows if you turned on Enhanced protection.
+      </p>
+      <p>
         To remove it: right-click the Clozer icon › Remove from Chrome. You can also revoke the connection in Clozer,
         Settings › Chrome and Outlook.
       </p>
