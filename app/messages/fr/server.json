@@ -42,7 +42,8 @@
     "INVITATION_NOT_FOUND": "Cette invitation n'est plus valable.",
     "YOU_ARE_NOT_THE_RECIPIENT_OF_THE_INVITATION": "Cette invitation est pour une autre adresse email.",
     "INVITER_IS_NO_LONGER_A_MEMBER_OF_THE_ORGANIZATION": "La personne qui vous a invité a quitté l'équipe. Demandez une nouvelle invitation.",
-    "fallback": "Ça n'a pas marché, réessayez."
+    "fallback": "Ça n'a pas marché, réessayez.",
+    "PLAN_TEAM_REQUIRED": "Cet espace n'est plus en offre Équipe, il ne peut pas accueillir de nouveau membre. Demandez à son administrateur."
   },
   "facts": {
     "day": "J+{days}",

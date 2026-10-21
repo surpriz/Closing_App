@@ -27,3 +27,15 @@ export async function resolvePrice(stripe: Stripe, plan: PaidPlanId, interval: I
   prices.set(key, { id: data[0].id, at: Date.now() });
   return data[0].id;
 }
+
+let portals: { solo?: string; team?: string; at: number } | null = null;
+
+/** The portal for this plan (scripts/stripe-setup.mjs): Team's offers no way down to Solo. Undefined: Stripe's default. */
+export async function resolvePortalConfiguration(stripe: Stripe, plan: string) {
+  if (!portals || Date.now() - portals.at >= PRICE_TTL_MS) {
+    const { data } = await stripe.billingPortal.configurations.list({ active: true, limit: 100 });
+    const byKind = (kind: string) => data.find((configuration) => configuration.metadata?.clozer_portal === kind)?.id;
+    portals = { solo: byKind("solo"), team: byKind("team"), at: Date.now() };
+  }
+  return plan === "solo" ? portals.solo : portals.team;
+}

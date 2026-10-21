@@ -31,6 +31,13 @@ import {
 } from "@/lib/platform-admin";
 import { getSellerLocale, toUiLocale } from "@/lib/seller-locale";
 
+async function requireTeamPlan(organizationId: string) {
+  const plan = await getWorkspacePlan(organizationId);
+  if (!plan.limits.invites) {
+    throw APIError.from("FORBIDDEN", { code: "PLAN_TEAM_REQUIRED", message: "Joining this workspace needs its Team plan." });
+  }
+}
+
 export const googleEnabled =
   !!process.env.GOOGLE_CLIENT_ID && !!process.env.GOOGLE_CLIENT_SECRET;
 
@@ -141,13 +148,10 @@ export const auth = betterAuth({
       cancelPendingInvitationsOnReInvite: true,
       // Team is billed per member: the Stripe quantity follows every arrival and departure
       organizationHooks: {
-        // Inviting is a Team feature (the settings action says it nicer first)
-        beforeCreateInvitation: async ({ organization }) => {
-          const plan = await getWorkspacePlan(organization.id);
-          if (!plan.limits.invites) {
-            throw APIError.from("FORBIDDEN", { code: "PLAN_TEAM_REQUIRED", message: "Inviting teammates needs the Team plan." });
-          }
-        },
+        // Inviting is a Team feature (the settings action says it nicer first). Checked again on
+        // acceptance: an invitation sent during the trial must not add a member once on Free or Solo
+        beforeCreateInvitation: ({ organization }) => requireTeamPlan(organization.id),
+        beforeAcceptInvitation: ({ organization }) => requireTeamPlan(organization.id),
         afterAddMember: async ({ organization }) => inBackground("seat-sync", () => syncSeats(organization.id)),
         afterAcceptInvitation: async ({ organization }) => inBackground("seat-sync", () => syncSeats(organization.id)),
         afterRemoveMember: async ({ organization }) => inBackground("seat-sync", () => syncSeats(organization.id)),

@@ -42,7 +42,8 @@
     "INVITATION_NOT_FOUND": "This invitation is no longer valid.",
     "YOU_ARE_NOT_THE_RECIPIENT_OF_THE_INVITATION": "This invitation is for another email address.",
     "INVITER_IS_NO_LONGER_A_MEMBER_OF_THE_ORGANIZATION": "The person who invited you has left the team. Ask for a new invitation.",
-    "fallback": "That didn't work, try again."
+    "fallback": "That didn't work, try again.",
+    "PLAN_TEAM_REQUIRED": "This workspace is no longer on the Team plan, so it can't take new members. Ask its admin."
   },
   "facts": {
     "day": "D+{days}",

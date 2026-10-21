@@ -5,7 +5,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 
 import { getAppOrigin } from "@/lib/app-origin";
 import { BILLING_HREF, isPaidPlanId, isPaidStatus, seatQuantity, type Interval } from "@/lib/billing/plans";
-import { getStripe, resolvePrice } from "@/lib/billing/stripe";
+import { getStripe, resolvePortalConfiguration, resolvePrice } from "@/lib/billing/stripe";
 import { prisma } from "@/lib/db";
 import { requireManager } from "@/lib/session";
 
@@ -85,6 +85,7 @@ export async function openBillingPortal(): Promise<BillingState> {
   try {
     const session = await stripe.billingPortal.sessions.create({
       customer: organization.stripeCustomerId,
+      configuration: await resolvePortalConfiguration(stripe, organization.plan),
       return_url: `${await getAppOrigin()}${BILLING_HREF}`,
       locale: await stripeLocale(),
     });

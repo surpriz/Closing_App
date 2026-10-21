@@ -63,9 +63,13 @@ for (const entry of CATALOGUE) {
   console.log(`${entry.name}: ${product.id} · ${prices.join(", ")}`);
 }
 
-// Seats follow the members (lib/billing/seats.ts): no quantity change in the portal
-const portal = {
+// Two portals. Solo can move up to Team; Team only changes period or cancels: a Solo price
+// on a workspace of several members would bill one seat for a team (lib/billing/stripe.ts picks one).
+// Seats follow the members (lib/billing/seats.ts): no quantity change in either.
+const [solo, team] = portalProducts;
+const portal = (kind, products) => ({
   business_profile: { headline: "Clozer" },
+  metadata: { clozer_portal: kind },
   features: {
     invoice_history: { enabled: true },
     payment_method_update: { enabled: true },
@@ -75,13 +79,16 @@ const portal = {
       enabled: true,
       default_allowed_updates: ["price"],
       proration_behavior: "create_prorations",
-      products: portalProducts,
+      products,
     },
   },
-};
-const { data: configurations } = await stripe.billingPortal.configurations.list({ is_default: true, limit: 1 });
-const configuration = configurations[0]
-  ? await stripe.billingPortal.configurations.update(configurations[0].id, portal)
-  : await stripe.billingPortal.configurations.create(portal);
-console.log(`Customer portal: ${configuration.id}`);
+});
+const { data: configurations } = await stripe.billingPortal.configurations.list({ active: true, limit: 100 });
+for (const [kind, products] of [["solo", [solo, team]], ["team", [team]]]) {
+  const existing = configurations.find((configuration) => configuration.metadata?.clozer_portal === kind);
+  const configuration = existing
+    ? await stripe.billingPortal.configurations.update(existing.id, portal(kind, products))
+    : await stripe.billingPortal.configurations.create(portal(kind, products));
+  console.log(`Customer portal (${kind}): ${configuration.id}`);
+}
 console.log("Then: Stripe Tax origin address and registrations, webhook endpoint /api/stripe/webhook");
