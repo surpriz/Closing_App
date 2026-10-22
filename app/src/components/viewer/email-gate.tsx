@@ -26,7 +26,8 @@ export function EmailGate({ slug, action, known, documentName, senderName, label
   const [knownState, unlockKnown, unlocking] = useActionState(async () => known!.unlock(), null);
   const [notMe, setNotMe] = useState(false);
   const invalid = state?.error === "invalid_email";
-  const greet = known && !notMe && !knownState?.error;
+  const tooMany = state?.error === "too_many" || knownState?.error === "too_many";
+  const greet = known && !notMe && (!knownState?.error || knownState.error === "too_many");
 
   // Shown in a real browser: the link was clicked, whether or not the reader goes on
   useEffect(() => {
@@ -54,6 +55,11 @@ export function EmailGate({ slug, action, known, documentName, senderName, label
               <ArrowRight data-icon="inline-end" />
             </Button>
           </form>
+          {tooMany && (
+            <p role="alert" className="mt-2 text-small text-destructive">
+              {labels.tooManyAttempts}
+            </p>
+          )}
           <Button variant="ghost" className="mt-2 h-11 w-full text-muted-foreground" onClick={() => setNotMe(true)}>
             {labels.notMe}
           </Button>
@@ -83,6 +89,11 @@ export function EmailGate({ slug, action, known, documentName, senderName, label
           {invalid && (
             <p id="email-error" role="alert" className="mt-2 text-small text-destructive">
               {labels.invalidEmail}
+            </p>
+          )}
+          {tooMany && (
+            <p role="alert" className="mt-2 text-small text-destructive">
+              {labels.tooManyAttempts}
             </p>
           )}
         </form>

@@ -258,6 +258,27 @@ model AdminAuditLog {
   @@map("admin_audit_logs")
 }
 
+// Better Auth rate limiting (sign-in, magic link): serverless has no shared memory
+model RateLimit {
+  id          String @id
+  key         String @unique
+  count       Int
+  lastRequest BigInt
+
+  @@map("rate_limits")
+}
+
+// Our own limits on public endpoints (email gate, smart link, tracking, upload, pairing).
+// Fixed window per key; the key holds a hashed IP, never the raw address
+model RequestLimit {
+  key         String   @id
+  count       Int
+  windowStart DateTime
+
+  @@index([windowStart])
+  @@map("request_limits")
+}
+
 // =============================================================================
 // Enums
 // =============================================================================

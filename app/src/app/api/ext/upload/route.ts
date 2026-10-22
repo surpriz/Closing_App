@@ -3,6 +3,7 @@ import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { blobToken, documentUploadPrefix } from "@/lib/blob";
 import { MAX_UPLOAD_BYTES } from "@/lib/closing/constants";
 import { authenticateExtension } from "@/lib/extension-auth";
+import { consumeLimit } from "@/lib/rate-limit";
 
 // Same as /api/upload, authenticated by the extension token instead of the session cookie
 export async function POST(request: Request) {
@@ -17,6 +18,7 @@ export async function POST(request: Request) {
       onBeforeGenerateToken: async (pathname) => {
         const caller = await authenticateExtension(request);
         if (!caller) throw new Error("Not authenticated");
+        if (!(await consumeLimit("upload", request.headers, caller.user.id))) throw new Error("Too many uploads");
 
         if (!pathname.startsWith(documentUploadPrefix(caller.organization.id))) {
           throw new Error("Invalid upload path");

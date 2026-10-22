@@ -93,6 +93,19 @@ async function magicLinkRefusal(email: string, headers: Headers | null | undefin
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, { provider: "postgresql" }),
+  // Explicit rather than defaults: these are the answers a customer security review asks for
+  session: { expiresIn: 7 * 24 * 60 * 60, updateAge: 24 * 60 * 60 },
+  // Serverless instances share nothing in memory: counters live in the database
+  rateLimit: {
+    enabled: process.env.NODE_ENV === "production",
+    storage: "database",
+    window: 60,
+    max: 100,
+    // A few sign-in links a minute per IP: enough for a typo, not for flooding someone's inbox
+    customRules: { "/sign-in/magic-link": { window: 60, max: 5 } },
+  },
+  // Vercel sets x-real-ip itself: rate limits count the real client
+  advanced: { ipAddress: { ipAddressHeaders: ["x-real-ip", "x-forwarded-for"] } },
   // Tokens written before this was on stay readable and get encrypted on the next sign-in
   account: { encryptOAuthTokens: true },
   user: {
@@ -179,6 +192,8 @@ export const auth = betterAuth({
       },
     }),
     magicLink({
+      // Matches the "expires in 5 minutes" line of the email
+      expiresIn: 5 * 60,
       sendMagicLink: async ({ email, url }, ctx) => {
         const { locale, refusal } = await magicLinkRefusal(email, ctx?.headers ?? ctx?.request?.headers);
         const t = getTranslator(locale);

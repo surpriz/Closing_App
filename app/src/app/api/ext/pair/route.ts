@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { consumeLimit, tooManyRequests } from "@/lib/rate-limit";
 import {
   formatUserCode,
   generatePollSecret,
@@ -9,7 +10,8 @@ import {
 
 // The Outlook add-in starts a pairing. No auth: the add-in has no token yet.
 // It keeps `poll` to itself and shows `code` to the seller, who types it in the app.
-export async function POST() {
+export async function POST(request: Request) {
+  if (!(await consumeLimit("pairCreate", request.headers))) return tooManyRequests();
   await prisma.extensionPairing.deleteMany({ where: { expiresAt: { lt: new Date() } } });
 
   const poll = generatePollSecret();

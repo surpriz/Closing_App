@@ -54,6 +54,8 @@ export async function deleteDocumentForever(documentId: string) {
       posterPathname: true,
       audioPathname: true,
       capsules: { select: { blobPathname: true, posterPathname: true } },
+      // DeepL copies of the PDF
+      fileTranslations: { select: { blobPathname: true } },
       links: { select: { voiceComments: { select: { blobPathname: true } } } },
     },
   });
@@ -64,6 +66,7 @@ export async function deleteDocumentForever(documentId: string) {
     document.posterPathname,
     document.audioPathname,
     ...document.capsules.flatMap((c) => [c.blobPathname, c.posterPathname]),
+    ...document.fileTranslations.map((t) => t.blobPathname),
     ...document.links.flatMap((l) => l.voiceComments.map((v) => v.blobPathname)),
   ]);
   await prisma.document.delete({ where: { id: documentId } });

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 
 import { isLinkExpired, viewerDeadline } from "./expiry";
 import { companyFromEmail } from "./prospects/from-recipient";
+import { readGateCookie, signGateCookie } from "./tracking/gate-cookie";
 import { EMAIL_COOKIE_MAX_AGE, emailCookieName } from "./tracking/visitor";
 
 const SLUG_PATTERN = /^[A-Za-z0-9]{6,32}$/;
@@ -64,8 +65,16 @@ export async function getLinkForViewer(slug: string) {
   return resolved?.state === "open" ? resolved.link : null;
 }
 
+// Same key as the forward tokens: it never rotates, so gate cookies stay valid
+function gateSecret() {
+  const secret = process.env.ENCRYPTION_KEY;
+  if (!secret || secret.length < 32) throw new Error("ENCRYPTION_KEY must be at least 32 characters");
+  return secret;
+}
+
 export async function getViewerAccess(link: { id: string; requireEmail: boolean }) {
-  const email = (await cookies()).get(emailCookieName(link.id))?.value ?? null;
+  // An unsigned or edited cookie counts as none: the reader types their email again
+  const email = readGateCookie(link.id, (await cookies()).get(emailCookieName(link.id))?.value, gateSecret());
   return { allowed: !link.requireEmail || !!email, email };
 }
 
@@ -78,7 +87,7 @@ export async function identifyProspect(link: { id: string }, email: string, name
     update: name ? { name } : {},
   });
 
-  (await cookies()).set(emailCookieName(link.id), email, {
+  (await cookies()).set(emailCookieName(link.id), signGateCookie(link.id, email, gateSecret()), {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",

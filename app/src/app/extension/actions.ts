@@ -9,6 +9,7 @@ import { inBackground } from "@/lib/closing/background";
 import { upsertSellerPrefs } from "@/lib/closing/notify/preferences";
 import { encryptSecret } from "@/lib/crypto";
 import { prisma } from "@/lib/db";
+import { consumeLimit } from "@/lib/rate-limit";
 import { isEmailConfigured, sendEmail } from "@/lib/email";
 import { normalizeUserCode, outlookConnectedEmail } from "@/lib/extension-pairing";
 import { generateExtensionToken, hashExtensionToken, OUTLOOK_TOKEN_LABEL, tokenHint } from "@/lib/extension-tokens";
@@ -53,6 +54,8 @@ export async function connectExtension() {
 export async function claimOutlookPairing(input: string): Promise<{ ok: true } | { ok: false; message: string }> {
   const { user, organization } = await requireWorkspace();
   const t = await getTranslations("auth.extension");
+  // Codes are short-lived but short: a few tries per seller, never a scan
+  if (!(await consumeLimit("pairClaim", await headers(), `claim:${user.id}`))) return { ok: false, message: t("unknownCode") };
   const code = normalizeUserCode(input);
   const pairing = code
     ? await prisma.extensionPairing.findUnique({ where: { userCode: code }, select: { id: true, expiresAt: true, tokenCiphertext: true } })

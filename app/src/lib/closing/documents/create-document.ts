@@ -26,6 +26,12 @@ export function findReusableDocument(organizationId: string, contentSha256: stri
   });
 }
 
+// The name comes from the uploader's file name: no control characters, no endless string
+export function documentNameFromFile(fileName: string) {
+  const clean = fileName.replace(/[\u0000-\u001f\u007f]/g, "").replace(/\.pdf$/i, "").trim().slice(0, 200);
+  return clean || "Document";
+}
+
 // The caller sent something unusable, as opposed to an infrastructure failure
 export class DocumentInputError extends Error {}
 
@@ -74,7 +80,7 @@ export async function createFileDocument(input: {
     data: {
       organizationId,
       ownerId: userId,
-      name: input.name.replace(/\.pdf$/i, ""),
+      name: documentNameFromFile(input.name),
       blobUrl: blob.url,
       blobPathname: blob.pathname,
       contentType: blob.contentType,

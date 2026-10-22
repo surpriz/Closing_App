@@ -5,6 +5,7 @@ import { markFollowupClicked } from "@/lib/closing/followups/attribution";
 import { getLinkForViewer } from "@/lib/closing/links";
 import { getRequestContext } from "@/lib/closing/tracking/request-context";
 import { prisma } from "@/lib/db";
+import { consumeLimit } from "@/lib/rate-limit";
 import { isWorkspaceMember } from "@/lib/session";
 
 const bodySchema = z.object({ slug: z.string().min(1).max(64), followupId: z.string().max(40).nullish() });
@@ -12,6 +13,7 @@ const bodySchema = z.object({ slug: z.string().min(1).max(64), followupId: z.str
 // The email gate showed in a browser (sendBeacon, so a scanner that only fetches the page never
 // counts): someone clicked the link. Until a reading starts, that is "clicked, not read".
 export async function POST(request: Request) {
+  if (!(await consumeLimit("trackGate", request.headers))) return new Response(null, { status: 429 });
   let payload: unknown;
   try {
     payload = JSON.parse(await request.text());

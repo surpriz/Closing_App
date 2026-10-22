@@ -31,10 +31,11 @@ import { getRequestContext } from "@/lib/closing/tracking/request-context";
 import { resolveViewerView } from "@/lib/closing/tracking/viewer-view";
 import { VISITOR_COOKIE } from "@/lib/closing/tracking/visitor";
 import { prisma } from "@/lib/db";
+import { consumeLimit } from "@/lib/rate-limit";
 import { isEmailConfigured } from "@/lib/email";
 import { isWorkspaceMember } from "@/lib/session";
 
-export type UnlockState = { error?: "invalid_email" | "not_found" } | null;
+export type UnlockState = { error?: "invalid_email" | "not_found" | "too_many" } | null;
 
 const unlockSchema = z.object({
   email: z.email().max(254),
@@ -46,6 +47,7 @@ export async function unlockWithEmail(
   _prev: UnlockState,
   formData: FormData,
 ): Promise<UnlockState> {
+  if (!(await consumeLimit("gate", await headers()))) return { error: "too_many" };
   const resolved = await resolveViewerLink(slug);
   if (!resolved) return { error: "not_found" };
   // Expired or withdrawn while the gate was open: the page now shows the locked screen
@@ -76,6 +78,7 @@ export async function unlockWithEmail(
  * signature receipt going to that address is what flags a wrong claim.
  */
 export async function unlockAsKnown(slug: string): Promise<UnlockState> {
+  if (!(await consumeLimit("gate", await headers()))) return { error: "too_many" };
   const resolved = await resolveViewerLink(slug);
   if (!resolved) return { error: "not_found" };
   if (resolved.state !== "open") redirect(`/v/${slug}`);

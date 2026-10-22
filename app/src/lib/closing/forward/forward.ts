@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 
 import { prisma } from "@/lib/db";
 import { isEmailConfigured } from "@/lib/email";
+import { consumeLimit } from "@/lib/rate-limit";
 import { isWorkspaceMember } from "@/lib/session";
 
 import { inBackground } from "../background";
@@ -49,11 +50,14 @@ export async function forwardDocument(input: ForwardInput): Promise<{ ok: true }
 
   // A real reading session of this browser: a script posting the form has none
   const requestHeaders = await headers();
+  if (!(await consumeLimit("forward", requestHeaders))) return { ok: false, error: "limit" };
   const context = getRequestContext(requestHeaders);
   const view = await resolveViewerView(link.id, input.viewId);
   if (context.isBot || !view || isCrawlerView(view)) return { ok: false, error: "not_found" };
 
   const access = await getViewerAccess(link);
+  // Behind an email gate, only a reader who passed it forwards
+  if (!access.allowed) return { ok: false, error: "identify" };
   const fromEmail = access.email ?? input.fromEmail;
   if (!fromEmail) return { ok: false, error: "identify" };
 

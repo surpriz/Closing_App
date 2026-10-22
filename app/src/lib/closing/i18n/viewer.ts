@@ -47,6 +47,7 @@ export type ViewerLabels = {
   emailLabel: string;
   emailSubmit: string;
   invalidEmail: string;
+  tooManyAttempts: string;
   privacyNotice: string;
   privacyNoticeWeb: string;
   privacyNoticeVideo: string;
@@ -195,6 +196,7 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     emailLabel: "Your email",
     emailSubmit: "View the document",
     invalidEmail: "Please enter a valid email address.",
+    tooManyAttempts: "Too many attempts. Please try again in a few minutes.",
     privacyNotice: "The sender can see which pages of this document are viewed and for how long, along with your approximate location and device, to follow up at the right time.",
     privacyNoticeWeb: "The sender can see when this document is opened and for how long, along with your approximate location and device, to follow up at the right time.",
     privacyNoticeVideo: "The sender can see which parts of this video are watched and for how long, along with your approximate location and device, to follow up at the right time.",
@@ -365,6 +367,7 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     emailLabel: "Votre email",
     emailSubmit: "Voir le document",
     invalidEmail: "Adresse email invalide.",
+    tooManyAttempts: "Trop de tentatives. Réessayez dans quelques minutes.",
     privacyNotice: "L'expéditeur voit quelles pages de ce document sont consultées et combien de temps, ainsi que votre localisation approximative et votre appareil, pour vous recontacter au bon moment.",
     privacyNoticeWeb: "L'expéditeur voit quand ce document est ouvert et combien de temps, ainsi que votre localisation approximative et votre appareil, pour vous recontacter au bon moment.",
     privacyNoticeVideo: "L'expéditeur voit quels passages de cette vidéo sont regardés et combien de temps, ainsi que votre localisation approximative et votre appareil, pour vous recontacter au bon moment.",
@@ -535,6 +538,7 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     emailLabel: "Tu email",
     emailSubmit: "Ver el documento",
     invalidEmail: "Introduce un email válido.",
+    tooManyAttempts: "Demasiados intentos. Vuelve a intentarlo en unos minutos.",
     privacyNotice: "El remitente puede ver qué páginas de este documento se consultan y durante cuánto tiempo, junto con tu ubicación aproximada y tu dispositivo, para contactarte en el momento adecuado.",
     privacyNoticeWeb: "El remitente puede ver cuándo se abre este documento y durante cuánto tiempo, junto con tu ubicación aproximada y tu dispositivo, para contactarte en el momento adecuado.",
     privacyNoticeVideo: "El remitente puede ver qué partes de este vídeo se ven y durante cuánto tiempo, así como tu ubicación aproximada y tu dispositivo, para hacer un seguimiento en el momento adecuado.",
@@ -705,6 +709,7 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     emailLabel: "Ihre E-Mail",
     emailSubmit: "Dokument ansehen",
     invalidEmail: "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
+    tooManyAttempts: "Zu viele Versuche. Bitte versuchen Sie es in ein paar Minuten erneut.",
     privacyNotice: "Der Absender sieht, welche Seiten dieses Dokuments wie lange angesehen werden, sowie Ihren ungefähren Standort und Ihr Gerät, um sich zum richtigen Zeitpunkt zu melden.",
     privacyNoticeWeb: "Der Absender sieht, wann und wie lange dieses Dokument geöffnet wird, sowie Ihren ungefähren Standort und Ihr Gerät, um sich zum richtigen Zeitpunkt zu melden.",
     privacyNoticeVideo: "Der Absender sieht, welche Teile dieses Videos wie lange angesehen werden, sowie Ihren ungefähren Standort und Ihr Gerät, um sich zum richtigen Zeitpunkt zu melden.",

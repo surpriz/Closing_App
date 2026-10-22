@@ -8,6 +8,7 @@ import { parseSmartParams } from "@/lib/closing/shared/smart-params";
 import { getRequestContext } from "@/lib/closing/tracking/request-context";
 import { VISITOR_COOKIE } from "@/lib/closing/tracking/visitor";
 import { prisma } from "@/lib/db";
+import { consumeLimit, tooManyRequests } from "@/lib/rate-limit";
 import { isWorkspaceMember } from "@/lib/session";
 
 /** New readers per Smart Link per hour; beyond that they type their email. */
@@ -25,6 +26,7 @@ const bodySchema = z.object({
  * cold email before the prospect does. On to their own link, remembered there.
  */
 export async function POST(request: NextRequest, ctx: RouteContext<"/api/v/[slug]/smart">) {
+  if (!(await consumeLimit("smart", request.headers))) return tooManyRequests();
   const { slug } = await ctx.params;
   const parsed = bodySchema.safeParse(await request.json().catch(() => null));
   const smart = parsed.success ? parseSmartParams(parsed.data) : null;
