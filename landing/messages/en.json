@@ -23,6 +23,7 @@
   "footer": {
     "privacy": "Privacy",
     "terms": "Terms",
+    "security": "Security",
     "subprocessors": "Subprocessors",
     "legal": "Legal notice",
     "support": "Support"
@@ -327,6 +328,14 @@
     "subprocessors": {
       "title": "Subprocessors",
       "description": "The providers that process data for Clozer, and where."
+    },
+    "security": {
+      "title": "Security",
+      "description": "How Clozer protects your documents, your links and your prospects' data."
+    },
+    "dpa": {
+      "title": "Data processing agreement (DPA)",
+      "description": "Clozer's data processing agreement (Article 28 GDPR), available to sign separately."
     },
     "support": {
       "title": "Support",

@@ -23,6 +23,7 @@
   "footer": {
     "privacy": "Confidentialité",
     "terms": "CGU",
+    "security": "Sécurité",
     "subprocessors": "Sous-traitants",
     "legal": "Mentions légales",
     "support": "Support"
@@ -327,6 +328,14 @@
     "subprocessors": {
       "title": "Sous-traitants",
       "description": "Les prestataires qui traitent des données pour Clozer, et où."
+    },
+    "security": {
+      "title": "Sécurité",
+      "description": "Comment Clozer protège vos documents, vos liens et les données de vos prospects."
+    },
+    "dpa": {
+      "title": "Accord de traitement des données (DPA)",
+      "description": "L'accord de traitement des données de Clozer (article 28 du RGPD), à signer à part si besoin."
     },
     "support": {
       "title": "Support",

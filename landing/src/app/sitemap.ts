@@ -11,6 +11,8 @@ const PAGES: { path: AppPathname; changeFrequency: "weekly" | "monthly" | "yearl
   { path: "/terms", changeFrequency: "yearly", priority: 0.3 },
   { path: "/privacy", changeFrequency: "yearly", priority: 0.3 },
   { path: "/subprocessors", changeFrequency: "yearly", priority: 0.3 },
+  { path: "/security", changeFrequency: "monthly", priority: 0.4 },
+  { path: "/dpa", changeFrequency: "yearly", priority: 0.3 },
   { path: "/legal", changeFrequency: "yearly", priority: 0.3 },
   { path: "/support", changeFrequency: "monthly", priority: 0.4 },
 ];
