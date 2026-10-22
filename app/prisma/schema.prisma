@@ -258,6 +258,24 @@ model AdminAuditLog {
   @@map("admin_audit_logs")
 }
 
+// Sensitive actions inside a workspace (team, exports, erasures, deletions, extension access).
+// No relation to the workspace on purpose: the deletion of a workspace is itself logged.
+// Never holds a prospect's email; purged after 12 months like tracking data
+model AuditLog {
+  id             String   @id @default(cuid())
+  organizationId String
+  actorUserId    String?
+  action         String
+  targetType     String?
+  targetId       String?
+  metadata       Json?
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId, createdAt])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
 // Better Auth rate limiting (sign-in, magic link): serverless has no shared memory
 model RateLimit {
   id          String @id

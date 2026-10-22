@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 
 import { getPublicAppUrl } from "@/lib/app-origin";
+import { logAudit } from "@/lib/audit";
 import { inBackground } from "@/lib/closing/background";
 import { upsertSellerPrefs } from "@/lib/closing/notify/preferences";
 import { encryptSecret } from "@/lib/crypto";
@@ -45,6 +46,13 @@ export async function connectExtension() {
   const t = await getTranslations("auth.extension");
   const label = browserLabel((await headers()).get("user-agent") ?? "", t("browser"));
   const created = await createToken(user.id, organization.id, label);
+  await logAudit({
+    organizationId: organization.id,
+    actorUserId: user.id,
+    action: "extension.connected",
+    targetType: "extension_token",
+    targetId: created.id,
+  });
   revalidatePath("/settings");
   return created;
 }
@@ -74,6 +82,13 @@ export async function claimOutlookPairing(input: string): Promise<{ ok: true } |
     return { ok: false, message: t("codeUsed") };
   }
 
+  await logAudit({
+    organizationId: organization.id,
+    actorUserId: user.id,
+    action: "outlook.connected",
+    targetType: "extension_token",
+    targetId: id,
+  });
   if (isEmailConfigured()) {
     const email = outlookConnectedEmail({ at: new Date(), settingsUrl: `${getPublicAppUrl()}/settings#extension`, locale: toUiLocale(user.locale) });
     inBackground("outlook-connected-email", () => sendEmail({ to: user.email, ...email }));
@@ -85,10 +100,19 @@ export async function claimOutlookPairing(input: string): Promise<{ ok: true } |
 
 export async function revokeExtensionToken(id: string) {
   const { user, organization } = await requireWorkspace();
-  await prisma.extensionToken.updateMany({
+  const { count } = await prisma.extensionToken.updateMany({
     where: { id, userId: user.id, organizationId: organization.id, revokedAt: null },
     data: { revokedAt: new Date() },
   });
+  if (count) {
+    await logAudit({
+      organizationId: organization.id,
+      actorUserId: user.id,
+      action: "extension.revoked",
+      targetType: "extension_token",
+      targetId: id,
+    });
+  }
   revalidatePath("/settings");
 }
 

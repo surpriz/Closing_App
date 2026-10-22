@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { z } from "zod";
 
+import { logAudit } from "@/lib/audit";
 import { exportProspectData } from "@/lib/privacy/prospect";
 import { isManagerRole } from "@/lib/roles";
 import { getWorkspace } from "@/lib/session";
@@ -15,6 +16,7 @@ export async function GET(request: NextRequest) {
   if (!email.success) return new Response("Invalid email", { status: 400 });
 
   const data = await exportProspectData(workspace.organization.id, email.data);
+  await logAudit({ organizationId: workspace.organization.id, actorUserId: workspace.user.id, action: "prospect.exported" });
   return Response.json(data, {
     headers: { "content-disposition": `attachment; filename="clozer-prospect-${data.email}.json"` },
   });

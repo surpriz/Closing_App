@@ -90,6 +90,7 @@ export async function purgeExpiredData(now = new Date()) {
   ]);
 
   const requestLimits = await purgeRequestLimits(now);
+  const auditLogs = await prisma.auditLog.deleteMany({ where: { createdAt: { lt: cutoffs.tracking } } });
 
   return {
     linksErased: links.length,
@@ -98,5 +99,6 @@ export async function purgeExpiredData(now = new Date()) {
     sessionsDeleted: sessions.count,
     verificationsDeleted: verifications.count,
     requestLimitsDeleted: requestLimits,
+    auditLogsDeleted: auditLogs.count,
   };
 }
