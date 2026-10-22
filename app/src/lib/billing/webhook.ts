@@ -26,7 +26,7 @@ const ORG_BILLING = {
 } as const;
 
 /** Writes the subscription as Stripe has it now: whatever order events arrive in, the latest state wins. */
-async function syncSubscription(stripe: Stripe, subscriptionId: string) {
+export async function syncSubscription(stripe: Stripe, subscriptionId: string) {
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
   const customerId = idOf(subscription.customer);
   // The workspace may be gone (deleted, which cancelled the subscription): nothing to write, no retry

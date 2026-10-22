@@ -6,9 +6,18 @@ import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 
-import { openBillingPortal, startCheckout, type BillingState } from "@/app/(dashboard)/settings/billing-actions";
+import { openBillingPortal, startCheckout, switchToTeam, type BillingState } from "@/app/(dashboard)/settings/billing-actions";
 import { AutoRefresh } from "@/components/dashboard/auto-refresh";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { MONTHLY_PRICE_CENTS, PLANS, seatQuantity, type Interval, type PaidPlanId, type PlanId, type PlanSource } from "@/lib/billing/plans";
 import { cn } from "@/lib/utils";
 
@@ -50,6 +59,7 @@ export function BillingSettings(props: BillingSettingsProps) {
   const params = useSearchParams();
   const [interval, setInterval] = useState<Interval>(props.interval ?? "year");
   const [pending, startTransition] = useTransition();
+  const [confirmTeam, setConfirmTeam] = useState(false);
   const toasted = useRef(false);
   const justPaid = params.get("billing") === "success";
   const activating = justPaid && props.subscribed === null;
@@ -77,7 +87,21 @@ export function BillingSettings(props: BillingSettingsProps) {
   })();
 
   const usageLine = ({ used, max }: Usage) => (max === null ? t("usage.unlimited", { used }) : t("usage.of", { used, max }));
-  const choose = (plan: PaidPlanId) => startTransition(async () => report(await startCheckout(plan, interval)));
+  // Solo already paid: the move to Team happens here, with the real amount, not in the portal
+  const soloSubscriber = props.subscribed === "solo" && props.source !== "comped";
+  const choose = (plan: PaidPlanId) =>
+    plan === "team" && soloSubscriber
+      ? setConfirmTeam(true)
+      : startTransition(async () => report(await startCheckout(plan, interval)));
+  const teamSeats = seatQuantity(props.members);
+  const teamMonthly = MONTHLY_PRICE_CENTS.team[interval];
+  const moveToTeam = () =>
+    startTransition(async () => {
+      const result = await switchToTeam(interval);
+      setConfirmTeam(false);
+      if (result.ok) toast.success(t("switch.done"));
+      else report(result);
+    });
   const manage = () => startTransition(async () => report(await openBillingPortal()));
 
   return (
@@ -151,10 +175,21 @@ export function BillingSettings(props: BillingSettingsProps) {
                     <p className="text-heading tabular-nums">
                       {plan === "team" ? t("price.perSeat", { amount: money(cents) }) : t("price.perMonth", { amount: money(cents) })}
                     </p>
-                    {plan !== "free" && (
+                    {plan === "solo" && (
                       <p className="text-small text-muted-foreground">
                         {t("price.exclVat")}
-                        {interval === "year" && ` · ${t("price.billedYearly", { amount: money(cents * 12 * quantity) })}`}
+                        {interval === "year" && ` · ${t("price.billedYearly", { amount: money(cents * 12) })}`}
+                      </p>
+                    )}
+                    {plan === "team" && (
+                      <p className="text-small text-muted-foreground">
+                        {t("price.exclVat")} ·{" "}
+                        {t("price.teamTotal", {
+                          amount: money(cents * quantity * (interval === "year" ? 12 : 1)),
+                          period: interval,
+                          count: quantity,
+                        })}
+                        {props.members < quantity && ` (${t("price.teamMinimum")})`}
                       </p>
                     )}
                   </div>
@@ -196,6 +231,27 @@ export function BillingSettings(props: BillingSettingsProps) {
           {!props.canManage && <p className="text-small text-muted-foreground">{t("actions.managerOnly")}</p>}
         </div>
       )}
+      <Dialog open={confirmTeam} onOpenChange={setConfirmTeam}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("switch.title")}</DialogTitle>
+            <DialogDescription>
+              {t("switch.body", {
+                count: teamSeats,
+                price: money(teamMonthly),
+                period: interval,
+                total: money(teamMonthly * teamSeats * (interval === "year" ? 12 : 1)),
+              })}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose render={<Button variant="outline" />}>{t("switch.cancel")}</DialogClose>
+            <Button disabled={pending} onClick={moveToTeam}>
+              {t("switch.confirm")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

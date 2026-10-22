@@ -6,6 +6,7 @@ import { LoginForm } from "@/components/auth/login-form";
 import { ProductPanel } from "@/components/auth/product-panel";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { googleEnabled } from "@/lib/auth";
+import { prisma } from "@/lib/db";
 import { devMagicLinksEnabled } from "@/lib/dev-magic-links";
 import { safeNextPath } from "@/lib/next-path";
 import { getSession } from "@/lib/session";
@@ -36,21 +37,46 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   // The landing's signup form lands here with ?email= (send the link at once) or ?provider=google.
   const email = typeof params.email === "string" ? params.email.trim().slice(0, 254) : "";
   const provider = params.provider === "google" && googleEnabled ? "google" : null;
+  // From an invitation link: say who invites, and fill in the invited address (no link sent until asked)
+  const invitation = await pendingInvitation(next);
+  const tInvite = await getTranslations("auth.invitation");
 
   return (
     <main className="grid flex-1 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
       <div className="relative flex items-center justify-center px-5 py-14 sm:px-8">
-        <LoginForm
-          devMode={devMagicLinksEnabled()}
-          next={next}
-          initialError={error}
-          google={googleEnabled}
-          initialEmail={error ? "" : email}
-          autoStart={error ? null : provider ?? (email ? "email" : null)}
-        />
+        <div className="w-full max-w-[25rem] space-y-6">
+          {invitation && (
+            <p role="status" className="rounded-lg bg-card px-4 py-3 text-body ring-1 ring-foreground/85">
+              {tInvite("loginNotice", {
+                inviter: invitation.user.name || invitation.user.email,
+                workspace: invitation.organization.name,
+                email: invitation.email,
+              })}
+            </p>
+          )}
+          <LoginForm
+            devMode={devMagicLinksEnabled()}
+            next={next}
+            initialError={error}
+            google={googleEnabled}
+            initialEmail={error ? "" : email || invitation?.email || ""}
+            autoStart={error ? null : provider ?? (email ? "email" : null)}
+          />
+        </div>
         <LocaleSwitcher className="absolute right-5 bottom-5 sm:right-8" />
       </div>
       <ProductPanel />
     </main>
   );
+}
+
+const INVITATION_PATH = /^\/invitation\/([\w-]{1,64})$/;
+
+async function pendingInvitation(next: string) {
+  const id = INVITATION_PATH.exec(next)?.[1];
+  if (!id) return null;
+  return prisma.invitation.findFirst({
+    where: { id, status: "pending", expiresAt: { gt: new Date() } },
+    select: { email: true, organization: { select: { name: true } }, user: { select: { name: true, email: true } } },
+  });
 }

@@ -49,7 +49,9 @@
     "perMonth": "{amount} / mois",
     "perSeat": "{amount} / membre / mois",
     "billedYearly": "soit {amount} par an",
-    "exclVat": "HT"
+    "exclVat": "HT",
+    "teamTotal": "{amount} par {period, select, month {mois} other {an}} pour {count, plural, one {# membre} other {# membres}}",
+    "teamMinimum": "2 minimum"
   },
   "current": {
     "label": "Offre actuelle",
@@ -87,7 +89,8 @@
     "disabled": "La facturation n'est pas disponible pour l'instant.",
     "generic": "Ça n'a pas marché, réessayez.",
     "soloTeam": "Solo, c'est pour une personne. À plusieurs, choisissez Équipe.",
-    "noCustomer": "Pas encore d'abonnement : choisissez d'abord une offre."
+    "noCustomer": "Pas encore d'abonnement : choisissez d'abord une offre.",
+    "switchFailed": "Le changement n'a pas pu se faire. Vérifiez votre carte dans Factures et paiement."
   },
   "upgrade": {
     "title": "Disponible avec une offre payante",
@@ -116,5 +119,12 @@
     "payment": "Votre dernier paiement a échoué. Mettez à jour votre carte pour garder votre offre.",
     "canceling": "{days, plural, =0 {Votre offre se termine aujourd'hui.} one {Votre offre se termine demain.} other {Votre offre se termine dans # jours.}}",
     "cta": "Voir la facturation"
+  },
+  "switch": {
+    "title": "Passer en Équipe",
+    "body": "{count, plural, one {# membre} other {# membres}} × {price} HT par mois, facturé {period, select, month {chaque mois} other {à l'année}} : {total}. La différence avec Solo pour la période en cours est facturée maintenant, au prorata.",
+    "confirm": "Passer en Équipe",
+    "cancel": "Annuler",
+    "done": "Vous êtes en Équipe."
   }
 }

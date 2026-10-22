@@ -1,11 +1,13 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { getAppOrigin } from "@/lib/app-origin";
 import { BILLING_HREF, isPaidPlanId, isPaidStatus, seatQuantity, type Interval } from "@/lib/billing/plans";
 import { getStripe, resolvePortalConfiguration, resolvePrice } from "@/lib/billing/stripe";
+import { syncSubscription } from "@/lib/billing/webhook";
 import { prisma } from "@/lib/db";
 import { requireManager } from "@/lib/session";
 
@@ -95,4 +97,40 @@ export async function openBillingPortal(): Promise<BillingState> {
     return { error: t("generic") };
   }
   redirect(url);
+}
+
+/**
+ * Solo to Team from Clozer, not the portal: the portal only knows the price per seat, Clozer
+ * shows what is really billed (every member, 2 minimum). The difference is charged at once.
+ */
+export async function switchToTeam(interval: Interval): Promise<BillingState & { ok?: boolean }> {
+  const { organization } = await requireManager();
+  const t = await getTranslations("billing.errors");
+  const stripe = getStripe();
+  if (!stripe) return { error: t("disabled") };
+  if (interval !== "month" && interval !== "year") return { error: t("generic") };
+  if (organization.plan !== "solo" || !isPaidStatus(organization.planStatus) || !organization.stripeSubscriptionId) {
+    return { error: t("generic") };
+  }
+
+  try {
+    const members = await prisma.member.count({ where: { organizationId: organization.id } });
+    const subscription = await stripe.subscriptions.retrieve(organization.stripeSubscriptionId);
+    const item = subscription.items.data[0];
+    if (!item) return { error: t("generic") };
+    await stripe.subscriptions.update(subscription.id, {
+      items: [{ id: item.id, price: await resolvePrice(stripe, "team", interval), quantity: seatQuantity(members) }],
+      proration_behavior: "always_invoice",
+      // A declined card leaves the subscription on Solo instead of a Team left unpaid
+      payment_behavior: "error_if_incomplete",
+      metadata: { ...subscription.metadata, plan: "team" },
+    });
+    // The webhook says the same a moment later; the page should not wait for it
+    await syncSubscription(stripe, subscription.id);
+  } catch (error) {
+    console.error("[billing:switch-team]", error);
+    return { error: t("switchFailed") };
+  }
+  revalidatePath("/settings");
+  return { ok: true };
 }

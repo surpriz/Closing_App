@@ -63,8 +63,8 @@ for (const entry of CATALOGUE) {
   console.log(`${entry.name}: ${product.id} · ${prices.join(", ")}`);
 }
 
-// Two portals. Solo can move up to Team; Team only changes period or cancels: a Solo price
-// on a workspace of several members would bill one seat for a team (lib/billing/stripe.ts picks one).
+// Two portals, each staying on its plan: period change or cancellation only. Solo moves up to Team
+// from Clozer (switchToTeam), which knows the seats; Team never drops to the one-seat Solo price.
 // Seats follow the members (lib/billing/seats.ts): no quantity change in either.
 const [solo, team] = portalProducts;
 const portal = (kind, products) => ({
@@ -85,7 +85,7 @@ const portal = (kind, products) => ({
   },
 });
 const { data: configurations } = await stripe.billingPortal.configurations.list({ active: true, limit: 100 });
-for (const [kind, products] of [["solo", [solo, team]], ["team", [team]]]) {
+for (const [kind, products] of [["solo", [solo]], ["team", [team]]]) {
   const existing = configurations.find((configuration) => configuration.metadata?.clozer_portal === kind);
   const configuration = existing
     ? await stripe.billingPortal.configurations.update(existing.id, portal(kind, products))
