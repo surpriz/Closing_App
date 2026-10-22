@@ -6,6 +6,7 @@ import { LoginForm } from "@/components/auth/login-form";
 import { ProductPanel } from "@/components/auth/product-panel";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { googleEnabled } from "@/lib/auth";
+import { maskEmail } from "@/lib/closing/prospects/mask-email";
 import { prisma } from "@/lib/db";
 import { devMagicLinksEnabled } from "@/lib/dev-magic-links";
 import { safeNextPath } from "@/lib/next-path";
@@ -37,7 +38,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   // The landing's signup form lands here with ?email= (send the link at once) or ?provider=google.
   const email = typeof params.email === "string" ? params.email.trim().slice(0, 254) : "";
   const provider = params.provider === "google" && googleEnabled ? "google" : null;
-  // From an invitation link: say who invites, and fill in the invited address (no link sent until asked)
+  // From an invitation link, before any sign-in: the workspace and a masked address, nothing more
   const invitation = await pendingInvitation(next);
   const tInvite = await getTranslations("auth.invitation");
 
@@ -47,11 +48,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
         <div className="w-full max-w-[25rem] space-y-6">
           {invitation && (
             <p role="status" className="rounded-lg bg-card px-4 py-3 text-body ring-1 ring-foreground/85">
-              {tInvite("loginNotice", {
-                inviter: invitation.user.name || invitation.user.email,
-                workspace: invitation.organization.name,
-                email: invitation.email,
-              })}
+              {tInvite("loginNotice", { workspace: invitation.organization.name, email: maskEmail(invitation.email) })}
             </p>
           )}
           <LoginForm
@@ -59,7 +56,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
             next={next}
             initialError={error}
             google={googleEnabled}
-            initialEmail={error ? "" : email || invitation?.email || ""}
+            initialEmail={error ? "" : email}
             autoStart={error ? null : provider ?? (email ? "email" : null)}
           />
         </div>
@@ -77,6 +74,6 @@ async function pendingInvitation(next: string) {
   if (!id) return null;
   return prisma.invitation.findFirst({
     where: { id, status: "pending", expiresAt: { gt: new Date() } },
-    select: { email: true, organization: { select: { name: true } }, user: { select: { name: true, email: true } } },
+    select: { email: true, organization: { select: { name: true } } },
   });
 }
