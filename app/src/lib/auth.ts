@@ -6,6 +6,7 @@ import { admin, magicLink, organization } from "better-auth/plugins";
 
 import { DEFAULT_UI_LOCALE, LOCALE_COOKIE, resolveUiLocale, type UiLocale } from "@/i18n/locale";
 import { getTranslator } from "@/i18n/messages";
+import { captureProductEvent } from "@/lib/analytics/server";
 import { getPublicAppUrl } from "@/lib/app-origin";
 import { syncSeats } from "@/lib/billing/seats";
 import { getWorkspacePlan } from "@/lib/billing/workspace-plan";
@@ -117,6 +118,7 @@ export const auth = betterAuth({
           const role = isPlatformAdminEmail(user.email) ? { role: PLATFORM_ADMIN_ROLE } : {};
           return { data: { ...user, ...role, locale } };
         },
+        after: async (user) => captureProductEvent("signed_up", user.id),
       },
     },
     session: {

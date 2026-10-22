@@ -59,6 +59,14 @@ export function PrivacyFr() {
         Données.
       </p>
       <p>
+        Pour améliorer le produit, nous mesurons son utilisation (pages ouvertes, liens créés, propositions ouvertes,
+        changement d&apos;offre) avec PostHog, hébergé dans l&apos;Union européenne. Ces mesures sont rattachées à un
+        identifiant technique de votre compte, jamais à votre email, votre nom ni aux informations de vos prospects. Le
+        traitement repose sur notre intérêt légitime ; vous pouvez vous y opposer en écrivant à{" "}
+        <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>. Les erreurs techniques sont remontées à Sentry,
+        hébergé dans l&apos;Union européenne, sans adresse IP.
+      </p>
+      <p>
         Si vous prenez une offre payante, le paiement passe par Stripe. Vos données de carte sont saisies chez Stripe :
         Clozer ne les voit pas et ne les stocke pas. Nous conservons le nom et l&apos;adresse de facturation, le numéro
         de TVA éventuel et l&apos;historique des factures, que la loi nous oblige à garder 10 ans.
@@ -101,7 +109,11 @@ export function PrivacyFr() {
           <strong>Session</strong> : garde les utilisateurs de Clozer connectés.
         </li>
       </ul>
-      <p>Aucun cookie publicitaire, aucun outil de mesure d&apos;audience, aucun traceur tiers.</p>
+      <p>
+        Aucun cookie publicitaire, aucun traceur publicitaire. La mesure d&apos;audience du site et de l&apos;application
+        n&apos;utilise ni cookie ni stockage dans votre navigateur, et n&apos;est jamais active sur les pages de lecture
+        des propositions.
+      </p>
 
       <h2>Prestataires</h2>
       <p>

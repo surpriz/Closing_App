@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 
 import { ImpersonationBanner } from "@/components/admin/impersonation-banner";
+import { IdentifySeller } from "@/components/analytics/product-analytics";
 import { TrialBanner } from "@/components/billing/trial-banner";
 import { UpgradeDialogHost } from "@/components/billing/upgrade-dialog";
 import { Logo } from "@/components/brand/logo";
@@ -114,6 +115,7 @@ export default async function DashboardLayout({
       <MobileNav isManager={isManager} hasTeam={hasTeam} />
       <HelpWidget firstName={user.name?.trim().split(/\s+/)[0] || null} />
       <UpgradeDialogHost />
+      <IdentifySeller userId={user.id} />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 import type Stripe from "stripe";
 
+import { captureProductEvent } from "@/lib/analytics/server";
 import { isUniqueViolation } from "@/lib/closing/followups/queue";
 import { prisma } from "@/lib/db";
 
@@ -46,6 +47,21 @@ export async function syncSubscription(stripe: Stripe, subscriptionId: string) {
 
   const fields = subscriptionFields(subscription, org.plan);
   await prisma.organization.update({ where: { id: org.id }, data: { ...fields, stripeCustomerId: customerId } });
+  if (fields.plan !== org.plan || isPaidStatus(fields.planStatus) !== isPaidStatus(org.planStatus)) {
+    const owner = await prisma.member.findFirst({
+      where: { organizationId: org.id, role: { contains: "owner" } },
+      select: { userId: true },
+    });
+    if (owner) {
+      captureProductEvent("plan_changed", owner.userId, {
+        plan: fields.plan,
+        previous_plan: org.plan,
+        status: fields.planStatus,
+        interval: fields.billingInterval,
+        seats: fields.seats,
+      });
+    }
+  }
   // Switched from Solo to Team in the portal: one seat billed, bring it to the member count
   if (fields.plan === "team" && fields.seats !== seatQuantity(org._count.members)) await syncSeats(org.id);
   return org.id;

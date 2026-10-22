@@ -1,4 +1,5 @@
 import type { DocumentKind } from "@/generated/prisma/enums";
+import { captureProductEvent } from "@/lib/analytics/server";
 import { assertCanCreateLink, getWorkspacePlan } from "@/lib/billing/workspace-plan";
 import { prisma } from "@/lib/db";
 import { randomSlug } from "@/lib/ids";
@@ -108,6 +109,12 @@ export async function createDocumentLink(input: {
       chatEnabled: true,
       followupsEnabled: true,
     },
+  });
+  captureProductEvent("link_created", input.userId, {
+    source: input.source ?? "app",
+    kind: document.kind,
+    draft: !!input.draft,
+    onboarding_test: !!input.onboardingTest,
   });
   return { ...link, title };
 }

@@ -3,6 +3,7 @@ import { Archivo, Geist_Mono } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
 
+import { ProductAnalytics } from "@/components/analytics/product-analytics";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -45,6 +46,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             <TooltipProvider delay={200}>{children}</TooltipProvider>
             <Toaster position="bottom-right" />
           </ThemeProvider>
+          <ProductAnalytics />
         </NextIntlClientProvider>
       </body>
     </html>

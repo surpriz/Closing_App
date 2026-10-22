@@ -12,6 +12,14 @@ const FRENCH_ROUTES: [string, string][] = [
 ];
 
 const nextConfig: NextConfig = {
+  // PostHog through our own domain (/ingest): its endpoints end with a slash
+  skipTrailingSlashRedirect: true,
+  async rewrites() {
+    return [
+      { source: "/ingest/static/:path*", destination: "https://eu-assets.i.posthog.com/static/:path*" },
+      { source: "/ingest/:path*", destination: "https://eu.i.posthog.com/:path*" },
+    ];
+  },
   async redirects() {
     return [
       {

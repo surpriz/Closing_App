@@ -7,8 +7,8 @@ export const UPDATED_AT: Record<AppPathname, Date> = {
   "/use-cases": new Date("2026-10-18"),
   "/pricing": new Date("2026-10-18"),
   "/terms": new Date("2026-10-18"),
-  "/privacy": new Date("2026-10-18"),
+  "/privacy": new Date("2026-10-22"),
   "/legal": new Date("2026-10-16"),
-  "/subprocessors": new Date("2026-10-18"),
+  "/subprocessors": new Date("2026-10-22"),
   "/support": new Date("2026-10-13"),
 };

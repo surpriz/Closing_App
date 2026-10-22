@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
 import { z } from "zod";
 
+import { captureProductEvent } from "@/lib/analytics/server";
 import { inBackground } from "@/lib/closing/background";
 import { emitReaderEvent } from "@/lib/closing/channels/engagement-webhooks";
 import { VIEW_SESSION_WINDOW_MS } from "@/lib/closing/constants";
@@ -138,6 +139,10 @@ export async function POST(request: NextRequest) {
   if (!excluded) {
     await confirmDraftOnOpen(link.id, now);
     if (parsed.data.followupId) await markFollowupClicked(parsed.data.followupId, link.id, now);
+    // The seller's "aha": someone opened what they sent. Nothing about the reader goes out
+    if (!recentView && link.createdById) {
+      captureProductEvent("proposal_opened", link.createdById, { onboarding_test: link.isOnboardingTest });
+    }
     inBackground("view-started", async () => {
       await cancelOpenFollowups(link.id, "openedProposal", ["ANTI_GHOSTING"]);
       // A new reader, a decision maker or a committee says more than a plain call moment

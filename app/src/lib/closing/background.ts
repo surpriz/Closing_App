@@ -1,3 +1,4 @@
+import { captureException } from "@sentry/nextjs";
 import { after } from "next/server";
 
 // Runs work after the response is sent and never lets it crash the request
@@ -7,6 +8,7 @@ export function inBackground(label: string, task: () => Promise<unknown>) {
       await task();
     } catch (error) {
       console.error(`[closing:${label}]`, error);
+      captureException(error, { tags: { background: label } });
     }
   });
 }

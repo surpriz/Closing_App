@@ -34,6 +34,7 @@ import { HeatScale } from "@/components/thermal-plate";
 import { ThermalReading } from "@/components/thermal-reading";
 import { ThermalVideo } from "@/components/thermal-video";
 import { READING_PAGES } from "@/components/thermal-reading-data";
+import { SoftwareStructuredData } from "@/components/structured-data";
 import { Link } from "@/i18n/navigation";
 import { resolveLocale } from "@/i18n/page";
 import type { Locale } from "@/i18n/routing";
@@ -102,6 +103,7 @@ export default async function Home({ params }: Props) {
 
   return (
     <div className="flex min-h-full flex-col overflow-x-clip">
+      <SoftwareStructuredData locale={locale} />
       <SiteHeader locale={locale} path="/" />
 
       <main className="flex-1">

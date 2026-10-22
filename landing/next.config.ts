@@ -6,6 +6,14 @@ import createNextIntlPlugin from "next-intl/plugin";
 const LEGACY_FRENCH_PAGES = ["/cgu", "/confidentialite", "/mentions-legales", "/sous-traitants", "/support"];
 
 const nextConfig: NextConfig = {
+  // PostHog through our own domain (/ingest): its endpoints end with a slash
+  skipTrailingSlashRedirect: true,
+  async rewrites() {
+    return [
+      { source: "/ingest/static/:path*", destination: "https://eu-assets.i.posthog.com/static/:path*" },
+      { source: "/ingest/:path*", destination: "https://eu.i.posthog.com/:path*" },
+    ];
+  },
   async redirects() {
     return [
       {

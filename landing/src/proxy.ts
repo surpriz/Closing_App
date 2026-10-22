@@ -6,6 +6,6 @@ import { routing } from "./i18n/routing";
 export default createMiddleware(routing);
 
 export const config = {
-  // Skip Next internals and files (sitemap.xml, robots.txt, icon.svg…).
-  matcher: "/((?!_next|_vercel|.*\\..*).*)",
+  // Skip Next internals, files (sitemap.xml, robots.txt, icon.svg…) and the PostHog proxy.
+  matcher: "/((?!_next|_vercel|ingest/|.*\\..*).*)",
 };

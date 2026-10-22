@@ -77,4 +77,22 @@ export const SUBPROCESSORS: { name: string; purpose: Localized; location: Locali
     location: { fr: "États-Unis", en: "United States" },
     safeguard: { fr: "Data Privacy Framework", en: "Data Privacy Framework" },
   },
+  {
+    name: "PostHog Inc.",
+    purpose: {
+      fr: "Mesure d'audience du site et de l'utilisation de l'application, sans cookie (jamais sur les pages de lecture)",
+      en: "Audience measurement of the website and of app usage, without cookies (never on reading pages)",
+    },
+    location: { fr: "Union européenne (Francfort)", en: "European Union (Frankfurt)" },
+    safeguard: { fr: "DPA PostHog, clauses contractuelles types", en: "PostHog DPA, standard contractual clauses" },
+  },
+  {
+    name: "Functional Software Inc. (Sentry)",
+    purpose: {
+      fr: "Détection des erreurs techniques de l'application",
+      en: "Detection of technical errors in the application",
+    },
+    location: { fr: "Union européenne (Francfort)", en: "European Union (Frankfurt)" },
+    safeguard: { fr: "DPA Sentry, clauses contractuelles types", en: "Sentry DPA, standard contractual clauses" },
+  },
 ];

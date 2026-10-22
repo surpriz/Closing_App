@@ -54,6 +54,14 @@ export function PrivacyEn() {
       </p>
       <p>You can export your workspace data and delete your account or workspace from Settings › Data.</p>
       <p>
+        To improve the product, we measure how it is used (pages opened, links created, proposals opened, plan
+        changes) with PostHog, hosted in the European Union. These measurements are tied to a technical identifier of
+        your account, never to your email, your name or your prospects&apos; information. This processing is based on
+        our legitimate interest; you can object to it by writing to{" "}
+        <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>. Technical errors are reported to Sentry, hosted in
+        the European Union, without IP address.
+      </p>
+      <p>
         If you take a paid plan, payment goes through Stripe. You enter your card details with Stripe: Clozer never
         sees or stores them. We keep the billing name and address, the VAT number if any and the invoice history,
         which the law requires us to keep for 10 years.
@@ -95,7 +103,10 @@ export function PrivacyEn() {
           <strong>Session</strong>: keeps Clozer users signed in.
         </li>
       </ul>
-      <p>No advertising cookies, no audience measurement tools, no third-party trackers.</p>
+      <p>
+        No advertising cookies, no advertising trackers. Audience measurement of the website and the app uses no
+        cookie and no storage in your browser, and is never active on proposal reading pages.
+      </p>
 
       <h2>Providers</h2>
       <p>
