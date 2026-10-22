@@ -78,7 +78,8 @@ const portal = (kind, products) => ({
     subscription_update: {
       enabled: true,
       default_allowed_updates: ["price"],
-      proration_behavior: "create_prorations",
+      // Moving up is charged at once, not at the next renewal (a year away on a yearly plan)
+      proration_behavior: "always_invoice",
       products,
     },
   },

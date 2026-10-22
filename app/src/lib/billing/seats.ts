@@ -24,7 +24,8 @@ export async function syncSeats(organizationId: string) {
   if (!item || item.quantity === quantity) return;
   await stripe.subscriptions.update(subscription.id, {
     items: [{ id: item.id, quantity }],
-    proration_behavior: "create_prorations",
+    // A seat added is charged now (a yearly plan would otherwise wait a year); one removed is a credit on the next invoice
+    proration_behavior: quantity > (item.quantity ?? 0) ? "always_invoice" : "create_prorations",
   });
 }
 
