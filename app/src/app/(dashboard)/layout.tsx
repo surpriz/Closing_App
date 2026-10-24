@@ -79,7 +79,7 @@ export default async function DashboardLayout({
   return (
     <div className="flex flex-1 flex-col">
       <ImpersonationBanner />
-      <TrialBanner plan={plan} now={now} offer={offerEndsAt(organization, now) !== null} />
+      <TrialBanner plan={plan} now={now} offer={plan.subscribed === null && offerEndsAt(organization, now) !== null} />
       <header className="sticky top-0 z-30 border-b border-foreground bg-background">
         <div className="mx-auto flex h-14 max-w-7xl items-stretch gap-6 px-4 sm:px-6">
           <Link

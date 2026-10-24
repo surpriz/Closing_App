@@ -117,7 +117,7 @@
     "team": "Team"
   },
   "banner": {
-    "offer": "Only {days} days left to keep 30% off for 12 months.",
+    "offer": "Only {days, plural, one {# day} other {# days}} left to keep 30% off for 12 months.",
     "trial": "{days, plural, =0 {Your Team trial ends today.} one {Your Team trial ends tomorrow.} other {Your Team trial ends in # days.}} Then you move to Free, your links keep working.",
     "beta": "{days, plural, =0 {Free beta access ends today.} one {Free beta access ends tomorrow.} other {Free beta access ends in # days.}}",
     "payment": "Your last payment failed. Update your card to keep your plan.",

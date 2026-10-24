@@ -178,7 +178,7 @@ export default async function SettingsPage() {
               canManage={isManager}
               billingEnabled={isBillingEnabled()}
               hasCustomer={!!organization.stripeCustomerId}
-              offerEndsAt={offerEndsAt(organization, new Date())?.toISOString() ?? null}
+              offerEndsAt={billing.subscribed === null ? (offerEndsAt(organization, new Date())?.toISOString() ?? null) : null}
             />
             <AdvancedSettingsBlock className="space-y-10">
               {/* Unlike the form above, no "Enregistrer": said once, where the rule changes */}
