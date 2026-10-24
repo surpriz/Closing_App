@@ -53,6 +53,9 @@
     "teamTotal": "{amount} par {period, select, month {mois} other {an}} pour {count, plural, one {# membre} other {# membres}}",
     "teamMinimum": "2 minimum"
   },
+  "offer": {
+    "line": "Votre offre : -30 % pendant 12 mois si vous choisissez une formule avant le {date}. Vos jours d'essai restants sont conservés."
+  },
   "current": {
     "label": "Offre actuelle",
     "trial": "Essai Équipe jusqu'au {date}.",
@@ -114,6 +117,7 @@
     "team": "Équipe"
   },
   "banner": {
+    "offer": "Plus que {days} jours pour garder -30 % pendant 12 mois.",
     "trial": "{days, plural, =0 {Votre essai Équipe se termine aujourd'hui.} one {Votre essai Équipe se termine demain.} other {Votre essai Équipe se termine dans # jours.}} Ensuite vous passez en Gratuit, vos liens continuent de marcher.",
     "beta": "{days, plural, =0 {L'accès offert de la bêta se termine aujourd'hui.} one {L'accès offert de la bêta se termine demain.} other {L'accès offert de la bêta se termine dans # jours.}}",
     "payment": "Votre dernier paiement a échoué. Mettez à jour votre carte pour garder votre offre.",
