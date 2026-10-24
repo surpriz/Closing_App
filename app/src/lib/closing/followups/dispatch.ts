@@ -1,6 +1,7 @@
 import type { FollowupStatus } from "@/generated/prisma/enums";
 import { getPublicAppUrl } from "@/lib/app-origin";
 import { ACTIVE_WORKSPACE } from "@/lib/closing/active-workspace";
+import { shareLink } from "@/lib/closing/link-url";
 import { prisma } from "@/lib/db";
 import { isEmailConfigured } from "@/lib/email";
 import { toUiLocale } from "@/lib/seller-locale";
@@ -37,7 +38,12 @@ export async function sendFollowup(
     where: { id: followupId },
     include: {
       prospect: true,
-      link: { include: { createdBy: { select: { email: true, locale: true } } } },
+      link: {
+        include: {
+          createdBy: { select: { email: true, locale: true } },
+          document: { select: { name: true, displayTitle: true, docType: true } },
+        },
+      },
     },
   });
   const statuses: FollowupStatus[] = approvedById ? [...SENDABLE, "DRAFT"] : SENDABLE;
@@ -146,6 +152,7 @@ export async function sendFollowup(
   });
   if (claimed.count === 0) return "ignored";
 
+  const share = shareLink(getPublicAppUrl(), { slug: link.slug, document: link.document, company: prospect.company });
   try {
     let providerMessageId: string | null = null;
 
@@ -159,6 +166,7 @@ export async function sendFollowup(
         body: followup.body,
         replyTo: link.createdBy?.email,
         replyRelay: replyRelayAddress(followup.id),
+        link: share,
       });
       providerMessageId = result.id;
     } else {
@@ -171,7 +179,7 @@ export async function sendFollowup(
         body: followup.body,
         templateVariables: {
           "1": prospect.name?.split(" ")[0] ?? "",
-          "2": `${getPublicAppUrl()}/v/${link.slug}`,
+          "2": share.url,
         },
       });
       providerMessageId = result.id;

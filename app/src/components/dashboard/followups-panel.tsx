@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { FollowupStatus } from "@/generated/prisma/enums";
+import { copyMessage } from "@/lib/clipboard";
 import { buildMailto } from "@/lib/closing/followups/mailto";
 import { formatInTimeZone } from "@/lib/format";
 
@@ -268,7 +269,7 @@ function DraftEditor({ followup: f }: { followup: FollowupItem }) {
           size="sm"
           variant="ghost"
           onClick={async () => {
-            await navigator.clipboard.writeText(isEmail && subject ? `${subject}\n\n${body}` : body);
+            await copyMessage(isEmail && subject ? `${subject}\n\n${body}` : body, isEmail ? f.share : null);
             setCopied(true);
             setTimeout(() => setCopied(false), 1500);
           }}

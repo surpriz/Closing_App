@@ -5,6 +5,7 @@ import { getTranslations } from "next-intl/server";
 
 import { getAppOrigin } from "@/lib/app-origin";
 import { createDocumentLink } from "@/lib/closing/documents/create-link";
+import { viewerUrl } from "@/lib/closing/link-url";
 import { upsertSellerPrefs } from "@/lib/closing/notify/preferences";
 import { prisma } from "@/lib/db";
 import { isTestRead, OFFER_DESCRIPTION_MAX, parseMailClient, testLinkName } from "@/lib/onboarding";
@@ -78,9 +79,9 @@ export async function createOnboardingTestLink(
   // One test link per seller and document: it is never counted against the plan, so it is never multiplied
   const existing = await prisma.link.findFirst({
     where: { organizationId: organization.id, createdById: user.id, documentId: document.id, isOnboardingTest: true, archivedAt: null },
-    select: { id: true, slug: true },
+    select: { id: true, slug: true, document: { select: { name: true, displayTitle: true, docType: true } } },
   });
-  if (existing) return { linkId: existing.id, url: `${await getAppOrigin()}/v/${existing.slug}` };
+  if (existing) return { linkId: existing.id, url: viewerUrl(await getAppOrigin(), existing) };
 
   const link = await createDocumentLink({
     userId: user.id,
@@ -93,7 +94,7 @@ export async function createOnboardingTestLink(
     onboardingTest: true,
   });
   if (!link) return { error: t("documentNotFound") };
-  return { linkId: link.id, url: `${await getAppOrigin()}/v/${link.slug}` };
+  return { linkId: link.id, url: `${await getAppOrigin()}${link.path}` };
 }
 
 export type TestLinkStatus = {

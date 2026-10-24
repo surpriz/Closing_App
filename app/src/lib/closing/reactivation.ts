@@ -6,6 +6,7 @@ import { toUiLocale } from "@/lib/seller-locale";
 
 import { formatDeadline } from "./expiry";
 import { reactivatedEmail } from "./i18n/reactivated-email";
+import { shareLink } from "./link-url";
 import { sendProspectEmail } from "./prospect-email";
 import { defaultTimezone } from "./settings";
 
@@ -30,7 +31,7 @@ export async function notifyReactivated(
     select: {
       slug: true,
       expiresAt: true,
-      document: { select: { name: true } },
+      document: { select: { name: true, displayTitle: true, docType: true } },
       createdBy: { select: { email: true, name: true, locale: true } },
       organization: { select: { settings: { select: { senderName: true } } } },
       actions: {
@@ -51,7 +52,7 @@ export async function notifyReactivated(
 
   const prospects = new Map(link.actions.flatMap((a) => (a.prospect ? [[a.prospect.id, a.prospect] as const] : [])));
   const senderName = link.organization.settings?.senderName?.trim() || link.createdBy?.name || null;
-  const url = `${getPublicAppUrl()}/v/${link.slug}`;
+  const share = shareLink(getPublicAppUrl(), link);
 
   const told: string[] = [];
   for (const prospect of prospects.values()) {
@@ -64,8 +65,9 @@ export async function notifyReactivated(
       await sendProspectEmail({
         prospect,
         locale,
-        ...reactivatedEmail(locale, { documentName: link.document.name, senderName, deadline, url }),
+        ...reactivatedEmail(locale, { documentName: link.document.name, senderName, deadline, url: share.url }),
         replyTo: link.createdBy?.email,
+        link: share,
       });
       told.push(prospect.id);
     } catch (error) {

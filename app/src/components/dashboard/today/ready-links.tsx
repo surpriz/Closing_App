@@ -15,10 +15,13 @@ import {
   markLinkSent,
 } from "@/app/(dashboard)/links/actions";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { copyLink } from "@/lib/clipboard";
 
 export type ReadyLink = {
   id: string;
   url: string;
+  /** What the prospect clicks on once pasted in an email. */
+  title: string;
   /** Who it is for, or "Sans destinataire" (today.page.noRecipient). */
   label: string;
   documentName: string;
@@ -46,7 +49,7 @@ function ReadyLinkRow({ link }: { link: ReadyLink }) {
 
   async function copy() {
     try {
-      await navigator.clipboard.writeText(link.url);
+      await copyLink(link);
       setCopied(true);
       toast.success(t("copiedToast"));
       startTransition(async () => {

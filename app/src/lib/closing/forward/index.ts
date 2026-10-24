@@ -1,6 +1,7 @@
 import { getPublicAppUrl } from "@/lib/app-origin";
 import { prisma } from "@/lib/db";
 
+import { viewerUrl, type UrlLink } from "../link-url";
 import { createForwardToken, forwardIdOf, verifyForwardToken } from "./token";
 
 // ENCRYPTION_KEY never rotates, so forward emails already sent keep working
@@ -13,8 +14,8 @@ function forwardSecret() {
 }
 
 /** The link in the forward email: the viewer, with a token that names the recipient. */
-export function forwardUrl(slug: string, forwardId: string, toEmail: string) {
-  return `${getPublicAppUrl()}/v/${slug}?f=${encodeURIComponent(createForwardToken(forwardId, toEmail, forwardSecret()))}`;
+export function forwardUrl(link: UrlLink, forwardId: string, toEmail: string) {
+  return `${viewerUrl(getPublicAppUrl(), link)}?f=${encodeURIComponent(createForwardToken(forwardId, toEmail, forwardSecret()))}`;
 }
 
 /** The recipient a forward token names on this link, or null when it was tampered with or belongs elsewhere. */

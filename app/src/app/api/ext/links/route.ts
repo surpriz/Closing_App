@@ -46,7 +46,7 @@ export const POST = withExtensionAuth(async (request, { user, organization }) =>
         id: link.id,
         name: link.name,
         title: link.title,
-        url: `${appUrl}/v/${link.slug}`,
+        url: `${appUrl}${link.path}`,
         // What the prospect will meet, and where to change it or add a welcome message
         summary: settingsSummary(link, new Date(), user.locale),
         manageUrl: `${appUrl}/links/${link.id}?new=1`,

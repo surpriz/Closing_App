@@ -26,6 +26,7 @@ import { PrepareFollowupButton } from "../prepare-followup-button";
 export function DealNextAction({
   linkId,
   url,
+  shareTitle,
   action,
   cta,
   canEdit,
@@ -36,6 +37,7 @@ export function DealNextAction({
 }: {
   linkId: string;
   url: string;
+  shareTitle: string;
   action: NextAction;
   cta: DealCta | null;
   canEdit: boolean;
@@ -123,7 +125,7 @@ export function DealNextAction({
       </div>
       {canEdit && cta && (
         <div className="shrink-0 pl-7.5 sm:pl-0">
-          <CtaButton cta={cta} linkId={linkId} url={url} />
+          <CtaButton cta={cta} linkId={linkId} url={url} shareTitle={shareTitle} />
         </div>
       )}
     </div>
@@ -134,10 +136,12 @@ function CtaButton({
   cta,
   linkId,
   url,
+  shareTitle,
 }: {
   cta: DealCta;
   linkId: string;
   url: string;
+  shareTitle: string;
 }) {
   switch (cta.kind) {
     case "mark_won":
@@ -148,7 +152,7 @@ function CtaButton({
       );
     case "copy_link":
       return (
-        <CopyButton value={url} label={cta.label} size="lg" variant="default" />
+        <CopyButton value={url} title={shareTitle} label={cta.label} size="lg" variant="default" />
       );
     case "href": {
       const Icon = cta.href.startsWith("tel:")

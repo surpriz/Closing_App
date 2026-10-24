@@ -8,6 +8,7 @@ import { getPublicAppUrl } from "@/lib/app-origin";
 import { PlanLimitError, upgradePrompt } from "@/lib/billing/workspace-plan";
 import { inBackground } from "@/lib/closing/background";
 import { confirmLinkSent, createDocumentLink } from "@/lib/closing/documents/create-link";
+import { shareLink } from "@/lib/closing/link-url";
 import { unsubscribePageUrl } from "@/lib/closing/unsubscribe";
 import { prisma } from "@/lib/db";
 import { getEnv } from "@/lib/env";
@@ -242,7 +243,7 @@ export async function acceptSuggestionsAction(suggestionIds: string[]): Promise<
 }
 
 export type OutreachResult =
-  | { linkId: string; url: string; email: string; subject: string; body: string; draft: boolean }
+  | { linkId: string; url: string; title: string; email: string; subject: string; body: string; draft: boolean }
   | { error: string };
 
 // Placeholder linkId while the link is being created; reclaimed if the request died
@@ -312,7 +313,7 @@ export async function createOutreachLinkAction(suggestionId: string, documentId:
     select: {
       slug: true,
       draftAt: true,
-      document: { select: { name: true, displayTitle: true } },
+      document: { select: { name: true, displayTitle: true, docType: true } },
       prospects: { where: { origin: "PROSPECTING" }, select: { id: true }, take: 1 },
     },
   });
@@ -320,7 +321,7 @@ export async function createOutreachLinkAction(suggestionId: string, documentId:
     await prisma.prospectSuggestion.update({ where: { id: suggestion.id }, data: { linkId: null, hookSubject: null, hookBody: null } });
     return { error: t("linkArchived") };
   }
-  const url = `${getPublicAppUrl()}/v/${link.slug}`;
+  const { url, title } = shareLink(getPublicAppUrl(), { slug: link.slug, document: link.document, company: suggestion.companyName });
 
   let subject = suggestion.hookSubject;
   let message = suggestion.hookBody;
@@ -352,7 +353,7 @@ export async function createOutreachLinkAction(suggestionId: string, documentId:
   });
 
   revalidatePath("/prospecting");
-  return { linkId, url, email: suggestion.email, subject, body: `${message}\n\n${footer}`, draft: !!link.draftAt };
+  return { linkId, url, title, email: suggestion.email, subject, body: `${message}\n\n${footer}`, draft: !!link.draftAt };
 }
 
 /** The seller sent the message from their mailbox: the deal starts now. */

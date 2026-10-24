@@ -4,10 +4,9 @@ import { BILLING_SELECT } from "@/lib/billing/workspace-plan";
 import { prisma } from "@/lib/db";
 
 import { isLinkExpired, viewerDeadline } from "./expiry";
+import { bareSlug } from "./link-url";
 import { companyFromEmail } from "./prospects/from-recipient";
 import { EMAIL_COOKIE_MAX_AGE, emailCookieName } from "./tracking/visitor";
-
-const SLUG_PATTERN = /^[A-Za-z0-9]{6,32}$/;
 
 async function findViewerLink(slug: string) {
   return prisma.link.findUnique({
@@ -46,8 +45,10 @@ export type ViewerLinkState = "open" | "expired" | "archived";
  * workspace is suspended. Only the locked pages and the revival request and
  * signal read a link that is not open.
  */
-export async function resolveViewerLink(slug: string, now = new Date()) {
-  if (!SLUG_PATTERN.test(slug)) return null;
+export async function resolveViewerLink(param: string, now = new Date()) {
+  // The full address may come in, words included (/v/acme-devis-mHiTw7Wdh4uT)
+  const slug = bareSlug(param);
+  if (!slug) return null;
   const link = await findViewerLink(slug);
   // A suspended workspace's links read as unknown: no page, no tracking
   if (!link || link.organization.suspendedAt) return null;
