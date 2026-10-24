@@ -58,6 +58,7 @@ import {
   VIDEO_SEGMENTS,
 } from "@/lib/closing/documents/video-segments";
 import { videoProvider } from "@/lib/closing/documents/web-link";
+import { shareLink } from "@/lib/closing/link-url";
 import { buttonVariants } from "@/components/ui/button";
 import { prisma } from "@/lib/db";
 import {
@@ -257,7 +258,11 @@ export default async function DocumentDetailPage({
   });
 
   const followupItems: FollowupItem[] = followups.map((f) =>
-    toFollowupItem(f, dealLabel(f.link)),
+    toFollowupItem(
+      f,
+      dealLabel(f.link),
+      shareLink(origin, { slug: f.link.slug, document: f.link.document, company: f.link.prospects[0]?.company }),
+    ),
   );
 
   const now = new Date();
@@ -326,7 +331,7 @@ export default async function DocumentDetailPage({
       strong: !!score || link.dealStatus !== "OPEN",
       views: link._count.views,
       heat: pages && pages.length > 0 ? pageHeat(pages, heatPages) : null,
-      url: `${origin}/v/${link.slug}`,
+      ...shareLink(origin, { slug: link.slug, document, company: prospect?.company }),
       followupsEnabled: link.followupsEnabled,
     };
   });

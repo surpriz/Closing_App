@@ -43,6 +43,8 @@ export type TodoRow = {
   /** 1-5 from the same analysis, null when it is missing or stale. */
   aiPriority: number | null;
   url: string;
+  /** What the prospect clicks on once pasted in an email. */
+  title: string;
   /** Reading time per page as a thermal strip, null when the link was never opened. */
   heat: PageHeat | null;
 };
@@ -170,7 +172,7 @@ export function TodoList({
               {row.action.kind === "close_won" ? (
                 <MarkWonButton linkId={row.id} />
               ) : (
-                <CopyButton value={row.url} />
+                <CopyButton value={row.url} title={row.title} />
               )}
               {index === 0 && (
                 <Link
@@ -194,6 +196,8 @@ export type UnopenedRow = {
   label: string;
   documentName: string | null;
   url: string;
+  /** What the prospect clicks on once pasted in an email. */
+  title: string;
   /** Copied a while ago, never opened: ask whether it really went out. */
   askIfSent?: boolean;
 };
@@ -244,7 +248,7 @@ export function UnopenedDeals({ rows }: { rows: UnopenedRow[] }) {
             {row.askIfSent ? (
               <SentQuestion linkId={row.id} />
             ) : (
-              <CopyButton value={row.url} />
+              <CopyButton value={row.url} title={row.title} />
             )}
           </li>
         ))}

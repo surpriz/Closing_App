@@ -10,11 +10,12 @@ import { SiteHeader } from "@/components/site-header";
 import { HeatScale } from "@/components/thermal-plate";
 import { COMPARISON, MONTHLY_PRICE, PLAN_KEYS, type Interval, type PaidPlanKey } from "@/content/pricing";
 import { MESSAGES } from "@/i18n/messages";
+import { Link } from "@/i18n/navigation";
 import { resolveLocale } from "@/i18n/page";
 import type { Locale } from "@/i18n/routing";
 import { alternatesFor, localizedPath } from "@/i18n/seo";
 
-const FAQ = ["vat", "cancel", "members", "afterTrial", "beta", "invoices", "payment"] as const;
+const FAQ = ["vat", "cancel", "members", "afterTrial", "beta", "invoices", "payment", "security"] as const;
 const INTERVALS = ["month", "year"] as const;
 
 // Hidden unless the toggle (components/billing-toggle.tsx) is on that interval; monthly by default.
@@ -56,6 +57,17 @@ export default async function Pricing({ params }: Props) {
     <a href={APP_BILLING_URL} className="font-medium text-ink underline underline-offset-4">
       {chunks}
     </a>
+  );
+
+  const securityLink = (chunks: React.ReactNode) => (
+    <Link href="/security" className="font-medium text-ink underline underline-offset-4">
+      {chunks}
+    </Link>
+  );
+  const dpaLink = (chunks: React.ReactNode) => (
+    <Link href="/dpa" className="font-medium text-ink underline underline-offset-4">
+      {chunks}
+    </Link>
   );
 
   const price = (plan: PaidPlanKey) =>
@@ -234,7 +246,10 @@ export default async function Pricing({ params }: Props) {
                 mainEntity: FAQ.map((item) => ({
                   "@type": "Question",
                   name: t(`faq.${item}.q`),
-                  acceptedAnswer: { "@type": "Answer", text: t.markup(`faq.${item}.a`, { billing: (chunks) => chunks }) },
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text: t.markup(`faq.${item}.a`, { billing: (chunks) => chunks, security: (chunks) => chunks, dpa: (chunks) => chunks }),
+                  },
                 })),
               }).replace(/</g, "\\u003c"),
             }}
@@ -262,7 +277,7 @@ export default async function Pricing({ params }: Props) {
                       className="size-5 shrink-0 transition-transform duration-300 ease-[var(--ease-out-expo)] group-open:rotate-45"
                     />
                   </summary>
-                  <p className="max-w-[62ch] pb-6 text-body text-ink-soft">{t.rich(`faq.${item}.a`, { billing: billingLink })}</p>
+                  <p className="max-w-[62ch] pb-6 text-body text-ink-soft">{t.rich(`faq.${item}.a`, { billing: billingLink, security: securityLink, dpa: dpaLink })}</p>
                 </details>
               ))}
             </div>
@@ -280,6 +295,9 @@ export default async function Pricing({ params }: Props) {
               <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-small text-ink-soft">
                 <span>{th("hero.free")}</span>
                 <span>{th("hero.noCard")}</span>
+                <Link href="/security" className="underline-offset-4 hover:text-ink hover:underline">
+                  {th("hero.europe")}
+                </Link>
               </p>
             </div>
           </div>

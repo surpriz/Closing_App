@@ -65,14 +65,3 @@ export async function sendEmail(input: EmailInput) {
 
   return { id: result.MessageId ?? null };
 }
-
-export function textToHtml(text: string) {
-  const escaped = text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-  return escaped
-    .split(/\n{2,}/)
-    .map((paragraph) => `<p>${paragraph.replace(/\n/g, "<br>")}</p>`)
-    .join("");
-}

@@ -12,6 +12,7 @@ export async function SiteFooter({ locale, path }: { locale: Locale; path: AppPa
   const legalLinks = [
     { href: "/privacy", label: t("privacy") },
     { href: "/terms", label: t("terms") },
+    { href: "/security", label: t("security") },
     { href: "/subprocessors", label: t("subprocessors") },
     { href: "/legal", label: t("legal") },
     { href: "/support", label: t("support") },

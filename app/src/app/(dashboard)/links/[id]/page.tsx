@@ -39,7 +39,6 @@ import { ShareMailToolTip } from "@/components/onboarding/share-mail-tool-tip";
 import { capsuleUploadPrefix } from "@/lib/blob";
 import { dealLabel, linkLabelSelect } from "@/lib/closing/dashboard/labels";
 import type { DocType } from "@/lib/closing/documents/doc-types";
-import { linkTitle } from "@/lib/closing/documents/link-title";
 import { showsCountdown } from "@/lib/closing/expiry";
 import { firstNameOf, guessMailClient } from "@/lib/closing/share/compose";
 import { settingsSummary } from "@/lib/closing/share/summary";
@@ -118,10 +117,7 @@ export default async function LinkDetailPage({
         ].join("|")}
         linkId={link.id}
         url={url}
-        title={linkTitle({
-          ...link.document,
-          company: mainProspect?.company,
-        })}
+        title={deal.shareTitle}
         sent={!link.draftAt}
         copied={!!link.copiedAt}
         recipient={
@@ -177,6 +173,7 @@ export default async function LinkDetailPage({
           <DealNextAction
             linkId={link.id}
             url={url}
+            shareTitle={deal.shareTitle}
             action={deal.nextAction}
             cta={deal.cta}
             canEdit={canEdit}

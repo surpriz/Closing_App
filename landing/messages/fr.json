@@ -23,6 +23,7 @@
   "footer": {
     "privacy": "Confidentialité",
     "terms": "CGU",
+    "security": "Sécurité",
     "subprocessors": "Sous-traitants",
     "legal": "Mentions légales",
     "support": "Support"
@@ -66,6 +67,7 @@
       "lead": "Pour les commerciaux B2B et leurs managers. Envoyez un lien Clozer à la place du PDF ou de la vidéo : vous voyez qui l'ouvre, ce qu'il lit et à qui il le transfère. Clozer prépare la relance.",
       "free": "14 jours d'essai Équipe",
       "noCard": "Sans carte bancaire",
+      "europe": "Hébergé en Europe",
       "magicLink": "Lien de connexion par email"
     },
     "silence": {
@@ -220,7 +222,10 @@
       "discreet": "Vos relances parlent de l'offre, jamais de ce que vous avez vu.",
       "limit": "Trois relances par mois et par contact au maximum, jamais juste après une lecture.",
       "unsubscribe": "Un lien de désinscription dans chaque relance, et les adresses IP ne sont jamais stockées en clair.",
-      "subprocessors": "Voir nos sous-traitants et où sont vos données"
+      "europe": "Hébergé en Europe, chiffré en transit et au repos.",
+      "private": "Vos PDF n'ont aucune adresse publique : chaque ouverture est vérifiée par nos serveurs.",
+      "subprocessors": "Voir nos sous-traitants et où sont vos données",
+      "security": "Comment on protège vos données"
     },
     "who": {
       "title": "Pour le commercial, et pour son manager.",
@@ -280,7 +285,7 @@
       },
       "data": {
         "q": "Où sont mes données ?",
-        "a": "La liste de nos sous-traitants, avec le pays de chacun, est sur la page <subprocessors>Sous-traitants</subprocessors>. Ce que nous collectons et pourquoi est dans la <privacy>politique de confidentialité</privacy>."
+        "a": "En Europe : application et documents à Paris, base de données à Francfort. Seul le texte des documents part chez nos fournisseurs d'IA, aux États-Unis, sans l'email ni l'adresse IP des lecteurs. La page <security>Sécurité</security> détaille comment on protège tout ça, la page <subprocessors>Sous-traitants</subprocessors> liste chaque prestataire avec son pays, et la <privacy>politique de confidentialité</privacy> dit ce que nous collectons et pourquoi."
       }
     },
     "final": "Votre prochaine proposition part avec un lien suivi.",
@@ -327,6 +332,14 @@
     "subprocessors": {
       "title": "Sous-traitants",
       "description": "Les prestataires qui traitent des données pour Clozer, et où."
+    },
+    "security": {
+      "title": "Sécurité",
+      "description": "Comment Clozer protège vos documents, vos liens et les données de vos prospects."
+    },
+    "dpa": {
+      "title": "Accord de traitement des données (DPA)",
+      "description": "L'accord de traitement des données de Clozer (article 28 du RGPD), à signer à part si besoin."
     },
     "support": {
       "title": "Support",
@@ -586,6 +599,10 @@
       "payment": {
         "q": "Quels moyens de paiement acceptez-vous ?",
         "a": "La carte bancaire, via Stripe. Clozer ne voit pas votre numéro de carte et ne le stocke pas."
+      },
+      "security": {
+        "q": "Mes documents et ceux de mes clients sont-ils en sécurité ?",
+        "a": "Oui. Hébergés en Europe, chiffrés en transit et au repos, jamais accessibles par une adresse publique, et chaque espace est isolé des autres. Le détail est sur la page <security>Sécurité</security>, et notre <dpa>accord de traitement des données</dpa> est prêt à signer."
       }
     },
     "final": "Essayez Clozer en Équipe pendant 14 jours."

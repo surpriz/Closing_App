@@ -1,9 +1,13 @@
 import { signPayload } from "@/lib/crypto";
+import { reportSecurityEvent } from "@/lib/security-events";
+
+import { resolvesToPublicAddress } from "./public-address";
 
 const PRIVATE_HOST =
   /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|0\.0\.0\.0|\[?::1\]?)/i;
 
-// Basic SSRF guard for user-provided URLs
+// First SSRF check on user-provided URLs, by name only. Before a request, resolvesToPublicAddress
+// also checks what the name points to
 export function isSafeOutboundUrl(value: string) {
   try {
     const url = new URL(value);
@@ -31,7 +35,10 @@ export async function postSlackMessage(webhookUrl: string, text: string) {
 }
 
 export async function postSignedWebhook(url: string, secret: string, event: string, payload: unknown) {
-  if (!isSafeOutboundUrl(url)) throw new Error("Webhook URL not allowed");
+  if (!isSafeOutboundUrl(url) || !(await resolvesToPublicAddress(new URL(url).hostname))) {
+    reportSecurityEvent("webhook_blocked", { scope: "webhook", host: URL.canParse(url) ? new URL(url).hostname : null });
+    throw new Error("Webhook URL not allowed");
+  }
 
   const body = JSON.stringify({ event, sentAt: new Date().toISOString(), data: payload });
   const response = await fetch(url, {
@@ -42,6 +49,8 @@ export async function postSignedWebhook(url: string, secret: string, event: stri
       "X-Closing-Signature": `sha256=${signPayload(body, secret)}`,
     },
     body,
+    // A redirect could point anywhere, an internal address included: not followed, counted as a failure
+    redirect: "manual",
     signal: AbortSignal.timeout(10_000),
   });
   if (!response.ok) throw new Error(`Webhook ${response.status}`);

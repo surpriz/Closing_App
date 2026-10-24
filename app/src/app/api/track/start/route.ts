@@ -25,6 +25,7 @@ import { followupOfLink, markFollowupClicked } from "@/lib/closing/followups/att
 import { evaluateReaders } from "@/lib/closing/triggers/committee";
 import { evaluateHotLead } from "@/lib/closing/triggers/hot-lead";
 import { prisma } from "@/lib/db";
+import { consumeLimit, perLink, tooManyRequests } from "@/lib/rate-limit";
 import { isWorkspaceMember } from "@/lib/session";
 
 const bodySchema = z.object({
@@ -46,6 +47,7 @@ export async function POST(request: NextRequest) {
   if (!link || link.document.status !== "READY") {
     return Response.json({ error: "Not found" }, { status: 404 });
   }
+  if (!(await consumeLimit("trackStart", request.headers, perLink(request.headers, link.id)))) return tooManyRequests();
 
   const access = await getViewerAccess(link);
   if (!access.allowed) {

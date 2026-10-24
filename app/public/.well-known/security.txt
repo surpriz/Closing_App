@@ -1,0 +1,5 @@
+Contact: mailto:contact@clozer.club
+Expires: 2027-10-22T00:00:00.000Z
+Preferred-Languages: fr, en
+Canonical: https://app.clozer.club/.well-known/security.txt
+Policy: https://www.clozer.club/en/security

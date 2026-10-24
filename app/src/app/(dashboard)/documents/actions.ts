@@ -8,6 +8,7 @@ import { z } from "zod";
 
 import { INTL_LOCALE } from "@/i18n/locale";
 import { getAppOrigin } from "@/lib/app-origin";
+import { logAudit } from "@/lib/audit";
 import { linkQuota, upgradePrompt, videoPitchQuota, type UpgradePrompt } from "@/lib/billing/workspace-plan";
 import { deletePrivateBlob, headPrivateBlob, pitchUploadPrefix } from "@/lib/blob";
 import { inBackground } from "@/lib/closing/background";
@@ -264,7 +265,7 @@ export async function createQuickLink(documentId: string): Promise<{ linkId: str
 // it for good, files included, after ARCHIVE_GRACE_DAYS.
 // Every seller's links go with it, hence managers only.
 export async function archiveDocument(documentId: string) {
-  const { organization } = await requireManager();
+  const { user, organization } = await requireManager();
   const document = await prisma.document.findFirst({
     where: { id: documentId, organizationId: organization.id, archivedAt: null },
     select: { id: true, links: { where: { archivedAt: null }, select: { id: true } } },
@@ -279,6 +280,14 @@ export async function archiveDocument(documentId: string) {
   for (const link of document.links) {
     await cancelOpenFollowups(link.id, "documentDeleted");
   }
+  await logAudit({
+    organizationId: organization.id,
+    actorUserId: user.id,
+    action: "document.archived",
+    targetType: "document",
+    targetId: document.id,
+    metadata: { links: document.links.length },
+  });
 
   revalidatePath("/documents");
   revalidatePath("/dashboard");

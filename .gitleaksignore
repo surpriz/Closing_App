@@ -1,0 +1,5 @@
+# Reviewed false positives: test fixture secrets and an empty variable in .env.example
+9227e756562bd25fc9482025fc6e28f3be48c627:app/src/lib/closing/replies/replies.test.ts:generic-api-key:6
+4cf2ccbebfc8d2cef2bb1b98563273ee0c34251c:app/.env.example:generic-api-key:66
+e65b13da3f0b18eece0ff210cef66c0ef5d25c71:app/src/lib/closing/forward/token.test.ts:generic-api-key:5
+607da4427c2b77286deba62388012b765b4defdb:app/src/lib/closing/unsubscribe/token.test.ts:generic-api-key:5

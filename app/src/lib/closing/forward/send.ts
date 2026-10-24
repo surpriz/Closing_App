@@ -3,7 +3,9 @@ import { prisma } from "@/lib/db";
 import { isEmailConfigured } from "@/lib/email";
 import { senderAs } from "@/lib/email-address";
 
+import { linkTitle } from "../documents/link-title";
 import { forwardEmail, forwardReceiptEmail, forwardSenderName } from "../i18n/forward-email";
+import { shareLink } from "../link-url";
 import { prospectSender, sendProspectEmail } from "../prospect-email";
 import { viewerSenderName } from "../sender-name";
 import { forwardUrl } from "./index";
@@ -20,7 +22,7 @@ export async function sendForwardEmail(forwardId: string) {
       link: {
         select: {
           slug: true,
-          document: { select: { name: true } },
+          document: { select: { name: true, displayTitle: true, docType: true } },
           createdBy: { select: { name: true, email: true } },
           organization: { select: { name: true, settings: { select: { senderName: true } } } },
         },
@@ -30,6 +32,7 @@ export async function sendForwardEmail(forwardId: string) {
     },
   });
   const { link, fromProspect, toProspect } = forward;
+  const url = forwardUrl(link, forwardId, toProspect.email);
   const fromName = fromProspect ? readerName(fromProspect) : null;
   const from = prospectSender();
   try {
@@ -40,6 +43,7 @@ export async function sendForwardEmail(forwardId: string) {
       from: senderAs(forwardSenderName(fromName), from),
       // The recipient answers the colleague who sent it, not the seller
       replyTo: fromProspect.email,
+      link: { url, title: linkTitle(link.document) },
       ...forwardEmail(forward.locale, {
         fromName,
         toName: toProspect.name,
@@ -51,7 +55,7 @@ export async function sendForwardEmail(forwardId: string) {
           organizationName: link.organization.name,
         }),
         message: forward.message,
-        url: forwardUrl(link.slug, forwardId, toProspect.email),
+        url,
       }),
     });
     await prisma.linkForward.update({ where: { id: forwardId }, data: { sentAt: new Date(), error: null } });
@@ -85,7 +89,7 @@ export async function sendForwardReceipt(forwardId: string) {
         select: {
           slug: true,
           organizationId: true,
-          document: { select: { name: true } },
+          document: { select: { name: true, displayTitle: true, docType: true } },
           createdBy: { select: { email: true } },
         },
       },
@@ -98,6 +102,7 @@ export async function sendForwardReceipt(forwardId: string) {
   if (await isOptedOutInWorkspace(fromProspect.email, link.organizationId)) return;
 
   const locale = fromProspect.locale ?? forward.locale;
+  const share = shareLink(getPublicAppUrl(), link);
   await sendProspectEmail({
     prospect: fromProspect,
     locale,
@@ -105,7 +110,8 @@ export async function sendForwardReceipt(forwardId: string) {
     ...forwardReceiptEmail(locale, {
       toName: readerName(forward.toProspect),
       documentName: link.document.name,
-      url: `${getPublicAppUrl()}/v/${link.slug}`,
+      url: share.url,
     }),
+    link: share,
   });
 }

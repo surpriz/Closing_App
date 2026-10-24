@@ -5,6 +5,7 @@ import { markFollowupClicked } from "@/lib/closing/followups/attribution";
 import { getLinkForViewer } from "@/lib/closing/links";
 import { getRequestContext } from "@/lib/closing/tracking/request-context";
 import { prisma } from "@/lib/db";
+import { consumeLimit, perLink } from "@/lib/rate-limit";
 import { isWorkspaceMember } from "@/lib/session";
 
 const bodySchema = z.object({ slug: z.string().min(1).max(64), followupId: z.string().max(40).nullish() });
@@ -23,6 +24,9 @@ export async function POST(request: Request) {
 
   const link = await getLinkForViewer(parsed.data.slug);
   if (!link || link.shared) return new Response(null, { status: 204 });
+  if (!(await consumeLimit("trackGate", request.headers, perLink(request.headers, link.id)))) {
+    return new Response(null, { status: 429 });
+  }
   if (getRequestContext(request.headers).isBot || (await isWorkspaceMember(link.organizationId))) {
     return new Response(null, { status: 204 });
   }

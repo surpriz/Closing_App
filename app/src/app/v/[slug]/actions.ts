@@ -12,6 +12,7 @@ import { refreshEngagementScore } from "@/lib/closing/engagement/refresh-score";
 import { formatDeadline, isLinkExpired } from "@/lib/closing/expiry";
 import { cancelOpenFollowups } from "@/lib/closing/followups/queue";
 import { pickLocale } from "@/lib/closing/i18n/viewer";
+import { shareLink } from "@/lib/closing/link-url";
 import { getPublicAppUrl } from "@/lib/app-origin";
 import { SIGNER_NAME, signedEmail } from "@/lib/closing/i18n/signed-email";
 import {
@@ -31,15 +32,21 @@ import { getRequestContext } from "@/lib/closing/tracking/request-context";
 import { resolveViewerView } from "@/lib/closing/tracking/viewer-view";
 import { VISITOR_COOKIE } from "@/lib/closing/tracking/visitor";
 import { prisma } from "@/lib/db";
+import { consumeLimit, perLink } from "@/lib/rate-limit";
 import { isEmailConfigured } from "@/lib/email";
 import { isWorkspaceMember } from "@/lib/session";
 
-export type UnlockState = { error?: "invalid_email" | "not_found" } | null;
+export type UnlockState = { error?: "invalid_email" | "not_found" | "too_many" } | null;
 
 const unlockSchema = z.object({
   email: z.email().max(254),
   name: z.string().max(120).optional(),
 });
+
+async function withinGateLimit(linkId: string) {
+  const requestHeaders = await headers();
+  return consumeLimit("gate", requestHeaders, perLink(requestHeaders, linkId));
+}
 
 export async function unlockWithEmail(
   slug: string,
@@ -48,6 +55,7 @@ export async function unlockWithEmail(
 ): Promise<UnlockState> {
   const resolved = await resolveViewerLink(slug);
   if (!resolved) return { error: "not_found" };
+  if (!(await withinGateLimit(resolved.link.id))) return { error: "too_many" };
   // Expired or withdrawn while the gate was open: the page now shows the locked screen
   if (resolved.state !== "open") redirect(`/v/${slug}`);
   const { link } = resolved;
@@ -78,6 +86,7 @@ export async function unlockWithEmail(
 export async function unlockAsKnown(slug: string): Promise<UnlockState> {
   const resolved = await resolveViewerLink(slug);
   if (!resolved) return { error: "not_found" };
+  if (!(await withinGateLimit(resolved.link.id))) return { error: "too_many" };
   if (resolved.state !== "open") redirect(`/v/${slug}`);
   const recipient = await knownRecipient(resolved.link.id);
   // The contact changed since the page loaded: back to the plain gate
@@ -307,9 +316,11 @@ async function sendSignedReceipt(input: {
     select: {
       createdBy: { select: { email: true, name: true } },
       organization: { select: { settings: { select: { senderName: true } } } },
+      document: { select: { name: true, displayTitle: true, docType: true } },
     },
   });
   const locale = prospect.locale ?? "fr";
+  const share = shareLink(getPublicAppUrl(), { slug: link.slug, document: owner?.document ?? link.document });
   await sendProspectEmail({
     prospect,
     locale,
@@ -321,8 +332,9 @@ async function sendSignedReceipt(input: {
         showZone: !prospect.timezone,
       }),
       senderName: owner?.organization.settings?.senderName?.trim() || owner?.createdBy?.name || null,
-      url: `${getPublicAppUrl()}/v/${link.slug}`,
+      url: share.url,
     }),
+    link: share,
   });
 }
 

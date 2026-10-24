@@ -11,6 +11,8 @@ export const routing = defineRouting({
     "/privacy": { en: "/privacy", fr: "/confidentialite" },
     "/legal": { en: "/legal", fr: "/mentions-legales" },
     "/subprocessors": { en: "/subprocessors", fr: "/sous-traitants" },
+    "/security": { en: "/security", fr: "/securite" },
+    "/dpa": "/dpa",
     "/support": "/support",
     "/use-cases": { en: "/use-cases", fr: "/cas-d-usage" },
     "/pricing": { en: "/pricing", fr: "/tarifs" },

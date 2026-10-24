@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
+import { logAudit } from "@/lib/audit";
 import { countProspectData, eraseProspectData } from "@/lib/privacy/prospect";
 import { accountDeletionBlocker, deleteAccount, deleteWorkspace } from "@/lib/privacy/workspace";
 import { isOwnerRole } from "@/lib/roles";
@@ -30,20 +31,22 @@ export async function lookupProspect(_prev: LookupState, formData: FormData): Pr
 }
 
 export async function eraseProspect(email: string): Promise<PrivacyActionState> {
-  const { organization } = await requireManager();
+  const { user, organization } = await requireManager();
   const t = await getTranslations("settings.privacyActions");
   const parsed = emailSchema.safeParse(email);
   if (!parsed.success) return { error: t("invalidEmail") };
 
   const result = await eraseProspectData(organization.id, parsed.data);
   if (!result.erased) return { error: t("nothingToErase") };
+  // The journal keeps that an erasure happened, never whose
+  await logAudit({ organizationId: organization.id, actorUserId: user.id, action: "prospect.erased" });
   revalidatePath("/dashboard");
   revalidatePath("/links");
   return { ok: true };
 }
 
 export async function deleteWorkspaceAction(_prev: PrivacyActionState, formData: FormData): Promise<PrivacyActionState> {
-  const { organization, role } = await requireWorkspace();
+  const { user, organization, role } = await requireWorkspace();
   const t = await getTranslations("settings.privacyActions");
   if (!isOwnerRole(role)) return { error: t("ownerOnly") };
   if (String(formData.get("confirm") ?? "").trim() !== organization.name) {
@@ -51,11 +54,18 @@ export async function deleteWorkspaceAction(_prev: PrivacyActionState, formData:
   }
 
   await deleteWorkspace(organization.id);
+  await logAudit({
+    organizationId: organization.id,
+    actorUserId: user.id,
+    action: "workspace.deleted",
+    targetType: "organization",
+    targetId: organization.id,
+  });
   redirect("/login");
 }
 
 export async function deleteAccountAction(_prev: PrivacyActionState, formData: FormData): Promise<PrivacyActionState> {
-  const { user } = await requireWorkspace();
+  const { user, organization } = await requireWorkspace();
   const t = await getTranslations("settings");
   if (!CONFIRM_WORDS.includes(String(formData.get("confirm") ?? "").trim().toUpperCase())) {
     return { error: t("privacyActions.typeConfirmWord", { word: t("privacy.deleteAccountConfirmWord") }) };
@@ -70,5 +80,6 @@ export async function deleteAccountAction(_prev: PrivacyActionState, formData: F
   }
 
   await deleteAccount(user.id);
+  await logAudit({ organizationId: organization.id, actorUserId: null, action: "account.deleted", targetType: "user", targetId: user.id });
   redirect("/login");
 }

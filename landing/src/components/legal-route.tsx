@@ -21,7 +21,7 @@ export function legalRoute({
   translated = false,
 }: {
   path: Exclude<AppPathname, "/">;
-  messages: "terms" | "privacy" | "notice" | "subprocessors" | "support";
+  messages: "terms" | "privacy" | "notice" | "subprocessors" | "support" | "security" | "dpa";
   content: Record<Locale, ComponentType>;
   translated?: boolean;
 }) {

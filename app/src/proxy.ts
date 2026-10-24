@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { LOCALE_COOKIE, LOCALE_COOKIE_MAX_AGE, isUiLocale } from "@/i18n/locale";
 
+import { bareSlug } from "@/lib/closing/link-url";
 import {
   SIGNUP_SOURCE_COOKIE,
   SIGNUP_SOURCE_MAX_AGE,
@@ -61,9 +62,15 @@ export function proxy(request: NextRequest) {
     return response;
   }
 
+  // /v/acme-devis-mHiTw7Wdh4uT reads as /v/mHiTw7Wdh4uT: the words are for the prospect, the address bar keeps them
+  const segment = /^\/v\/([^/]+-[^/]+)$/.exec(request.nextUrl.pathname)?.[1];
+  const slug = segment ? bareSlug(segment) : null;
+  const rewrite = request.nextUrl.clone();
+  if (slug) rewrite.pathname = `/v/${slug}`;
+
   // Give every proposal visitor a stable anonymous id before the viewer loads,
   // so parallel tracking calls agree on who is reading.
-  const response = NextResponse.next();
+  const response = slug ? NextResponse.rewrite(rewrite) : NextResponse.next();
 
   if (!request.cookies.has(VISITOR_COOKIE)) {
     response.cookies.set(VISITOR_COOKIE, crypto.randomUUID(), {
