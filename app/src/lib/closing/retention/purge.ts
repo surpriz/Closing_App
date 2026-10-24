@@ -2,6 +2,7 @@ import type { Prisma } from "@/generated/prisma/client";
 
 import { prisma } from "@/lib/db";
 import { deleteDocumentForever, eraseLinkTracking, KEPT_ACTION_TYPES } from "@/lib/privacy/erase";
+import { purgeRequestLimits } from "@/lib/rate-limit";
 
 // Stated in the privacy policy: change both together
 export const RETENTION_MONTHS = 12;
@@ -88,11 +89,16 @@ export async function purgeExpiredData(now = new Date()) {
     prisma.verification.deleteMany({ where: { expiresAt: { lt: now } } }),
   ]);
 
+  const requestLimits = await purgeRequestLimits(now);
+  const auditLogs = await prisma.auditLog.deleteMany({ where: { createdAt: { lt: cutoffs.tracking } } });
+
   return {
     linksErased: links.length,
     documentsDeleted: documents.length,
     signaturesDeleted: signatures.count,
     sessionsDeleted: sessions.count,
     verificationsDeleted: verifications.count,
+    requestLimitsDeleted: requestLimits,
+    auditLogsDeleted: auditLogs.count,
   };
 }

@@ -8,6 +8,7 @@ import { parseSmartParams } from "@/lib/closing/shared/smart-params";
 import { getRequestContext } from "@/lib/closing/tracking/request-context";
 import { VISITOR_COOKIE } from "@/lib/closing/tracking/visitor";
 import { prisma } from "@/lib/db";
+import { consumeLimit, perLink, tooManyRequests } from "@/lib/rate-limit";
 import { isWorkspaceMember } from "@/lib/session";
 
 /** New readers per Smart Link per hour; beyond that they type their email. */
@@ -32,6 +33,7 @@ export async function POST(request: NextRequest, ctx: RouteContext<"/api/v/[slug
 
   const link = await getLinkForViewer(slug);
   if (!link?.shared) return Response.json({ error: "Not found" }, { status: 404 });
+  if (!(await consumeLimit("smart", request.headers, perLink(request.headers, link.id)))) return tooManyRequests();
 
   // A scanner running the page, or the seller trying their own link: the plain gate
   if (getRequestContext(request.headers).isBot || (await isWorkspaceMember(link.organizationId))) {

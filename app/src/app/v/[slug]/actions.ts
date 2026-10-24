@@ -32,15 +32,21 @@ import { getRequestContext } from "@/lib/closing/tracking/request-context";
 import { resolveViewerView } from "@/lib/closing/tracking/viewer-view";
 import { VISITOR_COOKIE } from "@/lib/closing/tracking/visitor";
 import { prisma } from "@/lib/db";
+import { consumeLimit, perLink } from "@/lib/rate-limit";
 import { isEmailConfigured } from "@/lib/email";
 import { isWorkspaceMember } from "@/lib/session";
 
-export type UnlockState = { error?: "invalid_email" | "not_found" } | null;
+export type UnlockState = { error?: "invalid_email" | "not_found" | "too_many" } | null;
 
 const unlockSchema = z.object({
   email: z.email().max(254),
   name: z.string().max(120).optional(),
 });
+
+async function withinGateLimit(linkId: string) {
+  const requestHeaders = await headers();
+  return consumeLimit("gate", requestHeaders, perLink(requestHeaders, linkId));
+}
 
 export async function unlockWithEmail(
   slug: string,
@@ -49,6 +55,7 @@ export async function unlockWithEmail(
 ): Promise<UnlockState> {
   const resolved = await resolveViewerLink(slug);
   if (!resolved) return { error: "not_found" };
+  if (!(await withinGateLimit(resolved.link.id))) return { error: "too_many" };
   // Expired or withdrawn while the gate was open: the page now shows the locked screen
   if (resolved.state !== "open") redirect(`/v/${slug}`);
   const { link } = resolved;
@@ -79,6 +86,7 @@ export async function unlockWithEmail(
 export async function unlockAsKnown(slug: string): Promise<UnlockState> {
   const resolved = await resolveViewerLink(slug);
   if (!resolved) return { error: "not_found" };
+  if (!(await withinGateLimit(resolved.link.id))) return { error: "too_many" };
   if (resolved.state !== "open") redirect(`/v/${slug}`);
   const recipient = await knownRecipient(resolved.link.id);
   // The contact changed since the page loaded: back to the plain gate

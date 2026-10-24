@@ -30,6 +30,16 @@ export function PrivacyNotice({
       >
         {labels.privacyLink}
       </a>
+      {" · "}
+      {/* Buyers at large accounts ask before reading: the answer is one click away */}
+      <a
+        href={labels.securityUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="font-medium text-foreground underline decoration-foreground/40 underline-offset-[3px] hover:decoration-foreground"
+      >
+        {labels.securityLink}
+      </a>
     </p>
   );
 }

@@ -7,6 +7,7 @@ import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { getAppOrigin } from "@/lib/app-origin";
+import { logAudit } from "@/lib/audit";
 import { auth } from "@/lib/auth";
 import { planFor, upgradePrompt, type UpgradeReason } from "@/lib/billing/workspace-plan";
 import { prisma } from "@/lib/db";
@@ -47,7 +48,7 @@ function refresh() {
 }
 
 export async function inviteMember(_prev: TeamActionState, formData: FormData): Promise<TeamActionState> {
-  const { organization } = await requireManager();
+  const { user, organization } = await requireManager();
   const t = await getTranslations("team.actions");
   const parsed = inviteSchema(t).safeParse({
     email: String(formData.get("email") ?? "").trim(),
@@ -64,6 +65,14 @@ export async function inviteMember(_prev: TeamActionState, formData: FormData): 
       body: { ...parsed.data, organizationId: organization.id },
       headers: await headers(),
     });
+    await logAudit({
+      organizationId: organization.id,
+      actorUserId: user.id,
+      action: "member.invited",
+      targetType: "invitation",
+      targetId: invitation.id,
+      metadata: { role: parsed.data.role },
+    });
     refresh();
     // No email in local dev: the link is shown to copy instead
     return devMagicLinksEnabled()
@@ -75,19 +84,26 @@ export async function inviteMember(_prev: TeamActionState, formData: FormData): 
 }
 
 export async function cancelInvitation(invitationId: string): Promise<TeamActionState> {
-  await requireManager();
+  const { user, organization } = await requireManager();
   const t = await getTranslations("team.actions");
   try {
     await auth.api.cancelInvitation({ body: { invitationId }, headers: await headers() });
   } catch (error) {
     return { error: teamError(t, error) };
   }
+  await logAudit({
+    organizationId: organization.id,
+    actorUserId: user.id,
+    action: "member.invitation_cancelled",
+    targetType: "invitation",
+    targetId: invitationId,
+  });
   refresh();
   return { ok: true };
 }
 
 export async function updateMemberRole(memberId: string, role: string): Promise<TeamActionState> {
-  const { organization } = await requireManager();
+  const { user, organization } = await requireManager();
   const t = await getTranslations("team.actions");
   const parsed = roleSchema.safeParse(role);
   if (!parsed.success) return { error: t("unknownRole") };
@@ -100,12 +116,20 @@ export async function updateMemberRole(memberId: string, role: string): Promise<
   } catch (error) {
     return { error: teamError(t, error) };
   }
+  await logAudit({
+    organizationId: organization.id,
+    actorUserId: user.id,
+    action: "member.role_changed",
+    targetType: "member",
+    targetId: memberId,
+    metadata: { role: parsed.data },
+  });
   refresh();
   return { ok: true };
 }
 
 export async function removeMember(memberId: string): Promise<TeamActionState> {
-  const { organization } = await requireManager();
+  const { user, organization } = await requireManager();
   const member = await prisma.member.findFirst({
     where: { id: memberId, organizationId: organization.id },
     select: { userId: true },
@@ -125,6 +149,13 @@ export async function removeMember(memberId: string): Promise<TeamActionState> {
   await prisma.link.updateMany({
     where: { organizationId: organization.id, createdById: member.userId },
     data: { createdById: null },
+  });
+  await logAudit({
+    organizationId: organization.id,
+    actorUserId: user.id,
+    action: "member.removed",
+    targetType: "user",
+    targetId: member.userId,
   });
   refresh();
   return { ok: true };

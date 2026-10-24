@@ -23,11 +23,20 @@ export const SUBPROCESSORS: { name: string; purpose: Localized; location: Locali
   {
     name: "Amazon Web Services EMEA SARL",
     purpose: {
-      fr: "Envoi des emails (liens de connexion, relances, alertes)",
-      en: "Sending emails (sign-in links, follow-ups, alerts)",
+      fr: "Envoi des emails (liens de connexion, relances, alertes) et réception des réponses des prospects",
+      en: "Sending emails (sign-in links, follow-ups, alerts) and receiving prospects' replies",
     },
     location: { fr: "Union européenne (Stockholm)", en: "European Union (Stockholm)" },
     safeguard: { fr: "DPA AWS", en: "AWS DPA" },
+  },
+  {
+    name: "DeepL SE",
+    purpose: {
+      fr: "Traduction des documents PDF, seulement quand un lecteur demande une autre langue",
+      en: "Translation of PDF documents, only when a reader asks for another language",
+    },
+    location: { fr: "Union européenne (Allemagne)", en: "European Union (Germany)" },
+    safeguard: { fr: "DPA DeepL", en: "DeepL DPA" },
   },
   {
     name: "Anthropic PBC",

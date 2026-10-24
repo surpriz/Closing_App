@@ -6,6 +6,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { HeatScale } from "@/components/thermal-plate";
 import type { Messages } from "@/i18n/messages";
+import { Link } from "@/i18n/navigation";
 import { resolveLocale } from "@/i18n/page";
 import type { Locale } from "@/i18n/routing";
 import { alternatesFor, localizedPath } from "@/i18n/seo";
@@ -181,6 +182,9 @@ export default async function UseCases({ params }: Props) {
               <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-small text-ink-soft">
                 <span>{th("hero.free")}</span>
                 <span>{th("hero.noCard")}</span>
+                <Link href="/security" className="underline-offset-4 hover:text-ink hover:underline">
+                  {th("hero.europe")}
+                </Link>
               </p>
             </div>
           </div>

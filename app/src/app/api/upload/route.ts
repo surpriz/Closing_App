@@ -4,6 +4,7 @@ import { blobToken, capsuleUploadPrefix, documentUploadPrefix, pitchUploadPrefix
 import { MAX_UPLOAD_BYTES } from "@/lib/closing/constants";
 import { CAPSULE_POSTER_TYPE, CAPSULE_VIDEO_MAX_BYTES, PITCH_VIDEO_MAX_BYTES } from "@/lib/closing/media/limits";
 import { ALLOWED_MEDIA_TYPES } from "@/lib/closing/media/mime";
+import { consumeLimit } from "@/lib/rate-limit";
 import { getWorkspace } from "@/lib/session";
 
 // Issues short-lived tokens so the browser uploads PDFs, page capsules and video pitches straight to Blob
@@ -18,6 +19,7 @@ export async function POST(request: Request) {
       onBeforeGenerateToken: async (pathname) => {
         const workspace = await getWorkspace();
         if (!workspace) throw new Error("Not authenticated");
+        if (!(await consumeLimit("upload", request.headers, workspace.user.id))) throw new Error("Too many uploads");
 
         const organizationId = workspace.organization.id;
         if (pathname.startsWith(documentUploadPrefix(organizationId))) {
