@@ -26,5 +26,6 @@ Quand le code change (auth, stockage, sous-traitants, rétention), relire ces fi
 | Chiffrement des secrets | `app/src/lib/crypto.ts` |
 | Garde SSRF | `app/src/lib/closing/channels/public-address.ts`, `webhooks.ts` |
 | Journal d'audit | `app/src/lib/audit.ts` (table `audit_logs`) |
+| Alertes sécurité (Sentry, tag `kind:security`) | `app/src/lib/security-events.ts` |
 | Rétention et purge | `app/src/lib/closing/retention/purge.ts`, `app/src/lib/privacy/` |
 | CI sécurité | `.github/workflows/ci.yml` (job `security`), `codeql.yml`, `dependabot.yml` |

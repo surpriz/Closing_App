@@ -67,6 +67,7 @@
       "lead": "For B2B sales reps and their managers. Send a Clozer link instead of the PDF or the video: see who opens it, what they read and who they forward it to. Clozer drafts the follow-up.",
       "free": "14-day Team trial",
       "noCard": "No credit card",
+      "europe": "Hosted in Europe",
       "magicLink": "Sign-in link by email"
     },
     "silence": {
@@ -221,7 +222,10 @@
       "discreet": "Your follow-ups talk about the offer, never about what you saw.",
       "limit": "Three follow-ups per contact per month, max, and never right after a read.",
       "unsubscribe": "An unsubscribe link in every follow-up, and IP addresses are never stored in the clear.",
-      "subprocessors": "See our subprocessors and where your data lives"
+      "europe": "Hosted in Europe, encrypted in transit and at rest.",
+      "private": "Your PDFs have no public address: every opening is checked by our servers.",
+      "subprocessors": "See our subprocessors and where your data lives",
+      "security": "How we protect your data"
     },
     "who": {
       "title": "For the rep, and for the manager.",
@@ -281,7 +285,7 @@
       },
       "data": {
         "q": "Where is my data?",
-        "a": "Our subprocessors, with the country of each, are listed on the <subprocessors>Subprocessors</subprocessors> page. What we collect and why is in the <privacy>privacy policy</privacy>."
+        "a": "In Europe: application and documents in Paris, database in Frankfurt. Only the text of documents goes to our AI providers, in the United States, without the readers' email or IP address. The <security>Security</security> page explains how we protect it all, the <subprocessors>Subprocessors</subprocessors> page lists each provider with its country, and the <privacy>privacy policy</privacy> says what we collect and why."
       }
     },
     "final": "Send your next proposal as a tracked link.",
@@ -595,6 +599,10 @@
       "payment": {
         "q": "How can I pay?",
         "a": "By card, through Stripe. Clozer never sees or stores your card number."
+      },
+      "security": {
+        "q": "Are my documents and my customers' data safe?",
+        "a": "Yes. Hosted in Europe, encrypted in transit and at rest, never reachable through a public address, and every workspace is isolated from the others. Details are on the <security>Security</security> page, and the <dpa>data processing agreement</dpa> is ready to sign."
       }
     },
     "final": "Try Clozer on Team for 14 days."

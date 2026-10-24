@@ -66,7 +66,7 @@ const PROSPECT_SCREENS: Record<"actions" | "change", Record<Locale, StaticImageD
 };
 const READING_POINTS = ["pages", "readers", "live", "score"] as const;
 const VIDEO_POINTS = ["record", "watched", "transcript", "quote"] as const;
-const GUARANTEES = ["informed", "discreet", "limit", "unsubscribe"] as const;
+const GUARANTEES = ["informed", "discreet", "limit", "unsubscribe", "europe", "private"] as const;
 const TEAM_SCREENS: Record<"desktop" | "mobile", Record<Locale, StaticImageData>> = {
   desktop: { fr: teamFr, en: teamEn },
   mobile: { fr: teamMobileFr, en: teamMobileEn },
@@ -127,6 +127,9 @@ export default async function Home({ params }: Props) {
                 <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-small text-ink-soft">
                   <span>{t("hero.free")}</span>
                   <span>{t("hero.noCard")}</span>
+                  <Link href="/security" className="underline-offset-4 hover:text-ink hover:underline">
+                    {t("hero.europe")}
+                  </Link>
                   <span>{t("hero.magicLink")}</span>
                 </p>
               </div>
@@ -401,13 +404,22 @@ export default async function Home({ params }: Props) {
             <div>
               <h2 className="condensed text-title font-bold">{t("trust.title")}</h2>
               <p className="mt-6 max-w-[48ch] text-lead text-sheet/75">{t("trust.body")}</p>
-              <Link
-                href="/subprocessors"
-                className="mt-8 inline-block text-body font-semibold underline decoration-sheet/40 underline-offset-4 transition-colors hover:decoration-sheet"
-              >
-                {t("trust.subprocessors")}
-                <Icon name="arrow" className="ml-2 inline size-4 align-[-0.15em]" />
-              </Link>
+              <div className="mt-8 flex flex-col items-start gap-3">
+                <Link
+                  href="/security"
+                  className="text-body font-semibold underline decoration-sheet/40 underline-offset-4 transition-colors hover:decoration-sheet"
+                >
+                  {t("trust.security")}
+                  <Icon name="arrow" className="ml-2 inline size-4 align-[-0.15em]" />
+                </Link>
+                <Link
+                  href="/subprocessors"
+                  className="text-body font-semibold underline decoration-sheet/40 underline-offset-4 transition-colors hover:decoration-sheet"
+                >
+                  {t("trust.subprocessors")}
+                  <Icon name="arrow" className="ml-2 inline size-4 align-[-0.15em]" />
+                </Link>
+              </div>
             </div>
             <ul className="border-t border-sheet/30 self-center">
               {GUARANTEES.map((item) => (
@@ -503,7 +515,14 @@ export default async function Home({ params }: Props) {
                 mainEntity: FAQ.map((item) => ({
                   "@type": "Question",
                   name: t(`faq.${item}.q`),
-                  acceptedAnswer: { "@type": "Answer", text: t.markup(`faq.${item}.a`, { subprocessors: (chunks) => chunks, privacy: (chunks) => chunks }) },
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text: t.markup(`faq.${item}.a`, {
+                      subprocessors: (chunks) => chunks,
+                      privacy: (chunks) => chunks,
+                      security: (chunks) => chunks,
+                    }),
+                  },
                 })),
               }).replace(/</g, "\\u003c"),
             }}
@@ -543,6 +562,11 @@ export default async function Home({ params }: Props) {
                           {chunks}
                         </Link>
                       ),
+                      security: (chunks) => (
+                        <Link href="/security" className="font-medium text-ink underline underline-offset-4">
+                          {chunks}
+                        </Link>
+                      ),
                     })}
                   </p>
                 </details>
@@ -560,6 +584,9 @@ export default async function Home({ params }: Props) {
               <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-small text-ink-soft">
                 <span>{t("hero.free")}</span>
                 <span>{t("hero.noCard")}</span>
+                <Link href="/security" className="underline-offset-4 hover:text-ink hover:underline">
+                  {t("hero.europe")}
+                </Link>
               </p>
             </div>
           </div>
