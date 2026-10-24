@@ -129,6 +129,12 @@ model Organization {
   trialEndsAt          DateTime?
   // Created during the beta: Team until BETA_GRACE_UNTIL
   betaGrace            Boolean   @default(false)
+  // Campaign offer taken at signup, and where the signup came from (utm_*)
+  offerCode           String?
+  acquisitionSource   String?
+  acquisitionMedium   String?
+  acquisitionCampaign String?
+  acquisitionContent  String?
   stripeEvents         StripeEvent[]
 
   // Suspended by the platform admin: members locked out, cron and public links stopped

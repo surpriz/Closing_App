@@ -1,11 +1,12 @@
 import { randomUUID } from "node:crypto";
 
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
 
+import { SIGNUP_SOURCE_COOKIE, parseSource, workspaceSourceData, workspaceSourceEvent } from "@/lib/acquisition";
+import { captureProductEvent } from "@/lib/analytics/server";
 import { auth } from "@/lib/auth";
-import { trialEndsAtFor } from "@/lib/billing/plans";
 import { inBackground } from "@/lib/closing/background";
 import type { SellerScope } from "@/lib/closing/dashboard/queries";
 import { sendDueOnboardingEmail } from "@/lib/closing/onboarding-emails";
@@ -75,13 +76,14 @@ const resolveWorkspace = cache(async (): Promise<Resolved> => {
   });
   if (invitation) return { kind: "invited", invitationId: invitation.id };
 
+  const source = parseSource((await cookies()).get(SIGNUP_SOURCE_COOKIE)?.value);
   const organization = await prisma.organization.create({
     data: {
       id: randomUUID(),
       name: user.name?.trim() || user.email.split("@")[0],
       slug: `ws-${randomSlug(10).toLowerCase()}`,
       createdAt: now,
-      trialEndsAt: trialEndsAtFor(now),
+      ...workspaceSourceData(source, now),
       members: {
         create: {
           id: randomUUID(),
@@ -93,6 +95,7 @@ const resolveWorkspace = cache(async (): Promise<Resolved> => {
       settings: { create: {} },
     },
   });
+  if (source) captureProductEvent("workspace_created", user.id, workspaceSourceEvent(source, now));
   inBackground("welcome-email", () => sendDueOnboardingEmail(user.id, organization.id, now));
 
   return {

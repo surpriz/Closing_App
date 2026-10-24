@@ -6,6 +6,7 @@ import { getEnv } from "@/lib/env";
 import { isOwnerRole } from "@/lib/roles";
 import { toUiLocale } from "@/lib/seller-locale";
 
+import { offerEndsAt } from "./offers";
 import { BILLING_EMAIL_KINDS, buildBillingEmail, dueBillingEmail, type BillingEmailKind } from "./emails";
 import { COMPED_STATUS, PAID_STATUSES } from "./plans";
 
@@ -23,7 +24,7 @@ async function owners(organizationId: string) {
  * Claimed first (one row per owner and kind), released if the send fails.
  * Transactional: sent even to owners who turned the getting-started tips off.
  */
-async function sendToOwners(organizationId: string, kind: BillingEmailKind, dedupeKind: string, endsAt: Date | null, now: Date) {
+async function sendToOwners(organizationId: string, kind: BillingEmailKind, dedupeKind: string, endsAt: Date | null, now: Date, offer = false) {
   let sent = 0;
   for (const owner of await owners(organizationId)) {
     const claimed = await prisma.onboardingEmail
@@ -35,6 +36,7 @@ async function sendToOwners(organizationId: string, kind: BillingEmailKind, dedu
       firstName: owner.user.name?.trim().split(/\s+/)[0] || null,
       locale: toUiLocale(owner.user.locale),
       endsAt,
+      offer,
       now,
     });
     try {
@@ -67,7 +69,7 @@ export async function sendBillingEmails(now: Date) {
         },
       ],
     },
-    select: { id: true, trialEndsAt: true, betaGrace: true, onboardingEmails: { where: { kind: { startsWith: "billing_" } }, select: { kind: true } } },
+    select: { id: true, trialEndsAt: true, offerCode: true, betaGrace: true, onboardingEmails: { where: { kind: { startsWith: "billing_" } }, select: { kind: true } } },
   });
 
   let sent = 0;
@@ -86,7 +88,7 @@ export async function sendBillingEmails(now: Date) {
     );
     if (!kind) continue;
     const endsAt = kind.startsWith("billing_beta") ? betaGraceUntil : org.trialEndsAt;
-    sent += await sendToOwners(org.id, kind, kind, endsAt, now);
+    sent += await sendToOwners(org.id, kind, kind, endsAt, now, offerEndsAt(org, now) !== null);
     if (++handled >= BATCH) break;
   }
   return sent;

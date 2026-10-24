@@ -35,3 +35,4 @@ next-env.d.ts
 
 # vitest cache
 .vitest/
+.superpowers/
