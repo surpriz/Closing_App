@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { copyMessage } from "@/lib/clipboard";
 
 type Props = {
   suggestionId: string;
@@ -69,8 +70,7 @@ export function OutreachDialog({ suggestionId, documents, hasLink }: Props) {
   const mailtoFits = mailto.length <= 2000;
 
   const copy = () =>
-    navigator.clipboard
-      .writeText(body)
+    copyMessage(body, result)
       .then(() => toast.success(t("copied")))
       .catch(() => toast.error(t("copyFailed")));
 

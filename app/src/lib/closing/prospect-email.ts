@@ -1,4 +1,5 @@
-import { sendEmail, textToHtml } from "@/lib/email";
+import { sendEmail } from "@/lib/email";
+import { textToHtml, type TitledLink } from "@/lib/text-html";
 
 import { unsubscribeOneClickUrl, unsubscribePageUrl } from "./unsubscribe";
 import { unsubscribeFooter } from "./unsubscribe/copy";
@@ -29,6 +30,8 @@ export function sendProspectEmail(input: {
   replyRelay?: string | null;
   /** Another From than the seller's side, e.g. "Paul via Clozer" for a forward. */
   from?: string;
+  /** The proposal the body points to: in the HTML part its address reads as this title. */
+  link?: TitledLink | null;
 }) {
   // Added at send time only: the seller previews the message without it
   const footer = unsubscribeFooter(unsubscribePageUrl(input.prospect.id), input.locale);
@@ -38,7 +41,7 @@ export function sendProspectEmail(input: {
     replyTo: replyAddresses(input.replyTo ?? process.env.FOLLOWUP_EMAIL_REPLY_TO, input.replyRelay),
     subject: input.subject,
     text: input.body + footer.text,
-    html: textToHtml(input.body) + footer.html,
+    html: textToHtml(input.body, input.link) + footer.html,
     // One-click unsubscribe, required by Gmail and Yahoo (RFC 8058)
     headers: {
       "List-Unsubscribe": `<${unsubscribeOneClickUrl(input.prospect.id)}>`,

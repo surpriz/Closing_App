@@ -24,6 +24,8 @@ export type ProspectLinkRow = {
   /** Reading time per page, null while the link was never opened. */
   heat: PageHeat | null;
   url: string;
+  /** What the prospect clicks on once pasted in an email. */
+  title: string;
   followupsEnabled: boolean;
 };
 
@@ -63,7 +65,7 @@ export function DocumentLinks({ rows, video }: { rows: ProspectLinkRow[]; video:
               <span className="hidden md:inline">{t("followups")}</span>
               <LinkFollowupsToggle linkId={row.id} enabled={row.followupsEnabled} />
             </label>
-            <CopyButton value={row.url} />
+            <CopyButton value={row.url} title={row.title} />
           </div>
         </li>
       ))}

@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { bareSlug } from "@/lib/closing/link-url";
 import { isProspectSide } from "@/lib/closing/replies/inbound";
 import { recordProspectReply } from "@/lib/closing/replies/record";
 import { prisma } from "@/lib/db";
@@ -37,8 +38,11 @@ export const POST = withExtensionAuth(async (request, { user, organization }) =>
   let logged = 0;
   for (const reply of parsed.data.replies) {
     const fromEmail = reply.fromEmail.toLowerCase();
+    // Read from the email's href: the words of the address may come with it
+    const slug = bareSlug(reply.slug);
+    if (!slug) continue;
     const link = await prisma.link.findFirst({
-      where: { slug: reply.slug, organizationId: organization.id, archivedAt: null, shared: false },
+      where: { slug, organizationId: organization.id, archivedAt: null, shared: false },
       select: { id: true, prospects: { select: { id: true, email: true } } },
     });
     if (!link) continue;

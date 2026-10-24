@@ -56,6 +56,7 @@ import {
 } from "@/lib/closing/dashboard/queries";
 import { sellerStage } from "@/lib/closing/dashboard/seller-stage";
 import { catchUpInBackground } from "@/lib/closing/catch-up";
+import { shareLink } from "@/lib/closing/link-url";
 import { getWorkspaceLiveState } from "@/lib/closing/live";
 import { getSellerPrefs } from "@/lib/closing/notify/preferences";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
@@ -205,7 +206,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
     .filter((draft) => !draft.copiedAt)
     .map((draft) => ({
       id: draft.id,
-      url: `${origin}/v/${draft.slug}`,
+      ...shareLink(origin, { slug: draft.slug, document: draft.document, company: draft.prospects[0]?.company }),
       label: dealLabel(draft, noRecipient),
       documentName: draft.document.name,
     }));
@@ -213,7 +214,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
     .filter((draft) => draft.copiedAt)
     .map((draft) => ({
       id: draft.id,
-      url: `${origin}/v/${draft.slug}`,
+      ...shareLink(origin, { slug: draft.slug, document: draft.document, company: draft.prospects[0]?.company }),
       label: dealLabel(draft, noRecipient),
       documentName: dealDocumentMeta(draft),
       askIfSent:
@@ -246,6 +247,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
       label: row.label,
       documentName: row.documentName,
       url: row.url,
+      title: row.title,
     })),
   ];
   const distribution = buildHeatDistribution(
@@ -550,7 +552,7 @@ function toTodoRow(
     action,
     insightHeadline,
     aiPriority,
-    url: `${origin}/v/${deal.slug}`,
+    ...shareLink(origin, { slug: deal.slug, document: deal.document, company: prospect?.company }),
     heat: pages ? pageHeat(pages, deal.document.numPages) : null,
   };
 }

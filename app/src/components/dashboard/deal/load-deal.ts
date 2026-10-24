@@ -15,6 +15,7 @@ import type { ViewSignalType } from "@/generated/prisma/enums";
 import type { UiLocale } from "@/i18n/locale";
 import { getAppOrigin } from "@/lib/app-origin";
 import { sellerBookingUrl } from "@/lib/closing/booking/link-booking";
+import { shareLink } from "@/lib/closing/link-url";
 import { getLatestInsight } from "@/lib/closing/brain/latest";
 import {
   capsulesVisibleOnLink,
@@ -306,7 +307,8 @@ export async function loadDeal(
 
   const mainProspect = link.prospects[0];
   const title = dealLabel(link, tRoot("today.page.noRecipient"));
-  const url = `${origin}/v/${link.slug}`;
+  // What the seller copies: a readable address, and the title it reads as once pasted in an email
+  const { url, title: shareTitle } = shareLink(origin, { slug: link.slug, document: link.document, company: mainProspect?.company });
   const now = new Date();
 
   // Archived, or past its deadline: what the prospect gets is a locked page
@@ -766,7 +768,7 @@ export async function loadDeal(
   });
 
   const followupItems: FollowupItem[] = followups.map((f) =>
-    toFollowupItem(f, title),
+    toFollowupItem(f, title, { url, title: shareTitle }),
   );
 
   const signature = actions.find((action) => action.type === "VALIDATE_SIGN");
@@ -796,6 +798,7 @@ export async function loadDeal(
     rawReasons: score?.reasons ?? null,
     settings,
     url,
+    shareTitle,
     title,
     mainProspect,
     contactLine,

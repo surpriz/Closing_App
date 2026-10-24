@@ -4,6 +4,7 @@ import { assertCanCreateLink, getWorkspacePlan } from "@/lib/billing/workspace-p
 import { prisma } from "@/lib/db";
 import { randomSlug } from "@/lib/ids";
 
+import { viewerPath } from "../link-url";
 import { getSellerPrefs, sellerTimezone } from "../notify/preferences";
 import { defaultTimezone, getWorkspaceSettings } from "../settings";
 import { onLinkExpiryChanged } from "../triggers/expiry";
@@ -116,7 +117,7 @@ export async function createDocumentLink(input: {
     draft: !!input.draft,
     onboarding_test: !!input.onboardingTest,
   });
-  return { ...link, title };
+  return { ...link, title, path: viewerPath({ slug: link.slug, document, company: prospect?.company }) };
 }
 
 /** The defaults of a personal link of this type, as of `now`. */

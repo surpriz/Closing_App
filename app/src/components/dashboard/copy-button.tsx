@@ -7,16 +7,20 @@ import { useState } from "react";
 
 import { markLinkCopied } from "@/app/(dashboard)/links/actions";
 import { Button } from "@/components/ui/button";
+import { copyLink } from "@/lib/clipboard";
 
 /** Copies a link. Icon only by default; with `label` it becomes a full button. */
 export function CopyButton({
   value,
+  title,
   label,
   variant = "ghost",
   size,
   draftLinkId,
 }: {
   value: string;
+  /** A proposal link: pasted in an email it reads as this title, clickable, instead of its address. */
+  title?: string;
   label?: string;
   variant?: "default" | "outline" | "ghost";
   size?: "sm" | "default" | "lg";
@@ -34,7 +38,7 @@ export function CopyButton({
       size={label ? (size ?? "default") : "icon-xs"}
       aria-label={label ? undefined : t("copyLink")}
       onClick={async () => {
-        await navigator.clipboard.writeText(value);
+        await (title ? copyLink({ url: value, title }) : navigator.clipboard.writeText(value));
         setCopied(true);
         setTimeout(() => setCopied(false), 1500);
         if (!draftLinkId) return;
