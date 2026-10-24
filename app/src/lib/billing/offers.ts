@@ -25,3 +25,21 @@ export function offerFor(code: string | null | undefined): Offer | null {
   if (!code || !Object.prototype.hasOwnProperty.call(OFFERS, code)) return null;
   return OFFERS[code];
 }
+
+/** Stripe Checkout rejects a subscription trial_end less than 48 hours away. */
+export const MIN_TRIAL_END_MS = 48 * 60 * 60 * 1000;
+
+type OfferOrg = { offerCode: string | null; trialEndsAt: Date | null };
+
+/** What checkout applies for a workspace still on its offer: the coupon, and the trial end to carry over. */
+export function checkoutOffer(org: OfferOrg, now: Date): { couponId: string; trialEnd: number | null } | null {
+  const offer = offerFor(org.offerCode);
+  if (!offer || !org.trialEndsAt || now >= org.trialEndsAt) return null;
+  const farEnough = org.trialEndsAt.getTime() - now.getTime() >= MIN_TRIAL_END_MS;
+  return { couponId: offer.couponId, trialEnd: farEnough ? Math.floor(org.trialEndsAt.getTime() / 1000) : null };
+}
+
+/** The date the discount can no longer be taken (the end of the trial), or null when there is none to take. */
+export function offerEndsAt(org: OfferOrg, now: Date): Date | null {
+  return checkoutOffer(org, now) ? org.trialEndsAt : null;
+}
