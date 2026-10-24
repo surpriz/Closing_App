@@ -31,14 +31,16 @@ export function proxy(request: NextRequest) {
   // remember them before sign-up, then drop them from the URL.
   const { searchParams } = request.nextUrl;
   const lang = searchParams.get("lang");
-  const hasSourceParam = SOURCE_PARAMS.some((param) => searchParams.has(param));
+  // A proposal link is the prospect's, never a seller signup: its utm_* stay put and leave no source cookie
+  const trackSource = !request.nextUrl.pathname.startsWith("/v/");
+  const hasSourceParam = trackSource && SOURCE_PARAMS.some((param) => searchParams.has(param));
   if ((lang !== null || hasSourceParam) && !request.nextUrl.pathname.startsWith("/api/")) {
-    const incoming = sourceFromParams(searchParams, new Date());
+    const incoming = trackSource ? sourceFromParams(searchParams, new Date()) : null;
     // The sign-in callback carries the source again: keep the time of the first request
     const source = incoming && mergeSource(parseSource(request.cookies.get(SIGNUP_SOURCE_COOKIE)?.value), incoming);
     const url = request.nextUrl.clone();
     url.searchParams.delete("lang");
-    for (const param of SOURCE_PARAMS) url.searchParams.delete(param);
+    if (trackSource) for (const param of SOURCE_PARAMS) url.searchParams.delete(param);
     const response = NextResponse.redirect(url);
     if (lang !== null && isUiLocale(lang)) {
       response.cookies.set(LOCALE_COOKIE, lang, { maxAge: LOCALE_COOKIE_MAX_AGE, path: "/", sameSite: "lax" });
