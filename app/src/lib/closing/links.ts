@@ -74,8 +74,14 @@ function gateSecret() {
 }
 
 export async function getViewerAccess(link: { id: string; requireEmail: boolean }) {
-  // An unsigned or edited cookie counts as none: the reader types their email again
-  const email = readGateCookie(link.id, (await cookies()).get(emailCookieName(link.id))?.value, gateSecret());
+  // An edited cookie counts as none: the reader types their email again
+  const cookie = readGateCookie(link.id, (await cookies()).get(emailCookieName(link.id))?.value, gateSecret());
+  // A cookie from before signing: valid only for someone the gate really recorded on this link
+  const known =
+    cookie && !cookie.signed
+      ? await prisma.prospect.findUnique({ where: { linkId_email: { linkId: link.id, email: cookie.email } }, select: { id: true } })
+      : null;
+  const email = cookie && (cookie.signed || known) ? cookie.email : null;
   return { allowed: !link.requireEmail || !!email, email };
 }
 

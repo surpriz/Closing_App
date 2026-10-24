@@ -9,11 +9,11 @@ const BEFORE = new Date(LEGACY_GATE_COOKIES_UNTIL.getTime() - 1000);
 describe("gate cookie", () => {
   it("reads back the email it was signed with", () => {
     const value = signGateCookie("link1", "marie.dupont@acme.fr", SECRET);
-    expect(readGateCookie("link1", value, SECRET)).toBe("marie.dupont@acme.fr");
+    expect(readGateCookie("link1", value, SECRET)).toEqual({ email: "marie.dupont@acme.fr", signed: true });
   });
 
-  it("still reads a plain email, as written before signing, during the transition", () => {
-    expect(readGateCookie("link1", "marie@acme.fr", SECRET, BEFORE)).toBe("marie@acme.fr");
+  it("reads a plain email during the transition, flagged unsigned for the prospect check", () => {
+    expect(readGateCookie("link1", "marie@acme.fr", SECRET, BEFORE)).toEqual({ email: "marie@acme.fr", signed: false });
   });
 
   it("rejects a plain email once the transition is over", () => {
