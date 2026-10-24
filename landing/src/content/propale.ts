@@ -28,7 +28,7 @@ export const PROPALE = {
     label: "Offre réservée aux personnes contactées par email",
     trial: "30 jours d'essai Équipe, sans carte bancaire.",
     discount: "-30 % pendant 12 mois si vous choisissez une formule avant la fin de l'essai. Solo ou Équipe, mensuel ou annuel.",
-    earlyPay: "Choisir tôt ne vous fait perdre aucun jour d'essai.",
+    earlyPay: "Choisissez avant les deux derniers jours : la facturation démarre à la fin de l'essai.",
     deadline: "Inscription jusqu'au 30 novembre à 23 h 59.",
   },
   offerExpired: {
