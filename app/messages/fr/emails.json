@@ -62,7 +62,7 @@
     "trialEnding": {
       "subject": "{days, plural, one {Votre essai Équipe se termine demain} other {Votre essai Équipe se termine dans # jours}}",
       "title": "Votre essai se termine le {date}",
-      "body": "Vous avez eu tout Clozer pendant deux semaines. Pour le garder, choisissez Solo (19 € par mois) ou Équipe (39 € par membre).",
+      "body": "Vous avez eu tout Clozer pendant votre essai. Pour le garder, choisissez Solo (19 € par mois) ou Équipe (39 € par membre).",
       "offer": "Votre remise de 30 % pendant 12 mois reste valable jusqu'à la fin de l'essai. Si vous choisissez une formule maintenant, vous ne payez qu'à partir de cette date, sauf dans les deux derniers jours, où la facturation démarre tout de suite."
     },
     "trialEnded": {
