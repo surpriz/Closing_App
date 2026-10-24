@@ -75,24 +75,28 @@ describe("trialEndsAtFor", () => {
 });
 
 describe("mergeSource", () => {
-  const src = (offer: string | null, requestedAt: number, utmSource: string | null = null) => ({
-    offer,
-    requestedAt,
-    utmSource,
-    utmMedium: null,
-    utmCampaign: null,
-    utmContent: null,
+  it("keeps the request time when the callback lands after the deadline", () => {
+    const merged = mergeSource(src("2026-11-30T22:58:00Z"), src("2026-11-30T23:05:00Z"));
+    expect(merged.requestedAt).toBe(at("2026-11-30T22:58:00Z").getTime());
+    expect(signupOffer(merged, at("2026-11-30T23:05:00Z"))?.code).toBe("cold-2026-11");
   });
 
-  it("keeps the first request time for the same offer, with the new utm values", () => {
-    expect(mergeSource(src("a", 1, "old"), src("a", 2, "new"))).toEqual(src("a", 1, "new"));
+  it("lets a returning visitor start a fresh 24 h window", () => {
+    const merged = mergeSource(src("2026-11-10T10:00:00Z"), src("2026-11-11T09:00:00Z"));
+    expect(merged.requestedAt).toBe(at("2026-11-11T09:00:00Z").getTime());
+    expect(signupOffer(merged, at("2026-11-11T10:30:00Z"))?.code).toBe("cold-2026-11");
   });
 
-  it("takes the incoming source for another offer", () => {
-    expect(mergeSource(src("a", 1), src("b", 2))).toEqual(src("b", 2));
+  it("takes utm values from the incoming source", () => {
+    const incoming = { ...src("2026-11-30T23:05:00Z"), utmSource: "new" };
+    expect(mergeSource({ ...src("2026-11-30T22:58:00Z"), utmSource: "old" }, incoming).utmSource).toBe("new");
   });
 
-  it("takes the incoming source without an existing one", () => {
-    expect(mergeSource(null, src("a", 2))).toEqual(src("a", 2));
+  it("takes the incoming source for another offer, an unknown offer or no cookie", () => {
+    const incoming = src("2026-11-30T23:05:00Z");
+    expect(mergeSource(src("2026-11-30T22:58:00Z", "other"), incoming)).toEqual(incoming);
+    expect(mergeSource(null, incoming)).toEqual(incoming);
+    const unknown = src("2026-11-30T23:05:00Z", "nope");
+    expect(mergeSource(src("2026-11-30T22:58:00Z", "nope"), unknown)).toEqual(unknown);
   });
 });
