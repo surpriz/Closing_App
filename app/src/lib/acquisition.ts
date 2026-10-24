@@ -132,3 +132,16 @@ export function workspaceSourceData(source: SignupSource | null, now: Date) {
     acquisitionContent: source?.utmContent ?? null,
   };
 }
+
+/** Event properties for a new workspace; $set lets later events be filtered by campaign. */
+export function workspaceSourceEvent(source: SignupSource, now: Date): Record<string, unknown> {
+  const offer = signupOffer(source, now)?.code ?? null;
+  return {
+    offer,
+    utm_source: source.utmSource,
+    utm_medium: source.utmMedium,
+    utm_campaign: source.utmCampaign,
+    utm_content: source.utmContent,
+    $set: { offer, acquisition_source: source.utmSource, acquisition_campaign: source.utmCampaign },
+  };
+}

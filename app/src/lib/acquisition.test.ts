@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { appendSource, mergeSource, parseSource, serializeSource, signupOffer, sourceFromParams, workspaceSourceData } from "./acquisition";
+import { appendSource, mergeSource, parseSource, serializeSource, signupOffer, sourceFromParams, workspaceSourceData, workspaceSourceEvent } from "./acquisition";
 import { trialEndsAtFor } from "./billing/plans";
 
 const at = (iso: string) => new Date(iso);
@@ -131,6 +131,32 @@ describe("workspaceSourceData", () => {
       offerCode: null,
       acquisitionSource: "lemlist",
       trialEndsAt: trialEndsAtFor(later),
+    });
+  });
+});
+
+describe("workspaceSourceEvent", () => {
+  const now = at("2026-11-10T10:00:00Z");
+
+  it("reports the granted offer and tags the person", () => {
+    const source = sourceFromParams(new URLSearchParams({ offer: "cold-2026-11", utm_source: "lemlist", utm_campaign: "nov" }), now)!;
+    expect(workspaceSourceEvent(source, now)).toEqual({
+      offer: "cold-2026-11",
+      utm_source: "lemlist",
+      utm_medium: null,
+      utm_campaign: "nov",
+      utm_content: null,
+      $set: { offer: "cold-2026-11", acquisition_source: "lemlist", acquisition_campaign: "nov" },
+    });
+  });
+
+  it("sends a null offer once it is over but keeps the utm values", () => {
+    const later = at("2026-12-01T10:00:00Z");
+    const late = sourceFromParams(new URLSearchParams({ offer: "cold-2026-11", utm_source: "lemlist" }), later)!;
+    expect(workspaceSourceEvent(late, later)).toMatchObject({
+      offer: null,
+      utm_source: "lemlist",
+      $set: { offer: null, acquisition_source: "lemlist" },
     });
   });
 });

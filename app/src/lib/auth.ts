@@ -6,7 +6,6 @@ import { admin, magicLink, organization } from "better-auth/plugins";
 
 import { DEFAULT_UI_LOCALE, LOCALE_COOKIE, resolveUiLocale, type UiLocale } from "@/i18n/locale";
 import { getTranslator } from "@/i18n/messages";
-import { SIGNUP_SOURCE_COOKIE, parseSource, type SignupSource } from "@/lib/acquisition";
 import { captureProductEvent } from "@/lib/analytics/server";
 import { getPublicAppUrl } from "@/lib/app-origin";
 import { syncSeats } from "@/lib/billing/seats";
@@ -71,27 +70,6 @@ export function requestLocale(headers: Headers | null | undefined) {
   return resolveUiLocale({ cookie, acceptLanguage: headers?.get("accept-language") });
 }
 
-/** The campaign a visitor arrived from, remembered in a cookie until they sign up. */
-function requestSource(headers: Headers | null | undefined) {
-  const raw = headers?.get("cookie")?.match(new RegExp(`(?:^|;\\s*)${SIGNUP_SOURCE_COOKIE}=([^;]+)`))?.[1];
-  if (!raw) return null;
-  try {
-    return parseSource(decodeURIComponent(raw));
-  } catch {
-    return null;
-  }
-}
-
-function signupProperties(source: SignupSource) {
-  return {
-    offer: source.offer,
-    utm_source: source.utmSource,
-    utm_medium: source.utmMedium,
-    utm_campaign: source.utmCampaign,
-    utm_content: source.utmContent,
-  };
-}
-
 function signupError(refusal: SignupRefusal, locale: UiLocale) {
   return APIError.from("FORBIDDEN", { code: SIGNUP_REFUSAL_CODES[refusal], message: signupRefusalMessage(refusal, locale) });
 }
@@ -140,10 +118,7 @@ export const auth = betterAuth({
           const role = isPlatformAdminEmail(user.email) ? { role: PLATFORM_ADMIN_ROLE } : {};
           return { data: { ...user, ...role, locale } };
         },
-        after: async (user, ctx) => {
-          const source = requestSource(ctx?.headers ?? ctx?.request?.headers);
-          captureProductEvent("signed_up", user.id, source ? signupProperties(source) : {});
-        },
+        after: async (user) => captureProductEvent("signed_up", user.id),
       },
     },
     session: {
