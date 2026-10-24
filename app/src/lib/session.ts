@@ -1,11 +1,11 @@
 import { randomUUID } from "node:crypto";
 
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
 
+import { SIGNUP_SOURCE_COOKIE, parseSource, workspaceSourceData } from "@/lib/acquisition";
 import { auth } from "@/lib/auth";
-import { trialEndsAtFor } from "@/lib/billing/plans";
 import { inBackground } from "@/lib/closing/background";
 import type { SellerScope } from "@/lib/closing/dashboard/queries";
 import { sendDueOnboardingEmail } from "@/lib/closing/onboarding-emails";
@@ -81,7 +81,7 @@ const resolveWorkspace = cache(async (): Promise<Resolved> => {
       name: user.name?.trim() || user.email.split("@")[0],
       slug: `ws-${randomSlug(10).toLowerCase()}`,
       createdAt: now,
-      trialEndsAt: trialEndsAtFor(now),
+      ...workspaceSourceData(parseSource((await cookies()).get(SIGNUP_SOURCE_COOKIE)?.value), now),
       members: {
         create: {
           id: randomUUID(),

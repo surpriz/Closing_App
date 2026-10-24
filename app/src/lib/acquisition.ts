@@ -1,4 +1,5 @@
 import { DAY_MS } from "@/lib/closing/constants";
+import { trialEndsAtFor } from "@/lib/billing/plans";
 import { offerFor, type Offer } from "@/lib/billing/offers";
 
 export type SignupSource = {
@@ -117,4 +118,17 @@ export function signupOffer(source: SignupSource | null, now: Date): Offer | nul
   if (source.requestedAt > offer.signupDeadline.getTime()) return null;
   if (now.getTime() - source.requestedAt > DAY_MS) return null;
   return offer;
+}
+
+/** What a new workspace stores from its source: the trial it gets and where it came from. */
+export function workspaceSourceData(source: SignupSource | null, now: Date) {
+  const offer = signupOffer(source, now);
+  return {
+    trialEndsAt: trialEndsAtFor(now, offer?.trialDays),
+    offerCode: offer?.code ?? null,
+    acquisitionSource: source?.utmSource ?? null,
+    acquisitionMedium: source?.utmMedium ?? null,
+    acquisitionCampaign: source?.utmCampaign ?? null,
+    acquisitionContent: source?.utmContent ?? null,
+  };
 }

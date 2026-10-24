@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { appendSource, mergeSource, parseSource, serializeSource, signupOffer, sourceFromParams } from "./acquisition";
+import { appendSource, mergeSource, parseSource, serializeSource, signupOffer, sourceFromParams, workspaceSourceData } from "./acquisition";
 import { trialEndsAtFor } from "./billing/plans";
 
 const at = (iso: string) => new Date(iso);
@@ -98,5 +98,39 @@ describe("mergeSource", () => {
     expect(mergeSource(null, incoming)).toEqual(incoming);
     const unknown = src("2026-11-30T23:05:00Z", "nope");
     expect(mergeSource(src("2026-11-30T22:58:00Z", "nope"), unknown)).toEqual(unknown);
+  });
+});
+
+describe("workspaceSourceData", () => {
+  const now = at("2026-11-10T10:00:00Z");
+
+  it("gives a campaign signup its offer, its trial length and its source", () => {
+    const cold = sourceFromParams(new URLSearchParams({ offer: "cold-2026-11", utm_source: "lemlist" }), now);
+    expect(workspaceSourceData(cold, now)).toMatchObject({
+      offerCode: "cold-2026-11",
+      acquisitionSource: "lemlist",
+      trialEndsAt: at("2026-12-10T10:00:00Z"),
+    });
+  });
+
+  it("falls back to the standard trial without a source", () => {
+    expect(workspaceSourceData(null, now)).toEqual({
+      trialEndsAt: at("2026-11-24T10:00:00Z"),
+      offerCode: null,
+      acquisitionSource: null,
+      acquisitionMedium: null,
+      acquisitionCampaign: null,
+      acquisitionContent: null,
+    });
+  });
+
+  it("keeps the source but drops the offer once it is over", () => {
+    const later = at("2026-12-01T10:00:00Z");
+    const late = sourceFromParams(new URLSearchParams({ offer: "cold-2026-11", utm_source: "lemlist" }), later);
+    expect(workspaceSourceData(late, later)).toMatchObject({
+      offerCode: null,
+      acquisitionSource: "lemlist",
+      trialEndsAt: trialEndsAtFor(later),
+    });
   });
 });
