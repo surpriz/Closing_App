@@ -99,14 +99,14 @@ export default async function ColdEmail({ params, searchParams }: Props) {
       </header>
 
       <main className="flex-1">
-        {/* Hero: the scene, the offer, the signup. Held tight so all of it fits the first phone screen. */}
+        {/* Hero: the scene, the offer, the signup. Held tight so the submit shows on a 667px-tall phone. */}
         <section className="border-b border-ink">
-          <div className={`${WRAP} grid grid-cols-[minmax(0,1fr)] gap-6 pt-6 pb-10 sm:gap-10 sm:pt-12 md:pb-16 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-center lg:gap-16 lg:pt-16 lg:pb-20`}>
+          <div className={`${WRAP} grid grid-cols-[minmax(0,1fr)] gap-5 pt-5 pb-10 sm:gap-10 sm:pt-12 md:pb-16 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-center lg:gap-16 lg:pt-16 lg:pb-20`}>
             <div>
               <h1 className="condensed text-[2.125rem] leading-[0.98] font-extrabold tracking-[-0.03em] sm:text-display lg:text-[clamp(3rem,1rem+3.4vw,4.5rem)]">
                 {withHot(PROPALE.hero.title)}
               </h1>
-              <p className="mt-5 max-w-[54ch] text-body text-ink-soft sm:mt-8 sm:text-lead">{PROPALE.hero.lead}</p>
+              <p className="mt-4 max-w-[54ch] text-body text-ink-soft sm:mt-8 sm:text-lead">{PROPALE.hero.lead}</p>
             </div>
             <div className="w-full max-w-[28rem]">
               <OfferBlock open={open} />
