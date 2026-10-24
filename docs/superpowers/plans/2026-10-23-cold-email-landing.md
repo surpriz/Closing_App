@@ -15,7 +15,7 @@
 - Branch `feature/cold-email-landing`, cut from `surpriz/main` (9bb5ddf). Never base on staging. Push to remote `surpriz`, never `origin`.
 - Offer code: `cold-2026-11`. Signup deadline: 30 November 2026 23:59 Europe/Paris = `2026-11-30T22:59:59Z`.
 - Offer: 30-day Team trial, no card; 30% off for 12 months on Solo or Team, monthly and yearly, if checkout happens before the workspace's `trialEndsAt`.
-- Stripe coupon id: `cold-2026-11-30off` (percent_off 30, duration repeating, duration_in_months 12), same id in test and live.
+- Stripe coupon id: `cold-2026-11-30off` (percent_off 30, duration repeating, duration_in_months 13: Stripe counts the months from subscription creation, trial included, so 13 covers 12 billed months after a ~30-day trial), same id in test and live.
 - Cookie `clozer_signup_source`: httpOnly, sameSite lax, secure on https, path `/`, max age 24 h.
 - Copy rules: French, "vous", no "premiers clients", no invented proof, no fake urgency, no "tracking/analytics" jargon. Demo data labelled "exemple".
 - Landing stays cookieless; the page is `noindex` and absent from the sitemap.
@@ -181,7 +181,7 @@ expect(offerEndsAt(org, new Date("2026-12-11T00:00:00Z"))).toBeNull();
 
 - [ ] **Step 3: Implement** both functions. In `startCheckout`, load `offerCode` and `trialEndsAt` with the organization; when `checkoutOffer` returns a value, send `discounts: [{ coupon }]` instead of `allow_promotion_codes: true` (Stripe refuses both), and add `trial_end` to `subscription_data` when not null. No webhook change: `trialing` is already in `PAID_STATUSES`.
 
-- [ ] **Step 4: Create the test-mode coupon and verify.** `stripe coupons create --id cold-2026-11-30off --percent-off 30 --duration repeating --duration-in-months 12 --name "Offre email -30 %"` (test mode). With the workspace from Task 3, start a Team yearly checkout: Stripe shows -30 % and "trial until 10 Dec"; pay with `4242 4242 4242 4242`; the webhook sets `planStatus = trialing`; the app still shows Team.
+- [ ] **Step 4: Create the test-mode coupon and verify.** `stripe coupons create --id cold-2026-11-30off --percent-off 30 --duration repeating --duration-in-months 13 --name "Offre email -30 %"` (test mode). With the workspace from Task 3, start a Team yearly checkout: Stripe shows -30 % and "trial until 10 Dec"; pay with `4242 4242 4242 4242`; the webhook sets `planStatus = trialing`; the app still shows Team.
 
 - [ ] **Step 5: Commit** `feat(billing): apply the campaign discount at checkout`
 
