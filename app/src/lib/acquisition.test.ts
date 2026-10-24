@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { appendSource, parseSource, serializeSource, signupOffer, sourceFromParams } from "./acquisition";
+import { appendSource, mergeSource, parseSource, serializeSource, signupOffer, sourceFromParams } from "./acquisition";
 import { trialEndsAtFor } from "./billing/plans";
 
 const at = (iso: string) => new Date(iso);
@@ -71,5 +71,28 @@ describe("trialEndsAtFor", () => {
   it("takes an optional number of days", () => {
     expect(trialEndsAtFor(at("2026-11-10T00:00:00Z"), 30).toISOString()).toBe("2026-12-10T00:00:00.000Z");
     expect(trialEndsAtFor(at("2026-11-10T00:00:00Z")).toISOString()).toBe("2026-11-24T00:00:00.000Z");
+  });
+});
+
+describe("mergeSource", () => {
+  const src = (offer: string | null, requestedAt: number, utmSource: string | null = null) => ({
+    offer,
+    requestedAt,
+    utmSource,
+    utmMedium: null,
+    utmCampaign: null,
+    utmContent: null,
+  });
+
+  it("keeps the first request time for the same offer, with the new utm values", () => {
+    expect(mergeSource(src("a", 1, "old"), src("a", 2, "new"))).toEqual(src("a", 1, "new"));
+  });
+
+  it("takes the incoming source for another offer", () => {
+    expect(mergeSource(src("a", 1), src("b", 2))).toEqual(src("b", 2));
+  });
+
+  it("takes the incoming source without an existing one", () => {
+    expect(mergeSource(null, src("a", 2))).toEqual(src("a", 2));
   });
 });

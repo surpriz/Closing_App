@@ -79,6 +79,12 @@ export function parseSource(value: string | undefined): SignupSource | null {
   return source;
 }
 
+/** A callback revisiting the same offer keeps the first request time, so the deadline is judged on it. */
+export function mergeSource(existing: SignupSource | null, incoming: SignupSource): SignupSource {
+  if (!existing || existing.offer !== incoming.offer) return incoming;
+  return { ...incoming, requestedAt: existing.requestedAt };
+}
+
 /** Carries the source through a redirect on a relative path; never emits the timestamp. */
 export function appendSource(path: string, source: SignupSource): string {
   const [base, query = ""] = path.split("?");

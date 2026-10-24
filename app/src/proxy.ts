@@ -6,6 +6,8 @@ import {
   SIGNUP_SOURCE_COOKIE,
   SIGNUP_SOURCE_MAX_AGE,
   SOURCE_PARAMS,
+  mergeSource,
+  parseSource,
   serializeSource,
   sourceFromParams,
 } from "@/lib/acquisition";
@@ -30,7 +32,9 @@ export function proxy(request: NextRequest) {
   const lang = searchParams.get("lang");
   const hasSourceParam = SOURCE_PARAMS.some((param) => searchParams.has(param));
   if ((lang !== null || hasSourceParam) && !request.nextUrl.pathname.startsWith("/api/")) {
-    const source = sourceFromParams(searchParams, new Date());
+    const incoming = sourceFromParams(searchParams, new Date());
+    // The sign-in callback carries the source again: keep the time of the first request
+    const source = incoming && mergeSource(parseSource(request.cookies.get(SIGNUP_SOURCE_COOKIE)?.value), incoming);
     const url = request.nextUrl.clone();
     url.searchParams.delete("lang");
     for (const param of SOURCE_PARAMS) url.searchParams.delete(param);
