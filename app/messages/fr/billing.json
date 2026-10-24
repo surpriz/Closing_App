@@ -54,7 +54,7 @@
     "teamMinimum": "2 minimum"
   },
   "offer": {
-    "line": "Votre offre : -30 % pendant 12 mois si vous choisissez une formule avant le {date}. Vos jours d'essai restants sont conservés."
+    "line": "Votre offre : -30 % pendant 12 mois si vous choisissez une formule avant le {date}. Vos jours d'essai restants sont conservés, sauf dans les deux derniers jours, où la facturation démarre tout de suite."
   },
   "current": {
     "label": "Offre actuelle",

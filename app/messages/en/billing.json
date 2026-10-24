@@ -54,7 +54,7 @@
     "teamMinimum": "2 minimum"
   },
   "offer": {
-    "line": "Your offer: 30% off for 12 months if you pick a plan before {date}. Your remaining trial days are kept."
+    "line": "Your offer: 30% off for 12 months if you pick a plan before {date}. Your remaining trial days are kept, except in the last two days, when billing starts right away."
   },
   "current": {
     "label": "Current plan",
