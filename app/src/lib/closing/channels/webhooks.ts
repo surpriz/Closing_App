@@ -1,4 +1,5 @@
 import { signPayload } from "@/lib/crypto";
+import { reportSecurityEvent } from "@/lib/security-events";
 
 import { resolvesToPublicAddress } from "./public-address";
 
@@ -35,6 +36,7 @@ export async function postSlackMessage(webhookUrl: string, text: string) {
 
 export async function postSignedWebhook(url: string, secret: string, event: string, payload: unknown) {
   if (!isSafeOutboundUrl(url) || !(await resolvesToPublicAddress(new URL(url).hostname))) {
+    reportSecurityEvent("webhook_blocked", { scope: "webhook", host: URL.canParse(url) ? new URL(url).hostname : null });
     throw new Error("Webhook URL not allowed");
   }
 

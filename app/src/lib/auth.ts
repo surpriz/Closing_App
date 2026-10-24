@@ -30,6 +30,7 @@ import {
   normalizeEmail,
   parseSignupMode,
 } from "@/lib/platform-admin";
+import { consumeLimit } from "@/lib/rate-limit";
 import { getSellerLocale, toUiLocale } from "@/lib/seller-locale";
 
 async function requireTeamPlan(organizationId: string) {
@@ -195,6 +196,8 @@ export const auth = betterAuth({
       // Matches the "expires in 5 minutes" line of the email
       expiresIn: 5 * 60,
       sendMagicLink: async ({ email, url }, ctx) => {
+        // Report only (the IP limit above blocks): many sign-in links for one inbox, from many IPs
+        await consumeLimit("magicLinkEmail", ctx?.headers ?? new Headers(), `email:${normalizeEmail(email)}`);
         const { locale, refusal } = await magicLinkRefusal(email, ctx?.headers ?? ctx?.request?.headers);
         const t = getTranslator(locale);
         if (refusal) {

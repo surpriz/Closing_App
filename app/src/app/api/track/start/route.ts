@@ -25,7 +25,7 @@ import { followupOfLink, markFollowupClicked } from "@/lib/closing/followups/att
 import { evaluateReaders } from "@/lib/closing/triggers/committee";
 import { evaluateHotLead } from "@/lib/closing/triggers/hot-lead";
 import { prisma } from "@/lib/db";
-import { consumeLimit, tooManyRequests } from "@/lib/rate-limit";
+import { consumeLimit, perLink, tooManyRequests } from "@/lib/rate-limit";
 import { isWorkspaceMember } from "@/lib/session";
 
 const bodySchema = z.object({
@@ -38,7 +38,6 @@ const bodySchema = z.object({
 
 // Opens (or resumes) a reading session and returns its id
 export async function POST(request: NextRequest) {
-  if (!(await consumeLimit("trackStart", request.headers))) return tooManyRequests();
   const parsed = bodySchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return Response.json({ error: "Invalid body" }, { status: 400 });
@@ -48,6 +47,7 @@ export async function POST(request: NextRequest) {
   if (!link || link.document.status !== "READY") {
     return Response.json({ error: "Not found" }, { status: 404 });
   }
+  if (!(await consumeLimit("trackStart", request.headers, perLink(request.headers, link.id)))) return tooManyRequests();
 
   const access = await getViewerAccess(link);
   if (!access.allowed) {

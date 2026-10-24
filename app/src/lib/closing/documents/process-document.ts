@@ -5,6 +5,7 @@ import { extractText, getDocumentProxy } from "unpdf";
 import { deletePrivateBlob, readPrivateBlob } from "@/lib/blob";
 import { inBackground } from "@/lib/closing/background";
 import { prisma } from "@/lib/db";
+import { reportSecurityEvent } from "@/lib/security-events";
 
 import { detectPageTags } from "./page-tags";
 import { readDocumentPages } from "./read-pages";
@@ -29,7 +30,10 @@ export async function processDocument(documentId: string) {
   try {
     const data = await readPrivateBlob(document.blobPathname);
     // The content type comes from the uploader: check the bytes before handing them to the parser
-    if (!hasPdfHeader(data)) throw new Error("Not a PDF file");
+    if (!hasPdfHeader(data)) {
+      reportSecurityEvent("upload_not_pdf", { scope: "upload", documentId });
+      throw new Error("Not a PDF file");
+    }
     // Before parsing: pdf.js may take ownership of the buffer. The hash the client sent is only a hint.
     const contentSha256 = createHash("sha256").update(data).digest("hex");
     const pdf = await getDocumentProxy(data);
