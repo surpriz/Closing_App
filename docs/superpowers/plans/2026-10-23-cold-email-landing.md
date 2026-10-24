@@ -15,7 +15,7 @@
 - Branch `feature/cold-email-landing`, cut from `surpriz/main` (9bb5ddf). Never base on staging. Push to remote `surpriz`, never `origin`.
 - Offer code: `cold-2026-11`. Signup deadline: 30 November 2026 23:59 Europe/Paris = `2026-11-30T22:59:59Z`.
 - Offer: 30-day Team trial, no card; 30% off for 12 months on Solo or Team, monthly and yearly, if checkout happens before the workspace's `trialEndsAt`.
-- Stripe coupon id: `cold-2026-11-30off` (percent_off 30, duration repeating, duration_in_months 13: Stripe counts the months from subscription creation, trial included, so 13 covers 12 billed months after a ~30-day trial), same id in test and live.
+- Stripe coupons, same ids in test and live: `cold-2026-11-30off` for monthly prices (percent_off 30, duration repeating, duration_in_months 13: Stripe counts the months from subscription creation, trial included, so 13 covers 12 billed months after a ~30-day trial) and `cold-2026-11-30off-year` for yearly prices (percent_off 30, repeating, duration_in_months 12, so only the first yearly invoice is discounted, not the renewal).
 - Cookie `clozer_signup_source`: httpOnly, sameSite lax, secure on https, path `/`, max age 24 h.
 - Copy rules: French, "vous", no "premiers clients", no invented proof, no fake urgency, no "tracking/analytics" jargon. Demo data labelled "exemple".
 - Landing stays cookieless; the page is `noindex` and absent from the sitemap.
@@ -181,7 +181,7 @@ expect(offerEndsAt(org, new Date("2026-12-11T00:00:00Z"))).toBeNull();
 
 - [ ] **Step 3: Implement** both functions. In `startCheckout`, load `offerCode` and `trialEndsAt` with the organization; when `checkoutOffer` returns a value, send `discounts: [{ coupon }]` instead of `allow_promotion_codes: true` (Stripe refuses both), and add `trial_end` to `subscription_data` when not null. No webhook change: `trialing` is already in `PAID_STATUSES`.
 
-- [ ] **Step 4: Create the test-mode coupon and verify.** `stripe coupons create --id cold-2026-11-30off --percent-off 30 --duration repeating --duration-in-months 13 --name "Offre email -30 %"` (test mode). With the workspace from Task 3, start a Team yearly checkout: Stripe shows -30 % and "trial until 10 Dec"; pay with `4242 4242 4242 4242`; the webhook sets `planStatus = trialing`; the app still shows Team.
+- [ ] **Step 4: Create the test-mode coupon and verify.** `stripe coupons create --id cold-2026-11-30off --percent-off 30 --duration repeating --duration-in-months 13 --name "Offre email -30 %"` and `stripe coupons create --id cold-2026-11-30off-year --percent-off 30 --duration repeating --duration-in-months 12 --name "Offre email -30 % (annuel)"` (test mode). With the workspace from Task 3, start a Team yearly checkout: Stripe shows -30 % and "trial until 10 Dec"; pay with `4242 4242 4242 4242`; the webhook sets `planStatus = trialing`; the app still shows Team.
 
 - [ ] **Step 5: Commit** `feat(billing): apply the campaign discount at checkout`
 
@@ -256,7 +256,7 @@ expect(buildBillingEmail("billing_trial_ending", { ...DATA, offer: false }).html
 
 Every step here is outward-facing: confirm with Jérôme before each push and before live Stripe changes.
 
-- [ ] **Step 1:** Jérôme creates the live coupon with the same command as Task 4 Step 4, in live mode (or from the Stripe dashboard with id `cold-2026-11-30off`).
+- [ ] **Step 1:** Jérôme creates the two live coupons with the same commands as Task 4 Step 4, in live mode (or from the Stripe dashboard with ids `cold-2026-11-30off` and `cold-2026-11-30off-year`).
 - [ ] **Step 2:** Merge `feature/cold-email-landing` into `main`, push `surpriz main`. Check that `app/scripts/vercel-build.mjs` runs `prisma migrate deploy`; confirm the migration applied on prod.
 - [ ] **Step 3: Prod check.** Open `https://www.clozer.club/fr/propale?utm_source=test&utm_campaign=check`, sign up with a fresh address, confirm the workspace has the offer and source (admin page or DB), the billing page shows the offer line, and PostHog shows `signed_up` with `offer` and `utm_campaign`. Then delete that test account.
 - [ ] **Step 4:** Merge `main` into `staging`, push `surpriz staging`. Expected: no migration conflict (`20261106…` sorts after staging's `20261105…`).

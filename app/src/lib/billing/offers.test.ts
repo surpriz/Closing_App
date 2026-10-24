@@ -7,7 +7,7 @@ describe("offerFor", () => {
     const offer = offerFor("cold-2026-11")!;
     expect(offer.trialDays).toBe(30);
     expect(offer.signupDeadline.toISOString()).toBe("2026-11-30T22:59:59.000Z");
-    expect(offer.couponId).toBe("cold-2026-11-30off");
+    expect(offer.couponIds).toEqual({ month: "cold-2026-11-30off", year: "cold-2026-11-30off-year" });
     expect(offer.discountPercent).toBe(30);
     expect(offer.discountMonths).toBe(12);
   });
@@ -25,19 +25,26 @@ describe("checkoutOffer", () => {
   const now = new Date("2026-11-10T10:00:00Z");
   const org = { offerCode: "cold-2026-11", trialEndsAt: new Date("2026-12-10T10:00:00Z") };
 
-  it("gives the coupon and the trial end while the trial runs", () => {
-    expect(checkoutOffer(org, now)).toEqual({ couponId: "cold-2026-11-30off", trialEnd: Date.parse("2026-12-10T10:00:00Z") / 1000 });
+  const trialEnd = Date.parse("2026-12-10T10:00:00Z") / 1000;
+
+  it("gives the monthly coupon and the trial end while the trial runs", () => {
+    expect(checkoutOffer(org, now, "month")).toEqual({ couponId: "cold-2026-11-30off", trialEnd });
+  });
+
+  it("gives the yearly coupon on a yearly price", () => {
+    expect(checkoutOffer(org, now, "year")).toEqual({ couponId: "cold-2026-11-30off-year", trialEnd });
   });
 
   it("drops trial_end when the trial ends in under 48 hours", () => {
-    expect(checkoutOffer(org, new Date("2026-12-09T11:00:00Z"))).toEqual({ couponId: "cold-2026-11-30off", trialEnd: null });
+    expect(checkoutOffer(org, new Date("2026-12-09T11:00:00Z"), "month")).toEqual({ couponId: "cold-2026-11-30off", trialEnd: null });
+    expect(checkoutOffer(org, new Date("2026-12-09T11:00:00Z"), "year")).toEqual({ couponId: "cold-2026-11-30off-year", trialEnd: null });
   });
 
   it("is null once the trial is over, without an offer, or without a trial end", () => {
-    expect(checkoutOffer(org, new Date("2026-12-10T10:00:00Z"))).toBeNull();
-    expect(checkoutOffer({ offerCode: null, trialEndsAt: org.trialEndsAt }, now)).toBeNull();
-    expect(checkoutOffer({ offerCode: "nope", trialEndsAt: org.trialEndsAt }, now)).toBeNull();
-    expect(checkoutOffer({ offerCode: org.offerCode, trialEndsAt: null }, now)).toBeNull();
+    expect(checkoutOffer(org, new Date("2026-12-10T10:00:00Z"), "month")).toBeNull();
+    expect(checkoutOffer({ offerCode: null, trialEndsAt: org.trialEndsAt }, now, "month")).toBeNull();
+    expect(checkoutOffer({ offerCode: "nope", trialEndsAt: org.trialEndsAt }, now, "year")).toBeNull();
+    expect(checkoutOffer({ offerCode: org.offerCode, trialEndsAt: null }, now, "month")).toBeNull();
   });
 });
 

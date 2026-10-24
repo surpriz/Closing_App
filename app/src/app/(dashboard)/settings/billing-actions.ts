@@ -49,7 +49,7 @@ export async function startCheckout(plan: string, interval: Interval): Promise<B
   const members = await prisma.member.count({ where: { organizationId: organization.id } });
   if (plan === "solo" && members > 1) return { error: t("soloTeam") };
 
-  const offer = checkoutOffer(organization, new Date());
+  const offer = checkoutOffer(organization, new Date(), interval);
   let url: string | null;
   try {
     const origin = await getAppOrigin();
