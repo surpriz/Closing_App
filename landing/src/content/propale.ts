@@ -2,7 +2,10 @@
 // version, so it lives here instead of messages/<locale>.json (no fake English keys to keep in sync).
 // Strings are plain text. <hot>…</hot> marks the highlighted words, as in home.hero.title.
 
-/** Mirrors the "cold-2026-11" entry of app/src/lib/billing/offers.ts, copied by hand: the app is the authority on the deadline. */
+/**
+ * Mirrors the "cold-2026-11" entry of app/src/lib/billing/offers.ts (code and signupDeadline), copied by hand:
+ * the landing doesn't import from the app. Keep both in sync. The app is the authority on the deadline.
+ */
 export const COLD_OFFER = {
   code: "cold-2026-11",
   deadline: new Date("2026-11-30T22:59:59Z"),
@@ -25,7 +28,7 @@ export const PROPALE = {
     label: "Offre réservée aux personnes contactées par email",
     trial: "30 jours d'essai Équipe, sans carte bancaire.",
     discount: "-30 % pendant 12 mois si vous choisissez une formule avant la fin de l'essai. Solo ou Équipe, mensuel ou annuel.",
-    earlyPay: "Choisir tôt ne vous fait perdre aucun jour d'essai : la facturation démarre à la fin des 30 jours.",
+    earlyPay: "Choisir tôt ne vous fait perdre aucun jour d'essai.",
     deadline: "Inscription jusqu'au 30 novembre à 23 h 59.",
   },
   offerExpired: {
@@ -49,7 +52,7 @@ export const PROPALE = {
       },
       {
         title: "Voir le deal monter chez le décideur",
-        body: "Votre contact transfère la propale en interne ? Le nouveau lecteur apparaît, avec son nom ou son email et les pages qu'il a lues. Quand le DAF ouvre les tarifs, vous le savez.",
+        body: "Votre contact transfère la propale en interne ? Le nouveau lecteur apparaît, avec son nom ou son email et les pages qu'il a lues. Si quelqu'un à qui vous n'avez rien envoyé ouvre les tarifs, vous le voyez.",
       },
       {
         title: "Lâcher les deals morts",
@@ -75,7 +78,7 @@ export const PROPALE = {
       },
       {
         q: "Ça marche avec Gmail et Outlook ?",
-        a: "Oui. Sur Gmail et Outlook web, l'extension Chrome remplace le PDF joint par un lien au nom du destinataire. Pour Outlook installé, sur Windows et Mac, votre administrateur Microsoft 365 ajoute le complément pour toute l'équipe. Vous pouvez aussi copier le lien et le coller où vous voulez.",
+        a: "Oui. Sur Gmail et Outlook web, l'extension Chrome propose de remplacer le PDF joint par un lien au nom du destinataire. Pour Outlook installé, sur Windows et Mac, votre administrateur Microsoft 365 ajoute le complément pour toute l'équipe. Vous pouvez aussi copier le lien et le coller où vous voulez.",
       },
       {
         q: "Faut-il installer quelque chose ?",
@@ -87,7 +90,7 @@ export const PROPALE = {
       },
       {
         q: "Si je choisis une formule pendant l'essai, je perds les jours restants ?",
-        a: "Non. La facturation démarre à la fin des 30 jours, et les 12 mois à -30 % partent de là.",
+        a: "Non. La facturation démarre à la fin des 30 jours, et les 12 mois à -30 % partent de là. Seule exception : si vous choisissez dans les deux derniers jours de l'essai, la facturation démarre tout de suite.",
       },
       {
         q: "Et après les 12 mois ?",
