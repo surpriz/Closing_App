@@ -35,9 +35,13 @@ describe("checkoutOffer", () => {
     expect(checkoutOffer(org, now, "year")).toEqual({ couponId: "cold-2026-11-30off-year", trialEnd });
   });
 
-  it("drops trial_end when the trial ends in under 48 hours", () => {
-    expect(checkoutOffer(org, new Date("2026-12-09T11:00:00Z"), "month")).toEqual({ couponId: "cold-2026-11-30off", trialEnd: null });
-    expect(checkoutOffer(org, new Date("2026-12-09T11:00:00Z"), "year")).toEqual({ couponId: "cold-2026-11-30off-year", trialEnd: null });
+  it("keeps trial_end at exactly 49 hours", () => {
+    expect(checkoutOffer(org, new Date("2026-12-08T09:00:00Z"), "month")).toEqual({ couponId: "cold-2026-11-30off", trialEnd });
+  });
+
+  it("drops trial_end when the trial ends in under 49 hours", () => {
+    expect(checkoutOffer(org, new Date("2026-12-08T09:00:01Z"), "month")).toEqual({ couponId: "cold-2026-11-30off", trialEnd: null });
+    expect(checkoutOffer(org, new Date("2026-12-08T10:30:00Z"), "year")).toEqual({ couponId: "cold-2026-11-30off-year", trialEnd: null });
   });
 
   it("is null once the trial is over, without an offer, or without a trial end", () => {

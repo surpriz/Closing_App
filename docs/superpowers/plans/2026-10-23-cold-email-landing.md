@@ -26,7 +26,7 @@
 1. Magic link opened on another device than the one that filled the form: the offer must still apply (callbackURL carries the source). Test in Task 2.
 2. Existing user signing in through the page: no workspace change, no trial extension. Test in Task 3.
 3. Request made at 23:58 on 30 Nov, link clicked at 00:05: offer honoured; request at 00:01: standard trial. Test in Task 1.
-4. Checkout when the trial ends in under 48 hours: Stripe rejects `trial_end` that close, so the coupon applies without `trial_end`. Test in Task 4.
+4. Checkout when the trial ends in under 49 hours: Stripe rejects `trial_end` under 48 h (one hour of margin for the calls before `sessions.create`), so the coupon applies without `trial_end`. Test in Task 4.
 5. Forged or unknown `offer` value, or `utm_*` longer than 100 chars: ignored or truncated, never stored raw. Test in Task 1.
 
 ---

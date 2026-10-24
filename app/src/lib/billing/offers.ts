@@ -31,8 +31,11 @@ export function offerFor(code: string | null | undefined): Offer | null {
   return OFFERS[code];
 }
 
-/** Stripe Checkout rejects a subscription trial_end less than 48 hours away. */
-export const MIN_TRIAL_END_MS = 48 * 60 * 60 * 1000;
+/**
+ * Stripe Checkout rejects a subscription trial_end less than 48 hours away. One hour of margin
+ * because the customer and price lookups run between this check and sessions.create.
+ */
+export const MIN_TRIAL_END_MS = 49 * 60 * 60 * 1000;
 
 type OfferOrg = { offerCode: string | null; trialEndsAt: Date | null };
 
