@@ -15,6 +15,7 @@ import { notifyDraftReady } from "../alerts/draft-ready";
 import { autopilotEligible } from "../brain/policy";
 import { DAY_MS } from "../constants";
 import { deadlineSourceText, formatDeadline, isLinkExpired } from "../expiry";
+import { viewerUrl } from "../link-url";
 import { followupUrl } from "./attribution";
 import { guardSourceText, pickRelevantSections } from "./writer-context";
 
@@ -66,6 +67,7 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
           document: {
             select: {
               name: true,
+              displayTitle: true,
               sellerDescription: true,
               docType: true,
               docPurpose: true,
@@ -153,7 +155,7 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
       company: prospect.company,
       documentName: link.document.name,
       // ?r=: an opening from this message is credited to it
-      proposalUrl: followupUrl(`${getPublicAppUrl()}/v/${link.slug}`, followup.id),
+      proposalUrl: followupUrl(viewerUrl(getPublicAppUrl(), { slug: link.slug, document: link.document, company: prospect.company }), followup.id),
       senderName: settings?.senderName ?? link.createdBy?.name ?? null,
       senderSignature: settings?.senderSignature ?? null,
       daysSinceSent: link.sentAt ? Math.floor((now.getTime() - link.sentAt.getTime()) / DAY_MS) : null,

@@ -12,6 +12,7 @@ import { refreshEngagementScore } from "@/lib/closing/engagement/refresh-score";
 import { formatDeadline, isLinkExpired } from "@/lib/closing/expiry";
 import { cancelOpenFollowups } from "@/lib/closing/followups/queue";
 import { pickLocale } from "@/lib/closing/i18n/viewer";
+import { shareLink } from "@/lib/closing/link-url";
 import { getPublicAppUrl } from "@/lib/app-origin";
 import { SIGNER_NAME, signedEmail } from "@/lib/closing/i18n/signed-email";
 import {
@@ -307,9 +308,11 @@ async function sendSignedReceipt(input: {
     select: {
       createdBy: { select: { email: true, name: true } },
       organization: { select: { settings: { select: { senderName: true } } } },
+      document: { select: { name: true, displayTitle: true, docType: true } },
     },
   });
   const locale = prospect.locale ?? "fr";
+  const share = shareLink(getPublicAppUrl(), { slug: link.slug, document: owner?.document ?? link.document });
   await sendProspectEmail({
     prospect,
     locale,
@@ -321,8 +324,9 @@ async function sendSignedReceipt(input: {
         showZone: !prospect.timezone,
       }),
       senderName: owner?.organization.settings?.senderName?.trim() || owner?.createdBy?.name || null,
-      url: `${getPublicAppUrl()}/v/${link.slug}`,
+      url: share.url,
     }),
+    link: share,
   });
 }
 

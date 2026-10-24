@@ -18,16 +18,20 @@ export function cleanDisplayTitle(raw: string | null | undefined) {
   return title.length > 70 ? `${title.slice(0, 69).trimEnd()}…` : title;
 }
 
+// Best first: the AI's title, then the kind of document, then the file name. Pure.
+export function documentTitle(input: { name: string; displayTitle?: string | null; docType?: string | null }) {
+  const label = input.docType && input.docType !== "OTHER" ? DOC_TYPE_LABELS[input.docType as DocType] : undefined;
+  return input.displayTitle || label || humanizeName(input.name) || "Document";
+}
+
 // What the prospect reads in the email: "Devis rénovation cuisine – Acme Group". Pure.
-// Best first: the AI's title, then the kind of document, then the file name.
 export function linkTitle(input: {
   name: string;
   displayTitle?: string | null;
   docType?: string | null;
   company?: string | null;
 }) {
-  const label = input.docType && input.docType !== "OTHER" ? DOC_TYPE_LABELS[input.docType as DocType] : undefined;
-  const base = input.displayTitle || label || humanizeName(input.name) || "Document";
+  const base = documentTitle(input);
   const company = input.company?.trim();
   if (!company || base.toLowerCase().includes(company.toLowerCase())) return base;
   return `${base} – ${company}`;

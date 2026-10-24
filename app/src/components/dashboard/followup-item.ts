@@ -1,3 +1,4 @@
+import type { TitledLink } from "@/lib/text-html";
 import type { FollowupChannel, FollowupSentVia, FollowupStatus, FollowupTrigger } from "@/generated/prisma/enums";
 
 export type FollowupItem = {
@@ -23,15 +24,17 @@ export type FollowupItem = {
   recipient: string;
   recipientEmail: string;
   linkName: string;
+  /** The proposal the message points to: copied, its address reads as this title. */
+  share: TitledLink;
 };
 
-type FollowupRow = Omit<FollowupItem, "version" | "edited" | "recipient" | "recipientEmail" | "linkName"> & {
+type FollowupRow = Omit<FollowupItem, "version" | "edited" | "recipient" | "recipientEmail" | "linkName" | "share"> & {
   updatedAt: Date;
   editedAt: Date | null;
   prospect: { name: string | null; email: string };
 };
 
-export function toFollowupItem(f: FollowupRow, linkName: string): FollowupItem {
+export function toFollowupItem(f: FollowupRow, linkName: string, share: TitledLink): FollowupItem {
   return {
     id: f.id,
     version: f.updatedAt.toISOString(),
@@ -53,5 +56,6 @@ export function toFollowupItem(f: FollowupRow, linkName: string): FollowupItem {
     recipient: f.prospect.name ?? f.prospect.email,
     recipientEmail: f.prospect.email,
     linkName,
+    share,
   };
 }

@@ -29,6 +29,7 @@ export function DealHeader({ deal }: { deal: Deal }) {
     analytics,
     now,
     url,
+    shareTitle,
     title,
     contactLine,
     canEdit,
@@ -145,6 +146,7 @@ export function DealHeader({ deal }: { deal: Deal }) {
               </a>
               <CopyButton
                 value={url}
+                title={shareTitle}
                 draftLinkId={canEdit && link.draftAt ? link.id : undefined}
               />
             </span>
