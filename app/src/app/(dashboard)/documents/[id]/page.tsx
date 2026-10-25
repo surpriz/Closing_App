@@ -53,6 +53,7 @@ import { pageHeat } from "@/lib/closing/dashboard/page-heat";
 import { getPageReadings } from "@/lib/closing/dashboard/queries";
 import { showsReadingDetail } from "@/lib/closing/dashboard/reading-detail";
 import { labelReaders } from "@/lib/closing/dashboard/readers";
+import { documentTitle } from "@/lib/closing/documents/link-title";
 import {
   segmentLabel,
   VIDEO_SEGMENTS,
@@ -77,11 +78,11 @@ export async function generateMetadata({
   const { organization } = await requireWorkspace();
   const document = await prisma.document.findFirst({
     where: { id, organizationId: organization.id },
-    select: { name: true },
+    select: { name: true, displayTitle: true, docType: true },
   });
   return {
     title:
-      document?.name ?? (await getTranslations("documents.detail"))("fallbackTitle"),
+      (document && documentTitle(document)) ?? (await getTranslations("documents.detail"))("fallbackTitle"),
   };
 }
 
@@ -373,7 +374,7 @@ export default async function DocumentDetailPage({
           ]}
         />
         <PageHeader
-          title={document.name}
+          title={documentTitle(document)}
           description={
             document.status === "FAILED" ? (
               <span className="text-destructive">

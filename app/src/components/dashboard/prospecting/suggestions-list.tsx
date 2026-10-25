@@ -36,7 +36,7 @@ function linkedinHref(row: SuggestionRow) {
   return `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(keywords)}`;
 }
 
-export function SuggestionsList({ rows, documents }: { rows: SuggestionRow[]; documents: { id: string; name: string }[] }) {
+export function SuggestionsList({ rows, documents }: { rows: SuggestionRow[]; documents: { id: string; name: string; displayTitle: string | null; docType: string | null }[] }) {
   const t = useTranslations("prospecting.suggestions");
   const tl = useTranslations("prospecting.labels");
   const [pending, startTransition] = useTransition();

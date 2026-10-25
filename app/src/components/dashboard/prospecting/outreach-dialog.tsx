@@ -24,10 +24,11 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { copyMessage } from "@/lib/clipboard";
+import { documentTitle } from "@/lib/closing/documents/link-title";
 
 type Props = {
   suggestionId: string;
-  documents: { id: string; name: string }[];
+  documents: { id: string; name: string; displayTitle: string | null; docType: string | null }[];
   hasLink: boolean;
 };
 
@@ -112,7 +113,7 @@ export function OutreachDialog({ suggestionId, documents, hasLink }: Props) {
                 >
                   {documents.map((doc) => (
                     <option key={doc.id} value={doc.id}>
-                      {doc.name}
+                      {documentTitle(doc)}
                     </option>
                   ))}
                 </select>
