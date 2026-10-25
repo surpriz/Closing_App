@@ -1,78 +1,35 @@
-# Closing app
+# Clozer app
 
 Turn PDF proposals into tracked links, see how prospects read them, and send
-follow-ups based on that behavior (email / WhatsApp).
+follow-ups based on that behavior.
 
-Stack: Next.js 16 (App Router), TypeScript, Tailwind 4, shadcn/ui, Prisma 7 on
-Neon, Better Auth, Vercel Blob, Trigger.dev, Vercel AI SDK (OpenAI or
-Anthropic), Resend, Twilio, Stripe.
+Stack: Next.js 16 (App Router), TypeScript, Tailwind 4, shadcn/ui on Base UI,
+Prisma 7 on Neon, Better Auth (magic link + Google), private Vercel Blob,
+AI SDK 7 (OpenAI or Anthropic), Amazon SES, Stripe.
 
 ## Setup
 
-All commands below run from this directory (`app/`), not the repo root.
+All commands run from this directory (`app/`), not the repo root.
 
 ```bash
-cp .env.example .env.local   # fill in values
+cp .env.example .env.local   # fill in values, staging database only
 npm install                  # also runs prisma generate
-npm run db:deploy            # apply migrations to Neon
 npm run dev
+npm test
 ```
 
-## Layout
-
-```
-prisma/
-  schema.prisma                 all models (tables mapped to snake_case)
-  migrations/                   SQL migrations
-src/
-  app/
-    (auth)/login/               magic link + Google sign-in
-    (dashboard)/documents/      upload, document list
-    (dashboard)/documents/[id]/ analytics, links, follow-ups
-    (dashboard)/settings/       workspace follow-up defaults, alerts
-    v/[slug]/                   public proposal viewer
-    api/auth/[...all]/          Better Auth handler
-    api/upload/                 Vercel Blob client upload token
-    api/track/                  page view tracking (sendBeacon)
-    api/v/[slug]/chat/          prospect Q&A on the proposal
-    api/v/[slug]/actions/       validate & sign / request changes
-    api/webhooks/{twilio,resend,stripe}/
-  components/
-    ui/                         shadcn
-    dashboard/                  page time chart, score badge, follow-ups table
-    viewer/                     pdf.js renderer, CTA bar, chat widget
-  lib/
-    db.ts  auth.ts  auth-client.ts  env.ts
-    closing/
-      constants.ts  types.ts
-      engagement/               page view upsert, Hot/Warm/Cold scoring
-      triggers/                 hot pricing, anti-ghosting, hot lead
-      ai/                       provider switch, prompts, page tagging, chat
-      channels/                 Resend, Twilio WhatsApp, Slack, webhooks
-      scheduling/               prospect timezone -> next business slot
-      i18n/                     viewer and message translations
-  trigger/                      Trigger.dev tasks
-```
-
-Folders are created as each step lands; only the ones with code exist today.
+Locally the login page shows an "open magic link" button instead of sending
+email.
 
 ## Follow-up engine
 
-- Hot pricing follow-ups are queued while the prospect reads (`/api/track`),
-  hot lead alerts when a view starts (`/api/track/start`).
-- Anti-ghosting scans and sending run in `runClosingTick()`, exposed at
-  `POST /api/cron/closing` (header `Authorization: Bearer $CRON_SECRET`).
-- `src/trigger/closing-tick.ts` calls that route every 5 minutes. In the
-  Trigger.dev project set `APP_URL` and `CRON_SECRET`, then
-  `npx trigger.dev@latest deploy`.
-- Without AI keys, messages use built-in templates. Without an email provider
-  or Twilio, follow-ups are generated but marked as failed when sent.
-- Locally, the document page has test tools to run the engine and simulate an
-  old link.
+`runClosingTick()` is exposed at `POST /api/cron/closing` (header
+`Authorization: Bearer $CRON_SECRET`). The live caller is the GitHub Actions
+cron (`.github/workflows/closing-tick.yml`, every 5 minutes).
+`src/trigger/closing-tick.ts` does the same from Trigger.dev but is not
+deployed.
 
-```bash
-npm test   # scheduling, scoring, prompts
-```
+Without AI keys, messages use built-in templates.
 
 ## Notes
 

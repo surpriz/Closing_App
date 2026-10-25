@@ -25,7 +25,7 @@ Clozer turns a proposal (PDF, web page or video) into one tracked link per prosp
 - Seller app: "Aujourd'hui" (today's actions), documents, deal page per prospect (named after the prospect, never the document), team view for managers (2+ members), settings (essential vs advanced), prospecting behind a flag.
 - Prospect viewer `/v/[slug]`: email gate, CTA bar (Valider & signer, Demander un ajustement, Prendre RDV via Calendly/Cal.com), AI chat, voice comments, video capsules.
 - Smart Link for cold-email sequences (lemlist and similar): each clicking prospect gets their own tracking with no form.
-- Chrome extension (Gmail/Outlook web: replaces PDF attachments with links, badge, notifications; not published yet) and Outlook add-in (paired by code).
+- Chrome extension (Gmail/Outlook web: replaces PDF attachments with links, badge, notifications; on the Chrome Web Store) and Outlook add-in (paired by code).
 - Alerts by email, extension or Slack; follow-ups on pricing-page reads, anti-ghosting reminders, optional autopilot.
 - Signup: magic link and Google one-click (Google first). Onboarding gets a seller to a first live test link fast; getting-started emails follow up.
 - Roles: workspace owner / admin / member; platform admin by email.
@@ -34,7 +34,7 @@ Clozer turns a proposal (PDF, web page or video) into one tracked link per prosp
 - Stack: Next.js app (`app/`), separate marketing site (`landing/`, www.clozer.club), WXT extension (`extension/`), Office.js add-in (`outlook/`). Tailwind v4, shadcn on Base UI.
 - Seller-side UI is French and English (next-intl, `app/messages/{fr,en}`), picked per seller (`User.locale`). Emails, alerts and AI notes to the seller follow it; prospect-facing pages and messages follow the prospect's language.
 - Temperature (hot / warm / cold) is the product's core signal.
-- Pricing: free during the beta. No billing yet. Segment offers exist in intent only; no prices or plan names are decided.
+- Pricing (Stripe, live since 22 Oct 2026): Free, Solo 19 € / month, Team 39 € / seat / month (2 seats min), Enterprise on quote. Prices excl. VAT, cheaper yearly. New workspaces get a 14-day Team trial; beta workspaces keep Team until `BETA_GRACE_UNTIL`.
 
 ## Brand Commitments
 - Name: Clozer. Voice: direct, plain, short sentences, no corporate filler. French addresses the seller as "vous"; English uses a plain, direct "you".
