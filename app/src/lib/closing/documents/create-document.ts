@@ -3,6 +3,7 @@ import { inBackground } from "@/lib/closing/background";
 import { prisma } from "@/lib/db";
 
 import { processDocument } from "./process-document";
+import { MAX_AI_ATTEMPTS } from "./read-pages";
 
 const SHA256_HEX = /^[0-9a-f]{64}$/;
 
@@ -10,10 +11,28 @@ export function isSha256(value: unknown): value is string {
   return typeof value === "string" && SHA256_HEX.test(value);
 }
 
+export const documentSummarySelect = {
+  id: true,
+  name: true,
+  status: true,
+  docType: true,
+  aiProcessedAt: true,
+  aiAttempts: true,
+} as const;
+
+type SummaryRow = { id: string; name: string; status: string; docType: string | null; aiProcessedAt: Date | null; aiAttempts: number };
+
+// titled: the AI has classified (and titled) it, or never will. Until then the extension waits
+// before making a link, so the email shows the title rather than the file name.
+export function documentSummary({ docType, aiProcessedAt, aiAttempts, ...summary }: SummaryRow) {
+  const titled = docType !== null || aiProcessedAt !== null || summary.status === "FAILED" || aiAttempts >= MAX_AI_ATTEMPTS;
+  return { ...summary, titled };
+}
+
 // Newest usable copy of this PDF in the workspace: same bytes, so no second upload or AI reading.
 // READY only: their hash was recomputed from the stored file, the one a client sends is just a hint.
-export function findReusableDocument(organizationId: string, contentSha256: string) {
-  return prisma.document.findFirst({
+export async function findReusableDocument(organizationId: string, contentSha256: string) {
+  const document = await prisma.document.findFirst({
     where: {
       organizationId,
       contentSha256,
@@ -22,8 +41,9 @@ export function findReusableDocument(organizationId: string, contentSha256: stri
       status: "READY",
     },
     orderBy: { createdAt: "desc" },
-    select: { id: true, name: true, status: true },
+    select: documentSummarySelect,
   });
+  return document && documentSummary(document);
 }
 
 // The name comes from the uploader's file name: no control characters, no endless string
@@ -36,7 +56,7 @@ export function documentNameFromFile(fileName: string) {
 export class DocumentInputError extends Error {}
 
 export type CreatedDocument = {
-  document: { id: string; name: string; status: string };
+  document: { id: string; name: string; status: string; titled: boolean };
   reused: boolean;
 };
 
@@ -62,9 +82,9 @@ export async function createFileDocument(input: {
   // Registering the same file twice (a retry) returns the first registration
   const registered = await prisma.document.findFirst({
     where: { organizationId, blobPathname: blob.pathname, archivedAt: null },
-    select: { id: true, name: true, status: true },
+    select: documentSummarySelect,
   });
-  if (registered) return { document: registered, reused: true };
+  if (registered) return { document: documentSummary(registered), reused: true };
 
   const sha256 = isSha256(input.sha256) ? input.sha256 : null;
   if (sha256) {
@@ -88,9 +108,9 @@ export async function createFileDocument(input: {
       contentSha256: sha256,
       status: "PROCESSING",
     },
-    select: { id: true, name: true, status: true },
+    select: documentSummarySelect,
   });
 
   inBackground("process-document", () => processDocument(document.id));
-  return { document, reused: false };
+  return { document: documentSummary(document), reused: false };
 }
