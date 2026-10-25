@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from "next-intl";
 
 import { INTL_LOCALE } from "@/i18n/locale";
 import { formatClock } from "@/lib/closing/dashboard/deal-plates";
+import { documentTitle } from "@/lib/closing/documents/link-title";
 import { formatRelative } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -68,7 +69,7 @@ export function DealHeader({ deal }: { deal: Deal }) {
         className="inline-flex max-w-full items-center gap-1.5 text-small text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:underline"
       >
         <ArrowLeft className="size-4 shrink-0" aria-hidden />
-        <span className="truncate">{link.document.name}</span>
+        <span className="truncate">{documentTitle(link.document)}</span>
       </Link>
 
       <p className="flex flex-wrap gap-x-6 gap-y-1 border-b border-border pb-2 font-mono text-micro text-muted-foreground">
