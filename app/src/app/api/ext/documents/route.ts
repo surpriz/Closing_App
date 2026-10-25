@@ -3,7 +3,12 @@ import { z } from "zod";
 
 import { getTranslator } from "@/i18n/messages";
 import { assertCanCreateLink, PlanLimitError } from "@/lib/billing/workspace-plan";
-import { createFileDocument, DocumentInputError } from "@/lib/closing/documents/create-document";
+import {
+  createFileDocument,
+  DocumentInputError,
+  documentSummary,
+  documentSummarySelect,
+} from "@/lib/closing/documents/create-document";
 import { prisma } from "@/lib/db";
 import { extError, extPlanLimit, withExtensionAuth } from "@/lib/extension-auth";
 
@@ -19,9 +24,11 @@ export const GET = withExtensionAuth(async (request, { organization }) => {
     },
     orderBy: { createdAt: "desc" },
     take: 20,
-    select: { id: true, name: true, kind: true, numPages: true, createdAt: true },
+    select: { ...documentSummarySelect, kind: true, numPages: true, createdAt: true },
   });
-  return Response.json({ documents });
+  return Response.json({
+    documents: documents.map(({ kind, numPages, createdAt, ...row }) => ({ ...documentSummary(row), kind, numPages, createdAt })),
+  });
 });
 
 const createSchema = z.object({
