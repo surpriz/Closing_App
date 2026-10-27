@@ -405,6 +405,9 @@ export default async function DocumentDetailPage({
           action={
             <>
               {linkAction}
+              {document.status !== "FAILED" && (
+                <NewLinkButton documentId={document.id} variant="outline" smart />
+              )}
               {/* Deleting takes every seller's links down with it */}
               {isManagerRole(role) && (
                 <DeleteDocumentButton

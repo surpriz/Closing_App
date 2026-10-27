@@ -29,16 +29,16 @@
     "ariaLabel": "Chargement"
   },
   "actions": {
-    "sharedNeedsEmail": "Un lien partagé demande toujours l'email.",
+    "sharedNeedsEmail": "Un Smart Link demande toujours l'email.",
     "invalidDuration": "Durée invalide.",
     "reactivateManagerOnly": "Le document est archivé : seul un manager peut le remettre en ligne.",
     "nameTooLong": "Nom trop long.",
     "alreadyForContact": "Ce lien est déjà pour un contact : créez un nouveau lien pour le partager.",
-    "sharedNoRecipient": "Un lien partagé n'a pas de destinataire : passez-le en « Pour un prospect ».",
+    "sharedNoRecipient": "Un Smart Link n'a pas de destinataire : revenez à un lien personnel.",
     "emailOrName": "Indiquez un email ou un nom.",
     "invalidEmail": "Cet email n'est pas valide.",
     "adminsOnlyDefaults": "Seuls les admins changent les réglages par défaut.",
-    "fromPersonalLink": "Faites-le depuis un lien « Pour un prospect ».",
+    "fromPersonalLink": "Faites-le depuis un lien personnel.",
     "phoneFormat": "Numéro au format international, ex : +33612345678",
     "whatsappNeedsPhone": "Ajoutez un numéro pour activer WhatsApp.",
     "invalidContact": "Contact invalide.",
@@ -76,8 +76,8 @@
     "reads": "{count, plural, one {# lecture} other {# lectures}}",
     "readingNow": "En lecture",
     "lastRead": "Dernière lecture {when}",
-    "viaShared": "via le lien partagé",
-    "viaSharedNamed": "via le lien partagé « {name} »",
+    "viaShared": "via le Smart Link",
+    "viaSharedNamed": "via le Smart Link « {name} »",
     "expiredAgo": "Expiré {when}",
     "expiresIn": "Expire {when}",
     "readOnly": "Prospect de {seller}. Vous pouvez le consulter, seuls son commercial et les admins peuvent le modifier.",
@@ -243,6 +243,7 @@
     "cycleHint": "rappels « pas ouvert », envois à l'heure prévue, analyses en retard"
   },
   "newLinkButton": {
+    "smartLabel": "Smart Link pour cold email",
     "defaultLabel": "Un lien pour un autre prospect",
     "creating": "Création…"
   },
@@ -262,7 +263,7 @@
     "ready": "Votre lien est prêt",
     "pasteAndSend": "Collez-le dans votre message et envoyez-le. Le suivi démarre dès qu'il l'ouvre.",
     "confirmSent": "C'est envoyé",
-    "sharedIntro": "Postez-le, mettez-le en signature ou transférez-le : chaque lecteur donne son email et reçoit son propre lien, suivi comme vos autres prospects.",
+    "sharedIntro": "Mettez-le dans votre séquence de cold email, ou postez-le : chaque lecteur est identifié et reçoit son propre lien, suivi comme vos autres prospects.",
     "personalIntro": "Il l'ouvre et lit tout de suite, sans rien remplir. Vous saurez quelles pages, combien de temps, et quand relancer.",
     "forRecipient": "Pour <b>{email}</b>",
     "whoLabel": "Pour qui est ce lien ?",
@@ -280,11 +281,11 @@
     "welcomeHint": "Une vidéo ou un vocal pour présenter le document : le prospect voit votre bulle dès l'ouverture.",
     "customize": "Personnaliser",
     "preview": "Voir ce que verra le prospect",
-    "sharedMode": "Lien ouvert à tous : chaque lecteur donne son email et reçoit son propre lien.",
-    "backToPersonal": "Revenir à un lien pour une personne",
-    "broadcastAsk": "Vous voulez le diffuser largement (post, plaquette, signature) ?",
-    "makeOpen": "En faire un lien ouvert à tous",
-    "makeOpenAfter": ", chaque lecteur donnera son email."
+    "sharedMode": "Smart Link : chaque lecteur est identifié par son email, donné par votre outil de cold email ou tapé à l'ouverture, et reçoit son propre lien.",
+    "backToPersonal": "Revenir à un lien personnel",
+    "broadcastAsk": "Pour une séquence de cold email, ou à diffuser largement (post, signature) ?",
+    "makeOpen": "En faire un Smart Link",
+    "makeOpenAfter": ", chaque lecteur sera identifié."
   },
   "sharedReaders": {
     "empty": "Personne pour l'instant. Chaque lecteur apparaîtra ici avec son propre suivi.",

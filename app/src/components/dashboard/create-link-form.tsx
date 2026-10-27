@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { Mail, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
@@ -12,17 +12,20 @@ import { Button } from "@/components/ui/button";
 
 /**
  * One click: a new link with the usual settings, then the share screen where
- * the seller says who it is for. No form to fill first.
+ * the seller says who it is for. No form to fill first. `smart`: a Smart Link
+ * for a cold email sequence, never a personal link turned into one later.
  */
 export function NewLinkButton({
   documentId,
   variant = "default",
   label,
+  smart = false,
 }: {
   documentId: string;
   variant?: "default" | "outline";
   /** "Créer le lien" when the document has none yet. */
   label?: string;
+  smart?: boolean;
 }) {
   const router = useRouter();
   const t = useTranslations("deal.newLinkButton");
@@ -35,15 +38,15 @@ export function NewLinkButton({
       disabled={pending}
       onClick={() =>
         startTransition(async () => {
-          const result = await createQuickLink(documentId);
+          const result = await createQuickLink(documentId, { smart });
           if (isUpgradePrompt(result)) openUpgrade(result);
           else if ("error" in result) toast.error(result.error);
           else router.push(`/links/${result.linkId}?new=1`);
         })
       }
     >
-      <Plus />
-      {pending ? t("creating") : (label ?? t("defaultLabel"))}
+      {smart ? <Mail /> : <Plus />}
+      {pending ? t("creating") : (label ?? t(smart ? "smartLabel" : "defaultLabel"))}
     </Button>
   );
 }
