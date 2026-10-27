@@ -576,5 +576,12 @@
     "label": "Prepare the call",
     "writing": "Preparing…",
     "title": "For the call"
+  },
+  "smartLinkProblem": {
+    "titlePersonal": "This link isn't a Smart Link",
+    "bodyPersonal": "Readers came with their address in the link (?email=…), as if from a cold email sequence. A personal link ignores that address: they stay anonymous. Replace it with a Smart Link in your sequence.",
+    "createSmartLink": "Create a Smart Link on the document",
+    "titleTag": "Your sending tool didn't replace {tag}",
+    "bodyTag": "Readers came with the variable left as is in the link: they had to type their email to read. Check the exact variable syntax in your tool, then send a real email to your own address."
   }
 }

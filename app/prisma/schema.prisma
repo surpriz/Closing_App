@@ -440,6 +440,7 @@ enum SellerAlertType {
   EMAIL_BOUNCED // an email Clozer sent to the prospect bounced: the address is wrong
   DEAD_LINK_OPENED // the prospect came back to an archived or expired link without asking anything
   RELINK_REQUESTED // the link was archived and the prospect asked for the document again
+  SMART_LINK_PROBLEM // a cold email reader came without a usable address: a personal link, or a tool variable left as is
 }
 
 // Role of a prospect contact in the buying committee, set by the seller.

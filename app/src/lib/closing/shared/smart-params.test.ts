@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseSmartParams, smartLinkUrl } from "./smart-params";
+import { parseSmartParams, smartLinkProblem, smartLinkUrl } from "./smart-params";
 
 describe("parseSmartParams", () => {
   it("reads the email, company and name the tool filled in", () => {
@@ -45,5 +45,24 @@ describe("smartLinkUrl", () => {
     expect(smartLinkUrl("https://clozer.club/v/abc", "lemlist")).toBe(
       "https://clozer.club/v/abc?email={{email}}&company={{companyName}}&name={{firstName}}",
     );
+  });
+});
+
+describe("smartLinkProblem", () => {
+  it("flags an address sent to a personal link, which ignores it", () => {
+    expect(smartLinkProblem({ email: "paul@acme.fr" }, false)).toEqual({ kind: "personal_link", tag: null });
+    expect(smartLinkProblem({ email: "{{EMAIL}}" }, false)).toEqual({ kind: "personal_link", tag: null });
+  });
+
+  it("flags a Smart Link whose tool left the variable as is", () => {
+    expect(smartLinkProblem({ email: "{{EMAIL}}" }, true)).toEqual({ kind: "unresolved_tag", tag: "{{EMAIL}}" });
+    expect(smartLinkProblem({ email: "%EMAIL%" }, true)?.kind).toBe("unresolved_tag");
+  });
+
+  it("says nothing when the Smart Link works or nothing came from a sequence", () => {
+    expect(smartLinkProblem({ email: "paul@acme.fr" }, true)).toBeNull();
+    expect(smartLinkProblem({}, false)).toBeNull();
+    expect(smartLinkProblem({ email: "1" }, false)).toBeNull();
+    expect(smartLinkProblem({ email: "pas un email" }, false)).toBeNull();
   });
 });

@@ -41,6 +41,23 @@ export function parseSmartParams(params: Params): SmartParams | null {
   };
 }
 
+export type SmartLinkProblem = "personal_link" | "unresolved_tag";
+
+/**
+ * A cold email reader the link cannot name, worth telling the seller: an
+ * address in the URL of a personal link (it only reads it on a Smart Link),
+ * or a Smart Link whose tool left its variable as is. Null when all is well,
+ * or when nothing in the URL says it came from a sequence. Pure.
+ */
+export function smartLinkProblem(params: Params, shared: boolean): { kind: SmartLinkProblem; tag: string | null } | null {
+  const raw = first(params, "email");
+  // "?email=1" is the viewer's own "Ce n'est pas moi"
+  if (!raw || raw === "1") return null;
+  if (UNRESOLVED.test(raw)) return shared ? { kind: "unresolved_tag", tag: raw.slice(0, 40) } : { kind: "personal_link", tag: null };
+  if (shared) return null;
+  return normalizeEmail(raw.replaceAll(" ", "+")) ? { kind: "personal_link", tag: null } : null;
+}
+
 export type SmartLinkTool = "lemlist" | "instantly" | "apollo" | "woodpecker" | "other";
 
 /** Each tool's variables. Only Lemlist's are documented; the others are to check in the tool's editor. */
