@@ -58,6 +58,8 @@ export async function readerLinkFor(
   if (existing) return existing;
 
   const company = from.company ?? companyFromEmail(email);
+  // A first reader came through it: the shared link has gone out, it no longer waits to be sent
+  await prisma.link.updateMany({ where: { id: parent.id, draftAt: { not: null } }, data: { draftAt: null, sentAt: new Date() } });
   return prisma.link.create({
     data: {
       slug: randomSlug(12),
