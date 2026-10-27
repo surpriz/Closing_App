@@ -52,7 +52,7 @@ function dnsFields(report: DnsReport) {
   return {
     spfOk: report.spf.status === "ok" ? true : report.spf.status === "unknown_provider" ? null : false,
     dkimOk: report.dkim.status === "verified" ? true : report.dkim.status === "revoked" ? false : null,
-    dmarcOk: report.dmarc.status === "ok",
+    dmarcOk: report.dmarc.status !== "missing", // p=none is a published policy
     dkimSelector: report.dkim.selector,
     dnsDetail: report as unknown as Prisma.InputJsonValue,
     dnsCheckedAt: new Date(report.checkedAt),

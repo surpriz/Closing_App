@@ -65,6 +65,11 @@ describe("matchInbound", () => {
     expect(result).toEqual({ kind: "bounce", dsn });
   });
 
+  it("keeps a bounce generated on the seller's own domain as a bounce, not own_team", () => {
+    const result = matchInbound(message({ from: { address: "mailer-daemon@example.com", name: null }, isDsn: true }), ctx);
+    expect(result.kind).toBe("bounce");
+  });
+
   it("bounces win over auto-reply and thread matching", () => {
     const result = matchInbound(
       message({ isDsn: true, inReplyTo: "<orig-1@sender.example.com>", headers: { "auto-submitted": "auto-replied" } }),

@@ -34,19 +34,19 @@ function isTeamSide(from: string, ctx: MatchContext) {
 }
 
 /**
- * Decides what an incoming message is, first match wins: our own team, a bounce, an auto-reply,
+ * Decides what an incoming message is, first match wins: a bounce, our own team, an auto-reply,
  * then a real reply found by thread headers, sender address, or sender domain. Pure.
  */
 export function matchInbound(message: InboundMessage, ctx: MatchContext): MatchResult {
   const from = message.from.address.toLowerCase();
-  if (isTeamSide(from, ctx)) return { kind: "own_team" };
-
+  // DSN first: a bounce generated on the seller's own domain (mailer-daemon@) would otherwise read as the team
   if (message.isDsn || message.dsn) {
     return {
       kind: "bounce",
       dsn: message.dsn ?? { action: "other", status: null, diagnostic: null, failedRecipient: null, originalMessageId: null },
     };
   }
+  if (isTeamSide(from, ctx)) return { kind: "own_team" };
   if (isAutoReply(message.headers, message.subject)) return { kind: "auto_reply" };
 
   // Thread: the direct parent first, then the rest of the chain, most recent ancestor first

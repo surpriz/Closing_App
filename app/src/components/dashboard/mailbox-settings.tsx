@@ -41,7 +41,7 @@ export type MailboxRow = {
   dns: DnsReport | null;
 };
 
-type DnsState = "ok" | "missing" | "unknown";
+type DnsState = "ok" | "weak" | "missing" | "unknown";
 
 function dnsStates(dns: DnsReport | null): { key: "spf" | "dkim" | "dmarc"; state: DnsState; issue: string | null }[] {
   if (!dns) {
@@ -51,13 +51,15 @@ function dnsStates(dns: DnsReport | null): { key: "spf" | "dkim" | "dmarc"; stat
       { key: "dmarc", state: "unknown", issue: null },
     ];
   }
-  const spf: DnsState = dns.spf.status === "ok" ? "ok" : dns.spf.status === "unknown_provider" ? "unknown" : "missing";
-  const dkim: DnsState = dns.dkim.status === "verified" ? "ok" : dns.dkim.status === "revoked" ? "missing" : "unknown";
-  const dmarc: DnsState = dns.dmarc.status === "ok" ? "ok" : "missing";
+  // A probe-only or partial dnsDetail may lack a part: a missing part is unknown, never a crash
+  const spf: DnsState = !dns.spf ? "unknown" : dns.spf.status === "ok" ? "ok" : dns.spf.status === "unknown_provider" ? "unknown" : "missing";
+  const dkim: DnsState = !dns.dkim ? "unknown" : dns.dkim.status === "verified" ? "ok" : dns.dkim.status === "revoked" ? "missing" : "unknown";
+  // p=none works (the record exists): neutral badge with its info line, not a "missing"
+  const dmarc: DnsState = !dns.dmarc ? "unknown" : dns.dmarc.status === "ok" ? "ok" : dns.dmarc.status === "none_policy" ? "weak" : "missing";
   return [
     { key: "spf", state: spf, issue: spf === "missing" ? dns.spf.status : null },
-    { key: "dkim", state: dkim, issue: dkim === "ok" ? null : dns.dkim.status },
-    { key: "dmarc", state: dmarc, issue: dmarc === "missing" ? dns.dmarc.status : null },
+    { key: "dkim", state: dkim, issue: dkim === "ok" || !dns.dkim ? null : dns.dkim.status },
+    { key: "dmarc", state: dmarc, issue: dmarc === "missing" || dmarc === "weak" ? dns.dmarc.status : null },
   ];
 }
 
@@ -355,6 +357,7 @@ function ConnectForm() {
 
         <details className="space-y-3 text-small">
           <summary className="cursor-pointer text-body">{t("servers")}</summary>
+          <p className="pt-2 text-muted-foreground">{t("secureHelp")}</p>
           <div className="grid gap-3 pt-2 sm:grid-cols-[1fr_6rem_auto]">
             <Field label={t("imapHost")} htmlFor="mailbox-imap-host">
               <Input id="mailbox-imap-host" name="imapHost" value={form.imapHost} onChange={(e) => set("imapHost", e.target.value)} />

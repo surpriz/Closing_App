@@ -243,6 +243,7 @@
       "dkim": "DKIM",
       "dmarc": "DMARC",
       "ok": "ok",
+      "weak": "weak",
       "missing": "missing",
       "probe": {
         "button": "Test by email",
@@ -297,7 +298,8 @@
     "imapHost": "IMAP server",
     "smtpHost": "SMTP server",
     "port": "Port",
-    "secure": "TLS",
+    "secure": "Direct SSL/TLS (ports 465 / 993)",
+    "secureHelp": "Tick direct SSL/TLS only for ports 465 (SMTP) and 993 (IMAP). Otherwise the connection must support STARTTLS (ports 587 / 143).",
     "user": "Username (defaults to your email)",
     "password": "Password",
     "connect": "Connect",
