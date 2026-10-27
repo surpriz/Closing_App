@@ -87,15 +87,15 @@ export async function handleSesEvent(raw: unknown): Promise<SesOutcome> {
 
   if (event.kind === "Complaint") {
     // Marked as spam: as firm a "stop" as the unsubscribe link, prospecting opt-out included
-    await unsubscribeByToken(unsubscribeToken({ kind: "prospect", id: prospect.id }));
-    // unsubscribeByToken already wrote an UNSUBSCRIBE row; skipDuplicates keeps that first reason, which is
-    // acceptable: the address is blocked either way
+    // Written before unsubscribeByToken, which adds an UNSUBSCRIBE row too: skipDuplicates keeps the first
+    // reason, and COMPLAINT is the accurate one
     await addSuppression({
       organizationId: prospect.link.organizationId,
       email: prospect.email,
       reason: "COMPLAINT",
       source: "ses",
     });
+    await unsubscribeByToken(unsubscribeToken({ kind: "prospect", id: prospect.id }));
     await prisma.prospect.updateMany({
       where: { id: prospect.id, complainedAt: null },
       data: { complainedAt: at(event.complaint?.timestamp) },
@@ -126,13 +126,18 @@ export async function handleSesEvent(raw: unknown): Promise<SesOutcome> {
       data: { status: "CANCELLED", cancelledAt: now, error: reason },
     }),
   ]);
-  await addSuppression({
-    organizationId: prospect.link.organizationId,
-    email: prospect.email,
-    reason: "BOUNCE",
-    source: "ses",
-    detail,
-  });
+  // The cancellations are committed: a failed suppression write must not swallow the seller alert below
+  try {
+    await addSuppression({
+      organizationId: prospect.link.organizationId,
+      email: prospect.email,
+      reason: "BOUNCE",
+      source: "ses",
+      detail,
+    });
+  } catch (error) {
+    console.error("Could not suppress bounced address", error);
+  }
   await notifySeller({
     linkId: followup.linkId,
     type: "EMAIL_BOUNCED",

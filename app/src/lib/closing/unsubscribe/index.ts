@@ -115,6 +115,14 @@ export async function unsubscribeByToken(token: string) {
     const locale = await getSellerLocale(campaign.createdById);
     const reason = getNamespaceTranslator(locale, "server.followups.dispatch")("unsubscribed");
 
+    // Suppression first: it is the workspace-wide, legally relevant part and idempotent (skipDuplicates), so a
+    // failure later leaves the page retryable instead of showing "already done" with the address still live
+    await addSuppression({
+      organizationId: target.organizationId,
+      email: target.email,
+      reason: "UNSUBSCRIBE",
+      source: "unsubscribe_page",
+    });
     await prisma.$transaction([
       prisma.campaignProspect.updateMany({
         where: { id, status: { notIn: ["UNSUBSCRIBED"] } },
@@ -125,12 +133,6 @@ export async function unsubscribeByToken(token: string) {
         data: { status: "CANCELLED" },
       }),
     ]);
-    await addSuppression({
-      organizationId: target.organizationId,
-      email: target.email,
-      reason: "UNSUBSCRIBE",
-      source: "unsubscribe_page",
-    });
     // The same person may already hold a closing link in this workspace
     await stopClosingSide(target.organizationId, target.email, reason);
     return true;
@@ -140,13 +142,14 @@ export async function unsubscribeByToken(token: string) {
   const reason = getNamespaceTranslator(toUiLocale(prospect.link.createdBy?.locale), "server.followups.dispatch")(
     "unsubscribed",
   );
-  await stopClosingSide(target.organizationId, prospect.email, reason);
+  // Suppression first, same reasoning as the enrollment branch: safe to retry
   await addSuppression({
     organizationId: target.organizationId,
     email: prospect.email,
     reason: "UNSUBSCRIBE",
     source: "unsubscribe_page",
   });
+  await stopClosingSide(target.organizationId, prospect.email, reason);
 
   if (prospect.origin === "PROSPECTING") {
     const suggestion = await prisma.prospectSuggestion.findFirst({

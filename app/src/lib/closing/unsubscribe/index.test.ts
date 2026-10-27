@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const db = vi.hoisted(() => ({
   campaignProspect: { findUnique: vi.fn(), updateMany: vi.fn((args: unknown) => ({ op: "enrollment", args })) },
   campaignMessage: { updateMany: vi.fn((args: unknown) => ({ op: "messages", args })) },
-  prospect: { updateMany: vi.fn((args: unknown) => ({ op: "prospects", args })) },
+  prospect: { findUnique: vi.fn(), updateMany: vi.fn((args: unknown) => ({ op: "prospects", args })) },
   followup: { updateMany: vi.fn((args: unknown) => ({ op: "followups", args })) },
   $transaction: vi.fn(async () => []),
 }));
@@ -15,6 +15,7 @@ vi.mock("@/lib/prospecting/opt-out", () => ({ addOptOut: vi.fn() }));
 vi.mock("@/lib/seller-locale", () => ({ getSellerLocale: vi.fn(async () => "en"), toUiLocale: () => "en" }));
 vi.mock("@/lib/app-origin", () => ({ getPublicAppUrl: () => "https://app.test" }));
 
+import { createUnsubscribeToken } from "./token";
 import { findUnsubscribeTarget, unsubscribeByToken, unsubscribeOneClickUrl, unsubscribeToken } from "./index";
 
 const enrollmentRow = {
@@ -66,10 +67,39 @@ describe("unsubscribe, enrollment subject", () => {
       reason: "UNSUBSCRIBE",
       source: "unsubscribe_page",
     });
+    expect(addSuppression.mock.invocationCallOrder[0]).toBeLessThan(
+      db.campaignProspect.updateMany.mock.invocationCallOrder[0],
+    );
     expect(db.prospect.updateMany).toHaveBeenCalled();
     expect(db.followup.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ status: "CANCELLED", error: "Prospect unsubscribed" }) }),
     );
+  });
+});
+
+describe("unsubscribe, prospect subject", () => {
+  const prospectRow = {
+    id: "pr1",
+    email: "bob@acme.com",
+    unsubscribedAt: null,
+    origin: "MANUAL",
+    linkId: "l1",
+    link: { organizationId: "org1", createdBy: { locale: "en" } },
+  };
+
+  it("resolves a bare legacy token and suppresses before updating", async () => {
+    db.prospect.findUnique.mockResolvedValue(prospectRow);
+    const legacy = createUnsubscribeToken("pr1", "a-test-secret-that-is-long-enough-123");
+    expect(await findUnsubscribeTarget(legacy)).toMatchObject({ kind: "prospect", email: "bob@acme.com", alreadyDone: false });
+
+    expect(await unsubscribeByToken(legacy)).toBe(true);
+    expect(addSuppression).toHaveBeenCalledWith({
+      organizationId: "org1",
+      email: "bob@acme.com",
+      reason: "UNSUBSCRIBE",
+      source: "unsubscribe_page",
+    });
+    expect(addSuppression.mock.invocationCallOrder[0]).toBeLessThan(db.prospect.updateMany.mock.invocationCallOrder[0]);
   });
 });
 
