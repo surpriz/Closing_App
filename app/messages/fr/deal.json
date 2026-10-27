@@ -252,7 +252,7 @@
     "intro": "Collez ce lien dans votre séquence : chaque prospect qui clique arrive sans formulaire, avec son propre suivi.",
     "toolAria": "Outil de cold email",
     "documented": "Les variables sont celles de {tool}.",
-    "undocumented": "Vérifiez le nom des variables dans l'éditeur de votre outil.",
+    "undocumented": "Vérifiez le nom des variables dans l'éditeur de votre outil. Seul l'email compte : la société et le prénom sont un bonus.",
     "webhook": "Pour mettre la séquence en pause dès qu'un prospect lit, branchez le <link>webhook</link>."
   },
   "shareReady": {

@@ -58,16 +58,21 @@ export function smartLinkProblem(params: Params, shared: boolean): { kind: Smart
   return normalizeEmail(raw.replaceAll(" ", "+")) ? { kind: "personal_link", tag: null } : null;
 }
 
-export type SmartLinkTool = "lemlist" | "instantly" | "apollo" | "woodpecker" | "other";
+export type SmartLinkTool = "lemlist" | "instantly" | "apollo" | "manyreach" | "woodpecker" | "other";
 
-/** Each tool's variables. Only Lemlist's are documented; the others are to check in the tool's editor. */
+/**
+ * Each tool's variables. Only Lemlist's are documented; the others are to
+ * check in the tool's editor. Null: not known, left out (the email is enough).
+ */
 export const SMART_LINK_TOOLS: Record<
   SmartLinkTool,
-  { label: string; email: string; company: string; name: string; documented: boolean }
+  { label: string; email: string; company: string | null; name: string | null; documented: boolean }
 > = {
   lemlist: { label: "Lemlist", email: "{{email}}", company: "{{companyName}}", name: "{{firstName}}", documented: true },
   instantly: { label: "Instantly", email: "{{email}}", company: "{{companyName}}", name: "{{firstName}}", documented: false },
   apollo: { label: "Apollo", email: "{{email}}", company: "{{company}}", name: "{{first_name}}", documented: false },
+  // {{EMAIL}} seen replaced in a real campaign (Oct 2026); the others unknown
+  manyreach: { label: "Manyreach", email: "{{EMAIL}}", company: null, name: null, documented: false },
   woodpecker: { label: "Woodpecker", email: "{{EMAIL}}", company: "{{COMPANY}}", name: "{{FIRST_NAME}}", documented: false },
   other: { label: "Autre", email: "{{email}}", company: "{{company}}", name: "{{firstName}}", documented: false },
 };
@@ -75,5 +80,6 @@ export const SMART_LINK_TOOLS: Record<
 /** The URL to paste in the sequence. Braces stay readable: the tool replaces them before sending. */
 export function smartLinkUrl(baseUrl: string, tool: SmartLinkTool) {
   const tags = SMART_LINK_TOOLS[tool];
-  return `${baseUrl}?email=${tags.email}&company=${tags.company}&name=${tags.name}`;
+  const extra = [tags.company && `&company=${tags.company}`, tags.name && `&name=${tags.name}`].filter(Boolean).join("");
+  return `${baseUrl}?email=${tags.email}${extra}`;
 }
