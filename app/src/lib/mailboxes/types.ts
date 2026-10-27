@@ -1,10 +1,10 @@
 import type { MailboxErrorCode } from "./errors";
 
-// Declared locally because the generated Prisma enums are not available to this module yet; the controller aligns
-// them with "@/generated/prisma/enums" later. The connector union is named *Kind* to avoid clashing with the
+import type { MailboxProvider, MailboxConnector as MailboxConnectorKind } from "@/generated/prisma/enums";
+
+// Re-exported so existing importers keep working; the connector enum is aliased to avoid clashing with the
 // MailboxConnector interface below.
-export type MailboxProvider = "GOOGLE" | "MICROSOFT" | "IMAP";
-export type MailboxConnectorKind = "UNIPILE" | "NYLAS" | "GRAPH" | "SMTP";
+export type { MailboxProvider, MailboxConnectorKind };
 
 export type Capabilities = {
   customHeaders: boolean;
@@ -72,7 +72,7 @@ export interface MailboxConnector {
   send(message: OutboundMessage): Promise<SendResult>;
   listNewMessages(
     cursor: SyncCursor,
-    opts: { limit: number; notBefore: Date; signal: AbortSignal },
+    opts: { limit: number; notBefore: Date; signal: AbortSignal; candidateSenders?: Set<string> },
   ): Promise<{ messages: InboundMessage[]; cursor: SyncCursor; hasMore: boolean }>;
   getMessage?(id: string): Promise<InboundMessage | null>;
   verify(): Promise<VerifyResult>;
