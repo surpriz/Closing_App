@@ -13,6 +13,7 @@ import {
 import { DealSettings } from "@/components/dashboard/deal/deal-settings";
 import { loadDeal } from "@/components/dashboard/deal/load-deal";
 import { DealNextAction } from "@/components/dashboard/deal/next-action";
+import { SmartLinkProblemNotice } from "@/components/dashboard/deal/smart-link-problem";
 import { ThermalBand } from "@/components/dashboard/deal/thermal-band";
 import { DealContextForm } from "@/components/dashboard/deal-context-form";
 import { DealContextSummaryDetails } from "@/components/dashboard/deal-context-details";
@@ -42,6 +43,7 @@ import type { DocType } from "@/lib/closing/documents/doc-types";
 import { showsCountdown } from "@/lib/closing/expiry";
 import { firstNameOf, guessMailClient } from "@/lib/closing/share/compose";
 import { settingsSummary } from "@/lib/closing/share/summary";
+import type { SmartLinkProblem } from "@/lib/closing/shared/smart-params";
 import { prisma } from "@/lib/db";
 import { formatDate } from "@/lib/format";
 import { requireWorkspace } from "@/lib/session";
@@ -80,9 +82,12 @@ export default async function LinkDetailPage({
   if (!deal) notFound();
 
   const { link, now, canEdit, url, mainProspect, settings, insight } = deal;
-  const t = await getTranslations("deal.page");
-  const tDocs = await getTranslations("documents");
-  const locale = await getLocale();
+  const [t, tDocs, locale, smartProblems] = await Promise.all([
+    getTranslations("deal.page"),
+    getTranslations("documents"),
+    getLocale(),
+    canEdit ? loadSmartLinkProblems(link.id, link.shared, now) : [],
+  ]);
   const uploadPrefix = capsuleUploadPrefix(workspace.organization.id);
 
   const welcome = deal.welcome ? (
@@ -168,6 +173,12 @@ export default async function LinkDetailPage({
 
       <div className="space-y-6">
         <DealHeader deal={deal} />
+        <SmartLinkProblemNotice
+          problems={smartProblems}
+          linkId={link.id}
+          documentId={link.document.id}
+          convertible={!link.prospects.some((prospect) => prospect.origin === "SELLER")}
+        />
         {/* Not sent yet: the share screen above is the next action */}
         {!link.draftAt && (
           <DealNextAction
@@ -431,4 +442,25 @@ export default async function LinkDetailPage({
       </fieldset>
     </div>
   );
+}
+
+/**
+ * What still applies, seen in the last week: a personal link once converted has
+ * no address to ignore any more, and a fixed tool stops showing up.
+ */
+async function loadSmartLinkProblems(linkId: string, shared: boolean, now: Date) {
+  const alerts = await prisma.sellerAlert.findMany({
+    where: { linkId, type: "SMART_LINK_PROBLEM", createdAt: { gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) } },
+    orderBy: { createdAt: "desc" },
+    select: { payload: true, createdAt: true },
+  });
+  // The latest of each kind
+  const seen = new Set<SmartLinkProblem>();
+  return alerts.flatMap((alert) => {
+    const payload = alert.payload as { smartProblem?: SmartLinkProblem; tag?: string | null };
+    const applies = payload.smartProblem === (shared ? "unresolved_tag" : "personal_link");
+    if (!payload.smartProblem || !applies || seen.has(payload.smartProblem)) return [];
+    seen.add(payload.smartProblem);
+    return [{ kind: payload.smartProblem, tag: payload.tag ?? null, at: alert.createdAt }];
+  });
 }

@@ -77,7 +77,8 @@
     "MEETING_BOOKED": "Meeting booked",
     "DOCUMENT_FORWARDED": "Document forwarded",
     "DEAD_LINK_OPENED": "Back on an inactive link",
-    "RELINK_REQUESTED": "Document asked for again"
+    "RELINK_REQUESTED": "Document asked for again",
+    "SMART_LINK_PROBLEM": "Smart Link misconfigured"
   },
   "prospectRole": {
     "DECISION_MAKER": "Decision-maker",

@@ -252,11 +252,15 @@ export async function createVideoDocument(
 }
 
 /** "Nouveau lien" on a document: a fresh draft, set up on the share screen. */
-export async function createQuickLink(documentId: string): Promise<{ linkId: string } | { error: string } | UpgradePrompt> {
+export async function createQuickLink(
+  documentId: string,
+  { smart = false }: { smart?: boolean } = {},
+): Promise<{ linkId: string } | { error: string } | UpgradePrompt> {
   const { user, organization } = await requireWorkspace();
   const limit = await linkLimitError(organization.id);
   if (limit) return limit;
-  const link = await createDocumentLink({ userId: user.id, organizationId: organization.id, documentId, draft: true });
+  // A Smart Link is live from the start: it shows on the document and is never taken for the link to send
+  const link = await createDocumentLink({ userId: user.id, organizationId: organization.id, documentId, draft: !smart, smart });
   return link ? { linkId: link.id } : { error: (await getTranslations("documents.actions"))("notFound") };
 }
 

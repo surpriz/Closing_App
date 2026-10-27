@@ -3,6 +3,7 @@ import { INTL_LOCALE, type UiLocale } from "@/i18n/locale";
 import { getNamespaceTranslator } from "@/lib/server-translator";
 
 import { formatDeadline } from "../expiry";
+import type { SmartLinkProblem } from "../shared/smart-params";
 
 /**
  * Text of a Chrome notification, short enough for the system popup
@@ -29,6 +30,8 @@ export function extensionNotice(
     prospectEmail?: string | null;
     replyExcerpt?: string | null;
     deadState?: "archived" | "expired";
+    smartProblem?: SmartLinkProblem;
+    tag?: string | null;
   },
   locale: UiLocale,
   timezone = "Europe/Paris",
@@ -109,6 +112,13 @@ export function extensionNotice(
         title: t("notice.emailBounced.title"),
         body: t("notice.emailBounced.body", { email: payload.prospectEmail ?? who }),
       };
+    case "SMART_LINK_PROBLEM":
+      return payload.smartProblem === "personal_link"
+        ? { title: t("notice.smartLinkProblem.titlePersonal"), body: t("notice.smartLinkProblem.bodyPersonal", { doc }) }
+        : {
+            title: t("notice.smartLinkProblem.titleTag", { tag: payload.tag ?? "{{email}}" }),
+            body: t("notice.smartLinkProblem.bodyTag", { doc }),
+          };
     case "DRAFT_READY":
       return { title: t("notice.draftReady.title"), body: t("notice.draftReady.body", { who }) };
     case "COMMITTEE_LIVE":

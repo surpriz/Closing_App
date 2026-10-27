@@ -2,6 +2,7 @@ import { Loader2 } from "lucide-react";
 import type { Metadata } from "next";
 import { cookies, headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
+import { after } from "next/server";
 
 import { AutoRefresh } from "@/components/dashboard/auto-refresh";
 import type { ViewerCapsule } from "@/components/viewer/capsule-bubble";
@@ -50,7 +51,9 @@ import { firstNameOf } from "@/lib/closing/share/compose";
 import { viewerSenderName } from "@/lib/closing/sender-name";
 import { deadState, type DeadState } from "@/lib/closing/revival";
 import { findRevivalReader } from "@/lib/closing/revival-reader";
-import { parseSmartParams } from "@/lib/closing/shared/smart-params";
+import { notifySeller } from "@/lib/closing/notify/notify";
+import { parseSmartParams, smartLinkProblem } from "@/lib/closing/shared/smart-params";
+import { getRequestContext } from "@/lib/closing/tracking/request-context";
 import { VISITOR_COOKIE } from "@/lib/closing/tracking/visitor";
 import { deeplConfig } from "@/lib/closing/translation/deepl";
 import { guessLanguage, translationTarget } from "@/lib/closing/translation/translation";
@@ -167,6 +170,22 @@ export default async function ViewerPage({
   // A shared link is a door: once the reader is known, they read on their own link
   if (link.shared && access.email && !isSeller)
     redirect(`/api/v/${slug}/reader`);
+
+  // A cold email reader this link cannot name: told once per link, while the campaign can still be fixed
+  const problem =
+    !isSeller && !getRequestContext(requestHeaders).isBot ? smartLinkProblem(query, link.shared) : null;
+  if (problem)
+    after(async () => {
+      // Once a day at most: a fixed tool that breaks again in a later campaign is told again
+      const dedupeKey = `smart-link-problem:${link.id}:${problem.kind}:${new Date().toISOString().slice(0, 10)}`;
+      if (await prisma.sellerAlert.findUnique({ where: { dedupeKey }, select: { id: true } })) return;
+      await notifySeller({
+        linkId: link.id,
+        type: "SMART_LINK_PROBLEM",
+        dedupeKey,
+        payload: { smartProblem: problem.kind, tag: problem.tag },
+      });
+    });
 
   // A Smart Link from a cold email: the tool said who it was sent to, no form
   const smart = link.shared && !isSeller ? parseSmartParams(query) : null;

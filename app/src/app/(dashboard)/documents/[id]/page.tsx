@@ -133,7 +133,7 @@ export default async function DocumentDetailPage({
             take: 1,
           },
           engagementScore: true,
-          _count: { select: { views: true } },
+          _count: { select: { views: true, readerLinks: true } },
         },
       },
     },
@@ -301,21 +301,23 @@ export default async function DocumentDetailPage({
         )
       : null;
 
-  const prospectRows: ProspectLinkRow[] = document.links.map((link) => {
+  // The Smart Link first: the one to paste in a sequence, its readers below as their own rows
+  const orderedLinks = [...document.links].sort((a, b) => Number(b.shared) - Number(a.shared));
+  const prospectRows: ProspectLinkRow[] = orderedLinks.map((link) => {
     const prospect = link.prospects[0];
     const score = link.engagementScore;
     const expired = !!link.expiresAt && link.expiresAt <= now;
     const pages = readings.get(link.id);
     return {
       id: link.id,
-      label: dealLabel({ ...link, document }),
+      label: dealLabel({ ...link, document }, link.shared ? t("sharedLink") : undefined),
       contact:
         [prospect?.company ? prospect.name : null, prospect?.email]
           .filter(Boolean)
           .join(" · ") ||
         t("createdAgo", { when: formatRelative(link.createdAt, locale, now) }),
       state: link.shared
-        ? t("sharedLink")
+        ? t("smartLinkReaders", { count: link._count.readerLinks })
         : link.dealStatus !== "OPEN"
           ? tl(`dealStatus.${link.dealStatus}`)
           : expired
@@ -405,6 +407,9 @@ export default async function DocumentDetailPage({
           action={
             <>
               {linkAction}
+              {document.status !== "FAILED" && (
+                <NewLinkButton documentId={document.id} variant="outline" smart />
+              )}
               {/* Deleting takes every seller's links down with it */}
               {isManagerRole(role) && (
                 <DeleteDocumentButton
