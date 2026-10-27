@@ -34,7 +34,7 @@ export function sendProspectEmail(input: {
   link?: TitledLink | null;
 }) {
   // Added at send time only: the seller previews the message without it
-  const footer = unsubscribeFooter(unsubscribePageUrl(input.prospect.id), input.locale);
+  const footer = unsubscribeFooter(unsubscribePageUrl({ kind: "prospect", id: input.prospect.id }), input.locale);
   return sendEmail({
     to: input.prospect.email,
     from: input.from ?? prospectSender(),
@@ -44,7 +44,7 @@ export function sendProspectEmail(input: {
     html: textToHtml(input.body, input.link) + footer.html,
     // One-click unsubscribe, required by Gmail and Yahoo (RFC 8058)
     headers: {
-      "List-Unsubscribe": `<${unsubscribeOneClickUrl(input.prospect.id)}>`,
+      "List-Unsubscribe": `<${unsubscribeOneClickUrl({ kind: "prospect", id: input.prospect.id })}>`,
       "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
     },
   });

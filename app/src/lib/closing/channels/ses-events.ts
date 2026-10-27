@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { prisma } from "@/lib/db";
+import { addSuppression } from "@/lib/outreach/suppression";
 import { toUiLocale } from "@/lib/seller-locale";
 import { getNamespaceTranslator } from "@/lib/server-translator";
 
@@ -86,7 +87,15 @@ export async function handleSesEvent(raw: unknown): Promise<SesOutcome> {
 
   if (event.kind === "Complaint") {
     // Marked as spam: as firm a "stop" as the unsubscribe link, prospecting opt-out included
-    await unsubscribeByToken(unsubscribeToken(prospect.id));
+    await unsubscribeByToken(unsubscribeToken({ kind: "prospect", id: prospect.id }));
+    // unsubscribeByToken already wrote an UNSUBSCRIBE row; skipDuplicates keeps that first reason, which is
+    // acceptable: the address is blocked either way
+    await addSuppression({
+      organizationId: prospect.link.organizationId,
+      email: prospect.email,
+      reason: "COMPLAINT",
+      source: "ses",
+    });
     await prisma.prospect.updateMany({
       where: { id: prospect.id, complainedAt: null },
       data: { complainedAt: at(event.complaint?.timestamp) },
@@ -117,6 +126,13 @@ export async function handleSesEvent(raw: unknown): Promise<SesOutcome> {
       data: { status: "CANCELLED", cancelledAt: now, error: reason },
     }),
   ]);
+  await addSuppression({
+    organizationId: prospect.link.organizationId,
+    email: prospect.email,
+    reason: "BOUNCE",
+    source: "ses",
+    detail,
+  });
   await notifySeller({
     linkId: followup.linkId,
     type: "EMAIL_BOUNCED",
