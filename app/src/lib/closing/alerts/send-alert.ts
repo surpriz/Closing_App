@@ -176,7 +176,7 @@ export function alertMessage(
     }
     case "SMART_LINK_PROBLEM": {
       const personal = payload.smartProblem === "personal_link";
-      const url = personal ? `${appUrl}/documents/${link.document.id}` : linkUrl;
+      const url = linkUrl;
       const tag = payload.tag ?? "{{email}}";
       return {
         subject: t(personal ? "message.smartLinkProblem.subjectPersonal" : "message.smartLinkProblem.subjectTag", { tag }),

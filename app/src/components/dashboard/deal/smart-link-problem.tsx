@@ -4,6 +4,8 @@ import { getTranslations } from "next-intl/server";
 
 import type { SmartLinkProblem } from "@/lib/closing/shared/smart-params";
 
+import { MakeSmartLinkButton } from "./make-smart-link-button";
+
 export type SmartLinkProblemItem = { kind: SmartLinkProblem; tag: string | null; at: Date };
 
 /**
@@ -12,9 +14,11 @@ export type SmartLinkProblemItem = { kind: SmartLinkProblem; tag: string | null;
  */
 export async function SmartLinkProblemNotice({
   problems,
+  linkId,
   documentId,
 }: {
   problems: SmartLinkProblemItem[];
+  linkId: string;
   documentId: string;
 }) {
   if (problems.length === 0) return null;
@@ -39,12 +43,15 @@ export async function SmartLinkProblemNotice({
               {problem.kind === "personal_link" ? t("bodyPersonal") : t("bodyTag")}
             </p>
             {problem.kind === "personal_link" && (
-              <Link
-                href={`/documents/${documentId}`}
-                className="inline-block font-medium text-foreground underline underline-offset-4"
-              >
-                {t("createSmartLink")}
-              </Link>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-1">
+                <MakeSmartLinkButton linkId={linkId} />
+                <Link
+                  href={`/documents/${documentId}`}
+                  className="font-medium text-foreground underline underline-offset-4"
+                >
+                  {t("createSmartLink")}
+                </Link>
+              </div>
             )}
           </div>
         </div>
