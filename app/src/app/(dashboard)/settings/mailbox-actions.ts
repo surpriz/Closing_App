@@ -99,6 +99,16 @@ export async function recheckDns(id: string) {
 export async function saveMailboxCap(id: string, cap: number) {
   const { user, organization } = await requireOutreach();
   if (!Number.isFinite(cap)) return;
-  await updateMailboxCap(organization.id, user.id, id, cap);
+  const saved = await updateMailboxCap(organization.id, user.id, id, cap);
+  if (saved) {
+    await logAudit({
+      organizationId: organization.id,
+      actorUserId: user.id,
+      action: "mailbox.cap_changed",
+      targetType: "mailbox",
+      targetId: id,
+      metadata: { email: saved.email, cap: saved.cap },
+    });
+  }
   revalidatePath("/settings");
 }

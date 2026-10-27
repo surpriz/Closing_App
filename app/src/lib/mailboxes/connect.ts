@@ -14,7 +14,7 @@ import { guessedPreset, presetFor, type PresetId } from "./presets";
 type Endpoint = { host: string; port: number; secure: boolean };
 
 const RAMP_RESET_AFTER_MS = 30 * 86_400_000;
-/** A seller with more than this many live mailboxes is no longer doing cold email from "their own inbox". */
+/** Rule behind the `limit` error: at most this many live (active, error or connecting) mailboxes per seller. */
 export const MAX_MAILBOXES_PER_USER = 3;
 const LIVE = ["ACTIVE", "ERROR", "CONNECTING"] as const;
 
@@ -151,15 +151,16 @@ export async function connectImapMailbox(
     errorNotifiedAt: null,
     disconnectedAt: null,
     timezone: input.timezone,
-    dailyCap: getEnv().MAILBOX_DAILY_CAP_DEFAULT,
     syncErrorCount: 0,
     ...dnsFields(dns),
   };
   // A mailbox gone for a month is as cold as a new one: it ramps up again
   const stale = existing?.disconnectedAt && now.getTime() - existing.disconnectedAt.getTime() > RAMP_RESET_AFTER_MS;
+  // Takeover of a disconnected mailbox by another member is accepted: credentials were wiped, so whoever proves the
+  // password owns it. The cap is only set on create: a reconnect keeps the seller's own cap.
   const mailbox = await prisma.mailbox.upsert({
     where: { organizationId_email: { organizationId: input.organizationId, email } },
-    create: { organizationId: input.organizationId, userId: input.userId, email, rampStartedAt: now, ...fields },
+    create: { organizationId: input.organizationId, userId: input.userId, email, rampStartedAt: now, dailyCap: getEnv().MAILBOX_DAILY_CAP_DEFAULT, ...fields },
     update: { userId: input.userId, ...(stale ? { rampStartedAt: now } : {}), ...fields },
     select: { id: true },
   });
@@ -208,7 +209,9 @@ export async function updateMailboxCap(organizationId: string, userId: string, m
     where: { id: mailboxId, organizationId, userId, status: { not: "DISCONNECTED" } },
     data: { dailyCap },
   });
-  return count > 0 ? dailyCap : null;
+  if (count === 0) return null;
+  const mailbox = await prisma.mailbox.findFirst({ where: { id: mailboxId, organizationId, userId }, select: { email: true } });
+  return { cap: dailyCap, email: mailbox?.email ?? null };
 }
 
 /** "Sent today" as shown in settings: a count from another local day reads as zero. */

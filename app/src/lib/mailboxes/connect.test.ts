@@ -86,6 +86,14 @@ describe("connectImapMailbox", () => {
     });
   });
 
+  it("refuses past the per-user mailbox limit without verifying", async () => {
+    db.count.mockResolvedValue(3);
+    const res = await connectImapMailbox(input, { resolver, now });
+    expect(res).toMatchObject({ ok: false, code: "limit" });
+    expect(verify).not.toHaveBeenCalled();
+    expect(db.upsert).not.toHaveBeenCalled();
+  });
+
   it("resets the ramp of a mailbox disconnected for over 30 days", async () => {
     db.findUnique.mockResolvedValue({ id: "mb1", status: "DISCONNECTED", userId: "u1", disconnectedAt: new Date("2026-08-01T00:00:00Z") });
     await connectImapMailbox(input, { resolver, now });
@@ -96,6 +104,7 @@ describe("connectImapMailbox", () => {
     db.findUnique.mockResolvedValue({ id: "mb1", status: "DISCONNECTED", userId: "u1", disconnectedAt: new Date("2026-10-20T00:00:00Z") });
     await connectImapMailbox(input, { resolver, now });
     expect(db.upsert.mock.calls[0][0].update).not.toHaveProperty("rampStartedAt");
+    expect(db.upsert.mock.calls[0][0].update).not.toHaveProperty("dailyCap");
   });
 });
 
@@ -112,7 +121,9 @@ describe("disconnectMailbox", () => {
 describe("updateMailboxCap", () => {
   it("clamps to [1, max]", async () => {
     db.updateMany.mockResolvedValue({ count: 1 });
-    expect(await updateMailboxCap("org1", "u1", "mb1", 500)).toBe(50);
-    expect(await updateMailboxCap("org1", "u1", "mb1", 0)).toBe(1);
+    db.findFirst.mockResolvedValue({ email: "jean@acme.fr" });
+    expect(await updateMailboxCap("org1", "u1", "mb1", 500)).toEqual({ cap: 50, email: "jean@acme.fr" });
+    expect(db.updateMany.mock.calls[0][0].where).toMatchObject({ id: "mb1", organizationId: "org1", userId: "u1" });
+    expect(await updateMailboxCap("org1", "u1", "mb1", 0)).toMatchObject({ cap: 1 });
   });
 });

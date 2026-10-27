@@ -16,7 +16,8 @@ export type AuditAction =
   | "extension.revoked"
   | "outlook.connected"
   | "mailbox.connected"
-  | "mailbox.disconnected";
+  | "mailbox.disconnected"
+  | "mailbox.cap_changed";
 
 /**
  * One line in the workspace's journal. Never throws: a journal outage must not
