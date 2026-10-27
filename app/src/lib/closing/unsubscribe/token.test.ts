@@ -42,8 +42,23 @@ describe("unsubscribe tokens", () => {
   });
 
   it("encodes with a one-letter prefix", () => {
-    expect(encodeUnsubscribeSubject({ kind: "prospect", id: "x" })).toBe("p:x");
-    expect(encodeUnsubscribeSubject({ kind: "enrollment", id: "x" })).toBe("e:x");
+    expect(encodeUnsubscribeSubject({ kind: "prospect", id: "x" })).toBe("p-x");
+    expect(encodeUnsubscribeSubject({ kind: "enrollment", id: "x" })).toBe("e-x");
+  });
+
+  it("parses the legacy colon forms and the dash forms", () => {
+    expect(parseUnsubscribeSubject("p:abc")).toEqual({ kind: "prospect", id: "abc" });
+    expect(parseUnsubscribeSubject("e:abc")).toEqual({ kind: "enrollment", id: "abc" });
+    expect(parseUnsubscribeSubject("p-abc")).toEqual({ kind: "prospect", id: "abc" });
+    expect(parseUnsubscribeSubject("abc")).toEqual({ kind: "prospect", id: "abc" });
+  });
+
+  it("round-trips p-abc through a token and verifies a percent-decoded legacy token", () => {
+    const dash = createUnsubscribeToken("p-abc", secret);
+    expect(verifyUnsubscribeToken(dash, secret)).toBe("p-abc");
+    const legacy = createUnsubscribeToken("p:abc", secret);
+    expect(verifyUnsubscribeToken(decodeURIComponent(legacy.replace("p:", "p%3A")), secret)).toBe("p:abc");
+    expect(verifyUnsubscribeToken(legacy.replace("p:", "p%3A"), secret)).toBeNull();
   });
 
   it("accepts a legacy bare id as a prospect", () => {
@@ -60,5 +75,7 @@ describe("unsubscribe tokens", () => {
   it("rejects a prefix swapped without re-signing", () => {
     const [, signature] = createUnsubscribeToken("p:cm1abc", secret).split(".");
     expect(verifyUnsubscribeToken(`e:cm1abc.${signature}`, secret)).toBeNull();
+    const [, dashSignature] = createUnsubscribeToken("p-cm1abc", secret).split(".");
+    expect(verifyUnsubscribeToken(`e-cm1abc.${dashSignature}`, secret)).toBeNull();
   });
 });

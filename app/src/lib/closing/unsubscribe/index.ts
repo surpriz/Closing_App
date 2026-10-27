@@ -37,7 +37,14 @@ export function unsubscribeOneClickUrl(subject: UnsubscribeSubject) {
 
 /** What a token points at: a one-off prospect (closing follow-ups) or a campaign enrollment (cold sequence). */
 export async function findUnsubscribeTarget(token: string) {
-  const raw = verifyUnsubscribeToken(token, unsubscribeSecret());
+  // Page params can arrive percent-encoded (legacy "p:" links show up as "p%3A..."): decode once
+  let decoded = token;
+  try {
+    decoded = decodeURIComponent(token);
+  } catch {
+    // keep the raw token, the signature check will refuse it
+  }
+  const raw = verifyUnsubscribeToken(decoded, unsubscribeSecret());
   const subject = raw ? parseUnsubscribeSubject(raw) : null;
   if (!subject) return null;
 

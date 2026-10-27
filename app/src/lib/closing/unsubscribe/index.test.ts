@@ -33,10 +33,15 @@ beforeEach(() => {
 });
 
 describe("unsubscribe, enrollment subject", () => {
+  it("finds the target from a percent-encoded legacy colon token", async () => {
+    const legacy = createUnsubscribeToken("e:enr1", "a-test-secret-that-is-long-enough-123").replace("e:", "e%3A");
+    expect(await findUnsubscribeTarget(legacy)).toMatchObject({ kind: "enrollment" });
+  });
+
   it("finds the enrollment and its sender", async () => {
     const target = await findUnsubscribeTarget(unsubscribeToken({ kind: "enrollment", id: "enr1" }));
     expect(target).toMatchObject({ kind: "enrollment", email: "Lea@Acme.com", alreadyDone: false, organizationId: "org1" });
-    expect(target?.kind === "enrollment" && target.enrollment.campaign.mailbox.displayName).toBe("Paul");
+    expect(target?.kind === "enrollment" && target.enrollment.campaign.mailbox?.displayName).toBe("Paul");
   });
 
   it("reports an already unsubscribed enrollment", async () => {
@@ -105,6 +110,6 @@ describe("unsubscribe, prospect subject", () => {
 
 describe("unsubscribe urls", () => {
   it("puts the prefixed subject in the one-click url", () => {
-    expect(unsubscribeOneClickUrl({ kind: "enrollment", id: "enr1" })).toMatch(/^https:\/\/app\.test\/api\/unsubscribe\/e:enr1\./);
+    expect(unsubscribeOneClickUrl({ kind: "enrollment", id: "enr1" })).toMatch(/^https:\/\/app\.test\/api\/unsubscribe\/e-enr1\./);
   });
 });

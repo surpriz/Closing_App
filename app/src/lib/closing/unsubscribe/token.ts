@@ -8,18 +8,20 @@ function sign(subject: string, secret: string) {
   return createHmac("sha256", secret).update(`unsubscribe:${subject}`).digest("base64url");
 }
 
-/** "p:<id>" or "e:<id>": the kind is signed with the id, so a token cannot be replayed on another table. */
+/**
+ * "p-<id>" or "e-<id>": the kind is signed with the id, so a token cannot be replayed on another table.
+ * "-" (not ":") because Next re-encodes page params and ":" would arrive as "%3A"; cuids never contain "-".
+ */
 export function encodeUnsubscribeSubject(s: UnsubscribeSubject): string {
-  return `${PREFIX[s.kind]}:${s.id}`;
+  return `${PREFIX[s.kind]}-${s.id}`;
 }
 
-/** A bare id (no ":") is a prospect: links already sent before enrollments existed carry no prefix. */
+/** Accepts "p-"/"e-", the legacy "p:"/"e:" forms, and a bare id (a prospect: links sent before enrollments existed). */
 export function parseUnsubscribeSubject(subject: string): UnsubscribeSubject | null {
-  const colon = subject.indexOf(":");
-  if (colon === -1) return subject ? { kind: "prospect", id: subject } : null;
-  const id = subject.slice(colon + 1);
+  const match = /^([a-z])[-:](.*)$/.exec(subject);
+  if (!match) return subject ? { kind: "prospect", id: subject } : null;
+  const [, prefix, id] = match;
   if (!id) return null;
-  const prefix = subject.slice(0, colon);
   if (prefix === PREFIX.prospect) return { kind: "prospect", id };
   if (prefix === PREFIX.enrollment) return { kind: "enrollment", id };
   return null;
