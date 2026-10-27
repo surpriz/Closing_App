@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { isCampaignOwned } from "@/lib/outreach/ownership";
 
 import { isLinkExpired } from "../expiry";
 import { generateFollowupMessage, queueFollowup } from "../followups/queue";
@@ -30,6 +31,8 @@ export async function evaluateHotPricing(viewId: string, now = new Date()) {
   if (!view || view.isBot) return;
 
   const { link } = view;
+  // A campaign still drives this prospect: its own engine reads the same signals
+  if (isCampaignOwned(link)) return;
   if (!link.followupsEnabled || link.dealStatus !== "OPEN" || link.archivedAt || link.meetingBookedAt || link.quoteRequestedAt || link.repliedAt) return;
   if (link.snoozedUntil && link.snoozedUntil > now) return;
   if (isLinkExpired(link, now)) return;
