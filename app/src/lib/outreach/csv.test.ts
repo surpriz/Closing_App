@@ -21,6 +21,12 @@ describe("parseCsv", () => {
     expect(out.rows).toEqual([['say "hi"', "line1\nline2"]]);
   });
 
+  it("does not open a quoted section on a mid-field quote", () => {
+    const out = parseCsv('name,size\nJohn "Johnny" Smith,x\n5" pipe,y\nz,w');
+    expect(out.rows).toEqual([["John \"Johnny\" Smith", "x"], ['5" pipe', "y"], ["z", "w"]]);
+    expect(parseCsv('a;b\n5" x;1\n2;3').delimiter).toBe(";");
+  });
+
   it("strips the BOM, handles CRLF and skips empty lines", () => {
     const out = parseCsv("﻿email,name\r\n\r\nx@y.z,X\r\n,\r\n");
     expect(out.headers).toEqual(["email", "name"]);
@@ -106,5 +112,13 @@ describe("rowsToProspects", () => {
     const { prospects, rejected } = rowsToProspects(parsed, {});
     expect(prospects).toEqual([]);
     expect(rejected).toHaveLength(4);
+  });
+
+  it("never emits a link var, and the first column wins on slug collisions", () => {
+    const { prospects } = rowsToProspects(
+      { headers: ["email", "Link", "Taille", "taille", "Secteur d'activité", "Secteur d activite"], rows: [["a@b.co", "evil", "10", "20", "", "x"]], delimiter: "," },
+      { email: 0 },
+    );
+    expect(prospects[0].vars).toEqual({ taille: "10" });
   });
 });

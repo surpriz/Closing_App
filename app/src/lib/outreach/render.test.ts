@@ -29,6 +29,10 @@ describe("renderTemplate", () => {
     expect(out.missing).toEqual(["a", "b"]);
   });
 
+  it("dedups missing names case-insensitively", () => {
+    expect(renderTemplate("{{Foo}} {{foo}}", {}).missing).toEqual(["Foo"]);
+  });
+
   it("leaves {{link}} as is when absent, fills it when given", () => {
     expect(renderTemplate("See {{link}}", {})).toEqual({ text: "See {{link}}", missing: [] });
     expect(renderTemplate("See {{ Link }}", { link: "https://x.y" }).text).toBe("See https://x.y");

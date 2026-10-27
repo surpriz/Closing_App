@@ -7,10 +7,20 @@ const DELIMITERS = [",", ";", "\t"] as const;
 function detectDelimiter(text: string): CsvParseResult["delimiter"] {
   const counts: Record<string, number> = { ",": 0, ";": 0, "\t": 0 };
   let quoted = false;
+  let fieldStart = true;
   for (const char of text) {
-    if (char === '"') quoted = !quoted;
-    else if (!quoted && (char === "\n" || char === "\r")) break;
-    else if (!quoted && char in counts) counts[char]++;
+    if (quoted) {
+      if (char === '"') quoted = false;
+      continue;
+    }
+    if (char === '"' && fieldStart) {
+      quoted = true;
+      fieldStart = false;
+      continue;
+    }
+    if (char === "\n" || char === "\r") break;
+    fieldStart = char in counts;
+    if (char in counts) counts[char]++;
   }
   let best: CsvParseResult["delimiter"] = ",";
   for (const delimiter of DELIMITERS) if (counts[delimiter] > counts[best]) best = delimiter;
@@ -24,10 +34,13 @@ export function parseCsv(input: string): CsvParseResult {
   let row: string[] = [];
   let field = "";
   let quoted = false;
+  // a quote only opens a quoted section at the start of a field
+  let fieldQuotedBefore = false;
 
   const endRow = () => {
     row.push(field);
     field = "";
+    fieldQuotedBefore = false;
     if (row.some((cell) => cell.trim() !== "")) records.push(row);
     row = [];
   };
@@ -41,10 +54,13 @@ export function parseCsv(input: string): CsvParseResult {
           i++;
         } else quoted = false;
       } else field += char;
-    } else if (char === '"') quoted = true;
-    else if (char === delimiter) {
+    } else if (char === '"' && field === "" && !fieldQuotedBefore) {
+      quoted = true;
+      fieldQuotedBefore = true;
+    } else if (char === delimiter) {
       row.push(field);
       field = "";
+      fieldQuotedBefore = false;
     } else if (char === "\n" || char === "\r") {
       if (char === "\r" && text[i + 1] === "\n") i++;
       endRow();
@@ -70,7 +86,7 @@ function slug(value: string) {
 
 const HEADER_ALIASES: Record<ProspectColumn, string[]> = {
   email: ["email", "e_mail", "mail", "courriel"],
-  firstName: ["prenom", "firstname", "first_name", "first_name"],
+  firstName: ["prenom", "firstname", "first_name"],
   lastName: ["nom", "lastname", "last_name", "name"],
   company: ["societe", "entreprise", "company", "organisation", "organization"],
   title: ["poste", "titre", "title", "job", "fonction"],
@@ -123,10 +139,15 @@ export function rowsToProspects(
     if (!email) return void rejected.push({ line, reason: "no_email" });
     if (!EMAIL.test(email)) return void rejected.push({ line, reason: "invalid_email" });
     const vars: Record<string, string> = {};
+    const seen = new Set<string>();
     parsed.headers.forEach((header, index) => {
       const key = slug(header);
+      if (mapped.has(index) || !key || seen.has(key)) return;
+      seen.add(key); // first column wins for a given slug
+      // `link` is reserved for the campaign link in templates: a column must never override it
+      if (key === "link") return;
       const value = (row[index] ?? "").trim();
-      if (!mapped.has(index) && key && value) vars[key] = value;
+      if (value) vars[key] = value;
     });
     prospects.push({
       email,

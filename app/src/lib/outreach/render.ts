@@ -19,7 +19,7 @@ export function renderTemplate(body: string, vars: TemplateVars): { text: string
     if (name.toLowerCase() === "link") return whole;
     const repli = fallback?.trim();
     if (repli) return repli;
-    if (!missing.includes(name)) missing.push(name);
+    if (!missing.some((m) => m.toLowerCase() === name.toLowerCase())) missing.push(name);
     return "";
   });
   return { text, missing };
