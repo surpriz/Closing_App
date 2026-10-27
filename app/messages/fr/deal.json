@@ -33,7 +33,8 @@
     "invalidDuration": "Durée invalide.",
     "reactivateManagerOnly": "Le document est archivé : seul un manager peut le remettre en ligne.",
     "nameTooLong": "Nom trop long.",
-    "alreadyForContact": "Ce lien est déjà pour un contact : créez un nouveau lien pour le partager.",
+    "alreadyForContact": "Ce lien est déjà au nom d'un contact : créez un Smart Link depuis le document.",
+    "alreadyClosed": "Ce deal est clos : créez un Smart Link depuis le document.",
     "sharedNoRecipient": "Un Smart Link n'a pas de destinataire : revenez à un lien personnel.",
     "emailOrName": "Indiquez un email ou un nom.",
     "invalidEmail": "Cet email n'est pas valide.",
@@ -580,8 +581,10 @@
   },
   "smartLinkProblem": {
     "titlePersonal": "Ce lien n'est pas un Smart Link",
-    "bodyPersonal": "Des lecteurs sont arrivés avec leur adresse dans le lien (?email=…), comme depuis une séquence de cold email. Un lien personnel ignore cette adresse : ils restent anonymes. Dans votre séquence, remplacez-le par un Smart Link.",
-    "createSmartLink": "Créer un Smart Link sur le document",
+    "bodyPersonal": "Des lecteurs sont arrivés avec leur adresse dans le lien (?email=…), comme depuis une séquence de cold email. Un lien personnel ignore cette adresse : ils restent anonymes. Transformez-le en Smart Link : même adresse, et les emails déjà envoyés identifieront leurs lecteurs.",
+    "convert": "Le transformer en Smart Link",
+    "converted": "C'est un Smart Link. Les prochains lecteurs seront identifiés.",
+    "createSmartLink": "ou créer un nouveau Smart Link",
     "titleTag": "Votre outil d'envoi n'a pas remplacé {tag}",
     "bodyTag": "Des lecteurs sont arrivés avec la variable telle quelle dans le lien : ils ont dû taper leur email pour lire. Vérifiez la syntaxe exacte de la variable dans votre outil, puis faites un vrai envoi à votre propre adresse."
   }

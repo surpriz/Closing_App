@@ -345,15 +345,14 @@ export async function setLinkShared(linkId: string, shared: boolean) {
   const link = await requireOwnedLink(linkId);
   if (link.shared === shared) return { ok: true };
   if (shared) {
-    // Only a fresh link: one already read or answered is a deal under way
-    const [named, read, current] = await Promise.all([
-      prisma.prospect.count({ where: { linkId: link.id, origin: "SELLER" } }),
-      prisma.documentView.count({ where: { linkId: link.id, isBot: false } }),
+    // Nobody named on it yet: anonymous reads (a link pasted in a sequence by mistake) do not make it a deal
+    const [named, current] = await Promise.all([
+      prisma.prospect.count({ where: { linkId: link.id } }),
       prisma.link.findUniqueOrThrow({ where: { id: link.id }, select: { dealStatus: true } }),
     ]);
-    if (named > 0 || read > 0 || current.dealStatus !== "OPEN") {
+    if (named > 0 || current.dealStatus !== "OPEN") {
       const t = await getTranslations("deal.actions");
-      return { error: t("alreadyForContact") };
+      return { error: t(named > 0 ? "alreadyForContact" : "alreadyClosed") };
     }
   }
 

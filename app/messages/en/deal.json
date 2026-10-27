@@ -33,7 +33,8 @@
     "invalidDuration": "Invalid duration.",
     "reactivateManagerOnly": "The document is archived: only a manager can bring it back.",
     "nameTooLong": "Name too long.",
-    "alreadyForContact": "This link is already for a contact: create a new link to share it.",
+    "alreadyForContact": "This link already belongs to a contact: create a Smart Link from the document.",
+    "alreadyClosed": "This deal is closed: create a Smart Link from the document.",
     "sharedNoRecipient": "A Smart Link has no recipient: switch back to a personal link.",
     "emailOrName": "Enter an email or a name.",
     "invalidEmail": "This email isn't valid.",
@@ -580,8 +581,10 @@
   },
   "smartLinkProblem": {
     "titlePersonal": "This link isn't a Smart Link",
-    "bodyPersonal": "Readers came with their address in the link (?email=…), as if from a cold email sequence. A personal link ignores that address: they stay anonymous. Replace it with a Smart Link in your sequence.",
-    "createSmartLink": "Create a Smart Link on the document",
+    "bodyPersonal": "Readers came with their address in the link (?email=…), as if from a cold email sequence. A personal link ignores that address: they stay anonymous. Turn it into a Smart Link: same URL, and the emails already sent will name their readers.",
+    "convert": "Turn it into a Smart Link",
+    "converted": "It's a Smart Link now. The next readers will be identified.",
+    "createSmartLink": "or create a new Smart Link",
     "titleTag": "Your sending tool didn't replace {tag}",
     "bodyTag": "Readers came with the variable left as is in the link: they had to type their email to read. Check the exact variable syntax in your tool, then send a real email to your own address."
   }

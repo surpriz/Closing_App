@@ -83,7 +83,7 @@ export default async function LinkDetailPage({
 
   const { link, now, canEdit, url, mainProspect, settings, insight } = deal;
   const t = await getTranslations("deal.page");
-  const smartProblems = canEdit ? await loadSmartLinkProblems(link.id) : [];
+  const smartProblems = canEdit ? await loadSmartLinkProblems(link.id, link.shared) : [];
   const tDocs = await getTranslations("documents");
   const locale = await getLocale();
   const uploadPrefix = capsuleUploadPrefix(workspace.organization.id);
@@ -171,7 +171,7 @@ export default async function LinkDetailPage({
 
       <div className="space-y-6">
         <DealHeader deal={deal} />
-        <SmartLinkProblemNotice problems={smartProblems} documentId={link.document.id} />
+        <SmartLinkProblemNotice problems={smartProblems} linkId={link.id} documentId={link.document.id} />
         {/* Not sent yet: the share screen above is the next action */}
         {!link.draftAt && (
           <DealNextAction
@@ -437,7 +437,8 @@ export default async function LinkDetailPage({
   );
 }
 
-async function loadSmartLinkProblems(linkId: string) {
+/** What still applies: a personal link once converted has no address to ignore any more. */
+async function loadSmartLinkProblems(linkId: string, shared: boolean) {
   const alerts = await prisma.sellerAlert.findMany({
     where: { linkId, type: "SMART_LINK_PROBLEM" },
     orderBy: { createdAt: "asc" },
@@ -445,6 +446,7 @@ async function loadSmartLinkProblems(linkId: string) {
   });
   return alerts.flatMap((alert) => {
     const payload = alert.payload as { smartProblem?: SmartLinkProblem; tag?: string | null };
-    return payload.smartProblem ? [{ kind: payload.smartProblem, tag: payload.tag ?? null, at: alert.createdAt }] : [];
+    const applies = payload.smartProblem === (shared ? "unresolved_tag" : "personal_link");
+    return payload.smartProblem && applies ? [{ kind: payload.smartProblem, tag: payload.tag ?? null, at: alert.createdAt }] : [];
   });
 }
