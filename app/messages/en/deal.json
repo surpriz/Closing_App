@@ -252,7 +252,7 @@
     "intro": "Paste this link into your sequence: every prospect who clicks lands with no form, with their own tracking.",
     "toolAria": "Cold email tool",
     "documented": "The variables are {tool}'s.",
-    "undocumented": "Check the variable names in your tool's editor.",
+    "undocumented": "Check the variable names in your tool's editor. Only the email matters: company and first name are a bonus.",
     "webhook": "To pause the sequence as soon as a prospect reads, connect the <link>webhook</link>."
   },
   "shareReady": {

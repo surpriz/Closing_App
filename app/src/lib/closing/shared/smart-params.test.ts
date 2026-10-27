@@ -46,6 +46,10 @@ describe("smartLinkUrl", () => {
       "https://clozer.club/v/abc?email={{email}}&company={{companyName}}&name={{firstName}}",
     );
   });
+
+  it("leaves out the variables a tool is not known to have", () => {
+    expect(smartLinkUrl("https://clozer.club/v/abc", "manyreach")).toBe("https://clozer.club/v/abc?email={{EMAIL}}");
+  });
 });
 
 describe("smartLinkProblem", () => {
