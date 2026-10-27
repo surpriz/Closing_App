@@ -149,6 +149,10 @@ export async function handleInboundReply(raw: unknown): Promise<InboundOutcome> 
   const headers = Object.fromEntries(
     (notification.mail.headers ?? []).map((header) => [header.name.toLowerCase(), header.value] as const),
   );
+  // The map keeps one value per name, and an email can carry several signatures
+  const dkimSignatures = (notification.mail.headers ?? [])
+    .filter((header) => header.name.toLowerCase() === "dkim-signature")
+    .map((header) => header.value);
 
   // A DKIM probe is not a reply: checked before the relay lookup, after the spam and virus check so a rejected
   // email never writes a verdict
@@ -168,7 +172,7 @@ export async function handleInboundReply(raw: unknown): Promise<InboundOutcome> 
         dkim: notification.receipt.dkimVerdict?.status,
         dmarc: notification.receipt.dmarcVerdict?.status,
       },
-      headers,
+      dkimSignatures,
       now: new Date(),
     });
     return "probe";

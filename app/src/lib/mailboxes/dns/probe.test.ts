@@ -4,7 +4,7 @@ const findUnique = vi.fn();
 const updateMany = vi.fn();
 vi.mock("@/lib/db", () => ({ prisma: { mailbox: { findUnique: (a: unknown) => findUnique(a), updateMany: (a: unknown) => updateMany(a) } } }));
 
-import { dkimSignatureInfo, parseProbeAddress, probeAddress, recordDkimProbe, verdictToBoolean } from "./probe";
+import { dkimSignatureInfo, signatureForDomain, parseProbeAddress, probeAddress, recordDkimProbe, verdictToBoolean } from "./probe";
 
 const secret = "a-test-secret-that-is-long-enough-123";
 const domain = "reply.clozer.club";
@@ -30,12 +30,18 @@ describe("probe addresses", () => {
 describe("dkimSignatureInfo", () => {
   it("reads selector and domain from a folded header", () => {
     const header = "v=1; a=rsa-sha256; c=relaxed/relaxed;\r\n d=Acme.fr; s=Google;\r\n h=from:to; bh=abc=; b=xyz";
-    expect(dkimSignatureInfo({ "dkim-signature": header })).toEqual({ selector: "google", domain: "acme.fr" });
+    expect(dkimSignatureInfo(header)).toEqual({ selector: "google", domain: "acme.fr" });
   });
 
   it("is null without a usable signature", () => {
-    expect(dkimSignatureInfo({})).toBeNull();
-    expect(dkimSignatureInfo({ "dkim-signature": "v=1; bh=abc" })).toBeNull();
+    expect(dkimSignatureInfo(undefined)).toBeNull();
+    expect(dkimSignatureInfo("v=1; bh=abc")).toBeNull();
+  });
+
+  it("picks the signature of the mailbox domain among several", () => {
+    const sigs = ["v=1; d=provider.net; s=p1", "v=1; d=mail.acme.fr; s=sel2", "v=1; d=notacme.fr; s=x"];
+    expect(signatureForDomain(sigs, "acme.fr")).toEqual({ selector: "sel2", domain: "mail.acme.fr" });
+    expect(signatureForDomain(["v=1; d=notacme.fr; s=x"], "acme.fr")).toBeNull();
   });
 });
 
@@ -54,18 +60,18 @@ describe("recordDkimProbe", () => {
     updateMany.mockReset();
     findUnique.mockResolvedValue({ id: "m1", email: "paul@acme.fr", domain: "acme.fr", dnsDetail: { dkim: { status: "unknown", selector: null } } });
   });
-  const headers = { "dkim-signature": "v=1; d=acme.fr; s=sel1; b=x" };
+  const sigs = ["v=1; d=acme.fr; s=sel1; b=x"];
 
   it("writes nothing for an unknown mailbox or another sender", async () => {
     findUnique.mockResolvedValueOnce(null);
-    expect(await recordDkimProbe({ mailboxId: "m1", fromEmail: "paul@acme.fr", verdicts: {}, headers, now })).toBe("unknown_mailbox");
-    expect(await recordDkimProbe({ mailboxId: "m1", fromEmail: "eve@evil.com", verdicts: { dkim: "PASS" }, headers, now })).toBe("wrong_sender");
+    expect(await recordDkimProbe({ mailboxId: "m1", fromEmail: "paul@acme.fr", verdicts: {}, dkimSignatures: sigs, now })).toBe("unknown_mailbox");
+    expect(await recordDkimProbe({ mailboxId: "m1", fromEmail: "eve@evil.com", verdicts: { dkim: "PASS" }, dkimSignatures: sigs, now })).toBe("wrong_sender");
     expect(updateMany).not.toHaveBeenCalled();
   });
 
   it("records PASS and keeps the selector", async () => {
     const outcome = await recordDkimProbe({
-      mailboxId: "m1", fromEmail: "Paul@Acme.fr", verdicts: { spf: "PASS", dkim: "PASS", dmarc: "PASS" }, headers, now,
+      mailboxId: "m1", fromEmail: "Paul@Acme.fr", verdicts: { spf: "PASS", dkim: "PASS", dmarc: "PASS" }, dkimSignatures: sigs, now,
     });
     expect(outcome).toBe("recorded");
     const { where, data } = updateMany.mock.calls[0][0];
@@ -76,7 +82,7 @@ describe("recordDkimProbe", () => {
   });
 
   it("records FAIL as false and leaves other verdicts untouched", async () => {
-    await recordDkimProbe({ mailboxId: "m1", fromEmail: "paul@acme.fr", verdicts: { dkim: "FAIL", spf: "GRAY" }, headers: {}, now });
+    await recordDkimProbe({ mailboxId: "m1", fromEmail: "paul@acme.fr", verdicts: { dkim: "FAIL", spf: "GRAY" }, dkimSignatures: [], now });
     const { data } = updateMany.mock.calls[0][0];
     expect(data.dkimOk).toBe(false);
     expect(data).not.toHaveProperty("spfOk");
@@ -85,12 +91,28 @@ describe("recordDkimProbe", () => {
     expect(data.dnsDetail.dkim.status).toBe("unknown");
   });
 
+  it("credits the matching signature when it is not the last one", async () => {
+    await recordDkimProbe({
+      mailboxId: "m1", fromEmail: "paul@acme.fr", verdicts: { dkim: "PASS" },
+      dkimSignatures: ["d=acme.fr; s=mine", "d=provider.net; s=theirs"], now,
+    });
+    const { data } = updateMany.mock.calls[0][0];
+    expect(data).toMatchObject({ dkimOk: true, dkimSelector: "mine" });
+    expect(data.dnsDetail.probe.verified).toBe(true);
+  });
+
   it("does not credit a PASS signed for another domain", async () => {
     await recordDkimProbe({
-      mailboxId: "m1", fromEmail: "paul@acme.fr", verdicts: { dkim: "PASS" }, headers: { "dkim-signature": "d=relay.example; s=x" }, now,
+      mailboxId: "m1", fromEmail: "paul@acme.fr", verdicts: { dkim: "PASS" }, dkimSignatures: ["d=relay.example; s=x"], now,
     });
     const { data } = updateMany.mock.calls[0][0];
     expect(data).not.toHaveProperty("dkimOk");
     expect(data.dnsDetail.dkim.status).toBe("unknown");
+  });
+
+  it("resets a stale verified DKIM to unknown on FAIL, never revoked", async () => {
+    findUnique.mockResolvedValue({ id: "m1", email: "paul@acme.fr", domain: "acme.fr", dnsDetail: { dkim: { status: "verified", selector: "old" } } });
+    await recordDkimProbe({ mailboxId: "m1", fromEmail: "paul@acme.fr", verdicts: { dkim: "FAIL" }, dkimSignatures: sigs, now });
+    expect(updateMany.mock.calls[0][0].data.dnsDetail.dkim).toEqual({ status: "unknown", selector: null });
   });
 });

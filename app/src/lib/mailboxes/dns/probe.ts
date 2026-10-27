@@ -30,14 +30,26 @@ export function parseProbeAddress(recipient: string, domain: string, secret: str
   return mailboxId;
 }
 
-/** Selector and signing domain of the DKIM-Signature header. Header names are expected lowercased. */
-export function dkimSignatureInfo(headers: Record<string, string>): { selector: string; domain: string } | null {
-  const signature = headers["dkim-signature"];
+/** Selector and signing domain of one DKIM-Signature header value. */
+export function dkimSignatureInfo(signature: string | undefined): { selector: string; domain: string } | null {
   if (!signature) return null;
   const tag = (name: string) => new RegExp(`(?:^|;)\\s*${name}\\s*=\\s*([^;\\s]+)`, "i").exec(signature)?.[1]?.toLowerCase();
   const selector = tag("s");
   const domain = tag("d");
   return selector && domain ? { selector, domain } : null;
+}
+
+/**
+ * The first signature made for the mailbox's own domain. A mail can carry several (the sender's and its
+ * provider's) and the headers are not verified, so all of them are looked at, never just the last one.
+ */
+export function signatureForDomain(signatures: string[], mailboxDomain: string) {
+  const d = mailboxDomain.toLowerCase();
+  for (const raw of signatures) {
+    const info = dkimSignatureInfo(raw);
+    if (info && (info.domain === d || info.domain.endsWith(`.${d}`))) return info;
+  }
+  return null;
 }
 
 /** SES verdict status to a stored flag. Anything else (GRAY, PROCESSING_FAILED, absent) says nothing. */
@@ -49,17 +61,12 @@ export type ProbeOutcome = "recorded" | "wrong_sender" | "unknown_mailbox";
 
 type Verdicts = { spf?: string | null; dkim?: string | null; dmarc?: string | null };
 
-/** The signing domain must belong to the mailbox's domain: a PASS for someone else's key proves nothing about ours. */
-function signedForDomain(signingDomain: string, mailboxDomain: string) {
-  const d = mailboxDomain.toLowerCase();
-  return signingDomain === d || signingDomain.endsWith(`.${d}`);
-}
-
 export async function recordDkimProbe(input: {
   mailboxId: string;
   fromEmail: string;
   verdicts: Verdicts;
-  headers: Record<string, string>;
+  /** Every DKIM-Signature header value of the email, in order. */
+  dkimSignatures: string[];
   now: Date;
 }): Promise<ProbeOutcome> {
   const mailbox = await prisma.mailbox.findUnique({
@@ -70,11 +77,13 @@ export async function recordDkimProbe(input: {
   // The probe may only speak for the mailbox it was sent from
   if (input.fromEmail.trim().toLowerCase() !== mailbox.email.toLowerCase()) return "wrong_sender";
 
-  const signature = dkimSignatureInfo(input.headers);
+  // A PASS only counts for our domain if one of the signatures is ours: a PASS for a relay's key proves nothing
+  const signature = signatureForDomain(input.dkimSignatures, mailbox.domain);
+  const firstSignature = signature ?? dkimSignatureInfo(input.dkimSignatures[0]);
   const spf = verdictToBoolean(input.verdicts.spf);
   const dkim = verdictToBoolean(input.verdicts.dkim);
   const dmarc = verdictToBoolean(input.verdicts.dmarc);
-  const dkimPass = dkim === true && !!signature && signedForDomain(signature.domain, mailbox.domain);
+  const dkimPass = dkim === true && !!signature;
 
   const detail = (mailbox.dnsDetail && typeof mailbox.dnsDetail === "object" && !Array.isArray(mailbox.dnsDetail)
     ? mailbox.dnsDetail
@@ -83,11 +92,17 @@ export async function recordDkimProbe(input: {
   const nextDetail = {
     ...detail,
     // The settings page reads the DKIM pill from the stored report, so a real PASS has to land there too
-    ...(dkimPass ? { dkim: { ...dkimDetail, status: "verified", selector: signature.selector } } : {}),
+    // A FAIL is not proof of a revoked key: back to unknown, so the pill and the column agree
+    ...(dkimPass
+      ? { dkim: { ...dkimDetail, status: "verified", selector: signature.selector } }
+      : dkim === false
+        ? { dkim: { ...dkimDetail, status: "unknown", selector: null } }
+        : {}),
     probe: {
       at: input.now.toISOString(),
-      selector: signature?.selector ?? null,
-      domain: signature?.domain ?? null,
+      selector: firstSignature?.selector ?? null,
+      domain: firstSignature?.domain ?? null,
+      verified: dkimPass,
       dkim: input.verdicts.dkim ?? null,
       spf: input.verdicts.spf ?? null,
       dmarc: input.verdicts.dmarc ?? null,

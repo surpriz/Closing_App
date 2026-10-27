@@ -59,6 +59,24 @@ function dnsFields(report: DnsReport) {
   };
 }
 
+const PROBE_TRUST_MS = 90 * 24 * 60 * 60 * 1000;
+
+/**
+ * A DNS re-check only guesses the DKIM selector, a probe email proved the real signature. So a recent verified probe
+ * survives a DNS "unknown" (and the probe stays on the report); a DNS "verified" or "revoked" always wins.
+ */
+function withProbe(report: DnsReport, stored: unknown, now: Date) {
+  const probe = (stored as { probe?: { at?: string; verified?: boolean; selector?: string | null } } | null)?.probe;
+  if (!probe) return { report: report as DnsReport & { probe?: unknown }, kept: false };
+  const merged: DnsReport & { probe?: unknown } = { ...report, probe };
+  const fresh = !!probe.at && now.getTime() - new Date(probe.at).getTime() <= PROBE_TRUST_MS;
+  if (report.dkim.status === "unknown" && probe.verified === true && fresh) {
+    merged.dkim = { status: "verified", selector: probe.selector ?? null };
+    return { report: merged, kept: true };
+  }
+  return { report: merged, kept: false };
+}
+
 function unknownReport(now: Date): DnsReport {
   return {
     spf: { status: "unknown_provider", record: null },
@@ -185,7 +203,7 @@ export async function recheckMailboxDns(
 ) {
   const mailbox = await prisma.mailbox.findFirst({
     where: { id: mailboxId, organizationId, userId, status: { not: "DISCONNECTED" } },
-    select: { id: true, domain: true, provider: true, dkimSelector: true },
+    select: { id: true, domain: true, provider: true, dkimSelector: true, dnsDetail: true },
   });
   if (!mailbox) return null;
   let preset: PresetId | null = null;
@@ -199,8 +217,12 @@ export async function recheckMailboxDns(
     resolver,
     now,
   );
-  await prisma.mailbox.update({ where: { id: mailbox.id }, data: dnsFields(report) });
-  return report;
+  const merged = withProbe(report, mailbox.dnsDetail, now);
+  await prisma.mailbox.update({
+    where: { id: mailbox.id },
+    data: { ...dnsFields(merged.report), ...(merged.kept ? { dkimOk: true } : {}) },
+  });
+  return merged.report;
 }
 
 export async function updateMailboxCap(organizationId: string, userId: string, mailboxId: string, cap: number) {

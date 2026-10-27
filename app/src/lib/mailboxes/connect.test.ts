@@ -26,7 +26,7 @@ vi.mock("./imap", () => ({ imapConnector: () => ({ verify: () => verify() }) }))
 const encode = vi.fn((c: unknown) => `enc:${(c as { kind: string }).kind}`);
 vi.mock("./credentials", () => ({ encodeCredentials: (c: unknown) => encode(c) }));
 
-const { connectImapMailbox, disconnectMailbox, updateMailboxCap } = await import("./connect");
+const { connectImapMailbox, disconnectMailbox, recheckMailboxDns, updateMailboxCap } = await import("./connect");
 
 const resolver = {
   mx: async () => [{ exchange: "mx1.mail.ovh.net", priority: 1 }],
@@ -125,5 +125,39 @@ describe("updateMailboxCap", () => {
     expect(await updateMailboxCap("org1", "u1", "mb1", 500)).toEqual({ cap: 50, email: "jean@acme.fr" });
     expect(db.updateMany.mock.calls[0][0].where).toMatchObject({ id: "mb1", organizationId: "org1", userId: "u1" });
     expect(await updateMailboxCap("org1", "u1", "mb1", 0)).toMatchObject({ cap: 1 });
+  });
+});
+
+describe("recheckMailboxDns", () => {
+  const stored = (probe: object) => ({
+    id: "mb1", domain: "acme.fr", provider: "IMAP", dkimSelector: "sel1",
+    dnsDetail: { dkim: { status: "verified", selector: "sel1" }, probe },
+  });
+  const probeAt = (days: number) => new Date(now.getTime() - days * 86_400_000).toISOString();
+
+  beforeEach(() => db.update.mockResolvedValue({}));
+
+  it("keeps a recent verified probe when DNS cannot see the key", async () => {
+    db.findFirst.mockResolvedValue(stored({ at: probeAt(10), verified: true, selector: "sel1" }));
+    const report = await recheckMailboxDns("org1", "u1", "mb1", resolver, now);
+    expect(report?.dkim).toEqual({ status: "verified", selector: "sel1" });
+    const { data } = db.update.mock.calls[0][0];
+    expect(data.dkimOk).toBe(true);
+    expect(data.dnsDetail.probe.verified).toBe(true);
+  });
+
+  it("lets DNS win once the probe is older than 90 days", async () => {
+    db.findFirst.mockResolvedValue(stored({ at: probeAt(120), verified: true, selector: "sel1" }));
+    const report = await recheckMailboxDns("org1", "u1", "mb1", resolver, now);
+    expect(report?.dkim.status).toBe("unknown");
+    expect(db.update.mock.calls[0][0].data.dkimOk).toBeNull();
+  });
+
+  it("lets a DNS verdict win over the probe", async () => {
+    db.findFirst.mockResolvedValue(stored({ at: probeAt(1), verified: true, selector: "sel1" }));
+    const revoked = { ...resolver, txt: async (host: string) => (host.includes("_domainkey") ? ["v=DKIM1; p="] : []) };
+    const report = await recheckMailboxDns("org1", "u1", "mb1", revoked, now);
+    expect(report?.dkim.status).toBe("revoked");
+    expect(db.update.mock.calls[0][0].data.dkimOk).toBe(false);
   });
 });
