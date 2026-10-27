@@ -14,6 +14,7 @@ import { UploadDropzone } from "@/components/dashboard/upload-dropzone";
 import { documentUploadPrefix, pitchUploadPrefix } from "@/lib/blob";
 import { getDocumentPageReadings } from "@/lib/closing/dashboard/document-readings";
 import { pageHeat } from "@/lib/closing/dashboard/page-heat";
+import { documentTitle } from "@/lib/closing/documents/link-title";
 import { VIDEO_SEGMENTS } from "@/lib/closing/documents/video-segments";
 import { prisma } from "@/lib/db";
 import { formatDuration, formatRelative } from "@/lib/format";
@@ -171,8 +172,9 @@ export default async function DocumentsPage() {
                   <Link
                     href={`/documents/${document.id}`}
                     className="min-w-0 truncate font-semibold outline-none after:absolute after:inset-0 focus-visible:after:ring-3 focus-visible:after:ring-ring/30 focus-visible:after:ring-inset"
+                    title={document.name}
                   >
-                    {document.name}
+                    {documentTitle(document)}
                   </Link>
                   {!processing && document.status !== "FAILED" && (
                     <span className="flex shrink-0 items-center gap-1.5 text-small text-muted-foreground">

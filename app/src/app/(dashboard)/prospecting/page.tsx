@@ -92,7 +92,7 @@ export default async function ProspectionPage() {
       where: { organizationId: organization.id, archivedAt: null, status: "READY" },
       orderBy: { createdAt: "desc" },
       take: 50,
-      select: { id: true, name: true },
+      select: { id: true, name: true, displayTitle: true, docType: true },
     }),
   ]);
 

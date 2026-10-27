@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { cleanDisplayTitle, humanizeName, linkTitle } from "./link-title";
+import { cleanDisplayTitle, documentTitle, humanizeName, linkTitle } from "./link-title";
 
 describe("humanizeName", () => {
   it("turns a file name into words", () => {
@@ -46,5 +46,15 @@ describe("linkTitle", () => {
 
   it("never returns an empty title", () => {
     expect(linkTitle({ name: "---" })).toBe("Document");
+  });
+});
+
+describe("documentTitle", () => {
+  it("prefers the title read in the document, else tidies the file name", () => {
+    expect(documentTitle({ name: "Rust_Platform_FR_2026_OFF", displayTitle: "Plateforme Rust 2026" })).toBe(
+      "Plateforme Rust 2026",
+    );
+    expect(documentTitle({ name: "Rust_Platform_FR_2026_OFF", displayTitle: null })).toBe("Rust Platform FR 2026 OFF");
+    expect(documentTitle({ name: "---" })).toBe("Document");
   });
 });
