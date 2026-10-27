@@ -5,6 +5,8 @@ import type { DsnDetails, InboundHeaders } from "../types";
 export type ParsedEmail = Awaited<ReturnType<typeof PostalMime.parse>>;
 
 const MAX_DIAGNOSTIC = 300;
+const MAX_TEXT = 20_000;
+const RECIPIENT = /[^\s<>;,"]{1,254}@[^\s<>;,"]{1,254}/;
 const DSN_SUBJECT = /undeliver|non remis|delivery status notification|mail delivery failed|échec/i;
 const DSN_SENDER = /^(mailer-daemon|postmaster)$/i;
 const STATUS = /\b([45]\.\d{1,3}\.\d{1,3})\b/;
@@ -31,7 +33,7 @@ function oneLine(value: string | null) {
 function address(value: string | null) {
   if (!value) return null;
   const raw = value.includes(";") ? value.slice(value.indexOf(";") + 1) : value;
-  const found = /[^\s<>;,"]+@[^\s<>;,"]+/.exec(raw);
+  const found = RECIPIENT.exec(raw);
   return found ? found[0].toLowerCase() : null;
 }
 
@@ -89,20 +91,25 @@ export function dsnFromHeaders(input: {
   const local = input.from.split("@")[0] ?? "";
   const failedRecipients = input.headers["x-failed-recipients"];
   const isReport = /multipart\/report/i.test(input.headers["content-type"] ?? "");
-  const looksLikeDsn =
-    DSN_SENDER.test(local) || DSN_SUBJECT.test(input.subject ?? "") || !!failedRecipients || isReport;
-  if (!looksLikeDsn) return null;
+  // Words like "échec" are ordinary: the subject alone never proves a bounce
+  const strongSignal = DSN_SENDER.test(local) || !!failedRecipients || isReport;
+  const subjectSignal = DSN_SUBJECT.test(input.subject ?? "");
+  if (!strongSignal && !subjectSignal) return null;
 
-  const text = input.text ?? "";
+  // Bounded: the text is attacker-controlled and the scans below must stay linear
+  const text = (input.text ?? "").slice(0, MAX_TEXT);
   const status = STATUS.exec(text)?.[1] ?? null;
   const unknownUser = UNKNOWN_USER.exec(text);
+  if (!strongSignal && !status && !unknownUser) return null;
+
   const delayed = /delay|retried|will keep trying/i.test(input.subject ?? "") || /delayed/i.test(text.slice(0, 400));
-  const recipient = failedRecipients?.split(/[,;\s]+/).find(Boolean) ?? /[^\s<>;,"]+@[^\s<>;,"]+/.exec(text)?.[0];
+  const recipient = failedRecipients?.split(/[,;\s]+/).find(Boolean) ?? RECIPIENT.exec(text)?.[0];
 
   // The line that carries the evidence is the most useful diagnostic we can keep
   const lines = text.split(/\r?\n/);
   const line = lines.find((l) => (status ? STATUS.test(l) : UNKNOWN_USER.test(l)));
-  const action: DsnDetails["action"] = delayed ? "delayed" : status || unknownUser ? actionOf(null, status ?? "5") : "other";
+  // A status class is authoritative; the "delayed" wording only counts when there is no status
+  const action: DsnDetails["action"] = status ? actionOf(null, status) : delayed ? "delayed" : unknownUser ? "failed" : "other";
 
   return {
     action,

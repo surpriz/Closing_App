@@ -27,7 +27,7 @@ describe("classifyDsn", () => {
     [{ status: "5.2.2" }, "transient"],
     [{ status: "4.4.7" }, "transient"],
     [{ status: "4.2.1", action: "delayed" }, "transient"],
-    [{ status: null, action: "delayed" }, "ignore"],
+    [{ status: null, action: "delayed" }, "transient"],
     [{ status: "5.7.1" }, "policy"],
     [{ status: "5.7.26" }, "policy"],
     [{ status: "5.3.4", diagnostic: "Blocked by reputation filter" }, "policy"],

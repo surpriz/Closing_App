@@ -4,7 +4,7 @@ import { join } from "node:path";
 import PostalMime from "postal-mime";
 import { describe, expect, it } from "vitest";
 
-import { parseDsn } from "./dsn";
+import { dsnFromHeaders, parseDsn } from "./dsn";
 import { matchInbound, normalizeMessageId, type MatchContext } from "./match";
 import type { InboundMessage } from "../types";
 
@@ -115,6 +115,14 @@ describe("matchInbound", () => {
 
   it("does not match by domain without a Re: subject", () => {
     expect(matchInbound(message({ from: { address: "assistant@example.net", name: null }, subject: "Invoice" }), ctx).kind).toBe("unrelated");
+  });
+
+  it("a prospect reply with 'échec' in the subject is a reply, not a bounce", () => {
+    const text = "On regarde ça demain.";
+    const from = { address: "paul@example.org", name: null };
+    const subject = "Re: échec du test";
+    expect(dsnFromHeaders({ from: from.address, subject, headers: {}, text })).toBeNull();
+    expect(matchInbound(message({ from, subject, inReplyTo: "<orig-1@sender.example.com>" }), ctx).kind).toBe("reply");
   });
 
   it("returns unrelated for a stranger", () => {

@@ -80,6 +80,26 @@ describe("dsnFromHeaders", () => {
     expect(dsnFromHeaders({ from: "mailer-daemon@example.org", subject: "Oops", headers: {}, text: "Something broke" })?.action).toBe("other");
   });
 
+  it("stays fast on a huge token without @", () => {
+    const start = performance.now();
+    dsnFromHeaders({ from: "mailer-daemon@example.org", subject: "x", headers: {}, text: "a".repeat(200_000) });
+    expect(performance.now() - start).toBeLessThan(100);
+  });
+
+  it("does not take a human subject like 'échec' for a bounce", () => {
+    expect(dsnFromHeaders({ from: "paul@example.org", subject: "Re: échec du test", headers: {}, text: "On regarde ça demain." })).toBeNull();
+  });
+
+  it("derives the action from the status class, not from 'delayed' wording", () => {
+    const dsn = dsnFromHeaders({
+      from: "mailer-daemon@example.org",
+      subject: "Delivery delayed",
+      headers: {},
+      text: "Your message was delayed.\n550 5.1.1 user unknown",
+    });
+    expect(dsn).toMatchObject({ action: "failed", status: "5.1.1" });
+  });
+
   it("returns null for a normal message", () => {
     expect(dsnFromHeaders({ from: "paul@example.org", subject: "Re: hello", headers: {}, text: "Sounds good" })).toBeNull();
   });

@@ -15,7 +15,10 @@ export function classifyDsn(d: DsnDetails): DsnClass {
   const diagnostic = d.diagnostic ?? "";
   const status = d.status;
 
-  if (!status) return UNKNOWN_USER.test(diagnostic) ? "permanent" : "ignore";
+  if (!status) {
+    if (d.action === "delayed") return "transient";
+    return UNKNOWN_USER.test(diagnostic) ? "permanent" : "ignore";
+  }
 
   if (d.action === "delayed" || status.startsWith("4.") || status === "5.2.2") return "transient";
   if (status === "5.2.3") return "permanent_message";
