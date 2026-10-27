@@ -13,6 +13,7 @@ import {
 import { DealSettings } from "@/components/dashboard/deal/deal-settings";
 import { loadDeal } from "@/components/dashboard/deal/load-deal";
 import { DealNextAction } from "@/components/dashboard/deal/next-action";
+import { SmartLinkProblemNotice } from "@/components/dashboard/deal/smart-link-problem";
 import { ThermalBand } from "@/components/dashboard/deal/thermal-band";
 import { DealContextForm } from "@/components/dashboard/deal-context-form";
 import { DealContextSummaryDetails } from "@/components/dashboard/deal-context-details";
@@ -42,6 +43,7 @@ import type { DocType } from "@/lib/closing/documents/doc-types";
 import { showsCountdown } from "@/lib/closing/expiry";
 import { firstNameOf, guessMailClient } from "@/lib/closing/share/compose";
 import { settingsSummary } from "@/lib/closing/share/summary";
+import type { SmartLinkProblem } from "@/lib/closing/shared/smart-params";
 import { prisma } from "@/lib/db";
 import { formatDate } from "@/lib/format";
 import { requireWorkspace } from "@/lib/session";
@@ -81,6 +83,7 @@ export default async function LinkDetailPage({
 
   const { link, now, canEdit, url, mainProspect, settings, insight } = deal;
   const t = await getTranslations("deal.page");
+  const smartProblems = canEdit ? await loadSmartLinkProblems(link.id) : [];
   const tDocs = await getTranslations("documents");
   const locale = await getLocale();
   const uploadPrefix = capsuleUploadPrefix(workspace.organization.id);
@@ -168,6 +171,7 @@ export default async function LinkDetailPage({
 
       <div className="space-y-6">
         <DealHeader deal={deal} />
+        <SmartLinkProblemNotice problems={smartProblems} documentId={link.document.id} />
         {/* Not sent yet: the share screen above is the next action */}
         {!link.draftAt && (
           <DealNextAction
@@ -431,4 +435,16 @@ export default async function LinkDetailPage({
       </fieldset>
     </div>
   );
+}
+
+async function loadSmartLinkProblems(linkId: string) {
+  const alerts = await prisma.sellerAlert.findMany({
+    where: { linkId, type: "SMART_LINK_PROBLEM" },
+    orderBy: { createdAt: "asc" },
+    select: { payload: true, createdAt: true },
+  });
+  return alerts.flatMap((alert) => {
+    const payload = alert.payload as { smartProblem?: SmartLinkProblem; tag?: string | null };
+    return payload.smartProblem ? [{ kind: payload.smartProblem, tag: payload.tag ?? null, at: alert.createdAt }] : [];
+  });
 }

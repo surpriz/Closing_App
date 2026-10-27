@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "SellerAlertType" ADD VALUE 'SMART_LINK_PROBLEM';

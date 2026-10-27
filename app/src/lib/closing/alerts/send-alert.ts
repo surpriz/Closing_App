@@ -12,6 +12,7 @@ import { getNamespaceTranslator, type ServerT } from "@/lib/server-translator";
 import { escapeSlackText, postSignedWebhook, postSlackMessage } from "../channels/webhooks";
 import { formatDeadline } from "../expiry";
 import { isUniqueViolation } from "../followups/queue";
+import type { SmartLinkProblem } from "../shared/smart-params";
 
 export type AlertPayload = {
   liveViewers?: number;
@@ -51,6 +52,9 @@ export type AlertPayload = {
   /** Revival alerts: who came back, and why the link no longer opened. */
   prospectId?: string | null;
   deadState?: "archived" | "expired";
+  /** SMART_LINK_PROBLEM: a personal link got ?email=, or the tool left its variable (`tag`) as is. */
+  smartProblem?: SmartLinkProblem;
+  tag?: string | null;
 };
 
 const READER_ALERTS = new Set<SellerAlertType>(["COMMITTEE_LIVE", "DECISION_MAKER_DETECTED", "NEW_READER"]);
@@ -167,6 +171,27 @@ export function alertMessage(
         subject: t("message.relinkRequested.subject", { who }),
         line: t("message.relinkRequested.line", { who, doc }),
         blocks,
+        url,
+      };
+    }
+    case "SMART_LINK_PROBLEM": {
+      const personal = payload.smartProblem === "personal_link";
+      const url = personal ? `${appUrl}/documents/${link.document.id}` : linkUrl;
+      const tag = payload.tag ?? "{{email}}";
+      return {
+        subject: t(personal ? "message.smartLinkProblem.subjectPersonal" : "message.smartLinkProblem.subjectTag", { tag }),
+        line: t(personal ? "message.smartLinkProblem.linePersonal" : "message.smartLinkProblem.lineTag", { doc, tag }),
+        blocks: [
+          {
+            kind: "text",
+            text: t(personal ? "message.smartLinkProblem.bodyPersonal" : "message.smartLinkProblem.bodyTag", { doc, tag }),
+          },
+          {
+            kind: "button",
+            label: t(personal ? "message.smartLinkProblem.buttonPersonal" : "message.smartLinkProblem.buttonTag"),
+            href: url,
+          },
+        ],
         url,
       };
     }
@@ -513,7 +538,7 @@ export async function createAndDeliverAlert(input: AlertDelivery) {
                 ? "↪️"
               : input.type === "PROSPECT_REPLIED"
                 ? "💬"
-              : input.type === "EMAIL_BOUNCED"
+              : input.type === "EMAIL_BOUNCED" || input.type === "SMART_LINK_PROBLEM"
                 ? "⚠️"
               : input.type === "RELINK_REQUESTED" || input.type === "DEAD_LINK_OPENED"
                 ? "🔁"

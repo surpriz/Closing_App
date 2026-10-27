@@ -29,6 +29,8 @@ export function extensionNotice(
     prospectEmail?: string | null;
     replyExcerpt?: string | null;
     deadState?: "archived" | "expired";
+    smartProblem?: "personal_link" | "unresolved_tag";
+    tag?: string | null;
   },
   locale: UiLocale,
   timezone = "Europe/Paris",
@@ -109,6 +111,13 @@ export function extensionNotice(
         title: t("notice.emailBounced.title"),
         body: t("notice.emailBounced.body", { email: payload.prospectEmail ?? who }),
       };
+    case "SMART_LINK_PROBLEM":
+      return payload.smartProblem === "personal_link"
+        ? { title: t("notice.smartLinkProblem.titlePersonal"), body: t("notice.smartLinkProblem.bodyPersonal", { doc }) }
+        : {
+            title: t("notice.smartLinkProblem.titleTag", { tag: payload.tag ?? "{{email}}" }),
+            body: t("notice.smartLinkProblem.bodyTag", { doc }),
+          };
     case "DRAFT_READY":
       return { title: t("notice.draftReady.title"), body: t("notice.draftReady.body", { who }) };
     case "COMMITTEE_LIVE":
