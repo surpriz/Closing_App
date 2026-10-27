@@ -301,7 +301,8 @@ export async function forgetDraftCopied(linkId: string) {
 // Emails abandoned after the link was inserted. A copied link may be in a prospect's inbox: it stays
 export async function archiveStaleDrafts(now = new Date()) {
   const { count } = await prisma.link.updateMany({
-    where: { draftAt: { lte: new Date(now.getTime() - DRAFT_TTL_MS) }, archivedAt: null, copiedAt: null },
+    // A shared link waits on a sequence that may start weeks later: never tidied away
+    where: { draftAt: { lte: new Date(now.getTime() - DRAFT_TTL_MS) }, archivedAt: null, copiedAt: null, shared: false },
     data: { archivedAt: now },
   });
   return count;

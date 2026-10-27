@@ -176,7 +176,6 @@ export function alertMessage(
     }
     case "SMART_LINK_PROBLEM": {
       const personal = payload.smartProblem === "personal_link";
-      const url = linkUrl;
       const tag = payload.tag ?? "{{email}}";
       return {
         subject: t(personal ? "message.smartLinkProblem.subjectPersonal" : "message.smartLinkProblem.subjectTag", { tag }),
@@ -189,10 +188,10 @@ export function alertMessage(
           {
             kind: "button",
             label: t(personal ? "message.smartLinkProblem.buttonPersonal" : "message.smartLinkProblem.buttonTag"),
-            href: url,
+            href: linkUrl,
           },
         ],
-        url,
+        url: linkUrl,
       };
     }
     case "DEAD_LINK_OPENED": {

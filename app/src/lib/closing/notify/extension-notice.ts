@@ -3,6 +3,7 @@ import { INTL_LOCALE, type UiLocale } from "@/i18n/locale";
 import { getNamespaceTranslator } from "@/lib/server-translator";
 
 import { formatDeadline } from "../expiry";
+import type { SmartLinkProblem } from "../shared/smart-params";
 
 /**
  * Text of a Chrome notification, short enough for the system popup
@@ -29,7 +30,7 @@ export function extensionNotice(
     prospectEmail?: string | null;
     replyExcerpt?: string | null;
     deadState?: "archived" | "expired";
-    smartProblem?: "personal_link" | "unresolved_tag";
+    smartProblem?: SmartLinkProblem;
     tag?: string | null;
   },
   locale: UiLocale,

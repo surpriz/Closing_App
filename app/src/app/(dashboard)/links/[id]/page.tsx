@@ -82,10 +82,12 @@ export default async function LinkDetailPage({
   if (!deal) notFound();
 
   const { link, now, canEdit, url, mainProspect, settings, insight } = deal;
-  const t = await getTranslations("deal.page");
-  const smartProblems = canEdit ? await loadSmartLinkProblems(link.id, link.shared) : [];
-  const tDocs = await getTranslations("documents");
-  const locale = await getLocale();
+  const [t, tDocs, locale, smartProblems] = await Promise.all([
+    getTranslations("deal.page"),
+    getTranslations("documents"),
+    getLocale(),
+    canEdit ? loadSmartLinkProblems(link.id, link.shared, now) : [],
+  ]);
   const uploadPrefix = capsuleUploadPrefix(workspace.organization.id);
 
   const welcome = deal.welcome ? (
@@ -171,7 +173,12 @@ export default async function LinkDetailPage({
 
       <div className="space-y-6">
         <DealHeader deal={deal} />
-        <SmartLinkProblemNotice problems={smartProblems} linkId={link.id} documentId={link.document.id} />
+        <SmartLinkProblemNotice
+          problems={smartProblems}
+          linkId={link.id}
+          documentId={link.document.id}
+          convertible={!link.prospects.some((prospect) => prospect.origin === "SELLER")}
+        />
         {/* Not sent yet: the share screen above is the next action */}
         {!link.draftAt && (
           <DealNextAction
@@ -437,16 +444,23 @@ export default async function LinkDetailPage({
   );
 }
 
-/** What still applies: a personal link once converted has no address to ignore any more. */
-async function loadSmartLinkProblems(linkId: string, shared: boolean) {
+/**
+ * What still applies, seen in the last week: a personal link once converted has
+ * no address to ignore any more, and a fixed tool stops showing up.
+ */
+async function loadSmartLinkProblems(linkId: string, shared: boolean, now: Date) {
   const alerts = await prisma.sellerAlert.findMany({
-    where: { linkId, type: "SMART_LINK_PROBLEM" },
-    orderBy: { createdAt: "asc" },
+    where: { linkId, type: "SMART_LINK_PROBLEM", createdAt: { gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) } },
+    orderBy: { createdAt: "desc" },
     select: { payload: true, createdAt: true },
   });
+  // The latest of each kind
+  const seen = new Set<SmartLinkProblem>();
   return alerts.flatMap((alert) => {
     const payload = alert.payload as { smartProblem?: SmartLinkProblem; tag?: string | null };
     const applies = payload.smartProblem === (shared ? "unresolved_tag" : "personal_link");
-    return payload.smartProblem && applies ? [{ kind: payload.smartProblem, tag: payload.tag ?? null, at: alert.createdAt }] : [];
+    if (!payload.smartProblem || !applies || seen.has(payload.smartProblem)) return [];
+    seen.add(payload.smartProblem);
+    return [{ kind: payload.smartProblem, tag: payload.tag ?? null, at: alert.createdAt }];
   });
 }

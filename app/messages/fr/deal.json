@@ -586,6 +586,8 @@
     "converted": "C'est un Smart Link. Les prochains lecteurs seront identifiés.",
     "createSmartLink": "ou créer un nouveau Smart Link",
     "titleTag": "Votre outil d'envoi n'a pas remplacé {tag}",
-    "bodyTag": "Des lecteurs sont arrivés avec la variable telle quelle dans le lien : ils ont dû taper leur email pour lire. Vérifiez la syntaxe exacte de la variable dans votre outil, puis faites un vrai envoi à votre propre adresse."
+    "bodyTag": "Des lecteurs sont arrivés avec la variable telle quelle dans le lien : ils ont dû taper leur email pour lire. Vérifiez la syntaxe exacte de la variable dans votre outil, puis faites un vrai envoi à votre propre adresse.",
+    "bodyPersonalNamed": "Des lecteurs sont arrivés avec leur adresse dans le lien (?email=…), comme depuis une séquence de cold email. Ce lien est au nom d'un contact : il ignore cette adresse. Créez un Smart Link sur le document et mettez-le dans votre séquence.",
+    "createSmartLinkOnly": "Créer un Smart Link sur le document"
   }
 }
