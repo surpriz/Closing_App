@@ -14,7 +14,8 @@
       "extension": "Chrome and Outlook",
       "equipe": "Team",
       "facturation": "Billing",
-      "donnees": "Data"
+      "donnees": "Data",
+      "boite": "Mailbox"
     },
     "instantSave": "These sections save as soon as you change them."
   },
@@ -226,5 +227,87 @@
     "codeHint": "The code shows up in the Clozer pane in your Outlook. Never enter a code someone else sent you.",
     "connecting": "Connecting…",
     "connect": "Connect Outlook"
+  },
+  "mailbox": {
+    "title": "Mailbox",
+    "description": "Your campaigns go out from your own mailbox. Clozer reads your replies to stop sequences.",
+    "empty": "No mailbox connected yet.",
+    "status": {
+      "ACTIVE": "Active",
+      "ERROR": "Error",
+      "CONNECTING": "Connecting",
+      "DISCONNECTED": "Disconnected"
+    },
+    "dns": {
+      "spf": "SPF",
+      "dkim": "DKIM",
+      "dmarc": "DMARC",
+      "ok": "ok",
+      "missing": "missing",
+      "unknown": "unknown",
+      "help": {
+        "spf": {
+          "missing": "No SPF record found for your domain. Add one so receivers trust your messages.",
+          "duplicate": "Your domain has two SPF records, which breaks the check. Merge them into one.",
+          "missing_provider": "Your SPF record does not include your mail provider. Add it."
+        },
+        "dkim": {
+          "unknown": "We could not find a DKIM key. It may use a selector we did not try. Check with your provider.",
+          "revoked": "The DKIM key is revoked. Publish a new one with your provider."
+        },
+        "dmarc": {
+          "missing": "No DMARC record found. Add one, even with a soft policy.",
+          "none_policy": "Your DMARC policy is set to none. It works, but it protects little."
+        }
+      }
+    },
+    "sentToday": "Sent today: {sent} / {allowance}",
+    "ramping": "new mailbox, the limit rises over three weeks",
+    "cap": "Daily limit",
+    "capHint": "From 1 to {max} a day.",
+    "save": "Save",
+    "capSaved": "Limit saved",
+    "recheck": "Re-check DNS",
+    "rechecking": "Checking…",
+    "disconnect": "Disconnect",
+    "disconnecting": "Disconnecting…",
+    "cancel": "Cancel",
+    "disconnectTitle": "Disconnect this mailbox?",
+    "disconnectDescription": "Campaigns using it will stop sending. Your password is erased from Clozer.",
+    "connectTitle": "Connect a mailbox",
+    "email": "Email address",
+    "detect": "Detect",
+    "detecting": "Detecting…",
+    "detected": "Detected: {provider} ({domain})",
+    "providers": {
+      "GOOGLE": "Google",
+      "MICROSOFT": "Microsoft 365",
+      "IMAP": "IMAP / SMTP"
+    },
+    "googleNotice": "Gmail and Microsoft 365 will get a dedicated connection (coming soon). Meanwhile, Gmail accepts an app password.",
+    "microsoftNotice": "Microsoft 365 is not available yet. The form is disabled for now.",
+    "appPasswordHint": "Use an app password, not your usual Google password.",
+    "displayName": "Sender name",
+    "servers": "Servers",
+    "imapHost": "IMAP server",
+    "smtpHost": "SMTP server",
+    "port": "Port",
+    "secure": "TLS",
+    "user": "Username (defaults to your email)",
+    "password": "Password",
+    "connect": "Connect",
+    "connecting": "Connecting…",
+    "connected": "Mailbox connected",
+    "errors": {
+      "invalid": "Check the fields: email, servers, ports and password are required.",
+      "exists": "This mailbox is already connected in your workspace.",
+      "limit": "You reached the maximum number of mailboxes.",
+      "AUTH_REVOKED": "The server refused these credentials. Check the username and password.",
+      "QUOTA": "The provider says the sending quota is reached. Try again later.",
+      "RATE_LIMITED": "Too many attempts on the provider side. Try again in a few minutes.",
+      "REJECTED": "The provider rejected the connection.",
+      "TRANSIENT": "Could not reach the mail servers. Check the hosts and ports, then try again.",
+      "CONFIG": "This setup is not supported. Check the servers and ports."
+    }
   }
 }

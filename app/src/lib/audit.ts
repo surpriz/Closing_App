@@ -14,7 +14,9 @@ export type AuditAction =
   | "document.archived"
   | "extension.connected"
   | "extension.revoked"
-  | "outlook.connected";
+  | "outlook.connected"
+  | "mailbox.connected"
+  | "mailbox.disconnected";
 
 /**
  * One line in the workspace's journal. Never throws: a journal outage must not

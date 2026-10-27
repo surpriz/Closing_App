@@ -14,7 +14,8 @@
       "extension": "Chrome et Outlook",
       "equipe": "Équipe",
       "facturation": "Facturation",
-      "donnees": "Données"
+      "donnees": "Données",
+      "boite": "Boîte mail"
     },
     "instantSave": "Ces sections s'enregistrent dès que vous les modifiez."
   },
@@ -226,5 +227,87 @@
     "codeHint": "Le code s'affiche dans le volet Clozer de votre Outlook. Ne saisissez jamais un code envoyé par quelqu'un d'autre.",
     "connecting": "Connexion…",
     "connect": "Connecter Outlook"
+  },
+  "mailbox": {
+    "title": "Boîte mail",
+    "description": "Vos campagnes partent de votre propre boîte. Clozer lit vos réponses pour arrêter les séquences.",
+    "empty": "Aucune boîte connectée pour l'instant.",
+    "status": {
+      "ACTIVE": "Active",
+      "ERROR": "Erreur",
+      "CONNECTING": "Connexion",
+      "DISCONNECTED": "Déconnectée"
+    },
+    "dns": {
+      "spf": "SPF",
+      "dkim": "DKIM",
+      "dmarc": "DMARC",
+      "ok": "ok",
+      "missing": "manquant",
+      "unknown": "inconnu",
+      "help": {
+        "spf": {
+          "missing": "Aucun enregistrement SPF trouvé sur votre domaine. Ajoutez-en un pour que les destinataires vous fassent confiance.",
+          "duplicate": "Votre domaine a deux enregistrements SPF, ce qui casse la vérification. Fusionnez-les en un seul.",
+          "missing_provider": "Votre SPF n'inclut pas votre fournisseur de messagerie. Ajoutez-le."
+        },
+        "dkim": {
+          "unknown": "Clé DKIM introuvable. Elle utilise peut-être un sélecteur que nous n'avons pas essayé. Voyez avec votre fournisseur.",
+          "revoked": "La clé DKIM est révoquée. Publiez-en une nouvelle chez votre fournisseur."
+        },
+        "dmarc": {
+          "missing": "Aucun enregistrement DMARC trouvé. Ajoutez-en un, même avec une politique souple.",
+          "none_policy": "Votre politique DMARC est sur none. Ça fonctionne, mais ça protège peu."
+        }
+      }
+    },
+    "sentToday": "Envoyés aujourd'hui : {sent} / {allowance}",
+    "ramping": "boîte récente, la limite monte sur trois semaines",
+    "cap": "Plafond par jour",
+    "capHint": "De 1 à {max} par jour.",
+    "save": "Enregistrer",
+    "capSaved": "Plafond enregistré",
+    "recheck": "Re-vérifier le DNS",
+    "rechecking": "Vérification…",
+    "disconnect": "Déconnecter",
+    "disconnecting": "Déconnexion…",
+    "cancel": "Annuler",
+    "disconnectTitle": "Déconnecter cette boîte ?",
+    "disconnectDescription": "Les campagnes qui l'utilisent arrêteront d'envoyer. Votre mot de passe est effacé de Clozer.",
+    "connectTitle": "Connecter une boîte",
+    "email": "Adresse email",
+    "detect": "Détecter",
+    "detecting": "Détection…",
+    "detected": "Détecté : {provider} ({domain})",
+    "providers": {
+      "GOOGLE": "Google",
+      "MICROSOFT": "Microsoft 365",
+      "IMAP": "IMAP / SMTP"
+    },
+    "googleNotice": "Gmail et Microsoft 365 passeront par une connexion dédiée (bientôt). En attendant, Gmail accepte un mot de passe d'application.",
+    "microsoftNotice": "Microsoft 365 n'est pas encore disponible. Le formulaire est désactivé pour l'instant.",
+    "appPasswordHint": "Utilisez un mot de passe d'application, pas votre mot de passe Google habituel.",
+    "displayName": "Nom d'expéditeur",
+    "servers": "Serveurs",
+    "imapHost": "Serveur IMAP",
+    "smtpHost": "Serveur SMTP",
+    "port": "Port",
+    "secure": "TLS",
+    "user": "Identifiant (par défaut, votre email)",
+    "password": "Mot de passe",
+    "connect": "Connecter",
+    "connecting": "Connexion…",
+    "connected": "Boîte connectée",
+    "errors": {
+      "invalid": "Vérifiez les champs : email, serveurs, ports et mot de passe sont obligatoires.",
+      "exists": "Cette boîte est déjà connectée dans votre espace.",
+      "limit": "Vous avez atteint le nombre maximum de boîtes.",
+      "AUTH_REVOKED": "Le serveur a refusé ces identifiants. Vérifiez l'identifiant et le mot de passe.",
+      "QUOTA": "Le fournisseur indique que le quota d'envoi est atteint. Réessayez plus tard.",
+      "RATE_LIMITED": "Trop de tentatives côté fournisseur. Réessayez dans quelques minutes.",
+      "REJECTED": "Le fournisseur a refusé la connexion.",
+      "TRANSIENT": "Impossible de joindre les serveurs de messagerie. Vérifiez les hôtes et les ports, puis réessayez.",
+      "CONFIG": "Cette configuration n'est pas prise en charge. Vérifiez les serveurs et les ports."
+    }
   }
 }

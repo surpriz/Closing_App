@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { BillingSettings } from "@/components/dashboard/billing-settings";
 import { ExtensionTokens } from "@/components/dashboard/extension-tokens";
+import { MailboxSettings } from "@/components/dashboard/mailbox-settings";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { PrivacySettings } from "@/components/dashboard/privacy-settings";
 import {
@@ -23,6 +24,10 @@ import { extensionProbe } from "@/lib/extension-config";
 import { connectedClients } from "@/lib/extension-tokens";
 import { prisma } from "@/lib/db";
 import { isEmailConfigured } from "@/lib/email";
+import { dailyAllowance } from "@/lib/mailboxes/caps/allowance";
+import { sentToday } from "@/lib/mailboxes/connect";
+import type { DnsReport } from "@/lib/mailboxes/dns/checks";
+import { isOutreachAllowed } from "@/lib/outreach/flag";
 import { isManagerRole, isOwnerRole } from "@/lib/roles";
 import { requireWorkspace } from "@/lib/session";
 
@@ -43,6 +48,7 @@ export async function generateMetadata(): Promise<Metadata> {
 // Chrome and Outlook lead: the call alerts depend on them
 const ESSENTIAL = [
   { id: "extension" },
+  { id: "boite", outreachOnly: true },
   { id: "pilote" },
   { id: "alertes" },
   { id: "agenda" },
@@ -62,7 +68,8 @@ export default async function SettingsPage() {
   const { user, organization, role } = await requireWorkspace();
   const isManager = isManagerRole(role);
   const billing = planFor(organization);
-  const [settings, tokens, prefs, team, usage] = await Promise.all([
+  const outreach = isOutreachAllowed(user, organization.id);
+  const [settings, tokens, prefs, team, usage, mailboxes] = await Promise.all([
     getWorkspaceSettings(organization.id),
     prisma.extensionToken.findMany({
       where: {
@@ -82,6 +89,7 @@ export default async function SettingsPage() {
     getSellerPrefs(user.id, organization.id),
     isManager ? getTeam(organization.id) : null,
     getBillingUsage(organization.id),
+    outreach ? getMailboxes(user.id, organization.id) : null,
   ]);
   const llm = getLanguageModel("followup");
   const t = await getTranslations("settings.page");
@@ -97,7 +105,10 @@ export default async function SettingsPage() {
       <AdvancedSettingsProvider>
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-[11rem_minmax(0,1fr)]">
           <SettingsNav
-            essential={ESSENTIAL.map(({ id }) => ({ id, label: t(`nav.${id}`) }))}
+            essential={ESSENTIAL.filter((section) => outreach || !("outreachOnly" in section)).map(({ id }) => ({
+              id,
+              label: t(`nav.${id}`),
+            }))}
             advanced={ADVANCED.filter(
               (section) => isManager || !("managerOnly" in section),
             ).map(({ id }) => ({ id, label: t(`nav.${id}`) }))}
@@ -115,6 +126,11 @@ export default async function SettingsPage() {
                 probe={extensionProbe(user.email, tokens)}
               />
             </div>
+            {mailboxes && (
+              <div className="max-w-2xl">
+                <MailboxSettings mailboxes={mailboxes} maxCap={getEnv().MAILBOX_DAILY_CAP_MAX} />
+              </div>
+            )}
             <SettingsForm
               initial={{
                 version: settings.updatedAt.toISOString(),
@@ -199,6 +215,37 @@ export default async function SettingsPage() {
       </AdvancedSettingsProvider>
     </div>
   );
+}
+
+async function getMailboxes(userId: string, organizationId: string) {
+  const now = new Date();
+  const maxCap = getEnv().MAILBOX_DAILY_CAP_MAX;
+  const rows = await prisma.mailbox.findMany({
+    where: { userId, organizationId, status: { not: "DISCONNECTED" } },
+    orderBy: { createdAt: "asc" },
+    select: {
+      id: true,
+      email: true,
+      status: true,
+      lastError: true,
+      dailyCap: true,
+      rampStartedAt: true,
+      timezone: true,
+      sentDay: true,
+      sentCount: true,
+      dnsDetail: true,
+    },
+  });
+  return rows.map((row) => ({
+    id: row.id,
+    email: row.email,
+    status: row.status,
+    lastError: row.lastError,
+    dailyCap: row.dailyCap,
+    allowance: dailyAllowance(row, now, { max: maxCap }),
+    sentToday: sentToday(row, now),
+    dns: (row.dnsDetail as DnsReport | null) ?? null,
+  }));
 }
 
 async function getBillingUsage(organizationId: string) {
