@@ -1,0 +1,53 @@
+Return-Path: <>
+Received: from mx.example.org (mx.example.org [192.0.2.10]) by mail.example.com with ESMTPS; Tue, 10 Nov 2026 09:14:02 +0100
+From: Mail Delivery System <MAILER-DAEMON@mx.example.org>
+To: sender@example.com
+Subject: Undelivered Mail Returned to Sender
+Date: Tue, 10 Nov 2026 09:14:02 +0100
+Message-ID: <dsn-0001@mx.example.org>
+Auto-Submitted: auto-replied
+MIME-Version: 1.0
+Content-Type: multipart/report; report-type=delivery-status; boundary="BOUND-A"
+
+--BOUND-A
+Content-Type: text/plain; charset=utf-8
+
+This is the mail system at host mx.example.org.
+
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients.
+
+<ghost@example.org>: host mail.example.org[192.0.2.20] said: 550 5.1.1
+    <ghost@example.org>: Recipient address rejected: User unknown in virtual
+    mailbox table (in reply to RCPT TO command)
+
+--BOUND-A
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns; mx.example.org
+X-Postfix-Queue-ID: 4A1B2C3D4E
+Arrival-Date: Tue, 10 Nov 2026 09:14:00 +0100
+
+Final-Recipient: rfc822; ghost@example.org
+Original-Recipient: rfc822;ghost@example.org
+Action: failed
+Status: 5.1.1
+Remote-MTA: dns; mail.example.org
+Diagnostic-Code: smtp; 550 5.1.1 <ghost@example.org>: Recipient address
+    rejected: User unknown in virtual mailbox table
+
+--BOUND-A
+Content-Type: message/rfc822
+
+Received: from sender.example.com by mx.example.org; Tue, 10 Nov 2026 09:14:00 +0100
+From: Sender <sender@example.com>
+To: ghost@example.org
+Subject: Quick question
+Message-ID: <orig-1001@sender.example.com>
+Date: Tue, 10 Nov 2026 09:13:58 +0100
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+
+Hello, a quick question about your invoicing.
+
+--BOUND-A--
