@@ -78,6 +78,24 @@ const serverEnvSchema = z.object({
   PROSPECTING_DAILY_REVEAL_LIMIT: z.coerce.number().int().min(0).default(50),
   PROSPECTING_MOCK: z.enum(["true", "false"]).optional(),
 
+  // Native cold email (outreach)
+  // Native cold email, beta: workspaces allowed to connect a mailbox and run campaigns (comma-separated org ids)
+  OUTREACH_ORG_IDS: z.string().optional(),
+  // Gmail goes through an intermediary that carries Google's verification; pinned on each mailbox at connect time
+  GMAIL_CONNECTOR: z.enum(["unipile", "nylas"]).optional(),
+  UNIPILE_DSN: z.preprocess((value) => value || undefined, z.url().optional()),
+  UNIPILE_API_KEY: z.string().optional(),
+  NYLAS_API_URL: z.preprocess((value) => value || undefined, z.url().default("https://api.eu.nylas.com")),
+  NYLAS_CLIENT_ID: z.string().optional(),
+  NYLAS_API_KEY: z.string().optional(),
+  NYLAS_WEBHOOK_SECRET: z.string().optional(),
+  MICROSOFT_MAILBOX_CLIENT_ID: z.string().optional(),
+  MICROSOFT_MAILBOX_CLIENT_SECRET: z.string().optional(),
+  // ?token= on the mailbox webhooks (/api/webhooks/mailboxes/*). 24+ characters
+  MAILBOX_WEBHOOK_TOKEN: z.string().min(24).optional(),
+  MAILBOX_DAILY_CAP_DEFAULT: z.coerce.number().int().min(1).default(30),
+  MAILBOX_DAILY_CAP_MAX: z.coerce.number().int().min(1).default(50),
+
   // Billing: unset key means billing off and no plan limit (lib/billing/plans.ts)
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),

@@ -93,7 +93,7 @@ export type DealFactsInput = {
     sentAt: Date;
     channel: "EMAIL" | "WHATSAPP";
     subject: string | null;
-    sentVia: "PLATFORM" | "MANUAL" | null;
+    sentVia: "PLATFORM" | "MANUAL" | "MAILBOX" | null;
     /** What the message did: reopened from its link, answered, or bounced. */
     clickedAt?: Date | null;
     repliedAt?: Date | null;
@@ -103,8 +103,8 @@ export type DealFactsInput = {
     type: "CALL" | "EMAIL_REPLY_RECEIVED" | "MEETING" | "NOTE" | "MANUAL_SEND";
     note: string | null;
     occurredAt: Date;
-    /** INBOUND and EXTENSION: caught by Clozer, the note is the prospect's own words. */
-    source?: "MANUAL" | "INBOUND" | "EXTENSION";
+    /** INBOUND, EXTENSION and MAILBOX: caught by Clozer, the note is the prospect's own words. */
+    source?: "MANUAL" | "INBOUND" | "EXTENSION" | "MAILBOX";
   }[];
   score: { score: number; tier: "HOT" | "WARM" | "COLD" } | null;
 };

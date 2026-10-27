@@ -43,6 +43,7 @@ model User {
   onboardingEmails        OnboardingEmail[]
   helpMessages            HelpMessage[]
   helpFeedback            HelpFeedback[]
+  mailboxes               Mailbox[]
 
   @@map("users")
 }
@@ -144,6 +145,11 @@ model Organization {
   prospectingRuns     ProspectingRun[]
   prospectSuggestions ProspectSuggestion[]
   prospectingCredits  ProspectingCreditEntry[]
+
+  mailboxes       Mailbox[]
+  campaigns       Campaign[]
+  suppressions    Suppression[]
+  mailboxQuantity Int? // Connected mailboxes billed on the Stripe add-on item
 
   @@map("organizations")
 }
@@ -367,6 +373,7 @@ enum FollowupStatus {
 enum FollowupSentVia {
   PLATFORM // sent by Clozer (SES, Twilio)
   MANUAL // the seller sent it from their own mailbox
+  MAILBOX // sent from the seller's connected mailbox
 }
 
 enum Autonomy {
@@ -387,6 +394,7 @@ enum ActivitySource {
   MANUAL // typed by the seller
   INBOUND // a reply to an email Clozer sent, caught by the reply relay
   EXTENSION // a reply seen by the extension in the seller's Gmail or Outlook thread
+  MAILBOX // a reply seen by the mailbox sync of a campaign
 }
 
 // Why a deal was lost, picked by the seller in one click
@@ -459,6 +467,7 @@ enum ProspectOrigin {
   PROSPECTING // suggested by Clozer prospecting: an unsubscribe also opts out of prospecting for everyone
   COLD_EMAIL // came from a cold email Smart Link: the address was in the URL, unverified
   FORWARDED // another reader sent them the link with "Transférer": the address was typed by that reader
+  CAMPAIGN // enrolled by the seller in a native campaign: the address came from their own list
 }
 
 enum SellerAlertChannel {
@@ -616,6 +625,7 @@ model Document {
   capsules         PageCapsule[]
   translations     DocumentTranslation[]
   fileTranslations DocumentFileTranslation[]
+  campaigns        Campaign[]
 
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
@@ -796,6 +806,12 @@ model Link {
   webhookEvents    WebhookEvent[]
   forwards         LinkForward[]
 
+  // Created by a campaign for this enrollment
+  campaignProspectId String?
+  campaignProspect   CampaignProspect?
+  // The campaign engine still owns this prospect: closing triggers keep off (lib/outreach/ownership.ts)
+  campaignOwned      Boolean           @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -804,6 +820,8 @@ model Link {
   @@index([dealStatus, followupsEnabled])
   @@index([expiresAt])
   @@index([parentLinkId])
+  @@index([campaignProspectId])
+  @@index([campaignOwned])
   @@map("links")
 }
 
@@ -1015,6 +1033,10 @@ model Followup {
 
   views DocumentView[]
 
+  campaignProspectId String?
+  campaignProspect   CampaignProspect? @relation(fields: [campaignProspectId], references: [id], onDelete: SetNull)
+  campaignMessage    CampaignMessage?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -1022,6 +1044,7 @@ model Followup {
   @@index([linkId, createdAt(sort: Desc)])
   @@index([prospectId])
   @@index([providerMessageId])
+  @@index([campaignProspectId])
   @@map("followups_queue")
 }
 
@@ -1637,4 +1660,330 @@ model StripeEvent {
 
   @@index([organizationId, receivedAt])
   @@map("stripe_events")
+}
+
+// ============================================================================
+// Outreach (native cold email)
+// ============================================================================
+
+enum MailboxProvider {
+  GOOGLE
+  MICROSOFT
+  IMAP
+}
+// How Clozer talks to the mailbox: Google through an intermediary (pinned at connect time), Microsoft through Graph, anything else by IMAP/SMTP
+enum MailboxConnector {
+  UNIPILE
+  NYLAS
+  GRAPH
+  SMTP
+}
+enum MailboxStatus {
+  CONNECTING
+  ACTIVE
+  ERROR
+  DISCONNECTED
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  DONE
+  ARCHIVED
+}
+enum EnrollmentStatus {
+  QUEUED
+  ACTIVE
+  PAUSED
+  REPLIED
+  BOUNCED
+  UNSUBSCRIBED
+  SUPPRESSED
+  FINISHED
+  STOPPED
+}
+enum CampaignMessageKind {
+  STEP
+  FOLLOWUP
+}
+enum CampaignMessageStatus {
+  SCHEDULED
+  SENDING
+  SENT
+  FAILED
+  CANCELLED
+  SKIPPED
+}
+enum SuppressionReason {
+  UNSUBSCRIBE
+  BOUNCE
+  COMPLAINT
+  MANUAL
+}
+enum MailboxInboundKind {
+  REPLY
+  BOUNCE
+  IGNORED
+}
+
+// A seller's own mailbox, connected to send campaigns from. Belongs to the member who connected it.
+model Mailbox {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  provider    MailboxProvider
+  connector   MailboxConnector
+  email       String // lowercase
+  domain      String // part after the @, for DNS checks
+  displayName String?
+  signature   String? // null: WorkspaceSettings.senderSignature
+  // encryptSecret(JSON): IMAP/SMTP hosts + user + password, Graph refresh token, or the intermediary's account id
+  credentials       String
+  externalAccountId String?
+
+  status          MailboxStatus @default(CONNECTING)
+  lastError       String?
+  lastErrorAt     DateTime?
+  errorNotifiedAt DateTime? // one email per error episode
+
+  dailyCap      Int      @default(30)
+  rampStartedAt DateTime @default(now()) // a fresh mailbox sends a few a day at first
+  timezone      String // the seller's at connect time: what "today" means for the cap
+  sentDay       String? // yyyy-mm-dd in `timezone`
+  sentCount     Int      @default(0)
+  policyBounceDay   String?
+  policyBounceCount Int  @default(0)
+
+  spfOk        Boolean?
+  dkimOk       Boolean?
+  dmarcOk      Boolean?
+  dkimSelector String?
+  dnsDetail    Json?
+  dnsCheckedAt DateTime?
+
+  // Reply and bounce sync: provider cursor (IMAP "uidValidity:uid", Graph deltaLink, intermediary date), lease, backoff
+  syncCursor      String?
+  lastSyncAt      DateTime?
+  nextSyncAt      DateTime?
+  syncRequestedAt DateTime? // a webhook asked for a sync
+  syncClaimedAt   DateTime?
+  syncErrorCount  Int       @default(0)
+  // Change notifications (Graph, intermediaries)
+  subscriptionId        String?
+  subscriptionExpiresAt DateTime?
+  webhookSecret         String? // encrypted at rest
+
+  disconnectedAt DateTime?
+  campaigns      Campaign[]
+  messages       CampaignMessage[]
+  inboundEvents  MailboxInboundEvent[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([organizationId, email])
+  @@index([status, nextSyncAt])
+  @@index([userId])
+  @@map("mailboxes")
+}
+
+// A pending OAuth handshake (Microsoft, Gmail intermediary): PKCE verifier and where to go back
+model MailboxOauthState {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  provider       MailboxProvider
+  codeVerifier   String?
+  redirectTo     String?
+  expiresAt      DateTime
+  consumedAt     DateTime?
+  createdAt      DateTime @default(now())
+
+  @@index([expiresAt])
+  @@map("mailbox_oauth_states")
+}
+
+// What the sync saw in the seller's inbox: ids and a short excerpt only, never a body
+model MailboxInboundEvent {
+  id          String            @id @default(cuid())
+  mailboxId   String
+  mailbox     Mailbox           @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+  externalKey String            @unique // mailbox:<mailboxId>:<provider message id>
+  kind        MailboxInboundKind
+  messageId   String?
+  inReplyTo   String?
+  fromEmail   String?
+  subject     String?
+  receivedAt  DateTime
+  excerpt     String? // 600 characters max
+  dsnStatus   String?
+  dsnClass    String?
+  matchedMessageId String?
+  enrollmentId     String?
+  createdAt   DateTime @default(now())
+
+  @@index([mailboxId, receivedAt(sort: Desc)])
+  @@map("mailbox_inbound_events")
+}
+
+model Campaign {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdById    String
+  mailboxId      String
+  mailbox        Mailbox      @relation(fields: [mailboxId], references: [id], onDelete: Restrict)
+  // The document the Clozer link opens; required to activate when a step carries the link
+  documentId     String?
+  document       Document?    @relation(fields: [documentId], references: [id], onDelete: SetNull)
+
+  name        String
+  status      CampaignStatus @default(DRAFT)
+  locale      String // language of the steps and of the AI follow-ups
+  linkOnReply Boolean        @default(false) // no step carries the link: it goes out with the seller's answer
+
+  steps       CampaignStep[]
+  enrollments CampaignProspect[]
+  messages    CampaignMessage[]
+  startedAt   DateTime?
+  pausedAt    DateTime?
+  finishedAt  DateTime?
+  archivedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([organizationId, status])
+  @@map("campaigns")
+}
+
+model CampaignStep {
+  id          String   @id @default(cuid())
+  campaignId  String
+  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  order       Int // 1-based
+  delayDays   Int      @default(3) // after the previous step was sent; 0 for the first
+  subject     String? // null past step 1: same thread, "Re: <thread subject>"
+  newThread   Boolean  @default(false)
+  body        String // text with {{firstName|there}}, {{company}}, {{link}}
+  carriesLink Boolean  @default(false) // at most one step per campaign (checked in code)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([campaignId, order])
+  @@map("campaign_steps")
+}
+
+// One person enrolled in a campaign. Nothing on the dashboard until the link exists.
+model CampaignProspect {
+  id             String   @id @default(cuid())
+  campaignId     String
+  campaign       Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  organizationId String // denormalized: suppression and "already enrolled" checks
+
+  email     String // lowercase
+  firstName String?
+  lastName  String?
+  company   String?
+  title     String?
+  vars      Json? // extra CSV columns, usable as {{var}}
+  timezone  String // from the CSV, else the seller's; Prospect.timezone takes over once they read
+  locale    String
+
+  status       EnrollmentStatus @default(QUEUED)
+  currentStep  Int              @default(0) // last step order sent
+  nextSendAt   DateTime?
+  pausedReason String?
+  pausedAt     DateTime?
+  repliedAt    DateTime?
+  finishedAt   DateTime?
+
+  // Threading: our RFC Message-ID of the first mail, the provider thread id, the subject the thread started with
+  threadSubject    String?
+  firstMessageId   String?
+  providerThreadId String?
+
+  // Set lazily when the link step is sent, or on reply
+  linkId     String? @unique
+  link       Link?   @relation(fields: [linkId], references: [id], onDelete: SetNull)
+  prospectId String?
+
+  readEvaluatedAt DateTime?
+  lastSignal      String?
+  reactivatedAt   DateTime?
+
+  messages  CampaignMessage[]
+  followups Followup[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([campaignId, email])
+  @@index([status, nextSendAt])
+  @@index([organizationId, email])
+  @@index([campaignId, status])
+  @@map("campaign_prospects")
+}
+
+// One email that left (or will leave) the seller's mailbox for an enrollment: fixed steps are born here,
+// AI follow-ups are Followup rows mirrored here when they go out
+model CampaignMessage {
+  id           String           @id @default(cuid())
+  campaignId   String
+  campaign     Campaign         @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  enrollmentId String
+  enrollment   CampaignProspect @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  mailboxId    String
+  mailbox      Mailbox          @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+  stepId       String?
+  followupId   String?          @unique
+  followup     Followup?        @relation(fields: [followupId], references: [id], onDelete: SetNull)
+  kind         CampaignMessageKind @default(STEP)
+
+  status       CampaignMessageStatus @default(SCHEDULED)
+  scheduledFor DateTime
+  sendingAt    DateTime? // lease
+  attempts     Int       @default(0)
+  sentAt       DateTime?
+  error        String?
+
+  subject           String
+  body              String // rendered text, as sent
+  messageId         String? // RFC 5322 Message-ID: ours for SMTP and intermediaries, Exchange's read back after send
+  providerMessageId String?
+  inReplyTo         String?
+  threadId          String?
+  carriesLink       Boolean @default(false)
+
+  dedupeKey    String    @unique // cold:<enrollmentId>:<stepId> | cold:<enrollmentId>:fu:<followupId>
+  bouncedAt    DateTime?
+  bounceDetail String?
+  repliedAt    DateTime?
+  clickedAt    DateTime? // first opening of the link carried by this message
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, scheduledFor])
+  @@index([mailboxId, status, sentAt])
+  @@index([enrollmentId, createdAt(sort: Desc)])
+  @@index([messageId])
+  @@map("campaign_messages")
+}
+
+// Workspace-level stop list, plain lowercase email: the workspace already holds the address
+// (prospecting_opt_outs stays global and hashed)
+model Suppression {
+  id             String            @id @default(cuid())
+  organizationId String
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  email          String
+  reason         SuppressionReason
+  source         String // "unsubscribe_page" | "mailbox_sync" | "ses" | "seller" | "import"
+  detail         String?
+  createdAt      DateTime          @default(now())
+
+  @@unique([organizationId, email])
+  @@map("suppressions")
 }
