@@ -6,6 +6,8 @@ import { z } from "zod";
 
 import { logAudit } from "@/lib/audit";
 import { getSellerPrefs, sellerTimezone } from "@/lib/closing/notify/preferences";
+import { dkimProbeRelayAddress } from "@/lib/closing/replies/inbound";
+import { prisma } from "@/lib/db";
 import {
   connectImapMailbox,
   detectMailboxFor,
@@ -94,6 +96,16 @@ export async function recheckDns(id: string) {
   const { user, organization } = await requireOutreach();
   await recheckMailboxDns(organization.id, user.id, id);
   revalidatePath("/settings");
+}
+
+/** Where to send a test email from this mailbox to check its DKIM for real; null when the relay is off. */
+export async function getDkimProbeAddress(mailboxId: string): Promise<string | null> {
+  const { user, organization } = await requireOutreach();
+  const mailbox = await prisma.mailbox.findFirst({
+    where: { id: mailboxId, organizationId: organization.id, userId: user.id, status: { not: "DISCONNECTED" } },
+    select: { id: true },
+  });
+  return mailbox ? dkimProbeRelayAddress(mailbox.id) : null;
 }
 
 export async function saveMailboxCap(id: string, cap: number) {

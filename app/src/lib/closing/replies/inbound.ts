@@ -3,6 +3,7 @@ import PostalMime from "postal-mime";
 import { z } from "zod";
 
 import { prisma } from "@/lib/db";
+import { parseProbeAddress, probeAddress, recordDkimProbe } from "@/lib/mailboxes/dns/probe";
 
 import { emailDomain } from "../committee/reader-map";
 
@@ -32,6 +33,18 @@ export function replyRelayAddress(followupId: string) {
   const domain = process.env.INBOUND_REPLY_DOMAIN;
   if (!domain || !isReplyRelayConfigured()) return null;
   return replyAddress(followupId, domain, relaySecret());
+}
+
+/** The DKIM probe address of this mailbox, or null when the relay is off. */
+export function dkimProbeRelayAddress(mailboxId: string) {
+  const domain = process.env.INBOUND_REPLY_DOMAIN;
+  if (!domain || !isReplyRelayConfigured()) return null;
+  return probeAddress(mailboxId, domain, relaySecret());
+}
+
+/** The bare address of a "Name <a@b>" header value. */
+function bareAddress(value: string) {
+  return (/<([^<>]+)>/.exec(value)?.[1] ?? value).trim().toLowerCase();
 }
 
 const receivedSchema = z.object({
@@ -65,6 +78,7 @@ export type InboundOutcome =
   | "duplicate"
   | "auto_reply"
   | "not_a_relay"
+  | "probe"
   | "rejected"
   | "unauthenticated"
   | "not_the_prospect"
@@ -132,6 +146,34 @@ export async function handleInboundReply(raw: unknown): Promise<InboundOutcome> 
   if (!domain) return "not_a_relay";
 
   const secret = relaySecret();
+  const headers = Object.fromEntries(
+    (notification.mail.headers ?? []).map((header) => [header.name.toLowerCase(), header.value] as const),
+  );
+
+  // A DKIM probe is not a reply: checked before the relay lookup, after the spam and virus check so a rejected
+  // email never writes a verdict
+  const probedMailboxId = notification.receipt.recipients
+    .map((recipient) => parseProbeAddress(recipient, domain, secret))
+    .find((id): id is string => !!id);
+  if (probedMailboxId) {
+    if (notification.receipt.spamVerdict?.status === "FAIL" || notification.receipt.virusVerdict?.status === "FAIL") {
+      return "rejected";
+    }
+    const fromHeader = notification.mail.commonHeaders?.from?.[0] ?? notification.mail.source ?? "";
+    await recordDkimProbe({
+      mailboxId: probedMailboxId,
+      fromEmail: bareAddress(fromHeader),
+      verdicts: {
+        spf: notification.receipt.spfVerdict?.status,
+        dkim: notification.receipt.dkimVerdict?.status,
+        dmarc: notification.receipt.dmarcVerdict?.status,
+      },
+      headers,
+      now: new Date(),
+    });
+    return "probe";
+  }
+
   const followupId = notification.receipt.recipients
     .map((recipient) => parseReplyAddress(recipient, domain, secret))
     .find((id): id is string => !!id);
@@ -157,9 +199,6 @@ export async function handleInboundReply(raw: unknown): Promise<InboundOutcome> 
   });
   if (!followup) return "unknown_followup";
 
-  const headers = Object.fromEntries(
-    (notification.mail.headers ?? []).map((header) => [header.name.toLowerCase(), header.value] as const),
-  );
   const rawEmail = await readRawEmail(notification).catch((error) => {
     console.error("[replies:inbound] could not read the email", error);
     return null;

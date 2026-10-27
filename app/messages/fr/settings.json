@@ -244,6 +244,11 @@
       "dmarc": "DMARC",
       "ok": "ok",
       "missing": "manquant",
+      "probe": {
+        "button": "Tester par email",
+        "instruction": "Envoyez n'importe quel email depuis cette boîte à cette adresse, puis cliquez sur Rafraîchir.",
+        "refresh": "Rafraîchir"
+      },
       "unknown": "inconnu",
       "help": {
         "spf": {

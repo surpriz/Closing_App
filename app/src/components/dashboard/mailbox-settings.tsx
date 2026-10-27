@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useActionState, useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -8,6 +9,7 @@ import {
   connectMailbox,
   detectMailbox,
   disconnectMailbox,
+  getDkimProbeAddress,
   recheckDns,
   saveMailboxCap,
   type MailboxFormState,
@@ -59,7 +61,51 @@ function dnsStates(dns: DnsReport | null): { key: "spf" | "dkim" | "dmarc"; stat
   ];
 }
 
-function DnsLine({ dns }: { dns: DnsReport | null }) {
+/** A DNS lookup can only guess the DKIM selector: an email sent to the relay lets SES verify the real signature. */
+function DkimProbe({ mailboxId }: { mailboxId: string }) {
+  const t = useTranslations("settings.mailbox.dns");
+  const router = useRouter();
+  const [address, setAddress] = useState<string | null>(null);
+  const [asked, setAsked] = useState(false);
+  const [loading, startLoading] = useTransition();
+  const [refreshing, startRefreshing] = useTransition();
+
+  // Relay off: no address, so no button either
+  if (asked && !address) return null;
+  if (!address) {
+    return (
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={loading}
+        onClick={() =>
+          startLoading(async () => {
+            setAddress(await getDkimProbeAddress(mailboxId));
+            setAsked(true);
+          })
+        }
+      >
+        {t("probe.button")}
+      </Button>
+    );
+  }
+  return (
+    <div className="space-y-2 text-small">
+      <p className="text-muted-foreground">{t("probe.instruction")}</p>
+      <code className="block break-all bg-muted px-3 py-2">{address}</code>
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={refreshing}
+        onClick={() => startRefreshing(() => router.refresh())}
+      >
+        {t("probe.refresh")}
+      </Button>
+    </div>
+  );
+}
+
+function DnsLine({ dns, mailboxId }: { dns: DnsReport | null; mailboxId: string }) {
   const t = useTranslations("settings.mailbox.dns");
   const states = dnsStates(dns);
   const issues = states.filter((s) => s.issue && s.state !== "ok");
@@ -79,6 +125,7 @@ function DnsLine({ dns }: { dns: DnsReport | null }) {
           {t(`help.${key}.${issue}` as "help.spf.missing")}
         </p>
       ))}
+      {states.find((s) => s.key === "dkim")?.state === "unknown" && <DkimProbe mailboxId={mailboxId} />}
     </div>
   );
 }
@@ -142,7 +189,7 @@ function MailboxItem({ mailbox, maxCap }: { mailbox: MailboxRow; maxCap: number 
       {mailbox.status === "ERROR" && mailbox.lastError && (
         <p className="text-small text-destructive">{mailbox.lastError}</p>
       )}
-      <DnsLine dns={mailbox.dns} />
+      <DnsLine dns={mailbox.dns} mailboxId={mailbox.id} />
       <Button
         variant="outline"
         size="sm"

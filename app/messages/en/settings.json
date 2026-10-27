@@ -244,6 +244,11 @@
       "dmarc": "DMARC",
       "ok": "ok",
       "missing": "missing",
+      "probe": {
+        "button": "Test by email",
+        "instruction": "Send any email from this mailbox to this address, then click Refresh.",
+        "refresh": "Refresh"
+      },
       "unknown": "unknown",
       "help": {
         "spf": {
