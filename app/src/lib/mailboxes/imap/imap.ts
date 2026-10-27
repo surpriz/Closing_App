@@ -6,6 +6,7 @@ import { replyExcerpt } from "@/lib/closing/replies/text";
 import type { ImapCredentials } from "../credentials";
 import { MailboxError } from "../errors";
 import { dsnFromHeaders, parseDsn } from "../inbound/dsn";
+import { assertSafeMailHost, NETWORK_CODES } from "../safe-host";
 import type { InboundHeaders, InboundMessage, SyncCursor } from "../types";
 
 type ImapEndpoint = ImapCredentials["imap"];
@@ -22,8 +23,6 @@ const HEADER_NAMES = [
   "list-id",
   "x-failed-recipients",
 ];
-const NETWORK_CODES = /^(ECONNECTION|ETIMEDOUT|ESOCKET|EDNS|ECONNREFUSED|ECONNRESET|ENOTFOUND|EHOSTUNREACH|NoConnection)$/;
-
 export function mapImapError(error: unknown): MailboxError {
   if (error instanceof MailboxError) return error;
   const e = (error ?? {}) as { authenticationFailed?: boolean; code?: string; responseText?: string; message?: string };
@@ -35,10 +34,16 @@ export function mapImapError(error: unknown): MailboxError {
 
 /** One connection per call, always logged out: IMAP servers cap concurrent sessions per account. */
 export async function withImap<T>(creds: ImapEndpoint, signal: AbortSignal, fn: (client: ImapFlow) => Promise<T>): Promise<T> {
+  if (signal.aborted) throw new MailboxError("TRANSIENT", "sync aborted");
+  const target = await assertSafeMailHost({ host: creds.host, port: creds.port, kind: "imap" });
   const client = new ImapFlow({
-    host: creds.host,
+    // Validated address (production) with the original name kept for TLS SNI, against DNS rebinding
+    host: target.address,
+    ...(target.servername ? { servername: target.servername } : {}),
     port: creds.port,
     secure: creds.secure,
+    // Without implicit TLS, force STARTTLS so credentials never cross the wire in clear
+    doSTARTTLS: creds.secure ? undefined : true,
     auth: { user: creds.user, pass: creds.pass },
     logger: false,
     socketTimeout: 20_000,
@@ -203,14 +208,20 @@ export async function listNewImapMessages(
           !!opts.candidateSenders?.has(base.from.address);
 
         let textExcerpt: string | null = null;
-        let dsn = null;
-        if (likelyDsn) {
-          // Bounces need the whole MIME tree (delivery-status part), but capped so a huge bounce cannot hurt
-          const rawMail = await downloadRaw(client, msg.uid);
-          dsn = rawMail ? parseDsn(await PostalMime.parse(rawMail)) : likelyDsn;
+        let dsn = likelyDsn;
+        try {
+          if (likelyDsn) {
+            // Bounces need the whole MIME tree (delivery-status part), but capped so a huge bounce cannot hurt
+            const rawMail = await downloadRaw(client, msg.uid);
+            if (rawMail) dsn = parseDsn(await PostalMime.parse(rawMail));
+          } else if (isCandidate) {
+            textExcerpt = replyExcerpt(await downloadText(client, msg.uid, msg.bodyStructure));
+          }
+        } catch {
+          // One poison message must not block the cursor forever: keep the header-only view and move on
           textExcerpt = null;
-        } else if (isCandidate) {
-          textExcerpt = replyExcerpt(await downloadText(client, msg.uid, msg.bodyStructure));
+          dsn = likelyDsn;
+          console.warn(`imap: could not read body of uid ${msg.uid}, continuing without it`);
         }
         messages.push({ ...base, textExcerpt, isDsn: dsn !== null, dsn });
         lastUid = msg.uid;

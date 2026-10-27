@@ -1,19 +1,22 @@
 import nodemailer from "nodemailer";
 
-import { MailboxError } from "../errors";
 import type { ImapCredentials } from "../credentials";
+import { MailboxError } from "../errors";
+import { assertSafeMailHost, NETWORK_CODES } from "../safe-host";
 import type { OutboundMessage, SendResult } from "../types";
 
 type SmtpCredentials = ImapCredentials["smtp"];
 
-const NETWORK_CODES = /^(ECONNECTION|ETIMEDOUT|ESOCKET|EDNS|ECONNREFUSED|ECONNRESET|ENOTFOUND|EHOSTUNREACH)$/;
-
 /** One transporter per call: nothing is created at import time and nothing is pooled across mailboxes. */
-export function createSmtpTransport(creds: SmtpCredentials) {
+export function createSmtpTransport(creds: SmtpCredentials, target?: { address: string; servername?: string }) {
   return nodemailer.createTransport({
-    host: creds.host,
+    // `target` is the address already validated by assertSafeMailHost; the name stays as the TLS SNI/cert name
+    host: target?.address ?? creds.host,
     port: creds.port,
     secure: creds.secure,
+    // Never fall back to plaintext auth if the server (or a middlebox) hides STARTTLS
+    requireTLS: !creds.secure,
+    ...(target?.servername ? { tls: { servername: target.servername } } : {}),
     auth: { user: creds.user, pass: creds.pass },
     connectionTimeout: 10_000,
     socketTimeout: 20_000,
@@ -45,12 +48,17 @@ export function mapSmtpError(error: unknown): MailboxError {
   return new MailboxError("TRANSIENT", "SMTP error", { detail: e.message });
 }
 
+async function safeTransport(creds: SmtpCredentials) {
+  const target = await assertSafeMailHost({ host: creds.host, port: creds.port, kind: "smtp" });
+  return createSmtpTransport(creds, target);
+}
+
 export async function sendViaSmtp(
   creds: SmtpCredentials,
   from: { address: string; name: string },
   message: OutboundMessage,
 ): Promise<SendResult> {
-  const transporter = createSmtpTransport(creds);
+  const transporter = await safeTransport(creds);
   try {
     await transporter.sendMail({
       from,
@@ -72,7 +80,7 @@ export async function sendViaSmtp(
 }
 
 export async function verifySmtp(creds: SmtpCredentials): Promise<void> {
-  const transporter = createSmtpTransport(creds);
+  const transporter = await safeTransport(creds);
   try {
     await transporter.verify();
   } catch (error) {

@@ -2,6 +2,7 @@ import { Readable } from "node:stream";
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+const h = vi.hoisted(() => ({ imapOptions: [] as unknown[] }));
 const sendMail = vi.fn();
 const verifyTransport = vi.fn();
 const close = vi.fn();
@@ -14,6 +15,9 @@ const logout = vi.fn(async () => {});
 const download = vi.fn(async () => ({ meta: { charset: "utf-8" }, content: Readable.from([Buffer.from("Merci, ok.")]) }));
 vi.mock("imapflow", () => ({
   ImapFlow: class {
+    constructor(options: unknown) {
+      h.imapOptions.push(options);
+    }
     on() {}
     async connect() {}
     async mailboxOpen() {
@@ -26,6 +30,8 @@ vi.mock("imapflow", () => ({
     close() {}
   },
 }));
+
+import nodemailer from "nodemailer";
 
 import { MailboxError } from "../errors";
 import { imapConnector } from "./index";
@@ -43,6 +49,7 @@ beforeEach(() => {
   state.uidValidity = BigInt(10);
   state.search = [];
   state.messages = [];
+  h.imapOptions.length = 0;
 });
 
 describe("imapConnector.send", () => {
@@ -146,5 +153,56 @@ describe("imapConnector.listNewMessages", () => {
     expect(res.messages[0].textExcerpt).toBeNull();
     expect(download).not.toHaveBeenCalled();
     expect(res.hasMore).toBe(true);
+  });
+});
+
+describe("transport security options", () => {
+  const send = () =>
+    connector().send({ to: { address: "a@b.fr" }, subject: "s", text: "t", html: "t", messageId: "<m@x>", idempotencyKey: "k" });
+
+  it("requires STARTTLS on SMTP and IMAP when the connection is not implicit TLS", async () => {
+    sendMail.mockResolvedValue({});
+    const plain = { ...creds, smtp: { ...creds.smtp, port: 587, secure: false }, imap: { ...creds.imap, port: 143, secure: false } };
+    const c = imapConnector({ email: "me@x.fr", displayName: null }, plain);
+    await c.send({ to: { address: "a@b.fr" }, subject: "s", text: "t", html: "t", messageId: "<m@x>", idempotencyKey: "k" });
+    expect(vi.mocked(nodemailer.createTransport).mock.calls.at(-1)?.[0] as unknown).toMatchObject({ secure: false, requireTLS: true });
+    await c.listNewMessages(null, { limit: 1, notBefore: new Date(), signal: new AbortController().signal });
+    expect(h.imapOptions[0]).toMatchObject({ secure: false, doSTARTTLS: true });
+  });
+
+  it("does not weaken certificate checks", async () => {
+    sendMail.mockResolvedValue({});
+    await send();
+    expect(JSON.stringify(vi.mocked(nodemailer.createTransport).mock.calls.at(-1)?.[0] as unknown)).not.toContain("rejectUnauthorized");
+  });
+
+  it("refuses a forbidden port or private literal before connecting", async () => {
+    const bad = { ...creds, smtp: { ...creds.smtp, host: "10.0.0.5" } };
+    await expect(
+      imapConnector({ email: "me@x.fr", displayName: null }, bad).send({
+        to: { address: "a@b.fr" }, subject: "s", text: "t", html: "t", messageId: "<m@x>", idempotencyKey: "k",
+      }),
+    ).rejects.toMatchObject({ code: "CONFIG" });
+    expect(sendMail).not.toHaveBeenCalled();
+  });
+});
+
+describe("poison messages", () => {
+  it("degrades a message whose download fails and still advances the cursor", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    state.search = [1, 2];
+    const m = (uid: number) => ({
+      uid,
+      envelope: { from: [{ address: "p@acme.com" }], subject: "Re: x", inReplyTo: "<a@x>" },
+      headers: Buffer.from(""),
+      bodyStructure: { type: "text/plain", part: "1" },
+    });
+    state.messages = [m(1), m(2)];
+    download.mockRejectedValueOnce(new Error("boom"));
+    const res = await connector().listNewMessages(null, { limit: 10, notBefore: new Date(), signal: new AbortController().signal });
+    expect(res.messages.map((x) => x.textExcerpt)).toEqual([null, "Merci, ok."]);
+    expect(JSON.parse(res.cursor!).lastUid).toBe(2);
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
   });
 });
