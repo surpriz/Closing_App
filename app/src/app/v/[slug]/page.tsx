@@ -175,14 +175,17 @@ export default async function ViewerPage({
   const problem =
     !isSeller && !getRequestContext(requestHeaders).isBot ? smartLinkProblem(query, link.shared) : null;
   if (problem)
-    after(() =>
-      notifySeller({
+    after(async () => {
+      // Once a day at most: a fixed tool that breaks again in a later campaign is told again
+      const dedupeKey = `smart-link-problem:${link.id}:${problem.kind}:${new Date().toISOString().slice(0, 10)}`;
+      if (await prisma.sellerAlert.findUnique({ where: { dedupeKey }, select: { id: true } })) return;
+      await notifySeller({
         linkId: link.id,
         type: "SMART_LINK_PROBLEM",
-        dedupeKey: `smart-link-problem:${link.id}:${problem.kind}`,
+        dedupeKey,
         payload: { smartProblem: problem.kind, tag: problem.tag },
-      }),
-    );
+      });
+    });
 
   // A Smart Link from a cold email: the tool said who it was sent to, no form
   const smart = link.shared && !isSeller ? parseSmartParams(query) : null;

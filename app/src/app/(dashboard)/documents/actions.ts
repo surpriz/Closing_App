@@ -259,7 +259,8 @@ export async function createQuickLink(
   const { user, organization } = await requireWorkspace();
   const limit = await linkLimitError(organization.id);
   if (limit) return limit;
-  const link = await createDocumentLink({ userId: user.id, organizationId: organization.id, documentId, draft: true, smart });
+  // A Smart Link is live from the start: it shows on the document and is never taken for the link to send
+  const link = await createDocumentLink({ userId: user.id, organizationId: organization.id, documentId, draft: !smart, smart });
   return link ? { linkId: link.id } : { error: (await getTranslations("documents.actions"))("notFound") };
 }
 

@@ -310,7 +310,7 @@ export default async function DocumentDetailPage({
     const pages = readings.get(link.id);
     return {
       id: link.id,
-      label: link.shared ? t("sharedLink") : dealLabel({ ...link, document }),
+      label: dealLabel({ ...link, document }, link.shared ? t("sharedLink") : undefined),
       contact:
         [prospect?.company ? prospect.name : null, prospect?.email]
           .filter(Boolean)

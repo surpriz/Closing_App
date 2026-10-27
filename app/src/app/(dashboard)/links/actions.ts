@@ -345,9 +345,9 @@ export async function setLinkShared(linkId: string, shared: boolean) {
   const link = await requireOwnedLink(linkId);
   if (link.shared === shared) return { ok: true };
   if (shared) {
-    // Nobody named on it yet: anonymous reads (a link pasted in a sequence by mistake) do not make it a deal
+    // Nobody the seller named on it: anonymous reads (a link pasted in a sequence by mistake) do not make it a deal
     const [named, current] = await Promise.all([
-      prisma.prospect.count({ where: { linkId: link.id } }),
+      prisma.prospect.count({ where: { linkId: link.id, origin: "SELLER" } }),
       prisma.link.findUniqueOrThrow({ where: { id: link.id }, select: { dealStatus: true } }),
     ]);
     if (named > 0 || current.dealStatus !== "OPEN") {

@@ -137,9 +137,9 @@
       "subjectTag": "Your sending tool didn't replace {tag}",
       "linePersonal": "{doc}: a reader came with their address in the link, but it isn't a Smart Link. They stay anonymous.",
       "lineTag": "{doc}: your sending tool left {tag} as is in the link. The reader had to type their email.",
-      "bodyPersonal": "Someone opened {doc} with an address in the link (?email=…), as if from a cold email sequence. This is a personal link: it ignores that address, and every reader stays anonymous. Turn it into a Smart Link in one click: the URL stays the same, and the emails already sent will name their readers.",
+      "bodyPersonal": "Someone opened {doc} with an address in the link (?email=…), as if from a cold email sequence. This is a personal link: it ignores that address, and every reader stays anonymous. On the link page, turn it into a Smart Link (same URL) or create one on the document.",
       "bodyTag": "A reader opened {doc} with {tag} in the link: your cold email tool didn't replace the variable with their address. They had to type their email to read, and many leave at that point. Check the exact variable syntax in your tool, then send a real email to your own address.",
-      "buttonPersonal": "Turn it into a Smart Link",
+      "buttonPersonal": "Fix the link",
       "buttonTag": "See the Smart Link"
     }
   },

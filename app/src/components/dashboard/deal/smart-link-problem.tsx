@@ -16,10 +16,13 @@ export async function SmartLinkProblemNotice({
   problems,
   linkId,
   documentId,
+  convertible,
 }: {
   problems: SmartLinkProblemItem[];
   linkId: string;
   documentId: string;
+  /** Nobody the seller named on it: the same URL can become a Smart Link. */
+  convertible: boolean;
 }) {
   if (problems.length === 0) return null;
   const t = await getTranslations("deal.smartLinkProblem");
@@ -40,16 +43,16 @@ export async function SmartLinkProblemNotice({
                 : t("titleTag", { tag: problem.tag ?? "{{email}}" })}
             </p>
             <p className="text-muted-foreground">
-              {problem.kind === "personal_link" ? t("bodyPersonal") : t("bodyTag")}
+              {problem.kind === "unresolved_tag" ? t("bodyTag") : convertible ? t("bodyPersonal") : t("bodyPersonalNamed")}
             </p>
             {problem.kind === "personal_link" && (
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-1">
-                <MakeSmartLinkButton linkId={linkId} />
+                {convertible && <MakeSmartLinkButton linkId={linkId} />}
                 <Link
                   href={`/documents/${documentId}`}
                   className="font-medium text-foreground underline underline-offset-4"
                 >
-                  {t("createSmartLink")}
+                  {convertible ? t("createSmartLink") : t("createSmartLinkOnly")}
                 </Link>
               </div>
             )}
