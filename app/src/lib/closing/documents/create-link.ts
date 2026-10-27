@@ -9,7 +9,7 @@ import { getSellerPrefs, sellerTimezone } from "../notify/preferences";
 import { defaultTimezone, getWorkspaceSettings } from "../settings";
 import { onLinkExpiryChanged } from "../triggers/expiry";
 import { linkTitle } from "./link-title";
-import { linkDefaultsFor } from "./smart-defaults";
+import { linkDefaultsFor, SHARED_LINK_SETTINGS } from "./smart-defaults";
 
 export type LinkSource = "extension_gmail" | "extension_outlook" | "outlook_addin" | "prospecting";
 
@@ -39,6 +39,8 @@ export async function createDocumentLink(input: {
   draft?: boolean;
   /** The seller's own link from the welcome tour: always personal, never counted. */
   onboardingTest?: boolean;
+  /** A Smart Link for a cold email sequence: every reader is named from the URL or the gate. */
+  smart?: boolean;
 }) {
   if (!input.onboardingTest) await assertCanCreateLink(input.organizationId);
   const [document, settings, timeZone, plan] = await Promise.all([
@@ -65,7 +67,7 @@ export async function createDocumentLink(input: {
     allowShared: !prospect && !input.source && !input.onboardingTest,
     kind: document.kind,
   });
-  const autoSettings = input.requireEmail === undefined && input.expiresAt === undefined;
+  const autoSettings = !input.smart && input.requireEmail === undefined && input.expiresAt === undefined;
   const link = await prisma.link.create({
     data: {
       slug: randomSlug(12),
@@ -73,7 +75,7 @@ export async function createDocumentLink(input: {
       organizationId: input.organizationId,
       createdById: input.userId,
       name: input.name || prospect?.company || prospect?.email || (input.draft ? title : null),
-      requireEmail: input.requireEmail ?? defaults.requireEmail,
+      requireEmail: input.smart ? SHARED_LINK_SETTINGS.requireEmail : (input.requireEmail ?? defaults.requireEmail),
       expiresAt: input.expiresAt === undefined ? defaults.expiresAt : input.expiresAt,
       // Off on the Free plan, for this link only: links sent before keep what they had
       chatEnabled: defaults.chatEnabled && plan.limits.prospectChat,
@@ -82,7 +84,7 @@ export async function createDocumentLink(input: {
       followupsEnabled: input.followupsEnabled ?? defaults.followupsEnabled,
       ctaEnabled: defaults.ctaEnabled,
       bookingEnabled: defaults.bookingEnabled,
-      shared: defaults.shared,
+      shared: input.smart ? SHARED_LINK_SETTINGS.shared : defaults.shared,
       autoSettings,
       sentAt: input.draft ? null : now,
       draftAt: input.draft ? now : null,

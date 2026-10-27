@@ -252,11 +252,14 @@ export async function createVideoDocument(
 }
 
 /** "Nouveau lien" on a document: a fresh draft, set up on the share screen. */
-export async function createQuickLink(documentId: string): Promise<{ linkId: string } | { error: string } | UpgradePrompt> {
+export async function createQuickLink(
+  documentId: string,
+  { smart = false }: { smart?: boolean } = {},
+): Promise<{ linkId: string } | { error: string } | UpgradePrompt> {
   const { user, organization } = await requireWorkspace();
   const limit = await linkLimitError(organization.id);
   if (limit) return limit;
-  const link = await createDocumentLink({ userId: user.id, organizationId: organization.id, documentId, draft: true });
+  const link = await createDocumentLink({ userId: user.id, organizationId: organization.id, documentId, draft: true, smart });
   return link ? { linkId: link.id } : { error: (await getTranslations("documents.actions"))("notFound") };
 }
 
