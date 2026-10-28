@@ -6,6 +6,7 @@ import { buttonVariants } from "@/components/ui/button";
 import type { EngagementTier } from "@/generated/prisma/enums";
 import {
   describeNextAction,
+  isLive,
   isUrgent,
   type NextAction,
   type OpenDealStatus,
@@ -72,7 +73,7 @@ export function TodoList({
     <ul className="stagger divide-y divide-border border-y border-foreground bg-card">
       {rows.map((row, index) => {
         const read =
-          row.action.kind === "call_now"
+          isLive(row.action)
             ? t("today.todo.readingNow")
             : row.lastActivityAt
               ? t("today.todo.readAgo", { when: formatRelative(row.lastActivityAt, locale, now) })
@@ -146,7 +147,7 @@ export function TodoList({
                   urgent ? "font-semibold" : "text-foreground/80",
                 )}
               >
-                {row.action.kind === "call_now" ? (
+                {isLive(row.action) ? (
                   <LiveDot className="mt-1.5 size-2 shrink-0" />
                 ) : (
                   <ArrowRight className="mt-1 size-4 shrink-0" aria-hidden />

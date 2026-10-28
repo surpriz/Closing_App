@@ -51,6 +51,7 @@ import { buildDocumentFrictions } from "@/lib/closing/dashboard/frictions";
 import { dealLabel, linkLabelSelect } from "@/lib/closing/dashboard/labels";
 import { pageHeat } from "@/lib/closing/dashboard/page-heat";
 import { getPageReadings } from "@/lib/closing/dashboard/queries";
+import { groupReadersByAddress } from "@/lib/closing/shared/hot-readers";
 import { showsReadingDetail } from "@/lib/closing/dashboard/reading-detail";
 import { labelReaders } from "@/lib/closing/dashboard/readers";
 import { documentTitle } from "@/lib/closing/documents/link-title";
@@ -133,7 +134,7 @@ export default async function DocumentDetailPage({
             take: 1,
           },
           engagementScore: true,
-          _count: { select: { views: true, readerLinks: { where: { isOnboardingTest: false } } } },
+          _count: { select: { views: true } },
         },
       },
     },
@@ -301,19 +302,19 @@ export default async function DocumentDetailPage({
         )
       : null;
 
-  // A Smart Link reader opening from several browsers has a link per browser: one row, the latest
-  const readerBrowsers = new Map<string, number>();
-  const people = document.links.filter((link) => {
-    const email = link.parentLinkId ? link.prospects[0]?.email?.toLowerCase() : null;
-    if (!email) return true;
-    const key = `${link.parentLinkId}:${email}`;
-    readerBrowsers.set(key, (readerBrowsers.get(key) ?? 0) + 1);
-    return readerBrowsers.get(key) === 1;
-  });
-  const browsersOf = (link: (typeof people)[number]) => {
-    const email = link.parentLinkId ? link.prospects[0]?.email?.toLowerCase() : null;
-    return email ? (readerBrowsers.get(`${link.parentLinkId}:${email}`) ?? 1) : 1;
-  };
+  // A Smart Link reader opening from several browsers has a link per browser: one row per person
+  const people = groupReadersByAddress(
+    document.links.map((link) => ({
+      ...link,
+      linkId: link.id,
+      email: link.parentLinkId ? (link.prospects[0]?.email ?? null) : null,
+      scope: link.parentLinkId,
+      readingMs: 0,
+      pricingMs: 0,
+      lastActivityAt: link.lastActivityAt ?? link.createdAt,
+    })),
+  );
+  const readersOf = (smartLinkId: string) => people.filter((person) => person.parentLinkId === smartLinkId).length;
   // The Smart Link first: the one to paste in a sequence, its readers below as their own rows
   const orderedLinks = [...people].sort((a, b) => Number(b.shared) - Number(a.shared));
   const prospectRows: ProspectLinkRow[] = orderedLinks.map((link) => {
@@ -328,13 +329,13 @@ export default async function DocumentDetailPage({
         [
           prospect?.company ? prospect.name : null,
           prospect?.email,
-          browsersOf(link) > 1 ? t("browsers", { count: browsersOf(link) }) : null,
+          link.links > 1 ? t("browsers", { count: link.links }) : null,
         ]
           .filter(Boolean)
           .join(" · ") ||
         t("createdAgo", { when: formatRelative(link.createdAt, locale, now) }),
       state: link.shared
-        ? t("smartLinkReaders", { count: link._count.readerLinks })
+        ? t("smartLinkReaders", { count: readersOf(link.id) })
         : link.dealStatus !== "OPEN"
           ? tl(`dealStatus.${link.dealStatus}`)
           : expired

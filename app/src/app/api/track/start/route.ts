@@ -34,6 +34,9 @@ const bodySchema = z.object({
   locale: z.string().max(35).optional(),
   // ?r= on the link of a follow-up: the message that brought the reader back
   followupId: z.string().max(40).nullish(),
+  // False at page load, true at the reader's first gesture: mail scanners never make one.
+  // Missing (a page loaded before this field): a human, as before
+  human: z.boolean().optional(),
 });
 
 // Opens (or resumes) a reading session and returns its id
@@ -71,6 +74,8 @@ export async function POST(request: NextRequest) {
   // Treated like a bot from here on: kept for the record, never counted
   const fromSeller = await isWorkspaceMember(link.organizationId);
   const excluded = context.isBot || fromSeller;
+  // Not a gesture yet: the view is kept like a bot's until the reader confirms it
+  const pending = parsed.data.human === false;
   // IP-based timezone on Vercel, browser timezone as fallback (local dev)
   const timezone =
     context.timezone ??
@@ -91,8 +96,17 @@ export async function POST(request: NextRequest) {
       lastSeenAt: { gte: new Date(now.getTime() - VIEW_SESSION_WINDOW_MS) },
     },
     orderBy: { lastSeenAt: "desc" },
-    select: { id: true },
+    select: { id: true, isBot: true },
   });
+  // The first gesture on a view opened at load: it starts counting now, as a new session would
+  const confirming = !!recentView && recentView.isBot && !excluded && !pending;
+  if (confirming) {
+    await prisma.documentView.update({
+      where: { id: recentView.id },
+      data: { isBot: false, followupId: await followupOfLink(parsed.data.followupId, link.id) },
+    });
+  }
+  const fresh = !recentView || confirming;
 
   const viewId =
     recentView?.id ??
@@ -117,9 +131,9 @@ export async function POST(request: NextRequest) {
           os: context.os,
           referrer: context.referrer,
           userAgent: context.userAgent,
-          isBot: excluded,
+          isBot: excluded || pending,
           fromSeller,
-          followupId: excluded ? null : await followupOfLink(parsed.data.followupId, link.id),
+          followupId: excluded || pending ? null : await followupOfLink(parsed.data.followupId, link.id),
         },
         select: { id: true },
       })
@@ -129,8 +143,8 @@ export async function POST(request: NextRequest) {
     await prisma.prospect.update({
       where: { id: prospect.id },
       data: {
-        lastSeenAt: excluded ? undefined : now,
-        firstSeenAt: prospect.firstSeenAt ?? now,
+        lastSeenAt: excluded || pending ? undefined : now,
+        firstSeenAt: prospect.firstSeenAt ?? (pending ? undefined : now),
         timezone: prospect.timezone ?? timezone,
         locale: prospect.locale ?? locale,
         country: prospect.country ?? context.country,
@@ -138,18 +152,18 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  if (!excluded) {
+  if (!excluded && !pending) {
     await confirmDraftOnOpen(link.id, now);
     if (parsed.data.followupId) await markFollowupClicked(parsed.data.followupId, link.id, now);
     // The seller's "aha": someone opened what they sent. Nothing about the reader goes out
-    if (!recentView && link.createdById) {
+    if (fresh && link.createdById) {
       captureProductEvent("proposal_opened", link.createdById, { onboarding_test: link.isOnboardingTest });
     }
     inBackground("view-started", async () => {
       await cancelOpenFollowups(link.id, "openedProposal", ["ANTI_GHOSTING"]);
       // A new reader, a decision maker or a committee says more than a plain call moment
       const readerAlert = await evaluateReaders(viewId, now);
-      if (!readerAlert) await evaluateHotLead(viewId, !!recentView, now);
+      if (!readerAlert) await evaluateHotLead(viewId, !fresh, now);
       await refreshEngagementScore(link.id);
     });
     // Someone a reader forwarded it to: opened, once per forward, and the forwarder told if they asked
@@ -158,5 +172,5 @@ export async function POST(request: NextRequest) {
     if (link.parentLinkId) inBackground("reader-opened", () => emitReaderEvent(link.id, "reader.opened"));
   }
 
-  return Response.json({ viewId, resumed: !!recentView });
+  return Response.json({ viewId, resumed: !fresh });
 }
