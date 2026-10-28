@@ -18,6 +18,9 @@ vi.mock("./handle", () => ({ handleInbound: (...a: unknown[]) => handleInbound(.
 const notifyMailboxOwner = vi.fn();
 vi.mock("../notify-owner", () => ({ notifyMailboxOwner: (...a: unknown[]) => notifyMailboxOwner(...a) }));
 
+const maintainSubscriptions = vi.fn();
+vi.mock("../subscriptions", () => ({ maintainSubscriptions: (...a: unknown[]) => maintainSubscriptions(...a) }));
+
 const { syncMailbox, syncMailboxesDue, MIN_SYNC_BUDGET_MS, SYNC_INTERVAL_MS, SYNC_INTERVAL_WEBHOOK_MS, SYNC_LEASE_MS, MAX_SYNC_BACKOFF_MS } =
   await import("./sync");
 
@@ -141,8 +144,18 @@ describe("syncMailboxesDue", () => {
   const lastUpdate = () => prisma.mailbox.updateMany.mock.calls.at(-1)?.[0];
 
   beforeEach(() => {
+    maintainSubscriptions.mockResolvedValue({ subscribed: 0, renewed: 0, errors: 0 });
     prisma.mailbox.findMany.mockResolvedValue([due()]);
     prisma.mailbox.updateMany.mockResolvedValue({ count: 1 });
+  });
+
+  it("keeps syncing when the subscription upkeep throws", async () => {
+    maintainSubscriptions.mockRejectedValue(new Error("graph down"));
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const result = await syncMailboxesDue(NOW, { budgetMs: 60_000, connector: () => fakeConnector(okList()) });
+    expect(result).toEqual({ synced: 1, errors: 0 });
+    expect(maintainSubscriptions).toHaveBeenCalledWith(NOW, expect.objectContaining({ budgetMs: 10_000 }));
+    spy.mockRestore();
   });
 
   it("asks for the right mailboxes and claims each with a lease", async () => {

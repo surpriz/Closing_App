@@ -249,7 +249,7 @@ describe("sendDueMessages, success", () => {
   it("answers in the thread of the previous mail", async () => {
     const thread = { ...enrollment, currentStep: 1, threadSubject: "Hello Paul", firstMessageId: "<first@acme.io>", providerThreadId: "t1" };
     messageFindUnique.mockResolvedValue(message({ stepId: "s2", dedupeKey: "cold:e1:s2", enrollment: thread }));
-    messageFindFirst.mockResolvedValue({ messageId: "<first@acme.io>", providerMessageId: "prov-1", sentAt: new Date(now.getTime() - 3 * DAY) });
+    messageFindFirst.mockResolvedValue({ messageId: "<first@acme.io>", providerMessageId: "prov-1", mailboxId: "mb1", sentAt: new Date(now.getTime() - 3 * DAY) });
 
     await sendDueMessages(now, {}, deps);
 
@@ -262,6 +262,16 @@ describe("sendDueMessages, success", () => {
     // Last step: nothing to plan, the end is noticed by planEnrollments
     expect(messageCreate).not.toHaveBeenCalled();
     expect(enrollmentUpdateMany).toHaveBeenLastCalledWith({ where: { id: "e1", status: "ACTIVE" }, data: { nextSendAt: null } });
+  });
+
+  it("does not forward a provider id that belongs to another mailbox", async () => {
+    const thread = { ...enrollment, currentStep: 1, threadSubject: "Hello Paul", firstMessageId: "<first@acme.io>", providerThreadId: "t1" };
+    messageFindUnique.mockResolvedValue(message({ stepId: "s2", dedupeKey: "cold:e1:s2", enrollment: thread }));
+    messageFindFirst.mockResolvedValue({ messageId: "<first@acme.io>", providerMessageId: "prov-1", mailboxId: "old", sentAt: new Date(now.getTime() - 3 * DAY) });
+
+    await sendDueMessages(now, {}, deps);
+
+    expect(send.mock.calls[0][0]).toMatchObject({ inReplyTo: "<first@acme.io>", replyToProviderId: null });
   });
 
   it("starts a new thread on a newThread step: no reference to the old one, and it becomes the thread start", async () => {

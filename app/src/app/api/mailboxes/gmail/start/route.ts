@@ -26,15 +26,18 @@ export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
 
   const asked = params.get("mailboxId");
-  let reconnect: { id: string; email: string; externalAccountId: string | null } | null = null;
+  let reconnect: { id: string; email: string; connector: string; externalAccountId: string | null } | null = null;
   if (asked !== null) {
     if (!/^[\w-]{1,64}$/.test(asked)) return NextResponse.redirect(`${settings}?mailbox=error#boite`, 302);
     reconnect = await prisma.mailbox.findFirst({
       where: { id: asked, organizationId: organization.id, userId: user.id, provider: "GOOGLE" },
-      select: { id: true, email: true, externalAccountId: true },
+      select: { id: true, email: true, connector: true, externalAccountId: true },
     });
     if (!reconnect) return NextResponse.redirect(`${settings}?mailbox=error#boite`, 302);
   }
+  // A mailbox keeps the connector it was created with: after GMAIL_CONNECTOR changes, reconnecting it is a plain
+  // connection (the email upsert in connect.ts keeps the row)
+  if (reconnect && reconnect.connector !== connector) reconnect = null;
   const hint = params.get("login_hint");
   const loginHint = reconnect?.email ?? (hint && EMAIL.test(hint) ? hint : null);
 
@@ -43,6 +46,7 @@ export async function GET(request: NextRequest) {
       organizationId: organization.id,
       userId: user.id,
       provider: "GOOGLE",
+      // Informational: the callback reconnects by email (connect.ts), not by this id
       redirectTo: reconnect?.id ?? null,
     });
     if (connector === "NYLAS") {

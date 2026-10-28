@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const prisma = { mailbox: { findFirst: vi.fn(), update: vi.fn() } };
+const prisma = { mailbox: { findFirst: vi.fn(), updateMany: vi.fn() } };
 vi.mock("@/lib/db", () => ({ prisma }));
 const verifyClientState = vi.fn();
 vi.mock("./token", () => ({ verifyClientState: (...a: unknown[]) => verifyClientState(...a) }));
@@ -28,10 +28,16 @@ describe("microsoftValidationToken", () => {
 });
 
 describe("handleMicrosoftNotifications", () => {
+  it("keeps going when one notification fails", async () => {
+    prisma.mailbox.findFirst.mockRejectedValueOnce(new Error("db blip")).mockResolvedValueOnce({ id: "mb2" });
+    const out = await handleMicrosoftNotifications({ value: [note({ subscriptionId: "a" }), note({ subscriptionId: "b" })] }, now);
+    expect(out.syncMailboxIds).toEqual(["mb2"]);
+  });
+
   it("asks for a sync once per mailbox", async () => {
     const out = await handleMicrosoftNotifications({ value: [note(), note()] }, now);
     expect(out.syncMailboxIds).toEqual(["mb1"]);
-    expect(prisma.mailbox.update).toHaveBeenCalledWith({ where: { id: "mb1" }, data: { syncRequestedAt: now } });
+    expect(prisma.mailbox.updateMany).toHaveBeenCalledWith({ where: { id: "mb1" }, data: { syncRequestedAt: now } });
     expect(verifyClientState).toHaveBeenCalledWith("mb1", "cs");
   });
 
@@ -39,7 +45,7 @@ describe("handleMicrosoftNotifications", () => {
     verifyClientState.mockReturnValue(false);
     const out = await handleMicrosoftNotifications({ value: [note()] }, now);
     expect(out.syncMailboxIds).toEqual([]);
-    expect(prisma.mailbox.update).not.toHaveBeenCalled();
+    expect(prisma.mailbox.updateMany).not.toHaveBeenCalled();
   });
 
   it("does nothing for an unknown subscription or a malformed body", async () => {
@@ -48,21 +54,21 @@ describe("handleMicrosoftNotifications", () => {
     expect((await handleMicrosoftNotifications({ value: [{ subscriptionId: "s" }, null, 4] }, now)).syncMailboxIds).toEqual([]);
     expect((await handleMicrosoftNotifications(null, now)).syncMailboxIds).toEqual([]);
     expect((await handleMicrosoftNotifications({ value: "x" }, now)).syncMailboxIds).toEqual([]);
-    expect(prisma.mailbox.update).not.toHaveBeenCalled();
+    expect(prisma.mailbox.updateMany).not.toHaveBeenCalled();
   });
 
   it("clears the expiry on reauthorization and removal so the tick renews", async () => {
     for (const lifecycleEvent of ["reauthorizationRequired", "subscriptionRemoved"]) {
-      prisma.mailbox.update.mockClear();
+      prisma.mailbox.updateMany.mockClear();
       const out = await handleMicrosoftNotifications({ value: [note({ lifecycleEvent })] }, now);
       expect(out.syncMailboxIds).toEqual([]);
-      expect(prisma.mailbox.update).toHaveBeenCalledWith({ where: { id: "mb1" }, data: { subscriptionExpiresAt: null } });
+      expect(prisma.mailbox.updateMany).toHaveBeenCalledWith({ where: { id: "mb1" }, data: { subscriptionExpiresAt: null } });
     }
   });
 
   it("flags a missed event for the next tick without syncing inline", async () => {
     const out = await handleMicrosoftNotifications({ value: [note({ lifecycleEvent: "missed" })] }, now);
     expect(out.syncMailboxIds).toEqual([]);
-    expect(prisma.mailbox.update).toHaveBeenCalledWith({ where: { id: "mb1" }, data: { syncRequestedAt: now } });
+    expect(prisma.mailbox.updateMany).toHaveBeenCalledWith({ where: { id: "mb1" }, data: { syncRequestedAt: now } });
   });
 });

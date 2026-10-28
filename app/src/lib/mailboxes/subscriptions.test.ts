@@ -17,7 +17,7 @@ vi.mock("./webhooks/token", () => ({ clientStateFor: (id: string) => `cs-${id}` 
 const notifyMailboxOwner = vi.fn();
 vi.mock("./notify-owner", () => ({ notifyMailboxOwner: (...a: unknown[]) => notifyMailboxOwner(...a) }));
 
-const { maintainSubscriptions, MAX_SUBSCRIPTIONS_PER_TICK } = await import("./subscriptions");
+const { maintainSubscriptions, MAX_SUBSCRIPTIONS_PER_TICK, MAX_NEW_SUBSCRIPTIONS_PER_TICK } = await import("./subscriptions");
 
 const NOW = new Date("2026-10-28T10:00:00Z");
 const row = (extra: Record<string, unknown> = {}) => ({
@@ -43,6 +43,13 @@ function fake(extra: Partial<MailboxConnector> = {}, webhooks = true) {
 }
 const run = (connector: MailboxConnector) => maintainSubscriptions(NOW, { budgetMs: 10_000, connector: () => connector });
 
+/** The tick reads renewals and new subscriptions separately: route each row by whether it has an expiry. */
+function rows(list: ReturnType<typeof row>[]) {
+  prisma.mailbox.findMany.mockImplementation(async (q: { where: { subscriptionExpiresAt: unknown }; take: number }) =>
+    list.filter((r) => (q.where.subscriptionExpiresAt === null) === (r.subscriptionExpiresAt === null)).slice(0, q.take),
+  );
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   enabled.mockReturnValue(true);
@@ -57,14 +64,22 @@ describe("maintainSubscriptions", () => {
     expect(prisma.mailbox.findMany).not.toHaveBeenCalled();
   });
 
-  it("limits the query to the batch size", async () => {
-    prisma.mailbox.findMany.mockResolvedValue([]);
-    await run(fake());
+  it("reads renewals first and caps the rows without an expiry", async () => {
+    const renewing = Array.from({ length: 3 }, (_, i) =>
+      row({ id: `r${i}`, subscriptionId: `s${i}`, subscriptionExpiresAt: new Date(NOW.getTime() + HOUR_MS) }),
+    );
+    const fresh = Array.from({ length: 9 }, (_, i) => row({ id: `n${i}` }));
+    rows([...fresh, ...renewing] as never);
+    const connector = fake();
+    const out = await run(connector);
+    expect(out.renewed).toBe(3);
+    expect(out.subscribed).toBe(MAX_NEW_SUBSCRIPTIONS_PER_TICK);
     expect(prisma.mailbox.findMany.mock.calls[0][0].take).toBe(MAX_SUBSCRIPTIONS_PER_TICK);
+    expect(connector.renew.mock.invocationCallOrder[0]).toBeLessThan(connector.subscribe.mock.invocationCallOrder[0]);
   });
 
   it("subscribes a mailbox that has none", async () => {
-    prisma.mailbox.findMany.mockResolvedValue([row()]);
+    rows([row()] as never);
     const connector = fake();
     expect(await run(connector)).toEqual({ subscribed: 1, renewed: 0, errors: 0 });
     expect(connector.subscribe).toHaveBeenCalledWith({
@@ -78,7 +93,7 @@ describe("maintainSubscriptions", () => {
   });
 
   it("renews inside the 36 hour window", async () => {
-    prisma.mailbox.findMany.mockResolvedValue([row({ subscriptionId: "s1", subscriptionExpiresAt: new Date(NOW.getTime() + 35 * HOUR_MS) })]);
+    rows([row({ subscriptionId: "s1", subscriptionExpiresAt: new Date(NOW.getTime() + 35 * HOUR_MS) })] as never);
     const connector = fake();
     expect(await run(connector)).toEqual({ subscribed: 0, renewed: 1, errors: 0 });
     expect(connector.renew).toHaveBeenCalledWith("s1");
@@ -87,7 +102,7 @@ describe("maintainSubscriptions", () => {
   });
 
   it("leaves a fresh subscription alone", async () => {
-    prisma.mailbox.findMany.mockResolvedValue([row({ subscriptionId: "s1", subscriptionExpiresAt: new Date(NOW.getTime() + 40 * HOUR_MS) })]);
+    rows([row({ subscriptionId: "s1", subscriptionExpiresAt: new Date(NOW.getTime() + 40 * HOUR_MS) })] as never);
     const connector = fake();
     expect(await run(connector)).toEqual({ subscribed: 0, renewed: 0, errors: 0 });
     expect(connector.renew).not.toHaveBeenCalled();
@@ -95,7 +110,7 @@ describe("maintainSubscriptions", () => {
   });
 
   it("recreates a subscription Graph no longer knows", async () => {
-    prisma.mailbox.findMany.mockResolvedValue([row({ subscriptionId: "s1" })]);
+    rows([row({ subscriptionId: "s1" })] as never);
     const connector = fake({ renew: vi.fn().mockRejectedValue(new MailboxError("REJECTED", "x", { detail: "graph 404 ResourceNotFound" })) });
     expect(await run(connector)).toEqual({ subscribed: 1, renewed: 0, errors: 0 });
     expect(prisma.mailbox.update).toHaveBeenCalledWith({
@@ -105,7 +120,7 @@ describe("maintainSubscriptions", () => {
   });
 
   it("ignores connectors without push subscriptions", async () => {
-    prisma.mailbox.findMany.mockResolvedValue([row({ connector: "NYLAS" })]);
+    rows([row({ connector: "NYLAS" })] as never);
     const connector = fake({}, false);
     expect(await run(connector)).toEqual({ subscribed: 0, renewed: 0, errors: 0 });
     expect(connector.subscribe).not.toHaveBeenCalled();
@@ -114,7 +129,7 @@ describe("maintainSubscriptions", () => {
   });
 
   it("parks a mailbox whose login was revoked and tells the owner", async () => {
-    prisma.mailbox.findMany.mockResolvedValue([row()]);
+    rows([row()] as never);
     const connector = fake({ subscribe: vi.fn().mockRejectedValue(new MailboxError("AUTH_REVOKED", "x", { detail: "invalid_grant" })) });
     expect(await run(connector)).toEqual({ subscribed: 0, renewed: 0, errors: 1 });
     expect(prisma.mailbox.updateMany).toHaveBeenCalledWith(
@@ -124,7 +139,7 @@ describe("maintainSubscriptions", () => {
   });
 
   it("keeps going after a transient failure without touching the mailbox", async () => {
-    prisma.mailbox.findMany.mockResolvedValue([row({ id: "a" }), row({ id: "b" })]);
+    rows([row({ id: "a" }), row({ id: "b" })] as never);
     const subscribe = vi
       .fn()
       .mockRejectedValueOnce(new MailboxError("TRANSIENT", "x"))

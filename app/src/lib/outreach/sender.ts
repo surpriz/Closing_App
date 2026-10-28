@@ -280,7 +280,7 @@ async function sendOne(ctx: {
   const last = await prisma.campaignMessage.findFirst({
     where: { enrollmentId: enrollment.id, status: "SENT" },
     orderBy: { sentAt: "desc" },
-    select: { messageId: true, providerMessageId: true, sentAt: true },
+    select: { messageId: true, providerMessageId: true, mailboxId: true, sentAt: true },
   });
 
   // Re-checks, in this order: the situation may have changed since the message was planned
@@ -402,8 +402,8 @@ async function sendOne(ctx: {
       messageId: outgoingId,
       inReplyTo: rendered.sameThread ? (last?.messageId ?? null) : null,
       references: rendered.sameThread ? uniq([enrollment.firstMessageId, last?.messageId]) : [],
-      // API connectors thread through the provider id, not the headers
-      replyToProviderId: rendered.sameThread ? (last?.providerMessageId ?? null) : null,
+      // API connectors thread through the provider id, not the headers; an id from another mailbox means nothing here
+      replyToProviderId: rendered.sameThread && last?.mailboxId === mailbox.id ? (last.providerMessageId ?? null) : null,
       headers: connector.capabilities.listUnsubscribe
         ? {
             "List-Unsubscribe": `<${unsubscribeOneClickUrl({ kind: "enrollment", id: enrollment.id })}>`,

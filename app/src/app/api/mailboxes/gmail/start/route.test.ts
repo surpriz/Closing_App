@@ -6,7 +6,8 @@ vi.mock("@/lib/app-origin", () => ({ getPublicAppUrl: () => "https://app.test" }
 vi.mock("@/lib/outreach/flag", () => ({
   requireOutreach: async () => ({ user: { id: "u1" }, organization: { id: "o1" } }),
 }));
-vi.mock("@/lib/rate-limit", () => ({ consumeLimit: async () => true, tooManyRequests: () => new Response(null, { status: 429 }) }));
+const consumeLimit = vi.fn(async () => true);
+vi.mock("@/lib/rate-limit", () => ({ consumeLimit: () => consumeLimit(), tooManyRequests: () => new Response(null, { status: 429 }) }));
 const gmailConnector = vi.fn();
 vi.mock("@/lib/mailboxes/config", () => ({ gmailConnector: () => gmailConnector() }));
 const createOauthState = vi.fn();
@@ -25,6 +26,7 @@ const get = (query = "") => {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  consumeLimit.mockResolvedValue(true);
   gmailConnector.mockReturnValue("UNIPILE");
   createOauthState.mockResolvedValue({ id: "st1" });
   createHostedAuthLink.mockResolvedValue("https://hosted.test/x");
@@ -53,7 +55,7 @@ describe("gmail start", () => {
   });
 
   it("reconnects an Unipile mailbox through its account", async () => {
-    prisma.mailbox.findFirst.mockResolvedValue({ id: "mb1", email: "a@b.io", externalAccountId: "acc1" });
+    prisma.mailbox.findFirst.mockResolvedValue({ id: "mb1", email: "a@b.io", connector: "UNIPILE", externalAccountId: "acc1" });
     await get("?mailboxId=mb1");
     expect(createOauthState).toHaveBeenCalledWith(expect.objectContaining({ redirectTo: "mb1" }));
     expect(createHostedAuthLink).toHaveBeenCalledWith(expect.objectContaining({ type: "reconnect", reconnectAccountId: "acc1" }));
@@ -61,7 +63,7 @@ describe("gmail start", () => {
 
   it("reconnects a Nylas mailbox with its address as hint", async () => {
     gmailConnector.mockReturnValue("NYLAS");
-    prisma.mailbox.findFirst.mockResolvedValue({ id: "mb1", email: "a@b.io", externalAccountId: "g1" });
+    prisma.mailbox.findFirst.mockResolvedValue({ id: "mb1", email: "a@b.io", connector: "NYLAS", externalAccountId: "g1" });
     const res = await get("?mailboxId=mb1&login_hint=x%40y.io");
     expect(res.headers.get("location")).toBe("https://nylas.test/auth");
     expect(nylasAuthorizeUrl).toHaveBeenCalledWith({ state: "st1", loginHint: "a@b.io" });
@@ -74,5 +76,33 @@ describe("gmail start", () => {
     expect(nylasAuthorizeUrl).toHaveBeenLastCalledWith({ state: "st1", loginHint: "me@acme.io" });
     await get("?login_hint=not-an-email");
     expect(nylasAuthorizeUrl).toHaveBeenLastCalledWith({ state: "st1", loginHint: null });
+  });
+
+  it("falls back to a plain connection when the mailbox was made with another connector", async () => {
+    prisma.mailbox.findFirst.mockResolvedValue({ id: "mb1", email: "a@b.io", connector: "NYLAS", externalAccountId: "g1" });
+    await get("?mailboxId=mb1");
+    expect(createOauthState).toHaveBeenCalledWith(expect.objectContaining({ redirectTo: null }));
+    expect(createHostedAuthLink).toHaveBeenCalledWith(expect.objectContaining({ type: "create" }));
+    expect(createHostedAuthLink.mock.calls[0][0]).not.toHaveProperty("reconnectAccountId");
+  });
+
+  it("answers 404 when no Gmail connector is configured", async () => {
+    gmailConnector.mockReturnValue(null);
+    const res = await get();
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ error: "gmail_unavailable" });
+  });
+
+  it("answers 429 when rate limited, before anything else", async () => {
+    consumeLimit.mockResolvedValue(false);
+    expect((await get()).status).toBe(429);
+    expect(createOauthState).not.toHaveBeenCalled();
+  });
+
+  it("goes back to settings with an error when the hosted link fails", async () => {
+    createHostedAuthLink.mockRejectedValue(new Error("boom"));
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect((await get()).headers.get("location")).toContain("mailbox=error");
+    spy.mockRestore();
   });
 });

@@ -29,20 +29,25 @@ export async function handleMicrosoftNotifications(
     const clientState = typeof item?.clientState === "string" ? item.clientState : null;
     if (!subscriptionId || !clientState) continue;
 
-    const mailbox = await prisma.mailbox.findFirst({
-      where: { connector: "GRAPH", subscriptionId, status: "ACTIVE" },
-      select: { id: true },
-    });
-    if (!mailbox || !verifyClientState(mailbox.id, clientState)) continue;
+    try {
+      const mailbox = await prisma.mailbox.findFirst({
+        where: { connector: "GRAPH", subscriptionId, status: "ACTIVE" },
+        select: { id: true },
+      });
+      if (!mailbox || !verifyClientState(mailbox.id, clientState)) continue;
 
-    const lifecycle = typeof item.lifecycleEvent === "string" ? item.lifecycleEvent : null;
-    if (lifecycle === "reauthorizationRequired" || lifecycle === "subscriptionRemoved") {
-      // The next tick renews, or recreates the subscription when Graph says it is gone
-      await prisma.mailbox.update({ where: { id: mailbox.id }, data: { subscriptionExpiresAt: null } });
-      continue;
+      const lifecycle = typeof item.lifecycleEvent === "string" ? item.lifecycleEvent : null;
+      if (lifecycle === "reauthorizationRequired" || lifecycle === "subscriptionRemoved") {
+        // The next tick renews, or recreates the subscription when Graph says it is gone
+        await prisma.mailbox.updateMany({ where: { id: mailbox.id }, data: { subscriptionExpiresAt: null } });
+        continue;
+      }
+      await prisma.mailbox.updateMany({ where: { id: mailbox.id }, data: { syncRequestedAt: now } });
+      if (lifecycle !== "missed") sync.add(mailbox.id);
+    } catch (error) {
+      // One bad notification must not drop the rest of the batch
+      console.error("[mailboxes] microsoft notification failed", error instanceof Error ? error.message : "unknown");
     }
-    await prisma.mailbox.update({ where: { id: mailbox.id }, data: { syncRequestedAt: now } });
-    if (lifecycle !== "missed") sync.add(mailbox.id);
   }
   return { syncMailboxIds: [...sync] };
 }

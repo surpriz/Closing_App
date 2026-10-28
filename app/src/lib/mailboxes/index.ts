@@ -3,6 +3,7 @@ import { randomBytes } from "node:crypto";
 import type { Mailbox } from "@/generated/prisma/client";
 
 import { prisma } from "@/lib/db";
+import { getEnv } from "@/lib/env";
 
 import { decodeCredentials } from "./credentials";
 import { MailboxError } from "./errors";
@@ -48,6 +49,7 @@ export function connectorFor(mailbox: ConnectorMailbox, deps: ConnectorDeps = {}
     case "NYLAS": {
       const creds = decodeCredentials(mailbox.credentials);
       if (creds.kind !== "nylas") throw new MailboxError("CONFIG", "credentials do not match the Nylas connector");
+      if (!getEnv().NYLAS_API_KEY) throw new MailboxError("CONFIG", "nylas is not configured");
       return nylasConnector(mailbox, creds, deps);
     }
   }

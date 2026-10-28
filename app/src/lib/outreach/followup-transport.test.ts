@@ -101,7 +101,7 @@ beforeEach(() => {
   db.followup.updateMany.mockImplementation(track("claim"));
   db.followup.update.mockResolvedValue({});
   db.campaignMessage.create.mockImplementation(track("mirror", { id: "m1" }));
-  db.campaignMessage.findFirst.mockResolvedValue({ messageId: "<prev@x>", providerMessageId: "prov-prev" });
+  db.campaignMessage.findFirst.mockResolvedValue({ messageId: "<prev@x>", providerMessageId: "prov-prev", mailboxId: "mb1" });
   db.campaignMessage.updateMany.mockResolvedValue({ count: 1 });
   db.campaignProspect.updateMany.mockImplementation(track("resume"));
   // No step left by default: the resume alone
@@ -133,6 +133,13 @@ function enrollmentRow({ currentStep = 1, steps = [step2] as (typeof step2)[], s
 }
 
 describe("sendCampaignFollowup", () => {
+  it("does not forward a provider id that belongs to another mailbox", async () => {
+    db.campaignMessage.findFirst.mockResolvedValue({ messageId: "<prev@x>", providerMessageId: "prov-prev", mailboxId: "old" });
+    const connector = fakeConnector();
+    await sendCampaignFollowup("f1", now, { connector: () => connector as never });
+    expect(connector.send.mock.calls[0][0]).toMatchObject({ inReplyTo: "<prev@x>", replyToProviderId: null });
+  });
+
   it("claims, reserves, sends in thread, mirrors and resumes the enrollment", async () => {
     const connector = fakeConnector();
     const outcome = await sendCampaignFollowup("f1", now, { connector: () => connector as never });

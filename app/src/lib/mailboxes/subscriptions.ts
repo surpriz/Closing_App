@@ -3,15 +3,16 @@ import { ACTIVE_WORKSPACE } from "@/lib/closing/active-workspace";
 import { prisma } from "@/lib/db";
 import { organizationWhere, type OutreachScope } from "@/lib/outreach/scope";
 
+import { mailboxWebhooksEnabled, mailboxWebhookUrl } from "./config";
 import { isMailboxError } from "./errors";
 import { connectorFor } from "./index";
+import { RENEW_BEFORE_MS, subscriptionNeedsRenewal } from "./microsoft/subscriptions";
 import { notifyMailboxOwner } from "./notify-owner";
 import type { MailboxConnector } from "./types";
-import { mailboxWebhooksEnabled, mailboxWebhookUrl } from "./config";
-import { RENEW_BEFORE_MS, subscriptionNeedsRenewal } from "./microsoft/subscriptions";
 import { clientStateFor } from "./webhooks/token";
 
 export const MAX_SUBSCRIPTIONS_PER_TICK = 20;
+export const MAX_NEW_SUBSCRIPTIONS_PER_TICK = 5;
 /** Past this the tick moves on: subscriptions are retried on the next one. */
 const MIN_SUBSCRIPTION_BUDGET_MS = 1_000;
 
@@ -36,31 +37,31 @@ export async function maintainSubscriptions(
   if (!mailboxWebhooksEnabled()) return result;
 
   const deadline = Date.now() + opts.budgetMs;
-  const mailboxes = await prisma.mailbox.findMany({
-    where: {
-      status: "ACTIVE",
-      connector: "GRAPH",
-      ...organizationWhere(opts),
-      ...ACTIVE_WORKSPACE,
-      OR: [
-        { subscriptionId: null },
-        { subscriptionExpiresAt: null },
-        { subscriptionExpiresAt: { lte: new Date(now.getTime() + RENEW_BEFORE_MS) } },
-      ],
-    },
-    select: {
-      id: true,
-      provider: true,
-      connector: true,
-      email: true,
-      displayName: true,
-      credentials: true,
-      subscriptionId: true,
-      subscriptionExpiresAt: true,
-    },
-    orderBy: { subscriptionExpiresAt: { sort: "asc", nulls: "first" } },
+  const select = {
+    id: true,
+    provider: true,
+    connector: true,
+    email: true,
+    displayName: true,
+    credentials: true,
+    subscriptionId: true,
+    subscriptionExpiresAt: true,
+  } as const;
+  const base = { status: "ACTIVE" as const, connector: "GRAPH" as const, ...organizationWhere(opts), ...ACTIVE_WORKSPACE };
+  // Renewals first: they keep working mailboxes alive. Rows without an expiry (new or stuck) are capped so a
+  // subscribe that keeps failing cannot starve the renewals
+  const renewals = await prisma.mailbox.findMany({
+    where: { ...base, subscriptionExpiresAt: { not: null, lte: new Date(now.getTime() + RENEW_BEFORE_MS) } },
+    select,
+    orderBy: { subscriptionExpiresAt: "asc" },
     take: MAX_SUBSCRIPTIONS_PER_TICK,
   });
+  const fresh = await prisma.mailbox.findMany({
+    where: { ...base, subscriptionExpiresAt: null },
+    select,
+    take: Math.min(MAX_NEW_SUBSCRIPTIONS_PER_TICK, MAX_SUBSCRIPTIONS_PER_TICK - renewals.length),
+  });
+  const mailboxes = [...renewals, ...fresh];
 
   for (const mailbox of mailboxes) {
     if (deadline - Date.now() < MIN_SUBSCRIPTION_BUDGET_MS) break;
