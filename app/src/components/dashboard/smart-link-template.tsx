@@ -20,10 +20,13 @@ export function SmartLinkTemplate({
   url,
   linkId,
   followupsEnabled,
+  repliesWebhookUrl,
 }: {
   url: string;
   linkId: string;
   followupsEnabled: boolean;
+  /** Where the cold email tool reports replies: Clozer never sees those emails otherwise. */
+  repliesWebhookUrl: string;
 }) {
   const [tool, setTool] = useState<SmartLinkTool>("lemlist");
   const value = smartLinkUrl(url, tool);
@@ -90,6 +93,16 @@ export function SmartLinkTemplate({
           <span className="block text-muted-foreground">{followups ? t("followupsOn") : t("followupsOff")}</span>
         </span>
       </label>
+      <div className="space-y-2 border-t border-border pt-3">
+        <p className="font-medium text-foreground">{t("repliesTitle")}</p>
+        <p className="text-muted-foreground">
+          {t.rich("repliesHint", { code: (chunks) => <code className="text-micro">{chunks}</code> })}
+        </p>
+        <div className="flex items-center gap-2 rounded-sm border border-border bg-card py-1.5 pr-1 pl-3">
+          <code className="min-w-0 flex-1 truncate font-mono text-micro">{repliesWebhookUrl}</code>
+          <CopyButton value={repliesWebhookUrl} />
+        </div>
+      </div>
     </div>
   );
 }
