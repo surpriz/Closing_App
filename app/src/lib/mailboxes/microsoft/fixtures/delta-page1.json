@@ -1,0 +1,25 @@
+{
+  "@odata.nextLink": "https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages/delta?$skiptoken=PAGE2",
+  "value": [
+    {
+      "id": "AAMkAGI2-msg1=",
+      "internetMessageId": "<reply-1@target.io>",
+      "conversationId": "AAQkAGI2-conv=",
+      "from": { "emailAddress": { "address": "Jane@Target.io", "name": "Jane Doe" } },
+      "toRecipients": [{ "emailAddress": { "address": "me@seller.com" } }],
+      "subject": "Re: Quick question",
+      "receivedDateTime": "2026-10-27T09:30:00Z",
+      "bodyPreview": "Sounds interesting, call me tomorrow"
+    },
+    {
+      "id": "AAMkAGI2-newsletter=",
+      "internetMessageId": "<news-1@shop.example>",
+      "conversationId": "AAQkAGI2-news=",
+      "from": { "emailAddress": { "address": "news@shop.example", "name": "Shop" } },
+      "toRecipients": [{ "emailAddress": { "address": "me@seller.com" } }],
+      "subject": "Our weekly deals",
+      "receivedDateTime": "2026-10-27T09:35:00Z",
+      "bodyPreview": "Deals of the week"
+    }
+  ]
+}
