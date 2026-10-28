@@ -253,7 +253,11 @@
     "toolAria": "Outil de cold email",
     "documented": "Les variables sont celles de {tool}.",
     "undocumented": "Vérifiez le nom des variables dans l'éditeur de votre outil. Seul l'email compte : la société et le prénom sont un bonus.",
-    "webhook": "Pour mettre la séquence en pause dès qu'un prospect lit, branchez le <link>webhook</link>."
+    "webhook": "Pour mettre la séquence en pause dès qu'un prospect lit, branchez le <link>webhook</link>.",
+    "followupsTitle": "Relances Clozer après lecture",
+    "followupsOn": "Clozer prépare une relance adaptée à ce que chaque lecteur a lu, à valider avant envoi. Retirez l'étape équivalente de votre séquence, sinon le prospect en reçoit deux.",
+    "followupsOff": "Coupées : votre outil d'envoi fait les relances. Activez-les seulement si vous retirez une étape de votre séquence.",
+    "followupsFailed": "Le réglage n'a pas été enregistré. Réessayez."
   },
   "shareReady": {
     "copiedToast": "Lien copié. Collez-le dans votre message.",
