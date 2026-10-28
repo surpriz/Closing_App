@@ -137,6 +137,14 @@ describe("planEnrollments, catch-up", () => {
     ...extra,
   });
 
+  it("only a pending STEP keeps an enrollment out of the catch-up, a follow-up mirror does not", async () => {
+    await planEnrollments(now);
+    const call = enrollmentFindMany.mock.calls.find(([a]) => a.where.status === "ACTIVE")![0];
+    expect(call.where.messages).toEqual({ none: { kind: "STEP", status: { in: ["SCHEDULED", "SENDING"] } } });
+    // the day's count stays over both kinds (no kind filter)
+    expect(messageCount.mock.calls[0][0].where).not.toHaveProperty("kind");
+  });
+
   it("plans the next step of an enrollment with nothing pending", async () => {
     mailboxFindMany.mockResolvedValue([]);
     stranded = [stuck({ currentStep: 1, messages: [{ sentAt: new Date(now.getTime() - 4 * DAY) }] })];

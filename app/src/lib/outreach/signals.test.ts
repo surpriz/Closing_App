@@ -71,17 +71,18 @@ describe("signalsFrom", () => {
     expect(s.forwardedTo).toEqual(["new@acme.com"]);
   });
 
-  it("takes lastSentAt across both kinds and counts the last 30 days", () => {
+  it("takes lastSentAt across both kinds and counts only the follow-ups of the last 30 days", () => {
     const s = signalsFrom({
       ...base,
       sent: [
-        { sentAt: ago(40), kind: "STEP" },
+        { sentAt: ago(40), kind: "FOLLOWUP" },
         { sentAt: ago(10), kind: "STEP" },
-        { sentAt: ago(2), kind: "FOLLOWUP" },
+        { sentAt: ago(5), kind: "FOLLOWUP" },
+        { sentAt: ago(1), kind: "STEP" },
       ],
     });
-    expect(s.lastSentAt).toEqual(ago(2));
-    expect(s.sentLast30).toBe(2);
+    expect(s.lastSentAt).toEqual(ago(1));
+    expect(s.sentLast30).toBe(1);
   });
 
   it("carries replied, lastSignal, reactivatedAt, deepRead and openFollowup", () => {

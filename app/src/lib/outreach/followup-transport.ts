@@ -15,10 +15,13 @@ import { isMailboxError } from "@/lib/mailboxes/errors";
 import { notifyMailboxOwner } from "@/lib/mailboxes/notify-owner";
 import { NETWORK_CODES } from "@/lib/mailboxes/safe-host";
 import type { MailboxConnector } from "@/lib/mailboxes/types";
+import { toUiLocale } from "@/lib/seller-locale";
+import { getNamespaceTranslator } from "@/lib/server-translator";
 import { textToHtml } from "@/lib/text-html";
 
 import { outreachOrgIds } from "./flag";
-import { businessHoursOf, localDayBounds, MAX_ATTEMPTS, RETRY_DELAY_MS } from "./planner";
+import { dedupeKeyOf, replanStepMessage, scheduleStepMessage, STEP_SELECT } from "./messages";
+import { businessHoursOf, localDayBounds, MAX_ATTEMPTS, READING_PAUSES, RETRY_DELAY_MS, stepSendAt } from "./planner";
 import { threadSubject } from "./render";
 import { isSuppressed } from "./suppression";
 
@@ -45,20 +48,60 @@ function errorText(error: unknown) {
   return error instanceof Error ? error.message : String(error);
 }
 
-const PAUSES_ENDED_BY_FOLLOWUP = ["call_moment", "deep_read"];
-
-/** The seller's reading alert paused the enrollment; the AI follow-up is the way out. A manual or failure pause stays. */
-async function resumeEnrollment(enrollmentId: string) {
-  await prisma.campaignProspect.updateMany({
-    where: { id: enrollmentId, status: "PAUSED", pausedReason: { in: PAUSES_ENDED_BY_FOLLOWUP } },
-    data: { status: "ACTIVE", pausedReason: null, pausedAt: null },
-  });
-}
-
-const STALE_MIRROR_MS = 5 * 60 * 1000;
+// The reading pauses (E5) end with the AI follow-up. A manual or failure pause stays.
+const PAUSES_ENDED_BY_FOLLOWUP = [...READING_PAUSES];
 
 /**
- * FOLLOWUP mirrors whose worker died (SENDING for over 5 minutes). With a Message-ID the mail may have left: a SENT
+ * The follow-up went out (E4): a reading pause ends, and in the same transaction the next fixed step is planned from
+ * this send (its delay, and never sooner than minDaysBetweenFollowups). Without it the step left SCHEDULED during the
+ * pause would leave right behind the follow-up, and one the sender dropped (CANCELLED) would be taken by the catch-up for
+ * a failure.
+ */
+export async function resumeAfterFollowup(enrollmentId: string, sentAt: Date) {
+  const enrollment = await prisma.campaignProspect.findUnique({
+    where: { id: enrollmentId },
+    include: { campaign: { select: { id: true, mailboxId: true, steps: { orderBy: { order: "asc" }, select: STEP_SELECT } } } },
+  });
+  if (!enrollment) return;
+  const settings = await getWorkspaceSettings(enrollment.organizationId);
+  const step = enrollment.campaign.steps.find((s) => s.order === enrollment.currentStep + 1);
+  const mailboxId = enrollment.campaign.mailboxId;
+  const resume = {
+    where: { id: enrollmentId, status: "PAUSED" as const, pausedReason: { in: PAUSES_ENDED_BY_FOLLOWUP } },
+    data: { status: "ACTIVE" as const, pausedReason: null, pausedAt: null },
+  };
+  if (!step || !mailboxId) {
+    await prisma.campaignProspect.updateMany(resume);
+    return;
+  }
+  const earliest = sentAt.getTime() + Math.max(step.delayDays, settings.minDaysBetweenFollowups) * DAY_MS;
+  const at = stepSendAt(new Date(earliest), enrollment.timezone, businessHoursOf(settings), dedupeKeyOf(enrollment.id, step.id));
+  const planned = { enrollment, step, campaignId: enrollment.campaign.id, mailboxId, scheduledFor: at };
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.campaignProspect.updateMany(resume);
+      // Only an enrollment that goes on: a stop or another pause since leaves its step where it is
+      const live = await tx.campaignProspect.findUnique({ where: { id: enrollmentId }, select: { status: true } });
+      if (live?.status !== "ACTIVE") return;
+      if (await replanStepMessage(tx, planned)) {
+        await tx.campaignProspect.updateMany({ where: { id: enrollmentId, status: "ACTIVE" }, data: { nextSendAt: at } });
+      }
+    });
+  } catch (error) {
+    // A concurrent planner created the row meanwhile (the unique violation aborts the transaction): resume and move it
+    console.error(`[followup-transport] replan ${enrollmentId}`, error);
+    const { count } = await prisma.campaignProspect.updateMany(resume);
+    if (count > 0 && "id" in (await scheduleStepMessage(planned))) {
+      await prisma.campaignProspect.updateMany({ where: { id: enrollmentId, status: "ACTIVE" }, data: { nextSendAt: at } });
+    }
+  }
+}
+
+// Twice the cron's 300 s period: a worker of the previous run, still sending, is never taken for a dead one
+const STALE_MIRROR_MS = 10 * 60_000;
+
+/**
+ * FOLLOWUP mirrors whose worker died (SENDING for over 10 minutes). With a Message-ID the mail may have left: a SENT
  * follow-up confirms it, otherwise it is failed rather than risk a second mail. Without one nothing left: the claim is undone.
  */
 export async function reconcileFollowupMirrors(now: Date): Promise<number> {
@@ -76,7 +119,7 @@ export async function reconcileFollowupMirrors(now: Date): Promise<number> {
         where: lease,
         data: { status: "SENT", sentAt: f.sentAt ?? now, sendingAt: null },
       });
-      if (count > 0) await resumeEnrollment(row.enrollmentId);
+      if (count > 0) await resumeAfterFollowup(row.enrollmentId, f.sentAt ?? now);
     } else if (row.messageId) {
       const { count } = await prisma.campaignMessage.updateMany({
         where: lease,
@@ -86,9 +129,10 @@ export async function reconcileFollowupMirrors(now: Date): Promise<number> {
         await prisma.followup.updateMany({ where: { id: f.id, status: { not: "SENT" } }, data: { status: "FAILED", error: "interrupted" } });
       }
     } else {
+      // CANCELLED like a requeue: the follow-up holds the schedule, the next try takes this row back (REUSABLE)
       const { count } = await prisma.campaignMessage.updateMany({
         where: lease,
-        data: { status: "SCHEDULED", sendingAt: null },
+        data: { status: "CANCELLED", sendingAt: null },
       });
       if (count > 0 && f?.status === "SENT") {
         await prisma.followup.updateMany({
@@ -116,7 +160,12 @@ export async function sendCampaignFollowup(
     where: { id: followupId },
     include: {
       prospect: { select: { company: true } },
-      link: { include: { document: { select: { name: true, displayTitle: true, docType: true } } } },
+      link: {
+        include: {
+          document: { select: { name: true, displayTitle: true, docType: true } },
+          createdBy: { select: { locale: true } },
+        },
+      },
       campaignProspect: { include: { campaign: { select: { id: true, status: true, mailboxId: true, mailbox: true, organization: { select: { suspendedAt: true } } } } } },
     },
   });
@@ -127,6 +176,20 @@ export async function sendCampaignFollowup(
 
   const { campaign } = enrollment;
   const dedupeKey = `cold:${enrollment.id}:fu:${followup.id}`;
+  // Reasons are stored on the follow-up and shown to the seller, like dispatch.ts does
+  const t = getNamespaceTranslator(toUiLocale(followup.link.createdBy?.locale), "server.followups.dispatch");
+  // Not now, later: the follow-up stays sendable. A draft the seller approved meanwhile becomes GENERATED, as
+  // approveFollowup would make it, or the dispatcher would never take it again.
+  const postpone = async (at: Date, error?: string) => {
+    const approve =
+      deps.approvedById && followup.status === "DRAFT"
+        ? { status: "GENERATED" as const, ...(followup.approvedAt ? {} : { approvedAt: now, approvedById: deps.approvedById }) }
+        : {};
+    await prisma.followup.updateMany({
+      where: { id: followup.id, status: { in: [...SENDABLE] } },
+      data: { scheduledFor: at, ...(error ? { error } : {}), ...approve },
+    });
+  };
   const cancelFollowup = async (error: string) => {
     await prisma.followup.updateMany({
       where: { id: followup.id, status: { in: [...SENDABLE] } },
@@ -139,32 +202,38 @@ export async function sendCampaignFollowup(
     return "cancelled" as const;
   };
 
-  if (campaign.status === "DONE" || campaign.status === "ARCHIVED") return cancelFollowup(deps.endedReason ?? "campaign_ended");
+  const inAnHour = new Date(now.getTime() + HOUR_MS);
+  if (campaign.status === "DONE" || campaign.status === "ARCHIVED") return cancelFollowup(deps.endedReason ?? t("campaignEnded"));
   // Beta kill switch and suspended workspaces, like a paused campaign: due again in an hour, not on every tick
   const outOfBeta = !outreachOrgIds().includes(enrollment.organizationId) || campaign.organization.suspendedAt !== null;
   if (outOfBeta || campaign.status !== "ACTIVE") {
-    await prisma.followup.updateMany({
-      where: { id: followup.id, status: { in: [...SENDABLE] } },
-      data: { scheduledFor: new Date(now.getTime() + HOUR_MS) },
-    });
+    await postpone(inAnHour);
     return "ignored";
   }
-  if (enrollment.status !== "ACTIVE" && enrollment.status !== "PAUSED") {
-    return cancelFollowup(`enrollment_${enrollment.status.toLowerCase()}`);
+  if (enrollment.status !== "ACTIVE" && enrollment.status !== "PAUSED") return cancelFollowup(t("enrollmentEnded"));
+  // A seller's pause or a failure pause holds the follow-up too; only a reading pause is the follow-up's to end
+  if (enrollment.status === "PAUSED" && !PAUSES_ENDED_BY_FOLLOWUP.includes(enrollment.pausedReason ?? "")) {
+    await postpone(inAnHour);
+    return "ignored";
   }
-  if (await isSuppressed(enrollment.organizationId, enrollment.email)) return cancelFollowup("suppressed");
+  if (await isSuppressed(enrollment.organizationId, enrollment.email)) return cancelFollowup(t("suppressed"));
 
   const mailbox = campaign.mailbox;
   if (!mailbox || mailbox.status !== "ACTIVE") {
-    await prisma.followup.updateMany({
-      where: { id: followup.id, status: { in: [...SENDABLE] } },
-      data: { scheduledFor: new Date(now.getTime() + HOUR_MS), error: "no_mailbox" },
-    });
+    await postpone(inAnHour, t("noMailbox"));
     return "rescheduled";
   }
 
   const settings = await getWorkspaceSettings(mailbox.organizationId);
   const hours = businessHoursOf(settings);
+  // Never right after a reading (E9), like the steps: the mail would give the tracking away
+  const quietFrom = followup.link.lastActivityAt
+    ? followup.link.lastActivityAt.getTime() + settings.minDelayAfterReadingHours * HOUR_MS
+    : 0;
+  if (quietFrom > now.getTime()) {
+    await postpone(stepSendAt(new Date(quietFrom), enrollment.timezone, hours, dedupeKey));
+    return "rescheduled";
+  }
   // The slug is random and unique: the body carries the link when it holds it, whatever words precede it
   const carriesLink = followup.body.includes(followup.link.slug);
 
@@ -237,7 +306,9 @@ export async function sendCampaignFollowup(
     return "ignored";
   }
 
-  // Back to the queue: the follow-up stays sendable, its mirror waits SCHEDULED. `keepAttempt` when the try counts.
+  // Back to the queue: the follow-up stays sendable and holds the schedule. Its mirror is CANCELLED, not SCHEDULED, so
+  // it neither counts as a pending step nor in today's planned sends; the next try takes it back (REUSABLE).
+  // `keepAttempt` when the try counts.
   const requeue = async (at: Date, keepAttempt = false) => {
     await prisma.followup.update({
       where: { id: followup.id },
@@ -246,7 +317,7 @@ export async function sendCampaignFollowup(
     await prisma.campaignMessage.updateMany({
       where: { id: mirrorId },
       data: {
-        status: "SCHEDULED",
+        status: "CANCELLED",
         sendingAt: null,
         messageId: null,
         scheduledFor: at,
@@ -342,7 +413,6 @@ export async function sendCampaignFollowup(
       },
     });
     await prisma.followup.update({ where: { id: followup.id }, data: { providerMessageId: result.providerId } });
-    await resumeEnrollment(enrollment.id);
     if (!enrollment.threadSubject || !enrollment.firstMessageId) {
       await prisma.campaignProspect.updateMany({
         where: { id: enrollment.id },
@@ -353,6 +423,7 @@ export async function sendCampaignFollowup(
         },
       });
     }
+    await resumeAfterFollowup(enrollment.id, now);
     return "sent";
   } catch (error) {
     console.error(`[followup-transport] ${followup.id}`, error);
@@ -375,8 +446,9 @@ export async function sendCampaignFollowup(
         data: { status: "ERROR", lastError: `${error.code}: ${error.message}`, lastErrorAt: now },
       });
       await notifyMailboxOwner(box.id, code === "AUTH_REVOKED" ? "auth_revoked" : "send_failed", error.message, now);
-      await fail(errorText(error), null);
-      return "failed";
+      // The mailbox is at fault, not the message: it waits (an hour at a time) for the seller to reconnect it
+      await requeue(new Date(now.getTime() + HOUR_MS));
+      return "rescheduled";
     }
     if (isMailboxError(error) && (code === "QUOTA" || code === "RATE_LIMITED")) {
       const wait = error.options.retryAfterMs;

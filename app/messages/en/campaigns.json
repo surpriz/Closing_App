@@ -280,9 +280,7 @@
     "signals": {
       "pricing": "Read the pricing",
       "deep": "Read closely",
-      "reread": "Read it again",
-      "forward": "Forwarded it",
-      "reactivate": "Back after a while"
+      "reactivated": "Reactivation follow-up sent"
     },
     "callThem": "Call them",
     "clicked": "Clicked",
@@ -323,6 +321,7 @@
     "invalid": "Invalid request.",
     "duplicate": "This contact is already in the campaign.",
     "suppressed": "This contact is on the stop list.",
+    "campaign_closed": "This campaign is over: start a new one to reach this contact.",
     "not_found": "This contact can't be added."
   }
 }

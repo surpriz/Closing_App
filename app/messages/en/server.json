@@ -187,7 +187,12 @@
       "changeRequestedByProspect": "Changes requested by the prospect",
       "bounced": "Invalid email address (bounced)",
       "replied": "The prospect replied by email",
-      "campaign": "Follow-ups are driven by the campaign"
+      "campaign": "Follow-ups are driven by the campaign",
+      "campaignStopped": "The campaign stopped for this contact",
+      "campaignEnded": "The campaign is over",
+      "enrollmentEnded": "This contact is no longer in the campaign",
+      "suppressed": "Address on the stop list",
+      "noMailbox": "The campaign has no connected mailbox"
     },
     "queue": {
       "toReview": "To review: {issues}",

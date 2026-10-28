@@ -62,6 +62,8 @@ vi.mock("./messages", async () => ({
   ...(await vi.importActual<typeof import("./messages")>("./messages")),
   scheduleStepMessage: (...a: unknown[]) => scheduleStepMessage(...a),
 }));
+const orgIds = vi.hoisted(() => ({ value: ["org"] as string[] }));
+vi.mock("./flag", () => ({ outreachOrgIds: () => orgIds.value }));
 const releaseCampaignLink = vi.fn();
 vi.mock("./ownership", () => ({ releaseCampaignLink: (...a: unknown[]) => releaseCampaignLink(...a) }));
 
@@ -86,8 +88,15 @@ const view = (extra: object = {}) => ({
   ...extra,
 });
 
+// Two sessions that add up to more than a skim: a reread
+const reread = () => {
+  views = [view(), view({ startedAt: new Date(now.getTime() - 30 * MIN) })];
+  readingOfLink.mockResolvedValue({ readingMs: 60_000, pricingMs: 0, tags: [] });
+};
+
 beforeEach(() => {
   vi.clearAllMocks();
+  orgIds.value = ["org"];
   enrollment = {
     id: "e1",
     organizationId: "org",
@@ -111,7 +120,7 @@ beforeEach(() => {
     reactivatedAt: null,
     pausedReason: null,
     readEvaluatedAt: null,
-    campaign: { id: "c1", status: "ACTIVE", mailboxId: "mb1", steps: [step1, step2] },
+    campaign: { id: "c1", status: "ACTIVE", mailboxId: "mb1", organization: { suspendedAt: null }, steps: [step1, step2] },
   };
   views = [view()];
   db.linkFindUnique.mockResolvedValue({
@@ -188,20 +197,60 @@ describe("evaluateEnrollmentReading", () => {
   });
 
   it("deep read: pauses with deep_read and queues COLD_READ", async () => {
-    views = [view(), view({ startedAt: new Date(now.getTime() - 30 * MIN) })];
+    reread();
     expect(await evaluateEnrollmentReading("l1", now)).toBe("pause_alert");
     expect(updatesOf()[0].data).toMatchObject({ pausedReason: "deep_read", lastSignal: "deep" });
     expect(notifySeller.mock.calls[0][0].dedupeKey).toBe("cold_call:l1:deep_read");
     expect(queueFollowup.mock.calls[0][0]).toMatchObject({ trigger: "COLD_READ", dedupeKey: "cold:e1:read:deep" });
   });
 
-  it("is idempotent: when the alert and the follow-up were both deduplicated, nothing moves", async () => {
+  it("writes the pause before the effects, and keeps it when both turn out deduplicated", async () => {
     readingOfLink.mockResolvedValue({ readingMs: 90_000, pricingMs: 45_000, tags: [] });
     queueFollowup.mockResolvedValue(null);
     notifySeller.mockResolvedValue(false);
     await evaluateEnrollmentReading("l1", now);
     expect(generateFollowupMessage).not.toHaveBeenCalled();
-    expect(updatesOf()).toEqual([{ where: { id: "e1" }, data: { readEvaluatedAt: now } }]);
+    expect(updatesOf()[0]).toEqual({
+      where: { id: "e1", status: "ACTIVE" },
+      data: { status: "PAUSED", pausedReason: "call_moment", pausedAt: now, lastSignal: "pricing" },
+    });
+    const paused = db.enrollmentUpdateMany.mock.invocationCallOrder[0];
+    expect(paused).toBeLessThan(notifySeller.mock.invocationCallOrder[0]);
+    expect(paused).toBeLessThan(queueFollowup.mock.invocationCallOrder[0]);
+  });
+
+  it("at the 30-day follow-up cap, alerts and records the signal without pausing", async () => {
+    readingOfLink.mockResolvedValue({ readingMs: 90_000, pricingMs: 45_000, tags: [] });
+    db.messageFindMany.mockResolvedValue([
+      { sentAt: new Date(now.getTime() - 20 * DAY), kind: "STEP" },
+      { sentAt: new Date(now.getTime() - 15 * DAY), kind: "FOLLOWUP" },
+      { sentAt: new Date(now.getTime() - 10 * DAY), kind: "FOLLOWUP" },
+      { sentAt: new Date(now.getTime() - 5 * DAY), kind: "FOLLOWUP" },
+    ]);
+    expect(await evaluateEnrollmentReading("l1", now)).toBe("pause_alert");
+    expect(notifySeller).toHaveBeenCalled();
+    expect(queueFollowup).not.toHaveBeenCalled();
+    expect(updatesOf()[0]).toEqual({ where: { id: "e1", status: "ACTIVE" }, data: { lastSignal: "pricing" } });
+    expect(updatesOf().some((u) => u.data.status === "PAUSED")).toBe(false);
+  });
+
+  it("fixed steps do not use up the 30-day cap", async () => {
+    readingOfLink.mockResolvedValue({ readingMs: 90_000, pricingMs: 45_000, tags: [] });
+    db.messageFindMany.mockResolvedValue([1, 2, 3, 4].map((d) => ({ sentAt: new Date(now.getTime() - d * 4 * DAY), kind: "STEP" })));
+    await evaluateEnrollmentReading("l1", now);
+    expect(queueFollowup.mock.calls[0][0]).toMatchObject({ trigger: "COLD_READ_PRICING" });
+    expect(updatesOf()[0].data).toMatchObject({ status: "PAUSED" });
+  });
+
+  it("does not read, nor stamp, outside the beta or for a suspended workspace", async () => {
+    readingOfLink.mockResolvedValue({ readingMs: 90_000, pricingMs: 45_000, tags: [] });
+    orgIds.value = [];
+    expect(await evaluateEnrollmentReading("l1", now)).toBeNull();
+    orgIds.value = ["org"];
+    (enrollment.campaign as { organization: { suspendedAt: Date | null } }).organization.suspendedAt = now;
+    expect(await evaluateEnrollmentReading("l1", now)).toBeNull();
+    expect(db.enrollmentUpdateMany).not.toHaveBeenCalled();
+    expect(notifySeller).not.toHaveBeenCalled();
   });
 
   it("pauses when only the alert was new, or only the follow-up", async () => {
@@ -218,7 +267,7 @@ describe("evaluateEnrollmentReading", () => {
 
   it("with a follow-up already open, alerts and pauses but queues no second one", async () => {
     db.followupCount.mockResolvedValue(1);
-    views = [view(), view({ startedAt: new Date(now.getTime() - 30 * MIN) })];
+    reread();
     await evaluateEnrollmentReading("l1", now);
     expect(notifySeller).toHaveBeenCalled();
     expect(queueFollowup).not.toHaveBeenCalled();
@@ -247,7 +296,7 @@ describe("evaluateEnrollmentReading", () => {
     enrollment.status = "PAUSED";
     enrollment.pausedReason = "deep_read";
     enrollment.lastSignal = "deep";
-    views = [view(), view({ startedAt: new Date(now.getTime() - 30 * MIN) })];
+    reread();
     await evaluateEnrollmentReading("l1", now);
     expect(queueFollowup).not.toHaveBeenCalled();
     expect(notifySeller).not.toHaveBeenCalled();
@@ -270,10 +319,31 @@ describe("evaluateEnrollmentReading", () => {
     db.messageFindMany.mockResolvedValue([{ sentAt: new Date(now.getTime() - 9 * DAY), kind: "STEP" }]);
     expect(await evaluateEnrollmentReading("l1", now)).toBe("ai_followup");
     expect(queueFollowup.mock.calls[0][0]).toMatchObject({ trigger: "COLD_REACTIVATE", dedupeKey: "cold:e1:read:reactivate" });
-    expect(updatesOf()).toContainEqual({
-      where: { id: "e1", status: "ACTIVE" },
-      data: { reactivatedAt: now, lastSignal: "reactivate" },
-    });
+    expect(updatesOf()).toContainEqual({ where: { id: "e1", status: "ACTIVE" }, data: { reactivatedAt: now } });
+    expect(updatesOf().some((u) => "lastSignal" in u.data)).toBe(false);
+  });
+
+  it("no reactivation while a campaign follow-up is still open", async () => {
+    enrollment.currentStep = 2;
+    views = [view({ lastSeenAt: new Date(now.getTime() - 8 * DAY), startedAt: new Date(now.getTime() - 8 * DAY) })];
+    db.messageFindMany.mockResolvedValue([{ sentAt: new Date(now.getTime() - 9 * DAY), kind: "STEP" }]);
+    db.followupCount.mockResolvedValue(1);
+    await evaluateEnrollmentReading("l1", now);
+    expect(queueFollowup).not.toHaveBeenCalled();
+    expect(updatesOf().some((u) => "reactivatedAt" in u.data)).toBe(false);
+  });
+
+  it("does not cancel the open deep-read follow-up when no prospect row can take the pricing one", async () => {
+    enrollment.status = "PAUSED";
+    enrollment.pausedReason = "deep_read";
+    enrollment.lastSignal = "deep";
+    db.followupCount.mockResolvedValue(1);
+    db.prospectFindFirst.mockResolvedValue(null);
+    readingOfLink.mockResolvedValue({ readingMs: 90_000, pricingMs: 45_000, tags: [] });
+    await evaluateEnrollmentReading("l1", now);
+    expect(db.followupUpdateMany).not.toHaveBeenCalled();
+    expect(queueFollowup).not.toHaveBeenCalled();
+    expect(updatesOf()[0]).toEqual({ where: { id: "e1", status: "PAUSED" }, data: { lastSignal: "pricing" } });
   });
 
   it("forward: the schedule is untouched, readEvaluatedAt is stamped, the same forward is not news next time", async () => {
@@ -293,7 +363,7 @@ describe("evaluateEnrollmentReading", () => {
 
   it("a deep read in the same session as a new forward still pauses, alerts and queues the follow-up", async () => {
     db.forwardFindMany.mockResolvedValue([{ createdAt: new Date(now.getTime() - MIN), toProspect: { email: "boss@acme.com" } }]);
-    views = [view(), view({ startedAt: new Date(now.getTime() - 30 * MIN) })];
+    reread();
     expect(await evaluateEnrollmentReading("l1", now)).toBe("pause_alert");
     expect(updatesOf()[0]).toEqual({
       where: { id: "e1", status: "ACTIVE" },
@@ -394,6 +464,13 @@ describe("evaluateReadingSignals", () => {
   it("does nothing when no reading is waiting", async () => {
     db.queryRaw.mockResolvedValue([]);
     expect(await evaluateReadingSignals(now)).toBe(0);
+    expect(db.linkFindUnique).not.toHaveBeenCalled();
+  });
+
+  it("stops at the scope's deadline", async () => {
+    db.queryRaw.mockResolvedValue([{ linkId: "l1" }]);
+    expect(await evaluateReadingSignals(now, { deadline: new Date(Date.now() - 1) })).toBe(0);
+    expect(db.queryRaw).toHaveBeenCalledTimes(1);
     expect(db.linkFindUnique).not.toHaveBeenCalled();
   });
 

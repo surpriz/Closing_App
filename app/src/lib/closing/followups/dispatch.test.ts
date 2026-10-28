@@ -66,10 +66,8 @@ describe("sendFollowup, campaign links", () => {
     db.followup.findUnique.mockResolvedValue(row({ campaignProspectId: "e1" }));
     mocks.sendCampaignFollowup.mockResolvedValue("sent");
     expect(await sendFollowup("f1")).toBe("sent");
-    expect(mocks.sendCampaignFollowup).toHaveBeenCalledWith("f1", expect.any(Date), {
-      approvedById: undefined,
-      endedReason: "Follow-ups are driven by the campaign",
-    });
+    // The transport words its own reasons (campaign ended, enrollment ended...) in the seller's language
+    expect(mocks.sendCampaignFollowup).toHaveBeenCalledWith("f1", expect.any(Date), { approvedById: undefined });
     expect(db.followup.updateMany).not.toHaveBeenCalled();
   });
 

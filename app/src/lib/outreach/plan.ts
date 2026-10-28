@@ -61,6 +61,7 @@ export async function planEnrollments(
     const hours = await hoursOf(mailbox.organizationId);
     const allowance = remainingToday(mailbox, now, { max: getEnv().MAILBOX_DAILY_CAP_MAX });
     const today = localDayBounds(now, mailbox.timezone);
+    // Both kinds: a follow-up mirror due today uses the same mailbox day as the steps
     const scheduledToday = await prisma.campaignMessage.count({
       where: {
         mailboxId: mailbox.id,
@@ -113,7 +114,8 @@ export async function planEnrollments(
       currentStep: { gt: 0 },
       ...orgFilter,
       campaign: { status: "ACTIVE", mailbox: { status: "ACTIVE" } },
-      messages: { none: { status: { in: ["SCHEDULED", "SENDING"] } } },
+      // A pending step, that is: a campaign follow-up on its way does not stand for the next step
+      messages: { none: { kind: "STEP", status: { in: ["SCHEDULED", "SENDING"] } } },
       // One waiting for a later time is left alone until then: no point re-reading it every tick
       OR: [{ nextSendAt: null }, { nextSendAt: { lte: now } }],
     },

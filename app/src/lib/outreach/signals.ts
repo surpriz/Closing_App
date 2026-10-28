@@ -61,7 +61,8 @@ export function signalsFrom(input: {
     ],
     replied: enrollment.repliedAt !== null,
     lastSentAt,
-    sentLast30: input.sent.filter((message) => message.sentAt.getTime() >= since).length,
+    // The 30-day cap is about AI follow-ups: the fixed steps the seller planned never use it up
+    sentLast30: input.sent.filter((message) => message.kind === "FOLLOWUP" && message.sentAt.getTime() >= since).length,
     lastSignal: enrollment.lastSignal,
     reactivatedAt: enrollment.reactivatedAt,
     openFollowup: input.openFollowup,

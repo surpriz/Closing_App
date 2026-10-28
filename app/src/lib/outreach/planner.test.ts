@@ -244,7 +244,9 @@ describe("nextStepFor with reading signals", () => {
   it("pauses on a deep read or a second session, unless already signalled", () => {
     const deep = { kind: "pause_alert", reason: "deep_read", followup: "COLD_READ" };
     expect(plan({ deepRead: true, opened: true })).toEqual(deep);
-    expect(plan({ sessions: 2, opened: true })).toEqual(deep);
+    expect(plan({ sessions: 2, opened: true, readingMs: WARM_READ_MIN_MS })).toEqual(deep);
+    // two skims are not a reread
+    expect(plan({ sessions: 2, opened: true, readingMs: WARM_READ_MIN_MS - 1 })).toMatchObject({ kind: "send_step" });
     expect(plan({ sessions: 1, opened: true, readingMs: 60_000 })).toMatchObject({ kind: "send_step" });
     expect(plan({ deepRead: true, opened: true, lastSignal: "deep" })).not.toMatchObject({ kind: "pause_alert" });
     expect(plan({ deepRead: true, opened: true, lastSignal: "pricing" })).not.toMatchObject({ kind: "pause_alert" });
@@ -316,7 +318,21 @@ describe("nextStepFor with reading signals", () => {
     expect(plan({ opened: false }, lastStepDone)).toEqual({ kind: "finish" });
   });
 
-  it("at the 30-day cap, pause_alert drops its follow-up but still pauses", () => {
+  it("finishes a reactivated reader whose sequence is over, a past deep read does not fire again", () => {
+    const reactivated = {
+      opened: true,
+      sessions: 2,
+      readingMs: 60_000,
+      lastSignal: "deep",
+      reactivatedAt: ago(4 * DAY_MS),
+      lastReadAt: ago(9 * DAY_MS),
+      openFollowup: false,
+    };
+    const done = { ...lastStepDone, lastSentAt: ago(3 * DAY_MS) };
+    expect(plan({ ...reactivated, lastSentAt: done.lastSentAt }, done)).toEqual({ kind: "finish" });
+  });
+
+  it("at the 30-day cap, pause_alert drops its follow-up (the caller alerts without pausing)", () => {
     expect(plan({ pricingMs: 30_000, opened: true, sentLast30: 3 })).toEqual({
       kind: "pause_alert",
       reason: "call_moment",

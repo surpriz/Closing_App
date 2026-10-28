@@ -322,6 +322,24 @@ describe("sendDueMessages, re-checks", () => {
     expect(result.cancelled).toBe(1);
   });
 
+  it("keeps the step waiting, schedule untouched, while a reading pause holds the enrollment", async () => {
+    for (const pausedReason of ["call_moment", "deep_read"]) {
+      messageUpdateMany.mockClear();
+      messageFindUnique.mockResolvedValue(message({ enrollment: { ...enrollment, status: "PAUSED", pausedReason } }));
+      const result = await sendDueMessages(now, {}, deps);
+      expect(messageUpdateMany).toHaveBeenCalledWith({
+        where: { id: "m1", status: "SENDING", sendingAt: now },
+        data: { status: "SCHEDULED", sendingAt: null, messageId: null, attempts: { decrement: 1 } },
+      });
+      expect(send).not.toHaveBeenCalled();
+      expect(result.cancelled).toBe(0);
+    }
+    // Any other pause still drops it
+    messageUpdateMany.mockClear();
+    messageFindUnique.mockResolvedValue(message({ enrollment: { ...enrollment, status: "PAUSED", pausedReason: "seller" } }));
+    expect((await sendDueMessages(now, {}, deps)).cancelled).toBe(1);
+  });
+
   it("cancels when the step was removed", async () => {
     stepFindMany.mockResolvedValue([step2]);
     const result = await sendDueMessages(now, {}, deps);

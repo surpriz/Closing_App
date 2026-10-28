@@ -8,6 +8,7 @@ const db = {
   linkForward: { findFirst: vi.fn() },
   campaignProspect: { findMany: vi.fn(), createMany: vi.fn(), create: vi.fn(), updateMany: vi.fn(), findFirst: vi.fn(), findUnique: vi.fn() },
   campaignMessage: { updateMany: vi.fn() },
+  followup: { findMany: vi.fn(), updateMany: vi.fn() },
   $transaction: vi.fn(async (arg: unknown) =>
     typeof arg === "function" ? (arg as (tx: unknown) => unknown)(db) : Promise.all(arg as Promise<unknown>[]),
   ),
@@ -18,6 +19,12 @@ const isSuppressed = vi.fn();
 vi.mock("./suppression", () => ({
   suppressedAmong: (...args: unknown[]) => suppressedAmong(...args),
   isSuppressed: (...args: unknown[]) => isSuppressed(...args),
+}));
+const releaseCampaignLink = vi.fn();
+vi.mock("./ownership", () => ({ releaseCampaignLink: (...args: unknown[]) => releaseCampaignLink(...args) }));
+vi.mock("@/lib/seller-locale", async () => ({
+  ...(await vi.importActual<typeof import("@/lib/seller-locale")>("@/lib/seller-locale")),
+  getSellerLocale: vi.fn(async () => "fr"),
 }));
 vi.mock("@/lib/closing/notify/preferences", () => ({
   getSellerPrefs: vi.fn(async () => ({ timezone: "Europe/Paris" })),
@@ -165,6 +172,35 @@ describe("stopEnrollment", () => {
     vi.clearAllMocks();
     db.campaignProspect.updateMany.mockResolvedValue({ count: 1 });
     db.campaignMessage.updateMany.mockResolvedValue({ count: 0 });
+    db.campaignProspect.findUnique.mockResolvedValue({ linkId: null, campaign: { createdById: "u1" } });
+    db.followup.findMany.mockResolvedValue([]);
+  });
+
+  it("releases the link and cancels the open campaign follow-ups with a reason in the seller's language", async () => {
+    db.campaignProspect.findUnique.mockResolvedValue({ linkId: "l1", campaign: { createdById: "u1" } });
+    db.followup.findMany.mockResolvedValue([{ id: "f1" }, { id: "f2" }]);
+    expect(await stopEnrollment("e1", "STOPPED", "seller", NOW)).toBe(true);
+    expect(releaseCampaignLink).toHaveBeenCalledWith("l1");
+    expect(db.followup.findMany).toHaveBeenCalledWith({
+      where: { campaignProspectId: "e1", status: { in: ["PENDING", "DRAFT", "GENERATED", "SCHEDULED"] } },
+      select: { id: true },
+    });
+    expect(db.followup.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ["f1", "f2"] }, status: { in: ["PENDING", "DRAFT", "GENERATED", "SCHEDULED"] } },
+      data: { status: "CANCELLED", cancelledAt: NOW, error: "La campagne s'est arrêtée pour ce contact" },
+    });
+    expect(db.campaignMessage.updateMany).toHaveBeenCalledWith({
+      where: { followupId: { in: ["f1", "f2"] }, status: { in: ["SCHEDULED", "SENDING"] } },
+      data: { status: "CANCELLED", sendingAt: null },
+    });
+  });
+
+  it("touches neither the link nor the follow-ups when the enrollment was already over", async () => {
+    db.campaignProspect.findUnique.mockResolvedValue({ linkId: "l1", campaign: { createdById: "u1" } });
+    db.campaignProspect.updateMany.mockResolvedValue({ count: 0 });
+    expect(await stopEnrollment("e1", "STOPPED", "seller", NOW)).toBe(false);
+    expect(releaseCampaignLink).not.toHaveBeenCalled();
+    expect(db.followup.findMany).not.toHaveBeenCalled();
   });
 
   it("only touches live enrollments and cancels their pending messages", async () => {
@@ -257,7 +293,7 @@ describe("enrollForwardedContact", () => {
   const forward = { toProspect: { id: "p9", email: "Boss@Acme.com", name: "Jane Roe Smith", company: "Acme" } };
   beforeEach(() => {
     vi.clearAllMocks();
-    db.campaign.findFirst.mockResolvedValue({ locale: "fr", createdById: "u1" });
+    db.campaign.findFirst.mockResolvedValue({ locale: "fr", createdById: "u1", status: "ACTIVE" });
     db.linkForward.findFirst.mockResolvedValue(forward);
     isSuppressed.mockResolvedValue(false);
     db.campaignProspect.findFirst.mockResolvedValue(null);
@@ -280,6 +316,16 @@ describe("enrollForwardedContact", () => {
         status: "QUEUED",
       }),
     });
+  });
+
+  it("refuses a campaign that is over", async () => {
+    db.campaign.findFirst.mockResolvedValue({ locale: "fr", createdById: "u1", status: "DONE" });
+    expect(await enrollForwardedContact("c1", "p9", ACTOR, NOW, "o1")).toBe("campaign_closed");
+    expect(db.campaignProspect.create).not.toHaveBeenCalled();
+    for (const status of ["DRAFT", "PAUSED"]) {
+      db.campaign.findFirst.mockResolvedValue({ locale: "fr", createdById: "u1", status });
+      expect(await enrollForwardedContact("c1", "p9", ACTOR, NOW, "o1")).toBe("enrolled");
+    }
   });
 
   it("skips an address already enrolled", async () => {

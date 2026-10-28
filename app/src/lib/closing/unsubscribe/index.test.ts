@@ -8,9 +8,11 @@ const db = vi.hoisted(() => ({
   $transaction: vi.fn(async () => []),
 }));
 const addSuppression = vi.hoisted(() => vi.fn(async () => true));
+const stopEnrollment = vi.hoisted(() => vi.fn(async () => true));
 
 vi.mock("@/lib/db", () => ({ prisma: db }));
 vi.mock("@/lib/outreach/suppression", () => ({ addSuppression }));
+vi.mock("@/lib/outreach/enroll", () => ({ stopEnrollment }));
 vi.mock("@/lib/prospecting/opt-out", () => ({ addOptOut: vi.fn() }));
 vi.mock("@/lib/seller-locale", () => ({ getSellerLocale: vi.fn(async () => "en"), toUiLocale: () => "en" }));
 vi.mock("@/lib/app-origin", () => ({ getPublicAppUrl: () => "https://app.test" }));
@@ -58,25 +60,17 @@ describe("unsubscribe, enrollment subject", () => {
   it("stops the enrollment, cancels pending messages and suppresses the address", async () => {
     expect(await unsubscribeByToken(unsubscribeToken({ kind: "enrollment", id: "enr1" }))).toBe(true);
 
-    // Only from a running status, and with an end date; REPLIED, BOUNCED or STOPPED keep their outcome
-    expect(db.campaignProspect.updateMany).toHaveBeenCalledWith({
-      where: { id: "enr1", status: { in: ["QUEUED", "ACTIVE", "PAUSED"] } },
-      data: { status: "UNSUBSCRIBED", finishedAt: expect.any(Date) },
-    });
-    expect(db.campaignMessage.updateMany).toHaveBeenCalledWith({
-      where: { enrollmentId: "enr1", status: "SCHEDULED" },
-      data: { status: "CANCELLED" },
-    });
+    // The common stop: running statuses only, pending steps cancelled, link released, campaign follow-ups dropped
+    expect(stopEnrollment).toHaveBeenCalledWith("enr1", "UNSUBSCRIBED", "unsubscribed", expect.any(Date));
     expect(addSuppression).toHaveBeenCalledWith({
       organizationId: "org1",
       email: "Lea@Acme.com",
       reason: "UNSUBSCRIBE",
       source: "unsubscribe_page",
     });
-    expect(addSuppression.mock.invocationCallOrder[0]).toBeLessThan(
-      db.campaignProspect.updateMany.mock.invocationCallOrder[0],
-    );
-    expect(db.prospect.updateMany).toHaveBeenCalled();
+    expect(addSuppression.mock.invocationCallOrder[0]).toBeLessThan(stopEnrollment.mock.invocationCallOrder[0]);
+    // The closing side comes after the stop
+    expect(db.prospect.updateMany.mock.invocationCallOrder[0]).toBeGreaterThan(stopEnrollment.mock.invocationCallOrder[0]);
     expect(db.followup.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ status: "CANCELLED", error: "Prospect unsubscribed" }) }),
     );

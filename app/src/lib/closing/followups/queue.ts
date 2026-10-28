@@ -17,7 +17,7 @@ import { DAY_MS } from "../constants";
 import { deadlineSourceText, formatDeadline, isLinkExpired } from "../expiry";
 import { viewerUrl } from "../link-url";
 import { followupUrl } from "./attribution";
-import { guardSourceText, pickRelevantSections } from "./writer-context";
+import { guardSourceText, pickRelevantSections, previousMessagesOf } from "./writer-context";
 
 export function isUniqueViolation(error: unknown) {
   return typeof error === "object" && error !== null && "code" in error && error.code === "P2002";
@@ -85,6 +85,17 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
             take: 3,
             select: { sentAt: true, channel: true, subject: true, body: true },
           },
+          // A campaign link's history is mostly its fixed steps: the writer must not repeat them
+          campaignProspect: {
+            select: {
+              messages: {
+                where: { kind: "STEP", status: "SENT", sentAt: { not: null } },
+                orderBy: { sentAt: "desc" },
+                take: 3,
+                select: { sentAt: true, subject: true, body: true },
+              },
+            },
+          },
           actions: {
             where: { message: { not: null } },
             orderBy: { createdAt: "desc" },
@@ -119,6 +130,11 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
   };
   const brief = followup.trigger === "AI_DECISION" ? (context.brief ?? null) : null;
   const now = new Date();
+  // Only this follow-up's enrollment: a link's earlier enrollment (re-enrolled contact) is another story
+  const campaignSteps =
+    followup.campaignProspectId && link.campaignProspectId === followup.campaignProspectId
+      ? (link.campaignProspect?.messages ?? [])
+      : [];
   // The link no longer opens: a message pointing to it would be off-key, and the writer call wasted
   if (isLinkExpired(link, now)) {
     await prisma.followup.updateMany({
@@ -141,6 +157,17 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
     valueProps: settings?.valueProps ?? null,
   });
 
+  // A campaign link is never "sent" by the seller: its first mail is the enrollment's first step
+  let firstSentAt = link.sentAt;
+  if (!firstSentAt && followup.campaignProspectId) {
+    const first = await prisma.campaignMessage.findFirst({
+      where: { enrollmentId: followup.campaignProspectId, status: "SENT", sentAt: { not: null } },
+      orderBy: { sentAt: "asc" },
+      select: { sentAt: true },
+    });
+    firstSentAt = first?.sentAt ?? null;
+  }
+
   // The plan, not the stored setting: autopilot comes back by itself on an upgrade
   const plan = await getWorkspacePlan(link.organizationId);
   const aiQuota =
@@ -160,7 +187,7 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
       proposalUrl: followupUrl(viewerUrl(getPublicAppUrl(), { slug: link.slug, document: link.document, company: prospect.company }), followup.id),
       senderName: settings?.senderName ?? link.createdBy?.name ?? null,
       senderSignature: settings?.senderSignature ?? null,
-      daysSinceSent: link.sentAt ? Math.floor((now.getTime() - link.sentAt.getTime()) / DAY_MS) : null,
+      daysSinceSent: firstSentAt ? Math.floor((now.getTime() - firstSentAt.getTime()) / DAY_MS) : null,
       deadlineLabel,
       sequence:
         followup.trigger === "ANTI_GHOSTING" ? { clicked: !!context.clicked, final: !!context.final } : null,
@@ -169,7 +196,7 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
       documentIntro: (pages[0]?.text ?? link.document.sellerDescription)?.slice(0, 600) ?? null,
       instruction: instruction ?? null,
       pricingExcerpt:
-        followup.trigger === "HOT_PRICING"
+        followup.trigger === "HOT_PRICING" || followup.trigger === "COLD_READ_PRICING"
           ? pages
               .filter((p) => p.tags.includes("PRICING"))
               .map((p) => p.text ?? "")
@@ -186,12 +213,11 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
         followup.trigger === "WARM_READ" || followup.trigger === "COLD_READ" ? context.readTags : undefined,
       ),
       documentPurpose: link.document.docPurpose,
-      previousFollowups: link.followups.map((f) => ({
-        daysAgo: Math.floor((now.getTime() - f.sentAt!.getTime()) / DAY_MS),
-        channel: f.channel,
-        subject: f.subject,
-        excerpt: (f.body ?? "").slice(0, 300),
-      })),
+      previousFollowups: previousMessagesOf(
+        link.followups.map((f) => ({ ...f, sentAt: f.sentAt! })),
+        campaignSteps.map((m) => ({ ...m, sentAt: m.sentAt! })),
+        now,
+      ),
       prospectMessages: [
         ...link.actions.map((a) => a.message!.slice(0, 600)),
         ...link.sellerActivities.map((a) => a.note!.slice(0, 600)),

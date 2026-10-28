@@ -1,6 +1,9 @@
 import { isSupportedLocale } from "@/lib/closing/constants";
+import { OPEN_FOLLOWUP_STATUSES } from "@/lib/closing/followups/queue";
 import { getSellerPrefs, sellerTimezone } from "@/lib/closing/notify/preferences";
 import { prisma } from "@/lib/db";
+import { getSellerLocale } from "@/lib/seller-locale";
+import { getNamespaceTranslator } from "@/lib/server-translator";
 
 import { type Actor, canEditCampaign } from "./campaigns";
 import {
@@ -12,6 +15,7 @@ import {
   type ProspectRow,
   rowsToProspects,
 } from "./csv";
+import { releaseCampaignLink } from "./ownership";
 import { templateVarsOf } from "./planner";
 import { renderTemplate } from "./render";
 import { isSuppressed, suppressedAmong } from "./suppression";
@@ -219,8 +223,9 @@ export async function importProspects(input: {
 
 /**
  * Ends an enrollment and cancels what it still had in the outbox. False when it was already over.
- * A SENDING row belongs to its lease and is left alone: a send already under way may still go out (the sender only
+ * A SENDING step belongs to its lease and is left alone: a send already under way may still go out (the sender only
  * re-checks the enrollment up to the moment it writes the Message-ID), and the sender records what really happened.
+ * The campaign is done with this prospect: its link becomes an ordinary deal and its open AI follow-ups are dropped.
  */
 export async function stopEnrollment(
   id: string,
@@ -228,6 +233,10 @@ export async function stopEnrollment(
   reason: string | null,
   now: Date,
 ): Promise<boolean> {
+  const target = await prisma.campaignProspect.findUnique({
+    where: { id },
+    select: { linkId: true, campaign: { select: { createdById: true } } },
+  });
   const [enrollment] = await prisma.$transaction([
     prisma.campaignProspect.updateMany({
       where: { id, status: { in: [...LIVE_ENROLLMENT] } },
@@ -238,7 +247,29 @@ export async function stopEnrollment(
       data: { status: "CANCELLED" },
     }),
   ]);
-  return enrollment.count > 0;
+  if (enrollment.count === 0) return false;
+  if (target?.linkId) await releaseCampaignLink(target.linkId);
+  if (target) await cancelCampaignFollowups(id, target.campaign.createdById, now);
+  return true;
+}
+
+/** The enrollment's open AI follow-ups and their waiting mirrors; the reason is in the seller's language. */
+async function cancelCampaignFollowups(enrollmentId: string, sellerId: string, now: Date) {
+  const open = await prisma.followup.findMany({
+    where: { campaignProspectId: enrollmentId, status: { in: [...OPEN_FOLLOWUP_STATUSES] } },
+    select: { id: true },
+  });
+  if (open.length === 0) return;
+  const ids = open.map((followup) => followup.id);
+  const reason = getNamespaceTranslator(await getSellerLocale(sellerId), "server.followups.dispatch")("campaignStopped");
+  await prisma.followup.updateMany({
+    where: { id: { in: ids }, status: { in: [...OPEN_FOLLOWUP_STATUSES] } },
+    data: { status: "CANCELLED", cancelledAt: now, error: reason },
+  });
+  await prisma.campaignMessage.updateMany({
+    where: { followupId: { in: ids }, status: { in: ["SCHEDULED", "SENDING"] } },
+    data: { status: "CANCELLED", sendingAt: null },
+  });
 }
 
 /** The enrollment belongs to the workspace and to a campaign the actor may edit. */
@@ -304,7 +335,8 @@ export async function removeEnrollment(organizationId: string, id: string, now: 
   return stopEnrollment(id, "STOPPED", "seller", now);
 }
 
-export type ForwardedEnrollment = "enrolled" | "duplicate" | "suppressed" | "not_found";
+export type ForwardedEnrollment = "enrolled" | "duplicate" | "suppressed" | "campaign_closed" | "not_found";
+const OPEN_CAMPAIGN = ["DRAFT", "ACTIVE", "PAUSED"];
 
 /**
  * E8: a contact the prospect forwarded the document to joins the campaign on the seller's say-so, as a fresh QUEUED
@@ -319,9 +351,11 @@ export async function enrollForwardedContact(
 ): Promise<ForwardedEnrollment> {
   const campaign = await prisma.campaign.findFirst({
     where: { id: campaignId, organizationId, status: { not: "ARCHIVED" } },
-    select: { locale: true, createdById: true },
+    select: { locale: true, createdById: true, status: true },
   });
   if (!campaign || !canEditCampaign(campaign, actor)) return "not_found";
+  // A finished campaign sends nothing more: the contact would sit QUEUED forever
+  if (!OPEN_CAMPAIGN.includes(campaign.status)) return "campaign_closed";
 
   const forward = await prisma.linkForward.findFirst({
     where: { toProspectId: prospectId, link: { organizationId, campaignProspect: { campaignId } } },

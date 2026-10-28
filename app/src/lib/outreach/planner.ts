@@ -23,12 +23,15 @@ export type ReadingSettings = {
   hotPricingThresholdSec: number;
 };
 export const REACTIVATE_AFTER_DAYS = 5;
+/** The pauses a reading signal sets (E5): the campaign's AI follow-up is their way out, a stronger signal may update them. */
+export const READING_PAUSES: readonly string[] = ["call_moment", "deep_read"];
 
 export type NextAction =
   | { kind: "send_step"; step: PlannerStep; earliest: Date }
   | { kind: "wait"; until: Date | null }
   | { kind: "finish" }
-  // followup is null once the 30-day cap is reached: the enrollment still pauses and the seller is still alerted.
+  // followup is null once the 30-day cap is reached: the seller is still alerted, but with no follow-up to end a
+  // pause the enrollment stays ACTIVE.
   | { kind: "pause_alert"; reason: "call_moment" | "deep_read"; followup: "COLD_READ_PRICING" | "COLD_READ" | null }
   | { kind: "ai_followup"; trigger: "COLD_REACTIVATE" }
   | { kind: "note_forward" };
@@ -73,7 +76,8 @@ export function nextStepFor(input: {
     ) {
       return { kind: "pause_alert", reason: "call_moment", followup: capped ? null : "COLD_READ_PRICING" };
     }
-    if ((sig.deepRead || sig.sessions >= 2) && sig.lastSignal !== "deep" && sig.lastSignal !== "pricing") {
+    // A second session only counts as a reread when the reading adds up to more than a skim
+    if ((sig.deepRead || (sig.sessions >= 2 && sig.readingMs >= WARM_READ_MIN_MS)) && sig.lastSignal !== "deep" && sig.lastSignal !== "pricing") {
       return { kind: "pause_alert", reason: "deep_read", followup: capped ? null : "COLD_READ" };
     }
     // A skim does not move the sequence forward faster; the next step only waits out the reading delay.

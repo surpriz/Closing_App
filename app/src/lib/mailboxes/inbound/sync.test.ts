@@ -256,7 +256,9 @@ describe("syncMailboxesDue", () => {
     );
 
   it("a mailbox cut short at the tail of the tick goes to the back of the line, without a failure", async () => {
-    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    // Date too: on the real clock any millisecond spent before the first mailbox leaves less than MIN_SYNC_BUDGET_MS,
+    // and the tick skips it instead of syncing it
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
     try {
       const run = syncMailboxesDue(NOW, { budgetMs: MIN_SYNC_BUDGET_MS, connector: () => fakeConnector(abortingList()) });
       await vi.advanceTimersByTimeAsync(MIN_SYNC_BUDGET_MS);
@@ -273,7 +275,7 @@ describe("syncMailboxesDue", () => {
   });
 
   it("a mailbox that gets no page within a full budget counts as a soft failure and backs off", async () => {
-    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
     try {
       const run = syncMailboxesDue(NOW, { budgetMs: 60_000, connector: () => fakeConnector(abortingList()) });
       await vi.advanceTimersByTimeAsync(25_000);

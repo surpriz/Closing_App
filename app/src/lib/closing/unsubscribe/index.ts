@@ -1,5 +1,6 @@
 import { getPublicAppUrl } from "@/lib/app-origin";
 import { prisma } from "@/lib/db";
+import { stopEnrollment } from "@/lib/outreach/enroll";
 import { addSuppression } from "@/lib/outreach/suppression";
 import { addOptOut } from "@/lib/prospecting/opt-out";
 import { getSellerLocale, toUiLocale } from "@/lib/seller-locale";
@@ -130,18 +131,9 @@ export async function unsubscribeByToken(token: string) {
       reason: "UNSUBSCRIBE",
       source: "unsubscribe_page",
     });
-    await prisma.$transaction([
-      // Only a running enrollment changes: a REPLIED, BOUNCED or STOPPED one keeps its outcome (the suppression above
-      // already covers the address)
-      prisma.campaignProspect.updateMany({
-        where: { id, status: { in: ["QUEUED", "ACTIVE", "PAUSED"] } },
-        data: { status: "UNSUBSCRIBED", finishedAt: new Date() },
-      }),
-      prisma.campaignMessage.updateMany({
-        where: { enrollmentId: id, status: "SCHEDULED" },
-        data: { status: "CANCELLED" },
-      }),
-    ]);
+    // Only a running enrollment changes: a REPLIED, BOUNCED or STOPPED one keeps its outcome (the suppression above
+    // already covers the address). Like any stop, the link goes back to the seller and the campaign's AI follow-ups end
+    await stopEnrollment(id, "UNSUBSCRIBED", "unsubscribed", new Date());
     // The same person may already hold a closing link in this workspace
     await stopClosingSide(target.organizationId, target.email, reason);
     return true;

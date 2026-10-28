@@ -98,6 +98,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
         nextSendAt: true,
         linkId: true,
         lastSignal: true,
+        reactivatedAt: true,
         followups: {
           where: { status: { in: ["DRAFT", "GENERATED", "SCHEDULED", "SENT"] } },
           orderBy: { createdAt: "desc" },
@@ -207,6 +208,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
       lastAt: enrollment.messages[0]?.sentAt ?? null,
       linkId: enrollment.linkId,
       lastSignal: enrollment.lastSignal,
+      reactivatedAt: enrollment.reactivatedAt,
       followup: enrollment.followups[0]
         ? {
             status: enrollment.followups[0].status,

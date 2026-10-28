@@ -1,9 +1,20 @@
+import type { Prisma } from "@/generated/prisma/client";
 import type { CampaignMessageStatus, EnrollmentStatus } from "@/generated/prisma/enums";
 import { isUniqueViolation } from "@/lib/closing/followups/queue";
 import { prisma } from "@/lib/db";
 
 import { templateVarsOf } from "./planner";
 import { renderTemplate, threadSubject } from "./render";
+
+export const STEP_SELECT = {
+  id: true,
+  order: true,
+  delayDays: true,
+  subject: true,
+  newThread: true,
+  body: true,
+  carriesLink: true,
+} as const;
 
 export type StepRow = {
   id: string;
@@ -66,35 +77,75 @@ export async function scheduleStepMessage(input: {
   mailboxId: string;
   scheduledFor: Date;
 }): Promise<{ id: string } | { existing: CampaignMessageStatus }> {
-  const { enrollment, step, campaignId, mailboxId, scheduledFor } = input;
-  const dedupeKey = dedupeKeyOf(enrollment.id, step.id);
-  const rendered = renderStep(step, enrollment, null);
+  const dedupeKey = dedupeKeyOf(input.enrollment.id, input.step.id);
   try {
-    const created = await prisma.campaignMessage.create({
-      data: {
-        campaignId,
-        enrollmentId: enrollment.id,
-        mailboxId,
-        stepId: step.id,
-        kind: "STEP",
-        status: "SCHEDULED",
-        scheduledFor,
-        subject: rendered.subject,
-        body: rendered.body,
-        carriesLink: step.carriesLink,
-        dedupeKey,
-      },
-      select: { id: true },
-    });
+    const created = await prisma.campaignMessage.create({ data: stepMessageData(input), select: { id: true } });
     return { id: created.id };
   } catch (error) {
     if (!isUniqueViolation(error)) throw error;
   }
   const { count } = await prisma.campaignMessage.updateMany({
     where: { dedupeKey, status: "SCHEDULED" },
-    data: { scheduledFor },
+    data: { scheduledFor: input.scheduledFor },
   });
   const existing = await prisma.campaignMessage.findUnique({ where: { dedupeKey }, select: { id: true, status: true } });
   if (count > 0 && existing) return { id: existing.id };
   return { existing: existing?.status ?? "CANCELLED" };
+}
+
+type StepMessageInput = Parameters<typeof scheduleStepMessage>[0];
+
+function stepMessageData({ enrollment, step, campaignId, mailboxId, scheduledFor }: StepMessageInput) {
+  const rendered = renderStep(step, enrollment, null);
+  return {
+    campaignId,
+    enrollmentId: enrollment.id,
+    mailboxId,
+    stepId: step.id,
+    kind: "STEP" as const,
+    status: "SCHEDULED" as const,
+    scheduledFor,
+    subject: rendered.subject,
+    body: rendered.body,
+    carriesLink: step.carriesLink,
+    dedupeKey: dedupeKeyOf(enrollment.id, step.id),
+  };
+}
+
+/**
+ * Plans a step again at `scheduledFor`, inside the caller's transaction: a SCHEDULED row is moved, a CANCELLED or FAILED
+ * one (dropped while the enrollment was paused) is re-opened from `mailboxId`, a missing one is created. Looked up first
+ * rather than create-and-catch, since a unique violation would abort the transaction. False when a row is under way or
+ * already sent: nothing to plan.
+ */
+export async function replanStepMessage(db: Prisma.TransactionClient, input: StepMessageInput): Promise<boolean> {
+  const dedupeKey = dedupeKeyOf(input.enrollment.id, input.step.id);
+  const existing = await db.campaignMessage.findUnique({ where: { dedupeKey }, select: { status: true } });
+  if (!existing) {
+    await db.campaignMessage.create({ data: stepMessageData(input), select: { id: true } });
+    return true;
+  }
+  if (existing.status === "SCHEDULED") {
+    const { count } = await db.campaignMessage.updateMany({
+      where: { dedupeKey, status: "SCHEDULED" },
+      data: { scheduledFor: input.scheduledFor },
+    });
+    return count > 0;
+  }
+  if (existing.status === "CANCELLED" || existing.status === "FAILED") {
+    const { count } = await db.campaignMessage.updateMany({
+      where: { dedupeKey, status: { in: ["CANCELLED", "FAILED"] } },
+      data: {
+        status: "SCHEDULED",
+        scheduledFor: input.scheduledFor,
+        attempts: 0,
+        messageId: null,
+        sendingAt: null,
+        error: null,
+        mailboxId: input.mailboxId,
+      },
+    });
+    return count > 0;
+  }
+  return false;
 }

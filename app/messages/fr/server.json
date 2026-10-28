@@ -187,7 +187,12 @@
       "changeRequestedByProspect": "Ajustement demandé par le prospect",
       "bounced": "Adresse email invalide (bounce)",
       "replied": "Le prospect a répondu par email",
-      "campaign": "Les relances sont gérées par la campagne"
+      "campaign": "Les relances sont gérées par la campagne",
+      "campaignStopped": "La campagne s'est arrêtée pour ce contact",
+      "campaignEnded": "La campagne est terminée",
+      "enrollmentEnded": "Ce contact ne fait plus partie de la campagne",
+      "suppressed": "Adresse sur la liste d'arrêt",
+      "noMailbox": "La campagne n'a pas de boîte mail connectée"
     },
     "queue": {
       "toReview": "À relire : {issues}",

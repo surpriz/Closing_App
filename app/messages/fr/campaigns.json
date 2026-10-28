@@ -280,9 +280,7 @@
     "signals": {
       "pricing": "A lu les tarifs",
       "deep": "Lecture attentive",
-      "reread": "Relecture",
-      "forward": "A transféré le document",
-      "reactivate": "De retour après un moment"
+      "reactivated": "Relance de réactivation envoyée"
     },
     "callThem": "Appelez-le",
     "clicked": "A cliqué",
@@ -323,6 +321,7 @@
     "invalid": "Requête invalide.",
     "duplicate": "Ce contact est déjà dans la campagne.",
     "suppressed": "Ce contact figure sur la liste d'arrêt.",
+    "campaign_closed": "Cette campagne est terminée : lancez-en une nouvelle pour écrire à ce contact.",
     "not_found": "Ce contact ne peut pas être ajouté."
   }
 }

@@ -27,6 +27,7 @@ import {
   MAX_ATTEMPTS,
   MAX_SENDS_PER_TICK_PER_MAILBOX,
   nextStepFor,
+  READING_PAUSES,
   RETRY_DELAY_MS,
   retryAt,
   STALE_LEASE_MS,
@@ -282,6 +283,13 @@ async function sendOne(ctx: {
   });
 
   // Re-checks, in this order: the situation may have changed since the message was planned
+  // A reading pause ends with its AI follow-up, which plans this step again from its own send: the row waits, it is not
+  // dropped (a CANCELLED step would read as a failure to the catch-up)
+  if (enrollment.status === "PAUSED" && READING_PAUSES.includes(enrollment.pausedReason ?? "")) {
+    await requeue(message.id, reservedAt);
+    totals.rescheduled++;
+    return "next";
+  }
   if (enrollment.status !== "ACTIVE") {
     await cancel(message.id, reservedAt);
     totals.cancelled++;

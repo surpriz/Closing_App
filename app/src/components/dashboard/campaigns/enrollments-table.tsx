@@ -43,6 +43,7 @@ export type EnrollmentRow = {
   lastAt: Date | null;
   linkId: string | null;
   lastSignal: string | null;
+  reactivatedAt: Date | null;
   followup: { status: string; at: Date | null } | null;
   clicked: boolean;
 };
@@ -60,7 +61,8 @@ const STATUS_VARIANT = {
 } as const;
 
 const KNOWN_REASONS = ["rejected", "send_failed", "plan_limit", "document_missing", "suppressed", "archived", "interrupted"] as const;
-const SIGNALS = ["pricing", "deep", "reread", "forward", "reactivate"] as const;
+// The reading signals the evaluator writes; a reactivation is told by reactivatedAt, never by lastSignal
+const SIGNALS = ["pricing", "deep"] as const;
 const CALL_REASONS = ["call_moment", "deep_read"];
 const REMOVABLE: EnrollmentStatus[] = ["QUEUED", "ACTIVE", "PAUSED"];
 
@@ -108,10 +110,13 @@ export function EnrollmentsTable({
 
   const when = (date: Date | null, row: EnrollmentRow) => (date ? formatInTimeZone(date, row.timezone, locale) : te("never"));
 
-  const signalLabel = (row: EnrollmentRow) =>
-    row.lastSignal && (SIGNALS as readonly string[]).includes(row.lastSignal)
+  // The reactivation comes last in a sequence: once there, it is the latest news about the prospect
+  const signalLabel = (row: EnrollmentRow) => {
+    if (row.reactivatedAt) return te("signals.reactivated");
+    return row.lastSignal && (SIGNALS as readonly string[]).includes(row.lastSignal)
       ? te(`signals.${row.lastSignal as (typeof SIGNALS)[number]}`)
       : null;
+  };
 
   if (rows.length === 0) return <p className="text-small text-muted-foreground">{te("empty")}</p>;
 

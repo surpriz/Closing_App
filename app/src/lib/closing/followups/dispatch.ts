@@ -62,7 +62,6 @@ export async function sendFollowup(
   // Reasons are stored on the follow-up and shown to the seller
   const t = getNamespaceTranslator(toUiLocale(link.createdBy?.locale), "server.followups.dispatch");
 
-  // Campaign links are born with follow-ups off (the campaign drives them): only archiving stops those
   // A campaign drives its link: only its own follow-ups go out (checked first, campaign links have follow-ups off)
   if (isCampaignOwned(link) && !followup.campaignProspectId) {
     await finish(followup.id, "CANCELLED", t("campaign"));
@@ -154,7 +153,7 @@ export async function sendFollowup(
 
   if (followup.campaignProspectId) {
     // The campaign's mailbox sends it, in the enrollment's thread (and mirrors it as a campaign message)
-    const outcome = await sendCampaignFollowup(followup.id, now, { approvedById, endedReason: t("campaign") });
+    const outcome = await sendCampaignFollowup(followup.id, now, { approvedById });
     return outcome === "rescheduled" ? "ignored" : outcome;
   }
   // Claim it so two concurrent ticks can't send the same message twice

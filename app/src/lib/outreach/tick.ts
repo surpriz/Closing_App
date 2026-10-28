@@ -41,7 +41,7 @@ export async function runOutreachTick(
   const synced = await step("sync", () => syncMailboxesDue(now, { budgetMs, ...base }));
   const planned = await step("plan", () => planEnrollments(now, base));
   const sent = await step("send", () => sendDueMessages(now, { ...base, ...(scope.deadline ? { deadline: scope.deadline } : {}) }));
-  const read = await step("read", () => evaluateReadingSignals(now, base));
+  const read = await step("read", () => evaluateReadingSignals(now, { ...base, ...(scope.deadline ? { deadline: scope.deadline } : {}) }));
   const finished = await step("finish", () => finishIdleCampaigns(now, base));
   return { stale, synced, planned, sent, read, finished };
 }

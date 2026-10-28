@@ -1,6 +1,30 @@
 import type { PageTag } from "@/generated/prisma/enums";
 
+import { DAY_MS } from "../constants";
 import { tagLabels } from "../documents/doc-types";
+
+type SentMail = { sentAt: Date; subject: string | null; body: string | null };
+
+/**
+ * What the prospect already received, newest first, at most `max`: the link's follow-ups plus, for a campaign
+ * follow-up, the campaign's fixed steps (its own AI follow-ups are already among the link's). Pure.
+ */
+export function previousMessagesOf(
+  followups: (SentMail & { channel: string })[],
+  campaignSteps: SentMail[],
+  now: Date,
+  max = 3,
+) {
+  return [...followups, ...campaignSteps.map((step) => ({ ...step, channel: "EMAIL" }))]
+    .sort((a, b) => b.sentAt.getTime() - a.sentAt.getTime())
+    .slice(0, max)
+    .map((mail) => ({
+      daysAgo: Math.floor((now.getTime() - mail.sentAt.getTime()) / DAY_MS),
+      channel: mail.channel,
+      subject: mail.subject,
+      excerpt: (mail.body ?? "").slice(0, 300),
+    }));
+}
 
 /**
  * Which parts of the document the message writer gets, by follow-up goal.
