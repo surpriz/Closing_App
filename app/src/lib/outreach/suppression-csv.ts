@@ -1,6 +1,8 @@
 const HEADER = ["email", "reason", "source", "detail", "created_at"];
 
-function field(value: string) {
+/** Cells come from third parties: a leading = + - @ tab or CR would run as a formula in a spreadsheet. */
+function field(raw: string) {
+  const value = /^[=+\-@\t\r]/.test(raw) ? `'${raw}` : raw;
   return /[",\r\n]/.test(value) ? `"${value.replaceAll('"', '""')}"` : value;
 }
 

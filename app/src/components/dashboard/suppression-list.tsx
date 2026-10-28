@@ -55,6 +55,7 @@ function RemoveButton({ id, email }: { id: string; email: string }) {
               startTransition(async () => {
                 const result = await removeSuppressionAction(id);
                 if ("error" in result) toast.error(result.error);
+                else toast.success(t("removed"));
                 setOpen(false);
               })
             }
@@ -67,7 +68,15 @@ function RemoveButton({ id, email }: { id: string; email: string }) {
   );
 }
 
-export function SuppressionList({ rows, total }: { rows: SuppressionRow[]; total: number }) {
+export function SuppressionList({
+  rows,
+  total,
+  canRemove,
+}: {
+  rows: SuppressionRow[];
+  total: number;
+  canRemove: boolean;
+}) {
   const t = useTranslations("settings.suppressions");
   const locale = useLocale() as UiLocale;
   const format = new Intl.DateTimeFormat(INTL_LOCALE[locale], {
@@ -123,7 +132,7 @@ export function SuppressionList({ rows, total }: { rows: SuppressionRow[]; total
                   <TableCell>{row.source}</TableCell>
                   <TableCell>{format.format(new Date(row.createdAt))}</TableCell>
                   <TableCell className="text-right">
-                    {row.reason === "MANUAL" && <RemoveButton id={row.id} email={row.email} />}
+                    {canRemove && row.reason === "MANUAL" && <RemoveButton id={row.id} email={row.email} />}
                   </TableCell>
                 </TableRow>
               ))}

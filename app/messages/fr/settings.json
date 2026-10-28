@@ -379,7 +379,9 @@
     "errors": {
       "invalid": "Cette adresse email n'est pas valide.",
       "exists": "Cette adresse est déjà dans la liste.",
-      "notRemovable": "Seules les adresses ajoutées à la main peuvent être retirées."
-    }
+      "notRemovable": "Seules les adresses ajoutées à la main peuvent être retirées.",
+      "managerOnly": "Seuls les propriétaires et administrateurs peuvent retirer une adresse."
+    },
+    "removed": "Adresse retirée"
   }
 }

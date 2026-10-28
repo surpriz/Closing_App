@@ -153,6 +153,7 @@ export default async function SettingsPage({
                 <SuppressionList
                   rows={stopList.rows.map((row) => ({ ...row, createdAt: row.createdAt.toISOString() }))}
                   total={stopList.total}
+                  canRemove={isManager}
                 />
               </div>
             )}

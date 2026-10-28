@@ -7,6 +7,7 @@ import { z } from "zod";
 import { logAudit } from "@/lib/audit";
 import { requireOutreach } from "@/lib/outreach/flag";
 import { addSuppression, removeManualSuppression } from "@/lib/outreach/suppression";
+import { isManagerRole } from "@/lib/roles";
 
 export type SuppressionFormState = { ok: true } | { error: string } | null;
 
@@ -34,7 +35,7 @@ export async function addSuppressionAction(
     actorUserId: user.id,
     action: "suppression.added",
     targetType: "suppression",
-    metadata: { email: parsed.data },
+    metadata: { reason: "MANUAL" },
   });
   revalidatePath("/settings");
   return { ok: true };
@@ -42,8 +43,9 @@ export async function addSuppressionAction(
 
 /** A manual row only: the rows written by an unsubscribe, a bounce or a complaint stay. */
 export async function removeSuppressionAction(id: string): Promise<{ ok: true } | { error: string }> {
-  const { user, organization } = await requireOutreach();
+  const { user, organization, role } = await requireOutreach();
   const t = await getTranslations("settings.suppressions.errors");
+  if (!isManagerRole(role)) return { error: t("managerOnly") };
   if (!(await removeManualSuppression(organization.id, id))) return { error: t("notRemovable") };
 
   await logAudit({
@@ -52,6 +54,7 @@ export async function removeSuppressionAction(id: string): Promise<{ ok: true } 
     action: "suppression.removed",
     targetType: "suppression",
     targetId: id,
+    metadata: { reason: "MANUAL" },
   });
   revalidatePath("/settings");
   return { ok: true };

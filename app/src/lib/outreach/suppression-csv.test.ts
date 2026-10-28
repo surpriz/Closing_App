@@ -22,4 +22,20 @@ describe("suppressionsCsv", () => {
     ]);
     expect(csv).toContain('"said ""no"", twice\nreally"');
   });
+
+  it("neutralises cells a spreadsheet would run as a formula", () => {
+    const csv = suppressionsCsv([
+      { email: '=HYPERLINK("x")@x.com', reason: "BOUNCE", source: "dsn", detail: "-1", createdAt: new Date(0) },
+      { email: "+cmd|' /C calc'!A0@x.com", reason: "BOUNCE", source: "dsn", detail: null, createdAt: new Date(0) },
+    ]);
+    const [, first, second] = csv.split("\r\n");
+    expect(first).toBe(`"'=HYPERLINK(""x"")@x.com",BOUNCE,dsn,'-1,1970-01-01T00:00:00.000Z`);
+    expect(second.startsWith(`'+cmd|' /C calc'!A0@x.com,`)).toBe(true);
+  });
+
+  it("leaves a plain email untouched", () => {
+    expect(suppressionsCsv([{ email: "ana@acme.com", reason: "MANUAL", source: "seller", detail: null, createdAt: new Date(0) }])).toContain(
+      "\r\nana@acme.com,MANUAL",
+    );
+  });
 });
