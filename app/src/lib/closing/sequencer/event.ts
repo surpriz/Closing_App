@@ -42,38 +42,47 @@ function pick(source: Body | null | undefined, ...paths: string[]): string | nul
 /**
  * Reads the tools' usual shapes: `{ email, event }` as documented, plus the
  * nested lead or contact objects most tools post. No event means a reply, the
- * common case of a "lead replied" automation. Null when there is no address
- * or the event is not one Clozer acts on. Pure.
+ * common case of a "lead replied" automation. "ignored" for an event Clozer
+ * does not act on, null when there is no address. Pure.
  */
-export function parseSequencerEvent(body: Body | null, query: URLSearchParams): SequencerEvent | null {
+export function parseSequencerEvent(
+  body: Body | null,
+  query: URLSearchParams,
+): SequencerEvent | "ignored" | null {
+  // Never "to" or "recipient": on a reply those are the seller's own address
   const rawEmail =
-    pick(body, "email", "lead.email", "contact.email", "lead_email", "leadEmail", "recipient", "to") ?? query.get("email");
+    pick(body, "email", "lead.email", "contact.email", "lead_email", "leadEmail", "from") ?? query.get("email");
   const email = rawEmail ? normalizeEmail(rawEmail) : null;
   if (!email) return null;
   const rawKind = (pick(body, "event", "type", "event_type", "eventType") ?? query.get("event") ?? "replied")
     .toLowerCase()
     .replace(/[\s-]/g, "_");
   const kind = KINDS[rawKind];
-  if (!kind) return null;
+  // Opened, clicked, sent…: tools often post every event to one address, those are no error
+  if (!kind) return "ignored";
   const excerpt = pick(body, "text", "reply", "message", "body", "reply_text", "replyText");
   return { email, kind, excerpt: excerpt ? excerpt.slice(0, 600) : null };
 }
 
-function sign(organizationId: string, secret: string) {
-  return createHmac("sha256", secret).update(`sequencer:${organizationId}`).digest("base64url");
+function sign(organizationId: string, version: number, secret: string) {
+  return createHmac("sha256", secret).update(`sequencer:${organizationId}:${version}`).digest("base64url");
 }
 
-/** The workspace's webhook address token: the workspace id, signed. Never stored, never rotated. */
-export function sequencerToken(organizationId: string, secret: string) {
-  return `${organizationId}.${sign(organizationId, secret)}`;
+/**
+ * The workspace's webhook address token: the workspace id and a version, signed. Never stored;
+ * bumping the version (WorkspaceSettings.sequencerTokenVersion) revokes every address given out.
+ */
+export function sequencerToken(organizationId: string, version: number, secret: string) {
+  return `${organizationId}.${version}.${sign(organizationId, version, secret)}`;
 }
 
-export function verifySequencerToken(token: string, secret: string): string | null {
-  const dot = token.lastIndexOf(".");
-  if (dot <= 0) return null;
-  const organizationId = token.slice(0, dot);
-  const given = Buffer.from(token.slice(dot + 1));
-  const expected = Buffer.from(sign(organizationId, secret));
+/** The workspace and version the token was signed for; the caller checks the version is current. */
+export function verifySequencerToken(token: string, secret: string): { organizationId: string; version: number } | null {
+  const [organizationId, rawVersion, signature, ...rest] = token.split(".");
+  const version = Number(rawVersion);
+  if (!organizationId || !signature || rest.length > 0 || !Number.isInteger(version) || version < 0) return null;
+  const given = Buffer.from(signature);
+  const expected = Buffer.from(sign(organizationId, version, secret));
   if (given.length !== expected.length || !timingSafeEqual(given, expected)) return null;
-  return organizationId;
+  return { organizationId, version };
 }

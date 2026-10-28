@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { parseSequencerEvent, sequencerToken, verifySequencerToken } from "./event";
 
 const none = new URLSearchParams();
+const kindOf = (result: ReturnType<typeof parseSequencerEvent>) => (result && result !== "ignored" ? result.kind : result);
 
 describe("parseSequencerEvent", () => {
   it("reads the documented shape", () => {
@@ -14,19 +15,26 @@ describe("parseSequencerEvent", () => {
   });
 
   it("reads the nested lead objects tools post, and takes no event as a reply", () => {
-    expect(parseSequencerEvent({ lead: { email: "paul@acme.fr" } }, none)?.kind).toBe("replied");
-    expect(parseSequencerEvent({ contact: { email: "paul@acme.fr" }, type: "emailsBounced" }, none)?.kind).toBe("bounced");
-    expect(parseSequencerEvent({ email: "paul@acme.fr", event: "Opt-Out" }, none)?.kind).toBe("unsubscribed");
+    expect(kindOf(parseSequencerEvent({ lead: { email: "paul@acme.fr" } }, none))).toBe("replied");
+    expect(kindOf(parseSequencerEvent({ contact: { email: "paul@acme.fr" }, type: "emailsBounced" }, none))).toBe("bounced");
+    expect(kindOf(parseSequencerEvent({ email: "paul@acme.fr", event: "Opt-Out" }, none))).toBe("unsubscribed");
   });
 
   it("falls back on the query string for tools that only call a URL", () => {
-    expect(parseSequencerEvent(null, new URLSearchParams("email=paul@acme.fr&event=unsubscribed"))?.kind).toBe(
+    expect(kindOf(parseSequencerEvent(null, new URLSearchParams("email=paul@acme.fr&event=unsubscribed")))).toBe(
       "unsubscribed",
     );
   });
 
-  it("ignores events Clozer does not act on, and a missing address", () => {
-    expect(parseSequencerEvent({ email: "paul@acme.fr", event: "opened" }, none)).toBeNull();
+  it("takes the reply's sender, never its recipient (the seller)", () => {
+    expect(parseSequencerEvent({ from: "paul@acme.fr", to: "seller@clozer.club" }, none)).toMatchObject({
+      email: "paul@acme.fr",
+    });
+    expect(parseSequencerEvent({ to: "seller@clozer.club", event: "replied" }, none)).toBeNull();
+  });
+
+  it("ignores events Clozer does not act on, and needs an address", () => {
+    expect(parseSequencerEvent({ email: "paul@acme.fr", event: "opened" }, none)).toBe("ignored");
     expect(parseSequencerEvent({ event: "replied" }, none)).toBeNull();
     expect(parseSequencerEvent({ email: "{{email}}" }, none)).toBeNull();
   });
@@ -35,13 +43,14 @@ describe("parseSequencerEvent", () => {
 describe("sequencerToken", () => {
   const secret = "s".repeat(32);
 
-  it("gives back the workspace it was made for", () => {
-    expect(verifySequencerToken(sequencerToken("org_1", secret), secret)).toBe("org_1");
+  it("gives back the workspace and version it was made for", () => {
+    expect(verifySequencerToken(sequencerToken("org_1", 3, secret), secret)).toEqual({ organizationId: "org_1", version: 3 });
   });
 
-  it("refuses another workspace's id with this signature", () => {
-    const [, signature] = sequencerToken("org_1", secret).split(".");
-    expect(verifySequencerToken(`org_2.${signature}`, secret)).toBeNull();
+  it("refuses this signature on another workspace or another version", () => {
+    const [, , signature] = sequencerToken("org_1", 0, secret).split(".");
+    expect(verifySequencerToken(`org_2.0.${signature}`, secret)).toBeNull();
+    expect(verifySequencerToken(`org_1.1.${signature}`, secret)).toBeNull();
     expect(verifySequencerToken("org_1", secret)).toBeNull();
   });
 });

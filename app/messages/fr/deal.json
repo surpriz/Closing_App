@@ -259,7 +259,9 @@
     "followupsOff": "Coupées : votre outil d'envoi fait les relances. Activez-les seulement si vous retirez une étape de votre séquence.",
     "followupsFailed": "Le réglage n'a pas été enregistré. Réessayez.",
     "repliesTitle": "Réponses reçues par votre outil",
-    "repliesHint": "Clozer ne voit pas les réponses à vos emails de séquence : elles arrivent dans votre boîte. Pour qu'il arrête ses relances et vous prévienne, faites envoyer par votre outil (webhook, ou Zapier / Make) un POST à cette adresse à chaque réponse, désinscription ou rebond : <code>'{'\"email\": \"…\", \"event\": \"replied\"'}'</code>. Gardez-la pour vous : elle vaut pour tout votre espace."
+    "repliesHint": "Clozer ne voit pas les réponses à vos emails de séquence : elles arrivent dans votre boîte. Pour qu'il arrête ses relances et vous prévienne, faites envoyer par votre outil (webhook, ou Zapier / Make) un POST à cette adresse à chaque réponse, désinscription ou rebond : <code>'{'\"email\": \"…\", \"event\": \"replied\"'}'</code>. Gardez-la pour vous : elle vaut pour tout votre espace.",
+    "repliesRotate": "Régénérer l'adresse",
+    "repliesRotated": "Nouvelle adresse : l'ancienne ne marche plus. Mettez-la à jour dans votre outil."
   },
   "shareReady": {
     "copiedToast": "Lien copié. Collez-le dans votre message.",

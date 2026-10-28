@@ -259,7 +259,9 @@
     "followupsOff": "Off: your sending tool does the follow-ups. Turn them on only if you remove a step from your sequence.",
     "followupsFailed": "The setting wasn't saved. Try again.",
     "repliesTitle": "Replies your tool receives",
-    "repliesHint": "Clozer can't see replies to your sequence emails: they land in your inbox. To make it stop its follow-ups and tell you, have your tool (webhook, or Zapier / Make) POST to this address on every reply, unsubscribe or bounce: <code>'{'\"email\": \"…\", \"event\": \"replied\"'}'</code>. Keep it private: it works for your whole workspace."
+    "repliesHint": "Clozer can't see replies to your sequence emails: they land in your inbox. To make it stop its follow-ups and tell you, have your tool (webhook, or Zapier / Make) POST to this address on every reply, unsubscribe or bounce: <code>'{'\"email\": \"…\", \"event\": \"replied\"'}'</code>. Keep it private: it works for your whole workspace.",
+    "repliesRotate": "Regenerate the address",
+    "repliesRotated": "New address: the old one no longer works. Update it in your tool."
   },
   "shareReady": {
     "copiedToast": "Link copied. Paste it into your message.",
