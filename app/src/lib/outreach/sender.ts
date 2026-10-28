@@ -48,17 +48,22 @@ export async function expireStaleLeases(now: Date): Promise<{ requeued: number; 
   const stale = { status: "SENDING" as const, sendingAt: { lt: new Date(now.getTime() - STALE_LEASE_MS) } };
   const failStale = async (extra: object) => {
     const rows = await prisma.campaignMessage.findMany({ where: { ...stale, ...extra }, select: { id: true, enrollmentId: true } });
-    if (rows.length === 0) return 0;
-    const { count } = await prisma.campaignMessage.updateMany({
-      where: { ...stale, id: { in: rows.map((row) => row.id) } },
-      data: { status: "FAILED", error: "interrupted", sendingAt: null },
-    });
-    // A failed message left on an ACTIVE enrollment would be picked again by the catch-up forever
-    await prisma.campaignProspect.updateMany({
-      where: { id: { in: rows.map((row) => row.enrollmentId) }, status: "ACTIVE" },
-      data: { status: "PAUSED", pausedReason: "interrupted", pausedAt: now },
-    });
-    return count;
+    let failed = 0;
+    for (const row of rows) {
+      // Per row, guarded: only an enrollment whose message really transitioned is paused
+      const { count } = await prisma.campaignMessage.updateMany({
+        where: { ...stale, id: row.id },
+        data: { status: "FAILED", error: "interrupted", sendingAt: null },
+      });
+      if (count === 0) continue;
+      failed++;
+      // A failed message left on an ACTIVE enrollment would be picked again by the catch-up forever
+      await prisma.campaignProspect.updateMany({
+        where: { id: row.enrollmentId, status: "ACTIVE" },
+        data: { status: "PAUSED", pausedReason: "interrupted", pausedAt: now },
+      });
+    }
+    return failed;
   };
   const started = await failStale({ messageId: { not: null } });
   const requeued = await prisma.campaignMessage.updateMany({
@@ -189,7 +194,7 @@ export async function sendDueMessages(
         await prisma.campaignMessage.updateMany({
           where: leased(candidate.id, reservedAt),
           data: again
-            ? { status: "SCHEDULED", sendingAt: null, scheduledFor: again }
+            ? { status: "SCHEDULED", sendingAt: null, messageId: null, scheduledFor: again }
             : { status: "FAILED", error: errorText(error), sendingAt: null },
         });
         if (again) totals.rescheduled++;

@@ -14,7 +14,6 @@ import { suppressedAmong } from "./suppression";
 import { detectCountryTimezone } from "./timezone";
 
 const LIVE_ENROLLMENT = ["QUEUED", "ACTIVE", "PAUSED"] as const;
-const PENDING_MESSAGE = ["SCHEDULED", "SENDING"] as const;
 
 // Free mailboxes: a warning at import, never a refusal. `hotmail.*`-style entries match any suffix.
 export const PERSONAL_DOMAINS: readonly string[] = [
@@ -204,7 +203,10 @@ export async function importProspects(input: {
   return summary;
 }
 
-/** Ends an enrollment and cancels what it still had in the outbox. False when it was already over. */
+/**
+ * Ends an enrollment and cancels what it still had in the outbox. False when it was already over.
+ * A SENDING row belongs to its lease: the sender re-checks the enrollment before sending and records the truth.
+ */
 export async function stopEnrollment(
   id: string,
   to: "STOPPED" | "BOUNCED" | "REPLIED" | "UNSUBSCRIBED" | "SUPPRESSED",
@@ -217,7 +219,7 @@ export async function stopEnrollment(
       data: { status: to, finishedAt: now, pausedReason: reason, ...(to === "REPLIED" ? { repliedAt: now } : {}) },
     }),
     prisma.campaignMessage.updateMany({
-      where: { enrollmentId: id, status: { in: [...PENDING_MESSAGE] } },
+      where: { enrollmentId: id, status: "SCHEDULED" },
       data: { status: "CANCELLED" },
     }),
   ]);
@@ -232,14 +234,30 @@ export async function pauseEnrollment(organizationId: string, id: string, now: D
   return count > 0;
 }
 
-/** Scheduled messages stay as they are: the sender re-checks business hours before each one. */
+/**
+ * Scheduled messages stay as they are: the sender re-checks business hours before each one. A step that failed or was
+ * cancelled while the enrollment was paused is re-opened, otherwise the catch-up would pause it again at once.
+ */
 export async function resumeEnrollment(organizationId: string, id: string, now: Date): Promise<boolean> {
-  void now;
-  const { count } = await prisma.campaignProspect.updateMany({
-    where: { id, organizationId, status: "PAUSED" },
-    data: { status: "ACTIVE", pausedReason: null, pausedAt: null },
+  return prisma.$transaction(async (tx) => {
+    const { count } = await tx.campaignProspect.updateMany({
+      where: { id, organizationId, status: "PAUSED" },
+      data: { status: "ACTIVE", pausedReason: null, pausedAt: null },
+    });
+    if (count === 0) return false;
+    const enrollment = await tx.campaignProspect.findUnique({
+      where: { id },
+      select: { currentStep: true, campaign: { select: { steps: { select: { id: true, order: true } } } } },
+    });
+    const blocked = enrollment?.campaign.steps.find((step) => step.order === enrollment.currentStep + 1);
+    if (blocked) {
+      await tx.campaignMessage.updateMany({
+        where: { enrollmentId: id, stepId: blocked.id, status: { in: ["FAILED", "CANCELLED"] } },
+        data: { status: "SCHEDULED", scheduledFor: now, attempts: 0, messageId: null, sendingAt: null, error: null },
+      });
+    }
+    return true;
   });
-  return count > 0;
 }
 
 export async function removeEnrollment(organizationId: string, id: string, now: Date): Promise<boolean> {

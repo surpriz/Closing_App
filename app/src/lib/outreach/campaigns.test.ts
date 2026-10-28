@@ -106,7 +106,7 @@ describe("archiveCampaign", () => {
       data: { status: "ARCHIVED", archivedAt: NOW },
     });
     expect(db.campaignMessage.updateMany).toHaveBeenCalledWith({
-      where: { campaignId: "c1", campaign: { organizationId: "org" }, status: { in: ["SCHEDULED", "SENDING"] } },
+      where: { campaignId: "c1", campaign: { organizationId: "org" }, status: "SCHEDULED" },
       data: { status: "CANCELLED" },
     });
     expect(db.campaignProspect.updateMany).toHaveBeenCalledWith({

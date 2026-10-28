@@ -136,7 +136,7 @@ export async function unsubscribeByToken(token: string) {
         data: { status: "UNSUBSCRIBED" },
       }),
       prisma.campaignMessage.updateMany({
-        where: { enrollmentId: id, status: { in: ["SCHEDULED", "SENDING"] } },
+        where: { enrollmentId: id, status: "SCHEDULED" },
         data: { status: "CANCELLED" },
       }),
     ]);

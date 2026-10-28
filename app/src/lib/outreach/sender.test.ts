@@ -475,14 +475,34 @@ describe("expireStaleLeases", () => {
       select: { id: true, enrollmentId: true },
     });
     expect(messageUpdateMany).toHaveBeenNthCalledWith(1, {
-      where: { ...stale, id: { in: ["m1"] } },
+      where: { ...stale, id: "m1" },
       data: { status: "FAILED", error: "interrupted", sendingAt: null },
     });
     expect(enrollmentUpdateMany).toHaveBeenCalledWith({
-      where: { id: { in: ["e1"] }, status: "ACTIVE" },
+      where: { id: "e1", status: "ACTIVE" },
       data: { status: "PAUSED", pausedReason: "interrupted", pausedAt: now },
     });
     expect(result).toEqual({ requeued: 0, failed: 1 });
+  });
+
+  it("pauses only the enrollments whose row really transitioned", async () => {
+    messageFindMany
+      .mockResolvedValueOnce([
+        { id: "m1", enrollmentId: "e1" },
+        { id: "m2", enrollmentId: "e2" },
+      ])
+      .mockResolvedValueOnce([]);
+    messageUpdateMany
+      .mockResolvedValueOnce({ count: 0 }) // m1 finished meanwhile
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 0 });
+    const result = await expireStaleLeases(now);
+    expect(enrollmentUpdateMany).toHaveBeenCalledTimes(1);
+    expect(enrollmentUpdateMany).toHaveBeenCalledWith({
+      where: { id: "e2", status: "ACTIVE" },
+      data: { status: "PAUSED", pausedReason: "interrupted", pausedAt: now },
+    });
+    expect(result.failed).toBe(1);
   });
 
   it("requeues a stale row that never reached the connector, fails it once the attempts are used up", async () => {
@@ -499,7 +519,7 @@ describe("expireStaleLeases", () => {
       select: { id: true, enrollmentId: true },
     });
     expect(enrollmentUpdateMany).toHaveBeenCalledWith({
-      where: { id: { in: ["e2"] }, status: "ACTIVE" },
+      where: { id: "e2", status: "ACTIVE" },
       data: { status: "PAUSED", pausedReason: "interrupted", pausedAt: now },
     });
     expect(result).toEqual({ requeued: 2, failed: 1 });
@@ -554,7 +574,7 @@ describe("sendDueMessages, leases and failures", () => {
     spy.mockRestore();
     expect(messageUpdateMany).toHaveBeenCalledWith({
       where: { id: "m1", status: "SENDING", sendingAt: now },
-      data: { status: "SCHEDULED", sendingAt: null, scheduledFor: new Date(now.getTime() + 30 * 60_000) },
+      data: { status: "SCHEDULED", sendingAt: null, messageId: null, scheduledFor: new Date(now.getTime() + 30 * 60_000) },
     });
     expect(send).toHaveBeenCalledTimes(1);
     expect(result.sent).toBe(1);

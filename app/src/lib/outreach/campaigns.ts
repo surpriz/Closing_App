@@ -172,7 +172,7 @@ export async function pauseCampaign(organizationId: string, id: string, now: Dat
 export async function archiveCampaign(organizationId: string, id: string, now: Date = new Date()): Promise<boolean> {
   const results = await prisma.$transaction([
     prisma.campaignMessage.updateMany({
-      where: { campaignId: id, campaign: { organizationId }, status: { in: [...PENDING_MESSAGE] } },
+      where: { campaignId: id, campaign: { organizationId }, status: "SCHEDULED" },
       data: { status: "CANCELLED" },
     }),
     prisma.campaignProspect.updateMany({

@@ -5,15 +5,17 @@ import type { ProspectRow } from "./csv";
 const db = {
   campaign: { findFirst: vi.fn() },
   member: { findMany: vi.fn() },
-  campaignProspect: { findMany: vi.fn(), createMany: vi.fn(), updateMany: vi.fn(), findFirst: vi.fn() },
+  campaignProspect: { findMany: vi.fn(), createMany: vi.fn(), updateMany: vi.fn(), findFirst: vi.fn(), findUnique: vi.fn() },
   campaignMessage: { updateMany: vi.fn() },
-  $transaction: vi.fn(async (ops: Promise<unknown>[]) => Promise.all(ops)),
+  $transaction: vi.fn(async (arg: unknown) =>
+    typeof arg === "function" ? (arg as (tx: unknown) => unknown)(db) : Promise.all(arg as Promise<unknown>[]),
+  ),
 };
 vi.mock("@/lib/db", () => ({ prisma: db }));
 const suppressedAmong = vi.fn();
 vi.mock("./suppression", () => ({ suppressedAmong: (...args: unknown[]) => suppressedAmong(...args) }));
 
-const { importProspects, prepareProspects, removeEnrollment, stopEnrollment } = await import("./enroll");
+const { importProspects, prepareProspects, removeEnrollment, resumeEnrollment, stopEnrollment } = await import("./enroll");
 
 const NOW = new Date("2026-11-03T09:00:00Z");
 const row = (email: string, over: Partial<ProspectRow> = {}): ProspectRow => ({
@@ -139,7 +141,7 @@ describe("stopEnrollment", () => {
       data: { status: "REPLIED", finishedAt: NOW, pausedReason: "reply", repliedAt: NOW },
     });
     expect(db.campaignMessage.updateMany).toHaveBeenCalledWith({
-      where: { enrollmentId: "e1", status: { in: ["SCHEDULED", "SENDING"] } },
+      where: { enrollmentId: "e1", status: "SCHEDULED" },
       data: { status: "CANCELLED" },
     });
   });
@@ -166,5 +168,40 @@ describe("removeEnrollment", () => {
     expect(await removeEnrollment("org", "e1", NOW)).toBe(true);
     expect(db.campaignProspect.findFirst.mock.calls[0][0].where).toEqual({ id: "e1", organizationId: "org" });
     expect(db.campaignProspect.updateMany.mock.calls[0][0].data).toMatchObject({ status: "STOPPED", pausedReason: "seller" });
+  });
+});
+
+describe("resumeEnrollment", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    db.campaignProspect.updateMany.mockResolvedValue({ count: 1 });
+    db.campaignProspect.findUnique.mockResolvedValue({
+      currentStep: 1,
+      campaign: {
+        steps: [
+          { id: "s1", order: 1 },
+          { id: "s2", order: 2 },
+        ],
+      },
+    });
+    db.campaignMessage.updateMany.mockResolvedValue({ count: 1 });
+  });
+
+  it("flips to ACTIVE and re-opens the failed or cancelled next step in one transaction", async () => {
+    expect(await resumeEnrollment("org", "e1", NOW)).toBe(true);
+    expect(db.campaignProspect.updateMany).toHaveBeenCalledWith({
+      where: { id: "e1", organizationId: "org", status: "PAUSED" },
+      data: { status: "ACTIVE", pausedReason: null, pausedAt: null },
+    });
+    expect(db.campaignMessage.updateMany).toHaveBeenCalledWith({
+      where: { enrollmentId: "e1", stepId: "s2", status: { in: ["FAILED", "CANCELLED"] } },
+      data: { status: "SCHEDULED", scheduledFor: NOW, attempts: 0, messageId: null, sendingAt: null, error: null },
+    });
+  });
+
+  it("does nothing when the enrollment was not paused", async () => {
+    db.campaignProspect.updateMany.mockResolvedValue({ count: 0 });
+    expect(await resumeEnrollment("org", "e1", NOW)).toBe(false);
+    expect(db.campaignMessage.updateMany).not.toHaveBeenCalled();
   });
 });

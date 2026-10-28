@@ -63,7 +63,7 @@ describe("unsubscribe, enrollment subject", () => {
       data: { status: "UNSUBSCRIBED" },
     });
     expect(db.campaignMessage.updateMany).toHaveBeenCalledWith({
-      where: { enrollmentId: "enr1", status: { in: ["SCHEDULED", "SENDING"] } },
+      where: { enrollmentId: "enr1", status: "SCHEDULED" },
       data: { status: "CANCELLED" },
     });
     expect(addSuppression).toHaveBeenCalledWith({
