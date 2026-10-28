@@ -244,6 +244,14 @@ describe("handleUnipileEvent", () => {
     expect(h.notifyOwner).toHaveBeenCalledWith("mb1", "auth_revoked", "unipile CREDENTIALS", NOW);
   });
 
+  it("PERMISSIONS (a scope unticked at consent) is an error to reconnect from", async () => {
+    h.findFirst.mockResolvedValueOnce({ id: "mb1", status: "ACTIVE" });
+    h.account.mockResolvedValueOnce({ ...ACCOUNT, status: "PERMISSIONS" });
+    const out = await handleUnipileEvent({ event: "account_status", account_id: "acc_1", status: "PERMISSIONS" }, NOW);
+    expect(out).toEqual({ action: "auth_revoked", mailboxId: "mb1" });
+    expect(h.notifyOwner).toHaveBeenCalledWith("mb1", "auth_revoked", "unipile PERMISSIONS", NOW);
+  });
+
   it("reads the nested account status shape", async () => {
     h.findFirst.mockResolvedValueOnce({ id: "mb1", status: "ACTIVE" });
     h.account.mockResolvedValueOnce({ address: null, name: null, status: "DISCONNECTED" });

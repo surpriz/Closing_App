@@ -204,7 +204,8 @@ export async function handleUnipileEvent(
     await prisma.mailbox.update({ where: { id: mailbox.id }, data: { syncRequestedAt: now } });
     return { action: "sync", mailboxId: mailbox.id };
   }
-  if (event === "account_status" && (status === "CREDENTIALS" || status === "DISCONNECTED")) {
+  // PERMISSIONS: a scope the seller unticked on Google's consent screen; reconnecting asks for it again
+  if (event === "account_status" && (status === "CREDENTIALS" || status === "DISCONNECTED" || status === "PERMISSIONS")) {
     // The payload is only a hint: our own call to Unipile decides
     const live = await getUnipileAccount(accountId, deps).catch(() => null);
     if (!live?.status || !/CREDENTIALS|DISCONNECTED|PERMISSIONS/i.test(live.status)) return { action: "none" };
