@@ -13,6 +13,8 @@ const messageCreate = vi.fn();
 const stepFindMany = vi.fn();
 const enrollmentUpdate = vi.fn();
 const enrollmentUpdateMany = vi.fn();
+const enrollmentFindUnique = vi.fn();
+const campaignFindUnique = vi.fn();
 vi.mock("@/lib/db", () => ({
   prisma: {
     mailbox: {
@@ -29,10 +31,12 @@ vi.mock("@/lib/db", () => ({
       create: (...a: unknown[]) => messageCreate(...a),
     },
     campaignStep: { findMany: (...a: unknown[]) => stepFindMany(...a) },
+    campaign: { findUnique: (...a: unknown[]) => campaignFindUnique(...a) },
     $transaction: (fn: (tx: unknown) => unknown) => fn(txStub),
     campaignProspect: {
       update: (...a: unknown[]) => enrollmentUpdate(...a),
       updateMany: (...a: unknown[]) => enrollmentUpdateMany(...a),
+      findUnique: (...a: unknown[]) => enrollmentFindUnique(...a),
     },
   },
 }));
@@ -127,7 +131,7 @@ const message = (extra: object = {}) => ({
   dedupeKey: "cold:e1:s1",
   attempts: 1,
   enrollment,
-  campaign: { status: "ACTIVE", documentId: null, createdById: "u1" },
+  campaign: { status: "ACTIVE", documentId: null, createdById: "u1", mailboxId: "mb1" },
   ...extra,
 });
 
@@ -158,6 +162,8 @@ beforeEach(() => {
   stepFindMany.mockResolvedValue([step1, step2]);
   enrollmentUpdate.mockResolvedValue({});
   enrollmentUpdateMany.mockResolvedValue({ count: 1 });
+  enrollmentFindUnique.mockResolvedValue({ status: "ACTIVE" });
+  campaignFindUnique.mockResolvedValue({ mailboxId: "mb1" });
   isSuppressed.mockResolvedValue(false);
   reserveSend.mockResolvedValue(true);
   stopEnrollment.mockResolvedValue(true);
@@ -320,7 +326,7 @@ describe("sendDueMessages, re-checks", () => {
   });
 
   it("leaves the schedule alone when the campaign is paused", async () => {
-    messageFindUnique.mockResolvedValue(message({ campaign: { status: "PAUSED", documentId: null, createdById: "u1" } }));
+    messageFindUnique.mockResolvedValue(message({ campaign: { status: "PAUSED", documentId: null, createdById: "u1", mailboxId: "mb1" } }));
     await sendDueMessages(now, {}, deps);
     expect(messageUpdateMany).toHaveBeenCalledWith({
       where: { id: "m1", status: "SENDING", sendingAt: now },
@@ -474,6 +480,28 @@ describe("sendDueMessages, send errors", () => {
     expect(enrollmentUpdate).not.toHaveBeenCalled();
   });
 
+  it("network TRANSIENT: the row goes back with its attempt, the mailbox's batch stops, nobody is told", async () => {
+    candidates = [{ id: "m1" }, { id: "m2" }, { id: "m3" }];
+    send.mockRejectedValue(new MailboxError("TRANSIENT", "SMTP server unreachable", { detail: "ETIMEDOUT" }));
+    const result = await sendDueMessages(now, {}, deps);
+    expect(messageUpdateMany).toHaveBeenCalledWith({
+      where: { id: "m1", status: "SENDING", sendingAt: now },
+      data: {
+        status: "SCHEDULED",
+        sendingAt: null,
+        messageId: null,
+        attempts: { decrement: 1 },
+        scheduledFor: new Date(now.getTime() + 30 * 60_000),
+      },
+    });
+    // m2 and m3 are never reserved: they stay SCHEDULED for the next tick
+    expect(calls.filter((c) => c === "reserve")).toHaveLength(1);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(notifyMailboxOwner).not.toHaveBeenCalled();
+    expect(messageUpdateMany.mock.calls.some(([a]) => a.data.status === "FAILED")).toBe(false);
+    expect(result).toEqual({ sent: 0, rescheduled: 1, failed: 0, cancelled: 0 });
+  });
+
   it("TRANSIENT: tried again in 30 minutes while attempts remain", async () => {
     send.mockRejectedValue(new MailboxError("TRANSIENT", "timeout"));
     const result = await sendDueMessages(now, {}, deps);
@@ -600,12 +628,60 @@ describe("sendDueMessages, leases and failures", () => {
     expect(result.sent).toBe(0);
   });
 
-  it("does not send when the Message-ID marker cannot be written under the lease", async () => {
+  it("does not send when the Message-ID marker cannot be written, and requeues the row of a live enrollment", async () => {
     messageUpdateMany.mockImplementation(async (args: { data: { messageId?: string; status?: string } }) => ({
       count: args.data.messageId && !args.data.status ? 0 : 1,
     }));
     await sendDueMessages(now, {}, deps);
     expect(send).not.toHaveBeenCalled();
+    expect(enrollmentFindUnique).toHaveBeenCalledWith({ where: { id: "e1" }, select: { status: true } });
+    expect(messageUpdateMany).toHaveBeenCalledWith({
+      where: { id: "m1", status: "SENDING", sendingAt: now },
+      data: { status: "SCHEDULED", sendingAt: null, messageId: null, attempts: { decrement: 1 } },
+    });
+  });
+
+  it("cancels the row when the marker fails because the enrollment ended", async () => {
+    messageUpdateMany.mockImplementation(async (args: { data: { messageId?: string; status?: string } }) => ({
+      count: args.data.messageId && !args.data.status ? 0 : 1,
+    }));
+    enrollmentFindUnique.mockResolvedValue({ status: "REPLIED" });
+    const result = await sendDueMessages(now, {}, deps);
+    expect(send).not.toHaveBeenCalled();
+    expect(messageUpdateMany).toHaveBeenCalledWith({
+      where: { id: "m1", status: "SENDING", sendingAt: now },
+      data: { status: "CANCELLED", sendingAt: null },
+    });
+    expect(result.cancelled).toBe(1);
+  });
+
+  it("moves a row to the campaign's new mailbox instead of sending it from the old one", async () => {
+    messageFindUnique.mockResolvedValue(message({ campaign: { status: "ACTIVE", documentId: null, createdById: "u1", mailboxId: "mb2" } }));
+    await sendDueMessages(now, {}, deps);
+    expect(messageUpdateMany).toHaveBeenCalledWith({
+      where: { id: "m1", status: "SENDING", sendingAt: now },
+      data: { status: "SCHEDULED", sendingAt: null, messageId: null, attempts: { decrement: 1 }, mailboxId: "mb2" },
+    });
+    expect(reserveSend).not.toHaveBeenCalled();
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it("cancels a row whose campaign has no mailbox any more", async () => {
+    messageFindUnique.mockResolvedValue(message({ campaign: { status: "ACTIVE", documentId: null, createdById: "u1", mailboxId: null } }));
+    const result = await sendDueMessages(now, {}, deps);
+    expect(messageUpdateMany).toHaveBeenCalledWith({
+      where: { id: "m1", status: "SENDING", sendingAt: now },
+      data: { status: "CANCELLED", sendingAt: null, error: "no_mailbox" },
+    });
+    expect(send).not.toHaveBeenCalled();
+    expect(result.cancelled).toBe(1);
+  });
+
+  it("plans the next step from the campaign's mailbox as it is after the send", async () => {
+    campaignFindUnique.mockResolvedValue({ mailboxId: "mb2" });
+    await sendDueMessages(now, {}, deps);
+    expect(campaignFindUnique).toHaveBeenCalledWith({ where: { id: "c1" }, select: { mailboxId: true } });
+    expect(messageCreate.mock.calls[0][0].data).toMatchObject({ stepId: "s2", mailboxId: "mb2" });
   });
 
   it("plans no next message when the enrollment was stopped during the send", async () => {

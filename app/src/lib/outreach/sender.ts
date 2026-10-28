@@ -13,6 +13,7 @@ import { reserveSend } from "@/lib/mailboxes/caps/counter";
 import { nextWindowSlots } from "@/lib/mailboxes/caps/window";
 import { isMailboxError, type MailboxErrorCode } from "@/lib/mailboxes/errors";
 import { notifyMailboxOwner } from "@/lib/mailboxes/notify-owner";
+import { NETWORK_CODES } from "@/lib/mailboxes/safe-host";
 import type { MailboxConnector } from "@/lib/mailboxes/types";
 import { textToHtml } from "@/lib/text-html";
 
@@ -26,6 +27,7 @@ import {
   MAX_ATTEMPTS,
   MAX_SENDS_PER_TICK_PER_MAILBOX,
   nextStepFor,
+  RETRY_DELAY_MS,
   retryAt,
   STALE_LEASE_MS,
   stepSendAt,
@@ -107,7 +109,7 @@ function uniq(values: (string | null | undefined)[]) {
 const leased = (id: string, reservedAt: Date) => ({ id, status: "SENDING" as const, sendingAt: reservedAt });
 
 /** A message that goes back to the queue without having failed: the attempt taken by the reservation is given back. */
-async function requeue(id: string, reservedAt: Date, scheduledFor?: Date) {
+async function requeue(id: string, reservedAt: Date, scheduledFor?: Date, mailboxId?: string) {
   const { count } = await prisma.campaignMessage.updateMany({
     where: leased(id, reservedAt),
     data: {
@@ -116,6 +118,7 @@ async function requeue(id: string, reservedAt: Date, scheduledFor?: Date) {
       messageId: null,
       attempts: { decrement: 1 },
       ...(scheduledFor ? { scheduledFor } : {}),
+      ...(mailboxId ? { mailboxId } : {}),
     },
   });
   return count > 0;
@@ -243,12 +246,22 @@ async function sendOne(ctx: {
     where: { id: messageId },
     include: {
       enrollment: true,
-      campaign: { select: { status: true, documentId: true, createdById: true } },
+      campaign: { select: { status: true, documentId: true, createdById: true, mailboxId: true } },
     },
   });
   if (!message || message.status !== "SENDING") return "next";
   const { enrollment, campaign } = message;
   const dedupeKey = message.dedupeKey;
+
+  // The campaign moved to another mailbox after this row was planned: it follows, and leaves this mailbox's batch
+  if (campaign.mailboxId !== mailbox.id) {
+    if (campaign.mailboxId) await requeue(message.id, reservedAt, undefined, campaign.mailboxId);
+    else {
+      await cancel(message.id, reservedAt, "no_mailbox");
+      totals.cancelled++;
+    }
+    return "next";
+  }
 
   const steps = await prisma.campaignStep.findMany({ where: { campaignId: message.campaignId }, orderBy: { order: "asc" } });
   const step = steps.find((s) => s.id === message.stepId);
@@ -339,7 +352,16 @@ async function sendOne(ctx: {
     where: { ...leased(message.id, reservedAt), enrollment: { status: "ACTIVE" }, campaign: { status: "ACTIVE" } },
     data: { messageId: outgoingId },
   });
-  if (marked.count === 0) return "next";
+  if (marked.count === 0) {
+    // Not sent, and nothing may leave now: the row must not sit SENDING until its lease expires
+    const fresh = await prisma.campaignProspect.findUnique({ where: { id: enrollment.id }, select: { status: true } });
+    if (fresh && (LIVE_ENROLLMENT as readonly string[]).includes(fresh.status)) await requeue(message.id, reservedAt);
+    else {
+      await cancel(message.id, reservedAt);
+      totals.cancelled++;
+    }
+    return "next";
+  }
   ctx.state.marked = true;
 
   let result;
@@ -416,12 +438,14 @@ async function sendOne(ctx: {
       where: { id: enrollment.id, status: "ACTIVE" },
       data: { nextSendAt: at },
     });
-    if (still.count === 1) {
+    // Read again: the campaign may have moved to another mailbox during the send, the next step goes from there
+    const current = await prisma.campaign.findUnique({ where: { id: message.campaignId }, select: { mailboxId: true } });
+    if (still.count === 1 && current?.mailboxId) {
       await scheduleStepMessage({
         enrollment: { ...enrollment, ...progress },
         step: nextStep,
         campaignId: message.campaignId,
-        mailboxId: mailbox.id,
+        mailboxId: current.mailboxId,
         scheduledFor: at,
       });
     }
@@ -429,6 +453,12 @@ async function sendOne(ctx: {
     await prisma.campaignProspect.updateMany({ where: { id: enrollment.id, status: "ACTIVE" }, data: { nextSendAt: null } });
   }
   return "next";
+}
+
+function isNetworkFailure(error: unknown) {
+  if (!isMailboxError(error)) return false;
+  const detail = error.options.detail ?? "";
+  return NETWORK_CODES.test(detail);
 }
 
 /** D4: what a failed send does to the message, the enrollment and the mailbox. */
@@ -456,6 +486,14 @@ async function handleFailure(
     const wait = error.options.retryAfterMs;
     const [slot] = nextWindowSlots(now, mailbox.timezone, hours, 1, `${mailbox.id}:${message.dedupeKey}`);
     await requeue(message.id, reservedAt, wait !== undefined ? new Date(now.getTime() + wait) : (slot ?? new Date(now.getTime() + DAY_MS)));
+    totals.rescheduled++;
+    return "stop";
+  }
+
+  // The server cannot be reached: every other message of this mailbox would fail the same way, so the batch stops here.
+  // The row is given its attempt back, nobody is told: a network blip is not the seller's problem
+  if (code === "TRANSIENT" && isNetworkFailure(error)) {
+    await requeue(message.id, reservedAt, new Date(now.getTime() + RETRY_DELAY_MS));
     totals.rescheduled++;
     return "stop";
   }

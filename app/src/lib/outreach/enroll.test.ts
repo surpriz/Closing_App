@@ -210,6 +210,7 @@ describe("resumeEnrollment", () => {
     db.campaignProspect.findUnique.mockResolvedValue({
       currentStep: 1,
       campaign: {
+        mailboxId: "mb2",
         steps: [
           { id: "s1", order: 1 },
           { id: "s2", order: 2 },
@@ -219,7 +220,7 @@ describe("resumeEnrollment", () => {
     db.campaignMessage.updateMany.mockResolvedValue({ count: 1 });
   });
 
-  it("flips to ACTIVE and re-opens the failed or cancelled next step in one transaction", async () => {
+  it("flips to ACTIVE and re-opens the failed or cancelled next step in one transaction, from the campaign's mailbox", async () => {
     expect(await resumeEnrollment("org", "e1", NOW, ACTOR)).toBe(true);
     expect(db.campaignProspect.updateMany).toHaveBeenCalledWith({
       where: { id: "e1", organizationId: "org", status: "PAUSED" },
@@ -227,7 +228,7 @@ describe("resumeEnrollment", () => {
     });
     expect(db.campaignMessage.updateMany).toHaveBeenCalledWith({
       where: { enrollmentId: "e1", stepId: "s2", status: { in: ["FAILED", "CANCELLED"] } },
-      data: { status: "SCHEDULED", scheduledFor: NOW, attempts: 0, messageId: null, sendingAt: null, error: null },
+      data: { status: "SCHEDULED", scheduledFor: NOW, attempts: 0, messageId: null, sendingAt: null, error: null, mailboxId: "mb2" },
     });
   });
 

@@ -179,7 +179,6 @@ describe("finishIdleCampaigns", () => {
         status: "ACTIVE",
         organizationId: "org",
         enrollments: { some: {}, none: { status: { in: ["QUEUED", "ACTIVE", "PAUSED"] } } },
-        messages: { none: { status: { in: ["SCHEDULED", "SENDING"] }, enrollment: { status: { in: ["QUEUED", "ACTIVE", "PAUSED"] } } } },
       },
       data: { status: "DONE", finishedAt: NOW },
     });

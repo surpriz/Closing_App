@@ -28,7 +28,6 @@ async function editableCampaign(organizationId: string, id: string, actor: Actor
 const LIVE_ENROLLMENT = ["QUEUED", "ACTIVE", "PAUSED"] as const;
 // DONE too: people can be imported into a finished campaign, which then starts again
 const RESTARTABLE = ["DRAFT", "PAUSED", "DONE"] as const;
-const PENDING_MESSAGE = ["SCHEDULED", "SENDING"] as const;
 
 export async function createCampaign(input: {
   organizationId: string;
@@ -249,9 +248,9 @@ export async function finishIdleCampaigns(now: Date, scope: OutreachScope = {}):
     where: {
       status: "ACTIVE",
       ...organizationWhere(scope),
+      // No live enrollment is enough: a pending row can then only belong to an ended one, and its lease (or
+      // expireStaleLeases) settles it. A SENDING row still in flight records SENT after the flip, which is fine
       enrollments: { some: {}, none: { status: { in: [...LIVE_ENROLLMENT] } } },
-      // Only rows of live enrollments count: a SENDING row left by an ended enrollment must not hold the campaign open
-      messages: { none: { status: { in: [...PENDING_MESSAGE] }, enrollment: { status: { in: [...LIVE_ENROLLMENT] } } } },
     },
     data: { status: "DONE", finishedAt: now },
   });

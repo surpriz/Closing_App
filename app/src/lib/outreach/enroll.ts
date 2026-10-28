@@ -272,13 +272,26 @@ export async function resumeEnrollment(organizationId: string, id: string, now: 
     if (count === 0) return false;
     const enrollment = await tx.campaignProspect.findUnique({
       where: { id },
-      select: { currentStep: true, campaign: { select: { steps: { select: { id: true, order: true } } } } },
+      select: {
+        currentStep: true,
+        campaign: { select: { mailboxId: true, steps: { select: { id: true, order: true } } } },
+      },
     });
     const blocked = enrollment?.campaign.steps.find((step) => step.order === enrollment.currentStep + 1);
     if (blocked) {
+      // From the campaign's mailbox of today: it may have changed since the row was planned
+      const mailboxId = enrollment?.campaign.mailboxId;
       await tx.campaignMessage.updateMany({
         where: { enrollmentId: id, stepId: blocked.id, status: { in: ["FAILED", "CANCELLED"] } },
-        data: { status: "SCHEDULED", scheduledFor: now, attempts: 0, messageId: null, sendingAt: null, error: null },
+        data: {
+          status: "SCHEDULED",
+          scheduledFor: now,
+          attempts: 0,
+          messageId: null,
+          sendingAt: null,
+          error: null,
+          ...(mailboxId ? { mailboxId } : {}),
+        },
       });
     }
     return true;
