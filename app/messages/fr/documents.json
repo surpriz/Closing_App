@@ -165,7 +165,8 @@
     "alertsTitle": "Alertes",
     "pendingTitle": "Votre lien est prêt, il n'est pas encore parti.",
     "pendingDescription": "Envoyez-le à votre prospect : il apparaîtra ici dès qu'il l'ouvre.",
-    "browsers": "{count} navigateurs"
+    "browsers": "{count} navigateurs",
+    "titleKeepsLinks": "Les nouvelles adresses de lien reprennent ce titre. Celles déjà envoyées continuent de marcher."
   },
   "content": {
     "videoRead": "Ce que vous dites dans chaque passage de la vidéo, lu par l'IA depuis la transcription. Les étiquettes disent à Clozer quand vous parlez tarifs, planning… Corrigez-les si besoin.",

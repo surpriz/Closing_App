@@ -23,7 +23,8 @@
     "capsulesTitle": "Page capsules",
     "capsulesHint": "recorded before the welcome message",
     "circuitTitle": "Document chain",
-    "circuitHint": "who passed it to whom"
+    "circuitHint": "who passed it to whom",
+    "readerLinkNote": "This personal link was made when this reader first opened your Smart Link. It's theirs: don't send it, keep using the Smart Link."
   },
   "loading": {
     "ariaLabel": "Loading"

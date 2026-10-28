@@ -17,6 +17,7 @@ async function findViewerLink(slug: string) {
         select: {
           id: true,
           name: true,
+          displayTitle: true,
           kind: true,
           status: true,
           docType: true,
@@ -109,8 +110,14 @@ export async function identifyProspect(link: { id: string }, email: string, name
  * and the reader types their email as before.
  */
 export async function knownRecipient(linkId: string) {
+  // A Smart Link reader's own link: the reader it was made for, whose URL only they were sent to
+  const link = await prisma.link.findUnique({ where: { id: linkId }, select: { parentLinkId: true } });
   const prospects = await prisma.prospect.findMany({
-    where: { linkId, origin: "SELLER", unsubscribedAt: null },
+    where: {
+      linkId,
+      origin: link?.parentLinkId ? { in: ["COLD_EMAIL", "EMAIL_GATE"] } : "SELLER",
+      unsubscribedAt: null,
+    },
     select: { email: true, name: true },
     take: 2,
   });

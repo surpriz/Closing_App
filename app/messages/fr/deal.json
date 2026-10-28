@@ -23,7 +23,8 @@
     "capsulesTitle": "Capsules par page",
     "capsulesHint": "enregistrées avant le mot d'accueil",
     "circuitTitle": "Circuit du document",
-    "circuitHint": "qui l'a transmis à qui"
+    "circuitHint": "qui l'a transmis à qui",
+    "readerLinkNote": "Ce lien personnel a été créé à la première ouverture de votre Smart Link par ce lecteur. Il lui est réservé : ne l'envoyez pas, continuez d'utiliser le Smart Link."
   },
   "loading": {
     "ariaLabel": "Chargement"
