@@ -114,6 +114,26 @@ describe("send", () => {
     expect(out.threadId).toBe("AAQkAGI2-conv=");
   });
 
+  it("falls back to a fresh draft when the mail being replied to is gone", async () => {
+    const { http, calls } = fakeHttp([
+      (c) => (c.url.endsWith("/createReply") ? new Response(JSON.stringify({ error: { code: "ErrorItemNotFound" } }), { status: 404 }) : undefined),
+      (c) => (c.method === "POST" && c.url.endsWith("/me/messages") ? json("draft.json", 201) : undefined),
+      (c) => (c.url.endsWith("/send") ? empty(202) : undefined),
+    ]);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const out = await graphConnector(mailbox(), creds(), { http }).send(message({ replyToProviderId: "gone" }));
+    warn.mockRestore();
+    expect(out.providerId).toBe("AAMkAGI2-draft=");
+    expect(calls[1].body).toMatchObject({ subject: "Quick question", toRecipients: expect.any(Array) });
+  });
+
+  it("rejects the message, not the mailbox, on a 400 or 413 while drafting", async () => {
+    for (const status of [400, 413]) {
+      const { http } = fakeHttp([() => new Response("{}", { status })]);
+      await expect(graphConnector(mailbox(), creds(), { http }).send(message())).rejects.toMatchObject({ code: "REJECTED" });
+    }
+  });
+
   it("removes the draft when the send is refused and maps quota", async () => {
     const { http, calls } = fakeHttp([
       (c) => (c.method === "POST" && c.url.endsWith("/me/messages") ? json("draft.json", 201) : undefined),
@@ -307,6 +327,17 @@ describe("listNewMessages", () => {
     expect(calls.filter((c) => c.url.includes("internetMessageHeaders")).map((c) => c.url)).toHaveLength(2);
   });
 
+  it("reports an abort before the first page as a coded error", async () => {
+    const { http, calls } = fakeHttp(routes());
+    const controller = new AbortController();
+    controller.abort();
+    await expect(graphConnector(mailbox(), creds(), { http }).listNewMessages(null, { ...opts(), signal: controller.signal })).rejects.toMatchObject({
+      code: "TRANSIENT",
+      message: "sync aborted",
+    });
+    expect(calls).toHaveLength(0);
+  });
+
   it("never sends the bearer to a foreign host", async () => {
     const { http, calls } = fakeHttp([]);
     await expect(graphConnector(mailbox(), creds(), { http }).listNewMessages("https://evil.example/x", opts())).rejects.toMatchObject({
@@ -329,6 +360,23 @@ describe("verify address trust (nOAuth)", () => {
   });
   it("falls back to the UPN for a foreign, unowned mail", async () => {
     expect(await verifyWith({ mail: "ceo@victim.com", userPrincipalName: "j@corp.com", proxyAddresses: [] })).toMatchObject({ address: "j@corp.com" });
+  });
+});
+
+describe("verify address trust, tenants", () => {
+  it("refuses a guest UPN", async () => {
+    const { http } = fakeHttp([() => new Response(JSON.stringify({ mail: "a@corp.com", userPrincipalName: "a_corp.com#EXT#@t.onmicrosoft.com" }))]);
+    expect(await graphConnector(mailbox(), creds(), { http }).verify()).toMatchObject({ ok: false, code: "CONFIG" });
+  });
+  it("uses mail directly on a personal account and skips proxyAddresses", async () => {
+    const { http, calls } = fakeHttp([() => new Response(JSON.stringify({ mail: "Me@outlook.com", userPrincipalName: "me@thirdparty.io" }))]);
+    const out = await graphConnector(mailbox(), creds({ tenantId: "9188040d-6c67-4c5b-b112-36a304b66dad" }), { http }).verify();
+    expect(out).toMatchObject({ ok: true, address: "me@outlook.com" });
+    expect(calls[0].url).not.toContain("proxyAddresses");
+  });
+  it("survives an empty /me body", async () => {
+    const { http } = fakeHttp([() => new Response("null")]);
+    expect(await graphConnector(mailbox(), creds(), { http }).verify()).toMatchObject({ ok: false, code: "CONFIG" });
   });
 });
 

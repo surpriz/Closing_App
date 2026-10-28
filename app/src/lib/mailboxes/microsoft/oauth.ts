@@ -10,6 +10,7 @@ export const MICROSOFT_SCOPES = "openid email offline_access User.Read Mail.Read
 /** Codes meaning the grant is gone for good: the seller has to reconnect. */
 const REVOKED_CODES = ["AADSTS70008", "AADSTS50173", "AADSTS700082"];
 const AUTH_CODES = ["ErrorAccessDenied", "Authorization_RequestDenied", "InvalidAuthenticationToken"];
+const SUBMISSION_CODES = ["ErrorSubmissionQuotaExceeded", "ErrorMessageSubmissionBlocked"];
 const CONFIG_CODES = ["MailboxNotEnabledForRESTAPI", "MailboxNotSupportedForRESTAPI"];
 const RECIPIENT_CODES = ["ErrorInvalidRecipients", "ErrorRecipientNotFound", "ErrorNoRecipients", "ErrorInvalidRecipient"];
 const DEFAULT_RETRY_MS = 60_000;
@@ -53,18 +54,29 @@ function retryAfterMs(header: string | null): number {
 }
 
 /** Provider errors become coded MailboxErrors; only codes and statuses are kept, never a token or a raw body. */
-export function mapGraphError(status: number, body: unknown, retryAfter: string | null): MailboxError {
+export function mapGraphError(
+  status: number,
+  body: unknown,
+  retryAfter: string | null,
+  context: "send" | "read" | "token" = "read",
+): MailboxError {
   const err = (body as { error?: { code?: unknown; message?: unknown } } | null)?.error;
   const code = typeof err?.code === "string" ? err.code : "";
   const message = typeof err?.message === "string" ? err.message : "";
   const detail = `graph ${status}${code ? ` ${code}` : ""}`;
   if (status === 429) return new MailboxError("RATE_LIMITED", "rate limited", { retryAfterMs: retryAfterMs(retryAfter), detail });
-  if (code === "ErrorSubmissionQuotaExceeded" || code === "ErrorMessageSubmissionBlocked" || /quota/i.test(code) || /\b5\.2\.2\b|quota/i.test(message)) {
+  // Submission limits only: a full mailbox (ErrorQuotaExceeded) is not something waiting for tomorrow fixes
+  if (SUBMISSION_CODES.includes(code) || /submission quota|\b5\.2\.2\b/i.test(message)) {
     return new MailboxError("QUOTA", "sending quota reached", { detail });
   }
   if (status === 401 || AUTH_CODES.includes(code)) return new MailboxError("AUTH_REVOKED", "access denied by Microsoft", { detail });
   if (CONFIG_CODES.includes(code)) return new MailboxError("CONFIG", "this Microsoft mailbox cannot be used through the API", { detail });
   if (status === 400 && RECIPIENT_CODES.includes(code)) return new MailboxError("REJECTED", "invalid recipient", { detail });
+  if (context === "send") {
+    // These concern this message only (size, content, a caller-supplied header), never the whole mailbox
+    if (status === 413 || code === "ErrorMessageSizeExceeded") return new MailboxError("REJECTED", "message too large", { detail });
+    if (status === 400) return new MailboxError("REJECTED", "message refused by Microsoft", { detail });
+  }
   if (status >= 500) {
     return new MailboxError("TRANSIENT", "Microsoft unavailable", {
       detail,

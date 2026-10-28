@@ -77,7 +77,11 @@ export async function GET(request: NextRequest) {
           );
           // A reconnect replaces the grant: drop the previous subscription so it cannot keep notifying
           const previous = await prisma.mailbox.findUnique({ where: { id: mailboxId }, select: { subscriptionId: true } });
-          if (previous?.subscriptionId) await connector.unsubscribe!(previous.subscriptionId).catch(() => undefined);
+          if (previous?.subscriptionId) {
+            await connector.unsubscribe!(previous.subscriptionId).catch(() => undefined);
+            // Cleared before subscribing: a failed subscribe must not leave an id that no longer exists
+            await prisma.mailbox.update({ where: { id: mailboxId }, data: { subscriptionId: null, subscriptionExpiresAt: null } });
+          }
           const sub = await connector.subscribe!({
             notificationUrl: mailboxWebhookUrl("microsoft"),
             clientState: clientStateFor(mailboxId),

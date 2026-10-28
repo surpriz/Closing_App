@@ -53,16 +53,25 @@ type GraphJson = GraphMessage & {
   displayName?: string | null;
 };
 
-type CallOptions = { method?: string; body?: unknown; headers?: Record<string, string>; signal?: AbortSignal };
+type CallOptions = { context?: "send" | "read"; method?: string; body?: unknown; headers?: Record<string, string>; signal?: AbortSignal };
 
 /**
  * `mail` is editable by a tenant admin (nOAuth): it is only trusted when the account really owns it, as a proxy
  * address or on the UPN's domain. Otherwise the UPN stands.
  */
-export function trustedAddress(me: { mail?: string | null; userPrincipalName?: string | null; proxyAddresses?: string[] }) {
+export const CONSUMER_TENANT = "9188040d-6c67-4c5b-b112-36a304b66dad";
+
+export function trustedAddress(
+  me: { mail?: string | null; userPrincipalName?: string | null; proxyAddresses?: string[] },
+  tenantId: string | null = null,
+) {
+  // Guest accounts carry a mangled UPN: nothing reliable to send from
+  if (me.userPrincipalName?.includes("#EXT#")) return null;
   const upn = me.userPrincipalName?.trim().toLowerCase() || null;
   const mail = me.mail?.trim().toLowerCase() || null;
   if (!mail) return upn;
+  // Personal accounts have no tenant admin who could have edited `mail`: nOAuth does not apply
+  if (tenantId === CONSUMER_TENANT) return mail;
   const owned = (me.proxyAddresses ?? []).some((a) => /^smtp:/i.test(a) && a.slice(5).trim().toLowerCase() === mail);
   const sameDomain = !!upn && domainOf(mail) === domainOf(upn);
   return owned || sameDomain ? mail : upn;
@@ -89,7 +98,10 @@ export function graphConnector(mailbox: ConnectorMailbox, initial: MicrosoftCred
     // A link from the server is only followed on the Graph host: the bearer must not travel elsewhere
     const url = path.startsWith("https://") ? path : `${GRAPH}${path}`;
     if (!url.startsWith(`${GRAPH}/`)) throw new MailboxError("TRANSIENT", "unexpected link from Microsoft");
+    const aborted = () => new MailboxError("TRANSIENT", "sync aborted");
+    if (opts.signal?.aborted) throw aborted();
     const token = await accessToken();
+    if (opts.signal?.aborted) throw aborted();
     let res: Response;
     try {
       res = await http(url, {
@@ -103,8 +115,8 @@ export function graphConnector(mailbox: ConnectorMailbox, initial: MicrosoftCred
         body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
         signal: opts.signal,
       });
-    } catch (error) {
-      if (opts.signal?.aborted) throw error;
+    } catch {
+      if (opts.signal?.aborted) throw aborted();
       throw new MailboxError("TRANSIENT", "could not reach Microsoft Graph");
     }
     if (res.status === 401 && !retried) {
@@ -112,8 +124,8 @@ export function graphConnector(mailbox: ConnectorMailbox, initial: MicrosoftCred
       return call(path, opts, true);
     }
     const json = await res.json().catch(() => null);
-    if (!res.ok) throw mapGraphError(res.status, json, res.headers.get("retry-after"));
-    return { status: res.status, json };
+    if (!res.ok) throw mapGraphError(res.status, json, res.headers.get("retry-after"), opts.context ?? "read");
+    return { status: res.status, json: (json ?? {}) as GraphJson };
   }
 
   const prefer = (extra?: string) => ({ Prefer: [extra, 'IdType="ImmutableId"'].filter(Boolean).join(", ") });
@@ -135,26 +147,39 @@ export function graphConnector(mailbox: ConnectorMailbox, initial: MicrosoftCred
       toRecipients: recipients(message),
       internetMessageHeaders: draftHeaders(message),
     };
+    const fresh = async () =>
+      (await call("/me/messages", { method: "POST", body: content, headers: prefer(), context: "send" })).json;
     let draft: GraphMessage;
     if (message.replyToProviderId) {
       // Headers and recipients go in createReply: Graph does not take custom headers on update. Confirm in the spike.
-      const created = await call(`/me/messages/${encodeURIComponent(message.replyToProviderId)}/createReply`, {
-        method: "POST",
-        body: { message: { toRecipients: content.toRecipients, internetMessageHeaders: content.internetMessageHeaders } },
-        headers: prefer(),
-      });
-      draft = (
-        await call(`/me/messages/${encodeURIComponent(created.json.id)}`, {
-          method: "PATCH",
-          body: { subject: content.subject, body: content.body },
+      let created: { json: GraphJson } | null = null;
+      try {
+        created = await call(`/me/messages/${encodeURIComponent(message.replyToProviderId)}/createReply`, {
+          method: "POST",
+          body: { message: { toRecipients: content.toRecipients, internetMessageHeaders: content.internetMessageHeaders } },
           headers: prefer(),
-        })
-      ).json;
+          context: "send",
+        });
+      } catch (error) {
+        // The mail we reply to was deleted: send without threading rather than park the whole mailbox
+        if (!(isMailboxError(error) && /graph 404/.test(error.options.detail ?? ""))) throw error;
+        console.warn("[mailboxes] graph reply target gone, sending a fresh message");
+      }
+      draft = created
+        ? (
+            await call(`/me/messages/${encodeURIComponent(created.json.id)}`, {
+              method: "PATCH",
+              body: { subject: content.subject, body: content.body },
+              headers: prefer(),
+              context: "send",
+            })
+          ).json
+        : await fresh();
     } else {
-      draft = (await call("/me/messages", { method: "POST", body: content, headers: prefer() })).json;
+      draft = await fresh();
     }
     try {
-      await call(`/me/messages/${encodeURIComponent(draft.id)}/send`, { method: "POST" });
+      await call(`/me/messages/${encodeURIComponent(draft.id)}/send`, { method: "POST", context: "send" });
     } catch (error) {
       // Only on a definite refusal: after a network error or a 5xx the mail may have left, and the immutable id
       // would then point at the Sent copy
@@ -228,6 +253,7 @@ export function graphConnector(mailbox: ConnectorMailbox, initial: MicrosoftCred
       `/me/mailFolders/inbox/messages/delta?$select=${LIST_SELECT}` +
       `&$filter=${encodeURIComponent(`receivedDateTime ge ${opts.notBefore.toISOString()}`)}`;
     const headers = prefer(`odata.maxpagesize=${opts.limit}`);
+    if (opts.signal.aborted) throw new MailboxError("TRANSIENT", "sync aborted");
     let page: { json: GraphJson };
     try {
       page = await call(cursor ?? first, { headers, signal: opts.signal });
@@ -279,8 +305,10 @@ export function graphConnector(mailbox: ConnectorMailbox, initial: MicrosoftCred
 
   async function verify(): Promise<VerifyResult> {
     try {
-      const { json } = await call("/me?$select=mail,userPrincipalName,proxyAddresses,displayName");
-      const address = trustedAddress(json);
+      // proxyAddresses is a directory attribute; personal accounts have none, so they do not ask for it
+      const select = creds.tenantId === CONSUMER_TENANT ? "mail,userPrincipalName,displayName" : "mail,userPrincipalName,proxyAddresses,displayName";
+      const { json } = await call(`/me?$select=${select}`);
+      const address = trustedAddress(json, creds.tenantId);
       if (!address) return { ok: false, code: "CONFIG", message: "no address on the account" };
       return { ok: true, address, displayName: json.displayName ?? null };
     } catch (error) {

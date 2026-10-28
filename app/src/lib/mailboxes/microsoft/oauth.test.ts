@@ -122,3 +122,21 @@ describe("mapGraphError", () => {
     expect(mapGraphError(410, null, null).options.detail).toContain("410");
   });
 });
+
+describe("mapGraphError contexts", () => {
+  it("treats message-specific refusals on the send path as REJECTED", () => {
+    expect(mapGraphError(413, null, null, "send").code).toBe("REJECTED");
+    expect(mapGraphError(400, { error: { code: "ErrorMessageSizeExceeded" } }, null, "send").code).toBe("REJECTED");
+    expect(mapGraphError(400, { error: { code: "ErrorInvalidIdMalformed" } }, null, "send").code).toBe("REJECTED");
+    expect(mapGraphError(400, { error: { code: "ErrorInvalidRecipients" } }, null, "send").code).toBe("REJECTED");
+  });
+  it("keeps unknown 4xx as CONFIG outside the send path and for non-400 on send", () => {
+    expect(mapGraphError(400, { error: { code: "X" } }, null, "read").code).toBe("CONFIG");
+    expect(mapGraphError(409, { error: { code: "X" } }, null, "send").code).toBe("CONFIG");
+  });
+  it("limits QUOTA to submission limits", () => {
+    expect(mapGraphError(403, { error: { code: "ErrorSubmissionQuotaExceeded" } }, null, "send").code).toBe("QUOTA");
+    expect(mapGraphError(403, { error: { code: "ErrorQuotaExceeded", message: "mailbox is full" } }, null, "send").code).toBe("CONFIG");
+  });
+});
+
