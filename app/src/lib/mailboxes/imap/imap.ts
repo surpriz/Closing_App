@@ -165,7 +165,7 @@ function toInbound(msg: FetchMessageObject, uidValidity: number): Omit<InboundMe
     subject: env?.subject ?? null,
     date: date ? new Date(date) : new Date(),
     headers,
-    authenticated: parseAuthenticationResults(headers["authentication-results"]),
+    authenticated: parseAuthenticationResults(headers["authentication-results"], from?.address?.split("@")[1]),
     threadId: null,
   };
 }

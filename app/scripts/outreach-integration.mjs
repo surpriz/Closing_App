@@ -1,20 +1,29 @@
 // Checks the cold-email engine's queries against a real Postgres. Never run in CI, never against production:
 // it creates rows (one organization and its mailbox, campaigns, enrollments, messages) and deletes them in a `finally`.
 //
-//   OUTREACH_IT_CONFIRM=yes DATABASE_URL=<disposable Neon branch, migrated> node scripts/outreach-integration.mjs
+//   OUTREACH_IT_CONFIRM=<host of DATABASE_URL> DATABASE_URL=<disposable Neon branch, migrated> node scripts/outreach-integration.mjs
 //
 // The TypeScript modules cannot be imported from a plain .mjs (the app is not compiled to a path), so the script
-// re-issues the same queries in SQL, copied from src/lib/outreach/campaigns.ts (finishIdleCampaigns), sender.ts
-// (candidate query of sendDueMessages) and src/lib/mailboxes/caps/counter.ts (reserveSend). Keep them in sync.
+// re-issues the same queries in SQL. They are COPIES and must be kept in sync by hand. Checklist when touching:
+//   - finishIdle()   <- finishIdleCampaigns in src/lib/outreach/campaigns.ts (LIVE_ENROLLMENT = QUEUED, ACTIVE, PAUSED,
+//                       also in enroll.ts and sender.ts; `enrollments: { some: {}, none: live }`)
+//   - candidates()   <- the candidate `where` of sendDueMessages in src/lib/outreach/sender.ts
+//                       (kind STEP, status SCHEDULED, scheduledFor <= now, campaign ACTIVE, enrollment ACTIVE)
+//   - reserveSend()  <- src/lib/mailboxes/caps/counter.ts (verbatim)
+// Last checked against those files on 2026-10-28: no drift.
 import { neon } from "@neondatabase/serverless";
 
 const url = process.env.DATABASE_URL;
-if (!url || process.env.OUTREACH_IT_CONFIRM !== "yes") {
-  console.error("Set DATABASE_URL to a disposable branch and OUTREACH_IT_CONFIRM=yes: this script writes to the database.");
+const host = url ? new URL(url).host : null;
+if (!url || process.env.OUTREACH_IT_CONFIRM !== host) {
+  console.error(
+    `Refusing to run: this script writes to the database. Set DATABASE_URL to a disposable branch and ` +
+      `OUTREACH_IT_CONFIRM to its host (${host ?? "unknown, DATABASE_URL is missing"}).`,
+  );
   process.exit(1);
 }
 const sql = neon(url);
-console.log(`database host: ${new URL(url).host}`);
+console.log(`database host: ${host}`);
 
 const tag = `it${Date.now().toString(36)}`;
 const id = (name) => `${tag}_${name}`;
@@ -105,8 +114,15 @@ try {
   failures.push("script error");
 } finally {
   // Cascades remove the mailbox, campaigns, steps, enrollments and messages
-  await sql`DELETE FROM organizations WHERE id = ${ids.org}`.catch((e) => console.error("cleanup org", e));
-  await sql`DELETE FROM users WHERE id = ${ids.user}`.catch((e) => console.error("cleanup user", e));
+  for (const [what, run] of [
+    ["organization", () => sql`DELETE FROM organizations WHERE id = ${ids.org}`],
+    ["user", () => sql`DELETE FROM users WHERE id = ${ids.user}`],
+  ]) {
+    await run().catch((e) => {
+      console.error(`cleanup of the ${what} failed, rows with prefix ${tag}_ remain`, e);
+      failures.push(`cleanup ${what}`);
+    });
+  }
 }
 
 if (failures.length > 0) {
