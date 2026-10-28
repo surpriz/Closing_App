@@ -27,6 +27,9 @@ const TRIGGER_GOAL: Record<string, string> = {
   EXPIRY_REMINDER: "expiry_reminder",
   WARM_READ: "follow_reading",
   INTEREST_RETURNED: "gentle_reminder",
+  COLD_READ: "follow_reading",
+  COLD_READ_PRICING: "clarify_pricing",
+  COLD_REACTIVATE: "reactivate",
 };
 const MAX_SECTIONS = 6;
 

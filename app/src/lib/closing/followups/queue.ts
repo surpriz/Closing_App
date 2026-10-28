@@ -181,7 +181,7 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
         brief?.goal ?? null,
         followup.trigger,
         link.document.docType,
-        followup.trigger === "WARM_READ" ? context.readTags : undefined,
+        followup.trigger === "WARM_READ" || followup.trigger === "COLD_READ" ? context.readTags : undefined,
       ),
       documentPurpose: link.document.docPurpose,
       previousFollowups: link.followups.map((f) => ({
@@ -215,7 +215,9 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
     draft.issues.length === 0 &&
     !link.parentLinkId &&
     followup.trigger !== "ANTI_GHOSTING" &&
-    followup.trigger !== "INTEREST_RETURNED";
+    followup.trigger !== "INTEREST_RETURNED" &&
+    // A reactivation always goes through the seller
+    followup.trigger !== "COLD_REACTIVATE";
   let sendsAlone =
     autopilot &&
     (followup.trigger !== "AI_DECISION" ||

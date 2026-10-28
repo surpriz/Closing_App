@@ -38,7 +38,10 @@
     "AI_DECISION": "Conseillée par l'analyse",
     "EXPIRY_REMINDER": "Rappel avant expiration",
     "WARM_READ": "Après un clic de cold email",
-    "INTEREST_RETURNED": "Reprise après réactivation"
+    "INTEREST_RETURNED": "Reprise après réactivation",
+    "COLD_READ": "Après lecture du document (séquence à froid)",
+    "COLD_READ_PRICING": "Après lecture des tarifs (séquence à froid)",
+    "COLD_REACTIVATE": "Réactivation (séquence à froid)"
   },
   "sellerActivity": {
     "CALL": "Appel",

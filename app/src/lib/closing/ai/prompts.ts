@@ -53,6 +53,11 @@ const GOALS: Record<FollowupDraftInput["trigger"], string> = {
     "The sender has just made the document available again after its link had stopped opening. Say simply that it is available again at the URL, and offer one concrete next step (answer questions or a short call). Word it so it reads right whether or not the prospect asked for it: never say or hint that you know they tried to open it. If a 'Link expires' date is given, state it exactly.",
   WARM_READ:
     "The prospect came from a cold email and has not answered yet. Write a short, relevant follow-up about one topic from the given sections that matters to a company like theirs, and end with one simple question (for example whether it is a priority this quarter). It is an early conversation: no hard sell, no call request in the first line.",
+  COLD_READ:
+    "The prospect came from a cold outreach sequence and read the document: follow the topic from the given sections with one simple question. It is an early conversation: no call request in the first line.",
+  COLD_READ_PRICING:
+    "The prospect is likely weighing the investment. Offer to clarify the pricing options or discuss a payment schedule or phasing, and suggest a short call. Stay factual about what the proposal contains.",
+  COLD_REACTIVATE: "Restart a conversation that went quiet, without guilt-tripping, with a simple yes/no question.",
 };
 
 // "Never opened" steps: the last one closes the loop, a click that stopped at the email screen needs the way in made easy

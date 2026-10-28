@@ -356,6 +356,9 @@ enum FollowupTrigger {
   EXPIRY_REMINDER // the link expires soon (quotes and proposals)
   WARM_READ // a cold email reader read for a while without answering
   INTEREST_RETURNED // the seller reopened a dead link the prospect had come back to
+  COLD_READ // a cold sequence recipient read the document attentively
+  COLD_READ_PRICING // a cold sequence recipient spent time on the pricing
+  COLD_REACTIVATE // a cold sequence recipient came back after a quiet period
 }
 
 enum FollowupStatus {
