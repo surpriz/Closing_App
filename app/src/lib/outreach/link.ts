@@ -47,23 +47,30 @@ export async function createCampaignLink(
   });
   if (!created) return null;
 
-  await prisma.link.update({
-    where: { id: created.id },
-    data: { campaignProspectId: enrollmentId, campaignOwned: opts.owned },
-  });
-  const prospect = await prisma.prospect.findFirst({
-    where: { linkId: created.id, email: enrollment.email },
-    select: { id: true },
-  });
-  const claimed = await prisma.campaignProspect.updateMany({
-    where: { id: enrollmentId, linkId: null },
-    data: { linkId: created.id, prospectId: prospect?.id ?? null },
-  });
-  if (claimed.count === 0) {
-    // Another pass attached its link first: ours is archived and theirs is used
-    await prisma.link.update({ where: { id: created.id }, data: { archivedAt: opts.now ?? new Date() } });
-    const winner = await prisma.campaignProspect.findUnique({ where: { id: enrollmentId }, select: enrollmentSelect });
-    return winner?.linkId ? loadLink(winner.linkId, winner) : null;
+  let prospect: { id: string } | null;
+  try {
+    await prisma.link.update({
+      where: { id: created.id },
+      data: { campaignProspectId: enrollmentId, campaignOwned: opts.owned },
+    });
+    prospect = await prisma.prospect.findFirst({
+      where: { linkId: created.id, email: enrollment.email },
+      select: { id: true },
+    });
+    const claimed = await prisma.campaignProspect.updateMany({
+      where: { id: enrollmentId, linkId: null },
+      data: { linkId: created.id, prospectId: prospect?.id ?? null },
+    });
+    if (claimed.count === 0) {
+      // Another pass attached its link first: ours is archived and theirs is used
+      await archiveQuietly(created.id, opts.now);
+      const winner = await prisma.campaignProspect.findUnique({ where: { id: enrollmentId }, select: enrollmentSelect });
+      return winner?.linkId ? loadLink(winner.linkId, winner) : null;
+    }
+  } catch (error) {
+    // No enrollment points at this link: archived so a retry does not leave (and count) a second one
+    await archiveQuietly(created.id, opts.now);
+    throw error;
   }
 
   return {
@@ -90,4 +97,12 @@ async function loadLink(linkId: string, enrollment: { company: string | null; pr
     url: viewerUrl(getPublicAppUrl(), { slug: link.slug, document: link.document, company: enrollment.company }),
     title: linkTitle({ ...link.document, company: enrollment.company }),
   };
+}
+
+async function archiveQuietly(linkId: string, now = new Date()) {
+  try {
+    await prisma.link.update({ where: { id: linkId }, data: { archivedAt: now } });
+  } catch (error) {
+    console.error(`[campaign-link] could not archive ${linkId}`, error);
+  }
 }

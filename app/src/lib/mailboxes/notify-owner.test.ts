@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const updateMany = vi.fn();
 const findUnique = vi.fn();
+const PREV = new Date("2026-11-18T12:00:00Z");
 vi.mock("@/lib/db", () => ({
   prisma: { mailbox: { updateMany: (...a: unknown[]) => updateMany(...a), findUnique: (...a: unknown[]) => findUnique(...a) } },
 }));
@@ -21,7 +22,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   isEmailConfigured.mockReturnValue(true);
   updateMany.mockResolvedValue({ count: 1 });
-  findUnique.mockResolvedValue({ email: "me@acme.com", user: { email: "owner@acme.com", locale: "fr" } });
+  findUnique.mockResolvedValue({ errorNotifiedAt: PREV, email: "me@acme.com", user: { email: "owner@acme.com", locale: "fr" } });
 });
 
 describe("notifyMailboxOwner", () => {
@@ -50,9 +51,15 @@ describe("notifyMailboxOwner", () => {
     expect(mail.html).toContain('href="https://app.example.com/settings#boite"');
   });
 
-  it("never throws", async () => {
+  it("releases the reservation when sendEmail throws, and never throws", async () => {
     sendEmail.mockRejectedValue(new Error("ses down"));
     vi.spyOn(console, "error").mockImplementation(() => {});
     expect(await notifyMailboxOwner("mb", "sync_failed", null, now)).toBe(false);
+    expect(updateMany).toHaveBeenLastCalledWith({ where: { id: "mb", errorNotifiedAt: now }, data: { errorNotifiedAt: PREV } });
+  });
+
+  it("leaves the detail line out when there is none", async () => {
+    await notifyMailboxOwner("mb", "sync_failed", null, now);
+    expect(sendEmail.mock.calls[0][0].text).not.toContain("Détail");
   });
 });

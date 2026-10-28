@@ -20,8 +20,13 @@ export async function notifyMailboxOwner(
   detail: string | null,
   now = new Date(),
 ): Promise<boolean> {
-  if (!isEmailConfigured()) return false;
+  let previous: Date | null = null;
+  let reservedAt = false;
   try {
+    if (!isEmailConfigured()) return false;
+    previous =
+      (await prisma.mailbox.findUnique({ where: { id: mailboxId }, select: { errorNotifiedAt: true } }))
+        ?.errorNotifiedAt ?? null;
     // The reservation is the lock: a lost race (count 0) means another pass already told the owner
     const reserved = await prisma.mailbox.updateMany({
       where: {
@@ -31,6 +36,7 @@ export async function notifyMailboxOwner(
       data: { errorNotifiedAt: now },
     });
     if (reserved.count === 0) return false;
+    reservedAt = true;
 
     const mailbox = await prisma.mailbox.findUnique({
       where: { id: mailboxId },
@@ -49,6 +55,14 @@ export async function notifyMailboxOwner(
     return true;
   } catch (error) {
     console.error(`[mailbox-notify] ${mailboxId} ${issue}`, error);
+    // Released so the next pass can tell the owner instead of staying silent for 24 h
+    if (reservedAt) {
+      try {
+        await prisma.mailbox.updateMany({ where: { id: mailboxId, errorNotifiedAt: now }, data: { errorNotifiedAt: previous } });
+      } catch {
+        // Nothing more to do: the cooldown simply stands
+      }
+    }
     return false;
   }
 }

@@ -33,7 +33,8 @@ const base = {
 const now = new Date("2026-11-20T12:00:00Z");
 
 beforeEach(() => {
-  vi.clearAllMocks();
+  vi.resetAllMocks();
+  vi.spyOn(console, "error").mockImplementation(() => {});
   enrollmentFind.mockResolvedValue(base);
   prospectFind.mockResolvedValue({ id: "pr1" });
   createDocumentLink.mockResolvedValue({ id: "l1", slug: "abcdef123456", title: "Devis – Acme", path: "/v/acme-abcdef123456" });
@@ -93,5 +94,21 @@ describe("createCampaignLink", () => {
     const link = await createCampaignLink("e1", { owned: true, now });
     expect(linkUpdate).toHaveBeenLastCalledWith({ where: { id: "l1" }, data: { archivedAt: now } });
     expect(link?.linkId).toBe("winner");
+  });
+
+  it("archives the fresh link and rethrows when a step after creation fails", async () => {
+    prospectFind.mockRejectedValue(new Error("db down"));
+    await expect(createCampaignLink("e1", { owned: true, now })).rejects.toThrow("db down");
+    expect(linkUpdate).toHaveBeenLastCalledWith({ where: { id: "l1" }, data: { archivedAt: now } });
+  });
+
+  it("still returns the winner's link when archiving the loser fails", async () => {
+    enrollmentUpdateMany.mockResolvedValue({ count: 0 });
+    enrollmentFind.mockResolvedValueOnce(base).mockResolvedValueOnce({ ...base, linkId: "winner" });
+    linkUpdate.mockImplementation(async (arg: { data: { archivedAt?: Date } }) => {
+      if (arg.data.archivedAt) throw new Error("boom");
+    });
+    linkFind.mockResolvedValue({ slug: "wwwwww111111", document: { name: "q", displayTitle: "Devis", docType: null }, prospects: [] });
+    expect((await createCampaignLink("e1", { owned: true, now }))?.linkId).toBe("winner");
   });
 });
