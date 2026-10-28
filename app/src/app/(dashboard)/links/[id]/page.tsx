@@ -177,10 +177,7 @@ export default async function LinkDetailPage({
 
       <div className="space-y-6">
         <DealHeader deal={deal} />
-        {canEdit &&
-          !link.shared &&
-          !link.isOnboardingTest &&
-          !link.prospects.some((prospect) => prospect.origin === "SELLER") && <MarkAsTestButton linkId={link.id} />}
+        {canEdit && link.parentLinkId && !link.isOnboardingTest && <MarkAsTestButton linkId={link.id} />}
         <SmartLinkProblemNotice
           problems={smartProblems}
           linkId={link.id}

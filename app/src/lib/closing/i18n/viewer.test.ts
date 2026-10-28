@@ -29,6 +29,9 @@ const EXPLAINS_TRACKING = new Set<keyof ViewerLabels>([
   "privacyNoticeVideo",
   "chatDisclaimer",
   "readerSource",
+  // Only ever shown to the signed-in seller, never to a prospect
+  "sellerNotice",
+  "sellerNoticeShared",
 ]);
 
 describe("viewer labels", () => {

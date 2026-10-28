@@ -216,6 +216,11 @@ export async function reactivateLink(
       },
       data: { archivedAt: null },
     }),
+    // A Smart Link reader marked as a test by mistake and brought back is a reader again
+    prisma.link.updateMany({
+      where: { id: link.id, parentLinkId: { not: null }, isOnboardingTest: true },
+      data: { isOnboardingTest: false },
+    }),
     // Out of the purge too. The document's other links stay archived
     ...(link.document.archivedAt
       ? [prisma.document.update({ where: { id: link.documentId }, data: { archivedAt: null } })]
@@ -313,7 +318,7 @@ export async function setLinkSwitch(linkId: string, key: LinkSwitch, value: bool
   }
   // A Smart Link's readers follow it: one switch for the whole campaign, never two that disagree
   if (link.shared && field === "followupsEnabled") {
-    const readers = { parentLinkId: link.id };
+    const readers = { parentLinkId: link.id, isOnboardingTest: false };
     await prisma.link.updateMany({ where: readers, data: { followupsEnabled: value } });
     if (!value) {
       const t = await getTranslations("server.followups.dispatch");
@@ -761,19 +766,21 @@ export async function regenerateSequencerWebhook() {
 }
 
 /**
- * "C'est un test": the seller opened their own link, or a test send of their cold email tool filled in
- * a real prospect's address. The reader drops out of every count and follow-up, and out of sight.
- * Never on a link made for a contact the seller named: that one is a deal.
+ * "C'est un test": a Smart Link reader that was the seller's own test, or a test send of their cold
+ * email tool that filled in a real prospect's address. It drops out of every count and follow-up.
+ * Bringing it back from the archive makes it a reader again.
  */
 export async function markLinkAsTest(linkId: string) {
   const link = await requireOwnedLink(linkId);
-  const named = await prisma.prospect.count({ where: { linkId: link.id, origin: "SELLER" } });
-  if (link.shared || named > 0) {
+  // Smart Link readers only: they never count in the link quota, and a campaign or named deal is never one
+  const reader = await prisma.link.findUniqueOrThrow({ where: { id: link.id }, select: { parentLinkId: true } });
+  if (!reader.parentLinkId) {
     const t = await getTranslations("deal.actions");
     return { error: t("notATest") };
   }
   await prisma.link.update({ where: { id: link.id }, data: { isOnboardingTest: true, archivedAt: new Date() } });
   await cancelOpenFollowups(link.id, "archived");
   revalidateLink(link);
+  revalidatePath(`/links/${reader.parentLinkId}`);
   return { ok: true, documentId: link.documentId };
 }

@@ -121,6 +121,10 @@ export type ViewerLabels = {
   chatError: string;
   chatLimit: string;
   chatSenderFallback: string;
+  /** Shown to a signed-in seller on their own link: their reading is not counted. */
+  sellerNotice: string;
+  /** Same on a Smart Link, where the address in the URL is ignored too. */
+  sellerNoticeShared: string;
   /** Seller capsule bubble on a page. {sender} as above. */
   capsuleFrom: string;
   capsuleOpen: string;
@@ -260,6 +264,8 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     chatError: "The assistant is unavailable, please try again in a moment.",
     chatLimit: "You've reached the question limit for now. {sender} will be happy to answer directly.",
     chatSenderFallback: "the sender",
+  sellerNotice: "You're signed in to Clozer: this reading doesn't count. Test it in another browser.",
+  sellerNoticeShared: "You're signed in to Clozer: this reading doesn't count and the address in the link is ignored. To test this Smart Link as a prospect, copy the test link from its page and open it in a private window.",
     capsuleFrom: "A word from {sender}",
     capsuleOpen: "Play the message",
     capsuleClose: "Close",
@@ -433,6 +439,8 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     chatError: "L'assistant est indisponible, réessayez dans un instant.",
     chatLimit: "Vous avez atteint la limite de questions pour le moment. {sender} vous répondra volontiers directement.",
     chatSenderFallback: "l'expéditeur",
+  sellerNotice: "Vous êtes connecté à Clozer : cette lecture ne compte pas. Testez dans un autre navigateur.",
+  sellerNoticeShared: "Vous êtes connecté à Clozer : cette lecture ne compte pas, et l'adresse du lien est ignorée. Pour tester ce Smart Link comme un prospect, copiez le lien de test depuis sa fiche et ouvrez-le en navigation privée.",
     capsuleFrom: "Un mot de {sender}",
     capsuleOpen: "Lancer le message",
     capsuleClose: "Fermer",
@@ -606,6 +614,8 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     chatError: "El asistente no está disponible, inténtelo de nuevo en un momento.",
     chatLimit: "Ha alcanzado el límite de preguntas por ahora. {sender} le responderá con gusto directamente.",
     chatSenderFallback: "el remitente",
+  sellerNotice: "Has iniciado sesión en Clozer: esta lectura no cuenta. Pruébalo en otro navegador.",
+  sellerNoticeShared: "Has iniciado sesión en Clozer: esta lectura no cuenta y la dirección del enlace se ignora. Para probar este Smart Link como un cliente, copia el enlace de prueba desde su ficha y ábrelo en una ventana privada.",
     capsuleFrom: "Un mensaje de {sender}",
     capsuleOpen: "Reproducir el mensaje",
     capsuleClose: "Cerrar",
@@ -779,6 +789,8 @@ const LABELS: Record<"en" | "fr" | "es" | "de", ViewerLabels> = {
     chatError: "Der Assistent ist nicht verfügbar, bitte versuchen Sie es gleich noch einmal.",
     chatLimit: "Sie haben das Fragelimit vorerst erreicht. {sender} antwortet Ihnen gern direkt.",
     chatSenderFallback: "der Absender",
+  sellerNotice: "Sie sind bei Clozer angemeldet: Dieses Lesen zählt nicht. Testen Sie es in einem anderen Browser.",
+  sellerNoticeShared: "Sie sind bei Clozer angemeldet: Dieses Lesen zählt nicht, und die Adresse im Link wird ignoriert. Um diesen Smart Link wie ein Interessent zu testen, kopieren Sie den Testlink von seiner Seite und öffnen Sie ihn in einem privaten Fenster.",
     capsuleFrom: "Eine Nachricht von {sender}",
     capsuleOpen: "Nachricht abspielen",
     capsuleClose: "Schließen",
