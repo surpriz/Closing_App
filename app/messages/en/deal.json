@@ -23,22 +23,24 @@
     "capsulesTitle": "Page capsules",
     "capsulesHint": "recorded before the welcome message",
     "circuitTitle": "Document chain",
-    "circuitHint": "who passed it to whom"
+    "circuitHint": "who passed it to whom",
+    "readerLinkNote": "This personal link was made when this reader first opened your Smart Link. It's theirs: don't send it, keep using the Smart Link."
   },
   "loading": {
     "ariaLabel": "Loading"
   },
   "actions": {
-    "sharedNeedsEmail": "A shared link always asks for the email.",
+    "sharedNeedsEmail": "A Smart Link always asks for the email.",
     "invalidDuration": "Invalid duration.",
     "reactivateManagerOnly": "The document is archived: only a manager can bring it back.",
     "nameTooLong": "Name too long.",
-    "alreadyForContact": "This link is already for a contact: create a new link to share it.",
-    "sharedNoRecipient": "A shared link has no recipient: switch it to “For one prospect”.",
+    "alreadyForContact": "This link already belongs to a contact: create a Smart Link from the document.",
+    "alreadyClosed": "This deal is closed: create a Smart Link from the document.",
+    "sharedNoRecipient": "A Smart Link has no recipient: switch back to a personal link.",
     "emailOrName": "Enter an email or a name.",
     "invalidEmail": "This email isn't valid.",
     "adminsOnlyDefaults": "Only admins change the default settings.",
-    "fromPersonalLink": "Do it from a “For one prospect” link.",
+    "fromPersonalLink": "Do it from a personal link.",
     "phoneFormat": "Number in international format, e.g. +14155550123",
     "whatsappNeedsPhone": "Add a number to turn on WhatsApp.",
     "invalidContact": "Invalid contact.",
@@ -59,7 +61,8 @@
     "cannotPrepare": "Couldn't prepare a follow-up.",
     "expiryPast": "Pick a future date.",
     "expiryTooFar": "One year max.",
-    "callScriptFailed": "Couldn't prepare the call right now. Try again in a moment."
+    "callScriptFailed": "Couldn't prepare the call right now. Try again in a moment.",
+    "notATest": "Only a Smart Link reader can be marked as a test. Archive this link if needed."
   },
   "followupActions": {
     "emptyMessage": "The message is empty.",
@@ -76,8 +79,8 @@
     "reads": "{count, plural, one {# read} other {# reads}}",
     "readingNow": "Reading now",
     "lastRead": "Last read {when}",
-    "viaShared": "via the shared link",
-    "viaSharedNamed": "via the shared link “{name}”",
+    "viaShared": "via the Smart Link",
+    "viaSharedNamed": "via the Smart Link “{name}”",
     "expiredAgo": "Expired {when}",
     "expiresIn": "Expires {when}",
     "readOnly": "{seller}'s prospect. You can view it; only its seller and the admins can change it.",
@@ -243,6 +246,7 @@
     "cycleHint": "“not opened” reminders, scheduled sends, overdue analyses"
   },
   "newLinkButton": {
+    "smartLabel": "Smart Link for cold email",
     "defaultLabel": "A link for another prospect",
     "creating": "Creating…"
   },
@@ -250,8 +254,18 @@
     "intro": "Paste this link into your sequence: every prospect who clicks lands with no form, with their own tracking.",
     "toolAria": "Cold email tool",
     "documented": "The variables are {tool}'s.",
-    "undocumented": "Check the variable names in your tool's editor.",
-    "webhook": "To pause the sequence as soon as a prospect reads, connect the <link>webhook</link>."
+    "undocumented": "Check the variable names in your tool's editor. Only the email matters: company and first name are a bonus.",
+    "webhook": "To pause the sequence as soon as a prospect reads, connect the <link>webhook</link>.",
+    "followupsTitle": "Clozer follow-ups after reading",
+    "followupsOn": "Clozer drafts a follow-up based on what each reader read, for you to approve. Remove the matching step from your sequence, or the prospect gets two.",
+    "followupsOff": "Off: your sending tool does the follow-ups. Turn them on only if you remove a step from your sequence.",
+    "followupsFailed": "The setting wasn't saved. Try again.",
+    "repliesTitle": "Replies your tool receives",
+    "repliesHint": "Clozer can't see replies to your sequence emails: they land in your inbox. To make it stop its follow-ups and tell you, have your tool (webhook, or Zapier / Make) POST to this address on every reply, unsubscribe or bounce: <code>'{'\"email\": \"…\", \"event\": \"replied\"'}'</code>. Keep it private: it works for your whole workspace.",
+    "repliesRotate": "Regenerate the address",
+    "repliesRotated": "New address: the old one no longer works. Update it in your tool.",
+    "testTitle": "Test it as a prospect",
+    "testHint": "Open this link in a private window, without signing in: signed in, Clozer knows it's you and counts nothing. The reader it creates has your address: it's marked as a test, with no follow-up and no figures. Don't use your tool's test send: it fills the variables with a real prospect."
   },
   "shareReady": {
     "copiedToast": "Link copied. Paste it into your message.",
@@ -262,7 +276,7 @@
     "ready": "Your link is ready",
     "pasteAndSend": "Paste it into your message and send it. Tracking starts as soon as they open it.",
     "confirmSent": "I sent it",
-    "sharedIntro": "Post it, put it in your signature or forward it: each reader gives their email and gets their own link, tracked like your other prospects.",
+    "sharedIntro": "Put it in your cold email sequence, or post it: each reader is identified and gets their own link, tracked like your other prospects.",
     "personalIntro": "They open it and read right away, nothing to fill in. You'll see which pages, for how long, and when to follow up.",
     "forRecipient": "For <b>{email}</b>",
     "whoLabel": "Who is this link for?",
@@ -280,11 +294,11 @@
     "welcomeHint": "A video or a voice note to introduce the document: the prospect sees your bubble on opening.",
     "customize": "Customize",
     "preview": "See what the prospect will see",
-    "sharedMode": "Open link: each reader gives their email and gets their own link.",
-    "backToPersonal": "Back to a link for one person",
-    "broadcastAsk": "Want to share it widely (post, brochure, signature)?",
-    "makeOpen": "Make it an open link",
-    "makeOpenAfter": ", each reader will give their email."
+    "sharedMode": "Smart Link: each reader is identified by their email, given by your cold email tool or typed when they open it, and gets their own link.",
+    "backToPersonal": "Back to a personal link",
+    "broadcastAsk": "For a cold email sequence, or to share widely (post, signature)?",
+    "makeOpen": "Make it a Smart Link",
+    "makeOpenAfter": ", each reader will be identified."
   },
   "sharedReaders": {
     "empty": "Nobody yet. Each reader will show up here with their own tracking.",
@@ -536,7 +550,9 @@
     "replyCaught": "Email reply from {from}",
     "replySeen": "Reply from {from} seen in your inbox",
     "textCopied": "text copied (p. {pages})",
-    "printed": "printed"
+    "printed": "printed",
+    "testReader": "Test (out of the figures)",
+    "devices": "{count} browsers"
   },
   "heat": {
     "notRead": "Not read yet"
@@ -576,5 +592,22 @@
     "label": "Prepare the call",
     "writing": "Preparing…",
     "title": "For the call"
+  },
+  "smartLinkProblem": {
+    "titlePersonal": "This link isn't a Smart Link",
+    "bodyPersonal": "Readers came with their address in the link (?email=…), as if from a cold email sequence. A personal link ignores that address: they stay anonymous. Turn it into a Smart Link: same URL, and the emails already sent will name their readers.",
+    "convert": "Turn it into a Smart Link",
+    "converted": "It's a Smart Link now. The next readers will be identified.",
+    "createSmartLink": "or create a new Smart Link",
+    "titleTag": "Your sending tool didn't replace {tag}",
+    "bodyTag": "Readers came with the variable left as is in the link: they had to type their email to read. Check the exact variable syntax in your tool, then send a real email to your own address.",
+    "bodyPersonalNamed": "Readers came with their address in the link (?email=…), as if from a cold email sequence. This link belongs to a contact: it ignores that address. Create a Smart Link on the document and put it in your sequence.",
+    "createSmartLinkOnly": "Create a Smart Link on the document"
+  },
+  "markAsTest": {
+    "question": "One of your own tests?",
+    "action": "Remove it from the figures",
+    "confirm": "This reader leaves the figures, the daily report and the follow-ups. Continue?",
+    "done": "Test removed."
   }
 }

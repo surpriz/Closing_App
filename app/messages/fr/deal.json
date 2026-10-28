@@ -23,22 +23,24 @@
     "capsulesTitle": "Capsules par page",
     "capsulesHint": "enregistrées avant le mot d'accueil",
     "circuitTitle": "Circuit du document",
-    "circuitHint": "qui l'a transmis à qui"
+    "circuitHint": "qui l'a transmis à qui",
+    "readerLinkNote": "Ce lien personnel a été créé à la première ouverture de votre Smart Link par ce lecteur. Il lui est réservé : ne l'envoyez pas, continuez d'utiliser le Smart Link."
   },
   "loading": {
     "ariaLabel": "Chargement"
   },
   "actions": {
-    "sharedNeedsEmail": "Un lien partagé demande toujours l'email.",
+    "sharedNeedsEmail": "Un Smart Link demande toujours l'email.",
     "invalidDuration": "Durée invalide.",
     "reactivateManagerOnly": "Le document est archivé : seul un manager peut le remettre en ligne.",
     "nameTooLong": "Nom trop long.",
-    "alreadyForContact": "Ce lien est déjà pour un contact : créez un nouveau lien pour le partager.",
-    "sharedNoRecipient": "Un lien partagé n'a pas de destinataire : passez-le en « Pour un prospect ».",
+    "alreadyForContact": "Ce lien est déjà au nom d'un contact : créez un Smart Link depuis le document.",
+    "alreadyClosed": "Ce deal est clos : créez un Smart Link depuis le document.",
+    "sharedNoRecipient": "Un Smart Link n'a pas de destinataire : revenez à un lien personnel.",
     "emailOrName": "Indiquez un email ou un nom.",
     "invalidEmail": "Cet email n'est pas valide.",
     "adminsOnlyDefaults": "Seuls les admins changent les réglages par défaut.",
-    "fromPersonalLink": "Faites-le depuis un lien « Pour un prospect ».",
+    "fromPersonalLink": "Faites-le depuis un lien personnel.",
     "phoneFormat": "Numéro au format international, ex : +33612345678",
     "whatsappNeedsPhone": "Ajoutez un numéro pour activer WhatsApp.",
     "invalidContact": "Contact invalide.",
@@ -59,7 +61,8 @@
     "cannotPrepare": "Impossible de préparer une relance.",
     "expiryPast": "Choisissez une date à venir.",
     "expiryTooFar": "Un an maximum.",
-    "callScriptFailed": "Impossible de préparer l'appel pour l'instant, réessayez dans un moment."
+    "callScriptFailed": "Impossible de préparer l'appel pour l'instant, réessayez dans un moment.",
+    "notATest": "Seul un lecteur de Smart Link peut être marqué comme test. Archivez ce lien si besoin."
   },
   "followupActions": {
     "emptyMessage": "Le message est vide.",
@@ -76,8 +79,8 @@
     "reads": "{count, plural, one {# lecture} other {# lectures}}",
     "readingNow": "En lecture",
     "lastRead": "Dernière lecture {when}",
-    "viaShared": "via le lien partagé",
-    "viaSharedNamed": "via le lien partagé « {name} »",
+    "viaShared": "via le Smart Link",
+    "viaSharedNamed": "via le Smart Link « {name} »",
     "expiredAgo": "Expiré {when}",
     "expiresIn": "Expire {when}",
     "readOnly": "Prospect de {seller}. Vous pouvez le consulter, seuls son commercial et les admins peuvent le modifier.",
@@ -243,6 +246,7 @@
     "cycleHint": "rappels « pas ouvert », envois à l'heure prévue, analyses en retard"
   },
   "newLinkButton": {
+    "smartLabel": "Smart Link pour cold email",
     "defaultLabel": "Un lien pour un autre prospect",
     "creating": "Création…"
   },
@@ -250,8 +254,18 @@
     "intro": "Collez ce lien dans votre séquence : chaque prospect qui clique arrive sans formulaire, avec son propre suivi.",
     "toolAria": "Outil de cold email",
     "documented": "Les variables sont celles de {tool}.",
-    "undocumented": "Vérifiez le nom des variables dans l'éditeur de votre outil.",
-    "webhook": "Pour mettre la séquence en pause dès qu'un prospect lit, branchez le <link>webhook</link>."
+    "undocumented": "Vérifiez le nom des variables dans l'éditeur de votre outil. Seul l'email compte : la société et le prénom sont un bonus.",
+    "webhook": "Pour mettre la séquence en pause dès qu'un prospect lit, branchez le <link>webhook</link>.",
+    "followupsTitle": "Relances Clozer après lecture",
+    "followupsOn": "Clozer prépare une relance adaptée à ce que chaque lecteur a lu, à valider avant envoi. Retirez l'étape équivalente de votre séquence, sinon le prospect en reçoit deux.",
+    "followupsOff": "Coupées : votre outil d'envoi fait les relances. Activez-les seulement si vous retirez une étape de votre séquence.",
+    "followupsFailed": "Le réglage n'a pas été enregistré. Réessayez.",
+    "repliesTitle": "Réponses reçues par votre outil",
+    "repliesHint": "Clozer ne voit pas les réponses à vos emails de séquence : elles arrivent dans votre boîte. Pour qu'il arrête ses relances et vous prévienne, faites envoyer par votre outil (webhook, ou Zapier / Make) un POST à cette adresse à chaque réponse, désinscription ou rebond : <code>'{'\"email\": \"…\", \"event\": \"replied\"'}'</code>. Gardez-la pour vous : elle vaut pour tout votre espace.",
+    "repliesRotate": "Régénérer l'adresse",
+    "repliesRotated": "Nouvelle adresse : l'ancienne ne marche plus. Mettez-la à jour dans votre outil.",
+    "testTitle": "Tester comme un prospect",
+    "testHint": "Ouvrez ce lien dans une fenêtre de navigation privée, sans vous connecter : connecté, Clozer vous reconnaît et ne compte rien. La fiche créée porte votre adresse : elle est marquée test, sans relance ni statistiques. N'utilisez pas l'envoi de test de votre outil : il remplit les variables avec un vrai prospect."
   },
   "shareReady": {
     "copiedToast": "Lien copié. Collez-le dans votre message.",
@@ -262,7 +276,7 @@
     "ready": "Votre lien est prêt",
     "pasteAndSend": "Collez-le dans votre message et envoyez-le. Le suivi démarre dès qu'il l'ouvre.",
     "confirmSent": "C'est envoyé",
-    "sharedIntro": "Postez-le, mettez-le en signature ou transférez-le : chaque lecteur donne son email et reçoit son propre lien, suivi comme vos autres prospects.",
+    "sharedIntro": "Mettez-le dans votre séquence de cold email, ou postez-le : chaque lecteur est identifié et reçoit son propre lien, suivi comme vos autres prospects.",
     "personalIntro": "Il l'ouvre et lit tout de suite, sans rien remplir. Vous saurez quelles pages, combien de temps, et quand relancer.",
     "forRecipient": "Pour <b>{email}</b>",
     "whoLabel": "Pour qui est ce lien ?",
@@ -280,11 +294,11 @@
     "welcomeHint": "Une vidéo ou un vocal pour présenter le document : le prospect voit votre bulle dès l'ouverture.",
     "customize": "Personnaliser",
     "preview": "Voir ce que verra le prospect",
-    "sharedMode": "Lien ouvert à tous : chaque lecteur donne son email et reçoit son propre lien.",
-    "backToPersonal": "Revenir à un lien pour une personne",
-    "broadcastAsk": "Vous voulez le diffuser largement (post, plaquette, signature) ?",
-    "makeOpen": "En faire un lien ouvert à tous",
-    "makeOpenAfter": ", chaque lecteur donnera son email."
+    "sharedMode": "Smart Link : chaque lecteur est identifié par son email, donné par votre outil de cold email ou tapé à l'ouverture, et reçoit son propre lien.",
+    "backToPersonal": "Revenir à un lien personnel",
+    "broadcastAsk": "Pour une séquence de cold email, ou à diffuser largement (post, signature) ?",
+    "makeOpen": "En faire un Smart Link",
+    "makeOpenAfter": ", chaque lecteur sera identifié."
   },
   "sharedReaders": {
     "empty": "Personne pour l'instant. Chaque lecteur apparaîtra ici avec son propre suivi.",
@@ -536,7 +550,9 @@
     "replyCaught": "Réponse de {from} par email",
     "replySeen": "Réponse de {from} vue dans votre boîte mail",
     "textCopied": "texte copié (p. {pages})",
-    "printed": "imprimé"
+    "printed": "imprimé",
+    "testReader": "Test (hors statistiques)",
+    "devices": "{count} navigateurs"
   },
   "heat": {
     "notRead": "Pas encore lu"
@@ -576,5 +592,22 @@
     "label": "Préparer l'appel",
     "writing": "Préparation…",
     "title": "Pour l'appel"
+  },
+  "smartLinkProblem": {
+    "titlePersonal": "Ce lien n'est pas un Smart Link",
+    "bodyPersonal": "Des lecteurs sont arrivés avec leur adresse dans le lien (?email=…), comme depuis une séquence de cold email. Un lien personnel ignore cette adresse : ils restent anonymes. Transformez-le en Smart Link : même adresse, et les emails déjà envoyés identifieront leurs lecteurs.",
+    "convert": "Le transformer en Smart Link",
+    "converted": "C'est un Smart Link. Les prochains lecteurs seront identifiés.",
+    "createSmartLink": "ou créer un nouveau Smart Link",
+    "titleTag": "Votre outil d'envoi n'a pas remplacé {tag}",
+    "bodyTag": "Des lecteurs sont arrivés avec la variable telle quelle dans le lien : ils ont dû taper leur email pour lire. Vérifiez la syntaxe exacte de la variable dans votre outil, puis faites un vrai envoi à votre propre adresse.",
+    "bodyPersonalNamed": "Des lecteurs sont arrivés avec leur adresse dans le lien (?email=…), comme depuis une séquence de cold email. Ce lien est au nom d'un contact : il ignore cette adresse. Créez un Smart Link sur le document et mettez-le dans votre séquence.",
+    "createSmartLinkOnly": "Créer un Smart Link sur le document"
+  },
+  "markAsTest": {
+    "question": "C'est un de vos tests ?",
+    "action": "L'effacer des statistiques",
+    "confirm": "Ce lecteur sort des statistiques, du rapport du jour et des relances. Continuer ?",
+    "done": "Test effacé."
   }
 }

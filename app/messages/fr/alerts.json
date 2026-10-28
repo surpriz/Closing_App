@@ -124,13 +124,24 @@
       "line": "{who} a répondu par email au sujet de {doc}",
       "body": "{who} a répondu à votre relance sur {doc}. Sa réponse vous a été transférée.",
       "bodyThread": "{who} a répondu dans votre fil d'emails sur {doc}.",
-      "stopped": "Les relances automatiques sont arrêtées : la suite est entre vos mains."
+      "stopped": "Les relances automatiques sont arrêtées : la suite est entre vos mains.",
+      "bodySequencer": "{who} a répondu à votre séquence de cold email au sujet de {doc}. Votre outil d'envoi l'a signalé à Clozer : la réponse est dans votre boîte."
     },
     "emailBounced": {
       "subject": "Adresse invalide : {email}",
       "line": "La relance envoyée à {email} ({doc}) n'a pas pu être livrée",
       "body": "La relance envoyée à {email} au sujet de {doc} est revenue : l'adresse n'existe pas ou refuse les emails.",
       "fix": "Plus rien ne partira à cette adresse. Vérifiez-la avec le prospect et ajoutez le bon contact sur le deal."
+    },
+    "smartLinkProblem": {
+      "subjectPersonal": "Ce lien n'identifie pas vos lecteurs de cold email",
+      "subjectTag": "Votre outil d'envoi n'a pas remplacé {tag}",
+      "linePersonal": "{doc} : un lecteur est arrivé avec son adresse dans le lien, mais ce n'est pas un Smart Link. Il reste anonyme.",
+      "lineTag": "{doc} : votre outil d'envoi a laissé {tag} tel quel dans le lien. Le lecteur a dû taper son email.",
+      "bodyPersonal": "Quelqu'un a ouvert {doc} avec une adresse dans le lien (?email=…), comme depuis une séquence de cold email. Ce lien est un lien personnel : il ignore cette adresse, et chaque lecteur reste anonyme. Sur la fiche du lien, transformez-le en Smart Link (même adresse) ou créez-en un sur le document.",
+      "bodyTag": "Un lecteur est arrivé sur {doc} avec {tag} dans le lien : votre outil de cold email n'a pas remplacé la variable par son adresse. Il a dû taper son email pour lire, et beaucoup abandonnent à ce moment-là. Vérifiez la syntaxe exacte de la variable dans votre outil, puis faites un vrai envoi à votre propre adresse.",
+      "buttonPersonal": "Corriger le lien",
+      "buttonTag": "Voir le Smart Link"
     }
   },
   "notice": {
@@ -213,6 +224,12 @@
     "emailBounced": {
       "title": "Email non délivré",
       "body": "{email} n'existe pas ou refuse les emails."
+    },
+    "smartLinkProblem": {
+      "titlePersonal": "Lecteur de cold email non identifié",
+      "bodyPersonal": "{doc} n'est pas un Smart Link : l'adresse du lien est ignorée.",
+      "titleTag": "{tag} non remplacé",
+      "bodyTag": "Votre outil d'envoi a laissé la variable telle quelle sur {doc}."
     }
   },
   "digest": {

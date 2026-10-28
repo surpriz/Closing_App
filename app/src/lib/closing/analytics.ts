@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 
 import { linkLabelSelect } from "./dashboard/labels";
+import { countPeople } from "./engagement/people";
 
 type Scope = { documentId: string } | { linkId: string };
 
@@ -8,7 +9,8 @@ type Scope = { documentId: string } | { linkId: string };
 export async function getReadingAnalytics(scope: Scope) {
   const viewWhere =
     "documentId" in scope
-      ? { documentId: scope.documentId, isBot: false }
+      ? // The seller's own tests never weigh in the document's figures
+        { documentId: scope.documentId, isBot: false, link: { isOnboardingTest: false } }
       : { linkId: scope.linkId, isBot: false };
 
   const [totals, visitors, pages, locations, recentViews] = await Promise.all([
@@ -18,7 +20,7 @@ export async function getReadingAnalytics(scope: Scope) {
       _sum: { totalDurationMs: true },
       _max: { lastSeenAt: true },
     }),
-    prisma.documentView.groupBy({ by: ["visitorId"], where: viewWhere }),
+    prisma.documentView.groupBy({ by: ["visitorId", "email"], where: viewWhere }),
     prisma.pageView.groupBy({
       by: ["pageNumber"],
       where: { view: viewWhere },
@@ -46,7 +48,7 @@ export async function getReadingAnalytics(scope: Scope) {
 
   return {
     viewCount: totals._count._all,
-    uniqueVisitors: visitors.length,
+    uniqueVisitors: countPeople(visitors),
     totalDurationMs: totals._sum.totalDurationMs ?? 0,
     lastActivityAt: totals._max.lastSeenAt,
     pages: pages

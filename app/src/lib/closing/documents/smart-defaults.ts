@@ -38,6 +38,11 @@ export type LinkDefaults = {
 /** Documents a prospect can say yes to. */
 const AGREEABLE_DOC_TYPES = ["QUOTE", "PROPOSAL", "CONTRACT"];
 
+/** "Valider & signer" and "Demander un ajustement" only make sense on a deal. Unknown type: offered. */
+function offersAnswers(docType: string | null | undefined) {
+  return !docType || AGREEABLE_DOC_TYPES.includes(docType);
+}
+
 /** Documents that call for no meeting: the deal is already done. */
 const NO_MEETING_DOC_TYPES = ["INVOICE"];
 
@@ -80,7 +85,7 @@ export function linkDefaultsFor(
     chatEnabled: workspace.chatEnabledByDefault,
     voiceCommentsEnabled: workspace.voiceCommentsByDefault,
     followupsEnabled: workspace.followupsByDefault,
-    ctaEnabled: !known || AGREEABLE_DOC_TYPES.includes(docType),
+    ctaEnabled: offersAnswers(docType),
     bookingEnabled: !known || !NO_MEETING_DOC_TYPES.includes(docType),
     expiresAt: deadline ? expiryInDays(deadline, now, timeZone) : null,
     ...(shared && SHARED_LINK_SETTINGS),

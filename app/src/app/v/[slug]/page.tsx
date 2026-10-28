@@ -2,6 +2,7 @@ import { Loader2 } from "lucide-react";
 import type { Metadata } from "next";
 import { cookies, headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
+import { after } from "next/server";
 
 import { AutoRefresh } from "@/components/dashboard/auto-refresh";
 import type { ViewerCapsule } from "@/components/viewer/capsule-bubble";
@@ -31,6 +32,7 @@ import { suggestQuestions, toUIMessages } from "@/lib/closing/chat/messages";
 import { loadChatSetup } from "@/lib/closing/chat/queries";
 import { showsCountdown, viewerDeadline } from "@/lib/closing/expiry";
 import type { SupportedLocale } from "@/lib/closing/constants";
+import { documentTitle } from "@/lib/closing/documents/link-title";
 import { canForward } from "@/lib/closing/forward/rules";
 import {
   chosenLocale,
@@ -50,7 +52,9 @@ import { firstNameOf } from "@/lib/closing/share/compose";
 import { viewerSenderName } from "@/lib/closing/sender-name";
 import { deadState, type DeadState } from "@/lib/closing/revival";
 import { findRevivalReader } from "@/lib/closing/revival-reader";
-import { parseSmartParams } from "@/lib/closing/shared/smart-params";
+import { notifySeller } from "@/lib/closing/notify/notify";
+import { parseSmartParams, smartLinkProblem } from "@/lib/closing/shared/smart-params";
+import { getRequestContext } from "@/lib/closing/tracking/request-context";
 import { VISITOR_COOKIE } from "@/lib/closing/tracking/visitor";
 import { deeplConfig } from "@/lib/closing/translation/deepl";
 import { guessLanguage, translationTarget } from "@/lib/closing/translation/translation";
@@ -70,7 +74,7 @@ export async function generateMetadata({
   // An expired link keeps its title: the locked page still says what it was
   const resolved = await resolveViewerLink(slug);
   return {
-    title: resolved?.link.document.name ?? "Document",
+    title: resolved ? documentTitle(resolved.link.document) : "Document",
     robots: { index: false, follow: false },
   };
 }
@@ -121,7 +125,7 @@ export default async function ViewerPage({
   const lockedProps = {
     action: requestLinkRevival.bind(null, slug),
     slug,
-    documentName: link.document.name,
+    documentName: documentTitle(link.document),
     senderName,
     labels,
     quote: countdown,
@@ -168,6 +172,22 @@ export default async function ViewerPage({
   if (link.shared && access.email && !isSeller)
     redirect(`/api/v/${slug}/reader`);
 
+  // A cold email reader this link cannot name: told once per link, while the campaign can still be fixed
+  const problem =
+    !isSeller && !getRequestContext(requestHeaders).isBot ? smartLinkProblem(query, link.shared) : null;
+  if (problem)
+    after(async () => {
+      // Once a day at most: a fixed tool that breaks again in a later campaign is told again
+      const dedupeKey = `smart-link-problem:${link.id}:${problem.kind}:${new Date().toISOString().slice(0, 10)}`;
+      if (await prisma.sellerAlert.findUnique({ where: { dedupeKey }, select: { id: true } })) return;
+      await notifySeller({
+        linkId: link.id,
+        type: "SMART_LINK_PROBLEM",
+        dedupeKey,
+        payload: { smartProblem: problem.kind, tag: problem.tag },
+      });
+    });
+
   // A Smart Link from a cold email: the tool said who it was sent to, no form
   const smart = link.shared && !isSeller ? parseSmartParams(query) : null;
   if (smart)
@@ -195,7 +215,7 @@ export default async function ViewerPage({
             unlock: unlockAsKnown.bind(null, slug),
           }
         }
-        documentName={link.document.name}
+        documentName={documentTitle(link.document)}
         senderName={senderName}
         labels={labels}
       />
@@ -263,8 +283,7 @@ export default async function ViewerPage({
 
   const sellerNotice = isSeller && (
     <SellerNotice>
-      Vous êtes connecté à Clozer : cette lecture ne compte pas. Testez dans un
-      autre navigateur.
+      {link.shared ? labels.sellerNoticeShared : labels.sellerNotice}
     </SellerNotice>
   );
 
@@ -293,7 +312,7 @@ export default async function ViewerPage({
         {withExpiry(
           <VideoViewer
             slug={slug}
-            documentName={link.document.name}
+            documentName={documentTitle(link.document)}
             senderName={senderName}
             src={src}
             poster={link.document.posterPathname ? `${src}?poster` : null}
@@ -330,7 +349,7 @@ export default async function ViewerPage({
         {withExpiry(
           <WebViewer
             slug={slug}
-            documentName={link.document.name}
+            documentName={documentTitle(link.document)}
             senderName={senderName}
             externalUrl={link.document.externalUrl}
             embedUrl={link.document.embedUrl}
@@ -371,7 +390,7 @@ export default async function ViewerPage({
         <PdfViewer
           slug={slug}
           fileUrl={`/api/v/${slug}/file`}
-          documentName={link.document.name}
+          documentName={documentTitle(link.document)}
           senderName={senderName}
           labels={labels}
           ctaEnabled={link.ctaEnabled}

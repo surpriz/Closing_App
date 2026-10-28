@@ -124,13 +124,24 @@
       "line": "{who} replied by email about {doc}",
       "body": "{who} replied to your follow-up about {doc}. We forwarded the reply to you.",
       "bodyThread": "{who} replied in your email thread about {doc}.",
-      "stopped": "Automatic follow-ups are off for this deal: it's your conversation now."
+      "stopped": "Automatic follow-ups are off for this deal: it's your conversation now.",
+      "bodySequencer": "{who} answered your cold email sequence about {doc}. Your sending tool told Clozer: the reply is in your inbox."
     },
     "emailBounced": {
       "subject": "Invalid address: {email}",
       "line": "The follow-up to {email} ({doc}) couldn't be delivered",
       "body": "The follow-up sent to {email} about {doc} bounced: the address doesn't exist or rejects email.",
       "fix": "Nothing more will go to this address. Check it with the prospect and add the right contact to the deal."
+    },
+    "smartLinkProblem": {
+      "subjectPersonal": "This link can't name your cold email readers",
+      "subjectTag": "Your sending tool didn't replace {tag}",
+      "linePersonal": "{doc}: a reader came with their address in the link, but it isn't a Smart Link. They stay anonymous.",
+      "lineTag": "{doc}: your sending tool left {tag} as is in the link. The reader had to type their email.",
+      "bodyPersonal": "Someone opened {doc} with an address in the link (?email=…), as if from a cold email sequence. This is a personal link: it ignores that address, and every reader stays anonymous. On the link page, turn it into a Smart Link (same URL) or create one on the document.",
+      "bodyTag": "A reader opened {doc} with {tag} in the link: your cold email tool didn't replace the variable with their address. They had to type their email to read, and many leave at that point. Check the exact variable syntax in your tool, then send a real email to your own address.",
+      "buttonPersonal": "Fix the link",
+      "buttonTag": "See the Smart Link"
     }
   },
   "notice": {
@@ -213,6 +224,12 @@
     "emailBounced": {
       "title": "Email not delivered",
       "body": "{email} doesn't exist or rejects email."
+    },
+    "smartLinkProblem": {
+      "titlePersonal": "Cold email reader not identified",
+      "bodyPersonal": "{doc} isn't a Smart Link: the address in the link is ignored.",
+      "titleTag": "{tag} not replaced",
+      "bodyTag": "Your sending tool left the variable as is on {doc}."
     }
   },
   "digest": {

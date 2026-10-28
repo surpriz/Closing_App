@@ -36,6 +36,7 @@ Rules:
 - confidence: an integer from 0 to 100 (not a fraction): how sure you are of your reading. Few or ambiguous signals: 20 to 50. Clear, consistent signals: 70 and more.
 - priority: an integer from 1 to 5. 5 = act today (risk of losing momentum or a clear buying window), 1 = nothing to do for now.
 - The recommended timing is a choice from the list; never write dates.
+- The facts carry no current time, and your text is read later: never say how long ago something happened ("an hour ago", "yesterday", "this morning"). Place readings by their day and local time as the facts give them (e.g. "on day 0, Tuesday evening").
 - Respect the follow-up budget given: if it is used up, do not recommend send_followup.
 - recipient: the reader letter to contact ("A", "B"…), or null for the main contact. Only a reader linked to a known contact can receive a written follow-up; to reach an unidentified reader, recommend involve_decision_maker so the salesperson asks who it is.
 - followupBrief only when the action is send_followup: what the message should achieve and which business topics to raise. Topics must never refer to reading behaviour (pages viewed, time spent, opening the document): the prospect must not feel watched. Example: "budget options and payment in instalments", not "the pricing page they read".

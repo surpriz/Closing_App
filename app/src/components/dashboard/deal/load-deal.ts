@@ -54,7 +54,7 @@ import { freshEngagementScore } from "@/lib/closing/engagement/refresh-score";
 import { getLinkLiveState } from "@/lib/closing/live";
 import { getSellerPrefs } from "@/lib/closing/notify/preferences";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
-import { rankSharedReaders } from "@/lib/closing/shared/hot-readers";
+import { groupReadersByAddress, rankSharedReaders } from "@/lib/closing/shared/hot-readers";
 import { readingByLink } from "@/lib/closing/shared/reading-time";
 import { languageName } from "@/lib/closing/translation/translation";
 import { getLanguageModel } from "@/lib/closing/ai/provider";
@@ -413,6 +413,7 @@ export async function loadDeal(
       repliedAt: link.repliedAt,
       gateSeenAt: link.gateSeenAt,
       snoozedUntil: link.snoozedUntil,
+      anonymous: link.prospects.length === 0,
       meetingBookedAt: link.meetingBookedAt,
       meetingAt: link.meetingAt,
       quoteRequestedAt: link.quoteRequestedAt,
@@ -863,6 +864,7 @@ async function loadSharedReaders(
       dealStatus: true,
       lastActivityAt: true,
       createdAt: true,
+      isOnboardingTest: true,
       engagementScore: { select: { tier: true } },
       prospects: {
         select: { email: true, name: true, company: true },
@@ -876,13 +878,17 @@ async function loadSharedReaders(
     documentId,
   );
   const ranked = rankSharedReaders(
-    links.map((reader) => ({
-      ...reader,
-      linkId: reader.id,
-      readingMs: reading.get(reader.id)?.readingMs ?? 0,
-      pricingMs: reading.get(reader.id)?.pricingMs ?? 0,
-      lastActivityAt: reader.lastActivityAt ?? reader.createdAt,
-    })),
+    // One row per person, whatever the browsers they read from
+    groupReadersByAddress(
+      links.map((reader) => ({
+        ...reader,
+        linkId: reader.id,
+        email: reader.prospects[0]?.email ?? null,
+        readingMs: reading.get(reader.id)?.readingMs ?? 0,
+        pricingMs: reading.get(reader.id)?.pricingMs ?? 0,
+        lastActivityAt: reader.lastActivityAt ?? reader.createdAt,
+      })),
+    ),
     thresholdSec,
   );
   return ranked.map((reader) => {
@@ -900,14 +906,17 @@ async function loadSharedReaders(
       detail: [
         prospect?.name ? prospect.email : null,
         prospect?.company,
+        reader.links > 1 ? t("devices", { count: reader.links }) : null,
         t("readAgo", {
           when: formatRelative(reader.lastActivityAt, locale, now),
         }),
       ]
         .filter(Boolean)
         .join(" · "),
-      state:
-        reader.dealStatus !== "OPEN"
+      // Shown, never hidden: an address anyone can type is no proof, the seller sees what was set aside
+      state: reader.isOnboardingTest
+        ? t("testReader")
+        : reader.dealStatus !== "OPEN"
           ? tl(`dealStatus.${reader.dealStatus}`)
           : reader.engagementScore
             ? tl(`tier.${reader.engagementScore.tier}`)

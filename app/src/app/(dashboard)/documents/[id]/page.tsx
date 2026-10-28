@@ -51,6 +51,7 @@ import { buildDocumentFrictions } from "@/lib/closing/dashboard/frictions";
 import { dealLabel, linkLabelSelect } from "@/lib/closing/dashboard/labels";
 import { pageHeat } from "@/lib/closing/dashboard/page-heat";
 import { getPageReadings } from "@/lib/closing/dashboard/queries";
+import { groupReadersByAddress } from "@/lib/closing/shared/hot-readers";
 import { showsReadingDetail } from "@/lib/closing/dashboard/reading-detail";
 import { labelReaders } from "@/lib/closing/dashboard/readers";
 import { documentTitle } from "@/lib/closing/documents/link-title";
@@ -125,7 +126,7 @@ export default async function DocumentDetailPage({
         },
       },
       links: {
-        where: { archivedAt: null, draftAt: null },
+        where: { archivedAt: null, draftAt: null, isOnboardingTest: false },
         orderBy: { createdAt: "desc" },
         include: {
           prospects: {
@@ -133,7 +134,7 @@ export default async function DocumentDetailPage({
             take: 1,
           },
           engagementScore: true,
-          _count: { select: { views: true } },
+          _count: { select: { views: { where: { isBot: false } } } },
         },
       },
     },
@@ -301,21 +302,53 @@ export default async function DocumentDetailPage({
         )
       : null;
 
-  const prospectRows: ProspectLinkRow[] = document.links.map((link) => {
+  // A Smart Link reader opening from several browsers has a link per browser: one row per person
+  const people = groupReadersByAddress(
+    document.links.map((link) => ({
+      ...link,
+      linkId: link.id,
+      email: link.parentLinkId ? (link.prospects[0]?.email ?? null) : null,
+      scope: link.parentLinkId,
+      readingMs: 0,
+      pricingMs: 0,
+      lastActivityAt: link.lastActivityAt ?? link.createdAt,
+    })),
+  );
+  const readersBySmartLink = new Map<string, number>();
+  const viewsByPerson = new Map<string, number>();
+  for (const link of document.links) {
+    const email = link.parentLinkId ? link.prospects[0]?.email?.trim().toLowerCase() : null;
+    const key = email ? `${link.parentLinkId}:${email}` : link.id;
+    viewsByPerson.set(key, (viewsByPerson.get(key) ?? 0) + link._count.views);
+  }
+  for (const person of people) {
+    if (person.parentLinkId) readersBySmartLink.set(person.parentLinkId, (readersBySmartLink.get(person.parentLinkId) ?? 0) + 1);
+  }
+  const personKey = (link: (typeof people)[number]) => {
+    const email = link.parentLinkId ? link.prospects[0]?.email?.trim().toLowerCase() : null;
+    return email ? `${link.parentLinkId}:${email}` : link.id;
+  };
+  // The Smart Link first: the one to paste in a sequence, its readers below as their own rows
+  const orderedLinks = [...people].sort((a, b) => Number(b.shared) - Number(a.shared));
+  const prospectRows: ProspectLinkRow[] = orderedLinks.map((link) => {
     const prospect = link.prospects[0];
     const score = link.engagementScore;
     const expired = !!link.expiresAt && link.expiresAt <= now;
     const pages = readings.get(link.id);
     return {
       id: link.id,
-      label: dealLabel({ ...link, document }),
+      label: dealLabel({ ...link, document }, link.shared ? t("sharedLink") : undefined),
       contact:
-        [prospect?.company ? prospect.name : null, prospect?.email]
+        [
+          prospect?.company ? prospect.name : null,
+          prospect?.email,
+          link.links > 1 ? t("browsers", { count: link.links }) : null,
+        ]
           .filter(Boolean)
           .join(" · ") ||
         t("createdAgo", { when: formatRelative(link.createdAt, locale, now) }),
       state: link.shared
-        ? t("sharedLink")
+        ? t("smartLinkReaders", { count: readersBySmartLink.get(link.id) ?? 0 })
         : link.dealStatus !== "OPEN"
           ? tl(`dealStatus.${link.dealStatus}`)
           : expired
@@ -330,7 +363,7 @@ export default async function DocumentDetailPage({
           : null,
       signed: link.dealStatus === "VALIDATED" || link.dealStatus === "WON",
       strong: !!score || link.dealStatus !== "OPEN",
-      views: link._count.views,
+      views: viewsByPerson.get(personKey(link)) ?? link._count.views,
       heat: pages && pages.length > 0 ? pageHeat(pages, heatPages) : null,
       ...shareLink(origin, { slug: link.slug, document, company: prospect?.company }),
       followupsEnabled: link.followupsEnabled,
@@ -400,11 +433,16 @@ export default async function DocumentDetailPage({
                 />
                 {t("analyzing")}
               </span>
+            ) : document.displayTitle && document.links.length > 0 ? (
+              t("titleKeepsLinks")
             ) : undefined
           }
           action={
             <>
               {linkAction}
+              {document.status !== "FAILED" && (
+                <NewLinkButton documentId={document.id} variant="outline" smart />
+              )}
               {/* Deleting takes every seller's links down with it */}
               {isManagerRole(role) && (
                 <DeleteDocumentButton

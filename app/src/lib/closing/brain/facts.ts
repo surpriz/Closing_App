@@ -103,8 +103,8 @@ export type DealFactsInput = {
     type: "CALL" | "EMAIL_REPLY_RECEIVED" | "MEETING" | "NOTE" | "MANUAL_SEND";
     note: string | null;
     occurredAt: Date;
-    /** INBOUND and EXTENSION: caught by Clozer, the note is the prospect's own words. */
-    source?: "MANUAL" | "INBOUND" | "EXTENSION";
+    /** INBOUND, EXTENSION and SEQUENCER: caught by Clozer, the note is the prospect's own words. */
+    source?: "MANUAL" | "INBOUND" | "EXTENSION" | "SEQUENCER";
   }[];
   score: { score: number; tier: "HOT" | "WARM" | "COLD" } | null;
 };

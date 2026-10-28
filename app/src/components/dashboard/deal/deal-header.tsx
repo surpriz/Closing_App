@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from "next-intl";
 
 import { INTL_LOCALE } from "@/i18n/locale";
 import { formatClock } from "@/lib/closing/dashboard/deal-plates";
+import { customLinkName } from "@/lib/closing/dashboard/labels";
 import { documentTitle } from "@/lib/closing/documents/link-title";
 import { formatRelative } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -129,9 +130,11 @@ export function DealHeader({ deal }: { deal: Deal }) {
                 href={`/links/${link.parentLink.id}`}
                 className="text-muted-foreground hover:text-foreground hover:underline"
               >
-                {link.parentLink.name
-                  ? t("viaSharedNamed", { name: link.parentLink.name })
-                  : t("viaShared")}
+                {(() => {
+                  // The name the seller chose, never the file name the link got at creation
+                  const named = customLinkName({ name: link.parentLink.name, document: link.document, prospects: [] });
+                  return named ? t("viaSharedNamed", { name: named }) : t("viaShared");
+                })()}
               </Link>
             )}
           </div>
