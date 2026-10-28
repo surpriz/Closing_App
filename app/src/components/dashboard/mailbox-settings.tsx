@@ -609,7 +609,7 @@ export function MailboxSettings({
   const [reconnect, setReconnect] = useState<{ email: string; mailboxId: string; n: number } | null>(null);
   // The banner lives in state so the query flags can be stripped from the URL without losing it.
   const [shownFlash] = useState(flash);
-  const [initialCount] = useState(mailboxes.length);
+  const [initialActive] = useState(() => new Set(mailboxes.filter((m) => m.status === "ACTIVE").map((m) => m.id)));
   const router = useRouter();
   const pathname = usePathname();
   useEffect(() => {
@@ -622,7 +622,7 @@ export function MailboxSettings({
         <p className="text-body text-muted-foreground">{t("description")}</p>
       </div>
       <div className="border-y border-foreground bg-card">
-        {shownFlash && <FlashBanner flash={shownFlash} arrived={mailboxes.length > initialCount} />}
+        {shownFlash && <FlashBanner flash={shownFlash} arrived={mailboxes.some((m) => m.status === "ACTIVE" && !initialActive.has(m.id))} />}
         {mailboxes.length === 0 ? (
           <p className="px-5 py-3 text-small text-muted-foreground">{t("empty")}</p>
         ) : (
