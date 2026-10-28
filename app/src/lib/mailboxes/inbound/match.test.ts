@@ -15,6 +15,7 @@ const ctx: MatchContext = {
   mailboxAddress: "sender@example.com",
   teamEmails: ["sender@example.com", "colleague@example.com"],
   sentMessageIds: new Map([["orig-1@sender.example.com", { enrollmentId: "enr-1", messageId: "msg-1" }]]),
+  sentThreadIds: new Map([["thr-1", { enrollmentId: "enr-7", messageId: "msg-7" }]]),
   enrollments: [
     { enrollmentId: "enr-1", email: "paul@example.org", lastSentAt: new Date(now.getTime() - 3 * day) },
     { enrollmentId: "enr-2", email: "paul@example.org", lastSentAt: new Date(now.getTime() - 1 * day) },
@@ -166,6 +167,20 @@ describe("matchInbound with fixtures", () => {
       { ...ctx, sentMessageIds: new Map([["orig-1008a@sender.example.com", { enrollmentId: "enr-9", messageId: "msg-9" }]]) },
     );
     expect(result).toMatchObject({ kind: "reply", via: "thread", enrollmentId: "enr-9" });
+  });
+
+  it("matches by provider thread id when the headers give nothing", () => {
+    const result = matchInbound(message({ from: { address: "someone@elsewhere.io", name: null }, threadId: "thr-1" }), ctx);
+    expect(result).toEqual({ kind: "reply", enrollmentId: "enr-7", via: "thread", messageId: "msg-7" });
+  });
+
+  it("ignores an unknown thread id and still prefers the headers", () => {
+    expect(matchInbound(message({ from: { address: "someone@elsewhere.io", name: null }, threadId: "other" }), ctx).kind).toBe("unrelated");
+    const byHeader = matchInbound(
+      message({ from: { address: "someone@elsewhere.io", name: null }, inReplyTo: "<orig-1@sender.example.com>", threadId: "thr-1" }),
+      ctx,
+    );
+    expect(byHeader).toMatchObject({ enrollmentId: "enr-1" });
   });
 
   it("treats the OOO fixture as an auto-reply", async () => {

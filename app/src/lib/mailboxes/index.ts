@@ -2,14 +2,32 @@ import { randomBytes } from "node:crypto";
 
 import type { Mailbox } from "@/generated/prisma/client";
 
+import { prisma } from "@/lib/db";
+
 import { decodeCredentials } from "./credentials";
 import { MailboxError } from "./errors";
 import { imapConnector } from "./imap";
 import type { MailboxConnector } from "./types";
 
-export function connectorFor(
-  mailbox: Pick<Mailbox, "id" | "provider" | "connector" | "email" | "displayName" | "credentials">,
-): MailboxConnector {
+export type ConnectorDeps = {
+  /** Called when a connector rotates its credentials (refresh token), with the freshly encoded blob */
+  persistCredentials?: (encoded: string) => Promise<void>;
+  http?: typeof fetch;
+};
+
+export type ConnectorMailbox = Pick<Mailbox, "id" | "provider" | "connector" | "email" | "displayName" | "credentials"> &
+  Partial<Pick<Mailbox, "externalAccountId" | "subscriptionId">>;
+
+/** Default rotation hook: writes the new encoded credentials straight back to the mailbox row. */
+export function defaultPersist(mailboxId: string): (encoded: string) => Promise<void> {
+  return async (encoded) => {
+    await prisma.mailbox.update({ where: { id: mailboxId }, data: { credentials: encoded } });
+  };
+}
+
+// `deps` is for the OAuth connectors added next; the IMAP one has nothing to rotate
+export function connectorFor(mailbox: ConnectorMailbox, deps: ConnectorDeps = {}): MailboxConnector {
+  void deps;
   switch (mailbox.connector) {
     case "SMTP": {
       const creds = decodeCredentials(mailbox.credentials);

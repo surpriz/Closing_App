@@ -1,14 +1,16 @@
 import type { Prisma } from "@/generated/prisma/client";
-import type { MailboxProvider } from "@/generated/prisma/enums";
+import type { MailboxConnector as MailboxConnectorKind, MailboxProvider } from "@/generated/prisma/enums";
 import { prisma } from "@/lib/db";
 import { getEnv } from "@/lib/env";
 
 import { localDayKey } from "./caps/allowance";
-import { encodeCredentials, type ImapCredentials } from "./credentials";
+import { encodeCredentials, type ImapCredentials, type MailboxCredentials } from "./credentials";
 import { runDnsChecks, detectMailbox, type DnsReport } from "./dns/checks";
 import { nodeResolver, type DnsResolver } from "./dns/resolver";
 import type { MailboxErrorCode } from "./errors";
+import type { MailboxConnector, VerifyResult } from "./types";
 import { imapConnector } from "./imap";
+import { connectorFor } from "./index";
 import { guessedPreset, presetFor, type PresetId } from "./presets";
 
 type Endpoint = { host: string; port: number; secure: boolean };
@@ -115,9 +117,23 @@ export type ConnectResult =
   | { ok: true; mailboxId: string; dns: DnsReport }
   | { ok: false; code: MailboxErrorCode | "exists" | "limit"; message: string };
 
-export async function connectImapMailbox(
-  input: ConnectInput,
-  deps: { resolver?: DnsResolver; now?: Date } = {},
+type SharedConnect = {
+  organizationId: string;
+  userId: string;
+  email: string;
+  displayName: string | null;
+  timezone: string;
+  connector: MailboxConnectorKind;
+  externalAccountId?: string | null;
+  /** Built only once the guards passed; may fix the provider from what DNS detection found */
+  prepare: () => { creds: MailboxCredentials; verify: () => Promise<VerifyResult> };
+  providerFor: (detected: { provider: MailboxProvider; preset: PresetId | null }) => MailboxProvider;
+};
+
+/** The guards, verification, DNS report and upsert both the IMAP and the OAuth paths share. */
+async function connectMailbox(
+  input: SharedConnect,
+  deps: { resolver?: DnsResolver; now?: Date },
 ): Promise<ConnectResult> {
   const resolver = deps.resolver ?? nodeResolver();
   const now = deps.now ?? new Date();
@@ -129,7 +145,6 @@ export async function connectImapMailbox(
     where: { organizationId_email: { organizationId: input.organizationId, email } },
     select: { id: true, status: true, disconnectedAt: true, userId: true },
   });
-  // The owner of a broken mailbox reconnects it with a new password; it already counts in their live mailboxes
   const reconnecting = existing?.status === "ERROR" && existing.userId === input.userId;
   if (existing && (LIVE as readonly string[]).includes(existing.status) && !reconnecting) {
     return { ok: false, code: "exists", message: "mailbox already connected" };
@@ -141,14 +156,8 @@ export async function connectImapMailbox(
     if (live >= MAX_MAILBOXES_PER_USER) return { ok: false, code: "limit", message: "too many mailboxes" };
   }
 
-  const user = input.user?.trim() || email;
-  const creds: ImapCredentials = {
-    v: 1,
-    kind: "imap",
-    imap: { ...input.imap, user, pass: input.password },
-    smtp: { ...input.smtp, user, pass: input.password },
-  };
-  const verified = await imapConnector({ email, displayName }, creds).verify();
+  const { creds, verify } = input.prepare();
+  const verified = await verify();
   if (!verified.ok) return { ok: false, code: verified.code, message: verified.message };
 
   let detected: Awaited<ReturnType<typeof detectMailbox>>;
@@ -157,13 +166,13 @@ export async function connectImapMailbox(
   } catch {
     detected = { provider: "IMAP", preset: null, mxHost: null };
   }
-  const dns = await safeReport({ domain, provider: detected.provider, preset: detected.preset }, resolver, now);
-  const provider: MailboxProvider = detected.preset === "gmail-app-password" ? "GOOGLE" : "IMAP";
+  const provider = input.providerFor(detected);
+  const dns = await safeReport({ domain, provider, preset: detected.preset }, resolver, now);
   const credentials = encodeCredentials(creds);
 
   const fields = {
     provider,
-    connector: "SMTP" as const,
+    connector: input.connector,
     domain,
     displayName,
     credentials,
@@ -174,12 +183,10 @@ export async function connectImapMailbox(
     disconnectedAt: null,
     timezone: input.timezone,
     syncErrorCount: 0,
+    ...(input.externalAccountId !== undefined ? { externalAccountId: input.externalAccountId } : {}),
     ...dnsFields(dns),
   };
-  // A mailbox gone for a month is as cold as a new one: it ramps up again
   const stale = existing?.disconnectedAt && now.getTime() - existing.disconnectedAt.getTime() > RAMP_RESET_AFTER_MS;
-  // Takeover of a disconnected mailbox by another member is accepted: credentials were wiped, so whoever proves the
-  // password owns it. The cap is only set on create: a reconnect keeps the seller's own cap.
   const mailbox = await prisma.mailbox.upsert({
     where: { organizationId_email: { organizationId: input.organizationId, email } },
     create: { organizationId: input.organizationId, userId: input.userId, email, rampStartedAt: now, dailyCap: getEnv().MAILBOX_DAILY_CAP_DEFAULT, ...fields },
@@ -189,8 +196,126 @@ export async function connectImapMailbox(
   return { ok: true, mailboxId: mailbox.id, dns };
 }
 
+export async function connectImapMailbox(
+  input: ConnectInput,
+  deps: { resolver?: DnsResolver; now?: Date } = {},
+): Promise<ConnectResult> {
+  const email = input.email.trim().toLowerCase();
+  const displayName = input.displayName?.trim() || null;
+  return connectMailbox(
+    {
+      organizationId: input.organizationId,
+      userId: input.userId,
+      email,
+      displayName,
+      timezone: input.timezone,
+      connector: "SMTP",
+      prepare: () => {
+        const user = input.user?.trim() || email;
+        const creds: ImapCredentials = {
+          v: 1,
+          kind: "imap",
+          imap: { ...input.imap, user, pass: input.password },
+          smtp: { ...input.smtp, user, pass: input.password },
+        };
+        return { creds, verify: () => imapConnector({ email, displayName }, creds).verify() };
+      },
+      providerFor: (detected) => (detected.preset === "gmail-app-password" ? "GOOGLE" : "IMAP"),
+    },
+    deps,
+  );
+}
+
+export type ProviderConnectInput = {
+  organizationId: string;
+  userId: string;
+  provider: MailboxProvider;
+  connector: MailboxConnectorKind;
+  email: string;
+  displayName: string | null;
+  credentials: MailboxCredentials;
+  externalAccountId: string | null;
+  timezone: string;
+  reconnectMailboxId?: string | null;
+};
+
+/**
+ * OAuth mailboxes (Microsoft, Gmail through a connector): same rules as IMAP (exists, per-member limit, owner
+ * reconnect, takeover of a disconnected one). The provider is the one the seller chose, DNS only feeds the report.
+ * A reconnect is recognised by the email, like IMAP; `reconnectMailboxId` only comes from the UI for context.
+ */
+export async function connectProviderMailbox(
+  input: ProviderConnectInput,
+  deps: {
+    resolver?: DnsResolver;
+    now?: Date;
+    verify?: (connector: MailboxConnector) => Promise<VerifyResult>;
+  } = {},
+): Promise<ConnectResult> {
+  const email = input.email.trim().toLowerCase();
+  const displayName = input.displayName?.trim() || null;
+  return connectMailbox(
+    {
+      organizationId: input.organizationId,
+      userId: input.userId,
+      email,
+      displayName,
+      timezone: input.timezone,
+      connector: input.connector,
+      externalAccountId: input.externalAccountId,
+      prepare: () => ({
+        creds: input.credentials,
+        verify: () => {
+          const connector = connectorFor(
+            {
+              id: input.reconnectMailboxId ?? "pending",
+              provider: input.provider,
+              connector: input.connector,
+              email,
+              displayName,
+              credentials: encodeCredentials(input.credentials),
+              externalAccountId: input.externalAccountId,
+            },
+            {},
+          );
+          return deps.verify ? deps.verify(connector) : connector.verify();
+        },
+      }),
+      providerFor: () => input.provider,
+    },
+    deps,
+  );
+}
+
+/**
+ * Best effort: asks the provider to drop the grant (Graph subscription, Unipile account, Nylas grant) before the
+ * credentials are wiped. A failure never blocks the disconnection.
+ */
+async function revokeAtProvider(where: { id: string; organizationId: string; userId?: string }) {
+  try {
+    const mailbox = await prisma.mailbox.findFirst({
+      where: { ...where, status: { not: "DISCONNECTED" } },
+      select: {
+        id: true,
+        provider: true,
+        connector: true,
+        email: true,
+        displayName: true,
+        credentials: true,
+        externalAccountId: true,
+        subscriptionId: true,
+      },
+    });
+    if (!mailbox?.credentials) return;
+    await connectorFor(mailbox).disconnect();
+  } catch (error) {
+    console.error("[mailboxes] provider revocation failed", where.id, error instanceof Error ? error.message : "unknown");
+  }
+}
+
 /** Credentials are wiped, not just the status flipped: a disconnected mailbox keeps no secret. */
 export async function disconnectMailbox(organizationId: string, userId: string, mailboxId: string, now = new Date()) {
+  await revokeAtProvider({ id: mailboxId, organizationId, userId });
   const { count } = await prisma.mailbox.updateMany({
     where: { id: mailboxId, organizationId, userId, status: { not: "DISCONNECTED" } },
     data: { status: "DISCONNECTED", disconnectedAt: now, credentials: "" },

@@ -41,6 +41,7 @@ const ctx = {
   mailboxAddress: "seller@acme.com",
   teamEmails: [],
   sentMessageIds: new Map([["sent1@acme.com", { enrollmentId: "en1", messageId: "cm1" }]]),
+  sentThreadIds: new Map(),
   enrollments: [{ enrollmentId: "en1", email: "bob@target.io", lastSentAt: new Date("2026-10-27T10:00:00Z") }],
   now: NOW,
 };

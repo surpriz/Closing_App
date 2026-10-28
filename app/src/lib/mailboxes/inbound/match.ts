@@ -7,6 +7,8 @@ export type MatchContext = {
   mailboxAddress: string;
   teamEmails: string[];
   sentMessageIds: Map<string, { enrollmentId: string; messageId: string }>;
+  /** Provider thread ids of our sent messages: replies that carry no usable In-Reply-To still land in the same thread */
+  sentThreadIds: Map<string, { enrollmentId: string; messageId: string }>;
   enrollments: { enrollmentId: string; email: string; lastSentAt: Date }[];
   now: Date;
 };
@@ -54,6 +56,11 @@ export function matchInbound(message: InboundMessage, ctx: MatchContext): MatchR
   for (const id of ancestors) {
     if (!id) continue;
     const sent = ctx.sentMessageIds.get(normalizeMessageId(id));
+    if (sent) return { kind: "reply", enrollmentId: sent.enrollmentId, via: "thread", messageId: sent.messageId };
+  }
+
+  if (message.threadId) {
+    const sent = ctx.sentThreadIds.get(message.threadId);
     if (sent) return { kind: "reply", enrollmentId: sent.enrollmentId, via: "thread", messageId: sent.messageId };
   }
 

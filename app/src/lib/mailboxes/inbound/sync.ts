@@ -120,9 +120,9 @@ async function buildContext(
         mailboxId: mailbox.id,
         status: "SENT",
         sentAt: { gte: new Date(now.getTime() - SENT_WINDOW_MS) },
-        messageId: { not: null },
+        OR: [{ messageId: { not: null } }, { threadId: { not: null } }],
       },
-      select: { id: true, enrollmentId: true, messageId: true },
+      select: { id: true, enrollmentId: true, messageId: true, threadId: true },
     }),
     prisma.campaignProspect.findMany({
       where: { campaign: { mailboxId: mailbox.id }, status: { in: ["QUEUED", "ACTIVE", "PAUSED"] } },
@@ -135,13 +135,17 @@ async function buildContext(
   ]);
 
   const sentMessageIds: MatchContext["sentMessageIds"] = new Map();
+  const sentThreadIds: MatchContext["sentThreadIds"] = new Map();
   for (const m of sent) {
-    if (m.messageId) sentMessageIds.set(normalizeMessageId(m.messageId), { enrollmentId: m.enrollmentId, messageId: m.id });
+    const ref = { enrollmentId: m.enrollmentId, messageId: m.id };
+    if (m.messageId) sentMessageIds.set(normalizeMessageId(m.messageId), ref);
+    if (m.threadId) sentThreadIds.set(m.threadId, ref);
   }
   return {
     mailboxAddress: mailbox.email,
     teamEmails: members.map((m) => m.user.email),
     sentMessageIds,
+    sentThreadIds,
     // Someone never written to cannot be answering: only enrollments with a sent message take part
     enrollments: enrollments.flatMap((e) =>
       e.messages[0]?.sentAt ? [{ enrollmentId: e.id, email: e.email, lastSentAt: e.messages[0].sentAt }] : [],

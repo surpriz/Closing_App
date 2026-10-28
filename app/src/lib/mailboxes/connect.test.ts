@@ -26,7 +26,12 @@ vi.mock("./imap", () => ({ imapConnector: () => ({ verify: () => verify() }) }))
 const encode = vi.fn((c: unknown) => `enc:${(c as { kind: string }).kind}`);
 vi.mock("./credentials", () => ({ encodeCredentials: (c: unknown) => encode(c) }));
 
-const { connectImapMailbox, disconnectMailbox, recheckMailboxDns, updateMailboxCap } = await import("./connect");
+const providerDisconnect = vi.fn();
+vi.mock("./index", () => ({
+  connectorFor: (mailbox: unknown) => ({ verify: () => verify(), disconnect: () => providerDisconnect(mailbox) }),
+}));
+
+const { connectImapMailbox, connectProviderMailbox, disconnectMailbox, recheckMailboxDns, updateMailboxCap } = await import("./connect");
 
 const resolver = {
   mx: async () => [{ exchange: "mx1.mail.ovh.net", priority: 1 }],
@@ -127,7 +132,71 @@ describe("connectImapMailbox", () => {
   });
 });
 
+const providerInput = {
+  organizationId: "org1",
+  userId: "u1",
+  provider: "MICROSOFT" as const,
+  connector: "GRAPH" as const,
+  email: "Jean@Acme.fr",
+  displayName: "Jean",
+  credentials: { v: 1 as const, kind: "unipile" as const, accountId: "acc1" },
+  externalAccountId: "acc1",
+  timezone: "Europe/Paris",
+};
+
+describe("connectProviderMailbox", () => {
+  it("applies the same guards: exists, then limit", async () => {
+    db.findUnique.mockResolvedValue({ id: "x", status: "ACTIVE", disconnectedAt: null, userId: "u2" });
+    expect(await connectProviderMailbox(providerInput, { resolver, now })).toMatchObject({ ok: false, code: "exists" });
+    db.findUnique.mockResolvedValue(null);
+    db.count.mockResolvedValue(3);
+    expect(await connectProviderMailbox(providerInput, { resolver, now })).toMatchObject({ ok: false, code: "limit" });
+    expect(db.upsert).not.toHaveBeenCalled();
+  });
+
+  it("lets the owner reconnect a mailbox in ERROR past the limit", async () => {
+    db.findUnique.mockResolvedValue({ id: "mb1", status: "ERROR", userId: "u1", disconnectedAt: null });
+    db.count.mockResolvedValue(3);
+    const res = await connectProviderMailbox(providerInput, { resolver, now });
+    expect(res).toMatchObject({ ok: true, mailboxId: "mb1" });
+    expect(db.upsert.mock.calls[0][0].update).not.toHaveProperty("rampStartedAt");
+  });
+
+  it("verifies through the injected function and writes nothing on failure", async () => {
+    const injected = vi.fn().mockResolvedValue({ ok: false, code: "AUTH_REVOKED", message: "revoked" });
+    const res = await connectProviderMailbox(providerInput, { resolver, now, verify: injected });
+    expect(res).toEqual({ ok: false, code: "AUTH_REVOKED", message: "revoked" });
+    expect(injected).toHaveBeenCalledTimes(1);
+    expect(db.upsert).not.toHaveBeenCalled();
+  });
+
+  it("stores the chosen provider, connector and external account", async () => {
+    const injected = vi.fn().mockResolvedValue({ ok: true, address: "jean@acme.fr", displayName: null });
+    const res = await connectProviderMailbox(providerInput, { resolver, now, verify: injected });
+    expect(res).toMatchObject({ ok: true, mailboxId: "mb1" });
+    expect(db.upsert.mock.calls[0][0].create).toMatchObject({
+      email: "jean@acme.fr",
+      provider: "MICROSOFT",
+      connector: "GRAPH",
+      externalAccountId: "acc1",
+      credentials: "enc:unipile",
+      status: "ACTIVE",
+    });
+  });
+});
+
 describe("disconnectMailbox", () => {
+  it("revokes at the provider first, and still disconnects when that throws", async () => {
+    db.findFirst.mockResolvedValue({ id: "mb1", credentials: "enc", subscriptionId: "sub1" });
+    providerDisconnect.mockRejectedValue(new Error("boom"));
+    db.updateMany.mockResolvedValue({ count: 1 });
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(await disconnectMailbox("org1", "u1", "mb1", now)).toBe(true);
+    expect(providerDisconnect).toHaveBeenCalledWith(expect.objectContaining({ subscriptionId: "sub1" }));
+    expect(db.updateMany).toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
   it("wipes the credentials and is scoped to the user and workspace", async () => {
     db.updateMany.mockResolvedValue({ count: 1 });
     expect(await disconnectMailbox("org1", "u1", "mb1", now)).toBe(true);
