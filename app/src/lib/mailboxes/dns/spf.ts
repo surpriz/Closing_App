@@ -7,7 +7,10 @@ export function parseSpf(txts: string[]): SpfInfo {
   const record = records[0] ?? null;
   if (!record) return { present: false, record: null, includes: [], all: null, duplicates: false };
   const terms = record.split(/\s+/).map((t) => t.toLowerCase());
-  const includes = terms.filter((t) => t.startsWith("include:")).map((t) => t.slice("include:".length));
+  // `redirect=` hands the whole policy to another domain (gmail.com: "v=spf1 redirect=_spf.google.com"): same effect
+  const includes = terms
+    .filter((t) => t.startsWith("include:") || t.startsWith("redirect="))
+    .map((t) => t.slice(t.indexOf(t.startsWith("include:") ? ":" : "=") + 1));
   const all = terms.find((t) => /^[-~?+]all$/.test(t)) as SpfAll | undefined;
   return { present: true, record, includes, all: all ?? null, duplicates: records.length > 1 };
 }

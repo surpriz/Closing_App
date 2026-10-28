@@ -21,14 +21,19 @@ export function classifyMx(hosts: string[]): MxClassification {
   return { provider: rule?.provider ?? "IMAP", preset: rule?.preset ?? null, mxHost };
 }
 
+/** A consumer domain's DNS belongs to its provider: gmail.com, googlemail.com, outlook.com, hotmail.*, live.*. */
+export function consumerProviderOf(domain: string): "google" | "microsoft" | null {
+  const d = domain.toLowerCase();
+  if (d === "gmail.com" || d === "googlemail.com") return "google";
+  if (d === "outlook.com" || /^(hotmail|live)\./.test(d)) return "microsoft";
+  return null;
+}
+
 /** Consumer domains are decided before the MX: their MX records say nothing useful about the account type. */
 export function classifyDomain(domain: string, mxHosts: string[]): MxClassification {
-  const d = domain.toLowerCase();
-  if (d === "gmail.com" || d === "googlemail.com") {
-    return { provider: "GOOGLE", preset: "gmail-app-password", mxHost: mxHosts[0]?.toLowerCase() ?? null };
-  }
-  if (d === "outlook.com" || /^(hotmail|live)\./.test(d)) {
-    return { provider: "MICROSOFT", preset: null, mxHost: mxHosts[0]?.toLowerCase() ?? null };
-  }
+  const consumer = consumerProviderOf(domain);
+  const mxHost = mxHosts[0]?.toLowerCase() ?? null;
+  if (consumer === "google") return { provider: "GOOGLE", preset: "gmail-app-password", mxHost };
+  if (consumer === "microsoft") return { provider: "MICROSOFT", preset: null, mxHost };
   return classifyMx(mxHosts);
 }

@@ -251,6 +251,7 @@
         "refresh": "Refresh"
       },
       "unknown": "unknown",
+      "managed": "{provider} address: SPF, DKIM and DMARC are handled by {provider}, nothing to set up.",
       "help": {
         "spf": {
           "missing": "No SPF record found for your domain. Add one so receivers trust your messages.",

@@ -3,7 +3,7 @@ import { PRESETS } from "../presets";
 import type { MailboxProvider } from "../types";
 import { parseDkim, dkimSelectorsFor } from "./dkim";
 import { parseDmarc, type DmarcPolicy } from "./dmarc";
-import { classifyDomain, type MxClassification } from "./mx";
+import { classifyDomain, consumerProviderOf, type MxClassification } from "./mx";
 import type { DnsResolver } from "./resolver";
 import { parseSpf, spfStatus, type SpfStatus } from "./spf";
 
@@ -12,6 +12,8 @@ export type DnsReport = {
   dmarc: { status: "ok" | "none_policy" | "missing"; policy: DmarcPolicy | null };
   dkim: { status: "verified" | "revoked" | "unknown"; selector: string | null };
   checkedAt: string;
+  /** A consumer domain (gmail.com, outlook.com…): its DNS belongs to the provider, the seller has nothing to set up. */
+  managedBy?: "google" | "microsoft";
 };
 
 type Input = {
@@ -33,6 +35,8 @@ async function lookupDkim(resolver: DnsResolver, host: string) {
 
 export async function runDnsChecks(input: Input): Promise<DnsReport> {
   const { domain, provider, preset, resolver } = input;
+  // Still checked (the records are real), but shown as the provider's business, not the seller's
+  const managed = consumerProviderOf(domain);
   const expectedInclude =
     provider === "GOOGLE" ? "_spf.google.com" : provider === "MICROSOFT" ? "spf.protection.outlook.com" : (preset ? PRESETS[preset].spfInclude : null);
 
@@ -57,6 +61,7 @@ export async function runDnsChecks(input: Input): Promise<DnsReport> {
     },
     dkim,
     checkedAt: input.now.toISOString(),
+    ...(managed ? { managedBy: managed } : {}),
   };
 }
 

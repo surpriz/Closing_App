@@ -131,6 +131,10 @@ function DnsLine({ dns, mailboxId }: { dns: DnsReport | null; mailboxId: string 
   const t = useTranslations("settings.mailbox.dns");
   const states = dnsStates(dns);
   const issues = states.filter((s) => s.issue && s.state !== "ok");
+  // gmail.com or outlook.com: the records are the provider's, there is nothing the seller could fix or probe
+  if (dns?.managedBy) {
+    return <p className="text-small text-muted-foreground">{t("managed", { provider: dns.managedBy === "google" ? "Google" : "Microsoft" })}</p>;
+  }
   return (
     <div className="space-y-1">
       <ul className="flex flex-wrap gap-1.5">

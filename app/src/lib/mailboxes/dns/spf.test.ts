@@ -8,6 +8,11 @@ describe("spf", () => {
     expect(spf).toMatchObject({ present: true, includes: ["_spf.google.com", "mailgun.org"], all: "~all", duplicates: false });
     expect(spfStatus(spf, "_spf.google.com")).toBe("ok");
   });
+  it("follows a redirect like an include (gmail.com)", () => {
+    const spf = parseSpf(["v=spf1 redirect=_spf.google.com"]);
+    expect(spf.includes).toEqual(["_spf.google.com"]);
+    expect(spfStatus(spf, "_spf.google.com")).toBe("ok");
+  });
   it("reports a missing provider include", () => {
     expect(spfStatus(parseSpf(["v=spf1 -all"]), "mx.ovh.com")).toBe("missing_provider");
   });

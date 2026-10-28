@@ -29,6 +29,14 @@ describe("runDnsChecks", () => {
     });
   });
 
+  it("marks a consumer domain as the provider's business, records still checked", async () => {
+    const resolver = fake({ txt: { "gmail.com": ["v=spf1 redirect=_spf.google.com"], "_dmarc.gmail.com": ["v=DMARC1; p=none"] } });
+    const r = await runDnsChecks({ domain: "gmail.com", provider: "GOOGLE", preset: "gmail-app-password", resolver, now });
+    expect(r).toMatchObject({ managedBy: "google", spf: { status: "ok" }, dmarc: { status: "none_policy" } });
+    const own = await runDnsChecks({ domain: "acme.fr", provider: "GOOGLE", preset: null, resolver: fake({}), now });
+    expect(own.managedBy).toBeUndefined();
+  });
+
   it("tries the known selector first", async () => {
     const resolver = fake({ txt: { "x.fr": [], "foo._domainkey.x.fr": ["v=DKIM1; p=A"], "default._domainkey.x.fr": ["v=DKIM1; p="] } });
     const r = await runDnsChecks({ domain: "x.fr", provider: "IMAP", preset: "ovh", knownSelector: "foo", resolver, now });

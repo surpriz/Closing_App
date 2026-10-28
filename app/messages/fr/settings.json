@@ -251,6 +251,7 @@
         "refresh": "Rafraîchir"
       },
       "unknown": "inconnu",
+      "managed": "Adresse {provider} : SPF, DKIM et DMARC sont gérés par {provider}, rien à configurer.",
       "help": {
         "spf": {
           "missing": "Aucun enregistrement SPF trouvé sur votre domaine. Ajoutez-en un pour que les destinataires vous fassent confiance.",
