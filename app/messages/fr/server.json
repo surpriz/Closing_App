@@ -185,7 +185,8 @@
       "validatedByProspect": "Proposition validée par le prospect",
       "changeRequestedByProspect": "Ajustement demandé par le prospect",
       "bounced": "Adresse email invalide (bounce)",
-      "replied": "Le prospect a répondu par email"
+      "replied": "Le prospect a répondu par email",
+      "campaign": "Les relances sont gérées par la campagne"
     },
     "queue": {
       "toReview": "À relire : {issues}",

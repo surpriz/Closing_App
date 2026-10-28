@@ -5,6 +5,8 @@ import { shareLink } from "@/lib/closing/link-url";
 import { prisma } from "@/lib/db";
 import { isEmailConfigured } from "@/lib/email";
 import { toUiLocale } from "@/lib/seller-locale";
+import { sendCampaignFollowup } from "@/lib/outreach/followup-transport";
+import { isCampaignOwned } from "@/lib/outreach/ownership";
 import { getNamespaceTranslator } from "@/lib/server-translator";
 
 import { isWhatsAppConfigured, sendWhatsApp } from "../channels/whatsapp";
@@ -140,6 +142,16 @@ export async function sendFollowup(
   }
 
   // Claim it so two concurrent ticks can't send the same message twice
+  if (followup.campaignProspectId) {
+    // The campaign's mailbox sends it, in the enrollment's thread (and mirrors it as a campaign message)
+    const outcome = await sendCampaignFollowup(followup.id, now, { approvedById });
+    return outcome === "rescheduled" ? "ignored" : outcome;
+  }
+  if (isCampaignOwned(link)) {
+    await finish(followup.id, "CANCELLED", t("campaign"));
+    return "cancelled";
+  }
+
   const claimed = await prisma.followup.updateMany({
     where: { id: followup.id, status: { in: statuses } },
     data: {

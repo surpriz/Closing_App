@@ -185,7 +185,8 @@
       "validatedByProspect": "Proposal approved by the prospect",
       "changeRequestedByProspect": "Changes requested by the prospect",
       "bounced": "Invalid email address (bounced)",
-      "replied": "The prospect replied by email"
+      "replied": "The prospect replied by email",
+      "campaign": "Follow-ups are driven by the campaign"
     },
     "queue": {
       "toReview": "To review: {issues}",
