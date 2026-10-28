@@ -40,6 +40,12 @@ describe("config urls", () => {
     expect(mailboxWebhooksEnabled(env({ MAILBOX_WEBHOOK_TOKEN: "t".repeat(24) }))).toBe(false);
   });
 
+  it("encodes a token with + / =", () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://app.clozer.club");
+    getEnv.mockReturnValue({ MAILBOX_WEBHOOK_TOKEN: "a+b/c=" });
+    expect(mailboxWebhookUrl("nylas")).toBe("https://app.clozer.club/api/webhooks/mailboxes/nylas?token=a%2Bb%2Fc%3D");
+  });
+
   it("builds the webhook and callback urls", () => {
     vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://app.clozer.club/");
     getEnv.mockReturnValue({ MAILBOX_WEBHOOK_TOKEN: "tok" });

@@ -19,7 +19,12 @@ export function clientStateFor(mailboxId: string): string {
 
 export function verifyClientState(mailboxId: string, value: string | null | undefined): boolean {
   if (!value) return false;
+  let expected: Buffer;
+  try {
+    expected = Buffer.from(clientStateFor(mailboxId));
+  } catch {
+    return false; // signing secret misconfigured: nothing can be trusted
+  }
   const given = Buffer.from(value);
-  const expected = Buffer.from(clientStateFor(mailboxId));
   return given.length === expected.length && timingSafeEqual(given, expected);
 }

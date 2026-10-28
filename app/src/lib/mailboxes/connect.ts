@@ -128,6 +128,8 @@ type SharedConnect = {
   /** Built only once the guards passed; may fix the provider from what DNS detection found */
   prepare: () => { creds: MailboxCredentials; verify: () => Promise<VerifyResult> };
   providerFor: (detected: { provider: MailboxProvider; preset: PresetId | null }) => MailboxProvider;
+  /** Provider the DNS report is read for: IMAP mailboxes are checked against what the MX says (SPF includes, DKIM selectors) */
+  reportProvider: (detected: { provider: MailboxProvider }) => MailboxProvider;
 };
 
 /** The guards, verification, DNS report and upsert both the IMAP and the OAuth paths share. */
@@ -145,10 +147,12 @@ async function connectMailbox(
     where: { organizationId_email: { organizationId: input.organizationId, email } },
     select: { id: true, status: true, disconnectedAt: true, userId: true },
   });
+  // The owner of a mailbox in ERROR can reconnect it (fix a password, re-consent) without hitting "exists" or the limit
   const reconnecting = existing?.status === "ERROR" && existing.userId === input.userId;
   if (existing && (LIVE as readonly string[]).includes(existing.status) && !reconnecting) {
     return { ok: false, code: "exists", message: "mailbox already connected" };
   }
+  // A reconnect replaces a mailbox that already counts, so only new ones hit the per-member cap
   if (!reconnecting) {
     const live = await prisma.mailbox.count({
       where: { organizationId: input.organizationId, userId: input.userId, status: { in: [...LIVE] } },
@@ -167,7 +171,7 @@ async function connectMailbox(
     detected = { provider: "IMAP", preset: null, mxHost: null };
   }
   const provider = input.providerFor(detected);
-  const dns = await safeReport({ domain, provider, preset: detected.preset }, resolver, now);
+  const dns = await safeReport({ domain, provider: input.reportProvider(detected), preset: detected.preset }, resolver, now);
   const credentials = encodeCredentials(creds);
 
   const fields = {
@@ -186,6 +190,7 @@ async function connectMailbox(
     ...(input.externalAccountId !== undefined ? { externalAccountId: input.externalAccountId } : {}),
     ...dnsFields(dns),
   };
+  // Taking over a disconnected mailbox is accepted (any member may reconnect it); after a month off the warm-up ramp restarts
   const stale = existing?.disconnectedAt && now.getTime() - existing.disconnectedAt.getTime() > RAMP_RESET_AFTER_MS;
   const mailbox = await prisma.mailbox.upsert({
     where: { organizationId_email: { organizationId: input.organizationId, email } },
@@ -221,6 +226,7 @@ export async function connectImapMailbox(
         return { creds, verify: () => imapConnector({ email, displayName }, creds).verify() };
       },
       providerFor: (detected) => (detected.preset === "gmail-app-password" ? "GOOGLE" : "IMAP"),
+      reportProvider: (detected) => detected.provider,
     },
     deps,
   );
@@ -282,6 +288,7 @@ export async function connectProviderMailbox(
         },
       }),
       providerFor: () => input.provider,
+      reportProvider: () => input.provider,
     },
     deps,
   );

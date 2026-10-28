@@ -26,6 +26,17 @@ vi.mock("./imap", () => ({ imapConnector: () => ({ verify: () => verify() }) }))
 const encode = vi.fn((c: unknown) => `enc:${(c as { kind: string }).kind}`);
 vi.mock("./credentials", () => ({ encodeCredentials: (c: unknown) => encode(c) }));
 
+const runChecks = vi.fn();
+vi.mock("./dns/checks", async (orig) => {
+  const actual = await orig<typeof import("./dns/checks")>();
+  return {
+    ...actual,
+    runDnsChecks: (...a: Parameters<typeof actual.runDnsChecks>) => {
+      runChecks(...a);
+      return actual.runDnsChecks(...a);
+    },
+  };
+});
 const providerDisconnect = vi.fn();
 vi.mock("./index", () => ({
   connectorFor: (mailbox: unknown) => ({ verify: () => verify(), disconnect: () => providerDisconnect(mailbox) }),
@@ -108,6 +119,13 @@ describe("connectImapMailbox", () => {
       status: "ACTIVE",
       dailyCap: 30,
     });
+  });
+
+  it("checks DNS for the MX-detected provider while storing IMAP", async () => {
+    const msResolver = { ...resolver, mx: async () => [{ exchange: "acme-fr.mail.protection.outlook.com", priority: 0 }] };
+    await connectImapMailbox(input, { resolver: msResolver, now });
+    expect(runChecks.mock.calls[0][0]).toMatchObject({ provider: "MICROSOFT" });
+    expect(db.upsert.mock.calls[0][0].create).toMatchObject({ provider: "IMAP", connector: "SMTP" });
   });
 
   it("refuses past the per-user mailbox limit without verifying", async () => {

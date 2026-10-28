@@ -18,6 +18,14 @@ describe("hasMailboxWebhookToken", () => {
   });
 });
 
+describe("client state when the signing secret is broken", () => {
+  it("returns false instead of throwing", async () => {
+    vi.stubEnv("ENCRYPTION_KEY", "short");
+    expect(verifyClientState("mb1", "a".repeat(64))).toBe(false);
+    vi.stubEnv("ENCRYPTION_KEY", "k".repeat(40));
+  });
+});
+
 describe("client state", () => {
   it("is stable per mailbox and verified in constant time", () => {
     const state = clientStateFor("mb1");

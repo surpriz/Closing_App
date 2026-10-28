@@ -40,6 +40,13 @@ describe("oauth state", () => {
     expect(db.findUnique).toHaveBeenCalledTimes(1);
   });
 
+  it("scopes the consumption to the expected session identity", async () => {
+    db.updateMany.mockResolvedValue({ count: 0 });
+    expect(await consumeOauthState("st1", now, { userId: "u2", organizationId: "o" })).toBeNull();
+    expect(db.updateMany.mock.calls[0][0].where).toMatchObject({ id: "st1", userId: "u2", organizationId: "o" });
+    expect(db.findUnique).not.toHaveBeenCalled();
+  });
+
   it("purges states expired for over an hour", async () => {
     db.deleteMany.mockResolvedValue({ count: 4 });
     expect(await purgeOauthStates(now)).toBe(4);

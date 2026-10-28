@@ -39,10 +39,17 @@ export async function createOauthState(input: {
   return { id: row.id, codeVerifier, codeChallenge };
 }
 
-/** One shot: the conditional update means a replayed or expired callback gets null, never the verifier. */
-export async function consumeOauthState(id: string, now = new Date()): Promise<ConsumedOauthState | null> {
+/**
+ * One shot: the conditional update means a replayed or expired callback gets null, never the verifier.
+ * With `expected` (the session identity), a state started by someone else is neither consumed nor returned.
+ */
+export async function consumeOauthState(
+  id: string,
+  now = new Date(),
+  expected?: { userId: string; organizationId: string },
+): Promise<ConsumedOauthState | null> {
   const { count } = await prisma.mailboxOauthState.updateMany({
-    where: { id, consumedAt: null, expiresAt: { gt: now } },
+    where: { id, consumedAt: null, expiresAt: { gt: now }, ...(expected ? { userId: expected.userId, organizationId: expected.organizationId } : {}) },
     data: { consumedAt: now },
   });
   if (count === 0) return null;
