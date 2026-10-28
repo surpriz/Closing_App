@@ -5,8 +5,23 @@ import { redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { z } from "zod";
 
-import { activateCampaign, archiveCampaign, CAMPAIGN_LOCALES, createCampaign, pauseCampaign } from "@/lib/outreach/campaigns";
+import { findTrackingHint } from "@/lib/closing/ai/guard";
+import { getSellerPrefs, sellerTimezone } from "@/lib/closing/notify/preferences";
+import { prisma } from "@/lib/db";
+import {
+  activateCampaign,
+  archiveCampaign,
+  CAMPAIGN_LOCALES,
+  createCampaign,
+  pauseCampaign,
+  saveSteps,
+  updateCampaign,
+} from "@/lib/outreach/campaigns";
+import { importProspects, type ImportSummary, pauseEnrollment, removeEnrollment, resumeEnrollment } from "@/lib/outreach/enroll";
 import { requireOutreach } from "@/lib/outreach/flag";
+import { sendTestMessage } from "@/lib/outreach/sender";
+import type { StepIssue } from "@/lib/outreach/steps";
+import { shiftEnrollmentBack, shiftMailboxRampBack } from "@/lib/outreach/testing";
 import { runOutreachTick } from "@/lib/outreach/tick";
 import { testToolsEnabled } from "@/lib/test-tools";
 
@@ -83,9 +98,198 @@ export async function archiveCampaignAction(id: string): Promise<ActionResult> {
 }
 
 /** Test environments only: runs a tick on demand instead of waiting for the engine. */
-export async function runOutreachTickAction(): Promise<void> {
+export async function runOutreachTickAction(): Promise<string> {
   const { organization } = await requireOutreach();
   if (!testToolsEnabled()) throw new Error("Test tools are disabled");
-  await runOutreachTick(new Date(), { organizationId: organization.id });
+  const summary = await runOutreachTick(new Date(), { organizationId: organization.id });
   revalidatePath("/campaigns", "layout");
+  return JSON.stringify(summary);
+}
+
+const MAX_CSV_BYTES = 2 * 1024 * 1024;
+
+const updateSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  // Empty means "leave as is": a mailbox that is no longer ACTIVE cannot be re-saved, only replaced
+  mailboxId: z.string().max(64).optional(),
+  documentId: z.string().max(64).optional(),
+  locale: z.enum(CAMPAIGN_LOCALES),
+});
+
+export async function updateCampaignAction(id: string, formData: FormData): Promise<ActionResult> {
+  const { organization } = await requireOutreach();
+  const t = await getTranslations("campaigns.actions");
+  if (!idSchema.safeParse(id).success) return { error: t("invalid") };
+
+  const parsed = updateSchema.safeParse({
+    name: formData.get("name")?.toString() ?? "",
+    mailboxId: formData.get("mailboxId")?.toString() ?? "",
+    documentId: formData.get("documentId")?.toString() ?? "",
+    locale: formData.get("locale")?.toString() ?? "",
+  });
+  if (!parsed.success) return { error: t("invalidSettings") };
+
+  const ok = await updateCampaign(organization.id, id, {
+    name: parsed.data.name,
+    locale: parsed.data.locale,
+    linkOnReply: formData.get("linkOnReply") === "on",
+    ...(parsed.data.mailboxId ? { mailboxId: parsed.data.mailboxId } : {}),
+    documentId: parsed.data.documentId || null,
+  });
+  if (!ok) return { error: t("settingsRefused") };
+  refresh(id);
+  return { ok: true, notice: t("settingsSaved") };
+}
+
+const stepsSchema = z
+  .array(
+    z.object({
+      order: z.number().int().min(1).max(50),
+      delayDays: z.number().int().min(0).max(365),
+      subject: z.string().max(1000).nullable(),
+      newThread: z.boolean(),
+      body: z.string().max(20_000),
+      carriesLink: z.boolean(),
+    }),
+  )
+  .max(50);
+
+export type SaveStepsResult = { ok: true; notice: string } | { error: string; issues?: string[] };
+
+export async function saveStepsAction(id: string, stepsJson: string): Promise<SaveStepsResult> {
+  const { organization } = await requireOutreach();
+  const t = await getTranslations("campaigns");
+  if (!idSchema.safeParse(id).success) return { error: t("actions.invalid") };
+
+  let raw: unknown;
+  try {
+    raw = JSON.parse(stepsJson);
+  } catch {
+    return { error: t("actions.invalid") };
+  }
+  const parsed = stepsSchema.safeParse(raw);
+  if (!parsed.success) return { error: t("actions.invalid") };
+
+  const result = await saveSteps(organization.id, id, parsed.data);
+  if (!result.ok) {
+    if (result.issues.length === 0) return { error: t("actions.notFound") };
+    const label = (issue: StepIssue) => t(`steps.issues.${issue.code}`, { order: "order" in issue ? issue.order : 0 });
+    return { error: t("steps.issues.summary"), issues: result.issues.map(label) };
+  }
+  refresh(id);
+  return { ok: true, notice: t("steps.saved") };
+}
+
+/** The editor warns while typing; the check lives server side because the guard pulls in the whole message catalog. */
+export async function trackingHintAction(text: string): Promise<string | null> {
+  await requireOutreach();
+  return findTrackingHint(text.slice(0, 20_000));
+}
+
+export async function importProspectsAction(
+  id: string,
+  formData: FormData,
+): Promise<ImportSummary | { error: string }> {
+  const { user, organization } = await requireOutreach();
+  const t = await getTranslations("campaigns");
+  if (!idSchema.safeParse(id).success) return { error: t("actions.invalid") };
+
+  const csv = formData.get("csv")?.toString() ?? "";
+  if (Buffer.byteLength(csv, "utf8") > MAX_CSV_BYTES) return { error: t("import.errors.tooBig") };
+
+  const prefs = await getSellerPrefs(user.id, organization.id);
+  const result = await importProspects({
+    organizationId: organization.id,
+    campaignId: id,
+    csv,
+    sellerTimezone: sellerTimezone(prefs),
+  });
+  if ("error" in result) return { error: t(`import.errors.${result.error}`) };
+  refresh(id);
+  return result;
+}
+
+async function enrollmentAction(
+  enrollmentId: string,
+  run: (organizationId: string, id: string, now: Date) => Promise<boolean>,
+  notice: "enrollmentPaused" | "enrollmentResumed" | "enrollmentRemoved",
+): Promise<ActionResult> {
+  const { organization } = await requireOutreach();
+  const t = await getTranslations("campaigns.actions");
+  if (!idSchema.safeParse(enrollmentId).success) return { error: t("invalid") };
+
+  // The helpers filter on the workspace themselves; a foreign id simply matches nothing
+  if (!(await run(organization.id, enrollmentId, new Date()))) return { error: t("enrollmentUnchanged") };
+  revalidatePath("/campaigns", "layout");
+  return { ok: true, notice: t(notice) };
+}
+
+export async function pauseEnrollmentAction(enrollmentId: string): Promise<ActionResult> {
+  return enrollmentAction(enrollmentId, pauseEnrollment, "enrollmentPaused");
+}
+
+export async function resumeEnrollmentAction(enrollmentId: string): Promise<ActionResult> {
+  return enrollmentAction(enrollmentId, resumeEnrollment, "enrollmentResumed");
+}
+
+export async function removeEnrollmentAction(enrollmentId: string): Promise<ActionResult> {
+  return enrollmentAction(enrollmentId, removeEnrollment, "enrollmentRemoved");
+}
+
+/** Sends the step to the signed-in seller only, never to a prospect. */
+export async function sendTestAction(campaignId: string, stepOrder: number): Promise<ActionResult> {
+  const { user, organization } = await requireOutreach();
+  const t = await getTranslations("campaigns");
+  if (!idSchema.safeParse(campaignId).success || !Number.isInteger(stepOrder)) return { error: t("actions.invalid") };
+
+  const result = await sendTestMessage({
+    organizationId: organization.id,
+    campaignId,
+    stepOrder,
+    to: user.email,
+  });
+  if (!result.ok) {
+    const known = ["not_found", "no_mailbox", "cap"] as const;
+    const message = (known as readonly string[]).includes(result.code)
+      ? t(`steps.test.${result.code as (typeof known)[number]}`)
+      : t(`errors.${result.code as "TRANSIENT"}`);
+    return { error: message };
+  }
+  return { ok: true, notice: t("steps.test.sent", { email: user.email }) };
+}
+
+const daysSchema = z.number().int().min(1).max(60);
+
+/** Test environments only. */
+export async function timeTravelEnrollmentAction(enrollmentId: string, days: number): Promise<ActionResult> {
+  const { organization } = await requireOutreach();
+  if (!testToolsEnabled()) throw new Error("Test tools are disabled");
+  const t = await getTranslations("campaigns.actions");
+  if (!idSchema.safeParse(enrollmentId).success || !daysSchema.safeParse(days).success) return { error: t("invalid") };
+
+  const own = await prisma.campaignProspect.findFirst({
+    where: { id: enrollmentId, organizationId: organization.id },
+    select: { id: true },
+  });
+  if (!own) return { error: t("invalid") };
+  await shiftEnrollmentBack(own.id, days);
+  revalidatePath("/campaigns", "layout");
+  return { ok: true, notice: t("shifted") };
+}
+
+/** Test environments only. */
+export async function shiftMailboxRampAction(mailboxId: string, days: number): Promise<ActionResult> {
+  const { organization } = await requireOutreach();
+  if (!testToolsEnabled()) throw new Error("Test tools are disabled");
+  const t = await getTranslations("campaigns.actions");
+  if (!idSchema.safeParse(mailboxId).success || !daysSchema.safeParse(days).success) return { error: t("invalid") };
+
+  const own = await prisma.mailbox.findFirst({
+    where: { id: mailboxId, organizationId: organization.id },
+    select: { id: true },
+  });
+  if (!own) return { error: t("invalid") };
+  await shiftMailboxRampBack(own.id, days);
+  revalidatePath("/campaigns", "layout");
+  return { ok: true, notice: t("shifted") };
 }
