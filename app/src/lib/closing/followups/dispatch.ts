@@ -154,7 +154,7 @@ export async function sendFollowup(
   if (followup.campaignProspectId) {
     // The campaign's mailbox sends it, in the enrollment's thread (and mirrors it as a campaign message)
     const outcome = await sendCampaignFollowup(followup.id, now, { approvedById });
-    return outcome === "rescheduled" ? "ignored" : outcome;
+    return outcome === "rescheduled" || outcome === "plan" ? "ignored" : outcome;
   }
   // Claim it so two concurrent ticks can't send the same message twice
   const claimed = await prisma.followup.updateMany({

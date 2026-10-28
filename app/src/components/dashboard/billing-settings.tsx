@@ -18,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { MONTHLY_PRICE_CENTS, PLANS, seatQuantity, type Interval, type PaidPlanId, type PlanId, type PlanSource } from "@/lib/billing/plans";
+import { MAILBOX_MONTHLY_PRICE_CENTS, MONTHLY_PRICE_CENTS, PLANS, seatQuantity, type Interval, type PaidPlanId, type PlanId, type PlanSource } from "@/lib/billing/plans";
 import { cn } from "@/lib/utils";
 
 type Usage = { used: number; max: number | null };
@@ -34,6 +34,8 @@ export type BillingSettingsProps = {
   seats: number | null;
   members: number;
   usage: { links: Usage; aiFollowups: Usage; videoPitches: Usage };
+  /** Counts read from the database: connected mailboxes, and the quantity mirrored from the Stripe item. */
+  mailboxes: { connected: number; billed: number | null };
   canManage: boolean;
   billingEnabled: boolean;
   hasCustomer: boolean;
@@ -46,8 +48,8 @@ const CONTACT_EMAIL = "contact@clozer.club";
 
 const FEATURES = {
   free: ["links", "tracking", "followups", "extension"],
-  solo: ["links", "followups", "assistant", "branding"],
-  team: ["solo", "teamView", "integrations", "seats"],
+  solo: ["links", "followups", "assistant", "branding", "mailbox"],
+  team: ["solo", "teamView", "integrations", "seats", "mailbox"],
 } as const;
 
 function report(result: BillingState | undefined) {
@@ -76,6 +78,14 @@ export function BillingSettings(props: BillingSettingsProps) {
   const money = (cents: number) =>
     new Intl.NumberFormat(locale, { style: "currency", currency: "EUR", maximumFractionDigits: cents % 100 ? 2 : 0 }).format(cents / 100);
   const date = (iso: string | null) => (iso ? format.dateTime(new Date(iso), { day: "numeric", month: "long", year: "numeric" }) : "");
+
+  // Free sells no mailbox add-on, so nothing to say there; Enterprise has them included
+  const mailboxLine = (() => {
+    const { connected } = props.mailboxes;
+    if (connected <= 0 || !PLANS[props.plan].mailboxAddon) return null;
+    if (props.plan === "enterprise") return t("current.mailboxesIncluded", { count: connected });
+    return t("current.mailboxes", { count: connected, price: money(MAILBOX_MONTHLY_PRICE_CENTS[props.interval ?? "month"]) });
+  })();
 
   const status = (() => {
     if (props.source === "unbilled") return t("current.unbilled");
@@ -123,6 +133,7 @@ export function BillingSettings(props: BillingSettingsProps) {
               {props.plan === "team" && props.seats ? ` · ${t("current.seats", { count: props.seats })}` : ""}
             </p>
             <p className="text-small text-muted-foreground">{activating ? t("checkout.pending") : status}</p>
+            {mailboxLine && <p className="text-small text-muted-foreground">{mailboxLine}</p>}
             {props.paymentIssue && <p className="text-small text-destructive">{t("current.paymentIssue")}</p>}
           </div>
           {props.canManage && props.hasCustomer && props.billingEnabled && (

@@ -10,6 +10,8 @@ const db = {
   $transaction: vi.fn(async (ops: Promise<unknown>[]) => Promise.all(ops)),
 };
 vi.mock("@/lib/db", () => ({ prisma: db }));
+const canUseMailboxes = vi.fn();
+vi.mock("@/lib/billing/mailboxes", () => ({ canUseMailboxes: (...a: unknown[]) => canUseMailboxes(...a) }));
 
 const { activateCampaign, archiveCampaign, createCampaign, finishIdleCampaigns, pauseCampaign, pauseCampaignsOfMailbox, saveSteps, updateCampaign, canEditCampaign } = await import("./campaigns");
 
@@ -33,6 +35,7 @@ function campaign(over: Record<string, unknown> = {}) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  canUseMailboxes.mockResolvedValue(true);
   db.campaign.updateMany.mockResolvedValue({ count: 1 });
   db.campaignProspect.findMany.mockResolvedValue([]);
 });
@@ -48,6 +51,14 @@ describe("activateCampaign", () => {
     expect(await activateCampaign("org", "c1", ACTOR, NOW)).toEqual({ ok: false, issue: "no_mailbox" });
     db.campaign.findFirst.mockResolvedValueOnce(campaign({ mailbox: { status: "ERROR", organizationId: "org" } }));
     expect(await activateCampaign("org", "c1", ACTOR, NOW)).toEqual({ ok: false, issue: "mailbox_not_active" });
+  });
+
+  it("refuses a workspace whose plan has no mailbox add-on", async () => {
+    canUseMailboxes.mockResolvedValue(false);
+    db.campaign.findFirst.mockResolvedValue(campaign());
+    expect(await activateCampaign("org", "c1", ACTOR, NOW)).toEqual({ ok: false, issue: "plan" });
+    expect(canUseMailboxes).toHaveBeenCalledWith("org");
+    expect(db.campaign.updateMany).not.toHaveBeenCalled();
   });
 
   it("returns the step issues", async () => {

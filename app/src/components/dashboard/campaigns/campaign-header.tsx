@@ -7,10 +7,12 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import {
+  type ActionResult,
   activateCampaignAction,
   archiveCampaignAction,
   pauseCampaignAction,
 } from "@/app/(dashboard)/campaigns/actions";
+import { isUpgradePrompt, openUpgrade } from "@/components/billing/upgrade-dialog";
 import { PageHeader, StatLine } from "@/components/dashboard/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -47,13 +49,14 @@ export function CampaignHeader({
   const [error, setError] = useState<string | null>(null);
   const [archiving, setArchiving] = useState(false);
 
-  const run = (action: (id: string) => Promise<{ ok: true; notice?: string } | { error: string }>, done?: () => void) =>
+  const run = (action: (id: string) => Promise<ActionResult>, done?: () => void) =>
     startTransition(async () => {
       setError(null);
       const result = await action(id);
       if ("error" in result) {
         // Kept on screen: an activation refusal says what to fix, a toast would vanish before it is read
         setError(result.error);
+        if (isUpgradePrompt(result)) openUpgrade(result);
         done?.();
         return;
       }

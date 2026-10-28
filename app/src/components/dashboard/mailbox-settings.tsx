@@ -15,6 +15,7 @@ import {
   saveMailboxCap,
   type MailboxFormState,
 } from "@/app/(dashboard)/settings/mailbox-actions";
+import { isUpgradePrompt, openUpgrade } from "@/components/billing/upgrade-dialog";
 import { AutoRefresh } from "@/components/dashboard/auto-refresh";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -52,7 +53,7 @@ export type ProviderAvailability = { google: "UNIPILE" | "NYLAS" | null; microso
 export type MailboxFlash = { flag: string; code: string | null };
 
 const FLASH_FLAGS = ["connected", "pending", "cancelled", "expired", "error", "exists", "limit", "failed"] as const;
-const FLASH_CODES = ["AUTH_REVOKED", "QUOTA", "RATE_LIMITED", "REJECTED", "TRANSIENT", "CONFIG", "exists", "limit"] as const;
+const FLASH_CODES = ["AUTH_REVOKED", "QUOTA", "RATE_LIMITED", "REJECTED", "TRANSIENT", "CONFIG", "exists", "limit", "plan"] as const;
 
 function startHref(provider: "GOOGLE" | "MICROSOFT", email: string, mailboxId?: string) {
   const params = new URLSearchParams({ login_hint: email });
@@ -381,6 +382,7 @@ function ConnectForm({
 
   const [state, formAction, pending] = useActionState<MailboxFormState, FormData>(async (prev, formData) => {
     const result = await connectMailbox(prev, formData);
+    if (isUpgradePrompt(result)) openUpgrade(result);
     if (result && "ok" in result) {
       setForm(EMPTY_FORM);
       setDetection(null);

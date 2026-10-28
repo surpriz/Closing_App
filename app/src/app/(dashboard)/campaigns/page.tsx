@@ -7,6 +7,7 @@ import { MailboxBanner } from "@/components/dashboard/campaigns/mailbox-banner";
 import { NewCampaignDialog } from "@/components/dashboard/campaigns/new-campaign-dialog";
 import { PageHeader, Surface } from "@/components/dashboard/page-header";
 import type { UiLocale } from "@/i18n/locale";
+import { canUseMailboxes } from "@/lib/billing/mailboxes";
 import { inBackground } from "@/lib/closing/background";
 import { prisma } from "@/lib/db";
 import { requireOutreach } from "@/lib/outreach/flag";
@@ -101,6 +102,7 @@ export default async function CampaignsPage() {
     .map(({ email, lastError }) => ({ email, lastError: lastError ? `${lastError.split(":")[0]}:` : null }));
   const own = active.find((mailbox) => mailbox.userId === user.id);
   const uiLocale = locale as UiLocale;
+  const planAllowed = await canUseMailboxes(organization.id);
 
   return (
     <div className="space-y-8">
@@ -117,7 +119,7 @@ export default async function CampaignsPage() {
         }
       />
       {active.length === 0 && <p className="text-small text-muted-foreground">{t("page.noMailboxHint")}</p>}
-      <MailboxBanner mailboxes={[...failing, ...teammatesFailing]} hasActive={active.length > 0} />
+      <MailboxBanner mailboxes={[...failing, ...teammatesFailing]} hasActive={active.length > 0} planBlocked={!planAllowed} />
 
       {rows.length ? (
         <Surface>

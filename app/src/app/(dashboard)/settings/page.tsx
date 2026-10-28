@@ -15,6 +15,7 @@ import {
 import { SettingsForm } from "@/components/dashboard/settings-form";
 import { SuppressionList } from "@/components/dashboard/suppression-list";
 import { TeamSettings } from "@/components/dashboard/team-settings";
+import { countBillableMailboxes } from "@/lib/billing/mailboxes";
 import { offerEndsAt } from "@/lib/billing/offers";
 import { countAiFollowupsThisMonth, countLinksCreatedThisMonth, countVideoPitches, isBillingEnabled, planFor } from "@/lib/billing/workspace-plan";
 import { getLanguageModel } from "@/lib/closing/ai/provider";
@@ -80,7 +81,7 @@ export default async function SettingsPage({
   const isManager = isManagerRole(role);
   const billing = planFor(organization);
   const outreach = isOutreachAllowed(user, organization.id);
-  const [settings, tokens, prefs, team, usage, mailboxes, stopList] = await Promise.all([
+  const [settings, tokens, prefs, team, usage, mailboxes, stopList, connectedMailboxes] = await Promise.all([
     getWorkspaceSettings(organization.id),
     prisma.extensionToken.findMany({
       where: {
@@ -102,6 +103,7 @@ export default async function SettingsPage({
     getBillingUsage(organization.id),
     outreach ? getMailboxes(user.id, organization.id) : null,
     outreach ? getStopList(organization.id) : null,
+    countBillableMailboxes(organization.id),
   ]);
   const llm = getLanguageModel("followup");
   const t = await getTranslations("settings.page");
@@ -216,6 +218,7 @@ export default async function SettingsPage({
                 aiFollowups: { used: usage.aiFollowups, max: billing.limits.aiFollowupsPerMonth },
                 videoPitches: { used: usage.videoPitches, max: billing.limits.videoPitches },
               }}
+              mailboxes={{ connected: connectedMailboxes, billed: organization.mailboxQuantity }}
               canManage={isManager}
               billingEnabled={isBillingEnabled()}
               hasCustomer={!!organization.stripeCustomerId}

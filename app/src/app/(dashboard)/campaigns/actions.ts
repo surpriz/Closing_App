@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { z } from "zod";
 
+import { upgradePrompt, type UpgradePrompt } from "@/lib/billing/workspace-plan";
 import { findTrackingHint } from "@/lib/closing/ai/guard";
 import { getSellerPrefs, sellerTimezone } from "@/lib/closing/notify/preferences";
 import { prisma } from "@/lib/db";
@@ -39,7 +40,7 @@ import { runOutreachTick } from "@/lib/outreach/tick";
 import { isManagerRole } from "@/lib/roles";
 import { testToolsEnabled } from "@/lib/test-tools";
 
-export type ActionResult = { ok: true; notice?: string } | { error: string };
+export type ActionResult = { ok: true; notice?: string } | { error: string } | UpgradePrompt;
 
 const createSchema = z.object({
   name: z.string().trim().min(1).max(120),
@@ -95,6 +96,7 @@ export async function activateCampaignAction(id: string): Promise<ActionResult> 
 
   const result = await activateCampaign(organization.id, id, actorOf(workspace));
   if (!result.ok) {
+    if (result.issue === "plan") return await upgradePrompt("mailbox");
     const variables = (result.variables ?? []).map((name) => `{{${name}}}`).join(", ");
     return { error: t(`issues.${result.issue}`, { variables }) };
   }

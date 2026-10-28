@@ -1,4 +1,5 @@
 import { getPublicAppUrl } from "@/lib/app-origin";
+import { canUseMailboxes } from "@/lib/billing/mailboxes";
 import { DAY_MS, HOUR_MS } from "@/lib/closing/constants";
 import { isUniqueViolation } from "@/lib/closing/followups/queue";
 import { shareLink } from "@/lib/closing/link-url";
@@ -32,7 +33,8 @@ export type FollowupTransportDeps = {
   /** Already translated: why a follow-up of a finished campaign is dropped. */
   endedReason?: string;
 };
-export type FollowupTransportOutcome = "sent" | "failed" | "cancelled" | "ignored" | "rescheduled";
+/** "plan": the workspace's plan no longer sells the mailbox add-on; the follow-up is left as it is (neither sent nor cancelled). */
+export type FollowupTransportOutcome = "sent" | "failed" | "cancelled" | "ignored" | "rescheduled" | "plan";
 
 const SENDABLE = ["GENERATED", "SCHEDULED", "DRAFT"] as const;
 // A mirror row that went back to the queue, or was dropped by the step sender, may be taken again
@@ -222,6 +224,12 @@ export async function sendCampaignFollowup(
   if (!mailbox || mailbox.status !== "ACTIVE") {
     await postpone(inAnHour, t("noMailbox"));
     return "rescheduled";
+  }
+
+  // A plan without the add-on keeps the mailbox connected but no longer sends (G4): the follow-up waits as it is
+  if (!(await canUseMailboxes(mailbox.organizationId))) {
+    console.warn(`[outreach:plan] workspace ${mailbox.organizationId} has no mailbox add-on, follow-ups are held`);
+    return "plan";
   }
 
   const settings = await getWorkspaceSettings(mailbox.organizationId);

@@ -56,7 +56,9 @@
     "mailboxError": "{mailbox} : {error}",
     "fix": "Corriger dans les réglages",
     "noMailbox": "Connectez une boîte pour envoyer.",
-    "connect": "Connecter une boîte"
+    "connect": "Connecter une boîte",
+    "planBlocked": "Vos campagnes sont en pause : connecter une boîte et envoyer des campagnes demande Solo ou Équipe.",
+    "seePlans": "Voir les offres"
   },
   "errors": {
     "AUTH_REVOKED": "Le serveur a refusé les identifiants. Reconnectez la boîte avec un mot de passe valide.",

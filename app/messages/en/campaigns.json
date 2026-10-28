@@ -56,7 +56,9 @@
     "mailboxError": "{mailbox}: {error}",
     "fix": "Fix it in settings",
     "noMailbox": "Connect a mailbox to send campaigns.",
-    "connect": "Connect a mailbox"
+    "connect": "Connect a mailbox",
+    "planBlocked": "Your campaigns are paused: connecting a mailbox and sending campaigns takes Solo or Team.",
+    "seePlans": "See plans"
   },
   "errors": {
     "AUTH_REVOKED": "The server refused the credentials. Reconnect the mailbox with a valid password.",

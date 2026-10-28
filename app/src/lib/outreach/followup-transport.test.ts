@@ -17,12 +17,14 @@ const mocks = vi.hoisted(() => ({
   reserveSend: vi.fn(),
   notifyMailboxOwner: vi.fn(),
   isSuppressed: vi.fn(),
+  canUseMailboxes: vi.fn(),
   orgIds: ["org1"] as string[],
 }));
 
 vi.mock("@/lib/db", () => ({ prisma: db }));
 vi.mock("@/lib/mailboxes/caps/counter", () => ({ reserveSend: mocks.reserveSend }));
 vi.mock("@/lib/mailboxes/notify-owner", () => ({ notifyMailboxOwner: mocks.notifyMailboxOwner }));
+vi.mock("@/lib/billing/mailboxes", () => ({ canUseMailboxes: mocks.canUseMailboxes }));
 vi.mock("./flag", () => ({ outreachOrgIds: () => mocks.orgIds }));
 vi.mock("./suppression", () => ({ isSuppressed: mocks.isSuppressed }));
 vi.mock("@/lib/app-origin", () => ({ getPublicAppUrl: () => "https://app.test" }));
@@ -96,6 +98,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.orgIds = ["org1"];
   mocks.isSuppressed.mockResolvedValue(false);
+  mocks.canUseMailboxes.mockResolvedValue(true);
   mocks.reserveSend.mockImplementation(track("reserve", true));
   db.followup.findUnique.mockResolvedValue(followup());
   db.followup.updateMany.mockImplementation(track("claim"));
@@ -133,6 +136,24 @@ function enrollmentRow({ currentStep = 1, steps = [step2] as (typeof step2)[], s
 }
 
 describe("sendCampaignFollowup", () => {
+  it("holds the follow-up as it is when the plan no longer sells mailboxes", async () => {
+    mocks.canUseMailboxes.mockResolvedValue(false);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const connector = fakeConnector();
+
+    const outcome = await sendCampaignFollowup("f1", now, { connector: () => connector as never });
+
+    expect(outcome).toBe("plan");
+    expect(mocks.canUseMailboxes).toHaveBeenCalledWith("org1");
+    expect(connector.send).not.toHaveBeenCalled();
+    expect(db.followup.updateMany).not.toHaveBeenCalled();
+    expect(db.followup.update).not.toHaveBeenCalled();
+    expect(db.campaignMessage.create).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0][0]).toContain("[outreach:plan]");
+    warn.mockRestore();
+  });
+
   it("does not forward a provider id that belongs to another mailbox", async () => {
     db.campaignMessage.findFirst.mockResolvedValue({ messageId: "<prev@x>", providerMessageId: "prov-prev", mailboxId: "old" });
     const connector = fakeConnector();

@@ -166,6 +166,7 @@ vi.mock("@/lib/closing/followups/queue", () => ({
     Object.assign(f, { status: "DRAFT", subject: null, body: "Bonjour Paul, les options sont là : https://app.test/v/acme-abc123xyz" });
   },
 }));
+vi.mock("@/lib/billing/mailboxes", () => ({ canUseMailboxes: async () => true }));
 vi.mock("./flag", () => ({ outreachOrgIds: () => ["org"] }));
 vi.mock("./suppression", () => ({ isSuppressed: async () => false }));
 vi.mock("./ownership", async () => ({

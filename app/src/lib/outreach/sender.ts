@@ -1,4 +1,5 @@
 import type { Mailbox } from "@/generated/prisma/client";
+import { canUseMailboxes } from "@/lib/billing/mailboxes";
 import { PlanLimitError } from "@/lib/billing/workspace-plan";
 import { DAY_MS, HOUR_MS } from "@/lib/closing/constants";
 import type { BusinessHours } from "@/lib/closing/scheduling/business-hours";
@@ -37,7 +38,7 @@ import { budgetLeft, organizationWhere, type OutreachScope } from "./scope";
 import { isSuppressed } from "./suppression";
 
 export type SendDeps = { connector?: (mailbox: Parameters<typeof connectorFor>[0]) => MailboxConnector; now?: Date };
-type Totals = { sent: number; rescheduled: number; failed: number; cancelled: number };
+type Totals = { sent: number; rescheduled: number; failed: number; cancelled: number; skippedPlan: number };
 type Outcome = "next" | "stop";
 
 /** A tick stops taking new messages after this long (or sooner, at the scope's deadline), so its leases stay well under STALE_LEASE_MS. */
@@ -162,7 +163,7 @@ export async function sendDueMessages(
   scope: OutreachScope = {},
   deps: SendDeps = {},
 ): Promise<Totals> {
-  const totals: Totals = { sent: 0, rescheduled: 0, failed: 0, cancelled: 0 };
+  const totals: Totals = { sent: 0, rescheduled: 0, failed: 0, cancelled: 0, skippedPlan: 0 };
   const startedAt = Date.now();
   const budgetMs = budgetLeft(SEND_BUDGET_MS, scope.deadline);
   const mailboxes = await prisma.mailbox.findMany({
@@ -174,7 +175,16 @@ export async function sendDueMessages(
     },
   });
 
+  // One plan check per workspace per pass. A workspace whose plan lacks the add-on keeps its mailboxes but no longer sends:
+  // messages stay SCHEDULED, nothing is cancelled or rescheduled.
+  const planByOrg = new Map<string, Promise<boolean>>();
   for (const mailbox of mailboxes) {
+    let allowed = planByOrg.get(mailbox.organizationId);
+    if (!allowed) planByOrg.set(mailbox.organizationId, (allowed = canUseMailboxes(mailbox.organizationId)));
+    if (!(await allowed)) {
+      totals.skippedPlan++;
+      continue;
+    }
     const max = getEnv().MAILBOX_DAILY_CAP_MAX;
     const take = Math.min(remainingToday(mailbox, now, { max }), MAX_SENDS_PER_TICK_PER_MAILBOX);
     if (take <= 0) continue;

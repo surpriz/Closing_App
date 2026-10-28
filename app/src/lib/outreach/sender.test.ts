@@ -89,6 +89,9 @@ vi.mock("./link", () => ({
 const stopEnrollment = vi.fn();
 vi.mock("./enroll", () => ({ stopEnrollment: (...a: unknown[]) => stopEnrollment(...a) }));
 
+const canUseMailboxes = vi.fn();
+vi.mock("@/lib/billing/mailboxes", () => ({ canUseMailboxes: (...a: unknown[]) => canUseMailboxes(...a) }));
+
 const { MailboxError } = await import("@/lib/mailboxes/errors");
 const { expireStaleLeases, SEND_BUDGET_MS, sendDueMessages, sendTestMessage } = await import("./sender");
 
@@ -155,6 +158,7 @@ beforeEach(() => {
   candidates = [{ id: "m1" }];
   mailboxFindMany.mockResolvedValue([mailbox]);
   mailboxFindUnique.mockResolvedValue({ status: "ACTIVE" });
+  canUseMailboxes.mockResolvedValue(true);
   messageFindMany.mockImplementation(async () => candidates);
   messageUpdateMany.mockImplementation(async (args: { data: { status?: string } }) => {
     if (args.data.status === "SENDING") calls.push("reserve");
@@ -177,6 +181,33 @@ beforeEach(() => {
   send.mockImplementation(async () => {
     calls.push("send");
     return { messageId: "<sent@acme.io>", providerId: "p1", threadId: "t1" };
+  });
+});
+
+describe("sendDueMessages, plan gate", () => {
+  it("skips the mailboxes of a workspace without the add-on and leaves its messages untouched", async () => {
+    canUseMailboxes.mockResolvedValue(false);
+    mailboxFindMany.mockResolvedValue([mailbox, { ...mailbox, id: "mb2" }]);
+
+    const result = await sendDueMessages(now, {}, deps);
+
+    expect(result).toMatchObject({ sent: 0, rescheduled: 0, failed: 0, cancelled: 0, skippedPlan: 2 });
+    expect(canUseMailboxes).toHaveBeenCalledTimes(1);
+    expect(canUseMailboxes).toHaveBeenCalledWith("org");
+    expect(messageFindMany).not.toHaveBeenCalled();
+    expect(messageUpdateMany).not.toHaveBeenCalled();
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it("still sends for the workspaces that are allowed", async () => {
+    canUseMailboxes.mockImplementation(async (org: string) => org === "org2");
+    mailboxFindMany.mockResolvedValue([mailbox, { ...mailbox, id: "mb2", organizationId: "org2" }]);
+
+    const result = await sendDueMessages(now, {}, deps);
+
+    expect(result.skippedPlan).toBe(1);
+    expect(messageFindMany).toHaveBeenCalledTimes(1);
+    expect(messageFindMany.mock.calls[0][0].where.mailboxId).toBe("mb2");
   });
 });
 
@@ -243,7 +274,7 @@ describe("sendDueMessages, success", () => {
       where: { id: "e1", status: "ACTIVE" },
       data: { nextSendAt: next.scheduledFor },
     });
-    expect(result).toEqual({ sent: 1, rescheduled: 0, failed: 0, cancelled: 0 });
+    expect(result).toEqual({ sent: 1, rescheduled: 0, failed: 0, cancelled: 0, skippedPlan: 0 });
   });
 
   it("answers in the thread of the previous mail", async () => {
@@ -307,7 +338,7 @@ describe("sendDueMessages, re-checks", () => {
     const result = await sendDueMessages(now, {}, deps);
     expect(messageFindUnique).not.toHaveBeenCalled();
     expect(send).not.toHaveBeenCalled();
-    expect(result).toEqual({ sent: 0, rescheduled: 0, failed: 0, cancelled: 0 });
+    expect(result).toEqual({ sent: 0, rescheduled: 0, failed: 0, cancelled: 0, skippedPlan: 0 });
   });
 
   it("puts the message back outside the prospect's business hours, without sending", async () => {
@@ -502,7 +533,7 @@ describe("sendDueMessages, send errors", () => {
     });
     expect(notifyMailboxOwner).toHaveBeenCalledWith("mb1", "auth_revoked", "token revoked", now);
     expect(send).toHaveBeenCalledTimes(1);
-    expect(result).toEqual({ sent: 0, rescheduled: 0, failed: 0, cancelled: 0 });
+    expect(result).toEqual({ sent: 0, rescheduled: 0, failed: 0, cancelled: 0, skippedPlan: 0 });
   });
 
   it("CONFIG: mailbox in ERROR too, but the owner hears the sending failed, not that the login was revoked", async () => {
@@ -566,7 +597,7 @@ describe("sendDueMessages, send errors", () => {
     expect(send).toHaveBeenCalledTimes(1);
     expect(notifyMailboxOwner).not.toHaveBeenCalled();
     expect(mailboxUpdate).not.toHaveBeenCalled();
-    expect(result).toEqual({ sent: 0, rescheduled: 0, failed: 1, cancelled: 0 });
+    expect(result).toEqual({ sent: 0, rescheduled: 0, failed: 1, cancelled: 0, skippedPlan: 0 });
   });
 
   it("maybe sent wins over the error code: a 5xx read as QUOTA is not rescheduled either", async () => {
@@ -598,7 +629,7 @@ describe("sendDueMessages, send errors", () => {
     expect(send).toHaveBeenCalledTimes(1);
     expect(notifyMailboxOwner).not.toHaveBeenCalled();
     expect(messageUpdateMany.mock.calls.some(([a]) => a.data.status === "FAILED")).toBe(false);
-    expect(result).toEqual({ sent: 0, rescheduled: 1, failed: 0, cancelled: 0 });
+    expect(result).toEqual({ sent: 0, rescheduled: 1, failed: 0, cancelled: 0, skippedPlan: 0 });
   });
 
   it("TRANSIENT: tried again in 30 minutes while attempts remain", async () => {

@@ -1,3 +1,4 @@
+import { canUseMailboxes } from "@/lib/billing/mailboxes";
 import { prisma } from "@/lib/db";
 
 import { organizationWhere, type OutreachScope } from "./scope";
@@ -155,6 +156,7 @@ export type ActivationIssue =
   | "not_found"
   | "no_mailbox"
   | "mailbox_not_active"
+  | "plan"
   | "steps"
   | "document_required"
   | "no_enrollment"
@@ -184,6 +186,7 @@ export async function activateCampaign(
   if (!campaign || !canEditCampaign(campaign, actor)) return { ok: false, issue: "not_found" };
   if (!campaign.mailbox || campaign.mailbox.organizationId !== organizationId) return { ok: false, issue: "no_mailbox" };
   if (campaign.mailbox.status !== "ACTIVE") return { ok: false, issue: "mailbox_not_active" };
+  if (!(await canUseMailboxes(organizationId))) return { ok: false, issue: "plan" };
   const stepIssues = validateSteps(campaign.steps);
   if (stepIssues.length > 0) return { ok: false, issue: "steps", steps: stepIssues };
   if ((linkStep(campaign.steps) !== null || campaign.linkOnReply) && !campaign.documentId) {

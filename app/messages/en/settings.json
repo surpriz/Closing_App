@@ -328,7 +328,8 @@
       "RATE_LIMITED": "Too many attempts on the provider side. Try again in a few minutes.",
       "REJECTED": "The provider rejected the connection.",
       "TRANSIENT": "Cannot reach the mail servers right now. Check the hosts and ports, or try again in a few minutes.",
-      "CONFIG": "This setup is not supported. Check the servers and ports."
+      "CONFIG": "This setup is not supported. Check the servers and ports.",
+      "plan": "Connecting a mailbox takes the Solo or Team plan."
     },
     "oauth": {
       "google": "Sign in with Google",
