@@ -244,22 +244,47 @@ describe("syncMailboxesDue", () => {
     expect(list).not.toHaveBeenCalled();
   });
 
-  it("an abort before the first page is no progress: lease released, no error counted", async () => {
+  const abortingList = () =>
+    vi.fn().mockImplementation(
+      (_c: unknown, o: { signal: AbortSignal }) =>
+        new Promise((_, reject) => o.signal.addEventListener("abort", () => reject(new Error("aborted")))),
+    );
+
+  it("a mailbox cut short at the tail of the tick goes to the back of the line, without a failure", async () => {
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
     try {
-      const list = vi.fn().mockImplementation(
-        (_c: unknown, o: { signal: AbortSignal }) =>
-          new Promise((_, reject) => o.signal.addEventListener("abort", () => reject(new Error("aborted")))),
-      );
-      const run = syncMailboxesDue(NOW, { budgetMs: MIN_SYNC_BUDGET_MS, connector: () => fakeConnector(list) });
+      const run = syncMailboxesDue(NOW, { budgetMs: MIN_SYNC_BUDGET_MS, connector: () => fakeConnector(abortingList()) });
       await vi.advanceTimersByTimeAsync(MIN_SYNC_BUDGET_MS);
       expect(await run).toEqual({ synced: 0, errors: 0 });
     } finally {
       vi.useRealTimers();
     }
-    // lease claim, then a release that leaves the schedule and the error state alone
     expect(prisma.mailbox.updateMany).toHaveBeenCalledTimes(2);
-    expect(lastUpdate()).toEqual({ where: { id: "mb1", syncClaimedAt: NOW }, data: { syncClaimedAt: null } });
+    expect(lastUpdate()).toEqual({
+      where: { id: "mb1", syncClaimedAt: NOW },
+      data: { syncClaimedAt: null, nextSyncAt: new Date(NOW.getTime() + 60_000) },
+    });
     expect(notifyMailboxOwner).not.toHaveBeenCalled();
+  });
+
+  it("a mailbox that gets no page within a full budget counts as a soft failure and backs off", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    try {
+      const run = syncMailboxesDue(NOW, { budgetMs: 60_000, connector: () => fakeConnector(abortingList()) });
+      await vi.advanceTimersByTimeAsync(25_000);
+      expect(await run).toEqual({ synced: 0, errors: 1 });
+    } finally {
+      vi.useRealTimers();
+    }
+    expect(lastUpdate()).toEqual({
+      where: { id: "mb1", syncClaimedAt: NOW },
+      data: {
+        syncErrorCount: 1,
+        nextSyncAt: new Date(NOW.getTime() + SYNC_INTERVAL_MS * 2),
+        syncClaimedAt: null,
+        lastError: "TRANSIENT: no page within budget",
+        lastErrorAt: NOW,
+      },
+    });
   });
 });

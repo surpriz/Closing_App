@@ -36,8 +36,6 @@ const mailbox = () => ({
   organizationId: "org1",
   email: "seller@acme.com",
   timezone: "Europe/Paris",
-  policyBounceDay: null as string | null,
-  policyBounceCount: 0,
 });
 const ctx = {
   mailboxAddress: "seller@acme.com",
@@ -100,7 +98,13 @@ describe("handleInbound", () => {
     prisma.mailboxInboundEvent.findUnique.mockResolvedValue({ id: "ev0", kind: "REPLY", dsnClass: null });
     expect(await handleInbound(mailbox(), message(), ctx, NOW)).toBe("duplicate");
     expect(prisma.mailboxInboundEvent.create).toHaveBeenCalledWith({
-      data: { mailboxId: "mb1", externalKey: "mailbox:mb1:m1", kind: "IGNORED", receivedAt: message().date },
+      data: {
+        mailboxId: "mb1",
+        externalKey: "mailbox:mb1:m1",
+        kind: "IGNORED",
+        receivedAt: message().date,
+        dsnClass: "pending",
+      },
       select: { id: true },
     });
     expect(stopEnrollment).not.toHaveBeenCalled();
@@ -111,7 +115,8 @@ describe("handleInbound", () => {
     expect(await handleInbound(mailbox(), message({ from: { address: "x@other.io", name: null }, inReplyTo: null }), ctx, NOW)).toBe(
       "ignored",
     );
-    expect(prisma.mailboxInboundEvent.update).not.toHaveBeenCalled();
+    expect(prisma.mailboxInboundEvent.update).toHaveBeenCalledTimes(1);
+    expect(prisma.mailboxInboundEvent.update).toHaveBeenCalledWith({ where: { id: "ev1" }, data: { dsnClass: null } });
     expect(stopEnrollment).not.toHaveBeenCalled();
   });
 
@@ -171,13 +176,69 @@ describe("handleInbound", () => {
     expect(recordProspectReply).not.toHaveBeenCalled();
   });
 
-  it("marks the event for retry when an effect fails, then rethrows", async () => {
+  it("stores the intent first and leaves the row unfinished when an effect fails", async () => {
     stopEnrollment.mockRejectedValue(new Error("db down"));
     await expect(handleInbound(mailbox(), message(), ctx, NOW)).rejects.toThrow("db down");
+    expect(prisma.mailboxInboundEvent.update).toHaveBeenCalledTimes(1);
     expect(prisma.mailboxInboundEvent.update).toHaveBeenCalledWith({
       where: { id: "ev1" },
-      data: { kind: "IGNORED", dsnClass: "retry" },
+      data: { dsnClass: "retry:reply", enrollmentId: "en1", matchedMessageId: "cm1" },
     });
+  });
+
+  it("replays a reply from the stored intent although the enrollment is no longer live", async () => {
+    prisma.mailboxInboundEvent.create.mockRejectedValue({ code: "P2002" });
+    prisma.mailboxInboundEvent.findUnique.mockResolvedValue({
+      id: "ev7",
+      kind: "IGNORED",
+      dsnClass: "retry:reply",
+      enrollmentId: "en1",
+      matchedMessageId: "cm1",
+    });
+    prisma.campaignProspect.findUnique.mockResolvedValue({ linkId: "l1", prospectId: "p1" });
+    // The first attempt ended the enrollment: nothing in the context can match this message any more
+    const emptyCtx = { ...ctx, sentMessageIds: new Map(), enrollments: [] };
+    expect(await handleInbound(mailbox(), message(), emptyCtx, NOW)).toBe("reply");
+    expect(recordProspectReply.mock.calls[0][0]).toMatchObject({ linkId: "l1", source: "MAILBOX", externalKey: "mbx:mb1:m1" });
+    expect(releaseCampaignLink).toHaveBeenCalledWith("l1");
+    expect(prisma.mailboxInboundEvent.update).toHaveBeenLastCalledWith({
+      where: { id: "ev7" },
+      data: expect.objectContaining({ kind: "REPLY", enrollmentId: "en1", dsnClass: null }),
+    });
+  });
+
+  it("retries a placeholder a crash left pending", async () => {
+    prisma.mailboxInboundEvent.create.mockRejectedValue({ code: "P2002" });
+    prisma.mailboxInboundEvent.findUnique.mockResolvedValue({
+      id: "ev8",
+      kind: "IGNORED",
+      dsnClass: "pending",
+      enrollmentId: null,
+      matchedMessageId: null,
+    });
+    expect(await handleInbound(mailbox(), message(), ctx, NOW)).toBe("reply");
+    expect(stopEnrollment).toHaveBeenCalledWith("en1", "REPLIED", null, NOW);
+  });
+
+  it("replays a bounce on the stored enrollment", async () => {
+    prisma.mailboxInboundEvent.create.mockRejectedValue({ code: "P2002" });
+    prisma.mailboxInboundEvent.findUnique.mockResolvedValue({
+      id: "ev9",
+      kind: "IGNORED",
+      dsnClass: "retry:bounce",
+      enrollmentId: "en1",
+      matchedMessageId: "cm1",
+    });
+    prisma.campaignProspect.findUnique.mockResolvedValue({ email: "bob@target.io", linkId: null });
+    const emptyCtx = { ...ctx, sentMessageIds: new Map(), enrollments: [] };
+    expect(await handleInbound(mailbox(), dsnMessage({}), emptyCtx, NOW)).toBe("bounce");
+    expect(stopEnrollment).toHaveBeenCalledWith("en1", "BOUNCED", "5.1.1", NOW);
+    expect(addSuppression).toHaveBeenCalled();
+  });
+
+  it("falls back to the processing time when the message date is invalid", async () => {
+    await handleInbound(mailbox(), message({ date: new Date("garbage") }), ctx, NOW);
+    expect(prisma.mailboxInboundEvent.create.mock.calls[0][0].data.receivedAt).toEqual(NOW);
   });
 
   it("processes a message marked for retry again, on the same event row", async () => {

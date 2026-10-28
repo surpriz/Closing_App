@@ -3,7 +3,7 @@ import { ACTIVE_WORKSPACE } from "@/lib/closing/active-workspace";
 import { DAY_MS, HOUR_MS } from "@/lib/closing/constants";
 import { prisma } from "@/lib/db";
 
-import { isMailboxError } from "../errors";
+import { isMailboxError, MailboxError } from "../errors";
 import { connectorFor } from "../index";
 import { notifyMailboxOwner } from "../notify-owner";
 import type { MailboxConnector } from "../types";
@@ -22,6 +22,8 @@ export const PAGE_LIMIT = 50;
 export const MIN_SYNC_BUDGET_MS = 5_000;
 export const LOOKBACK_MS = 7 * DAY_MS;
 export const SENT_WINDOW_MS = 60 * DAY_MS;
+/** A mailbox cut short by the end of the tick is looked at again soon, behind the others. */
+const RETRY_SOON_MS = 60_000;
 /** Consecutive failures (other than a revoked login) before the owner hears about it. */
 const SYNC_FAILURES_BEFORE_NOTICE = 3;
 
@@ -197,13 +199,25 @@ export async function syncMailboxesDue(
 
     try {
       const connector = (opts.connector ?? connectorFor)(mailbox);
-      const result = await syncMailbox(mailbox.id, now, {
-        connector: () => connector,
-        budgetMs: Math.min(SYNC_BUDGET_PER_MAILBOX_MS, remaining),
-      });
-      if (!result || result.pages === 0) {
-        // Not ACTIVE any more, or out of time before a single page: no progress, no failure
+      const budgetMs = Math.min(SYNC_BUDGET_PER_MAILBOX_MS, remaining);
+      const result = await syncMailbox(mailbox.id, now, { connector: () => connector, budgetMs });
+      if (!result) {
+        // Not ACTIVE any more
         await release(mailbox.id, now);
+        continue;
+      }
+      if (result.pages === 0) {
+        if (budgetMs >= SYNC_BUDGET_PER_MAILBOX_MS) {
+          // A full budget and not one page: this mailbox is slow or stuck, not unlucky. Count it so it backs off
+          errors++;
+          await recordFailure(mailbox.id, mailbox.syncErrorCount + 1, new MailboxError("TRANSIENT", "no page within budget"), now);
+        } else {
+          // Tail of the tick: not its fault, but it goes to the back of the line instead of hogging the head
+          await prisma.mailbox.updateMany({
+            where: { id: mailbox.id, syncClaimedAt: now },
+            data: { syncClaimedAt: null, nextSyncAt: new Date(now.getTime() + RETRY_SOON_MS) },
+          });
+        }
         continue;
       }
       const interval = connector.capabilities.webhooks ? SYNC_INTERVAL_WEBHOOK_MS : SYNC_INTERVAL_MS;

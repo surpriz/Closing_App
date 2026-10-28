@@ -15,7 +15,7 @@ import { notifyMailboxOwner } from "../notify-owner";
 import type { DsnDetails, InboundMessage } from "../types";
 
 import { classifyDsn } from "./classify";
-import { matchInbound, normalizeMessageId, type MatchContext } from "./match";
+import { matchInbound, normalizeMessageId, type MatchContext, type MatchResult } from "./match";
 
 export type InboundEffect = "reply" | "bounce" | "bounce_transient" | "bounce_policy" | "ignored" | "duplicate";
 
@@ -28,14 +28,20 @@ type HandledMailbox = {
   organizationId: string;
   email: string;
   timezone: string;
-  policyBounceDay: string | null;
-  policyBounceCount: number;
 };
+
+/** What an earlier, interrupted attempt left on the event row. */
+type Resume = { dsnClass: string | null; enrollmentId: string | null; matchedMessageId: string | null };
+
+// dsnClass of a row whose effects are not finished: "pending" from the start, "retry:<kind>" once the intent is stored
+const UNFINISHED = /^(pending|retry(:reply|:bounce)?)$/;
 
 /**
  * One inbox message: recorded once (externalKey), then its effect on the enrollment it concerns.
- * A failing effect leaves the event marked dsnClass "retry" and rethrows; the next pass processes the message again
- * and, if it fails once more, gives up ("failed") rather than blocking the mailbox. Two attempts at most.
+ * The event is born "pending" and only a finished effect clears that, so a crash or a failing effect leaves a row the
+ * next pass picks up again; the intent (reply or bounce, enrollment, matched message) is stored before any effect so
+ * the replay does not depend on the enrollment still being live. A second failure gives up ("failed") rather than
+ * blocking the mailbox: two attempts at most.
  */
 export async function handleInbound(
   mailbox: HandledMailbox,
@@ -44,11 +50,13 @@ export async function handleInbound(
   now: Date,
 ): Promise<InboundEffect> {
   const externalKey = `mailbox:${mailbox.id}:${message.id}`;
+  // A date the database cannot store would fail the create on every pass and pin the cursor
+  const receivedAt = Number.isNaN(message.date.getTime()) ? now : message.date;
   let eventId: string;
-  let retrying = false;
+  let resume: Resume | null = null;
   try {
     const event = await prisma.mailboxInboundEvent.create({
-      data: { mailboxId: mailbox.id, externalKey, kind: "IGNORED", receivedAt: message.date },
+      data: { mailboxId: mailbox.id, externalKey, kind: "IGNORED", receivedAt, dsnClass: "pending" },
       select: { id: true },
     });
     eventId = event.id;
@@ -56,29 +64,22 @@ export async function handleInbound(
     if (!isUniqueViolation(error)) throw error;
     const existing = await prisma.mailboxInboundEvent.findUnique({
       where: { externalKey },
-      select: { id: true, kind: true, dsnClass: true },
+      select: { id: true, kind: true, dsnClass: true, enrollmentId: true, matchedMessageId: true },
     });
-    if (!existing || existing.kind !== "IGNORED" || existing.dsnClass !== "retry") return "duplicate";
+    if (!existing || existing.kind !== "IGNORED" || !existing.dsnClass || !UNFINISHED.test(existing.dsnClass)) {
+      return "duplicate";
+    }
     eventId = existing.id;
-    retrying = true;
+    resume = existing;
   }
 
   try {
-    const effect = await apply(mailbox, message, ctx, now, eventId);
-    if (retrying && effect === "ignored") {
-      await prisma.mailboxInboundEvent.update({ where: { id: eventId }, data: { dsnClass: null } });
-    }
-    return effect;
+    return await apply(mailbox, message, ctx, now, eventId, resume);
   } catch (error) {
-    if (retrying) {
-      console.error(`[mailbox-sync] giving up on ${externalKey}`, error);
-      await prisma.mailboxInboundEvent.update({ where: { id: eventId }, data: { dsnClass: "failed" } }).catch(() => {});
-      return "ignored";
-    }
-    await prisma.mailboxInboundEvent
-      .update({ where: { id: eventId }, data: { kind: "IGNORED", dsnClass: "retry" } })
-      .catch(() => {});
-    throw error;
+    if (!resume) throw error;
+    console.error(`[mailbox-sync] giving up on ${externalKey}`, error);
+    await prisma.mailboxInboundEvent.update({ where: { id: eventId }, data: { dsnClass: "failed" } }).catch(() => {});
+    return "ignored";
   }
 }
 
@@ -88,9 +89,27 @@ async function apply(
   ctx: MatchContext,
   now: Date,
   eventId: string,
+  resume: Resume | null,
 ): Promise<InboundEffect> {
-  const match = matchInbound(message, ctx);
-  if (match.kind === "own_team" || match.kind === "auto_reply" || match.kind === "unrelated") return "ignored";
+  // A replay trusts what the first attempt stored: matching again would miss an enrollment it already ended
+  let match: MatchResult;
+  let forcedTarget: Target | null = null;
+  if (resume?.enrollmentId && resume.dsnClass === "retry:reply") {
+    match = { kind: "reply", enrollmentId: resume.enrollmentId, via: "thread", messageId: resume.matchedMessageId };
+  } else if (resume?.enrollmentId && resume.dsnClass === "retry:bounce") {
+    match = {
+      kind: "bounce",
+      dsn: message.dsn ?? { action: "other", status: null, diagnostic: null, failedRecipient: null, originalMessageId: null },
+    };
+    forcedTarget = { enrollmentId: resume.enrollmentId, messageId: resume.matchedMessageId, email: null };
+  } else {
+    match = matchInbound(message, ctx);
+  }
+
+  if (match.kind === "own_team" || match.kind === "auto_reply" || match.kind === "unrelated") {
+    await prisma.mailboxInboundEvent.update({ where: { id: eventId }, data: { dsnClass: null } });
+    return "ignored";
+  }
 
   // D14: sender, subject and a short excerpt are kept for replies and bounces only
   const base = {
@@ -102,6 +121,10 @@ async function apply(
   };
 
   if (match.kind === "reply") {
+    await prisma.mailboxInboundEvent.update({
+      where: { id: eventId },
+      data: { dsnClass: "retry:reply", enrollmentId: match.enrollmentId, matchedMessageId: match.messageId },
+    });
     await onReply(mailbox, message, match.enrollmentId, match.messageId, now);
     await prisma.mailboxInboundEvent.update({
       where: { id: eventId },
@@ -112,7 +135,11 @@ async function apply(
 
   const { dsn } = match;
   const dsnClass = classifyDsn(dsn);
-  const target = findTarget(dsn, ctx);
+  const target = forcedTarget ?? findTarget(dsn, ctx);
+  await prisma.mailboxInboundEvent.update({
+    where: { id: eventId },
+    data: { dsnClass: "retry:bounce", enrollmentId: target?.enrollmentId ?? null, matchedMessageId: target?.messageId ?? null },
+  });
   const { effect, enrollmentId } = await onBounce(mailbox, dsn, dsnClass, target, now);
   await prisma.mailboxInboundEvent.update({
     where: { id: eventId },
