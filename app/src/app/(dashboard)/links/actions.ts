@@ -735,3 +735,19 @@ export async function prepareFollowupFromInsight(linkId: string) {
   revalidateLink(link);
   return result.ok ? { ok: true } : { error: result.reasons.join(" ") || t("cannotPrepare") };
 }
+
+/**
+ * Clozer's follow-ups after a Smart Link reader read: off when the seller's cold email tool
+ * already follows up, so the prospect never gets two. Applies to the readers already in too.
+ */
+export async function setSmartLinkFollowups(linkId: string, enabled: boolean) {
+  const link = await requireOwnedLink(linkId);
+  if (!link.shared) throw new Error("Pas un Smart Link");
+  const readers = await prisma.link.findMany({ where: { parentLinkId: link.id }, select: { id: true } });
+  await prisma.link.updateMany({
+    where: { id: { in: [link.id, ...readers.map((reader) => reader.id)] } },
+    data: { followupsEnabled: enabled },
+  });
+  if (!enabled) for (const reader of readers) await cancelOpenFollowups(reader.id, "followupsOff");
+  revalidateLink(link);
+}

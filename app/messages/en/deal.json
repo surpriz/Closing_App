@@ -253,7 +253,11 @@
     "toolAria": "Cold email tool",
     "documented": "The variables are {tool}'s.",
     "undocumented": "Check the variable names in your tool's editor. Only the email matters: company and first name are a bonus.",
-    "webhook": "To pause the sequence as soon as a prospect reads, connect the <link>webhook</link>."
+    "webhook": "To pause the sequence as soon as a prospect reads, connect the <link>webhook</link>.",
+    "followupsTitle": "Clozer follow-ups after reading",
+    "followupsOn": "Clozer drafts a follow-up based on what each reader read, for you to approve. Remove the matching step from your sequence, or the prospect gets two.",
+    "followupsOff": "Off: your sending tool does the follow-ups. Turn them on only if you remove a step from your sequence.",
+    "followupsFailed": "The setting wasn't saved. Try again."
   },
   "shareReady": {
     "copiedToast": "Link copied. Paste it into your message.",

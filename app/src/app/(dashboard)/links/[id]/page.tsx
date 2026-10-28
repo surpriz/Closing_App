@@ -320,7 +320,7 @@ export default async function LinkDetailPage({
                     title={t("smartLinkTitle")}
                     hint={t("smartLinkHint")}
                   >
-                    <SmartLinkTemplate url={url} />
+                    <SmartLinkTemplate url={url} linkId={link.id} followupsEnabled={link.followupsEnabled} />
                   </DealSection>
                 )}
               </>
