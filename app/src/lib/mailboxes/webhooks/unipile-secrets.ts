@@ -10,7 +10,7 @@ function same(a: string, b: string) {
 
 /** Binds a hosted-auth notification to the state we issued: Unipile cannot sign, so we sign the `name` ourselves. */
 export function notifySignature(stateId: string): string {
-  return signPayload(stateId, signingSecret());
+  return signPayload(`unipile-notify:${stateId}`, signingSecret());
 }
 
 export function verifyNotifySignature(stateId: string | null | undefined, sig: string | null | undefined): boolean {

@@ -102,7 +102,14 @@ describe("error mapping", () => {
     expect((await code(422, { type: "errors/invalid_recipient" }))?.code).toBe("REJECTED");
     expect((await code(409, { type: "errors/disconnected_account" }))?.code).toBe("AUTH_REVOKED");
     expect((await code(401, { type: "errors/expired_credentials" }))?.code).toBe("AUTH_REVOKED");
-    expect((await code(403, { type: "errors/insufficient_permissions" }))?.code).toBe("AUTH_REVOKED");
+    expect((await code(401, { type: "errors/invalid_credentials_but_valid_account_x" }))?.code).toBe("AUTH_REVOKED");
+    // our key or plan, not the seller's mailbox
+    expect((await code(401, { type: "errors/missing_credentials" }))?.code).toBe("CONFIG");
+    expect((await code(403, { type: "errors/insufficient_permissions" }))?.code).toBe("CONFIG");
+    expect((await code(401))?.code).toBe("CONFIG");
+    // throttling and outages win over an account-level type
+    expect((await code(429, { type: "errors/disconnected_account" }))?.code).toBe("RATE_LIMITED");
+    expect((await code(503, { type: "errors/expired_credentials" }))?.code).toBe("TRANSIENT");
     expect((await code(400, { type: "errors/invalid_recipient_address" }))?.code).toBe("REJECTED");
     expect((await code(400, { type: "errors/invalid_parameters" }))?.code).toBe("CONFIG");
     const limited = await code(429, {}, { "retry-after": "7" });

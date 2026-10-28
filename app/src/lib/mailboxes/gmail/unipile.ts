@@ -5,7 +5,7 @@ import { isMailboxError, MailboxError } from "../errors";
 import type { ConnectorDeps } from "../index";
 import { parseAuthenticationResults, domainOf } from "../inbound/auth";
 import { dsnFromHeaders } from "../inbound/dsn";
-import { mailboxWebhookUrl } from "../config";
+import { mailboxWebhookUrl, mailboxWebhooksEnabled } from "../config";
 import { notifySignature, unipileHeaderToken } from "../webhooks/unipile-secrets";
 import type { InboundHeaders, InboundMessage, MailboxConnector, SendResult, SyncCursor, VerifyResult } from "../types";
 
@@ -54,19 +54,26 @@ function retryAfterMs(response: Response) {
   return Number.isFinite(seconds) && seconds > 0 ? Math.round(seconds * 1000) : undefined;
 }
 
+// spike: confirm the real account-level and API-key error types
+const ACCOUNT_LEVEL_TYPES = new Set(["disconnected_account", "expired_credentials", "invalid_credentials"]);
+
+function isAccountLevelType(type: string) {
+  const name = type.replace(/^errors\//, "");
+  return ACCOUNT_LEVEL_TYPES.has(name) || name.startsWith("invalid_credentials_but_valid_account");
+}
+
 /** Translates a failed response; the body is only read for its error type, never echoed in full, never a secret. */
 async function mapUnipileError(response: Response, context: "send" | "account" | "read"): Promise<MailboxError> {
   const body = obj(await response.json().catch(() => null));
   const type = str(body.type) ?? "";
   const detail = `unipile ${response.status}${type ? ` ${type.slice(0, 80)}` : ""}`;
   const { status } = response;
-  // Account-level problems first: a 401/403 carrying one of these is the mailbox, not our key
-  if (/disconnected|credentials|invalid_account|permissions/i.test(type)) {
-    return new MailboxError("AUTH_REVOKED", "the mailbox must be reconnected", { detail });
-  }
-  if (status === 401 || status === 403) return new MailboxError("CONFIG", "unipile rejected our API key", { detail });
+  // Decided before the allow-list: a throttled or failing Unipile says nothing about the mailbox
   if (status === 429) return new MailboxError("RATE_LIMITED", "unipile rate limit", { retryAfterMs: retryAfterMs(response), detail });
   if (status >= 500) return new MailboxError("TRANSIENT", "unipile unavailable", { detail });
+  if (isAccountLevelType(type)) return new MailboxError("AUTH_REVOKED", "the mailbox must be reconnected", { detail });
+  // Any other 401/403 (bad or rotated key, plan or feature limit) is on our side, never the seller's mailbox
+  if (status === 401 || status === 403) return new MailboxError("CONFIG", "unipile rejected our API key", { detail });
   if (status === 404 && context === "account") return new MailboxError("AUTH_REVOKED", "unipile account not found", { detail });
   if (context === "send" && (status === 400 || status === 422)) {
     // A bare 400 is more likely our request than the recipient: only recipient-looking types reject the message
@@ -347,8 +354,7 @@ export async function createHostedAuthLink(
  * Unipile does not sign webhooks, so the shared token travels both in the URL and in a custom header.
  */
 export async function ensureUnipileWebhook(deps: Deps = {}): Promise<{ created: number }> {
-  const token = getEnv().MAILBOX_WEBHOOK_TOKEN;
-  if (!token) throw new MailboxError("CONFIG", "MAILBOX_WEBHOOK_TOKEN is not set");
+  if (!mailboxWebhooksEnabled()) throw new MailboxError("CONFIG", "mailbox webhooks are not enabled");
   const requestUrl = mailboxWebhookUrl("unipile");
   const existing = await call(deps, "/api/v1/webhooks", { method: "GET", context: "account" });
   const have = new Set(

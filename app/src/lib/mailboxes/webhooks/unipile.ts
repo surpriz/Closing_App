@@ -41,16 +41,24 @@ export async function handleUnipileNotify(
   const stateId = str(body.name);
   if ((status !== "CREATION_SUCCESS" && status !== "RECONNECTED") || !accountId || !stateId) return { outcome: "ignored" };
 
+  // Checked before the state is spent: a forged notification must not burn someone's pending connection, and
+  // nothing is deleted for an account we could not tie to this state
+  let account: Awaited<ReturnType<typeof getUnipileAccount>>;
+  try {
+    account = await getUnipileAccount(accountId, deps);
+  } catch (error) {
+    console.error("[mailboxes] unipile account lookup failed", error instanceof Error ? error.message : "unknown");
+    return { outcome: "failed" };
+  }
+  if (account.name !== stateId) {
+    console.error("[mailboxes] unipile account does not match the state");
+    return { outcome: "invalid_state" };
+  }
+
   const state = await consumeOauthState(stateId, deps.now);
   if (!state || state.provider !== "GOOGLE") return { outcome: "invalid_state" };
 
   try {
-    const account = await getUnipileAccount(accountId, deps);
-    // The account must be the one created for this very state: the payload alone is not proof
-    if (account.name !== stateId) {
-      console.error("[mailboxes] unipile account does not match the state");
-      return { outcome: "invalid_state" };
-    }
     // Another workspace already runs this account: never let a second one take it over
     const taken = await prisma.mailbox.findFirst({
       where: {

@@ -14,7 +14,7 @@ export function hasMailboxWebhookToken(request: Request, env: ReturnType<typeof 
 
 /** Per-mailbox secret echoed by Graph in every notification; derived, so nothing extra to store. */
 export function clientStateFor(mailboxId: string): string {
-  return signPayload(mailboxId, signingSecret());
+  return signPayload(`graph-client-state:${mailboxId}`, signingSecret());
 }
 
 export function verifyClientState(mailboxId: string, value: string | null | undefined): boolean {

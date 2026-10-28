@@ -102,6 +102,15 @@ describe("handleUnipileNotify", () => {
     expect((await handleUnipileNotify(created)).outcome).toBe("invalid_state");
     expect(h.connect).not.toHaveBeenCalled();
     expect(h.disconnect).not.toHaveBeenCalled();
+    // the state stays usable: a forged notification cannot burn it
+    expect(h.consume).not.toHaveBeenCalled();
+  });
+
+  it("keeps the state and deletes nothing when the account lookup fails", async () => {
+    h.account.mockRejectedValueOnce(new Error("boom"));
+    expect((await handleUnipileNotify(created)).outcome).toBe("failed");
+    expect(h.consume).not.toHaveBeenCalled();
+    expect(h.disconnect).not.toHaveBeenCalled();
   });
 
   it("refuses an account a live mailbox of another workspace already uses", async () => {
@@ -117,11 +126,11 @@ describe("handleUnipileNotify", () => {
     expect(h.disconnect).not.toHaveBeenCalled();
   });
 
-  it("deletes the account when it has no address or the lookup throws", async () => {
+  it("deletes the account when it has no address or the connection throws", async () => {
     h.consume.mockResolvedValue(state);
     h.account.mockResolvedValueOnce({ address: null, name: "state_1", status: "OK" });
     expect((await handleUnipileNotify(created)).outcome).toBe("failed");
-    h.account.mockRejectedValueOnce(new Error("boom"));
+    h.connect.mockRejectedValueOnce(new Error("boom"));
     expect((await handleUnipileNotify(created)).outcome).toBe("failed");
     expect(h.disconnect).toHaveBeenCalledTimes(2);
   });
@@ -216,5 +225,13 @@ describe("hasUnipileHeaderToken", () => {
     expect(hasUnipileHeaderToken(req("good-token-good-token-good-token"))).toBe(false);
     expect(hasUnipileHeaderToken(req("bad"))).toBe(false);
     expect(hasUnipileHeaderToken(req())).toBe(false);
+  });
+});
+
+describe("signature domain separation", () => {
+  it("does not reuse the Graph client state for the same id", async () => {
+    const { notifySignature } = await import("./unipile-secrets");
+    const { clientStateFor } = await import("./token");
+    expect(notifySignature("same-id")).not.toBe(clientStateFor("same-id"));
   });
 });
