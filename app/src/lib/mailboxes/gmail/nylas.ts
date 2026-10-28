@@ -50,12 +50,17 @@ function detailOf(body: unknown): string | undefined {
 }
 
 /** Maps a Nylas failure; the detail comes from the error message only, never from the request. */
-function mapFailure(status: number, body: unknown, retryAfter: string | null): MailboxError {
+function mapFailure(status: number, body: unknown, retryAfter: string | null, grantLevel: boolean): MailboxError {
   const detail = detailOf(body);
+  const type = (body as { error?: { type?: unknown } } | null)?.error?.type;
+  // A 403/404 only means "the grant is gone" on the grant itself or when the error names it: a send that cites a
+  // vanished reply_to_message_id is a 404 about the message, not about the login
+  const aboutGrant = grantLevel || /grant/i.test(`${typeof type === "string" ? type : ""} ${detail ?? ""}`);
   const seconds = Number(retryAfter);
   const retryAfterMs = Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : undefined;
   let code: MailboxErrorCode;
-  if (status === 401 || status === 403 || status === 404) code = "AUTH_REVOKED";
+  if (status === 401 || ((status === 403 || status === 404) && aboutGrant)) code = "AUTH_REVOKED";
+  else if (status === 403) code = "CONFIG";
   else if (status === 429) code = "RATE_LIMITED";
   else if (status >= 500) code = "TRANSIENT";
   else if (/quota|rate limit exceeded|sending limit/i.test(detail ?? "")) code = "QUOTA";
@@ -63,8 +68,8 @@ function mapFailure(status: number, body: unknown, retryAfter: string | null): M
   return new MailboxError(code, `nylas ${status}`, { detail, retryAfterMs });
 }
 
-async function call(http: Http, path: string, init: RequestInit & { json?: unknown } = {}): Promise<unknown> {
-  const { json, ...rest } = init;
+async function call(http: Http, path: string, init: RequestInit & { json?: unknown; grantLevel?: boolean } = {}): Promise<unknown> {
+  const { json, grantLevel = false, ...rest } = init;
   const headers: Record<string, string> = {
     Authorization: `Bearer ${getEnv().NYLAS_API_KEY ?? ""}`,
     Accept: "application/json",
@@ -78,7 +83,7 @@ async function call(http: Http, path: string, init: RequestInit & { json?: unkno
     throw new MailboxError("TRANSIENT", "nylas unreachable");
   }
   const body = await res.json().catch(() => null);
-  if (!res.ok) throw mapFailure(res.status, body, res.headers.get("retry-after"));
+  if (!res.ok) throw mapFailure(res.status, body, res.headers.get("retry-after"), grantLevel);
   return body;
 }
 
@@ -202,11 +207,12 @@ export function nylasConnector(
       const newest = Math.max(maxSeen, ...raw.map((m) => m.date ?? 0));
       const next = body?.next_cursor;
       if (next) return { messages, cursor: `page:${after}:${newest}:${next}`, hasMore: true };
-      return { messages, cursor: `date:${newest || after}`, hasMore: false };
+      return { messages, // One second back: a message landing in the same second after this listing would otherwise be skipped
+      cursor: `date:${newest ? Math.max(after, newest - 1) : after}`, hasMore: false };
     },
     async verify(): Promise<VerifyResult> {
       try {
-        const body = (await call(http, grant)) as { data?: { grant_status?: string; email?: string } } | null;
+        const body = (await call(http, grant, { grantLevel: true })) as { data?: { grant_status?: string; email?: string } } | null;
         if (body?.data?.grant_status !== "valid") {
           return { ok: false, code: "AUTH_REVOKED", message: "nylas grant is not valid" };
         }
@@ -217,7 +223,7 @@ export function nylasConnector(
       }
     },
     async disconnect() {
-      await call(http, grant, { method: "DELETE" });
+      await call(http, grant, { method: "DELETE", grantLevel: true });
     },
   };
 }

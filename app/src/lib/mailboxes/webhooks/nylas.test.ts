@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const prisma = { mailbox: { findFirst: vi.fn(), update: vi.fn(), updateMany: vi.fn() } };
+const prisma = { mailbox: { findMany: vi.fn(), updateMany: vi.fn() } };
 vi.mock("@/lib/db", () => ({ prisma }));
 const notifyMailboxOwner = vi.fn();
 vi.mock("../notify-owner", () => ({ notifyMailboxOwner: (...a: unknown[]) => notifyMailboxOwner(...a) }));
@@ -37,29 +37,36 @@ describe("nylasChallenge", () => {
 
 describe("handleNylasEvent", () => {
   it("message.created asks for a sync", async () => {
-    prisma.mailbox.findFirst.mockResolvedValue({ id: "mb1" });
-    expect(await handleNylasEvent(event("message.created"), now)).toEqual({ syncMailboxId: "mb1" });
-    expect(prisma.mailbox.findFirst.mock.calls[0][0].where).toMatchObject({ connector: "NYLAS", externalAccountId: "g1" });
-    expect(prisma.mailbox.update).toHaveBeenCalledWith({ where: { id: "mb1" }, data: { syncRequestedAt: now } });
+    prisma.mailbox.findMany.mockResolvedValue([{ id: "mb1" }]);
+    expect(await handleNylasEvent(event("message.created"), now)).toEqual({ syncMailboxIds: ["mb1"] });
+    expect(prisma.mailbox.findMany.mock.calls[0][0].where).toMatchObject({ connector: "NYLAS", externalAccountId: "g1" });
+    expect(prisma.mailbox.updateMany).toHaveBeenCalledWith({ where: { id: { in: ["mb1"] } }, data: { syncRequestedAt: now } });
+  });
+  it("fans out to every workspace sharing the grant", async () => {
+    prisma.mailbox.findMany.mockResolvedValue([{ id: "mb1" }, { id: "mb2" }]);
+    prisma.mailbox.updateMany.mockResolvedValue({ count: 1 });
+    expect(await handleNylasEvent(event("message.created"), now)).toEqual({ syncMailboxIds: ["mb1", "mb2"] });
+    await handleNylasEvent(event("grant.expired"), now);
+    expect(notifyMailboxOwner).toHaveBeenCalledTimes(2);
   });
   it("grant.expired sets ERROR and tells the owner", async () => {
-    prisma.mailbox.findFirst.mockResolvedValue({ id: "mb1" });
+    prisma.mailbox.findMany.mockResolvedValue([{ id: "mb1" }]);
     prisma.mailbox.updateMany.mockResolvedValue({ count: 1 });
-    expect(await handleNylasEvent(event("grant.expired"), now)).toEqual({ syncMailboxId: null });
+    expect(await handleNylasEvent(event("grant.expired"), now)).toEqual({ syncMailboxIds: [] });
     expect(prisma.mailbox.updateMany.mock.calls[0][0].data).toMatchObject({ status: "ERROR", lastError: "AUTH_REVOKED: nylas grant.expired" });
     expect(notifyMailboxOwner).toHaveBeenCalledWith("mb1", "auth_revoked", "nylas grant.expired", now);
   });
   it("does not notify twice when the mailbox already left ACTIVE", async () => {
-    prisma.mailbox.findFirst.mockResolvedValue({ id: "mb1" });
+    prisma.mailbox.findMany.mockResolvedValue([{ id: "mb1" }]);
     prisma.mailbox.updateMany.mockResolvedValue({ count: 0 });
     await handleNylasEvent(event("grant.error"), now);
     expect(notifyMailboxOwner).not.toHaveBeenCalled();
   });
   it("ignores unknown grants, events and malformed payloads", async () => {
-    prisma.mailbox.findFirst.mockResolvedValue(null);
-    expect(await handleNylasEvent(event("message.created", "nope"), now)).toEqual({ syncMailboxId: null });
-    expect(await handleNylasEvent(event("message.updated"), now)).toEqual({ syncMailboxId: null });
-    expect(await handleNylasEvent(null, now)).toEqual({ syncMailboxId: null });
-    expect(prisma.mailbox.update).not.toHaveBeenCalled();
+    prisma.mailbox.findMany.mockResolvedValue([]);
+    expect(await handleNylasEvent(event("message.created", "nope"), now)).toEqual({ syncMailboxIds: [] });
+    expect(await handleNylasEvent(event("message.updated"), now)).toEqual({ syncMailboxIds: [] });
+    expect(await handleNylasEvent(null, now)).toEqual({ syncMailboxIds: [] });
+    expect(prisma.mailbox.updateMany).not.toHaveBeenCalled();
   });
 });

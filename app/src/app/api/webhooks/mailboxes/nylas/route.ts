@@ -9,7 +9,7 @@ import { handleNylasEvent, nylasChallenge, verifyNylasSignature } from "@/lib/ma
 /** Nylas checks the endpoint once when the webhook is registered: echo the challenge as plain text. */
 export async function GET(request: NextRequest) {
   if (!hasMailboxWebhookToken(request)) return new Response(null, { status: 401 });
-  const challenge = nylasChallenge(request.nextUrl.searchParams.get("challenge"));
+  const challenge = nylasChallenge(new URL(request.url).searchParams.get("challenge"));
   if (!challenge) return new Response(null, { status: 400 });
   return new Response(challenge, { status: 200, headers: { "Content-Type": "text/plain", "X-Content-Type-Options": "nosniff" } });
 }
@@ -22,10 +22,10 @@ export async function POST(request: NextRequest) {
     return new Response(null, { status: 401 });
   }
   try {
-    const { syncMailboxId } = await handleNylasEvent(JSON.parse(raw));
-    if (syncMailboxId) {
+    const { syncMailboxIds } = await handleNylasEvent(JSON.parse(raw));
+    for (const id of syncMailboxIds) {
       after(() =>
-        syncMailbox(syncMailboxId, new Date()).catch((error) =>
+        syncMailbox(id, new Date()).catch((error) =>
           console.error("[mailboxes] nylas sync failed", error instanceof Error ? error.message : "unknown"),
         ),
       );

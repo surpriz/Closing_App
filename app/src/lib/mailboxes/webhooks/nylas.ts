@@ -18,31 +18,33 @@ export function nylasChallenge(value: string | null): string | null {
 }
 
 /**
- * One Nylas notification. Returns the mailbox to sync (message.created) or null. Carries no content: the message is
+ * One Nylas notification. Returns the mailboxes to sync (message.created). Carries no content: the message is
  * re-read by the connector. Unknown events and unknown grants are ignored.
  */
-export async function handleNylasEvent(payload: unknown, now = new Date()): Promise<{ syncMailboxId: string | null }> {
+export async function handleNylasEvent(payload: unknown, now = new Date()): Promise<{ syncMailboxIds: string[] }> {
   const event = payload as { type?: unknown; data?: { object?: { grant_id?: unknown } } } | null;
   const type = typeof event?.type === "string" ? event.type : null;
   const grantId = event?.data?.object?.grant_id;
-  if (!type || typeof grantId !== "string" || !grantId) return { syncMailboxId: null };
+  if (!type || typeof grantId !== "string" || !grantId) return { syncMailboxIds: [] };
 
   const where = { connector: "NYLAS" as const, externalAccountId: grantId, status: "ACTIVE" as const };
+  // The same Google account connected in two workspaces shares one grant: every live mailbox on it is concerned
+  const mailboxes = await prisma.mailbox.findMany({ where, select: { id: true } });
+  if (mailboxes.length === 0) return { syncMailboxIds: [] };
+  const ids = mailboxes.map((m) => m.id);
   if (type === "message.created") {
-    const mailbox = await prisma.mailbox.findFirst({ where, select: { id: true } });
-    if (!mailbox) return { syncMailboxId: null };
-    await prisma.mailbox.update({ where: { id: mailbox.id }, data: { syncRequestedAt: now } });
-    return { syncMailboxId: mailbox.id };
+    await prisma.mailbox.updateMany({ where: { id: { in: ids } }, data: { syncRequestedAt: now } });
+    return { syncMailboxIds: ids };
   }
   if (type === "grant.expired" || type === "grant.error") {
-    const mailbox = await prisma.mailbox.findFirst({ where, select: { id: true } });
-    if (!mailbox) return { syncMailboxId: null };
     const detail = `nylas ${type}`;
-    const { count } = await prisma.mailbox.updateMany({
-      where: { id: mailbox.id, status: "ACTIVE" },
-      data: { status: "ERROR", lastError: `AUTH_REVOKED: ${detail}`, lastErrorAt: now },
-    });
-    if (count > 0) await notifyMailboxOwner(mailbox.id, "auth_revoked", detail, now);
+    for (const id of ids) {
+      const { count } = await prisma.mailbox.updateMany({
+        where: { id, status: "ACTIVE" },
+        data: { status: "ERROR", lastError: `AUTH_REVOKED: ${detail}`, lastErrorAt: now },
+      });
+      if (count > 0) await notifyMailboxOwner(id, "auth_revoked", detail, now);
+    }
   }
-  return { syncMailboxId: null };
+  return { syncMailboxIds: [] };
 }

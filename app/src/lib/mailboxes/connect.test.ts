@@ -215,6 +215,24 @@ describe("disconnectMailbox", () => {
     spy.mockRestore();
   });
 
+  it("keeps the provider grant when another live mailbox shares it", async () => {
+    db.findFirst.mockResolvedValue({ id: "mb1", connector: "NYLAS", credentials: "enc", externalAccountId: "g1" });
+    db.count.mockResolvedValue(1);
+    db.updateMany.mockResolvedValue({ count: 1 });
+    expect(await disconnectMailbox("org1", "u1", "mb1", now)).toBe(true);
+    expect(db.count.mock.calls[0][0].where).toMatchObject({ id: { not: "mb1" }, externalAccountId: "g1", status: { not: "DISCONNECTED" } });
+    expect(providerDisconnect).not.toHaveBeenCalled();
+    expect(db.updateMany).toHaveBeenCalled();
+  });
+
+  it("deletes the grant when nobody else uses it", async () => {
+    db.findFirst.mockResolvedValue({ id: "mb1", connector: "UNIPILE", credentials: "enc", externalAccountId: "a1" });
+    db.count.mockResolvedValue(0);
+    db.updateMany.mockResolvedValue({ count: 1 });
+    await disconnectMailbox("org1", "u1", "mb1", now);
+    expect(providerDisconnect).toHaveBeenCalled();
+  });
+
   it("wipes the credentials and is scoped to the user and workspace", async () => {
     db.updateMany.mockResolvedValue({ count: 1 });
     expect(await disconnectMailbox("org1", "u1", "mb1", now)).toBe(true);

@@ -314,6 +314,18 @@ async function revokeAtProvider(where: { id: string; organizationId: string; use
       },
     });
     if (!mailbox?.credentials) return;
+    // One Google account connected in two workspaces shares one grant/account: deleting it would cut the other
+    if ((mailbox.connector === "NYLAS" || mailbox.connector === "UNIPILE") && mailbox.externalAccountId) {
+      const others = await prisma.mailbox.count({
+        where: {
+          id: { not: mailbox.id },
+          connector: mailbox.connector,
+          externalAccountId: mailbox.externalAccountId,
+          status: { not: "DISCONNECTED" },
+        },
+      });
+      if (others > 0) return;
+    }
     await connectorFor(mailbox).disconnect();
   } catch (error) {
     console.error("[mailboxes] provider revocation failed", where.id, error instanceof Error ? error.message : "unknown");

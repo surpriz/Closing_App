@@ -107,6 +107,23 @@ describe("send", () => {
   });
 });
 
+describe("error mapping by scope", () => {
+  it("a missing reply target on send is REJECTED, not a revoked login", async () => {
+    http.mockResolvedValueOnce(json({ error: { type: "not_found_error", message: "Message not found" } }, 404));
+    await expect(connector().send(outbound)).rejects.toMatchObject({ code: "REJECTED", options: { detail: "Message not found" } });
+  });
+  it("403 on a send is CONFIG, unless it names the grant", async () => {
+    http.mockResolvedValueOnce(json({ error: { message: "forbidden" } }, 403));
+    await expect(connector().send(outbound)).rejects.toMatchObject({ code: "CONFIG" });
+    http.mockResolvedValueOnce(json({ error: { message: "grant has been revoked" } }, 403));
+    await expect(connector().send(outbound)).rejects.toMatchObject({ code: "AUTH_REVOKED" });
+  });
+  it("404 on the grant itself is AUTH_REVOKED", async () => {
+    http.mockResolvedValue(json({}, 404));
+    expect(await connector().verify()).toMatchObject({ ok: false, code: "AUTH_REVOKED" });
+  });
+});
+
 describe("listNewMessages", () => {
   const opts = { limit: 50, notBefore: new Date(1792000000_000), signal: new AbortController().signal };
   it("pages through two responses and ends on a date cursor", async () => {
@@ -133,7 +150,7 @@ describe("listNewMessages", () => {
     const second = await connector().listNewMessages(first.cursor, opts);
     expect(new URL(http.mock.calls[1][0]).searchParams.get("page_token")).toBe("tok-2");
     expect(second.hasMore).toBe(false);
-    expect(second.cursor).toBe("date:1793000500");
+    expect(second.cursor).toBe("date:1793000499");
     expect(second.messages[0].isDsn).toBe(true);
     expect(second.messages[0].dsn?.failedRecipient).toBe("nobody@corp.com");
   });
