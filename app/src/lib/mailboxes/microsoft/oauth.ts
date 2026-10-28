@@ -66,7 +66,7 @@ export function mapGraphError(
   const detail = `graph ${status}${code ? ` ${code}` : ""}`;
   if (status === 429) return new MailboxError("RATE_LIMITED", "rate limited", { retryAfterMs: retryAfterMs(retryAfter), detail });
   // Submission limits only: a full mailbox (ErrorQuotaExceeded) is not something waiting for tomorrow fixes
-  if (SUBMISSION_CODES.includes(code) || /submission quota|\b5\.2\.2\b/i.test(message)) {
+  if (SUBMISSION_CODES.includes(code) || /submission quota/i.test(message)) {
     return new MailboxError("QUOTA", "sending quota reached", { detail });
   }
   if (status === 401 || AUTH_CODES.includes(code)) return new MailboxError("AUTH_REVOKED", "access denied by Microsoft", { detail });

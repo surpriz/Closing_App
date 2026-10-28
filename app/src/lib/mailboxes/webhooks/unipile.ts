@@ -56,7 +56,13 @@ export async function handleUnipileNotify(
   }
 
   const state = await consumeOauthState(stateId, deps.now);
-  if (!state || state.provider !== "GOOGLE") return { outcome: "invalid_state" };
+  if (!state) {
+    // Made for this state, which expired or was spent: nobody will claim the account, it would linger connected and
+    // billed. The orphan guard keeps it when a mailbox already points at it (a replayed notification)
+    await dropOrphanAccount(accountId, deps);
+    return { outcome: "invalid_state" };
+  }
+  if (state.provider !== "GOOGLE") return { outcome: "invalid_state" };
 
   try {
     // Another workspace already runs this account: never let a second one take it over

@@ -239,6 +239,18 @@ describe("planEnrollments, catch-up", () => {
     expect(result.continued).toBe(0);
   });
 
+  it("leaves the blocked state alone when the failed next message carries a Message-ID", async () => {
+    mailboxFindMany.mockResolvedValue([]);
+    stranded = [stuck({ currentStep: 1, messages: [{ sentAt: new Date(now.getTime() - 4 * DAY) }] })];
+    messageCreate.mockRejectedValue({ code: "P2002" });
+    messageUpdateMany.mockResolvedValue({ count: 0 });
+    messageFindUnique.mockResolvedValue({ id: "m-old", status: "FAILED", messageId: "<sent@acme.com>" });
+    await planEnrollments(now);
+    expect(messageFindUnique).toHaveBeenLastCalledWith({ where: { dedupeKey: "cold:e1:s2" }, select: { messageId: true } });
+    expect(enrollmentUpdateMany).toHaveBeenCalledTimes(1);
+    expect(enrollmentUpdateMany).toHaveBeenCalledWith({ where: { id: "e1", status: "ACTIVE" }, data: { nextSendAt: null } });
+  });
+
   it("leaves it alone while the next message is still SCHEDULED", async () => {
     mailboxFindMany.mockResolvedValue([]);
     stranded = [stuck({ currentStep: 1, messages: [{ sentAt: new Date(now.getTime() - 4 * DAY) }] })];

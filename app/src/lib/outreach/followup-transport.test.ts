@@ -453,6 +453,26 @@ describe("sendCampaignFollowup", () => {
     expect(mocks.notifyMailboxOwner).toHaveBeenCalledWith("mb1", "send_failed", "TRANSIENT: greylisted", now);
   });
 
+  it("never retries a send that may have left: mirror and follow-up FAILED interrupted, Message-ID kept, enrollment paused", async () => {
+    const send = vi.fn(async (): Promise<never> => {
+      throw new MailboxError("TRANSIENT", "Microsoft unavailable", { detail: "graph 503", maybeSent: true });
+    });
+    expect(await sendCampaignFollowup("f1", now, { connector: () => fakeConnector(send) as never })).toBe("failed");
+    expect(db.followup.update).toHaveBeenLastCalledWith({ where: { id: "f1" }, data: { status: "FAILED", sentAt: null, error: "interrupted" } });
+    const mirrorWrites = db.campaignMessage.updateMany.mock.calls.map((c) => c[0]);
+    expect(mirrorWrites.at(-1)).toEqual({ where: { id: "m1" }, data: { status: "FAILED", sendingAt: null, error: "interrupted" } });
+    // The Message-ID written before the send is never cleared, nothing is put back in the queue
+    expect(mirrorWrites.some((w) => "messageId" in w.data && w.data.messageId === null)).toBe(false);
+    expect(mirrorWrites.some((w) => w.data.status === "CANCELLED" || w.data.status === "SCHEDULED")).toBe(false);
+    expect(db.followup.update.mock.calls.some((c) => c[0].data.status === "GENERATED")).toBe(false);
+    expect(db.campaignProspect.updateMany).toHaveBeenCalledWith({
+      where: { id: "e1", OR: [{ status: "ACTIVE" }, { status: "PAUSED", pausedReason: { in: expect.any(Array) } }] },
+      data: { status: "PAUSED", pausedReason: "interrupted", pausedAt: now },
+    });
+    expect(db.campaignProspect.updateMany.mock.calls[0][0].where.OR[1].pausedReason.in).toContain("call_moment");
+    expect(mocks.notifyMailboxOwner).not.toHaveBeenCalled();
+  });
+
   it("pauses with reason rejected on REJECTED", async () => {
     const send = vi.fn(async (): Promise<never> => {
       throw new MailboxError("REJECTED", "no such user");

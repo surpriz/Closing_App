@@ -548,6 +548,37 @@ describe("sendDueMessages, send errors", () => {
     expect(enrollmentUpdate).not.toHaveBeenCalled();
   });
 
+  it("maybe sent: row FAILED interrupted keeping its Message-ID, enrollment PAUSED interrupted, no retry, batch stops", async () => {
+    candidates = [{ id: "m1" }, { id: "m2" }];
+    send.mockRejectedValue(new MailboxError("TRANSIENT", "unipile unreachable", { detail: "ETIMEDOUT", maybeSent: true }));
+    const result = await sendDueMessages(now, {}, deps);
+    expect(messageUpdateMany).toHaveBeenCalledWith({
+      where: { id: "m1", status: "SENDING", sendingAt: now },
+      data: { status: "FAILED", error: "interrupted", sendingAt: null },
+    });
+    expect(enrollmentUpdateMany).toHaveBeenCalledWith({
+      where: { id: "e1", status: "ACTIVE" },
+      data: { status: "PAUSED", pausedReason: "interrupted", pausedAt: now },
+    });
+    // The Message-ID written before the send is never cleared, and nothing is put back in the queue
+    expect(messageUpdateMany.mock.calls.some(([a]) => a.data.messageId === null)).toBe(false);
+    expect(messageUpdateMany.mock.calls.some(([a]) => a.data.status === "SCHEDULED")).toBe(false);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(notifyMailboxOwner).not.toHaveBeenCalled();
+    expect(mailboxUpdate).not.toHaveBeenCalled();
+    expect(result).toEqual({ sent: 0, rescheduled: 0, failed: 1, cancelled: 0 });
+  });
+
+  it("maybe sent wins over the error code: a 5xx read as QUOTA is not rescheduled either", async () => {
+    send.mockRejectedValue(new MailboxError("QUOTA", "sending quota reached", { detail: "graph 503", maybeSent: true }));
+    await sendDueMessages(now, {}, deps);
+    expect(messageUpdateMany.mock.calls.some(([a]) => a.data.status === "SCHEDULED")).toBe(false);
+    expect(enrollmentUpdateMany).toHaveBeenCalledWith({
+      where: { id: "e1", status: "ACTIVE" },
+      data: { status: "PAUSED", pausedReason: "interrupted", pausedAt: now },
+    });
+  });
+
   it("network TRANSIENT: the row goes back with its attempt, the mailbox's batch stops, nobody is told", async () => {
     candidates = [{ id: "m1" }, { id: "m2" }, { id: "m3" }];
     send.mockRejectedValue(new MailboxError("TRANSIENT", "SMTP server unreachable", { detail: "ETIMEDOUT" }));

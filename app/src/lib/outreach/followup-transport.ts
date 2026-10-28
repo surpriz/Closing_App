@@ -396,8 +396,9 @@ export async function sendCampaignFollowup(
         idempotencyKey: dedupeKey,
       });
     } catch (error) {
-      // The send itself failed: nothing left
-      mayHaveLeft = false;
+      // The send itself failed: nothing left, unless the connector says the mail may have (then a crash below leaves the
+      // row to the reconciliation)
+      mayHaveLeft = isMailboxError(error) && error.maybeSent;
       return await handleSendError(error);
     }
 
@@ -441,6 +442,20 @@ export async function sendCampaignFollowup(
   async function handleSendError(error: unknown): Promise<FollowupTransportOutcome> {
     const box = mailbox!;
     const code = isMailboxError(error) ? error.code : null;
+    // The provider had taken the mail when it failed: it may have left. At-most-once, as for a stale mirror: the row
+    // keeps its Message-ID, nothing is retried, and the enrollment waits for the seller (a reading pause included,
+    // since this follow-up was what would have ended it)
+    if (isMailboxError(error) && error.maybeSent) {
+      await fail("interrupted", null);
+      await prisma.campaignProspect.updateMany({
+        where: {
+          id: enrollment!.id,
+          OR: [{ status: "ACTIVE" }, { status: "PAUSED", pausedReason: { in: PAUSES_ENDED_BY_FOLLOWUP } }],
+        },
+        data: { status: "PAUSED", pausedReason: "interrupted", pausedAt: now },
+      });
+      return "failed";
+    }
     if (isMailboxError(error) && (code === "AUTH_REVOKED" || code === "CONFIG")) {
       await prisma.mailbox.update({
         where: { id: box.id },

@@ -22,10 +22,13 @@ export type ConnectorDeps = {
 export type ConnectorMailbox = Pick<Mailbox, "id" | "provider" | "connector" | "email" | "displayName" | "credentials"> &
   Partial<Pick<Mailbox, "externalAccountId" | "subscriptionId">>;
 
-/** Default rotation hook: writes the new encoded credentials straight back to the mailbox row. */
+/**
+ * Default rotation hook: writes the new encoded credentials straight back to the mailbox row. Never into a disconnected
+ * one: a refresh in flight during the disconnect must not bring a live token back into a row whose secrets were wiped.
+ */
 export function defaultPersist(mailboxId: string): (encoded: string) => Promise<void> {
   return async (encoded) => {
-    await prisma.mailbox.update({ where: { id: mailboxId }, data: { credentials: encoded } });
+    await prisma.mailbox.updateMany({ where: { id: mailboxId, status: { not: "DISCONNECTED" } }, data: { credentials: encoded } });
   };
 }
 

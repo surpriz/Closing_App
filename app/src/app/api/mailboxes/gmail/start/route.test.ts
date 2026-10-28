@@ -86,11 +86,12 @@ describe("gmail start", () => {
     expect(createHostedAuthLink.mock.calls[0][0]).not.toHaveProperty("reconnectAccountId");
   });
 
-  it("answers 404 when no Gmail connector is configured", async () => {
+  it("sends the browser back to settings when no Gmail connector is configured", async () => {
     gmailConnector.mockReturnValue(null);
     const res = await get();
-    expect(res.status).toBe(404);
-    expect(await res.json()).toEqual({ error: "gmail_unavailable" });
+    expect(res.status).toBe(302);
+    expect(res.headers.get("location")).toBe("https://app.test/settings?mailbox=error&code=gmail_unavailable#boite");
+    expect(createOauthState).not.toHaveBeenCalled();
   });
 
   it("answers 429 when rate limited, before anything else", async () => {

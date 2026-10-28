@@ -4,7 +4,7 @@ import { MailboxError } from "../errors";
 import type { InboundMessage, MailboxConnector } from "../types";
 
 const prisma = {
-  mailbox: { findUnique: vi.fn(), findMany: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
+  mailbox: { findUnique: vi.fn(), findFirst: vi.fn(), findMany: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
   member: { findMany: vi.fn() },
   campaignMessage: { findMany: vi.fn() },
   campaignProspect: { findMany: vi.fn() },
@@ -18,10 +18,13 @@ vi.mock("./handle", () => ({ handleInbound: (...a: unknown[]) => handleInbound(.
 const notifyMailboxOwner = vi.fn();
 vi.mock("../notify-owner", () => ({ notifyMailboxOwner: (...a: unknown[]) => notifyMailboxOwner(...a) }));
 
+const outreachOrgIds = vi.fn();
+vi.mock("@/lib/outreach/flag", () => ({ outreachOrgIds: () => outreachOrgIds() }));
+
 const maintainSubscriptions = vi.fn();
 vi.mock("../subscriptions", () => ({ maintainSubscriptions: (...a: unknown[]) => maintainSubscriptions(...a) }));
 
-const { syncMailbox, syncMailboxesDue, MIN_SYNC_BUDGET_MS, SYNC_INTERVAL_MS, SYNC_INTERVAL_WEBHOOK_MS, SYNC_LEASE_MS, MAX_SYNC_BACKOFF_MS } =
+const { syncMailbox, syncMailboxNow, syncMailboxesDue, MIN_SYNC_BUDGET_MS, SYNC_INTERVAL_MS, SYNC_INTERVAL_WEBHOOK_MS, SYNC_LEASE_MS, MAX_SYNC_BACKOFF_MS } =
   await import("./sync");
 
 const NOW = new Date("2026-10-28T10:00:00Z");
@@ -306,5 +309,68 @@ describe("syncMailboxesDue", () => {
         lastErrorAt: NOW,
       },
     });
+  });
+});
+
+describe("syncMailboxNow", () => {
+  const okList = () => vi.fn().mockResolvedValue({ messages: [msg("a")], cursor: "c1", hasMore: false });
+
+  beforeEach(() => {
+    outreachOrgIds.mockReturnValue(["org1"]);
+    prisma.mailbox.findFirst.mockResolvedValue({ ...row, syncErrorCount: 0 });
+    prisma.mailbox.updateMany.mockResolvedValue({ count: 1 });
+  });
+
+  it("only looks at an active mailbox of an active beta workspace with recent sends", async () => {
+    await syncMailboxNow("mb1", NOW, { connector: () => fakeConnector(okList()) });
+    expect(prisma.mailbox.findFirst.mock.calls[0][0].where).toEqual({
+      id: "mb1",
+      status: "ACTIVE",
+      organizationId: { in: ["org1"] },
+      organization: { suspendedAt: null },
+      messages: { some: { status: "SENT", sentAt: { gte: new Date(NOW.getTime() - 60 * 86_400_000) } } },
+    });
+  });
+
+  it("skips a mailbox outside the kill switch: no lease, no sync", async () => {
+    outreachOrgIds.mockReturnValue([]);
+    prisma.mailbox.findFirst.mockResolvedValue(null);
+    const list = okList();
+    expect(await syncMailboxNow("mb1", NOW, { connector: () => fakeConnector(list) })).toEqual({ outcome: "skipped" });
+    expect(prisma.mailbox.findFirst.mock.calls[0][0].where.organizationId).toEqual({ in: [] });
+    expect(prisma.mailbox.updateMany).not.toHaveBeenCalled();
+    expect(list).not.toHaveBeenCalled();
+  });
+
+  it("leaves the request in syncRequestedAt when the lease is held elsewhere, without syncing", async () => {
+    prisma.mailbox.updateMany.mockResolvedValueOnce({ count: 0 });
+    const list = okList();
+    expect(await syncMailboxNow("mb1", NOW, { connector: () => fakeConnector(list) })).toEqual({ outcome: "busy" });
+    expect(list).not.toHaveBeenCalled();
+    expect(handleInbound).not.toHaveBeenCalled();
+    expect(prisma.mailbox.updateMany).toHaveBeenLastCalledWith({ where: { id: "mb1" }, data: { syncRequestedAt: NOW } });
+  });
+
+  it("syncs under the lease, clears the request and gives the lease back", async () => {
+    const list = okList();
+    expect(await syncMailboxNow("mb1", NOW, { connector: () => fakeConnector(list, true) })).toEqual({ outcome: "synced" });
+    expect(prisma.mailbox.updateMany.mock.calls[0][0]).toEqual({
+      where: {
+        id: "mb1",
+        OR: [{ syncClaimedAt: null }, { syncClaimedAt: { lt: new Date(NOW.getTime() - SYNC_LEASE_MS) } }],
+      },
+      data: { syncClaimedAt: NOW, syncRequestedAt: null },
+    });
+    expect(handleInbound).toHaveBeenCalledTimes(1);
+    expect(prisma.mailbox.updateMany.mock.calls.at(-1)?.[0]).toEqual({
+      where: { id: "mb1", syncClaimedAt: NOW },
+      data: { lastSyncAt: NOW, nextSyncAt: new Date(NOW.getTime() + SYNC_INTERVAL_WEBHOOK_MS), syncErrorCount: 0, syncClaimedAt: null },
+    });
+  });
+
+  it("a failing sync records the failure and frees the lease", async () => {
+    const list = vi.fn().mockRejectedValue(new MailboxError("TRANSIENT", "timeout"));
+    expect(await syncMailboxNow("mb1", NOW, { connector: () => fakeConnector(list) })).toEqual({ outcome: "failed" });
+    expect(prisma.mailbox.updateMany.mock.calls.at(-1)?.[0].data).toMatchObject({ syncClaimedAt: null, syncErrorCount: 1 });
   });
 });

@@ -121,6 +121,10 @@ describe("mapGraphError", () => {
     expect(mapGraphError(404, { error: { code: "ErrorItemNotFound" } }, null).options.detail).toContain("404");
     expect(mapGraphError(410, null, null).options.detail).toContain("410");
   });
+
+  it("does not read a bare 5.2.2 (mailbox full) as a sending quota", () => {
+    expect(mapGraphError(400, { error: { code: "ErrorQuotaExceeded", message: "Mailbox full 5.2.2" } }, null).code).toBe("CONFIG");
+  });
 });
 
 describe("mapGraphError contexts", () => {

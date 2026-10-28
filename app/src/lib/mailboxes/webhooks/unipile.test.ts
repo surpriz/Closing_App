@@ -73,6 +73,18 @@ describe("handleUnipileNotify", () => {
     expect(h.connect).toHaveBeenCalledTimes(1);
   });
 
+  it("drops the account made for a state that expired or was spent, unless a mailbox points at it", async () => {
+    h.consume.mockResolvedValueOnce(null);
+    expect((await handleUnipileNotify(created)).outcome).toBe("invalid_state");
+    expect(h.connect).not.toHaveBeenCalled();
+    expect(h.disconnect).toHaveBeenCalledTimes(1);
+
+    h.consume.mockResolvedValueOnce(null);
+    h.findFirst.mockResolvedValueOnce({ id: "mb1" });
+    expect((await handleUnipileNotify(created)).outcome).toBe("invalid_state");
+    expect(h.disconnect).toHaveBeenCalledTimes(1);
+  });
+
   it("ignores other statuses and malformed payloads without touching the state", async () => {
     expect((await handleUnipileNotify({ ...created, status: "CREATION_FAIL" })).outcome).toBe("ignored");
     expect((await handleUnipileNotify(null)).outcome).toBe("ignored");
@@ -97,7 +109,6 @@ describe("handleUnipileNotify", () => {
   });
 
   it("refuses an account that was not created for this state", async () => {
-    h.consume.mockResolvedValueOnce(state);
     h.account.mockResolvedValueOnce({ address: "me@acme.test", name: "other_state", status: "OK" });
     expect((await handleUnipileNotify(created)).outcome).toBe("invalid_state");
     expect(h.connect).not.toHaveBeenCalled();

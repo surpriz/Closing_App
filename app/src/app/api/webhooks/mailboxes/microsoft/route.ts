@@ -1,12 +1,13 @@
 import { after, type NextRequest } from "next/server";
 
-import { syncMailbox } from "@/lib/mailboxes/inbound/sync";
+import { syncMailboxNow } from "@/lib/mailboxes/inbound/sync";
 import { handleMicrosoftNotifications, microsoftValidationToken } from "@/lib/mailboxes/webhooks/microsoft";
 import { hasMailboxWebhookToken } from "@/lib/mailboxes/webhooks/token";
 
 /**
  * Graph subscription endpoint. Creating a subscription sends `?validationToken=`, answered as plain text within 10 s;
- * notifications must be acknowledged with 202 within 3 s, so the sync runs in after(). Never a 5xx: Graph would retry.
+ * notifications must be acknowledged with 202 within 3 s, so the sync runs in after(), under the tick's lease and kill
+ * switch. Never a 5xx: Graph would retry.
  */
 export async function POST(request: NextRequest) {
   if (!hasMailboxWebhookToken(request)) return new Response(null, { status: 401 });
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
     const { syncMailboxIds } = await handleMicrosoftNotifications(payload);
     for (const mailboxId of syncMailboxIds) {
       after(() =>
-        syncMailbox(mailboxId, new Date()).catch((error) =>
+        syncMailboxNow(mailboxId, new Date()).catch((error) =>
           console.error("[mailboxes] microsoft sync failed", mailboxId, error instanceof Error ? error.message : "unknown"),
         ),
       );

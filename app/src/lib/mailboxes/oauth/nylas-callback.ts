@@ -1,8 +1,9 @@
 import { logAudit } from "@/lib/audit";
 import { getSellerPrefs, sellerTimezone } from "@/lib/closing/notify/preferences";
 import { connectProviderMailbox } from "../connect";
-import { consumeOauthState } from "./state";
+import { isMailboxError } from "../errors";
 import { exchangeNylasCode } from "../gmail/nylas";
+import { consumeOauthState } from "./state";
 
 export type NylasCallbackParams = {
   code: string | null;
@@ -34,13 +35,13 @@ const defaults: NylasCallbackDeps = {
 export async function handleNylasCallback(params: NylasCallbackParams, deps: Partial<NylasCallbackDeps> = {}): Promise<string> {
   const d = { ...defaults, ...deps };
   const to = (flag: string) => `/settings?mailbox=${flag}#boite`;
-  if (params.error) return to("cancelled");
-  if (!params.code || !params.state) return to("expired");
 
-  // Bound to the signed-in member: a state started by someone else must never be usable (login CSRF)
+  // Bound to the signed-in member: a state started by someone else must never be usable (login CSRF). Consumed before
+  // anything else, a cancelled consent included, so it can never be replayed
   const expected = { userId: params.user.id, organizationId: params.organizationId };
-  const state = await d.consumeState(params.state, d.now(), expected);
-  if (!state || state.userId !== expected.userId || state.organizationId !== expected.organizationId || state.provider !== "GOOGLE") {
+  const state = params.state ? await d.consumeState(params.state, d.now(), expected) : null;
+  if (params.error) return to("cancelled");
+  if (!params.code || !state || state.userId !== expected.userId || state.organizationId !== expected.organizationId || state.provider !== "GOOGLE") {
     return to("expired");
   }
   try {
@@ -56,7 +57,7 @@ export async function handleNylasCallback(params: NylasCallbackParams, deps: Par
       externalAccountId: grantId,
       timezone: await d.timezone(state.userId, state.organizationId),
     });
-    if (!result.ok) return to(result.code === "exists" || result.code === "limit" ? result.code : "failed");
+    if (!result.ok) return to(`error&code=${result.code}`);
     await d.audit({
       organizationId: state.organizationId,
       actorUserId: state.userId,
@@ -67,7 +68,8 @@ export async function handleNylasCallback(params: NylasCallbackParams, deps: Par
     });
     return to("connected");
   } catch (error) {
+    if (isMailboxError(error)) return to(`error&code=${error.code}`);
     console.error("[mailboxes] nylas callback failed", error instanceof Error ? error.message : "unknown");
-    return to("failed");
+    return to("error&code=TRANSIENT");
   }
 }

@@ -248,6 +248,7 @@ async function getMailboxes(userId: string, organizationId: string) {
       sentCount: true,
       dnsDetail: true,
       provider: true,
+      connector: true,
     },
   });
   return rows.map((row) => ({
@@ -260,6 +261,7 @@ async function getMailboxes(userId: string, organizationId: string) {
     sentToday: sentToday(row, now),
     dns: (row.dnsDetail as DnsReport | null) ?? null,
     provider: row.provider,
+    connector: row.connector,
   }));
 }
 

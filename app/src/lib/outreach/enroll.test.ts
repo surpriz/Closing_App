@@ -273,15 +273,44 @@ describe("resumeEnrollment", () => {
     db.campaignMessage.updateMany.mockResolvedValue({ count: 1 });
   });
 
-  it("flips to ACTIVE and re-opens the failed or cancelled next step in one transaction, from the campaign's mailbox", async () => {
+  it("flips to ACTIVE and re-opens the next step in one transaction, from the campaign's mailbox, never one that may have left", async () => {
     expect(await resumeEnrollment("org", "e1", NOW, ACTOR)).toBe(true);
     expect(db.campaignProspect.updateMany).toHaveBeenCalledWith({
-      where: { id: "e1", organizationId: "org", status: "PAUSED" },
+      where: { id: "e1", organizationId: "org", status: "PAUSED", pausedReason: null },
       data: { status: "ACTIVE", pausedReason: null, pausedAt: null },
     });
     expect(db.campaignMessage.updateMany).toHaveBeenCalledWith({
-      where: { enrollmentId: "e1", stepId: "s2", status: { in: ["FAILED", "CANCELLED"] } },
+      where: { enrollmentId: "e1", stepId: "s2", OR: [{ status: "CANCELLED" }, { status: "FAILED", messageId: null }] },
       data: { status: "SCHEDULED", scheduledFor: NOW, attempts: 0, messageId: null, sendingAt: null, error: null, mailboxId: "mb2" },
+    });
+  });
+
+  it("keeps a failed step with a Message-ID blocked on any other pause", async () => {
+    db.campaignProspect.findUnique.mockResolvedValue({
+      currentStep: 1,
+      pausedReason: "send_failed",
+      campaign: { mailboxId: "mb2", steps: [{ id: "s1", order: 1 }, { id: "s2", order: 2 }] },
+    });
+    expect(await resumeEnrollment("org", "e1", NOW, ACTOR)).toBe(true);
+    expect(db.campaignProspect.updateMany.mock.calls[0][0].where.pausedReason).toBe("send_failed");
+    expect(db.campaignMessage.updateMany.mock.calls[0][0].where).toEqual({
+      enrollmentId: "e1",
+      stepId: "s2",
+      OR: [{ status: "CANCELLED" }, { status: "FAILED", messageId: null }],
+    });
+  });
+
+  it("re-opens a failed step with a Message-ID from an interrupted pause (the seller confirmed it did not leave)", async () => {
+    db.campaignProspect.findUnique.mockResolvedValue({
+      currentStep: 1,
+      pausedReason: "interrupted",
+      campaign: { mailboxId: "mb2", steps: [{ id: "s1", order: 1 }, { id: "s2", order: 2 }] },
+    });
+    expect(await resumeEnrollment("org", "e1", NOW, ACTOR)).toBe(true);
+    expect(db.campaignMessage.updateMany.mock.calls[0][0].where).toEqual({
+      enrollmentId: "e1",
+      stepId: "s2",
+      status: { in: ["FAILED", "CANCELLED"] },
     });
   });
 

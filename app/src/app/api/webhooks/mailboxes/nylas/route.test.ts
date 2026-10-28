@@ -5,7 +5,8 @@ vi.mock("@/lib/env", () => ({ getEnv: () => env }));
 const prisma = { mailbox: { findMany: vi.fn(), updateMany: vi.fn() } };
 vi.mock("@/lib/db", () => ({ prisma }));
 vi.mock("next/server", async (orig) => ({ ...(await orig<object>()), after: (fn: () => unknown) => void fn() }));
-vi.mock("@/lib/mailboxes/inbound/sync", () => ({ syncMailbox: vi.fn().mockResolvedValue(null) }));
+const syncMailboxNow = vi.fn().mockResolvedValue({ outcome: "synced" });
+vi.mock("@/lib/mailboxes/inbound/sync", () => ({ syncMailboxNow: (...a: unknown[]) => syncMailboxNow(...a) }));
 vi.mock("@/lib/mailboxes/notify-owner", () => ({ notifyMailboxOwner: vi.fn() }));
 
 const { GET, POST } = await import("./route");
@@ -34,6 +35,7 @@ describe("nylas webhook route", () => {
     prisma.mailbox.findMany.mockResolvedValue([{ id: "mb1" }]);
     expect((await POST(post("https://x.test/w?token=tok", signPayload(body, "sec")))).status).toBe(200);
     expect(prisma.mailbox.updateMany).toHaveBeenCalled();
+    expect(syncMailboxNow).toHaveBeenCalledWith("mb1", expect.any(Date));
   });
   it("still answers 200 on a signed payload that is not JSON", async () => {
     expect((await POST(post("https://x.test/w?token=tok", signPayload("nope", "sec"), "nope"))).status).toBe(200);

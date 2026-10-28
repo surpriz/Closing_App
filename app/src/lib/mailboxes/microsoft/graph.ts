@@ -53,7 +53,15 @@ type GraphJson = GraphMessage & {
   displayName?: string | null;
 };
 
-type CallOptions = { context?: "send" | "read"; method?: string; body?: unknown; headers?: Record<string, string>; signal?: AbortSignal };
+type CallOptions = {
+  context?: "send" | "read";
+  method?: string;
+  body?: unknown;
+  headers?: Record<string, string>;
+  signal?: AbortSignal;
+  /** The call hands the mail over for delivery: a failure that is not a definite refusal may still have sent it. */
+  transmits?: boolean;
+};
 
 /**
  * `mail` is editable by a tenant admin (nOAuth): it is only trusted when the account really owns it, as a proxy
@@ -117,14 +125,18 @@ export function graphConnector(mailbox: ConnectorMailbox, initial: MicrosoftCred
       });
     } catch {
       if (opts.signal?.aborted) throw aborted();
-      throw new MailboxError("TRANSIENT", "could not reach Microsoft Graph");
+      throw new MailboxError("TRANSIENT", "could not reach Microsoft Graph", { maybeSent: opts.transmits });
     }
     if (res.status === 401 && !retried) {
       await refresh();
       return call(path, opts, true);
     }
     const json = await res.json().catch(() => null);
-    if (!res.ok) throw mapGraphError(res.status, json, res.headers.get("retry-after"), opts.context ?? "read");
+    if (!res.ok) {
+      const error = mapGraphError(res.status, json, res.headers.get("retry-after"), opts.context ?? "read");
+      if (opts.transmits && res.status >= 500) throw new MailboxError(error.code, error.message, { ...error.options, maybeSent: true });
+      throw error;
+    }
     return { status: res.status, json: (json ?? {}) as GraphJson };
   }
 
@@ -162,7 +174,7 @@ export function graphConnector(mailbox: ConnectorMailbox, initial: MicrosoftCred
         });
       } catch (error) {
         // The mail we reply to was deleted: send without threading rather than park the whole mailbox
-        if (!(isMailboxError(error) && /graph 404/.test(error.options.detail ?? ""))) throw error;
+        if (!(isMailboxError(error) && /\bErrorItemNotFound\b/.test(error.options.detail ?? ""))) throw error;
         console.warn("[mailboxes] graph reply target gone, sending a fresh message");
       }
       draft = created
@@ -179,7 +191,7 @@ export function graphConnector(mailbox: ConnectorMailbox, initial: MicrosoftCred
       draft = await fresh();
     }
     try {
-      await call(`/me/messages/${encodeURIComponent(draft.id)}/send`, { method: "POST", context: "send" });
+      await call(`/me/messages/${encodeURIComponent(draft.id)}/send`, { method: "POST", context: "send", transmits: true });
     } catch (error) {
       // Only on a definite refusal: after a network error or a 5xx the mail may have left, and the immutable id
       // would then point at the Sent copy

@@ -317,31 +317,36 @@ async function reopenStepMessage(
 
 /**
  * Scheduled messages stay as they are: the sender re-checks business hours before each one. A step that failed or was
- * cancelled while the enrollment was paused is re-opened, otherwise the catch-up would pause it again at once.
+ * cancelled while the enrollment was paused is re-opened, otherwise the catch-up would pause it again at once. A failed
+ * step that carries a Message-ID may have left: it is only re-opened from an "interrupted" pause, which the UI confirms
+ * ("check your Sent folder") before calling this; otherwise it stays blocked for the explicit resend / skip.
  */
 export async function resumeEnrollment(organizationId: string, id: string, now: Date, actor: Actor): Promise<boolean> {
   if (!(await editableEnrollment(organizationId, id, actor))) return false;
   return prisma.$transaction(async (tx) => {
-    const { count } = await tx.campaignProspect.updateMany({
-      where: { id, organizationId, status: "PAUSED" },
-      data: { status: "ACTIVE", pausedReason: null, pausedAt: null },
-    });
-    if (count === 0) return false;
     const enrollment = await tx.campaignProspect.findUnique({
       where: { id },
       select: {
         currentStep: true,
+        pausedReason: true,
         campaign: { select: { mailboxId: true, steps: { select: { id: true, order: true } } } },
       },
     });
-    const blocked = enrollment?.campaign.steps.find((step) => step.order === enrollment.currentStep + 1);
+    if (!enrollment) return false;
+    const pausedReason = enrollment.pausedReason ?? null;
+    // Guarded on the reason read above: a pause that changed meanwhile is not resumed under the wrong rule
+    const { count } = await tx.campaignProspect.updateMany({
+      where: { id, organizationId, status: "PAUSED", pausedReason },
+      data: { status: "ACTIVE", pausedReason: null, pausedAt: null },
+    });
+    if (count === 0) return false;
+    const blocked = enrollment.campaign.steps.find((step) => step.order === enrollment.currentStep + 1);
     if (blocked) {
-      await reopenStepMessage(
-        tx,
-        { enrollmentId: id, stepId: blocked.id, status: { in: ["FAILED", "CANCELLED"] } },
-        enrollment?.campaign.mailboxId ?? null,
-        now,
-      );
+      const reopenable =
+        pausedReason === "interrupted"
+          ? { status: { in: ["FAILED", "CANCELLED"] as ("FAILED" | "CANCELLED")[] } }
+          : { OR: [{ status: "CANCELLED" as const }, { status: "FAILED" as const, messageId: null }] };
+      await reopenStepMessage(tx, { enrollmentId: id, stepId: blocked.id, ...reopenable }, enrollment.campaign.mailboxId ?? null, now);
     }
     return true;
   });

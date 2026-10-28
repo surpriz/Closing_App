@@ -105,6 +105,27 @@ describe("send", () => {
     http.mockRejectedValueOnce(new TypeError("fetch failed"));
     await expect(connector().send(outbound)).rejects.toBeInstanceOf(MailboxError);
   });
+  it("flags a 5xx, a network failure or a timeout on send as maybe sent", async () => {
+    http.mockResolvedValueOnce(json({}, 503));
+    await expect(connector().send(outbound)).rejects.toMatchObject({ code: "TRANSIENT", maybeSent: true });
+    http.mockRejectedValueOnce(new TypeError("fetch failed"));
+    await expect(connector().send(outbound)).rejects.toMatchObject({ code: "TRANSIENT", maybeSent: true });
+    http.mockRejectedValueOnce(Object.assign(new Error("timed out"), { name: "AbortError" }));
+    await expect(connector().send(outbound)).rejects.toMatchObject({ code: "TRANSIENT", maybeSent: true });
+  });
+  it("does not flag a definite refusal", async () => {
+    for (const status of [400, 401, 403, 429]) {
+      http.mockResolvedValueOnce(json({}, status));
+      await expect(connector().send(outbound)).rejects.toMatchObject({ maybeSent: false });
+    }
+  });
+  it("a 2xx without an id is a success on our own Message-ID", async () => {
+    http.mockResolvedValueOnce(json({ data: {} }));
+    expect(await connector().send(outbound)).toEqual({ messageId: "<own@acme.io>", providerId: null, threadId: null });
+    http.mockResolvedValueOnce(new Response("not json", { status: 200 }));
+    expect(await connector().send(outbound)).toEqual({ messageId: "<own@acme.io>", providerId: null, threadId: null });
+    expect(http).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe("error mapping by scope", () => {
@@ -153,6 +174,19 @@ describe("listNewMessages", () => {
     expect(second.cursor).toBe("date:1793000499");
     expect(second.messages[0].isDsn).toBe(true);
     expect(second.messages[0].dsn?.failedRecipient).toBe("nobody@corp.com");
+  });
+  it("never moves the cursor past the listing time on a future-dated mail", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(1793000000_000));
+    try {
+      const future = Math.floor(Date.parse("2027-06-01T00:00:00Z") / 1000);
+      http.mockResolvedValueOnce(json({ data: [{ id: "f1", date: future, from: [{ email: "x@corp.com" }] }] }));
+      expect((await connector().listNewMessages("date:1792999000", opts)).cursor).toBe("date:1792999999");
+      http.mockResolvedValueOnce(json({ data: [{ id: "f1", date: future, from: [{ email: "x@corp.com" }] }], next_cursor: "tok" }));
+      expect((await connector().listNewMessages("date:1792999000", opts)).cursor).toBe("page:1792999000:1793000000:tok");
+    } finally {
+      vi.useRealTimers();
+    }
   });
   it("resumes from a date cursor", async () => {
     http.mockResolvedValue(json({ data: [] }));

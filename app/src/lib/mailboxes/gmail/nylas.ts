@@ -68,8 +68,13 @@ function mapFailure(status: number, body: unknown, retryAfter: string | null, gr
   return new MailboxError(code, `nylas ${status}`, { detail, retryAfterMs });
 }
 
-async function call(http: Http, path: string, init: RequestInit & { json?: unknown; grantLevel?: boolean } = {}): Promise<unknown> {
-  const { json, grantLevel = false, ...rest } = init;
+/** `transmits`: the call hands the mail over; a failure that is not a definite refusal may still have sent it. */
+async function call(
+  http: Http,
+  path: string,
+  init: RequestInit & { json?: unknown; grantLevel?: boolean; transmits?: boolean } = {},
+): Promise<unknown> {
+  const { json, grantLevel = false, transmits = false, ...rest } = init;
   const headers: Record<string, string> = {
     Authorization: `Bearer ${getEnv().NYLAS_API_KEY ?? ""}`,
     Accept: "application/json",
@@ -79,11 +84,16 @@ async function call(http: Http, path: string, init: RequestInit & { json?: unkno
   try {
     res = await http(`${base()}${path}`, { ...rest, headers, body: json !== undefined ? JSON.stringify(json) : undefined });
   } catch (error) {
+    if (transmits) throw new MailboxError("TRANSIENT", "nylas unreachable", { maybeSent: true });
     if (error instanceof Error && error.name === "AbortError") throw error;
     throw new MailboxError("TRANSIENT", "nylas unreachable");
   }
   const body = await res.json().catch(() => null);
-  if (!res.ok) throw mapFailure(res.status, body, res.headers.get("retry-after"), grantLevel);
+  if (!res.ok) {
+    const error = mapFailure(res.status, body, res.headers.get("retry-after"), grantLevel);
+    if (transmits && res.status >= 500) throw new MailboxError(error.code, error.message, { ...error.options, maybeSent: true });
+    throw error;
+  }
   return body;
 }
 
@@ -164,6 +174,7 @@ export function nylasConnector(
       const customHeaders = Object.entries(message.headers ?? {}).map(([name, value]) => ({ name, value }));
       const body = (await call(http, `${grant}/messages/send`, {
         method: "POST",
+        transmits: true,
         json: {
           to: [{ email: message.to.address, name: message.to.name ?? undefined }],
           subject: message.subject,
@@ -173,7 +184,8 @@ export function nylasConnector(
         },
       })) as { data?: NylasMessage } | null;
       const sent = body?.data;
-      if (!sent?.id) throw new MailboxError("TRANSIENT", "nylas send response incomplete");
+      // Accepted but nothing to read back: the mail has left, our generated Message-ID stands
+      if (!sent?.id) return { messageId: message.messageId, providerId: null, threadId: null };
       let messageId = headerValue(sent.headers, "message-id");
       if (!messageId) {
         // The mail left already: a failed read-back must not fail the send
@@ -204,7 +216,8 @@ export function nylasConnector(
       } | null;
       const raw = body?.data ?? [];
       const messages = raw.map(toInbound);
-      const newest = Math.max(maxSeen, ...raw.map((m) => m.date ?? 0));
+      // A future-dated mail must not carry the cursor past now: everything arriving until then would be skipped
+      const newest = Math.min(Math.max(maxSeen, ...raw.map((m) => m.date ?? 0)), Math.floor(Date.now() / 1000));
       const next = body?.next_cursor;
       if (next) return { messages, cursor: `page:${after}:${newest}:${next}`, hasMore: true };
       return { messages, // One second back: a message landing in the same second after this listing would otherwise be skipped

@@ -127,6 +127,26 @@ describe("error mapping", () => {
     const failed = await connector().send(message).catch((e) => e);
     expect(failed.code).toBe("TRANSIENT");
   });
+
+  it("flags a 5xx or a network failure of POST /emails as maybe sent, never a definite refusal", async () => {
+    expect(await code(500)).toMatchObject({ code: "TRANSIENT", maybeSent: true });
+    expect(await code(503, { type: "errors/expired_credentials" })).toMatchObject({ maybeSent: true });
+    for (const status of [400, 401, 404, 409, 422, 429]) expect(await code(status)).toMatchObject({ maybeSent: false });
+    responder = () => {
+      throw new TypeError("fetch failed");
+    };
+    expect(await connector().send(message).catch((e) => e)).toMatchObject({ code: "TRANSIENT", maybeSent: true });
+    responder = () => {
+      throw Object.assign(new Error("timed out"), { name: "AbortError" });
+    };
+    expect(await connector().send(message).catch((e) => e)).toMatchObject({ code: "TRANSIENT", maybeSent: true });
+  });
+
+  it("does not flag a failed read: the send context is POST /emails only", async () => {
+    responder = () => json({}, 503);
+    const failed = await connector().listNewMessages(null, listOpts).catch((e) => e);
+    expect(failed).toMatchObject({ code: "TRANSIENT", maybeSent: false });
+  });
 });
 
 describe("listNewMessages", () => {
@@ -188,6 +208,24 @@ describe("cursor boundary", () => {
   });
 });
 
+describe("future-dated mail", () => {
+  it("never moves the cursor past the listing time", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-28T10:00:00Z"));
+    try {
+      responder = () => json({ items: [{ id: "f", date: "2027-06-01T00:00:00.000Z", from_attendee: { identifier: "a@b.test" } }] });
+      const out = await connector().listNewMessages(null, listOpts);
+      expect(JSON.parse(out.cursor!).after).toBe("2026-10-28T09:00:00.000Z");
+      responder = () =>
+        json({ items: [{ id: "f", date: "2027-06-01T00:00:00.000Z", from_attendee: { identifier: "a@b.test" } }], cursor: "c2" });
+      const paging = await connector().listNewMessages(null, listOpts);
+      expect(JSON.parse(paging.cursor!).max).toBe("2026-10-28T10:00:00.000Z");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
 describe("verify and disconnect", () => {
   it("is ok on a healthy account and returns the address", async () => {
     responder = () => json(accountOk);
@@ -229,7 +267,7 @@ describe("hosted auth link", () => {
       type: "create",
       providers: ["GOOGLE"],
       api_url: "https://api1.unipile.test:13111",
-      expiresOn: "2026-10-28T10:15:00.000Z",
+      expiresOn: "2026-10-28T10:10:00.000Z",
       name: "st1",
       success_redirect_url: "https://app.test/ok",
       failure_redirect_url: "https://app.test/ko",

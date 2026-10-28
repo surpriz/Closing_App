@@ -145,7 +145,7 @@ async function connectMailbox(
 
   const existing = await prisma.mailbox.findUnique({
     where: { organizationId_email: { organizationId: input.organizationId, email } },
-    select: { id: true, status: true, disconnectedAt: true, userId: true },
+    select: { id: true, status: true, disconnectedAt: true, userId: true, connector: true },
   });
   // The owner of a mailbox in ERROR can reconnect it (fix a password, re-consent) without hitting "exists" or the limit
   const reconnecting = existing?.status === "ERROR" && existing.userId === input.userId;
@@ -195,7 +195,13 @@ async function connectMailbox(
   const mailbox = await prisma.mailbox.upsert({
     where: { organizationId_email: { organizationId: input.organizationId, email } },
     create: { organizationId: input.organizationId, userId: input.userId, email, rampStartedAt: now, dailyCap: getEnv().MAILBOX_DAILY_CAP_DEFAULT, ...fields },
-    update: { userId: input.userId, ...(stale ? { rampStartedAt: now } : {}), ...fields },
+    // A cursor only means something to the connector that wrote it (IMAP uid, Graph deltaLink, intermediary date)
+    update: {
+      userId: input.userId,
+      ...(stale ? { rampStartedAt: now } : {}),
+      ...(existing && existing.connector !== input.connector ? { syncCursor: null } : {}),
+      ...fields,
+    },
     select: { id: true },
   });
   return { ok: true, mailboxId: mailbox.id, dns };

@@ -127,6 +127,16 @@ describe("send", () => {
     expect(calls[1].body).toMatchObject({ subject: "Quick question", toRecipients: expect.any(Array) });
   });
 
+  it("does not fall back on a 404 that is not a missing item", async () => {
+    const { http, calls } = fakeHttp([
+      (c) => (c.url.endsWith("/createReply") ? new Response(JSON.stringify({ error: { code: "ErrorInvalidIdMalformed" } }), { status: 404 }) : undefined),
+    ]);
+    await expect(graphConnector(mailbox(), creds(), { http }).send(message({ replyToProviderId: "x" }))).rejects.toMatchObject({
+      code: "CONFIG",
+    });
+    expect(calls).toHaveLength(1);
+  });
+
   it("rejects the message, not the mailbox, on a 400 or 413 while drafting", async () => {
     for (const status of [400, 413]) {
       const { http } = fakeHttp([() => new Response("{}", { status })]);
@@ -149,8 +159,33 @@ describe("send", () => {
       (c) => (c.method === "POST" && c.url.endsWith("/me/messages") ? json("draft.json", 201) : undefined),
       (c) => (c.url.endsWith("/send") ? new Response("{}", { status: 503 }) : undefined),
     ]);
-    await expect(graphConnector(mailbox(), creds(), { http }).send(message())).rejects.toMatchObject({ code: "TRANSIENT" });
+    await expect(graphConnector(mailbox(), creds(), { http }).send(message())).rejects.toMatchObject({ code: "TRANSIENT", maybeSent: true });
     expect(calls.some((c) => c.method === "DELETE")).toBe(false);
+  });
+
+  it("flags a network failure on /send as maybe sent", async () => {
+    const { http: base } = fakeHttp([
+      (c) => (c.method === "POST" && c.url.endsWith("/me/messages") ? json("draft.json", 201) : undefined),
+    ]);
+    const http = (async (input: string | URL, init?: RequestInit) => {
+      if (String(input).endsWith("/send")) throw new TypeError("fetch failed");
+      return base(input, init);
+    }) as unknown as typeof fetch;
+    await expect(graphConnector(mailbox(), creds(), { http }).send(message())).rejects.toMatchObject({ code: "TRANSIENT", maybeSent: true });
+  });
+
+  it("does not flag a definite refusal of /send, nor a 5xx while drafting", async () => {
+    const refused = fakeHttp([
+      (c) => (c.method === "POST" && c.url.endsWith("/me/messages") ? json("draft.json", 201) : undefined),
+      (c) => (c.url.endsWith("/send") ? json("error-quota.json", 403) : undefined),
+      (c) => (c.method === "DELETE" ? empty(204) : undefined),
+    ]);
+    await expect(graphConnector(mailbox(), creds(), { http: refused.http }).send(message())).rejects.toMatchObject({ maybeSent: false });
+    const drafting = fakeHttp([() => new Response("{}", { status: 503 })]);
+    await expect(graphConnector(mailbox(), creds(), { http: drafting.http }).send(message())).rejects.toMatchObject({
+      code: "TRANSIENT",
+      maybeSent: false,
+    });
   });
 
   it("does not duplicate X-Clozer-Id", async () => {

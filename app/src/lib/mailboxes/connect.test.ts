@@ -180,6 +180,16 @@ describe("connectProviderMailbox", () => {
     expect(db.upsert.mock.calls[0][0].update).not.toHaveProperty("rampStartedAt");
   });
 
+  it("drops the sync cursor when the connector changes, keeps it otherwise", async () => {
+    const ok = vi.fn().mockResolvedValue({ ok: true, address: "jean@acme.fr", displayName: null });
+    db.findUnique.mockResolvedValue({ id: "mb1", status: "ERROR", userId: "u1", disconnectedAt: null, connector: "SMTP" });
+    await connectProviderMailbox(providerInput, { resolver, now, verify: ok });
+    expect(db.upsert.mock.calls[0][0].update.syncCursor).toBeNull();
+    db.findUnique.mockResolvedValue({ id: "mb1", status: "ERROR", userId: "u1", disconnectedAt: null, connector: "GRAPH" });
+    await connectProviderMailbox(providerInput, { resolver, now, verify: ok });
+    expect(db.upsert.mock.calls[1][0].update).not.toHaveProperty("syncCursor");
+  });
+
   it("verifies through the injected function and writes nothing on failure", async () => {
     const injected = vi.fn().mockResolvedValue({ ok: false, code: "AUTH_REVOKED", message: "revoked" });
     const res = await connectProviderMailbox(providerInput, { resolver, now, verify: injected });

@@ -19,10 +19,11 @@ export async function GET(request: NextRequest) {
   const { user, organization } = await requireOutreach();
   if (!(await consumeLimit("mailboxConnect", request.headers, user.id))) return tooManyRequests();
 
-  const connector = gmailConnector();
-  if (!connector) return NextResponse.json({ error: "gmail_unavailable" }, { status: 404 });
-
   const settings = `${getPublicAppUrl()}/settings`;
+  // Reached from a link in the settings page: a browser lands back there, never on raw JSON
+  const connector = gmailConnector();
+  if (!connector) return NextResponse.redirect(`${settings}?mailbox=error&code=gmail_unavailable#boite`, 302);
+
   const params = request.nextUrl.searchParams;
 
   const asked = params.get("mailboxId");

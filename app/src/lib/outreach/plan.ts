@@ -183,10 +183,26 @@ export async function planEnrollments(
           data: { currentStep: step.order },
         });
       } else if (scheduled.existing === "FAILED" || scheduled.existing === "CANCELLED") {
-        await prisma.campaignProspect.updateMany({
-          where: { id: enrollment.id, status: "ACTIVE" },
-          data: { status: "PAUSED", pausedReason: "send_failed", pausedAt: now },
-        });
+        const failed =
+          scheduled.existing === "FAILED"
+            ? await prisma.campaignMessage.findUnique({
+                where: { dedupeKey: dedupeKeyOf(enrollment.id, step.id) },
+                select: { messageId: true },
+              })
+            : null;
+        if (failed?.messageId) {
+          // Interrupted mid-send, it may have left: the blocked state stays visible for the seller's resend or skip.
+          // Touched only to go to the back of the least-recently-touched line
+          await prisma.campaignProspect.updateMany({
+            where: { id: enrollment.id, status: "ACTIVE" },
+            data: { nextSendAt: null },
+          });
+        } else {
+          await prisma.campaignProspect.updateMany({
+            where: { id: enrollment.id, status: "ACTIVE" },
+            data: { status: "PAUSED", pausedReason: "send_failed", pausedAt: now },
+          });
+        }
       }
     } else if (action.kind === "finish" && enrollment.linkId) {
       // Finished by the reading evaluator, which has the signals (reactivation window); bumped to the back of the line

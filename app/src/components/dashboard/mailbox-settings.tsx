@@ -42,6 +42,8 @@ export type MailboxRow = {
   sentToday: number;
   dns: DnsReport | null;
   provider: "GOOGLE" | "MICROSOFT" | "IMAP";
+  /** How Clozer talks to it: a Gmail connected with an app password is GOOGLE over SMTP, reconnected by the IMAP form. */
+  connector: "UNIPILE" | "NYLAS" | "GRAPH" | "SMTP";
 };
 
 export type ProviderAvailability = { google: "UNIPILE" | "NYLAS" | null; microsoft: boolean };
@@ -269,7 +271,7 @@ function MailboxItem({
         </div>
         <div className="flex items-center gap-1">
           {mailbox.status === "ERROR" &&
-            (mailbox.provider === "IMAP" ? (
+            (mailbox.connector === "SMTP" || mailbox.provider === "IMAP" ? (
               <Button variant="outline" size="sm" onClick={() => onReconnect({ email: mailbox.email, mailboxId: mailbox.id })}>
                 {t("reconnect")}
               </Button>

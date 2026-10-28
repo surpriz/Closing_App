@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 import { after } from "next/server";
 
 import { getEnv } from "@/lib/env";
-import { syncMailbox } from "@/lib/mailboxes/inbound/sync";
+import { syncMailboxNow } from "@/lib/mailboxes/inbound/sync";
 import { hasMailboxWebhookToken } from "@/lib/mailboxes/webhooks/token";
 import { handleNylasEvent, nylasChallenge, verifyNylasSignature } from "@/lib/mailboxes/webhooks/nylas";
 
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     const { syncMailboxIds } = await handleNylasEvent(JSON.parse(raw));
     for (const id of syncMailboxIds) {
       after(() =>
-        syncMailbox(id, new Date()).catch((error) =>
+        syncMailboxNow(id, new Date()).catch((error) =>
           console.error("[mailboxes] nylas sync failed", error instanceof Error ? error.message : "unknown"),
         ),
       );

@@ -2,8 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const hasToken = vi.fn();
 vi.mock("@/lib/mailboxes/webhooks/token", () => ({ hasMailboxWebhookToken: (...a: unknown[]) => hasToken(...a) }));
-const syncMailbox = vi.fn();
-vi.mock("@/lib/mailboxes/inbound/sync", () => ({ syncMailbox: (...a: unknown[]) => syncMailbox(...a) }));
+const syncMailboxNow = vi.fn();
+vi.mock("@/lib/mailboxes/inbound/sync", () => ({ syncMailboxNow: (...a: unknown[]) => syncMailboxNow(...a) }));
 const handle = vi.fn();
 vi.mock("@/lib/mailboxes/webhooks/microsoft", async () => ({
   ...(await vi.importActual<object>("@/lib/mailboxes/webhooks/microsoft")),
@@ -30,7 +30,7 @@ beforeEach(() => {
   afterTasks.length = 0;
   hasToken.mockReturnValue(true);
   handle.mockResolvedValue({ syncMailboxIds: [] });
-  syncMailbox.mockResolvedValue(null);
+  syncMailboxNow.mockResolvedValue({ outcome: "synced" });
 });
 
 describe("POST /api/webhooks/mailboxes/microsoft", () => {
@@ -53,9 +53,10 @@ describe("POST /api/webhooks/mailboxes/microsoft", () => {
     handle.mockResolvedValue({ syncMailboxIds: ["mb1", "mb2"] });
     const res = await call();
     expect(res.status).toBe(202);
-    expect(syncMailbox).not.toHaveBeenCalled();
+    expect(syncMailboxNow).not.toHaveBeenCalled();
     await Promise.all(afterTasks.map((task) => task()));
-    expect(syncMailbox).toHaveBeenCalledTimes(2);
+    expect(syncMailboxNow).toHaveBeenCalledTimes(2);
+    expect(syncMailboxNow).toHaveBeenCalledWith("mb1", expect.any(Date));
   });
 
   it("stays 202 when the handler throws or the body is not JSON", async () => {

@@ -413,7 +413,7 @@ async function sendOne(ctx: {
       idempotencyKey: dedupeKey,
     });
   } catch (error) {
-    // The send itself failed: nothing left, so the marker is cleared with the requeue
+    // The send itself failed: unless the connector says the mail may have left, the marker is cleared with the requeue
     return handleFailure(error, ctx, message, enrollment.id);
   }
 
@@ -499,6 +499,13 @@ async function handleFailure(
 ): Promise<Outcome> {
   const { mailbox, reservedAt, hours, now, totals } = ctx;
   const code: MailboxErrorCode | null = isMailboxError(error) ? error.code : null;
+
+  // The provider had taken the mail when it failed: it may have left. At-most-once, as for a stale lease: the row keeps
+  // its Message-ID and the enrollment waits for the seller. The batch stops, the next send would likely fail the same way
+  if (isMailboxError(error) && error.maybeSent) {
+    if (await failAndPause(message.id, reservedAt, enrollmentId, "interrupted", "interrupted", now)) totals.failed++;
+    return "stop";
+  }
 
   if (isMailboxError(error) && (code === "AUTH_REVOKED" || code === "CONFIG")) {
     await prisma.mailbox.update({

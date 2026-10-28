@@ -5,6 +5,7 @@ const h = vi.hoisted(() => ({
   notify: vi.fn(async () => ({ outcome: "connected" })),
   event: vi.fn(async () => ({ action: "none" })),
   ensure: vi.fn(async () => ({ created: 0 })),
+  syncNow: vi.fn(async () => ({ outcome: "synced" })),
 }));
 
 vi.mock("next/server", async (orig) => ({
@@ -14,6 +15,7 @@ vi.mock("next/server", async (orig) => ({
 vi.mock("@/lib/env", () => ({ getEnv: () => ({ MAILBOX_WEBHOOK_TOKEN: "good-token-good-token-good-token" }) }));
 vi.mock("@/lib/mailboxes/config", () => ({ mailboxWebhooksEnabled: () => true }));
 vi.mock("@/lib/mailboxes/gmail/unipile", () => ({ ensureUnipileWebhook: h.ensure }));
+vi.mock("@/lib/mailboxes/inbound/sync", () => ({ syncMailboxNow: h.syncNow }));
 vi.mock("./unipile", async () => ({
   ...(await vi.importActual<typeof import("./unipile")>("./unipile")),
   handleUnipileNotify: h.notify,
@@ -76,6 +78,20 @@ describe("event route", () => {
     expect((await eventRoute.POST(post("", `token=${TOKEN}`, {}, { "x-clozer-token": TOKEN }))).status).toBe(401);
     expect((await eventRoute.POST(post("", `token=${TOKEN}`, {}))).status).toBe(401);
     expect(h.event).not.toHaveBeenCalled();
+  });
+
+  it("syncs a mail_received account in the background, under the lease", async () => {
+    h.event.mockResolvedValueOnce({ action: "sync", mailboxId: "mb1" } as never);
+    const res = await eventRoute.POST(post("", `token=${TOKEN}`, { event: "mail_received", account_id: "acc_1" }, good));
+    expect(res.status).toBe(202);
+    await Promise.all(h.jobs);
+    expect(h.syncNow).toHaveBeenCalledWith("mb1", expect.any(Date));
+  });
+
+  it("does not sync on any other outcome", async () => {
+    await eventRoute.POST(post("", `token=${TOKEN}`, { hello: 1 }, good));
+    await Promise.all(h.jobs);
+    expect(h.syncNow).not.toHaveBeenCalled();
   });
 
   it("answers 202 for an unknown payload and when the handler throws", async () => {

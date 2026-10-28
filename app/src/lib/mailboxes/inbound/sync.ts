@@ -2,6 +2,7 @@ import type { Mailbox } from "@/generated/prisma/client";
 import { ACTIVE_WORKSPACE } from "@/lib/closing/active-workspace";
 import { DAY_MS, HOUR_MS } from "@/lib/closing/constants";
 import { prisma } from "@/lib/db";
+import { outreachOrgIds } from "@/lib/outreach/flag";
 import { organizationWhere, type OutreachScope } from "@/lib/outreach/scope";
 
 import { isMailboxError, MailboxError } from "../errors";
@@ -195,59 +196,101 @@ export async function syncMailboxesDue(
   let errors = 0;
   for (const mailbox of due) {
     const remaining = deadline - Date.now();
-    // Too little left to connect and read a page: leave it, still due, for the next tick
     if (remaining < MIN_SYNC_BUDGET_MS) break;
     try {
-      const lease = await prisma.mailbox.updateMany({
-        where: {
-          id: mailbox.id,
-          OR: [{ syncClaimedAt: null }, { syncClaimedAt: { lt: new Date(now.getTime() - SYNC_LEASE_MS) } }],
-        },
-        data: { syncClaimedAt: now, syncRequestedAt: null },
-      });
-      // Someone else holds it: they will write the outcome
-      if (lease.count === 0) continue;
+      if (!(await claimSyncLease(mailbox.id, now))) continue;
     } catch (error) {
       console.error(`[mailbox-sync] ${mailbox.id} lease`, error);
       errors++;
       continue;
     }
-
-    try {
-      const connector = (opts.connector ?? connectorFor)(mailbox);
-      const budgetMs = Math.min(SYNC_BUDGET_PER_MAILBOX_MS, remaining);
-      const result = await syncMailbox(mailbox.id, now, { connector: () => connector, budgetMs });
-      if (!result) {
-        // Not ACTIVE any more
-        await release(mailbox.id, now);
-        continue;
-      }
-      if (result.pages === 0) {
-        if (budgetMs >= SYNC_BUDGET_PER_MAILBOX_MS) {
-          // A full budget and not one page: this mailbox is slow or stuck, not unlucky. Count it so it backs off
-          errors++;
-          await recordFailure(mailbox.id, mailbox.syncErrorCount + 1, new MailboxError("TRANSIENT", "no page within budget"), now);
-        } else {
-          // Tail of the tick: not its fault, but it goes to the back of the line instead of hogging the head
-          await prisma.mailbox.updateMany({
-            where: { id: mailbox.id, syncClaimedAt: now },
-            data: { syncClaimedAt: null, nextSyncAt: new Date(now.getTime() + RETRY_SOON_MS) },
-          });
-        }
-        continue;
-      }
-      const interval = connector.capabilities.webhooks ? SYNC_INTERVAL_WEBHOOK_MS : SYNC_INTERVAL_MS;
-      await prisma.mailbox.updateMany({
-        where: { id: mailbox.id, syncClaimedAt: now },
-        data: { lastSyncAt: now, nextSyncAt: new Date(now.getTime() + interval), syncErrorCount: 0, syncClaimedAt: null },
-      });
-      synced++;
-    } catch (error) {
-      errors++;
-      await recordFailure(mailbox.id, mailbox.syncErrorCount + 1, error, now);
-    }
+    const outcome = await syncUnderLease(mailbox, now, Math.min(SYNC_BUDGET_PER_MAILBOX_MS, remaining), opts);
+    if (outcome === "synced") synced++;
+    else if (outcome === "failed") errors++;
   }
   return { synced, errors };
+}
+
+export type SyncNowOutcome = "skipped" | "busy" | "synced" | "failed" | "idle";
+
+/**
+ * A webhook asked for this mailbox: sync it now, under the same lease and kill switch as the tick, so a webhook pass
+ * and a tick pass never replay the same inbound events. Held lease: the request is left in syncRequestedAt for the
+ * holder or the next tick.
+ */
+export async function syncMailboxNow(
+  mailboxId: string,
+  now: Date,
+  deps: SyncDeps & { budgetMs?: number } = {},
+): Promise<{ outcome: SyncNowOutcome }> {
+  const mailbox = await prisma.mailbox.findFirst({
+    where: {
+      id: mailboxId,
+      status: "ACTIVE",
+      ...organizationWhere({ organizationIds: outreachOrgIds() }),
+      ...ACTIVE_WORKSPACE,
+      messages: { some: { status: "SENT", sentAt: { gte: new Date(now.getTime() - SENT_WINDOW_MS) } } },
+    },
+    select: { id: true, provider: true, connector: true, email: true, displayName: true, credentials: true, syncErrorCount: true },
+  });
+  if (!mailbox) return { outcome: "skipped" };
+  if (!(await claimSyncLease(mailbox.id, now))) {
+    await prisma.mailbox.updateMany({ where: { id: mailbox.id }, data: { syncRequestedAt: now } });
+    return { outcome: "busy" };
+  }
+  return { outcome: await syncUnderLease(mailbox, now, deps.budgetMs ?? SYNC_BUDGET_PER_MAILBOX_MS, deps) };
+}
+
+/**
+ * Takes the sync lease (free, or left stale by a crashed run). A pending webhook request is folded into this pass, so
+ * one that arrives while it runs is kept for the next. False when someone else holds it.
+ */
+async function claimSyncLease(mailboxId: string, now: Date): Promise<boolean> {
+  const lease = await prisma.mailbox.updateMany({
+    where: {
+      id: mailboxId,
+      OR: [{ syncClaimedAt: null }, { syncClaimedAt: { lt: new Date(now.getTime() - SYNC_LEASE_MS) } }],
+    },
+    data: { syncClaimedAt: now, syncRequestedAt: null },
+  });
+  return lease.count > 0;
+}
+
+/** One leased mailbox: sync within the budget, then schedule the next pass or record the failure, and give the lease back. */
+async function syncUnderLease(
+  mailbox: ConnectorMailbox & { syncErrorCount: number },
+  now: Date,
+  budgetMs: number,
+  deps: SyncDeps,
+): Promise<"synced" | "failed" | "idle"> {
+  try {
+    const connector = (deps.connector ?? connectorFor)(mailbox);
+    const result = await syncMailbox(mailbox.id, now, { connector: () => connector, budgetMs });
+    if (!result) {
+      await release(mailbox.id, now);
+      return "idle";
+    }
+    if (result.pages === 0) {
+      if (budgetMs >= SYNC_BUDGET_PER_MAILBOX_MS) {
+        await recordFailure(mailbox.id, mailbox.syncErrorCount + 1, new MailboxError("TRANSIENT", "no page within budget"), now);
+        return "failed";
+      }
+      await prisma.mailbox.updateMany({
+        where: { id: mailbox.id, syncClaimedAt: now },
+        data: { syncClaimedAt: null, nextSyncAt: new Date(now.getTime() + RETRY_SOON_MS) },
+      });
+      return "idle";
+    }
+    const interval = connector.capabilities.webhooks ? SYNC_INTERVAL_WEBHOOK_MS : SYNC_INTERVAL_MS;
+    await prisma.mailbox.updateMany({
+      where: { id: mailbox.id, syncClaimedAt: now },
+      data: { lastSyncAt: now, nextSyncAt: new Date(now.getTime() + interval), syncErrorCount: 0, syncClaimedAt: null },
+    });
+    return "synced";
+  } catch (error) {
+    await recordFailure(mailbox.id, mailbox.syncErrorCount + 1, error, now);
+    return "failed";
+  }
 }
 
 /** Gives the lease back without touching the schedule; only if it is still ours. */

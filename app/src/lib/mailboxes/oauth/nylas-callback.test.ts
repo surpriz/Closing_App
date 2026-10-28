@@ -51,20 +51,33 @@ describe("handleNylasCallback", () => {
     expect(await run()).toBe("/settings?mailbox=expired#boite");
     expect(deps.exchange).not.toHaveBeenCalled();
   });
-  it("handles a cancelled consent and missing params", async () => {
+  it("consumes the state of a cancelled consent before going back, so it cannot be replayed", async () => {
     const { deps, run } = setup();
     expect(await run({ error: "access_denied" })).toBe("/settings?mailbox=cancelled#boite");
-    expect(await run({ code: null })).toBe("/settings?mailbox=expired#boite");
-    expect(deps.consumeState).not.toHaveBeenCalled();
+    expect(deps.consumeState).toHaveBeenCalledWith("s", now, { userId: "u1", organizationId: "o1" });
+    expect(deps.exchange).not.toHaveBeenCalled();
   });
-  it("reports connect refusals and exchange failures", async () => {
+  it("handles missing params", async () => {
+    const { deps, run } = setup();
+    expect(await run({ code: null })).toBe("/settings?mailbox=expired#boite");
+    expect(await run({ state: null })).toBe("/settings?mailbox=expired#boite");
+    expect(deps.consumeState).toHaveBeenCalledTimes(1); // the call without a state never reaches it
+    expect(deps.exchange).not.toHaveBeenCalled();
+  });
+  it("reports connect refusals and exchange failures with their code, like the Microsoft callback", async () => {
     expect(await setup({ connect: vi.fn().mockResolvedValue({ ok: false, code: "limit", message: "" }) }).run()).toBe(
-      "/settings?mailbox=limit#boite",
+      "/settings?mailbox=error&code=limit#boite",
     );
     expect(await setup({ connect: vi.fn().mockResolvedValue({ ok: false, code: "AUTH_REVOKED", message: "" }) }).run()).toBe(
-      "/settings?mailbox=failed#boite",
+      "/settings?mailbox=error&code=AUTH_REVOKED#boite",
+    );
+    const { MailboxError } = await import("../errors");
+    expect(await setup({ exchange: vi.fn().mockRejectedValue(new MailboxError("REJECTED", "bad code")) }).run()).toBe(
+      "/settings?mailbox=error&code=REJECTED#boite",
     );
     vi.spyOn(console, "error").mockImplementation(() => {});
-    expect(await setup({ exchange: vi.fn().mockRejectedValue(new Error("x")) }).run()).toBe("/settings?mailbox=failed#boite");
+    expect(await setup({ exchange: vi.fn().mockRejectedValue(new Error("x")) }).run()).toBe(
+      "/settings?mailbox=error&code=TRANSIENT#boite",
+    );
   });
 });

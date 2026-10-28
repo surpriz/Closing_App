@@ -14,7 +14,7 @@ import type { InboundHeaders, InboundMessage, MailboxConnector, SendResult, Sync
 
 const EXCERPT_MAX = 1000;
 const PAGE_MAX = 100;
-const LINK_TTL_MS = 15 * 60_000;
+const LINK_TTL_MS = 10 * 60_000; // the MailboxOauthState TTL: a link must not outlive the state it carries
 const OVERLAP_MS = 60 * 60_000; // late-dated replies must not fall behind the boundary; duplicates are absorbed downstream
 const RFC_MESSAGE_ID = /^<[^<>\s@]+@[^<>\s]+>$/;
 const KEPT_HEADERS = [
@@ -99,10 +99,18 @@ async function call(
       headers: { "X-API-KEY": key, accept: "application/json", ...(rest.headers as Record<string, string> | undefined) },
     });
   } catch (error) {
+    // Only POST /emails uses the send context: once it was on the wire the mail may have left
+    if (context === "send") throw new MailboxError("TRANSIENT", "unipile unreachable", { maybeSent: true });
     if (error instanceof Error && error.name === "AbortError") throw error;
     throw new MailboxError("TRANSIENT", "unipile unreachable");
   }
-  if (!response.ok) throw await mapUnipileError(response, context);
+  if (!response.ok) {
+    const error = await mapUnipileError(response, context);
+    if (context === "send" && response.status >= 500) {
+      throw new MailboxError(error.code, error.message, { ...error.options, maybeSent: true });
+    }
+    throw error;
+  }
   return obj(await response.json().catch(() => null));
 }
 
@@ -265,9 +273,12 @@ export function unipileConnector(
         .map((item) => mapEmail(obj(item)))
         .filter((m): m is InboundMessage => m !== null);
       let max = state?.max ?? null;
+      const listedAt = Date.now();
       for (const raw of Array.isArray(page.items) ? page.items : []) {
-        // An item without a valid date must not move the boundary (mapEmail falls back to "now" for it)
-        const time = Date.parse(str(obj(raw).date) ?? "");
+        // An item without a valid date must not move the boundary (mapEmail falls back to "now" for it), and a
+        // future-dated one must not carry it past now: everything arriving until then would be skipped
+        const parsed = Date.parse(str(obj(raw).date) ?? "");
+        const time = Number.isNaN(parsed) ? parsed : Math.min(parsed, listedAt);
         if (!Number.isNaN(time) && (!max || new Date(time).toISOString() > max)) max = new Date(time).toISOString();
       }
       const next = str(page.cursor);
