@@ -51,7 +51,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
       mailbox: { select: { id: true, email: true, status: true, userId: true } },
       steps: {
         orderBy: { order: "asc" },
-        select: { order: true, delayDays: true, subject: true, newThread: true, body: true, carriesLink: true },
+        select: { id: true, order: true, delayDays: true, subject: true, newThread: true, body: true, carriesLink: true },
       },
     },
   });
@@ -162,6 +162,15 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
   });
   const clicked = new Set(clicks.map((click) => click.enrollmentId));
 
+  // One grouped query for the whole campaign: rows an interrupted send left FAILED with a Message-ID. A row blocks its
+  // enrollment only when it is the next step, which is checked per row below.
+  const failedSteps = await prisma.campaignMessage.findMany({
+    where: { campaignId: campaign.id, kind: "STEP", status: "FAILED", messageId: { not: null }, enrollment: { status: "ACTIVE" } },
+    select: { enrollmentId: true, stepId: true },
+  });
+  const blockedSteps = new Set(failedSteps.map((message) => `${message.enrollmentId}:${message.stepId}`));
+  const stepIdByOrder = new Map(campaign.steps.map((step) => [step.order, step.id]));
+
   const byStatus = new Map(groups.map((group) => [group.status, group._count._all]));
   const total = groups.reduce((sum, group) => sum + group._count._all, 0);
   const counts = {
@@ -216,6 +225,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
           }
         : null,
       clicked: clicked.has(enrollment.id),
+      blockedStep: enrollment.status === "ACTIVE" && blockedSteps.has(`${enrollment.id}:${stepIdByOrder.get(enrollment.currentStep + 1)}`),
     };
   });
 
@@ -269,7 +279,14 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
         <SectionTitle>{t("steps.title")}</SectionTitle>
         <StepsEditor
           campaignId={campaign.id}
-          initialSteps={campaign.steps}
+          initialSteps={campaign.steps.map((step) => ({
+            order: step.order,
+            delayDays: step.delayDays,
+            subject: step.subject,
+            newThread: step.newThread,
+            body: step.body,
+            carriesLink: step.carriesLink,
+          }))}
           extraVars={Object.keys(extra)}
           sampleVars={sampleVars}
           sampleEmail={firstEnrollment?.email ?? null}

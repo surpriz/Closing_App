@@ -9,7 +9,9 @@ import {
   type ActionResult,
   pauseEnrollmentAction,
   removeEnrollmentAction,
+  resendStepAction,
   resumeEnrollmentAction,
+  skipStepAction,
 } from "@/app/(dashboard)/campaigns/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -46,6 +48,8 @@ export type EnrollmentRow = {
   reactivatedAt: Date | null;
   followup: { status: string; at: Date | null } | null;
   clicked: boolean;
+  /** The next step was interrupted mid-send: FAILED with a Message-ID, so the mail may have left. */
+  blockedStep: boolean;
 };
 
 const STATUS_VARIANT = {
@@ -85,6 +89,7 @@ export function EnrollmentsTable({
   const [filter, setFilter] = useState<"all" | EnrollmentStatus>("all");
   const [removing, setRemoving] = useState<EnrollmentRow | null>(null);
   const [resuming, setResuming] = useState<EnrollmentRow | null>(null);
+  const [resending, setResending] = useState<EnrollmentRow | null>(null);
   const [pending, startTransition] = useTransition();
 
   const present = (Object.keys(STATUS_VARIANT) as EnrollmentStatus[]).filter((status) =>
@@ -170,6 +175,11 @@ export function EnrollmentsTable({
                 <TableCell className="tabular-nums">
                   {row.currentStep}/{totalSteps}
                   {row.clicked && <p className="text-small text-muted-foreground">{te("clicked")}</p>}
+                  {row.status === "ACTIVE" && row.blockedStep && (
+                    <p className="mt-0.5 text-small font-medium text-warning-foreground">
+                      {te("blocked", { step: row.currentStep + 1 })}
+                    </p>
+                  )}
                 </TableCell>
                 <TableCell>
                   {signalLabel(row) ?? <span className="text-muted-foreground">{te("noSignal")}</span>}
@@ -204,6 +214,16 @@ export function EnrollmentsTable({
                       <Button variant="ghost" size="sm" render={<Link href={`/links/${row.linkId}`} />} nativeButton={false}>
                         {te("openLink")}
                       </Button>
+                    )}
+                    {!disabled && row.status === "ACTIVE" && row.blockedStep && (
+                      <>
+                        <Button variant="ghost" size="sm" disabled={pending} onClick={() => setResending(row)}>
+                          {te("resendStep")}
+                        </Button>
+                        <Button variant="ghost" size="sm" disabled={pending} onClick={() => run(skipStepAction, row.id)}>
+                          {te("skipStep")}
+                        </Button>
+                      </>
                     )}
                     {!disabled && row.status === "ACTIVE" && (
                       <Button variant="ghost" size="sm" disabled={pending} onClick={() => run(pauseEnrollmentAction, row.id)}>
@@ -245,6 +265,26 @@ export function EnrollmentsTable({
               onClick={() => resuming && run(resumeEnrollmentAction, resuming.id, () => setResuming(null))}
             >
               {te("resumeConfirm")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={resending !== null} onOpenChange={(open) => !open && setResending(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{te("resendTitle")}</DialogTitle>
+            <DialogDescription>{te("resendDescription", { email: resending?.email ?? "" })}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" disabled={pending} onClick={() => setResending(null)}>
+              {te("cancel")}
+            </Button>
+            <Button
+              disabled={pending}
+              onClick={() => resending && run(resendStepAction, resending.id, () => setResending(null))}
+            >
+              {te("resendConfirm")}
             </Button>
           </DialogFooter>
         </DialogContent>

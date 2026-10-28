@@ -23,8 +23,11 @@ import {
   enrollForwardedContact,
   importProspects,
   type ImportSummary,
-  pauseEnrollment,   removeEnrollment,
+  pauseEnrollment,
+  removeEnrollment,
+  resendBlockedStep,
   resumeEnrollment,
+  skipBlockedStep,
 } from "@/lib/outreach/enroll";
 import { MAX_IMPORT_BYTES } from "@/lib/outreach/csv";
 import { requireOutreach } from "@/lib/outreach/flag";
@@ -244,7 +247,7 @@ export async function importProspectsAction(
 async function enrollmentAction(
   enrollmentId: string,
   run: (organizationId: string, id: string, now: Date, actor: Actor) => Promise<boolean>,
-  notice: "enrollmentPaused" | "enrollmentResumed" | "enrollmentRemoved",
+  notice: "enrollmentPaused" | "enrollmentResumed" | "enrollmentRemoved" | "stepResent" | "stepSkipped",
 ): Promise<ActionResult> {
   const workspace = await requireOutreach();
   const t = await getTranslations("campaigns.actions");
@@ -262,6 +265,14 @@ export async function pauseEnrollmentAction(enrollmentId: string): Promise<Actio
 
 export async function resumeEnrollmentAction(enrollmentId: string): Promise<ActionResult> {
   return enrollmentAction(enrollmentId, resumeEnrollment, "enrollmentResumed");
+}
+
+export async function resendStepAction(enrollmentId: string): Promise<ActionResult> {
+  return enrollmentAction(enrollmentId, (organizationId, id, now, actor) => resendBlockedStep(organizationId, id, actor, now), "stepResent");
+}
+
+export async function skipStepAction(enrollmentId: string): Promise<ActionResult> {
+  return enrollmentAction(enrollmentId, (organizationId, id, now, actor) => skipBlockedStep(organizationId, id, actor, now), "stepSkipped");
 }
 
 export async function removeEnrollmentAction(enrollmentId: string): Promise<ActionResult> {

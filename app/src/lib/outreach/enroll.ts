@@ -1,6 +1,8 @@
-import { isSupportedLocale } from "@/lib/closing/constants";
+import type { Prisma } from "@/generated/prisma/client";
+import { DAY_MS, isSupportedLocale } from "@/lib/closing/constants";
 import { OPEN_FOLLOWUP_STATUSES } from "@/lib/closing/followups/queue";
 import { getSellerPrefs, sellerTimezone } from "@/lib/closing/notify/preferences";
+import { getWorkspaceSettings } from "@/lib/closing/settings";
 import { prisma } from "@/lib/db";
 import { getSellerLocale } from "@/lib/seller-locale";
 import { getNamespaceTranslator } from "@/lib/server-translator";
@@ -15,8 +17,9 @@ import {
   type ProspectRow,
   rowsToProspects,
 } from "./csv";
+import { dedupeKeyOf, scheduleStepMessage, STEP_SELECT } from "./messages";
 import { releaseCampaignLink } from "./ownership";
-import { templateVarsOf } from "./planner";
+import { businessHoursOf, stepSendAt, templateVarsOf } from "./planner";
 import { renderTemplate } from "./render";
 import { isSuppressed, suppressedAmong } from "./suppression";
 import { detectCountryTimezone } from "./timezone";
@@ -290,6 +293,28 @@ export async function pauseEnrollment(organizationId: string, id: string, now: D
   return count > 0;
 }
 
+/** Puts a step's message back in the outbox for `at`, from the campaign's mailbox. Returns how many rows matched. */
+async function reopenStepMessage(
+  db: Prisma.TransactionClient,
+  where: Prisma.CampaignMessageWhereInput,
+  mailboxId: string | null,
+  at: Date,
+): Promise<number> {
+  const { count } = await db.campaignMessage.updateMany({
+    where,
+    data: {
+      status: "SCHEDULED",
+      scheduledFor: at,
+      attempts: 0,
+      messageId: null,
+      sendingAt: null,
+      error: null,
+      ...(mailboxId ? { mailboxId } : {}),
+    },
+  });
+  return count;
+}
+
 /**
  * Scheduled messages stay as they are: the sender re-checks business hours before each one. A step that failed or was
  * cancelled while the enrollment was paused is re-opened, otherwise the catch-up would pause it again at once.
@@ -311,23 +336,92 @@ export async function resumeEnrollment(organizationId: string, id: string, now: 
     });
     const blocked = enrollment?.campaign.steps.find((step) => step.order === enrollment.currentStep + 1);
     if (blocked) {
-      // From the campaign's mailbox of today: it may have changed since the row was planned
-      const mailboxId = enrollment?.campaign.mailboxId;
-      await tx.campaignMessage.updateMany({
-        where: { enrollmentId: id, stepId: blocked.id, status: { in: ["FAILED", "CANCELLED"] } },
-        data: {
-          status: "SCHEDULED",
-          scheduledFor: now,
-          attempts: 0,
-          messageId: null,
-          sendingAt: null,
-          error: null,
-          ...(mailboxId ? { mailboxId } : {}),
-        },
-      });
+      await reopenStepMessage(
+        tx,
+        { enrollmentId: id, stepId: blocked.id, status: { in: ["FAILED", "CANCELLED"] } },
+        enrollment?.campaign.mailboxId ?? null,
+        now,
+      );
     }
     return true;
   });
+}
+
+const BLOCKED_STEP_FILTER = { status: "FAILED", messageId: { not: null } } as const;
+
+/**
+ * The next step of an ACTIVE enrollment was interrupted mid-send (FAILED with a Message-ID, so the mail may have left)
+ * and the seller says it did not: the same re-open as a resume, but only for that state. False when nothing matched.
+ */
+export async function resendBlockedStep(organizationId: string, id: string, actor: Actor, now: Date): Promise<boolean> {
+  if (!(await editableEnrollment(organizationId, id, actor))) return false;
+  return prisma.$transaction(async (tx) => {
+    const enrollment = await tx.campaignProspect.findFirst({
+      where: { id, organizationId, status: "ACTIVE" },
+      select: {
+        currentStep: true,
+        campaign: { select: { mailboxId: true, steps: { select: { id: true, order: true } } } },
+      },
+    });
+    const blocked = enrollment?.campaign.steps.find((step) => step.order === enrollment.currentStep + 1);
+    if (!enrollment || !blocked) return false;
+    const count = await reopenStepMessage(
+      tx,
+      { enrollmentId: id, stepId: blocked.id, enrollment: { status: "ACTIVE" }, ...BLOCKED_STEP_FILTER },
+      enrollment.campaign.mailboxId,
+      now,
+    );
+    if (count === 0) return false;
+    await tx.campaignProspect.updateMany({ where: { id, status: "ACTIVE" }, data: { nextSendAt: now } });
+    return true;
+  });
+}
+
+/**
+ * Same state, the seller gives the step up: its row is cancelled for good ("skipped"), the enrollment moves past it and
+ * the following step, if any, is planned after its usual delay. False when nothing matched.
+ */
+export async function skipBlockedStep(organizationId: string, id: string, actor: Actor, now: Date): Promise<boolean> {
+  if (!(await editableEnrollment(organizationId, id, actor))) return false;
+  const enrollment = await prisma.campaignProspect.findFirst({
+    where: { id, organizationId, status: "ACTIVE" },
+    include: {
+      campaign: { select: { id: true, mailboxId: true, steps: { orderBy: { order: "asc" }, select: STEP_SELECT } } },
+    },
+  });
+  if (!enrollment) return false;
+  const { campaign } = enrollment;
+  const blocked = campaign.steps.find((step) => step.order === enrollment.currentStep + 1);
+  if (!blocked) return false;
+
+  const moved = await prisma.$transaction(async (tx) => {
+    const { count } = await tx.campaignMessage.updateMany({
+      where: { enrollmentId: id, stepId: blocked.id, enrollment: { status: "ACTIVE" }, ...BLOCKED_STEP_FILTER },
+      data: { status: "CANCELLED", error: "skipped", sendingAt: null },
+    });
+    if (count === 0) return false;
+    const { count: advanced } = await tx.campaignProspect.updateMany({
+      where: { id, status: "ACTIVE", currentStep: enrollment.currentStep },
+      data: { currentStep: blocked.order, nextSendAt: null },
+    });
+    return advanced > 0;
+  });
+  if (!moved) return false;
+
+  const following = campaign.steps.find((step) => step.order === blocked.order + 1);
+  if (following && campaign.mailboxId) {
+    const hours = businessHoursOf(await getWorkspaceSettings(organizationId));
+    const at = stepSendAt(new Date(now.getTime() + following.delayDays * DAY_MS), enrollment.timezone, hours, dedupeKeyOf(id, following.id));
+    const scheduled = await scheduleStepMessage({
+      enrollment: { ...enrollment, currentStep: blocked.order },
+      step: following,
+      campaignId: campaign.id,
+      mailboxId: campaign.mailboxId,
+      scheduledFor: at,
+    });
+    if ("id" in scheduled) await prisma.campaignProspect.updateMany({ where: { id, status: "ACTIVE" }, data: { nextSendAt: at } });
+  }
+  return true;
 }
 
 export async function removeEnrollment(organizationId: string, id: string, now: Date, actor: Actor): Promise<boolean> {

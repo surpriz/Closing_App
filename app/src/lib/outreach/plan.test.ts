@@ -7,9 +7,11 @@ const enrollmentFindMany = vi.fn();
 const enrollmentUpdateMany = vi.fn();
 const messageUpdateMany = vi.fn();
 const messageFindUnique = vi.fn();
+const stepGroupBy = vi.fn();
 vi.mock("@/lib/db", () => ({
   prisma: {
     mailbox: { findMany: (...a: unknown[]) => mailboxFindMany(...a) },
+    campaignStep: { groupBy: (...a: unknown[]) => stepGroupBy(...a) },
     campaignMessage: {
       count: (...a: unknown[]) => messageCount(...a),
       create: (...a: unknown[]) => messageCreate(...a),
@@ -70,6 +72,7 @@ beforeEach(() => {
   queued = [];
   stranded = [];
   mailboxFindMany.mockResolvedValue([mailbox]);
+  stepGroupBy.mockResolvedValue([{ campaignId: "c1", _count: { _all: 2 } }]);
   messageCount.mockResolvedValue(0);
   messageCreate.mockImplementation(async () => ({ id: "m-new" }));
   enrollmentUpdateMany.mockResolvedValue({ count: 1 });
@@ -161,6 +164,25 @@ describe("planEnrollments, catch-up", () => {
     expect(result.finished).toBe(0);
     expect(releaseCampaignLink).not.toHaveBeenCalled();
     expect(enrollmentUpdateMany).toHaveBeenCalledWith({ where: { id: "e1", status: "ACTIVE" }, data: { nextSendAt: null } });
+  });
+
+  it("keeps linked enrollments at the last step out of the catch-up, per campaign step count", async () => {
+    mailboxFindMany.mockResolvedValue([]);
+    stepGroupBy.mockResolvedValue([
+      { campaignId: "c1", _count: { _all: 2 } },
+      { campaignId: "c2", _count: { _all: 3 } },
+      { campaignId: "c3", _count: { _all: 2 } },
+    ]);
+    await planEnrollments(now);
+    const call = enrollmentFindMany.mock.calls.find(([a]) => a.where.status === "ACTIVE")![0];
+    expect(call.where.NOT).toEqual({
+      OR: [
+        { linkId: { not: null }, campaignId: { in: ["c1", "c3"] }, currentStep: { gte: 2 } },
+        { linkId: { not: null }, campaignId: { in: ["c2"] }, currentStep: { gte: 3 } },
+      ],
+    });
+    // The pending-STEP filter still applies on top: a linked one with a step waiting is not "past" anything
+    expect(call.where.messages).toEqual({ none: { kind: "STEP", status: { in: ["SCHEDULED", "SENDING"] } } });
   });
 
   it("finishes the enrollment once the last step has had its time, and releases its link", async () => {

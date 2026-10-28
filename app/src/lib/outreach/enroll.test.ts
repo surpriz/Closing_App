@@ -20,6 +20,14 @@ vi.mock("./suppression", () => ({
   suppressedAmong: (...args: unknown[]) => suppressedAmong(...args),
   isSuppressed: (...args: unknown[]) => isSuppressed(...args),
 }));
+const scheduleStepMessage = vi.fn();
+vi.mock("./messages", async () => ({
+  ...(await vi.importActual<typeof import("./messages")>("./messages")),
+  scheduleStepMessage: (...args: unknown[]) => scheduleStepMessage(...args),
+}));
+vi.mock("@/lib/closing/settings", () => ({
+  getWorkspaceSettings: async () => ({ businessHourStart: 9, businessHourEnd: 18, businessDays: [1, 2, 3, 4, 5] }),
+}));
 const releaseCampaignLink = vi.fn();
 vi.mock("./ownership", () => ({ releaseCampaignLink: (...args: unknown[]) => releaseCampaignLink(...args) }));
 vi.mock("@/lib/seller-locale", async () => ({
@@ -31,7 +39,7 @@ vi.mock("@/lib/closing/notify/preferences", () => ({
   sellerTimezone: (prefs: { timezone: string | null }) => prefs.timezone ?? "UTC",
 }));
 
-const { enrollForwardedContact, importProspects, prepareProspects, removeEnrollment, resumeEnrollment, stopEnrollment } = await import("./enroll");
+const { enrollForwardedContact, importProspects, prepareProspects, removeEnrollment, resendBlockedStep, resumeEnrollment, skipBlockedStep, stopEnrollment } = await import("./enroll");
 
 const NOW = new Date("2026-11-03T09:00:00Z");
 const ACTOR = { userId: "u1", isManager: false };
@@ -286,6 +294,105 @@ describe("resumeEnrollment", () => {
     db.campaignProspect.updateMany.mockResolvedValue({ count: 0 });
     expect(await resumeEnrollment("org", "e1", NOW, ACTOR)).toBe(false);
     expect(db.campaignMessage.updateMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("resendBlockedStep", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    db.campaignProspect.findFirst.mockResolvedValue({
+      id: "e1",
+      currentStep: 1,
+      campaign: { createdById: "u1", mailboxId: "mb2", steps: [{ id: "s1", order: 1 }, { id: "s2", order: 2 }] },
+    });
+    db.campaignProspect.updateMany.mockResolvedValue({ count: 1 });
+    db.campaignMessage.updateMany.mockResolvedValue({ count: 1 });
+  });
+
+  it("re-opens the FAILED row that has a Message-ID, from the campaign's mailbox, and plans it now", async () => {
+    expect(await resendBlockedStep("org", "e1", ACTOR, NOW)).toBe(true);
+    expect(db.campaignMessage.updateMany).toHaveBeenCalledWith({
+      where: { enrollmentId: "e1", stepId: "s2", enrollment: { status: "ACTIVE" }, status: "FAILED", messageId: { not: null } },
+      data: { status: "SCHEDULED", scheduledFor: NOW, attempts: 0, messageId: null, sendingAt: null, error: null, mailboxId: "mb2" },
+    });
+    expect(db.campaignProspect.updateMany).toHaveBeenCalledWith({
+      where: { id: "e1", status: "ACTIVE" },
+      data: { nextSendAt: NOW },
+    });
+  });
+
+  it("refuses a teammate's enrollment", async () => {
+    expect(await resendBlockedStep("org", "e1", STRANGER, NOW)).toBe(false);
+    expect(db.campaignMessage.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("does nothing when no row is in that state", async () => {
+    db.campaignMessage.updateMany.mockResolvedValue({ count: 0 });
+    expect(await resendBlockedStep("org", "e1", ACTOR, NOW)).toBe(false);
+    expect(db.campaignProspect.updateMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("skipBlockedStep", () => {
+  const step = (id: string, order: number, delayDays: number) => ({
+    id,
+    order,
+    delayDays,
+    subject: null,
+    newThread: false,
+    body: "Hi",
+    carriesLink: false,
+  });
+  const enrollment = (currentStep: number, steps = [step("s1", 1, 0), step("s2", 2, 2), step("s3", 3, 3)]) => ({
+    id: "e1",
+    currentStep,
+    timezone: "Europe/Paris",
+    campaign: { id: "c1", createdById: "u1", mailboxId: "mb2", steps },
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    db.campaignProspect.findFirst.mockResolvedValue(enrollment(1));
+    db.campaignProspect.updateMany.mockResolvedValue({ count: 1 });
+    db.campaignMessage.updateMany.mockResolvedValue({ count: 1 });
+    scheduleStepMessage.mockResolvedValue({ id: "m3" });
+  });
+
+  it("cancels the row as skipped, moves past the step and plans the following one after its delay", async () => {
+    expect(await skipBlockedStep("org", "e1", ACTOR, NOW)).toBe(true);
+    expect(db.campaignMessage.updateMany).toHaveBeenCalledWith({
+      where: { enrollmentId: "e1", stepId: "s2", enrollment: { status: "ACTIVE" }, status: "FAILED", messageId: { not: null } },
+      data: { status: "CANCELLED", error: "skipped", sendingAt: null },
+    });
+    expect(db.campaignProspect.updateMany).toHaveBeenCalledWith({
+      where: { id: "e1", status: "ACTIVE", currentStep: 1 },
+      data: { currentStep: 2, nextSendAt: null },
+    });
+    const planned = scheduleStepMessage.mock.calls[0][0];
+    expect(planned).toMatchObject({ campaignId: "c1", mailboxId: "mb2", step: { id: "s3" } });
+    expect(planned.scheduledFor.getTime()).toBeGreaterThanOrEqual(NOW.getTime() + 3 * 86_400_000);
+    expect(db.campaignProspect.updateMany).toHaveBeenLastCalledWith({
+      where: { id: "e1", status: "ACTIVE" },
+      data: { nextSendAt: planned.scheduledFor },
+    });
+  });
+
+  it("plans nothing when the skipped step was the last one", async () => {
+    db.campaignProspect.findFirst.mockResolvedValue(enrollment(2));
+    expect(await skipBlockedStep("org", "e1", ACTOR, NOW)).toBe(true);
+    expect(scheduleStepMessage).not.toHaveBeenCalled();
+  });
+
+  it("refuses a teammate's enrollment", async () => {
+    expect(await skipBlockedStep("org", "e1", STRANGER, NOW)).toBe(false);
+    expect(db.campaignMessage.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("does nothing when no row is in that state", async () => {
+    db.campaignMessage.updateMany.mockResolvedValue({ count: 0 });
+    expect(await skipBlockedStep("org", "e1", ACTOR, NOW)).toBe(false);
+    expect(db.campaignProspect.updateMany).not.toHaveBeenCalled();
+    expect(scheduleStepMessage).not.toHaveBeenCalled();
   });
 });
 

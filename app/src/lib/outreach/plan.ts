@@ -107,6 +107,23 @@ export async function planEnrollments(
     }
   }
 
+  // Linked enrollments past their last step belong to the reading evaluator: left in, they would only rotate through
+  // the line at every tick. Step counts differ per campaign, so the exclusion is built per count.
+  const stepCounts = await prisma.campaignStep.groupBy({
+    by: ["campaignId"],
+    where: { campaign: { status: "ACTIVE" } },
+    _count: { _all: true },
+  });
+  const campaignsByCount = new Map<number, string[]>();
+  for (const { campaignId, _count } of stepCounts) {
+    campaignsByCount.set(_count._all, [...(campaignsByCount.get(_count._all) ?? []), campaignId]);
+  }
+  const atLastStepWithLink = [...campaignsByCount].map(([count, ids]) => ({
+    linkId: { not: null },
+    campaignId: { in: ids },
+    currentStep: { gte: count },
+  }));
+
   // Catch-up: an ACTIVE enrollment with nothing pending (the sender normally plans the next step itself)
   const stranded = await prisma.campaignProspect.findMany({
     where: {
@@ -118,6 +135,7 @@ export async function planEnrollments(
       messages: { none: { kind: "STEP", status: { in: ["SCHEDULED", "SENDING"] } } },
       // One waiting for a later time is left alone until then: no point re-reading it every tick
       OR: [{ nextSendAt: null }, { nextSendAt: { lte: now } }],
+      ...(atLastStepWithLink.length > 0 ? { NOT: { OR: atLastStepWithLink } } : {}),
     },
     // Least recently touched first, so a long list of waiting enrollments cannot starve the others
     orderBy: { updatedAt: "asc" },
