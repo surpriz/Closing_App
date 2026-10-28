@@ -12,6 +12,9 @@ export function initSentry(environment: string | undefined) {
     dsn,
     environment,
     tracesSampleRate: 0,
+    // Not our code: blob: workers come from extensions wrapping Worker (we create none,
+    // pdf.js falls back to its fake worker), _next-live/feedback is the Vercel Toolbar
+    denyUrls: [/^blob:/, /\/_next-live\/feedback\//],
     dataCollection: {
       userInfo: false,
       cookies: false,
