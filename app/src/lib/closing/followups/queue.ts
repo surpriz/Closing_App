@@ -14,6 +14,7 @@ import type { FollowupPromptInput } from "../ai/prompts";
 import { notifyDraftReady } from "../alerts/draft-ready";
 import { autopilotEligible } from "../brain/policy";
 import { DAY_MS } from "../constants";
+import { documentTitle } from "../documents/link-title";
 import { deadlineSourceText, formatDeadline, isLinkExpired } from "../expiry";
 import { viewerUrl } from "../link-url";
 import { followupUrl } from "./attribution";
@@ -153,7 +154,8 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
       locale: followup.locale,
       prospectName: prospect.name,
       company: prospect.company,
-      documentName: link.document.name,
+      // The title the prospect sees on the link, never the file name ("Rust_Platform_FR_2026_OFF")
+      documentName: documentTitle(link.document),
       // ?r=: an opening from this message is credited to it
       proposalUrl: followupUrl(viewerUrl(getPublicAppUrl(), { slug: link.slug, document: link.document, company: prospect.company }), followup.id),
       senderName: settings?.senderName ?? link.createdBy?.name ?? null,
