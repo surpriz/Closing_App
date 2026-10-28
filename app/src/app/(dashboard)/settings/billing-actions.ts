@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { getAppOrigin } from "@/lib/app-origin";
+import { checkoutOffer } from "@/lib/billing/offers";
 import { BILLING_HREF, isPaidPlanId, isPaidStatus, seatQuantity, type Interval } from "@/lib/billing/plans";
 import { getStripe, resolvePortalConfiguration, resolvePrice } from "@/lib/billing/stripe";
 import { syncSubscription } from "@/lib/billing/webhook";
@@ -48,6 +49,7 @@ export async function startCheckout(plan: string, interval: Interval): Promise<B
   const members = await prisma.member.count({ where: { organizationId: organization.id } });
   if (plan === "solo" && members > 1) return { error: t("soloTeam") };
 
+  const offer = checkoutOffer(organization, new Date(), interval);
   let url: string | null;
   try {
     const origin = await getAppOrigin();
@@ -60,9 +62,13 @@ export async function startCheckout(plan: string, interval: Interval): Promise<B
       tax_id_collection: { enabled: true },
       customer_update: { address: "auto", name: "auto" },
       billing_address_collection: "required",
-      allow_promotion_codes: true,
+      // Stripe refuses a coupon together with promotion codes.
+      ...(offer ? { discounts: [{ coupon: offer.couponId }] } : { allow_promotion_codes: true }),
       // The plan too: read back if this price is ever replaced and loses its lookup key
-      subscription_data: { metadata: { organizationId: organization.id, plan } },
+      subscription_data: {
+        metadata: { organizationId: organization.id, plan },
+        ...(offer?.trialEnd ? { trial_end: offer.trialEnd } : {}),
+      },
       locale: await stripeLocale(),
       success_url: `${origin}${BILLING_PATH}?billing=success#${BILLING_ANCHOR}`,
       cancel_url: `${origin}${BILLING_HREF}`,

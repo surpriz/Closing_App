@@ -2,7 +2,7 @@ import { after } from "next/server";
 
 const CAPTURE_URL = "https://eu.i.posthog.com/i/v0/e/";
 
-export type ProductEvent = "signed_up" | "link_created" | "proposal_opened" | "plan_changed";
+export type ProductEvent = "signed_up" | "workspace_created" | "link_created" | "proposal_opened" | "plan_changed";
 
 async function send(event: ProductEvent, userId: string, properties: Record<string, unknown>, key: string) {
   const response = await fetch(CAPTURE_URL, {

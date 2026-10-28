@@ -53,6 +53,9 @@
     "teamTotal": "{amount} a {period, select, month {month} other {year}} for {count, plural, one {# member} other {# members}}",
     "teamMinimum": "2 minimum"
   },
+  "offer": {
+    "line": "Your offer: 30% off for 12 months if you pick a plan before {date}. Your remaining trial days are kept, except in the last two days, when billing starts right away."
+  },
   "current": {
     "label": "Current plan",
     "trial": "Team trial until {date}.",
@@ -114,6 +117,7 @@
     "team": "Team"
   },
   "banner": {
+    "offer": "Only {days, plural, one {# day} other {# days}} left to keep 30% off for 12 months.",
     "trial": "{days, plural, =0 {Your Team trial ends today.} one {Your Team trial ends tomorrow.} other {Your Team trial ends in # days.}} Then you move to Free, your links keep working.",
     "beta": "{days, plural, =0 {Free beta access ends today.} one {Free beta access ends tomorrow.} other {Free beta access ends in # days.}}",
     "payment": "Your last payment failed. Update your card to keep your plan.",

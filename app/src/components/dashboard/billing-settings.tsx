@@ -37,6 +37,8 @@ export type BillingSettingsProps = {
   canManage: boolean;
   billingEnabled: boolean;
   hasCustomer: boolean;
+  /** Campaign discount still to take: the date it lapses. */
+  offerEndsAt: string | null;
 };
 
 // Same inbox as the landing (landing/src/components/links.ts)
@@ -145,6 +147,7 @@ export function BillingSettings(props: BillingSettingsProps) {
 
       {props.billingEnabled && (
         <div className="space-y-3 pt-2">
+          {props.offerEndsAt && <p className="text-small font-medium">{t("offer.line", { date: date(props.offerEndsAt) })}</p>}
           <div role="group" aria-label={t("interval.label")} className="inline-flex rounded-lg border border-input p-0.5 text-small">
             {(["month", "year"] as const).map((value) => (
               <button
