@@ -83,7 +83,8 @@ export async function readerLinkFor(
       voiceCommentsEnabled: parent.voiceCommentsEnabled,
       translationEnabled: parent.translationEnabled,
       forwardEnabled: parent.forwardEnabled,
-      followupsEnabled: parent.followupsEnabled,
+      // Never a follow-up to the seller's own test address
+      followupsEnabled: parent.followupsEnabled && !test,
       hotPricingThresholdSec: parent.hotPricingThresholdSec,
       channels: parent.channels,
       inactivityDays: parent.inactivityDays,

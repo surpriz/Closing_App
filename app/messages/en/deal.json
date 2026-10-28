@@ -61,7 +61,7 @@
     "expiryPast": "Pick a future date.",
     "expiryTooFar": "One year max.",
     "callScriptFailed": "Couldn't prepare the call right now. Try again in a moment.",
-    "notATest": "This is a contact you named: not a test. Archive it if needed."
+    "notATest": "Only a Smart Link reader can be marked as a test. Archive this link if needed."
   },
   "followupActions": {
     "emptyMessage": "The message is empty.",
@@ -264,7 +264,7 @@
     "repliesRotate": "Regenerate the address",
     "repliesRotated": "New address: the old one no longer works. Update it in your tool.",
     "testTitle": "Test it as a prospect",
-    "testHint": "Open this link in a private window (signed in, Clozer knows it's you and counts nothing). The reader it creates has your address: it's marked as a test and stays out of every figure. Don't use your tool's test send: it fills the variables with a real prospect."
+    "testHint": "Open this link in a private window, without signing in: signed in, Clozer knows it's you and counts nothing. The reader it creates has your address: it's marked as a test, with no follow-up and no figures. Don't use your tool's test send: it fills the variables with a real prospect."
   },
   "shareReady": {
     "copiedToast": "Link copied. Paste it into your message.",
@@ -549,7 +549,8 @@
     "replyCaught": "Email reply from {from}",
     "replySeen": "Reply from {from} seen in your inbox",
     "textCopied": "text copied (p. {pages})",
-    "printed": "printed"
+    "printed": "printed",
+    "testReader": "Test (out of the figures)"
   },
   "heat": {
     "notRead": "Not read yet"

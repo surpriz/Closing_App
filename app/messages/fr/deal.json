@@ -61,7 +61,7 @@
     "expiryPast": "Choisissez une date à venir.",
     "expiryTooFar": "Un an maximum.",
     "callScriptFailed": "Impossible de préparer l'appel pour l'instant, réessayez dans un moment.",
-    "notATest": "C'est un contact que vous avez nommé : ce n'est pas un test. Archivez-le si besoin."
+    "notATest": "Seul un lecteur de Smart Link peut être marqué comme test. Archivez ce lien si besoin."
   },
   "followupActions": {
     "emptyMessage": "Le message est vide.",
@@ -264,7 +264,7 @@
     "repliesRotate": "Régénérer l'adresse",
     "repliesRotated": "Nouvelle adresse : l'ancienne ne marche plus. Mettez-la à jour dans votre outil.",
     "testTitle": "Tester comme un prospect",
-    "testHint": "Ouvrez ce lien dans une fenêtre de navigation privée (connecté, Clozer vous reconnaît et ne compte rien). La fiche créée porte votre adresse : elle est marquée test et n'entre dans aucune statistique. N'utilisez pas l'envoi de test de votre outil : il remplit les variables avec un vrai prospect."
+    "testHint": "Ouvrez ce lien dans une fenêtre de navigation privée, sans vous connecter : connecté, Clozer vous reconnaît et ne compte rien. La fiche créée porte votre adresse : elle est marquée test, sans relance ni statistiques. N'utilisez pas l'envoi de test de votre outil : il remplit les variables avec un vrai prospect."
   },
   "shareReady": {
     "copiedToast": "Lien copié. Collez-le dans votre message.",
@@ -549,7 +549,8 @@
     "replyCaught": "Réponse de {from} par email",
     "replySeen": "Réponse de {from} vue dans votre boîte mail",
     "textCopied": "texte copié (p. {pages})",
-    "printed": "imprimé"
+    "printed": "imprimé",
+    "testReader": "Test (hors statistiques)"
   },
   "heat": {
     "notRead": "Pas encore lu"
