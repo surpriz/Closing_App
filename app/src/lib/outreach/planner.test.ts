@@ -305,8 +305,15 @@ describe("nextStepFor with reading signals", () => {
     const cold = { opened: true, readingMs: 60_000, lastReadAt: ago(6 * DAY_MS) };
     expect(plan(cold, lastStepDone)).toEqual({ kind: "ai_followup", trigger: "COLD_REACTIVATE" });
     expect(plan({ ...cold, reactivatedAt: ago(DAY_MS) }, lastStepDone)).toEqual({ kind: "finish" });
-    expect(plan({ ...cold, lastReadAt: ago(4 * DAY_MS) }, lastStepDone)).toEqual({ kind: "finish" });
     expect(plan(cold, sent1)).toMatchObject({ kind: "send_step" });
+  });
+
+  it("gives a reader the reactivation window before ending the sequence", () => {
+    const read = { opened: true, readingMs: 60_000, lastReadAt: ago(4 * DAY_MS) };
+    expect(plan(read, lastStepDone)).toEqual({ kind: "wait", until: new Date(now.getTime() + DAY_MS) });
+    // reactivated, or never opened: the lot 2 finish rule
+    expect(plan({ ...read, reactivatedAt: ago(DAY_MS) }, lastStepDone)).toEqual({ kind: "finish" });
+    expect(plan({ opened: false }, lastStepDone)).toEqual({ kind: "finish" });
   });
 
   it("at the 30-day cap, pause_alert drops its follow-up but still pauses", () => {

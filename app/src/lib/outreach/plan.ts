@@ -168,6 +168,9 @@ export async function planEnrollments(
           data: { status: "PAUSED", pausedReason: "send_failed", pausedAt: now },
         });
       }
+    } else if (action.kind === "finish" && enrollment.linkId) {
+      // Finished by the reading evaluator, which has the signals (reactivation window); bumped to the back of the line
+      await prisma.campaignProspect.updateMany({ where: { id: enrollment.id, status: "ACTIVE" }, data: { nextSendAt: null } });
     } else if (action.kind === "finish") {
       const { count } = await prisma.campaignProspect.updateMany({
         where: { id: enrollment.id, status: "ACTIVE" },

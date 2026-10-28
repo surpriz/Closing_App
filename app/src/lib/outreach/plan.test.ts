@@ -146,16 +146,24 @@ describe("planEnrollments, catch-up", () => {
     expect(result).toEqual({ started: 0, continued: 1, finished: 0 });
   });
 
-  it("finishes the enrollment once the last step has had its time, and releases its link", async () => {
+  it("leaves the end of a linked enrollment to the reading evaluator, which has the signals", async () => {
     mailboxFindMany.mockResolvedValue([]);
     stranded = [stuck({ currentStep: 2, linkId: "l1", messages: [{ sentAt: new Date(now.getTime() - 5 * DAY) }] })];
+    const result = await planEnrollments(now);
+    expect(result.finished).toBe(0);
+    expect(releaseCampaignLink).not.toHaveBeenCalled();
+    expect(enrollmentUpdateMany).toHaveBeenCalledWith({ where: { id: "e1", status: "ACTIVE" }, data: { nextSendAt: null } });
+  });
+
+  it("finishes the enrollment once the last step has had its time, and releases its link", async () => {
+    mailboxFindMany.mockResolvedValue([]);
+    stranded = [stuck({ currentStep: 2, linkId: null, messages: [{ sentAt: new Date(now.getTime() - 5 * DAY) }] })];
     const result = await planEnrollments(now);
 
     expect(enrollmentUpdateMany).toHaveBeenCalledWith({
       where: { id: "e1", status: "ACTIVE" },
       data: { status: "FINISHED", finishedAt: now },
     });
-    expect(releaseCampaignLink).toHaveBeenCalledWith("l1");
     expect(result.finished).toBe(1);
   });
 

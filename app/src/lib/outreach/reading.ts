@@ -13,7 +13,7 @@ import { getNamespaceTranslator } from "@/lib/server-translator";
 
 import { dedupeKeyOf, scheduleStepMessage, type StepRow } from "./messages";
 import { releaseCampaignLink } from "./ownership";
-import { businessHoursOf, nextStepFor, REACTIVATE_AFTER_DAYS, stepSendAt, type NextAction } from "./planner";
+import { businessHoursOf, nextStepFor, FINISH_AFTER_LAST_STEP_MS, REACTIVATE_AFTER_DAYS, stepSendAt, type NextAction } from "./planner";
 import type { OutreachScope } from "./scope";
 import { signalsFrom } from "./signals";
 
@@ -108,18 +108,22 @@ export async function evaluateEnrollmentReading(linkId: string, now: Date): Prom
   const lastSentAt = signals.lastSentAt;
 
   // A paused enrollment is planned as an active one, but only the signal rows (alert, note) are applied to it
-  const action = nextStepFor({
-    enrollment: { status: "ACTIVE", currentStep: enrollment.currentStep, lastSentAt },
-    steps: enrollment.campaign.steps,
-    signals,
-    settings: {
-      minDelayAfterReadingHours: settings.minDelayAfterReadingHours,
-      maxFollowupsPer30Days: settings.maxFollowupsPer30Days,
-      minDaysBetweenFollowups: settings.minDaysBetweenFollowups,
-      hotPricingThresholdSec: settings.hotPricingThresholdSec,
-    },
-    now,
-  });
+  const plan = (from: typeof signals) =>
+    nextStepFor({
+      enrollment: { status: "ACTIVE", currentStep: enrollment.currentStep, lastSentAt },
+      steps: enrollment.campaign.steps,
+      signals: from,
+      settings: {
+        minDelayAfterReadingHours: settings.minDelayAfterReadingHours,
+        maxFollowupsPer30Days: settings.maxFollowupsPer30Days,
+        minDaysBetweenFollowups: settings.minDaysBetweenFollowups,
+        hotPricingThresholdSec: settings.hotPricingThresholdSec,
+      },
+      now,
+    });
+  let action = plan(signals);
+  // A forward only has the stamp as side effect, and nothing re-evaluates this session: its read signal applies now
+  if (action.kind === "note_forward") action = plan({ ...signals, forwardedTo: [] });
   const hours = businessHoursOf(settings);
 
   const prospect = await prisma.prospect.findFirst({
@@ -173,7 +177,7 @@ export async function evaluateEnrollmentReading(linkId: string, now: Date): Prom
       } else if (upgrade) {
         const replaced = getNamespaceTranslator(toUiLocale(link.createdBy?.locale), "server.followups.act")("replaced");
         await prisma.followup.updateMany({
-          where: { campaignProspectId: enrollment.id, trigger: "COLD_READ", status: { in: [...OPEN_FOLLOWUP_STATUSES] } },
+          where: { campaignProspectId: enrollment.id, status: { in: [...OPEN_FOLLOWUP_STATUSES] } },
           data: { status: "CANCELLED", cancelledAt: now, error: replaced },
         });
         created = await queueRead(action.followup, "next-morning", lastSignal);
@@ -193,8 +197,6 @@ export async function evaluateEnrollmentReading(linkId: string, now: Date): Prom
         });
       }
     }
-  } else if (action.kind === "note_forward") {
-    // Nothing to write but the stamp below: forwards newer than it are the news, the schedule stays as is
   } else if (!paused && action.kind === "ai_followup") {
     await queueRead(action.trigger, "asap", "reactivate");
     await prisma.campaignProspect.updateMany({
@@ -270,10 +272,19 @@ export async function evaluateReadingSignals(now: Date, scope: OutreachScope = {
     SELECT cp."linkId"
     FROM "campaign_prospects" cp ${live}
     WHERE cp."status" = 'ACTIVE'
-      AND cp."reactivatedAt" IS NULL
       AND cp."currentStep" >= (SELECT COUNT(*) FROM "campaign_steps" s WHERE s."campaignId" = cp."campaignId")
-      AND l."lastActivityAt" < ${new Date(now.getTime() - REACTIVATE_AFTER_DAYS * DAY_MS)}
       AND (cp."readEvaluatedAt" IS NULL OR cp."readEvaluatedAt" < ${new Date(now.getTime() - DAY_MS)})
+      AND (
+        -- a reader gone quiet: reactivation; a reactivated one: its end of sequence
+        l."lastActivityAt" < ${new Date(now.getTime() - REACTIVATE_AFTER_DAYS * DAY_MS)}
+        OR cp."reactivatedAt" IS NOT NULL
+        -- never opened: the sequence ends after the last mail (the catch-up leaves linked enrollments to this pass)
+        OR (
+          l."lastActivityAt" IS NULL
+          AND (SELECT MAX(m."sentAt") FROM "campaign_messages" m WHERE m."enrollmentId" = cp."id" AND m."status" = 'SENT')
+            < ${new Date(now.getTime() - FINISH_AFTER_LAST_STEP_MS)}
+        )
+      )
       ${scoped}
     ORDER BY cp."readEvaluatedAt" ASC NULLS FIRST
     LIMIT ${REACTIVATION_BATCH}`;

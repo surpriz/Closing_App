@@ -233,7 +233,7 @@ describe("evaluateEnrollmentReading", () => {
     readingOfLink.mockResolvedValue({ readingMs: 90_000, pricingMs: 45_000, tags: [] });
     expect(await evaluateEnrollmentReading("l1", now)).toBe("pause_alert");
     expect(db.followupUpdateMany).toHaveBeenCalledWith({
-      where: { campaignProspectId: "e1", trigger: "COLD_READ", status: { in: ["PENDING", "DRAFT", "GENERATED", "SCHEDULED"] } },
+      where: { campaignProspectId: "e1", status: { in: ["PENDING", "DRAFT", "GENERATED", "SCHEDULED"] } },
       data: { status: "CANCELLED", cancelledAt: now, error: "Replaced by a newer analysis" },
     });
     expect(queueFollowup.mock.calls[0][0]).toMatchObject({ trigger: "COLD_READ_PRICING" });
@@ -276,15 +276,48 @@ describe("evaluateEnrollmentReading", () => {
     });
   });
 
-  it("forward: only stamps readEvaluatedAt, and the same forward is not news the next time", async () => {
+  it("forward: the schedule is untouched, readEvaluatedAt is stamped, the same forward is not news next time", async () => {
     const forward = { createdAt: new Date(now.getTime() - 10 * MIN), toProspect: { email: "boss@acme.com" } };
     db.forwardFindMany.mockResolvedValue([forward]);
-    expect(await evaluateEnrollmentReading("l1", now)).toBe("note_forward");
-    expect(updatesOf()).toEqual([{ where: { id: "e1" }, data: { readEvaluatedAt: now } }]);
-    expect(scheduleStepMessage).not.toHaveBeenCalled();
+    views = [view({ lastSeenAt: new Date(now.getTime() - 20 * MIN) })];
+    await evaluateEnrollmentReading("l1", now);
+    expect(updatesOf().some((u) => "lastSignal" in u.data)).toBe(false);
+    expect(updatesOf().at(-1)).toEqual({ where: { id: "e1" }, data: { readEvaluatedAt: now } });
 
     enrollment.readEvaluatedAt = now;
-    expect(await evaluateEnrollmentReading("l1", new Date(now.getTime() + 20 * MIN))).not.toBe("note_forward");
+    db.enrollmentUpdateMany.mockClear();
+    queueFollowup.mockClear();
+    await evaluateEnrollmentReading("l1", new Date(now.getTime() + 20 * MIN));
+    expect(updatesOf().at(-1)).toMatchObject({ data: { readEvaluatedAt: expect.any(Date) } });
+  });
+
+  it("a deep read in the same session as a new forward still pauses, alerts and queues the follow-up", async () => {
+    db.forwardFindMany.mockResolvedValue([{ createdAt: new Date(now.getTime() - MIN), toProspect: { email: "boss@acme.com" } }]);
+    views = [view(), view({ startedAt: new Date(now.getTime() - 30 * MIN) })];
+    expect(await evaluateEnrollmentReading("l1", now)).toBe("pause_alert");
+    expect(updatesOf()[0]).toEqual({
+      where: { id: "e1", status: "ACTIVE" },
+      data: { status: "PAUSED", pausedReason: "deep_read", pausedAt: now, lastSignal: "deep" },
+    });
+    expect(notifySeller.mock.calls[0][0].dedupeKey).toBe("cold_call:l1:deep_read");
+    expect(queueFollowup.mock.calls[0][0]).toMatchObject({ trigger: "COLD_READ" });
+    expect(updatesOf().filter((u) => "readEvaluatedAt" in u.data)).toHaveLength(1);
+  });
+
+  it("an opened sequence with no step left waits out the reactivation window instead of finishing", async () => {
+    enrollment.currentStep = 2;
+    views = [view({ lastSeenAt: new Date(now.getTime() - 2 * DAY), startedAt: new Date(now.getTime() - 2 * DAY) })];
+    db.messageFindMany.mockResolvedValue([{ sentAt: new Date(now.getTime() - 9 * DAY), kind: "STEP" }]);
+    expect(await evaluateEnrollmentReading("l1", now)).toBe("wait");
+    expect(releaseCampaignLink).not.toHaveBeenCalled();
+  });
+
+  it("a never-opened sequence still finishes three days after the last mail", async () => {
+    enrollment.currentStep = 2;
+    views = [];
+    db.messageFindMany.mockResolvedValue([{ sentAt: new Date(now.getTime() - 4 * DAY), kind: "STEP" }]);
+    expect(await evaluateEnrollmentReading("l1", now)).toBe("finish");
+    expect(releaseCampaignLink).toHaveBeenCalledWith("l1");
   });
 
   it("a skim only moves the next step after the reading delay", async () => {
@@ -342,10 +375,13 @@ describe("evaluateReadingSignals", () => {
     expect(reading.values).not.toContain("org2");
     expect(reading.values).toContain(100);
     // second pass: ACTIVE, never reactivated, no step left, quiet for 5 days, not looked at today
-    expect(reactivation.sql).toContain(`cp."reactivatedAt" IS NULL`);
+    expect(reactivation.sql).toContain(`cp."reactivatedAt" IS NOT NULL`);
+    // never opened: the end of the sequence three days after the last sent mail
+    expect(reactivation.sql).toContain(`l."lastActivityAt" IS NULL`);
+    expect(reactivation.sql).toContain(`MAX(m."sentAt")`);
     expect(reactivation.sql).toContain(`cp."currentStep" >= (SELECT COUNT(*)`);
     expect(reactivation.values).toEqual(
-      expect.arrayContaining([new Date(now.getTime() - 5 * DAY), new Date(now.getTime() - DAY), "org", 50]),
+      expect.arrayContaining([new Date(now.getTime() - 5 * DAY), new Date(now.getTime() - DAY), new Date(now.getTime() - 3 * DAY), "org", 50]),
     );
   });
 

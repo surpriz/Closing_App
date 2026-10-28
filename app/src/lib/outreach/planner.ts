@@ -93,6 +93,12 @@ export function nextStepFor(input: {
 
   if (next) return sendStep(enrollment, next, earliest, now);
 
+  // A reader who opened it gets the reactivation window before the sequence ends
+  if (signals && signals.opened && signals.lastReadAt && !signals.reactivatedAt) {
+    const until = new Date(signals.lastReadAt.getTime() + REACTIVATE_AFTER_DAYS * DAY_MS);
+    if (until.getTime() > now.getTime()) return { kind: "wait", until };
+  }
+
   if (!enrollment.lastSentAt) return finishOrWait(signals);
   const until = new Date(enrollment.lastSentAt.getTime() + FINISH_AFTER_LAST_STEP_MS);
   return until.getTime() <= now.getTime() ? finishOrWait(signals) : { kind: "wait", until };
