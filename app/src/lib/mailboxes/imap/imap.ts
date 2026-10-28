@@ -5,7 +5,7 @@ import { replyExcerpt } from "@/lib/closing/replies/text";
 
 import type { ImapCredentials } from "../credentials";
 import { MailboxError } from "../errors";
-import { parseAuthenticationResults } from "../inbound/auth";
+import { domainOf, parseAuthenticationResults } from "../inbound/auth";
 import { dsnFromHeaders, parseDsn } from "../inbound/dsn";
 import { assertSafeMailHost, NETWORK_CODES } from "../safe-host";
 import type { InboundHeaders, InboundMessage, SyncCursor } from "../types";
@@ -165,7 +165,7 @@ function toInbound(msg: FetchMessageObject, uidValidity: number): Omit<InboundMe
     subject: env?.subject ?? null,
     date: date ? new Date(date) : new Date(),
     headers,
-    authenticated: parseAuthenticationResults(headers["authentication-results"], from?.address?.split("@")[1]),
+    authenticated: parseAuthenticationResults(headers["authentication-results"], domainOf(from?.address ?? "")),
     threadId: null,
   };
 }

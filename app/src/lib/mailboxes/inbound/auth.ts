@@ -14,7 +14,8 @@ function stripNoise(header: string) {
     else if (depth === 0) {
       if (c === '"') {
         quoted = true;
-        out += " ";
+        // A placeholder, not a blank: a quoted local part ("a b"@host) must stay one token
+        out += "q";
       } else out += c;
     }
   }
@@ -37,8 +38,8 @@ function entries(header: string): Entry[] {
   return out;
 }
 
-/** Domain of "user@host", "@host" or "host", lowercased. */
-function domainOf(value: string | undefined) {
+/** Domain of "user@host", "@host" or "host", lowercased; after the last "@" so a quoted local part cannot fake it. */
+export function domainOf(value: string | undefined) {
   if (!value) return null;
   const host = value.slice(value.lastIndexOf("@") + 1).replace(/[<>]/g, "").replace(/\.$/, "").toLowerCase();
   return host.includes(".") ? host : null;

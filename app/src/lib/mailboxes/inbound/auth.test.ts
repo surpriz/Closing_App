@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseAuthenticationResults } from "./auth";
+import { domainOf, parseAuthenticationResults } from "./auth";
 
 const FROM = "target.io";
 
@@ -95,5 +95,26 @@ describe("parseAuthenticationResults", () => {
     expect(parseAuthenticationResults("mx.x.net; dkim=none; spf=neutral; dmarc=none", FROM)).toBeNull();
     expect(parseAuthenticationResults("mx.x.net; dkim=none; spf=none", FROM)).toBeNull();
     expect(parseAuthenticationResults("mx.x.net; auth=pass", FROM)).toBeNull();
+  });
+
+  it("reads a quoted local part in smtp.mailfrom", () => {
+    expect(parseAuthenticationResults('mx.x.net; spf=pass smtp.mailfrom="john doe"@target.io', FROM)).toBe(true);
+    expect(parseAuthenticationResults('mx.x.net; spf=pass smtp.mailfrom="x@target.io"@evil.test', FROM)).toBeNull();
+  });
+});
+
+describe("domainOf", () => {
+  it("takes the domain after the last @, whatever the quoted local part says", () => {
+    expect(domainOf('"x@evil.test"@Target.io')).toBe("target.io");
+    expect(domainOf("bob@target.io")).toBe("target.io");
+    expect(domainOf("@target.io")).toBe("target.io");
+    expect(domainOf("localhost")).toBeNull();
+    expect(domainOf("")).toBeNull();
+  });
+
+  it("aligns a mail whose From local part imitates another domain with its real one", () => {
+    const header = "mx.x.net; dkim=pass header.d=evil.test";
+    expect(parseAuthenticationResults(header, domainOf('"x@evil.test"@target.io'))).toBeNull();
+    expect(parseAuthenticationResults(header, domainOf("x@evil.test"))).toBe(true);
   });
 });
