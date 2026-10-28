@@ -136,7 +136,7 @@ export default async function DocumentDetailPage({
           },
           engagementScore: true,
           campaignProspect: linkCampaignSelect.campaignProspect,
-          _count: { select: { views: true } },
+          _count: { select: { views: { where: { isBot: false } } } },
         },
       },
     },
@@ -316,7 +316,20 @@ export default async function DocumentDetailPage({
       lastActivityAt: link.lastActivityAt ?? link.createdAt,
     })),
   );
-  const readersOf = (smartLinkId: string) => people.filter((person) => person.parentLinkId === smartLinkId).length;
+  const readersBySmartLink = new Map<string, number>();
+  const viewsByPerson = new Map<string, number>();
+  for (const link of document.links) {
+    const email = link.parentLinkId ? link.prospects[0]?.email?.trim().toLowerCase() : null;
+    const key = email ? `${link.parentLinkId}:${email}` : link.id;
+    viewsByPerson.set(key, (viewsByPerson.get(key) ?? 0) + link._count.views);
+  }
+  for (const person of people) {
+    if (person.parentLinkId) readersBySmartLink.set(person.parentLinkId, (readersBySmartLink.get(person.parentLinkId) ?? 0) + 1);
+  }
+  const personKey = (link: (typeof people)[number]) => {
+    const email = link.parentLinkId ? link.prospects[0]?.email?.trim().toLowerCase() : null;
+    return email ? `${link.parentLinkId}:${email}` : link.id;
+  };
   // The Smart Link first: the one to paste in a sequence, its readers below as their own rows
   const orderedLinks = [...people].sort((a, b) => Number(b.shared) - Number(a.shared));
   const prospectRows: ProspectLinkRow[] = orderedLinks.map((link) => {
@@ -337,7 +350,7 @@ export default async function DocumentDetailPage({
           .join(" · ") ||
         t("createdAgo", { when: formatRelative(link.createdAt, locale, now) }),
       state: link.shared
-        ? t("smartLinkReaders", { count: readersOf(link.id) })
+        ? t("smartLinkReaders", { count: readersBySmartLink.get(link.id) ?? 0 })
         : link.dealStatus !== "OPEN"
           ? tl(`dealStatus.${link.dealStatus}`)
           : expired
@@ -352,7 +365,7 @@ export default async function DocumentDetailPage({
           : null,
       signed: link.dealStatus === "VALIDATED" || link.dealStatus === "WON",
       strong: !!score || link.dealStatus !== "OPEN",
-      views: link._count.views,
+      views: viewsByPerson.get(personKey(link)) ?? link._count.views,
       heat: pages && pages.length > 0 ? pageHeat(pages, heatPages) : null,
       ...shareLink(origin, { slug: link.slug, document, company: prospect?.company }),
       followupsEnabled: link.followupsEnabled,

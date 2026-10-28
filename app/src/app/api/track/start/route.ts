@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
   if (confirming) {
     await prisma.documentView.update({
       where: { id: recentView.id },
-      data: { isBot: false, followupId: await followupOfLink(parsed.data.followupId, link.id) },
+      data: { isBot: false, lastSeenAt: now, followupId: await followupOfLink(parsed.data.followupId, link.id) },
     });
   }
   const fresh = !recentView || confirming;
@@ -147,12 +147,13 @@ export async function POST(request: NextRequest) {
       })
     ).id;
 
-  if (prospect && !fromSeller) {
+  // A pending view writes nothing on the prospect: a scanner's datacenter would set their zone and country
+  if (prospect && !fromSeller && !pending) {
     await prisma.prospect.update({
       where: { id: prospect.id },
       data: {
         lastSeenAt: excluded || pending ? undefined : now,
-        firstSeenAt: prospect.firstSeenAt ?? (pending ? undefined : now),
+        firstSeenAt: prospect.firstSeenAt ?? now,
         timezone: prospect.timezone ?? timezone,
         locale: prospect.locale ?? locale,
         country: prospect.country ?? context.country,
