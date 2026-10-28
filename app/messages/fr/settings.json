@@ -346,5 +346,40 @@
       "failed": "La connexion a échoué. Réessayez dans quelques minutes.",
       "pendingSlow": "Toujours rien. Rechargez dans un instant, ou reconnectez la boîte."
     }
+  },
+  "suppressions": {
+    "title": "Liste d'arrêt",
+    "description": "Ces adresses ne recevront plus aucun mail de campagne de cet espace.",
+    "count": "{count, plural, =0 {Aucune adresse} one {# adresse} other {# adresses}}",
+    "latest": "Les {count} dernières sont affichées. L'export CSV les contient toutes.",
+    "empty": "Personne pour l'instant. Les désinscriptions, rebonds et plaintes apparaîtront ici.",
+    "export": "Exporter en CSV",
+    "columns": {
+      "email": "Email",
+      "reason": "Raison",
+      "source": "Source",
+      "date": "Date"
+    },
+    "reason": {
+      "UNSUBSCRIBE": "Désinscrit",
+      "BOUNCE": "Rebond",
+      "COMPLAINT": "Plainte",
+      "MANUAL": "Ajout manuel"
+    },
+    "remove": "Retirer",
+    "removing": "Retrait…",
+    "cancel": "Annuler",
+    "removeTitle": "Retirer cette adresse ?",
+    "removeDescription": "{email} pourra de nouveau recevoir vos campagnes.",
+    "addLabel": "Adresse email à ajouter",
+    "placeholder": "prenom@entreprise.com",
+    "add": "Ajouter une adresse",
+    "adding": "Ajout…",
+    "added": "Adresse ajoutée",
+    "errors": {
+      "invalid": "Cette adresse email n'est pas valide.",
+      "exists": "Cette adresse est déjà dans la liste.",
+      "notRemovable": "Seules les adresses ajoutées à la main peuvent être retirées."
+    }
   }
 }

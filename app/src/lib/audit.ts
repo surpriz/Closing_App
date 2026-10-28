@@ -17,7 +17,9 @@ export type AuditAction =
   | "outlook.connected"
   | "mailbox.connected"
   | "mailbox.disconnected"
-  | "mailbox.cap_changed";
+  | "mailbox.cap_changed"
+  | "suppression.added"
+  | "suppression.removed";
 
 /**
  * One line in the workspace's journal. Never throws: a journal outage must not

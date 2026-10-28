@@ -28,6 +28,8 @@ export const LIMITS = {
   magicLinkEmail: { max: 10, windowSeconds: 60 * 60 },
   // Per seller: each attempt opens IMAP and SMTP sessions to a host the seller typed
   mailboxConnect: { max: 5, windowSeconds: 60 * 60 },
+  // Per seller: the stop list export reads every row of the workspace
+  suppressionExport: { max: 10, windowSeconds: 60 * 60 },
   // Per workspace: a cold email tool reporting replies, unsubscribes and bounces of a whole campaign
   sequencer: { max: 600, windowSeconds: 10 * 60 },
 } satisfies Record<string, Limit>;

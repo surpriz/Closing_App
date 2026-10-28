@@ -13,6 +13,7 @@ import {
   SettingsNav,
 } from "@/components/dashboard/settings-advanced";
 import { SettingsForm } from "@/components/dashboard/settings-form";
+import { SuppressionList } from "@/components/dashboard/suppression-list";
 import { TeamSettings } from "@/components/dashboard/team-settings";
 import { offerEndsAt } from "@/lib/billing/offers";
 import { countAiFollowupsThisMonth, countLinksCreatedThisMonth, countVideoPitches, isBillingEnabled, planFor } from "@/lib/billing/workspace-plan";
@@ -30,6 +31,7 @@ import { dailyAllowance } from "@/lib/mailboxes/caps/allowance";
 import { sentToday } from "@/lib/mailboxes/connect";
 import type { DnsReport } from "@/lib/mailboxes/dns/checks";
 import { isOutreachAllowed } from "@/lib/outreach/flag";
+import { countSuppressions, listSuppressions } from "@/lib/outreach/suppression";
 import { isManagerRole, isOwnerRole } from "@/lib/roles";
 import { requireWorkspace } from "@/lib/session";
 
@@ -78,7 +80,7 @@ export default async function SettingsPage({
   const isManager = isManagerRole(role);
   const billing = planFor(organization);
   const outreach = isOutreachAllowed(user, organization.id);
-  const [settings, tokens, prefs, team, usage, mailboxes] = await Promise.all([
+  const [settings, tokens, prefs, team, usage, mailboxes, stopList] = await Promise.all([
     getWorkspaceSettings(organization.id),
     prisma.extensionToken.findMany({
       where: {
@@ -99,6 +101,7 @@ export default async function SettingsPage({
     isManager ? getTeam(organization.id) : null,
     getBillingUsage(organization.id),
     outreach ? getMailboxes(user.id, organization.id) : null,
+    outreach ? getStopList(organization.id) : null,
   ]);
   const llm = getLanguageModel("followup");
   const t = await getTranslations("settings.page");
@@ -142,6 +145,14 @@ export default async function SettingsPage({
                   maxCap={getEnv().MAILBOX_DAILY_CAP_MAX}
                   availability={{ google: gmailConnector(), microsoft: isMicrosoftMailboxConfigured() }}
                   flash={flag ? { flag, code: one(query.code) } : null}
+                />
+              </div>
+            )}
+            {stopList && (
+              <div className="max-w-2xl">
+                <SuppressionList
+                  rows={stopList.rows.map((row) => ({ ...row, createdAt: row.createdAt.toISOString() }))}
+                  total={stopList.total}
                 />
               </div>
             )}
@@ -230,6 +241,11 @@ export default async function SettingsPage({
       </AdvancedSettingsProvider>
     </div>
   );
+}
+
+async function getStopList(organizationId: string) {
+  const [rows, total] = await Promise.all([listSuppressions(organizationId), countSuppressions(organizationId)]);
+  return { rows, total };
 }
 
 async function getMailboxes(userId: string, organizationId: string) {

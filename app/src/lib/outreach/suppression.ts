@@ -57,3 +57,31 @@ export async function addSuppression(input: {
   });
   return count > 0;
 }
+
+export async function listSuppressions(organizationId: string, take = 20) {
+  return prisma.suppression.findMany({
+    where: { organizationId },
+    orderBy: { createdAt: "desc" },
+    take,
+    select: { id: true, email: true, reason: true, source: true, createdAt: true },
+  });
+}
+
+export async function countSuppressions(organizationId: string): Promise<number> {
+  return prisma.suppression.count({ where: { organizationId } });
+}
+
+/** The whole stop list for the CSV export, oldest first. */
+export async function allSuppressions(organizationId: string) {
+  return prisma.suppression.findMany({
+    where: { organizationId },
+    orderBy: { createdAt: "asc" },
+    select: { email: true, reason: true, source: true, detail: true, createdAt: true },
+  });
+}
+
+/** Only a row the seller added by hand can go: unsubscribes, bounces and complaints must stay. */
+export async function removeManualSuppression(organizationId: string, id: string): Promise<boolean> {
+  const { count } = await prisma.suppression.deleteMany({ where: { id, organizationId, reason: "MANUAL" } });
+  return count > 0;
+}
