@@ -35,6 +35,21 @@ export function followupOfVisit(slug: string) {
   }
 }
 
+/** The campaign message this visit came from (?c=), kept for the tab like ?r=. */
+export function campaignMessageOfVisit(slug: string) {
+  try {
+    const key = `clozer:campaign-message:${slug}`;
+    const fromUrl = new URLSearchParams(window.location.search).get("c");
+    if (fromUrl && /^[a-z0-9]{8,40}$/.test(fromUrl)) {
+      sessionStorage.setItem(key, fromUrl);
+      return fromUrl;
+    }
+    return sessionStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
 function startView(slug: string) {
   let request = startRequests.get(slug);
   if (!request) {
@@ -46,6 +61,7 @@ function startView(slug: string) {
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         locale: navigator.language,
         followupId: followupOfVisit(slug),
+        campaignMessageId: campaignMessageOfVisit(slug),
       }),
     })
       .then((res) => (res.ok ? res.json() : null))

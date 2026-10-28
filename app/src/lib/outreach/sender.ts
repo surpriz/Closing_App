@@ -1,6 +1,6 @@
 import type { Mailbox } from "@/generated/prisma/client";
 import { PlanLimitError } from "@/lib/billing/workspace-plan";
-import { DAY_MS } from "@/lib/closing/constants";
+import { DAY_MS, HOUR_MS } from "@/lib/closing/constants";
 import type { BusinessHours } from "@/lib/closing/scheduling/business-hours";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
 import { unsubscribeOneClickUrl, unsubscribePageUrl } from "@/lib/closing/unsubscribe";
@@ -18,7 +18,7 @@ import type { MailboxConnector } from "@/lib/mailboxes/types";
 import { textToHtml } from "@/lib/text-html";
 
 import { stopEnrollment } from "./enroll";
-import { createCampaignLink, type CampaignLink } from "./link";
+import { campaignMessageUrl, createCampaignLink, type CampaignLink } from "./link";
 import { dedupeKeyOf, renderStep, scheduleStepMessage, type EnrollmentRow, type StepRow } from "./messages";
 import {
   businessHoursOf,
@@ -58,6 +58,8 @@ export async function expireStaleLeases(
   const org = organizationWhere(scope);
   const stale = {
     status: "SENDING" as const,
+    // A follow-up mirror is the follow-up transport's: it is never requeued or cancelled here
+    kind: "STEP" as const,
     sendingAt: { lt: new Date(now.getTime() - STALE_LEASE_MS) },
     ...(org.organizationId ? { campaign: org } : {}),
   };
@@ -167,7 +169,7 @@ export async function sendDueMessages(
       status: "ACTIVE",
       ...organizationWhere(scope),
       organization: { suspendedAt: null },
-      messages: { some: { status: "SCHEDULED", scheduledFor: { lte: now } } },
+      messages: { some: { kind: "STEP", status: "SCHEDULED", scheduledFor: { lte: now } } },
     },
   });
 
@@ -179,9 +181,11 @@ export async function sendDueMessages(
     const settings = await getWorkspaceSettings(mailbox.organizationId);
     const hours = businessHoursOf(settings);
     const signature = mailbox.signature ?? settings.senderSignature ?? null;
+    const readDelayHours = settings.minDelayAfterReadingHours;
     const candidates = await prisma.campaignMessage.findMany({
       where: {
         mailboxId: mailbox.id,
+        kind: "STEP",
         status: "SCHEDULED",
         scheduledFor: { lte: now },
         campaign: { status: "ACTIVE" },
@@ -204,7 +208,7 @@ export async function sendDueMessages(
       });
       if (reserved.count === 0) continue;
       const state = { marked: false };
-      const ctx = { messageId: candidate.id, reservedAt, mailbox, hours, signature, now, totals, connectorOf, state };
+      const ctx = { messageId: candidate.id, reservedAt, mailbox, hours, signature, readDelayHours, now, totals, connectorOf, state };
       try {
         if ((await sendOne(ctx)) === "stop") break;
       } catch (error) {
@@ -235,12 +239,13 @@ async function sendOne(ctx: {
   mailbox: Mailbox;
   hours: BusinessHours;
   signature: string | null;
+  readDelayHours: number;
   now: Date;
   totals: Totals;
   connectorOf: () => MailboxConnector;
   state: { marked: boolean };
 }): Promise<Outcome> {
-  const { messageId, reservedAt, mailbox, hours, signature, now, totals } = ctx;
+  const { messageId, reservedAt, mailbox, hours, signature, readDelayHours, now, totals } = ctx;
 
   const message = await prisma.campaignMessage.findUnique({
     where: { id: messageId },
@@ -300,6 +305,17 @@ async function sendOne(ctx: {
     return "next";
   }
 
+  // Never right after a reading: the mail would give the tracking away (E9)
+  if (enrollment.linkId) {
+    const read = await prisma.link.findUnique({ where: { id: enrollment.linkId }, select: { lastActivityAt: true } });
+    const quietFrom = read?.lastActivityAt ? read.lastActivityAt.getTime() + readDelayHours * HOUR_MS : 0;
+    if (quietFrom > now.getTime()) {
+      await requeue(message.id, reservedAt, stepSendAt(new Date(quietFrom), enrollment.timezone, hours, dedupeKey));
+      totals.rescheduled++;
+      return "next";
+    }
+  }
+
   // Link: created with the first message that carries it, then reused by every retry
   let link: CampaignLink | null = null;
   if (step.carriesLink) {
@@ -318,7 +334,9 @@ async function sendOne(ctx: {
     }
   }
 
-  const rendered = renderStep(step, enrollment, link?.url ?? null);
+  // ?c= credits the opening to this very message
+  const messageUrl = link ? campaignMessageUrl(link.url, message.id) : null;
+  const rendered = renderStep(step, enrollment, messageUrl);
   if (rendered.missing.length > 0) {
     // Not a dead end: the seller can add a fallback to the step and resume, which re-opens this cancelled message
     const reason = `missing_variable:${rendered.missing[0]}`;
@@ -333,7 +351,7 @@ async function sendOne(ctx: {
   const visible = signature ? `${rendered.body}\n\n${signature}` : rendered.body;
   const footer = unsubscribeFooter(unsubscribePageUrl({ kind: "enrollment", id: enrollment.id }), enrollment.locale);
   const text = visible + footer.text;
-  const html = textToHtml(visible, link ? { url: link.url, title: link.title } : null) + footer.html;
+  const html = textToHtml(visible, link && messageUrl ? { url: messageUrl, title: link.title } : null) + footer.html;
 
   // The cap is counted just before the send: a mailbox never goes over its day, whatever the other workers do
   const allowance = dailyAllowance(mailbox, now, { max: getEnv().MAILBOX_DAILY_CAP_MAX });

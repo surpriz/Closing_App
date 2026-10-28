@@ -15,6 +15,7 @@ const enrollmentUpdate = vi.fn();
 const enrollmentUpdateMany = vi.fn();
 const enrollmentFindUnique = vi.fn();
 const campaignFindUnique = vi.fn();
+const linkFindUnique = vi.fn();
 vi.mock("@/lib/db", () => ({
   prisma: {
     mailbox: {
@@ -32,6 +33,7 @@ vi.mock("@/lib/db", () => ({
     },
     campaignStep: { findMany: (...a: unknown[]) => stepFindMany(...a) },
     campaign: { findUnique: (...a: unknown[]) => campaignFindUnique(...a) },
+    link: { findUnique: (...a: unknown[]) => linkFindUnique(...a) },
     $transaction: (fn: (tx: unknown) => unknown) => fn(txStub),
     campaignProspect: {
       update: (...a: unknown[]) => enrollmentUpdate(...a),
@@ -51,6 +53,7 @@ vi.mock("@/lib/closing/settings", () => ({
     businessHourEnd: 18,
     businessDays: [1, 2, 3, 4, 5],
     senderSignature: null,
+    minDelayAfterReadingHours: 3,
   }),
 }));
 vi.mock("@/lib/closing/unsubscribe", () => ({
@@ -79,7 +82,10 @@ vi.mock("./suppression", () => ({
   },
 }));
 const createCampaignLink = vi.fn();
-vi.mock("./link", () => ({ createCampaignLink: (...a: unknown[]) => createCampaignLink(...a) }));
+vi.mock("./link", () => ({
+  createCampaignLink: (...a: unknown[]) => createCampaignLink(...a),
+  campaignMessageUrl: (url: string, id: string) => `${url}?c=${id}`,
+}));
 const stopEnrollment = vi.fn();
 vi.mock("./enroll", () => ({ stopEnrollment: (...a: unknown[]) => stopEnrollment(...a) }));
 
@@ -164,6 +170,7 @@ beforeEach(() => {
   enrollmentUpdateMany.mockResolvedValue({ count: 1 });
   enrollmentFindUnique.mockResolvedValue({ status: "ACTIVE" });
   campaignFindUnique.mockResolvedValue({ mailboxId: "mb1" });
+  linkFindUnique.mockResolvedValue({ lastActivityAt: null });
   isSuppressed.mockResolvedValue(false);
   reserveSend.mockResolvedValue(true);
   stopEnrollment.mockResolvedValue(true);
@@ -389,9 +396,40 @@ describe("sendDueMessages, re-checks", () => {
     stepFindMany.mockResolvedValue([{ ...step1, carriesLink: true, body: "See {{link}}" }, step2]);
     createCampaignLink.mockResolvedValue({ linkId: "l1", prospectId: null, url: "https://app.test/v/acme-abc", title: "Devis" });
     await sendDueMessages(now, {}, deps);
-    expect(send.mock.calls[0][0].text).toContain("See https://app.test/v/acme-abc");
-    expect(send.mock.calls[0][0].html).toContain('<a href="https://app.test/v/acme-abc">Devis</a>');
+    expect(send.mock.calls[0][0].text).toContain("See https://app.test/v/acme-abc?c=m1");
+    expect(send.mock.calls[0][0].html).toContain('<a href="https://app.test/v/acme-abc?c=m1">Devis</a>');
     expect(messageUpdateMany.mock.calls.find(([a]) => a.data.status === "SENT")![0].data.carriesLink).toBe(true);
+  });
+});
+
+describe("sendDueMessages, candidates", () => {
+  it("only takes step messages, never a follow-up mirror", async () => {
+    await sendDueMessages(now, {}, deps);
+    expect(messageFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ kind: "STEP", status: "SCHEDULED" }) }),
+    );
+    expect(mailboxFindMany.mock.calls[0][0].where.messages.some).toMatchObject({ kind: "STEP" });
+  });
+});
+
+describe("sendDueMessages, never right after a reading", () => {
+  it("moves the message after the reading delay when the link was read recently", async () => {
+    messageFindUnique.mockResolvedValue(message({ enrollment: { ...enrollment, linkId: "l1" } }));
+    linkFindUnique.mockResolvedValue({ lastActivityAt: new Date(now.getTime() - 3_600_000) }); // 1h ago, delay 3h
+    const result = await sendDueMessages(now, {}, deps);
+    expect(send).not.toHaveBeenCalled();
+    expect(reserveSend).not.toHaveBeenCalled();
+    expect(result.rescheduled).toBe(1);
+    const call = messageUpdateMany.mock.calls.find(([a]) => a.data.status === "SCHEDULED" && a.data.scheduledFor);
+    expect(call![0].where).toEqual({ id: "m1", status: "SENDING", sendingAt: now });
+    expect(call![0].data.scheduledFor.getTime()).toBeGreaterThanOrEqual(now.getTime() + 2 * 3_600_000);
+  });
+
+  it("sends when the last reading is older than the delay", async () => {
+    messageFindUnique.mockResolvedValue(message({ enrollment: { ...enrollment, linkId: "l1" } }));
+    linkFindUnique.mockResolvedValue({ lastActivityAt: new Date(now.getTime() - 4 * 3_600_000) });
+    const result = await sendDueMessages(now, {}, deps);
+    expect(result.sent).toBe(1);
   });
 });
 
@@ -531,7 +569,7 @@ describe("sendDueMessages, send errors", () => {
 
 describe("expireStaleLeases", () => {
   const cutoff = new Date(now.getTime() - 5 * 60_000);
-  const stale = { status: "SENDING", sendingAt: { lt: cutoff } };
+  const stale = { status: "SENDING", kind: "STEP", sendingAt: { lt: cutoff } };
 
   it("cancels, first, a stale row without Message-ID whose enrollment is no longer live, instead of requeuing it", async () => {
     messageFindMany.mockResolvedValue([]);

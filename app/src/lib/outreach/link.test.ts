@@ -19,7 +19,7 @@ const createDocumentLink = vi.fn();
 vi.mock("@/lib/closing/documents/create-link", () => ({ createDocumentLink: (...a: unknown[]) => createDocumentLink(...a) }));
 vi.mock("@/lib/app-origin", () => ({ getPublicAppUrl: () => "https://app.example.com" }));
 
-const { createCampaignLink } = await import("./link");
+const { campaignMessageUrl, createCampaignLink } = await import("./link");
 
 const base = {
   email: "paul@acme.com",
@@ -110,5 +110,14 @@ describe("createCampaignLink", () => {
     });
     linkFind.mockResolvedValue({ slug: "wwwwww111111", document: { name: "q", displayTitle: "Devis", docType: null }, prospects: [] });
     expect((await createCampaignLink("e1", { owned: true, now }))?.linkId).toBe("winner");
+  });
+});
+
+describe("campaignMessageUrl", () => {
+  it("adds the message id as ?c=", () => {
+    expect(campaignMessageUrl("https://app.example.com/v/acme-abc", "m1")).toBe("https://app.example.com/v/acme-abc?c=m1");
+  });
+  it("appends with & when the url already has a query", () => {
+    expect(campaignMessageUrl("https://app.example.com/v/x?a=1", "m1")).toBe("https://app.example.com/v/x?a=1&c=m1");
   });
 });

@@ -5,6 +5,7 @@ import { syncMailboxesDue } from "@/lib/mailboxes/inbound/sync";
 import { finishIdleCampaigns } from "./campaigns";
 import { outreachOrgIds } from "./flag";
 import { planEnrollments } from "./plan";
+import { evaluateReadingSignals } from "./reading";
 import { budgetLeft, type OutreachScope } from "./scope";
 import { expireStaleLeases, sendDueMessages } from "./sender";
 
@@ -31,7 +32,7 @@ export async function runOutreachTick(
 ) {
   const organizationIds = outreachOrgIds();
   if (organizationIds.length === 0 || (scope.organizationId !== undefined && !organizationIds.includes(scope.organizationId))) {
-    return { stale: null, synced: null, planned: null, sent: null, finished: null };
+    return { stale: null, synced: null, planned: null, sent: null, read: null, finished: null };
   }
   const base: OutreachScope = { ...(scope.organizationId ? { organizationId: scope.organizationId } : {}), organizationIds };
 
@@ -40,6 +41,7 @@ export async function runOutreachTick(
   const synced = await step("sync", () => syncMailboxesDue(now, { budgetMs, ...base }));
   const planned = await step("plan", () => planEnrollments(now, base));
   const sent = await step("send", () => sendDueMessages(now, { ...base, ...(scope.deadline ? { deadline: scope.deadline } : {}) }));
+  const read = await step("read", () => evaluateReadingSignals(now, base));
   const finished = await step("finish", () => finishIdleCampaigns(now, base));
-  return { stale, synced, planned, sent, finished };
+  return { stale, synced, planned, sent, read, finished };
 }

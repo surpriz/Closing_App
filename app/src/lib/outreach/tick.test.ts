@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   syncMailboxesDue: vi.fn(),
   planEnrollments: vi.fn(),
   sendDueMessages: vi.fn(),
+  evaluateReadingSignals: vi.fn(),
   finishIdleCampaigns: vi.fn(),
   captureException: vi.fn(),
   orgIds: ["org1", "org2"] as string[],
@@ -15,6 +16,7 @@ vi.mock("@sentry/nextjs", () => ({ captureException: mocks.captureException }));
 vi.mock("./sender", () => ({ expireStaleLeases: mocks.expireStaleLeases, sendDueMessages: mocks.sendDueMessages }));
 vi.mock("@/lib/mailboxes/inbound/sync", () => ({ syncMailboxesDue: mocks.syncMailboxesDue }));
 vi.mock("./plan", () => ({ planEnrollments: mocks.planEnrollments }));
+vi.mock("./reading", () => ({ evaluateReadingSignals: mocks.evaluateReadingSignals }));
 vi.mock("./campaigns", () => ({ finishIdleCampaigns: mocks.finishIdleCampaigns }));
 vi.mock("./flag", () => ({ outreachOrgIds: () => mocks.orgIds }));
 
@@ -37,18 +39,20 @@ beforeEach(() => {
   mocks.syncMailboxesDue.mockImplementation(track("sync", { synced: 2, errors: 0 }));
   mocks.planEnrollments.mockImplementation(track("plan", { started: 3, continued: 0, finished: 0 }));
   mocks.sendDueMessages.mockImplementation(track("send", { sent: 4, rescheduled: 0, failed: 0, cancelled: 0 }));
+  mocks.evaluateReadingSignals.mockImplementation(track("read", 2));
   mocks.finishIdleCampaigns.mockImplementation(track("finish", 1));
 });
 
 describe("runOutreachTick", () => {
-  it("runs the five steps in order and returns their results", async () => {
+  it("runs the six steps in order and returns their results", async () => {
     const result = await runOutreachTick(now);
-    expect(calls).toEqual(["stale", "sync", "plan", "send", "finish"]);
+    expect(calls).toEqual(["stale", "sync", "plan", "send", "read", "finish"]);
     expect(result).toEqual({
       stale: { requeued: 1, failed: 0 },
       synced: { synced: 2, errors: 0 },
       planned: { started: 3, continued: 0, finished: 0 },
       sent: { sent: 4, rescheduled: 0, failed: 0, cancelled: 0 },
+      read: 2,
       finished: 1,
     });
   });
@@ -57,7 +61,7 @@ describe("runOutreachTick", () => {
     const boom = new Error("imap down");
     mocks.syncMailboxesDue.mockRejectedValue(boom);
     const result = await runOutreachTick(now);
-    expect(calls).toEqual(["stale", "plan", "send", "finish"]);
+    expect(calls).toEqual(["stale", "plan", "send", "read", "finish"]);
     expect(result.synced).toBeNull();
     expect(result.sent).not.toBeNull();
     expect(console.error).toHaveBeenCalledWith("[outreach:sync]", boom);
@@ -71,6 +75,7 @@ describe("runOutreachTick", () => {
     expect(mocks.syncMailboxesDue).toHaveBeenCalledWith(now, { budgetMs: 60_000, ...scope });
     expect(mocks.planEnrollments).toHaveBeenCalledWith(now, scope);
     expect(mocks.sendDueMessages).toHaveBeenCalledWith(now, scope);
+    expect(mocks.evaluateReadingSignals).toHaveBeenCalledWith(now, scope);
     expect(mocks.finishIdleCampaigns).toHaveBeenCalledWith(now, scope);
 
     await runOutreachTick(now, { organizationId: "org1", syncBudgetMs: 5000 });
@@ -84,7 +89,7 @@ describe("runOutreachTick", () => {
 
   it("runs nothing when the list is empty or the workspace is not in it (kill switch)", async () => {
     mocks.orgIds = [];
-    expect(await runOutreachTick(now)).toEqual({ stale: null, synced: null, planned: null, sent: null, finished: null });
+    expect(await runOutreachTick(now)).toEqual({ stale: null, synced: null, planned: null, sent: null, read: null, finished: null });
     mocks.orgIds = ["org2"];
     await runOutreachTick(now, { organizationId: "org1" });
     expect(calls).toEqual([]);

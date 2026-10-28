@@ -18,6 +18,7 @@ import { evaluatePricingCallMoment } from "@/lib/closing/triggers/hot-lead";
 import { evaluateHotPricing } from "@/lib/closing/triggers/hot-pricing";
 import { evaluateWarmRead } from "@/lib/closing/triggers/warm-read";
 import { prisma } from "@/lib/db";
+import { evaluateEnrollmentReading } from "@/lib/outreach/reading";
 
 // The deal analysis runs after the response when a reader leaves
 export const maxDuration = 120;
@@ -65,6 +66,7 @@ export async function POST(request: Request) {
           expiresAt: true,
           dealStatus: true,
           parentLinkId: true,
+          campaignProspectId: true,
           document: { select: { numPages: true } },
           organization: { select: { suspendedAt: true } },
         },
@@ -161,6 +163,10 @@ export async function POST(request: Request) {
         await evaluatePricingCallMoment(view.id, now);
       }
     });
+    // A campaign link: the enrollment reads the new signals (the tick catches what this misses)
+    if (view.link.campaignProspectId) {
+      inBackground("outreach-read", () => evaluateEnrollmentReading(view.linkId, now));
+    }
     // A Smart Link reader: a follow-up on what they read, and the cold email tool hears when they get hot
     if (view.link.parentLinkId) {
       inBackground("warm-read", () => evaluateWarmRead(view.id, now));

@@ -33,6 +33,8 @@ type QueueFollowupInput = {
   locale: string;
   dedupeKey: string;
   context: Record<string, unknown>;
+  /** Set by a native campaign: the follow-up belongs to that enrollment. */
+  campaignProspectId?: string;
 };
 
 // Returns the new follow-up id, or null when the dedupe key already exists

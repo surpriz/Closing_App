@@ -6,6 +6,11 @@ import { prisma } from "@/lib/db";
 
 export type CampaignLink = { linkId: string; prospectId: string | null; url: string; title: string };
 
+/** The link as one message carries it: ?c=<message id> credits the opening to that message (like ?r= for follow-ups). */
+export function campaignMessageUrl(url: string, messageId: string) {
+  return `${url}${url.includes("?") ? "&" : "?"}c=${encodeURIComponent(messageId)}`;
+}
+
 const enrollmentSelect = {
   email: true,
   firstName: true,
