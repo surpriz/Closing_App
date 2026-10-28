@@ -6,6 +6,7 @@ import { inBackground } from "@/lib/closing/background";
 import { markDealDirty } from "@/lib/closing/brain/analyze-deal";
 import { refreshEngagementScore } from "@/lib/closing/engagement/refresh-score";
 import { MAX_SIGNALS_PER_VIEW, ONCE_PER_DETAIL, ONCE_PER_VIEW, signalDetail, signalValue } from "@/lib/closing/tracking/view-signals";
+import { confirmAwaitingView } from "@/lib/closing/tracking/viewer-view";
 import { VISITOR_COOKIE } from "@/lib/closing/tracking/visitor";
 import { prisma } from "@/lib/db";
 
@@ -28,21 +29,24 @@ export async function POST(request: Request) {
   if (!parsed.success) return new Response(null, { status: 400 });
   const { viewId, type } = parsed.data;
 
-  const view = await prisma.documentView.findUnique({
+  const found = await prisma.documentView.findUnique({
     where: { id: viewId },
     select: {
       id: true,
       linkId: true,
       visitorId: true,
       isBot: true,
+      fromSeller: true,
       link: { select: { organization: { select: { suspendedAt: true } } } },
     },
   });
   // Only the browser that opened the view may report on it
   const visitorId = (await cookies()).get(VISITOR_COOKIE)?.value;
-  if (!view || !visitorId || view.visitorId !== visitorId) {
+  if (!found || !visitorId || found.visitorId !== visitorId) {
     return new Response(null, { status: 403 });
   }
+  // A first click on a button is the gesture that confirms the view
+  const view = (await confirmAwaitingView(found))!;
   if (view.link.organization.suspendedAt) return new Response(null, { status: 404 });
 
   const valueMs = signalValue(type, parsed.data.valueMs);

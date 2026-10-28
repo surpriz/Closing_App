@@ -17,6 +17,7 @@ async function findViewerLink(slug: string) {
         select: {
           id: true,
           name: true,
+          displayTitle: true,
           kind: true,
           status: true,
           docType: true,

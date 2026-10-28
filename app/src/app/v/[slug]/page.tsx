@@ -32,6 +32,7 @@ import { suggestQuestions, toUIMessages } from "@/lib/closing/chat/messages";
 import { loadChatSetup } from "@/lib/closing/chat/queries";
 import { showsCountdown, viewerDeadline } from "@/lib/closing/expiry";
 import type { SupportedLocale } from "@/lib/closing/constants";
+import { documentTitle } from "@/lib/closing/documents/link-title";
 import { canForward } from "@/lib/closing/forward/rules";
 import {
   chosenLocale,
@@ -73,7 +74,7 @@ export async function generateMetadata({
   // An expired link keeps its title: the locked page still says what it was
   const resolved = await resolveViewerLink(slug);
   return {
-    title: resolved?.link.document.name ?? "Document",
+    title: resolved ? documentTitle(resolved.link.document) : "Document",
     robots: { index: false, follow: false },
   };
 }
@@ -124,7 +125,7 @@ export default async function ViewerPage({
   const lockedProps = {
     action: requestLinkRevival.bind(null, slug),
     slug,
-    documentName: link.document.name,
+    documentName: documentTitle(link.document),
     senderName,
     labels,
     quote: countdown,
@@ -214,7 +215,7 @@ export default async function ViewerPage({
             unlock: unlockAsKnown.bind(null, slug),
           }
         }
-        documentName={link.document.name}
+        documentName={documentTitle(link.document)}
         senderName={senderName}
         labels={labels}
       />
@@ -311,7 +312,7 @@ export default async function ViewerPage({
         {withExpiry(
           <VideoViewer
             slug={slug}
-            documentName={link.document.name}
+            documentName={documentTitle(link.document)}
             senderName={senderName}
             src={src}
             poster={link.document.posterPathname ? `${src}?poster` : null}
@@ -348,7 +349,7 @@ export default async function ViewerPage({
         {withExpiry(
           <WebViewer
             slug={slug}
-            documentName={link.document.name}
+            documentName={documentTitle(link.document)}
             senderName={senderName}
             externalUrl={link.document.externalUrl}
             embedUrl={link.document.embedUrl}
@@ -389,7 +390,7 @@ export default async function ViewerPage({
         <PdfViewer
           slug={slug}
           fileUrl={`/api/v/${slug}/file`}
-          documentName={link.document.name}
+          documentName={documentTitle(link.document)}
           senderName={senderName}
           labels={labels}
           ctaEnabled={link.ctaEnabled}

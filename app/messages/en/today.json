@@ -163,7 +163,9 @@
     "wait": "Nothing to do for now.",
     "replyEmail": "They replied by email: your move.",
     "clickedNotRead": "Clicked the link, but stopped at the email screen.",
-    "nudgeClicked": "Clicked {days} days ago and went no further: send the link again."
+    "nudgeClicked": "Clicked {days} days ago and went no further: send the link again.",
+    "identifyLive": "Someone unknown is reading now: match the time with your sends to find out who.",
+    "identify": "Someone unknown read a lot: find out who before calling anyone."
   },
   "dealCta": {
     "sendQuote": "Send the quote",
@@ -177,7 +179,8 @@
     "call": "Call",
     "logCall": "Log the call",
     "followUpByEmail": "Follow up by email",
-    "reactivate": "Reactivate the link"
+    "reactivate": "Reactivate the link",
+    "seeReads": "See the reads"
   },
   "feed": {
     "openedDocument": "opened the document",

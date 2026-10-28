@@ -50,14 +50,22 @@ export function campaignMessageOfVisit(slug: string) {
   }
 }
 
-function startView(slug: string) {
-  let request = startRequests.get(slug);
+/**
+ * `human: false` at load: the view exists, so buttons can report on it, but counts for nothing.
+ * `human: true` at the first gesture confirms it, after the first call so both land on one view.
+ * Mail scanners never get there.
+ */
+function startView(slug: string, human: boolean) {
+  const key = `${slug}:${human}`;
+  let request = startRequests.get(key);
   if (!request) {
-    request = fetch("/api/track/start", {
+    const before = human ? (startRequests.get(`${slug}:false`) ?? Promise.resolve(null)) : Promise.resolve(null);
+    request = before.then(() => fetch("/api/track/start", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         slug,
+        human,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         locale: navigator.language,
         followupId: followupOfVisit(slug),
@@ -66,8 +74,8 @@ function startView(slug: string) {
     })
       .then((res) => (res.ok ? res.json() : null))
       .then((data: { viewId?: string } | null) => data?.viewId ?? null)
-      .catch(() => null);
-    startRequests.set(slug, request);
+      .catch(() => null));
+    startRequests.set(key, request);
   }
   return request;
 }
@@ -110,9 +118,14 @@ export function usePageTracking(
     else elementsRef.current.delete(pageNumber);
   }, []);
 
+  // Mail scanners (Safe Links, Proofpoint…) open every link in a real browser and sit there for
+  // a while, without ever moving: the opening is only confirmed, and time only counted, after a gesture
+  const [human, setHuman] = useState(false);
+
   const getViewId = useCallback(() => viewIdRef.current, []);
   const markActive = useCallback(() => {
     lastInteractionRef.current = Date.now();
+    setHuman(true);
   }, []);
 
   const setPage = useCallback(
@@ -127,6 +140,7 @@ export function usePageTracking(
 
   const setActive = useCallback((active: boolean) => {
     activeRef.current = active;
+    if (active) setHuman(true);
   }, []);
 
   // `left` is sent even without reading time, so the seller stops seeing the
@@ -165,15 +179,28 @@ export function usePageTracking(
   }, []);
 
   useEffect(() => {
+    if (human || !pageCount) return;
+    const gestures = ["pointermove", "pointerdown", "scroll", "wheel", "keydown", "touchstart"] as const;
+    const onGesture = () => setHuman(true);
+    gestures.forEach((name) => window.addEventListener(name, onGesture, { passive: true, once: true }));
+    // Clicking into an embedded page blurs this window: a gesture this window never sees
+    if (embedded) window.addEventListener("blur", onGesture, { once: true });
+    return () => {
+      gestures.forEach((name) => window.removeEventListener(name, onGesture));
+      window.removeEventListener("blur", onGesture);
+    };
+  }, [human, pageCount, embedded]);
+
+  useEffect(() => {
     if (!pageCount) return;
     let cancelled = false;
-    startView(slug).then((viewId) => {
-      if (!cancelled) viewIdRef.current = viewId;
+    startView(slug, human).then((viewId) => {
+      if (!cancelled && viewId) viewIdRef.current = viewId;
     });
     return () => {
       cancelled = true;
     };
-  }, [slug, pageCount]);
+  }, [slug, pageCount, human]);
 
   // Current page = the page occupying the most vertical space on screen
   useEffect(() => {
@@ -216,7 +243,7 @@ export function usePageTracking(
     if (embedded) window.addEventListener("blur", markActive);
 
     let lastTick = Date.now();
-    lastInteractionRef.current = lastTick;
+    // No reading time before a gesture: the idle clock starts at the first one (markActive)
     const tick = setInterval(() => {
       const now = Date.now();
       const delta = Math.min(now - lastTick, 2000);

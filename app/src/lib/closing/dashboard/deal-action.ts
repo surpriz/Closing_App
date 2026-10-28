@@ -30,6 +30,7 @@ export function dealAction(deal: OpenDeal, now: Date, readingNow: boolean) {
       gateSeenAt: deal.gateSeenAt,
       revival: deal.revival,
       campaign: deal.campaign,
+      anonymous: deal.prospects.length === 0,
     }),
     ai.advice,
   );
