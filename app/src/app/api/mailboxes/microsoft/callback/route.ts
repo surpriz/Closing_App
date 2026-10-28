@@ -14,15 +14,14 @@ import { exchangeCode } from "@/lib/mailboxes/microsoft/oauth";
 import { consumeOauthState } from "@/lib/mailboxes/oauth/state";
 import { clientStateFor } from "@/lib/mailboxes/webhooks/token";
 import { requireOutreach } from "@/lib/outreach/flag";
-import { consumeLimit, tooManyRequests } from "@/lib/rate-limit";
 import type { MicrosoftCredentials } from "@/lib/mailboxes/credentials";
 
 const back = (query: string) => NextResponse.redirect(new URL(`/settings?${query}#boite`, getPublicAppUrl()));
 
 export async function GET(request: NextRequest) {
   const { user, organization } = await requireOutreach();
-  if (!isMicrosoftMailboxConfigured()) return Response.json({ error: "Not found" }, { status: 404 });
-  if (!(await consumeLimit("mailboxConnect", request.headers, user.id))) return tooManyRequests();
+  // Only `start` spends a mailboxConnect token; a refusal here lands on the settings page, not on JSON
+  if (!isMicrosoftMailboxConfigured()) return back("mailbox=failed");
 
   const params = request.nextUrl.searchParams;
   const stateId = params.get("state");
@@ -76,6 +75,9 @@ export async function GET(request: NextRequest) {
             credentials,
             { persistCredentials: defaultPersist(mailboxId) },
           );
+          // A reconnect replaces the grant: drop the previous subscription so it cannot keep notifying
+          const previous = await prisma.mailbox.findUnique({ where: { id: mailboxId }, select: { subscriptionId: true } });
+          if (previous?.subscriptionId) await connector.unsubscribe!(previous.subscriptionId).catch(() => undefined);
           const sub = await connector.subscribe!({
             notificationUrl: mailboxWebhookUrl("microsoft"),
             clientState: clientStateFor(mailboxId),

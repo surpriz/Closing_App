@@ -79,6 +79,16 @@ describe("refreshAccessToken", () => {
     expect(JSON.stringify([error.message, error.options])).not.toMatch(/Trace ID|rt-old|client-secret/);
   });
 
+  it.each(["interaction_required", "consent_required"])("maps %s to AUTH_REVOKED", async (error) => {
+    const http = vi.fn(async () => new Response(JSON.stringify({ error }), { status: 400 }));
+    await expect(refreshAccessToken(creds, { http })).rejects.toMatchObject({ code: "AUTH_REVOKED" });
+  });
+
+  it("maps a token endpoint 429 to RATE_LIMITED", async () => {
+    const http = vi.fn(async () => new Response("{}", { status: 429, headers: { "retry-after": "5" } }));
+    await expect(refreshAccessToken(creds, { http })).rejects.toMatchObject({ code: "RATE_LIMITED", options: { retryAfterMs: 5000 } });
+  });
+
   it("treats 5xx and network failures as transient", async () => {
     await expect(refreshAccessToken(creds, { http: async () => new Response("{}", { status: 503 }) })).rejects.toMatchObject({
       code: "TRANSIENT",
@@ -102,5 +112,13 @@ describe("mapGraphError", () => {
     expect(mapGraphError(403, { error: { code: "ErrorAccessDenied" } }, null).code).toBe("AUTH_REVOKED");
     expect(mapGraphError(400, { error: { code: "ErrorInvalidRecipients" } }, null).code).toBe("REJECTED");
     expect(mapGraphError(502, null, null).code).toBe("TRANSIENT");
+    expect(mapGraphError(403, { error: { code: "ErrorMessageSubmissionBlocked" } }, null).code).toBe("QUOTA");
+    expect(mapGraphError(403, { error: { code: "Something" } }, null).code).toBe("CONFIG");
+    expect(mapGraphError(401, { error: { code: "InvalidAuthenticationToken" } }, null).code).toBe("AUTH_REVOKED");
+    expect(mapGraphError(403, { error: { code: "Authorization_RequestDenied" } }, null).code).toBe("AUTH_REVOKED");
+    expect(mapGraphError(404, { error: { code: "MailboxNotEnabledForRESTAPI" } }, null).code).toBe("CONFIG");
+    expect(mapGraphError(400, { error: { code: "ErrorWhatever" } }, null).code).toBe("CONFIG");
+    expect(mapGraphError(404, { error: { code: "ErrorItemNotFound" } }, null).options.detail).toContain("404");
+    expect(mapGraphError(410, null, null).options.detail).toContain("410");
   });
 });

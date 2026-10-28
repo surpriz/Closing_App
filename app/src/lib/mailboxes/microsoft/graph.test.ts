@@ -104,18 +104,42 @@ describe("send", () => {
       "PATCH /me/messages/AAMkAGI2-draft%3D",
       "POST /me/messages/AAMkAGI2-draft%3D/send",
     ]);
-    expect(calls[1].body.subject).toBe("Quick question");
+    expect(calls[0].body).toEqual({
+      message: {
+        toRecipients: [{ emailAddress: { address: "jane@target.io", name: "Jane" } }],
+        internetMessageHeaders: [{ name: "X-Clozer-Id", value: "idem-1" }],
+      },
+    });
+    expect(calls[1].body).toEqual({ subject: "Quick question", body: { contentType: "html", content: "<p>hi</p>" } });
     expect(out.threadId).toBe("AAQkAGI2-conv=");
   });
 
   it("removes the draft when the send is refused and maps quota", async () => {
     const { http, calls } = fakeHttp([
       (c) => (c.method === "POST" && c.url.endsWith("/me/messages") ? json("draft.json", 201) : undefined),
-      (c) => (c.url.endsWith("/send") ? json("error-quota.json", 550) : undefined),
+      (c) => (c.url.endsWith("/send") ? json("error-quota.json", 403) : undefined),
       (c) => (c.method === "DELETE" ? empty(204) : undefined),
     ]);
     await expect(graphConnector(mailbox(), creds(), { http }).send(message())).rejects.toMatchObject({ code: "QUOTA" });
     expect(calls.at(-1)?.method).toBe("DELETE");
+  });
+
+  it("keeps the draft when the send fails with a 5xx or the network", async () => {
+    const { http, calls } = fakeHttp([
+      (c) => (c.method === "POST" && c.url.endsWith("/me/messages") ? json("draft.json", 201) : undefined),
+      (c) => (c.url.endsWith("/send") ? new Response("{}", { status: 503 }) : undefined),
+    ]);
+    await expect(graphConnector(mailbox(), creds(), { http }).send(message())).rejects.toMatchObject({ code: "TRANSIENT" });
+    expect(calls.some((c) => c.method === "DELETE")).toBe(false);
+  });
+
+  it("does not duplicate X-Clozer-Id", async () => {
+    const { http, calls } = fakeHttp([
+      (c) => (c.method === "POST" && c.url.endsWith("/me/messages") ? json("draft.json", 201) : undefined),
+      (c) => (c.url.endsWith("/send") ? empty(202) : undefined),
+    ]);
+    await graphConnector(mailbox(), creds(), { http }).send(message({ headers: { "x-clozer-id": "other" } }));
+    expect(calls[0].body.internetMessageHeaders).toEqual([{ name: "X-Clozer-Id", value: "idem-1" }]);
   });
 
   it("maps 429 with Retry-After", async () => {
@@ -132,7 +156,7 @@ describe("tokens", () => {
     const persist = vi.fn(async () => undefined);
     const { http, calls } = fakeHttp([
       (c) => (c.url.includes("oauth2/v2.0/token") ? json("token-refresh.json") : undefined),
-      (c) => (c.url.includes("/me?") ? new Response(JSON.stringify({ mail: "Me@Seller.com", displayName: "Me" })) : undefined),
+      (c) => (c.url.includes("/me?") ? new Response(JSON.stringify({ mail: "Me@Seller.com", userPrincipalName: "me@seller.com", displayName: "Me" })) : undefined),
     ]);
     const stale = creds({ accessTokenExpiresAt: new Date(Date.now() + 60_000).toISOString() });
     const out = await graphConnector(mailbox(), stale, { http, persistCredentials: persist }).verify();
@@ -252,12 +276,59 @@ describe("listNewMessages", () => {
     expect(out.cursor).toContain("DELTA2");
   });
 
+  it("throws instead of returning a cursor past unprocessed messages when aborted", async () => {
+    const { http } = fakeHttp(routes());
+    const controller = new AbortController();
+    const connector = graphConnector(mailbox(), creds(), { http: (async (...args: Parameters<typeof fetch>) => {
+      const res = await http(...args);
+      controller.abort();
+      return res;
+    }) as typeof fetch });
+    await expect(connector.listNewMessages(null, { ...opts(), signal: controller.signal })).rejects.toMatchObject({
+      code: "TRANSIENT",
+      message: "sync aborted",
+    });
+  });
+
+  it("reads a Exchange NDR sender and a subject-only bounce as candidates", async () => {
+    const page = {
+      "@odata.deltaLink": "https://graph.microsoft.com/v1.0/x?$deltatoken=D",
+      value: [
+        { id: "ndr1", from: { emailAddress: { address: `MicrosoftExchange${"a".repeat(32)}@tenant.onmicrosoft.com` } }, subject: "hello" },
+        { id: "ndr2", from: { emailAddress: { address: "someone@x.io" } }, subject: "Undeliverable: hi" },
+        { id: "plain", from: { emailAddress: { address: "someone@x.io" } }, subject: "hi" },
+      ],
+    };
+    const { http, calls } = fakeHttp([
+      (c) => (c.url.includes("/messages/delta") ? new Response(JSON.stringify(page)) : undefined),
+      (c) => (c.url.includes("internetMessageHeaders") ? new Response(JSON.stringify({ id: "x" })) : undefined),
+    ]);
+    await graphConnector(mailbox(), creds(), { http }).listNewMessages(null, opts());
+    expect(calls.filter((c) => c.url.includes("internetMessageHeaders")).map((c) => c.url)).toHaveLength(2);
+  });
+
   it("never sends the bearer to a foreign host", async () => {
     const { http, calls } = fakeHttp([]);
     await expect(graphConnector(mailbox(), creds(), { http }).listNewMessages("https://evil.example/x", opts())).rejects.toMatchObject({
       code: "TRANSIENT",
     });
     expect(calls).toHaveLength(0);
+  });
+});
+
+describe("verify address trust (nOAuth)", () => {
+  const verifyWith = async (me: object) => {
+    const { http } = fakeHttp([(c) => (c.url.includes("/me?") ? new Response(JSON.stringify(me)) : undefined)]);
+    return graphConnector(mailbox(), creds(), { http }).verify();
+  };
+  it("trusts mail found in proxyAddresses", async () => {
+    expect(await verifyWith({ mail: "Sales@Corp.com", userPrincipalName: "j@tenant.onmicrosoft.com", proxyAddresses: ["SMTP:sales@corp.com"] })).toMatchObject({ address: "sales@corp.com" });
+  });
+  it("trusts mail on the UPN domain", async () => {
+    expect(await verifyWith({ mail: "a@corp.com", userPrincipalName: "j@corp.com" })).toMatchObject({ address: "a@corp.com" });
+  });
+  it("falls back to the UPN for a foreign, unowned mail", async () => {
+    expect(await verifyWith({ mail: "ceo@victim.com", userPrincipalName: "j@corp.com", proxyAddresses: [] })).toMatchObject({ address: "j@corp.com" });
   });
 });
 

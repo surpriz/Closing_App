@@ -9,6 +9,9 @@ export const MICROSOFT_SCOPES = "openid email offline_access User.Read Mail.Read
 
 /** Codes meaning the grant is gone for good: the seller has to reconnect. */
 const REVOKED_CODES = ["AADSTS70008", "AADSTS50173", "AADSTS700082"];
+const AUTH_CODES = ["ErrorAccessDenied", "Authorization_RequestDenied", "InvalidAuthenticationToken"];
+const CONFIG_CODES = ["MailboxNotEnabledForRESTAPI", "MailboxNotSupportedForRESTAPI"];
+const RECIPIENT_CODES = ["ErrorInvalidRecipients", "ErrorRecipientNotFound", "ErrorNoRecipients", "ErrorInvalidRecipient"];
 const DEFAULT_RETRY_MS = 60_000;
 
 type OauthDeps = { http?: typeof fetch; now?: Date };
@@ -56,20 +59,20 @@ export function mapGraphError(status: number, body: unknown, retryAfter: string 
   const message = typeof err?.message === "string" ? err.message : "";
   const detail = `graph ${status}${code ? ` ${code}` : ""}`;
   if (status === 429) return new MailboxError("RATE_LIMITED", "rate limited", { retryAfterMs: retryAfterMs(retryAfter), detail });
-  if (code === "ErrorSubmissionQuotaExceeded" || /quota/i.test(code) || /\b5\.2\.2\b|quota/i.test(message)) {
+  if (code === "ErrorSubmissionQuotaExceeded" || code === "ErrorMessageSubmissionBlocked" || /quota/i.test(code) || /\b5\.2\.2\b|quota/i.test(message)) {
     return new MailboxError("QUOTA", "sending quota reached", { detail });
   }
-  if (status === 401 || code === "InvalidAuthenticationToken" || code === "ErrorAccessDenied" || status === 403) {
-    return new MailboxError("AUTH_REVOKED", "access denied by Microsoft", { detail });
-  }
-  if (status === 400 && code === "ErrorInvalidRecipients") return new MailboxError("REJECTED", "invalid recipient", { detail });
+  if (status === 401 || AUTH_CODES.includes(code)) return new MailboxError("AUTH_REVOKED", "access denied by Microsoft", { detail });
+  if (CONFIG_CODES.includes(code)) return new MailboxError("CONFIG", "this Microsoft mailbox cannot be used through the API", { detail });
+  if (status === 400 && RECIPIENT_CODES.includes(code)) return new MailboxError("REJECTED", "invalid recipient", { detail });
   if (status >= 500) {
     return new MailboxError("TRANSIENT", "Microsoft unavailable", {
       detail,
       retryAfterMs: retryAfter ? retryAfterMs(retryAfter) : undefined,
     });
   }
-  return new MailboxError("REJECTED", "request refused by Microsoft", { detail });
+  // 404 / 410 keep their status in `detail`: callers read it. Anything unrecognised is on our side, not the recipient's.
+  return new MailboxError("CONFIG", "request refused by Microsoft", { detail });
 }
 
 async function postToken(params: Record<string, string>, deps: OauthDeps) {
@@ -99,13 +102,14 @@ async function postToken(params: Record<string, string>, deps: OauthDeps) {
   const description = typeof json?.error_description === "string" ? json.error_description : "";
   const aadsts = REVOKED_CODES.find((c) => description.includes(c) || error.includes(c));
   const detail = `token ${res.status}${aadsts ? ` ${aadsts}` : error ? ` ${error}` : ""}`;
-  if (error === "invalid_grant" || aadsts) throw new MailboxError("AUTH_REVOKED", "Microsoft access was revoked", { detail });
-  if (res.status >= 500 || res.status === 429) {
-    throw new MailboxError("TRANSIENT", "Microsoft token endpoint unavailable", {
+  if (error === "invalid_grant" || error === "interaction_required" || error === "consent_required" || aadsts) throw new MailboxError("AUTH_REVOKED", "Microsoft access was revoked", { detail });
+  if (res.status === 429) {
+    throw new MailboxError("RATE_LIMITED", "Microsoft token endpoint throttled", {
       detail,
-      retryAfterMs: res.status === 429 ? retryAfterMs(res.headers.get("retry-after")) : undefined,
+      retryAfterMs: retryAfterMs(res.headers.get("retry-after")),
     });
   }
+  if (res.status >= 500) throw new MailboxError("TRANSIENT", "Microsoft token endpoint unavailable", { detail });
   throw new MailboxError("CONFIG", "Microsoft refused the token request", { detail });
 }
 
