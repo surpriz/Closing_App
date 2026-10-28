@@ -29,7 +29,7 @@ export const FAQ_EN: FaqSection[] = [
       {
         id: "tester",
         q: "How do I test my link without skewing the numbers?",
-        a: "Open your link in a private browsing window. Your own reads don't count while you're signed in to Clozer. Bots and automatic previews (Slack, LinkedIn) are filtered out too.",
+        a: "Open your link in a private browsing window, without signing in: signed in, Clozer knows it's you and counts nothing.\n\nFor a Smart Link, copy the test link from its page (“Test it as a prospect”): it carries your address with +test. Any read made with the address of a member of your workspace is marked as a test: no follow-up, nothing in the figures. A reader created by mistake is removed with “One of your own tests?” on its page.\n\nDon't use your cold email tool's test send: it fills the variables with a real prospect.",
       },
       {
         id: "prise-en-main",
@@ -113,7 +113,17 @@ export const FAQ_EN: FaqSection[] = [
       {
         id: "lien-partage",
         q: "Can I send the same link to lots of people?",
-        a: "Yes, with “Link open to everyone” on the share screen: it's a shared link, handy for a brochure, a LinkedIn post or an email signature. Each reader gives their email and gets their own link, tracked as a prospect; their follow-ups still wait for your go-ahead.\n\nA link that has already been read or assigned to a contact can't become shared: create a new one.",
+        a: "Yes, with a Smart Link: the “Smart Link for cold email” button on the document's page. It works for a cold email sequence, a brochure, a LinkedIn post or an email signature. Each reader is identified, by the address your tool puts in the link or by the email they type when they open it, and gets their own link, tracked as a prospect.\n\nA personal link can become a Smart Link as long as no contact is named on it, even after it was read: its address stays the same.",
+      },
+      {
+        id: "smart-link-outil",
+        q: "How do I use a Smart Link in Lemlist, Manyreach or another tool?",
+        a: "On the Smart Link's page, pick your tool: Clozer gives you the address to paste in the sequence, with the email variable (for example ?email={{EMAIL}} for Manyreach). Only the email matters, company and first name are a bonus.\n\nIf a reader comes with the variable left as is, or a personal link gets an ?email=, Clozer tells you: something is off in your sequence settings.\n\nThe same person reading on their phone, then on their computer, stays one row.",
+      },
+      {
+        id: "smart-link-relances",
+        q: "My cold email tool already follows up. Will Clozer follow up too?",
+        a: "No, by default. On a Smart Link, “Clozer follow-ups after reading” is off: your tool stays in charge. Turn it on only if you remove a step from your sequence, or the prospect gets two follow-ups.\n\nClozer can't see replies to your sequence emails: they land in your inbox. To let it know, have your tool (webhook, or Zapier / Make) post to the Smart Link's “Replies your tool receives” address on every reply, unsubscribe or bounce. It then stops its follow-ups and tells you.",
       },
       {
         id: "envoyer",
@@ -188,9 +198,14 @@ export const FAQ_EN: FaqSection[] = [
         a: "“Prospect” block on the prospect's page: each contact with what they read, then “Other readers”, grouped by company or network, with their role (Decision-maker, Finance / procurement, Technical…), guessed from the email or picked by you. Two different letters = often two people.",
       },
       {
+        id: "lecteur-inconnu",
+        q: "A “No recipient” reader reads a lot. What should I do?",
+        a: "Nobody is named on this link: Clozer doesn't know who reads. So it never marks it “Hot” and suggests finding out who it is rather than calling: match the reading time with your sends. In cold email, a Smart Link avoids this.",
+      },
+      {
         id: "pas-de-lecture",
         q: "My prospect says they read it, but Clozer shows nothing. Why?",
-        a: "Check that they actually opened the Clozer link and not an attachment sent alongside it. Automatic previews and bots don't count, and neither do your own opens while signed in. If the problem persists, report it through the help assistant.",
+        a: "Check that they actually opened the Clozer link and not an attachment sent alongside it. Automatic previews and bots don't count, and neither do your own opens while signed in. If the problem persists, report it through the help assistant.\n\nA read only counts after the reader's first gesture (scrolling, moving the mouse, touching the screen): mail security bots, which open links without moving, are left out.",
       },
     ],
   },
@@ -299,7 +314,7 @@ export const FAQ_EN: FaqSection[] = [
       {
         id: "reponses",
         q: "Does Clozer see my prospects' replies?",
-        a: "Yes, in two cases. When the prospect replies to a follow-up sent by Clozer: the reply lands in your inbox as usual, and Clozer gets a copy. And in Gmail with the extension, when a thread holding your Clozer link gets a reply from the prospect.\n\nThe reply shows on the prospect's page, automatic follow-ups stop and you're notified. “Resume follow-ups” on the page turns them back on.\n\nA reply Clozer can't see (Outlook, phone): log it on the prospect's page (Log an interaction → Reply received).",
+        a: "Yes, in two cases. When the prospect replies to a follow-up sent by Clozer: the reply lands in your inbox as usual, and Clozer gets a copy. And in Gmail with the extension, when a thread holding your Clozer link gets a reply from the prospect.\n\nThe reply shows on the prospect's page, automatic follow-ups stop and you're notified. “Resume follow-ups” on the page turns them back on.\n\nA reply Clozer can't see (Outlook, phone): log it on the prospect's page (Log an interaction → Reply received).\n\nWith a Smart Link in cold email, your sending tool can also tell Clozer about replies: see “My cold email tool already follows up”.",
       },
       {
         id: "arreter",

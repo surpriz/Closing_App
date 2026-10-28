@@ -115,11 +115,17 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
 ## Écran de partage d'un lien
 - S'affiche juste après le dépôt ou « Un lien pour un autre prospect » (« Créer le lien » tant que le document n'en a aucun), tant que le lien n'est pas envoyé. « Votre lien
   est prêt ».
-- Par défaut, un lien pour une personne. En bas de l'écran, « En faire un lien ouvert à tous » le rend
-  partagé. Lien ouvert à tous = lien partagé (plaquette, post
-  LinkedIn, signature) : chaque lecteur donne son email et reçoit son propre lien, suivi comme un prospect ; ses
-  relances attendent toujours votre feu vert. Un lien déjà lu ou attribué à un contact ne peut plus devenir
-  partagé : créez-en un nouveau.
+- Par défaut, un lien personnel. En bas de l'écran, « En faire un Smart Link » le change en Smart Link. On en
+  crée aussi un directement avec le bouton « Smart Link pour cold email » de la fiche document. Smart Link =
+  un lien pour beaucoup de monde (séquence de cold email, plaquette, post LinkedIn, signature) : chaque lecteur
+  est identifié par l'adresse que l'outil d'envoi met dans le lien (?email=…) ou par l'email tapé à
+  l'ouverture, et reçoit son propre lien, suivi comme un prospect. Un lien personnel peut devenir Smart Link
+  tant qu'aucun contact n'y est nommé, même déjà lu (même adresse).
+- Bloc Smart Link de sa fiche : l'adresse à coller selon l'outil (Lemlist, Manyreach…), « Tester comme un
+  prospect » (lien de test, à ouvrir en navigation privée sans être connecté ; les lectures faites avec
+  l'adresse d'un membre sont marquées test), « Relances Clozer après lecture » (coupé par défaut : l'outil de
+  séquence relance déjà), « Réponses reçues par votre outil » (adresse webhook où l'outil signale réponses,
+  désinscriptions, rebonds ; un manager peut la régénérer).
 - Champ « Pour qui est ce lien ? » en haut (facultatif) : un email ajoute le contact, un nom nomme juste le
   lien (et le prospect).
 - Un lien « Pour un prospect » s'ouvre directement, sans demander d'email au lecteur : il a été fait pour
