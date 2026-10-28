@@ -102,10 +102,17 @@ export const HELP_GUIDE_EN = `## What Clozer is
 ## Link share screen
 - Shows right after upload or “A link for another prospect” (“Create the link” while the document has none), as long as the link hasn't been sent. “Your link
   is ready”.
-- By default, a link for one person. At the bottom of the screen, “Make it a link open to everyone” makes it
-  shared. Link open to everyone = shared link (brochure, LinkedIn post, email signature): each reader gives
-  their email and gets their own link, tracked as a prospect; their follow-ups still wait for your go-ahead. A link
-  that has already been read or assigned to a contact can't become shared: create a new one.
+- By default, a personal link. At the bottom of the screen, “Make it a Smart Link” turns it into a Smart Link.
+  One can also be made straight away with the “Smart Link for cold email” button on the document's page. Smart
+  Link = one link for many people (cold email sequence, brochure, LinkedIn post, email signature): each reader is
+  identified by the address the sending tool puts in the link (?email=…) or by the email typed when opening, and
+  gets their own link, tracked as a prospect. A personal link can become a Smart Link as long as no contact is
+  named on it, even after it was read (same address).
+- Smart Link block on its page: the address to paste for each tool (Lemlist, Manyreach…), “Test it as a
+  prospect” (a test link, to open in a private window without signing in; reads made with a member's address
+  are marked as tests), “Clozer follow-ups after reading” (off by default: the sequence tool already follows
+  up), “Replies your tool receives” (webhook address where the tool reports replies, unsubscribes, bounces; a
+  manager can regenerate it).
 - “Who is this link for?” field at the top (optional): an email adds the contact, a name just names the link
   (and the prospect).
 - A “For a prospect” link opens directly, without asking the reader for an email: it was made for them. You can
