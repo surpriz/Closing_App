@@ -94,9 +94,14 @@ export function usePageTracking(
     else elementsRef.current.delete(pageNumber);
   }, []);
 
+  // Mail scanners (Safe Links, Proofpoint…) open every link in a real browser and sit there for
+  // a while, without ever moving: nothing counts, the opening included, before a human gesture
+  const [human, setHuman] = useState(false);
+
   const getViewId = useCallback(() => viewIdRef.current, []);
   const markActive = useCallback(() => {
     lastInteractionRef.current = Date.now();
+    setHuman(true);
   }, []);
 
   const setPage = useCallback(
@@ -111,6 +116,7 @@ export function usePageTracking(
 
   const setActive = useCallback((active: boolean) => {
     activeRef.current = active;
+    if (active) setHuman(true);
   }, []);
 
   // `left` is sent even without reading time, so the seller stops seeing the
@@ -149,7 +155,20 @@ export function usePageTracking(
   }, []);
 
   useEffect(() => {
-    if (!pageCount) return;
+    if (human || !pageCount) return;
+    const gestures = ["pointermove", "pointerdown", "scroll", "wheel", "keydown", "touchstart"] as const;
+    const onGesture = () => setHuman(true);
+    gestures.forEach((name) => window.addEventListener(name, onGesture, { passive: true, once: true }));
+    // Clicking into an embedded page blurs this window: a gesture this window never sees
+    if (embedded) window.addEventListener("blur", onGesture, { once: true });
+    return () => {
+      gestures.forEach((name) => window.removeEventListener(name, onGesture));
+      window.removeEventListener("blur", onGesture);
+    };
+  }, [human, pageCount, embedded]);
+
+  useEffect(() => {
+    if (!pageCount || !human) return;
     let cancelled = false;
     startView(slug).then((viewId) => {
       if (!cancelled) viewIdRef.current = viewId;
@@ -157,7 +176,7 @@ export function usePageTracking(
     return () => {
       cancelled = true;
     };
-  }, [slug, pageCount]);
+  }, [slug, pageCount, human]);
 
   // Current page = the page occupying the most vertical space on screen
   useEffect(() => {
@@ -200,7 +219,7 @@ export function usePageTracking(
     if (embedded) window.addEventListener("blur", markActive);
 
     let lastTick = Date.now();
-    lastInteractionRef.current = lastTick;
+    // No reading time before a gesture: the idle clock starts at the first one (markActive)
     const tick = setInterval(() => {
       const now = Date.now();
       const delta = Math.min(now - lastTick, 2000);
