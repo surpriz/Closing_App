@@ -114,14 +114,19 @@ async function call(
   return obj(await response.json().catch(() => null));
 }
 
-/** Account document -> what we use. `connection_params.mail.username` is the address for Gmail accounts. */
+/**
+ * Account document -> what we use. `connection_params.mail.username` is the address for Gmail accounts. `name` is
+ * Unipile's own label (verified live: never the hosted link's `name`), `created_at` ties the account to its link.
+ */
 function accountInfo(doc: Json) {
   const mail = obj(obj(doc.connection_params).mail);
   const sources = Array.isArray(doc.sources) ? doc.sources : [];
+  const created = str(doc.created_at) ? new Date(str(doc.created_at)!) : null;
   return {
     address: str(mail.username) ?? str(mail.email) ?? null,
     name: str(doc.name),
     status: str(obj(sources[0]).status),
+    createdAt: created && !Number.isNaN(created.getTime()) ? created : null,
   };
 }
 

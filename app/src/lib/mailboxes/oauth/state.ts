@@ -59,6 +59,13 @@ export async function consumeOauthState(
   });
 }
 
+/** The row as issued, spent or not: what a callback is checked against before the state is consumed. */
+export async function peekOauthState(
+  id: string,
+): Promise<{ provider: MailboxProvider; redirectTo: string | null; createdAt: Date } | null> {
+  return prisma.mailboxOauthState.findUnique({ where: { id }, select: { provider: true, redirectTo: true, createdAt: true } });
+}
+
 /**
  * True only for a state that ran out without ever being used. A consumed state says nothing of the kind: a sibling
  * delivery is (or was) handling it. A purged one is unknown, so false too.

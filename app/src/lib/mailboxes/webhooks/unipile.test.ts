@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const h = vi.hoisted(() => ({
   consume: vi.fn(),
+  peek: vi.fn(),
   expired: vi.fn(async () => false),
   connect: vi.fn(),
   account: vi.fn(),
@@ -20,7 +21,7 @@ vi.mock("@/lib/closing/notify/preferences", () => ({
   getSellerPrefs: vi.fn(async () => ({ timezone: "Europe/Paris" })),
   sellerTimezone: (p: { timezone: string }) => p.timezone,
 }));
-vi.mock("../oauth/state", () => ({ consumeOauthState: h.consume, isExpiredUnusedOauthState: h.expired }));
+vi.mock("../oauth/state", () => ({ consumeOauthState: h.consume, isExpiredUnusedOauthState: h.expired, peekOauthState: h.peek }));
 vi.mock("../connect", () => ({ connectProviderMailbox: h.connect }));
 vi.mock("../gmail/unipile", () => ({
   getUnipileAccount: h.account,
@@ -34,10 +35,14 @@ const { unipileHeaderToken } = await import("./unipile-secrets");
 
 const NOW = new Date("2026-10-28T10:00:00Z");
 const created = { status: "CREATION_SUCCESS", account_id: "acc_1", name: "state_1" };
+// The state was written five minutes before the account came back; Unipile's `name` is its own label, never ours
+const PENDING = { provider: "GOOGLE", redirectTo: null, createdAt: new Date("2026-10-28T09:55:00Z") };
+const ACCOUNT = { address: "me@acme.test", name: "Me", status: "OK", createdAt: new Date("2026-10-28T09:59:30Z") };
 
 beforeEach(() => {
   vi.clearAllMocks();
-  h.account.mockResolvedValue({ address: "me@acme.test", name: "state_1", status: "OK" });
+  h.account.mockResolvedValue(ACCOUNT);
+  h.peek.mockResolvedValue(PENDING);
   h.findFirst.mockReset();
   h.findFirst.mockResolvedValue(null);
   h.findUnique.mockResolvedValue(null);
@@ -130,13 +135,40 @@ describe("handleUnipileNotify", () => {
     expect(h.connect).not.toHaveBeenCalled();
   });
 
-  it("refuses an account that was not created for this state", async () => {
-    h.account.mockResolvedValueOnce({ address: "me@acme.test", name: "other_state", status: "OK" });
+  it("refuses an account older than the state it claims", async () => {
+    h.account.mockResolvedValueOnce({ ...ACCOUNT, createdAt: new Date("2026-10-28T09:00:00Z") });
     expect((await handleUnipileNotify(created)).outcome).toBe("invalid_state");
     expect(h.connect).not.toHaveBeenCalled();
     expect(h.disconnect).not.toHaveBeenCalled();
     // the state stays usable: a forged notification cannot burn it
     expect(h.consume).not.toHaveBeenCalled();
+  });
+
+  it("refuses an account without a creation date, and a state it does not know", async () => {
+    h.account.mockResolvedValueOnce({ ...ACCOUNT, createdAt: null });
+    expect((await handleUnipileNotify(created)).outcome).toBe("invalid_state");
+    h.peek.mockResolvedValueOnce(null);
+    expect((await handleUnipileNotify(created)).outcome).toBe("invalid_state");
+    expect(h.consume).not.toHaveBeenCalled();
+    expect(h.disconnect).not.toHaveBeenCalled();
+  });
+
+  it("tolerates a minute of clock skew between Unipile and us", async () => {
+    h.consume.mockResolvedValueOnce(state);
+    h.account.mockResolvedValueOnce({ ...ACCOUNT, createdAt: new Date("2026-10-28T09:54:10Z") });
+    expect((await handleUnipileNotify(created)).outcome).toBe("connected");
+  });
+
+  it("accepts on a reconnect the account the link was issued for, whatever its age", async () => {
+    h.peek.mockResolvedValue({ ...PENDING, redirectTo: "mb1" });
+    h.account.mockResolvedValue({ ...ACCOUNT, createdAt: new Date("2026-09-01T00:00:00Z") });
+    h.findFirst.mockResolvedValueOnce({ externalAccountId: "acc_1" }).mockResolvedValueOnce(null);
+    h.consume.mockResolvedValueOnce({ ...state, redirectTo: "mb1" });
+    expect((await handleUnipileNotify({ ...created, status: "RECONNECTED" })).outcome).toBe("connected");
+    expect(h.findFirst.mock.calls[0][0].where).toMatchObject({ id: "mb1", connector: "UNIPILE" });
+    // another account than the one reconnected: refused
+    h.findFirst.mockResolvedValueOnce({ externalAccountId: "acc_old" });
+    expect((await handleUnipileNotify({ ...created, account_id: "acc_2", status: "RECONNECTED" })).outcome).toBe("invalid_state");
   });
 
   it("keeps the state and deletes nothing when the account lookup fails", async () => {
@@ -161,7 +193,7 @@ describe("handleUnipileNotify", () => {
 
   it("deletes the account when it has no address or the connection throws", async () => {
     h.consume.mockResolvedValue(state);
-    h.account.mockResolvedValueOnce({ address: null, name: "state_1", status: "OK" });
+    h.account.mockResolvedValueOnce({ ...ACCOUNT, address: null });
     expect((await handleUnipileNotify(created)).outcome).toBe("failed");
     h.connect.mockRejectedValueOnce(new Error("boom"));
     expect((await handleUnipileNotify(created)).outcome).toBe("failed");

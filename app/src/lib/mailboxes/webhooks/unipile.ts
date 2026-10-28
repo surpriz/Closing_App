@@ -6,7 +6,7 @@ import { connectProviderMailbox } from "../connect";
 import { getUnipileAccount, unipileConnector } from "../gmail/unipile";
 import type { ConnectorDeps } from "../index";
 import { notifyMailboxOwner } from "../notify-owner";
-import { consumeOauthState, isExpiredUnusedOauthState } from "../oauth/state";
+import { consumeOauthState, isExpiredUnusedOauthState, peekOauthState } from "../oauth/state";
 import { verifyUnipileHeaderToken } from "./unipile-secrets";
 
 type Json = Record<string, unknown>;
@@ -30,6 +30,28 @@ export function hasUnipileHeaderToken(request: Request): boolean {
 
 export type NotifyOutcome = "connected" | "ignored" | "invalid_state" | "failed";
 
+// Unipile's clock against ours: a link is requested right after its state row is written
+const CLOCK_SKEW_MS = 60_000;
+
+/**
+ * Ties a Unipile account to the state its link carried: the account was created after the state (a link is made
+ * for a state that already exists), or it is the account a reconnect link was issued for. A state's id is a secret
+ * only the signed notify URL knows, so this only has to stop an account swapped in behind a genuine callback.
+ */
+export async function accountBoundToState(
+  account: { createdAt: Date | null },
+  accountId: string,
+  state: { createdAt: Date; redirectTo: string | null },
+): Promise<boolean> {
+  if (account.createdAt && account.createdAt.getTime() >= state.createdAt.getTime() - CLOCK_SKEW_MS) return true;
+  if (!state.redirectTo) return false;
+  const expected = await prisma.mailbox.findFirst({
+    where: { id: state.redirectTo, connector: "UNIPILE" },
+    select: { externalAccountId: true },
+  });
+  return !!expected?.externalAccountId && expected.externalAccountId === accountId;
+}
+
 /** Hosted-auth callback. The state is consumed first so a replay can never create a second mailbox. */
 export async function handleUnipileNotify(
   payload: unknown,
@@ -50,7 +72,9 @@ export async function handleUnipileNotify(
     console.error("[mailboxes] unipile account lookup failed", error instanceof Error ? error.message : "unknown");
     return { outcome: "failed" };
   }
-  if (account.name !== stateId) {
+  // The link's `name` only ever comes back in this payload (the signature vouches for it), never on the account
+  const pending = await peekOauthState(stateId);
+  if (!pending || !(await accountBoundToState(account, accountId, pending))) {
     console.error("[mailboxes] unipile account does not match the state");
     return { outcome: "invalid_state" };
   }
