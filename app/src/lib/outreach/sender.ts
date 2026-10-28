@@ -36,18 +36,37 @@ export type SendDeps = { connector?: (mailbox: Parameters<typeof connectorFor>[0
 type Totals = { sent: number; rescheduled: number; failed: number; cancelled: number };
 type Outcome = "next" | "stop";
 
-/** SENDING rows whose worker died: tried again while attempts remain, failed otherwise. */
+/** A tick stops taking new messages after this long, so its leases stay well under STALE_LEASE_MS. */
+export const SEND_BUDGET_MS = 120_000;
+
+/**
+ * SENDING rows whose worker died. A row that never got its Message-ID did not reach the connector: it is tried
+ * again while attempts remain. A row that has one may have left (SMTP ignores the idempotency key): at-most-once,
+ * it is failed and the enrollment waits for the seller rather than risk a second mail.
+ */
 export async function expireStaleLeases(now: Date): Promise<{ requeued: number; failed: number }> {
   const stale = { status: "SENDING" as const, sendingAt: { lt: new Date(now.getTime() - STALE_LEASE_MS) } };
+  const failStale = async (extra: object) => {
+    const rows = await prisma.campaignMessage.findMany({ where: { ...stale, ...extra }, select: { id: true, enrollmentId: true } });
+    if (rows.length === 0) return 0;
+    const { count } = await prisma.campaignMessage.updateMany({
+      where: { ...stale, id: { in: rows.map((row) => row.id) } },
+      data: { status: "FAILED", error: "interrupted", sendingAt: null },
+    });
+    // A failed message left on an ACTIVE enrollment would be picked again by the catch-up forever
+    await prisma.campaignProspect.updateMany({
+      where: { id: { in: rows.map((row) => row.enrollmentId) }, status: "ACTIVE" },
+      data: { status: "PAUSED", pausedReason: "interrupted", pausedAt: now },
+    });
+    return count;
+  };
+  const started = await failStale({ messageId: { not: null } });
   const requeued = await prisma.campaignMessage.updateMany({
-    where: { ...stale, attempts: { lt: MAX_ATTEMPTS } },
+    where: { ...stale, messageId: null, attempts: { lt: MAX_ATTEMPTS } },
     data: { status: "SCHEDULED", sendingAt: null },
   });
-  const failed = await prisma.campaignMessage.updateMany({
-    where: { ...stale, attempts: { gte: MAX_ATTEMPTS } },
-    data: { status: "FAILED", error: "interrupted", sendingAt: null },
-  });
-  return { requeued: requeued.count, failed: failed.count };
+  const exhausted = await failStale({ messageId: null, attempts: { gte: MAX_ATTEMPTS } });
+  return { requeued: requeued.count, failed: started + exhausted };
 }
 
 function errorText(error: unknown) {
@@ -62,31 +81,51 @@ function uniq(values: (string | null | undefined)[]) {
   return [...new Set(values.filter((v): v is string => Boolean(v)))];
 }
 
+/** The lease: only the worker that reserved the row, at that very instant, may move it on. */
+const leased = (id: string, reservedAt: Date) => ({ id, status: "SENDING" as const, sendingAt: reservedAt });
+
 /** A message that goes back to the queue without having failed: the attempt taken by the reservation is given back. */
-function requeue(id: string, scheduledFor?: Date) {
-  return prisma.campaignMessage.updateMany({
-    where: { id, status: "SENDING" },
-    data: { status: "SCHEDULED", sendingAt: null, attempts: { decrement: 1 }, ...(scheduledFor ? { scheduledFor } : {}) },
+async function requeue(id: string, reservedAt: Date, scheduledFor?: Date) {
+  const { count } = await prisma.campaignMessage.updateMany({
+    where: leased(id, reservedAt),
+    data: {
+      status: "SCHEDULED",
+      sendingAt: null,
+      messageId: null,
+      attempts: { decrement: 1 },
+      ...(scheduledFor ? { scheduledFor } : {}),
+    },
   });
+  return count > 0;
 }
 
-function cancel(id: string, error?: string) {
-  return prisma.campaignMessage.updateMany({
-    where: { id, status: "SENDING" },
+async function cancel(id: string, reservedAt: Date, error?: string) {
+  const { count } = await prisma.campaignMessage.updateMany({
+    where: leased(id, reservedAt),
     data: { status: "CANCELLED", sendingAt: null, ...(error ? { error } : {}) },
   });
+  return count > 0;
 }
 
-/** The message is dropped and the enrollment waits for the seller. */
-async function failAndPause(messageId: string, enrollmentId: string, error: string, reason: string, now: Date) {
-  await prisma.campaignMessage.updateMany({
-    where: { id: messageId, status: "SENDING" },
+/** The message is dropped and the enrollment waits for the seller. Nothing happens if the lease was lost. */
+async function failAndPause(
+  messageId: string,
+  reservedAt: Date,
+  enrollmentId: string,
+  error: string,
+  reason: string,
+  now: Date,
+) {
+  const { count } = await prisma.campaignMessage.updateMany({
+    where: leased(messageId, reservedAt),
     data: { status: "FAILED", error, sendingAt: null },
   });
+  if (count === 0) return false;
   await prisma.campaignProspect.updateMany({
     where: { id: enrollmentId, status: "ACTIVE" },
     data: { status: "PAUSED", pausedReason: reason, pausedAt: now },
   });
+  return true;
 }
 
 /** Sends what is due, mailbox by mailbox: reserve, re-check, count against the cap, send, record (D1, D4, D10). */
@@ -96,6 +135,7 @@ export async function sendDueMessages(
   deps: SendDeps = {},
 ): Promise<Totals> {
   const totals: Totals = { sent: 0, rescheduled: 0, failed: 0, cancelled: 0 };
+  const startedAt = Date.now();
   const mailboxes = await prisma.mailbox.findMany({
     where: {
       status: "ACTIVE",
@@ -129,13 +169,32 @@ export async function sendDueMessages(
     const connectorOf = () => (connector ??= (deps.connector ?? connectorFor)(mailbox));
 
     for (const candidate of candidates) {
+      if (Date.now() - startedAt >= SEND_BUDGET_MS) return totals;
+      // Real clock, not the tick's `now`: the lease must tell two overlapping ticks apart
+      const reservedAt = new Date();
       const reserved = await prisma.campaignMessage.updateMany({
         where: { id: candidate.id, status: "SCHEDULED" },
-        data: { status: "SENDING", sendingAt: now, attempts: { increment: 1 } },
+        data: { status: "SENDING", sendingAt: reservedAt, attempts: { increment: 1 } },
       });
       if (reserved.count === 0) continue;
-      const outcome = await sendOne({ messageId: candidate.id, mailbox, hours, signature, now, totals, connectorOf });
-      if (outcome === "stop") break;
+      const state = { marked: false };
+      const ctx = { messageId: candidate.id, reservedAt, mailbox, hours, signature, now, totals, connectorOf, state };
+      try {
+        if ((await sendOne(ctx)) === "stop") break;
+      } catch (error) {
+        console.error(`[outreach-sender] ${candidate.id}`, error);
+        // Once the Message-ID is written the mail may have left: the row stays SENDING and expires as interrupted
+        if (state.marked) continue;
+        const again = retryAt(now, candidate.attempts + 1);
+        await prisma.campaignMessage.updateMany({
+          where: leased(candidate.id, reservedAt),
+          data: again
+            ? { status: "SCHEDULED", sendingAt: null, scheduledFor: again }
+            : { status: "FAILED", error: errorText(error), sendingAt: null },
+        });
+        if (again) totals.rescheduled++;
+        else totals.failed++;
+      }
     }
   }
   return totals;
@@ -143,14 +202,16 @@ export async function sendDueMessages(
 
 async function sendOne(ctx: {
   messageId: string;
+  reservedAt: Date;
   mailbox: Mailbox;
   hours: BusinessHours;
   signature: string | null;
   now: Date;
   totals: Totals;
   connectorOf: () => MailboxConnector;
+  state: { marked: boolean };
 }): Promise<Outcome> {
-  const { messageId, mailbox, hours, signature, now, totals } = ctx;
+  const { messageId, reservedAt, mailbox, hours, signature, now, totals } = ctx;
 
   const message = await prisma.campaignMessage.findUnique({
     where: { id: messageId },
@@ -166,7 +227,7 @@ async function sendOne(ctx: {
   const steps = await prisma.campaignStep.findMany({ where: { campaignId: message.campaignId }, orderBy: { order: "asc" } });
   const step = steps.find((s) => s.id === message.stepId);
   if (!step) {
-    await cancel(message.id, "step_removed");
+    await cancel(message.id, reservedAt, "step_removed");
     totals.cancelled++;
     return "next";
   }
@@ -178,13 +239,13 @@ async function sendOne(ctx: {
 
   // Re-checks, in this order: the situation may have changed since the message was planned
   if (enrollment.status !== "ACTIVE") {
-    await cancel(message.id);
+    await cancel(message.id, reservedAt);
     totals.cancelled++;
     return "next";
   }
   const live = await prisma.mailbox.findUnique({ where: { id: mailbox.id }, select: { status: true } });
   if (campaign.status !== "ACTIVE" || live?.status !== "ACTIVE") {
-    await requeue(message.id);
+    await requeue(message.id, reservedAt);
     return "next";
   }
   if (await isSuppressed(enrollment.organizationId, enrollment.email)) {
@@ -193,7 +254,7 @@ async function sendOne(ctx: {
     return "next";
   }
   if (!inBusinessHours(now, enrollment.timezone, hours)) {
-    await requeue(message.id, stepSendAt(now, enrollment.timezone, hours, dedupeKey));
+    await requeue(message.id, reservedAt, stepSendAt(now, enrollment.timezone, hours, dedupeKey));
     totals.rescheduled++;
     return "next";
   }
@@ -205,12 +266,12 @@ async function sendOne(ctx: {
       link = await createCampaignLink(enrollment.id, { owned: true, now });
     } catch (error) {
       if (!(error instanceof PlanLimitError)) return handleFailure(error, ctx, message, enrollment.id);
-      await failAndPause(message.id, enrollment.id, "plan_limit", "plan_limit", now);
+      await failAndPause(message.id, reservedAt, enrollment.id, "plan_limit", "plan_limit", now);
       totals.failed++;
       return "next";
     }
     if (!link) {
-      await failAndPause(message.id, enrollment.id, "document_missing", "document_missing", now);
+      await failAndPause(message.id, reservedAt, enrollment.id, "document_missing", "document_missing", now);
       totals.failed++;
       return "next";
     }
@@ -232,10 +293,19 @@ async function sendOne(ctx: {
   if (!(await reserveSend(mailbox.id, localDayKey(now, mailbox.timezone), allowance))) {
     const tomorrow = localDayBounds(now, mailbox.timezone).end;
     const [slot] = nextWindowSlots(tomorrow, mailbox.timezone, hours, 1, `${mailbox.id}:${dedupeKey}`);
-    await requeue(message.id, slot ?? new Date(now.getTime() + DAY_MS));
+    await requeue(message.id, reservedAt, slot ?? new Date(now.getTime() + DAY_MS));
     totals.rescheduled++;
     return "stop";
   }
+
+  // Written before the send and guarded by the lease: a row with a Message-ID may have left (see expireStaleLeases)
+  const outgoingId = generateMessageId(messageIdDomain(mailbox.email));
+  const marked = await prisma.campaignMessage.updateMany({
+    where: leased(message.id, reservedAt),
+    data: { messageId: outgoingId },
+  });
+  if (marked.count === 0) return "next";
+  ctx.state.marked = true;
 
   let result;
   try {
@@ -245,7 +315,7 @@ async function sendOne(ctx: {
       subject: rendered.subject,
       text,
       html,
-      messageId: generateMessageId(messageIdDomain(mailbox.email)),
+      messageId: outgoingId,
       inReplyTo: rendered.sameThread ? (last?.messageId ?? null) : null,
       references: rendered.sameThread ? uniq([enrollment.firstMessageId, last?.messageId]) : [],
       headers: connector.capabilities.listUnsubscribe
@@ -257,31 +327,41 @@ async function sendOne(ctx: {
       idempotencyKey: dedupeKey,
     });
   } catch (error) {
+    // The send itself failed: nothing left, so the marker is cleared with the requeue
     return handleFailure(error, ctx, message, enrollment.id);
   }
 
-  await prisma.campaignMessage.update({
-    where: { id: message.id },
-    data: {
-      status: "SENT",
-      sentAt: now,
-      sendingAt: null,
-      messageId: result.messageId,
-      providerMessageId: result.providerId,
-      threadId: result.threadId,
-      subject: rendered.subject,
-      body: visible,
-      inReplyTo: rendered.sameThread ? (last?.messageId ?? null) : null,
-      carriesLink: step.carriesLink,
-    },
-  });
   const progress = {
     currentStep: step.order,
     threadSubject: rendered.sameThread ? enrollment.threadSubject : rendered.subject,
     firstMessageId: enrollment.firstMessageId ?? result.messageId,
     providerThreadId: enrollment.providerThreadId ?? result.threadId,
   };
-  await prisma.campaignProspect.update({ where: { id: enrollment.id }, data: progress });
+  // One transaction: a message that is SENT always moves its enrollment on, so the catch-up never plans it again
+  const recorded = await prisma.$transaction(async (tx) => {
+    const { count } = await tx.campaignMessage.updateMany({
+      where: leased(message.id, reservedAt),
+      data: {
+        status: "SENT",
+        sentAt: now,
+        sendingAt: null,
+        messageId: result.messageId,
+        providerMessageId: result.providerId,
+        threadId: result.threadId,
+        subject: rendered.subject,
+        body: visible,
+        inReplyTo: rendered.sameThread ? (last?.messageId ?? null) : null,
+        carriesLink: step.carriesLink,
+      },
+    });
+    if (count === 0) return false;
+    await tx.campaignProspect.update({ where: { id: enrollment.id }, data: progress });
+    return true;
+  });
+  if (!recorded) {
+    console.error(`[outreach-sender] ${message.id} lease lost after send`);
+    return "next";
+  }
   totals.sent++;
 
   // The next step is planned right away; the end of the sequence is noticed by planEnrollments
@@ -293,16 +373,22 @@ async function sendOne(ctx: {
   if (action.kind === "send_step") {
     const nextStep: StepRow = steps.find((s) => s.id === action.step.id)!;
     const at = stepSendAt(action.earliest, enrollment.timezone, hours, dedupeKeyOf(enrollment.id, nextStep.id));
-    await scheduleStepMessage({
-      enrollment: { ...enrollment, ...progress },
-      step: nextStep,
-      campaignId: message.campaignId,
-      mailboxId: mailbox.id,
-      scheduledFor: at,
+    // Only while the enrollment is still ACTIVE: a reply or a pause during the send must not leave a message behind
+    const still = await prisma.campaignProspect.updateMany({
+      where: { id: enrollment.id, status: "ACTIVE" },
+      data: { nextSendAt: at },
     });
-    await prisma.campaignProspect.update({ where: { id: enrollment.id }, data: { nextSendAt: at } });
+    if (still.count === 1) {
+      await scheduleStepMessage({
+        enrollment: { ...enrollment, ...progress },
+        step: nextStep,
+        campaignId: message.campaignId,
+        mailboxId: mailbox.id,
+        scheduledFor: at,
+      });
+    }
   } else {
-    await prisma.campaignProspect.update({ where: { id: enrollment.id }, data: { nextSendAt: null } });
+    await prisma.campaignProspect.updateMany({ where: { id: enrollment.id, status: "ACTIVE" }, data: { nextSendAt: null } });
   }
   return "next";
 }
@@ -310,11 +396,11 @@ async function sendOne(ctx: {
 /** D4: what a failed send does to the message, the enrollment and the mailbox. */
 async function handleFailure(
   error: unknown,
-  ctx: { mailbox: Mailbox; hours: BusinessHours; now: Date; totals: Totals },
+  ctx: { mailbox: Mailbox; reservedAt: Date; hours: BusinessHours; now: Date; totals: Totals },
   message: { id: string; attempts: number; dedupeKey: string },
   enrollmentId: string,
 ): Promise<Outcome> {
-  const { mailbox, hours, now, totals } = ctx;
+  const { mailbox, reservedAt, hours, now, totals } = ctx;
   const code: MailboxErrorCode | null = isMailboxError(error) ? error.code : null;
 
   if (isMailboxError(error) && (code === "AUTH_REVOKED" || code === "CONFIG")) {
@@ -322,7 +408,7 @@ async function handleFailure(
       where: { id: mailbox.id },
       data: { status: "ERROR", lastError: `${error.code}: ${error.message}`, lastErrorAt: now },
     });
-    await requeue(message.id);
+    await requeue(message.id, reservedAt);
     await notifyMailboxOwner(mailbox.id, "auth_revoked", error.message, now);
     return "stop";
   }
@@ -330,13 +416,13 @@ async function handleFailure(
   if (isMailboxError(error) && (code === "QUOTA" || code === "RATE_LIMITED")) {
     const wait = error.options.retryAfterMs;
     const [slot] = nextWindowSlots(now, mailbox.timezone, hours, 1, `${mailbox.id}:${message.dedupeKey}`);
-    await requeue(message.id, wait !== undefined ? new Date(now.getTime() + wait) : (slot ?? new Date(now.getTime() + DAY_MS)));
+    await requeue(message.id, reservedAt, wait !== undefined ? new Date(now.getTime() + wait) : (slot ?? new Date(now.getTime() + DAY_MS)));
     totals.rescheduled++;
     return "stop";
   }
 
   if (code === "REJECTED") {
-    await failAndPause(message.id, enrollmentId, errorText(error), "rejected", now);
+    await failAndPause(message.id, reservedAt, enrollmentId, errorText(error), "rejected", now);
     totals.failed++;
     return "next";
   }
@@ -344,15 +430,16 @@ async function handleFailure(
   const again = retryAt(now, message.attempts);
   if (again) {
     await prisma.campaignMessage.updateMany({
-      where: { id: message.id, status: "SENDING" },
-      data: { status: "SCHEDULED", sendingAt: null, scheduledFor: again },
+      where: leased(message.id, reservedAt),
+      data: { status: "SCHEDULED", sendingAt: null, messageId: null, scheduledFor: again },
     });
     totals.rescheduled++;
     return "next";
   }
-  await failAndPause(message.id, enrollmentId, errorText(error), "send_failed", now);
-  await notifyMailboxOwner(mailbox.id, "send_failed", errorText(error), now);
-  totals.failed++;
+  if (await failAndPause(message.id, reservedAt, enrollmentId, errorText(error), "send_failed", now)) {
+    await notifyMailboxOwner(mailbox.id, "send_failed", errorText(error), now);
+    totals.failed++;
+  }
   return "next";
 }
 

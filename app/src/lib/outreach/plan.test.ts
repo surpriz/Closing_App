@@ -5,12 +5,16 @@ const messageCount = vi.fn();
 const messageCreate = vi.fn();
 const enrollmentFindMany = vi.fn();
 const enrollmentUpdateMany = vi.fn();
+const messageUpdateMany = vi.fn();
+const messageFindUnique = vi.fn();
 vi.mock("@/lib/db", () => ({
   prisma: {
     mailbox: { findMany: (...a: unknown[]) => mailboxFindMany(...a) },
     campaignMessage: {
       count: (...a: unknown[]) => messageCount(...a),
       create: (...a: unknown[]) => messageCreate(...a),
+      updateMany: (...a: unknown[]) => messageUpdateMany(...a),
+      findUnique: (...a: unknown[]) => messageFindUnique(...a),
     },
     campaignProspect: {
       findMany: (...a: unknown[]) => enrollmentFindMany(...a),
@@ -89,7 +93,7 @@ describe("planEnrollments, first messages", () => {
     const queuedCall = enrollmentFindMany.mock.calls.find(([a]) => a.where.status === "QUEUED")![0];
     expect(queuedCall.take).toBe(3); // 5 a day on day 1, 2 already planned
     expect(queuedCall.orderBy).toEqual({ createdAt: "asc" });
-    expect(queuedCall.where).toEqual({ status: "QUEUED", campaign: { mailboxId: "mb1", status: "ACTIVE" } });
+    expect(queuedCall.where).toEqual({ status: "QUEUED", campaign: { mailboxId: "mb1", status: "ACTIVE", steps: { some: { order: 1 } } } });
     expect(result.started).toBe(2);
   });
 
@@ -160,6 +164,42 @@ describe("planEnrollments, catch-up", () => {
     stranded = [stuck({ currentStep: 2, messages: [{ sentAt: new Date(now.getTime() - DAY) }] })];
     const result = await planEnrollments(now);
     expect(result).toEqual({ started: 0, continued: 0, finished: 0 });
+    // Touched, so it moves to the back of the least-recently-updated order
+    expect(enrollmentUpdateMany).toHaveBeenCalledWith({
+      where: { id: "e1", status: "ACTIVE" },
+      data: { nextSendAt: new Date(now.getTime() + 2 * DAY) },
+    });
+  });
+
+  it.each([
+    ["SENT", { currentStep: 2 }],
+    ["FAILED", { status: "PAUSED", pausedReason: "send_failed", pausedAt: now }],
+    ["CANCELLED", { status: "PAUSED", pausedReason: "send_failed", pausedAt: now }],
+  ])("handles a next message that already exists as %s", async (existing, data) => {
+    mailboxFindMany.mockResolvedValue([]);
+    stranded = [stuck({ currentStep: 1, messages: [{ sentAt: new Date(now.getTime() - 4 * DAY) }] })];
+    messageCreate.mockRejectedValue({ code: "P2002" });
+    messageUpdateMany.mockResolvedValue({ count: 0 });
+    messageFindUnique.mockResolvedValue({ id: "m-old", status: existing });
+    const result = await planEnrollments(now);
+    expect(enrollmentUpdateMany).toHaveBeenCalledWith({ where: { id: "e1", status: "ACTIVE" }, data });
+    expect(result.continued).toBe(0);
+  });
+
+  it("leaves it alone while the next message is still SCHEDULED", async () => {
+    mailboxFindMany.mockResolvedValue([]);
+    stranded = [stuck({ currentStep: 1, messages: [{ sentAt: new Date(now.getTime() - 4 * DAY) }] })];
+    messageCreate.mockRejectedValue({ code: "P2002" });
+    messageUpdateMany.mockResolvedValue({ count: 0 });
+    messageFindUnique.mockResolvedValue({ id: "m-old", status: "SENDING" });
+    await planEnrollments(now);
     expect(enrollmentUpdateMany).not.toHaveBeenCalled();
+  });
+
+  it("reads the catch-up least recently updated first", async () => {
+    mailboxFindMany.mockResolvedValue([]);
+    await planEnrollments(now);
+    const call = enrollmentFindMany.mock.calls.find(([a]) => a.where.status === "ACTIVE")![0];
+    expect(call.orderBy).toEqual({ updatedAt: "asc" });
   });
 });

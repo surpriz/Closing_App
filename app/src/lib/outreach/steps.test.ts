@@ -53,6 +53,7 @@ describe("validateSteps", () => {
   it("keeps {{link}} in the step that carries it", () => {
     expect(validateSteps([step({ body: "See {{link}}" })])).toEqual([{ code: "link_outside_link_step", order: 1 }]);
     expect(validateSteps([step({ body: "See {{ Link }}", carriesLink: true })])).toEqual([]);
+    expect(validateSteps([step({ subject: "{{link}}" })])).toEqual([{ code: "link_outside_link_step", order: 1 }]);
   });
 
   it("allows one link step only", () => {

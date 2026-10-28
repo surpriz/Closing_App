@@ -42,7 +42,7 @@ export function validateSteps(steps: StepInput[]): StepIssue[] {
       step.order === 1 ? step.delayDays === 0 : Number.isInteger(step.delayDays) && step.delayDays >= 1 && step.delayDays <= MAX_DELAY_DAYS;
     if (!delayOk) issues.push({ code: "delay", order: step.order });
     if (step.body.length > MAX_BODY || (step.subject?.length ?? 0) > MAX_SUBJECT) issues.push({ code: "too_long", order: step.order });
-    if (!step.carriesLink && templateVariables(step.body).some((name) => name.toLowerCase() === "link")) {
+    if (!step.carriesLink && templateVariables(`${step.subject ?? ""}\n${step.body}`).some((name) => name.toLowerCase() === "link")) {
       issues.push({ code: "link_outside_link_step", order: step.order });
     }
   });

@@ -1,4 +1,4 @@
-import type { EnrollmentStatus } from "@/generated/prisma/enums";
+import type { CampaignMessageStatus, EnrollmentStatus } from "@/generated/prisma/enums";
 import { isUniqueViolation } from "@/lib/closing/followups/queue";
 import { prisma } from "@/lib/db";
 
@@ -56,7 +56,7 @@ export function renderStep(step: StepRow, enrollment: EnrollmentRow, link: strin
 
 /**
  * Inserts the SCHEDULED message of a step for an enrollment (dedupeKey cold:<enrollmentId>:<stepId>); on a duplicate,
- * moves scheduledFor only when the row is still SCHEDULED. Returns the message id, or null when it already left.
+ * moves scheduledFor only when the row is still SCHEDULED. Returns the message id, or the status of the row that already exists and could not be moved.
  * The text stored here is a placeholder: the sender renders the step again just before sending (D1).
  */
 export async function scheduleStepMessage(input: {
@@ -65,7 +65,7 @@ export async function scheduleStepMessage(input: {
   campaignId: string;
   mailboxId: string;
   scheduledFor: Date;
-}): Promise<string | null> {
+}): Promise<{ id: string } | { existing: CampaignMessageStatus }> {
   const { enrollment, step, campaignId, mailboxId, scheduledFor } = input;
   const dedupeKey = dedupeKeyOf(enrollment.id, step.id);
   const rendered = renderStep(step, enrollment, null);
@@ -86,7 +86,7 @@ export async function scheduleStepMessage(input: {
       },
       select: { id: true },
     });
-    return created.id;
+    return { id: created.id };
   } catch (error) {
     if (!isUniqueViolation(error)) throw error;
   }
@@ -94,7 +94,7 @@ export async function scheduleStepMessage(input: {
     where: { dedupeKey, status: "SCHEDULED" },
     data: { scheduledFor },
   });
-  if (count === 0) return null;
-  const existing = await prisma.campaignMessage.findUnique({ where: { dedupeKey }, select: { id: true } });
-  return existing?.id ?? null;
+  const existing = await prisma.campaignMessage.findUnique({ where: { dedupeKey }, select: { id: true, status: true } });
+  if (count > 0 && existing) return { id: existing.id };
+  return { existing: existing?.status ?? "CANCELLED" };
 }

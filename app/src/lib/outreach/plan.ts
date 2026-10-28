@@ -74,7 +74,7 @@ export async function planEnrollments(
     if (take === 0) continue;
 
     const queued = await prisma.campaignProspect.findMany({
-      where: { status: "QUEUED", campaign: { mailboxId: mailbox.id, status: "ACTIVE" } },
+      where: { status: "QUEUED", campaign: { mailboxId: mailbox.id, status: "ACTIVE", steps: { some: { order: 1 } } } },
       orderBy: { createdAt: "asc" },
       take,
       include: { campaign: { select: { id: true, steps: { where: { order: 1 }, select: STEP_SELECT, take: 1 } } } },
@@ -93,7 +93,7 @@ export async function planEnrollments(
       if (!step || !slot) continue;
       // The slot is in the mailbox's day; the prospect's own business hours still apply
       const at = nextBusinessSlot(slot, enrollment.timezone, hours, "asap");
-      const id = await scheduleStepMessage({
+      const scheduled = await scheduleStepMessage({
         enrollment,
         step,
         campaignId: enrollment.campaign.id,
@@ -104,7 +104,7 @@ export async function planEnrollments(
         where: { id: enrollment.id, status: "QUEUED" },
         data: { status: "ACTIVE", nextSendAt: at },
       });
-      if (id) totals.started++;
+      if ("id" in scheduled) totals.started++;
     }
   }
 
@@ -117,6 +117,8 @@ export async function planEnrollments(
       campaign: { status: "ACTIVE", mailbox: { status: "ACTIVE" } },
       messages: { none: { status: { in: ["SCHEDULED", "SENDING"] } } },
     },
+    // Least recently touched first, so a long list of waiting enrollments cannot starve the others
+    orderBy: { updatedAt: "asc" },
     take: CATCH_UP_BATCH,
     include: {
       campaign: { select: { id: true, mailboxId: true, steps: { orderBy: { order: "asc" }, select: STEP_SELECT } } },
@@ -141,19 +143,30 @@ export async function planEnrollments(
     if (action.kind === "send_step") {
       const step: StepRow = campaign.steps.find((s) => s.id === action.step.id)!;
       const at = stepSendAt(action.earliest, enrollment.timezone, hours, dedupeKeyOf(enrollment.id, step.id));
-      const id = await scheduleStepMessage({
+      const scheduled = await scheduleStepMessage({
         enrollment,
         step,
         campaignId: campaign.id,
         mailboxId: campaign.mailboxId,
         scheduledFor: at,
       });
-      if (id) {
+      if ("id" in scheduled) {
         await prisma.campaignProspect.updateMany({
           where: { id: enrollment.id, status: "ACTIVE" },
           data: { nextSendAt: at },
         });
         totals.continued++;
+      } else if (scheduled.existing === "SENT") {
+        // The mail left but the enrollment never moved on: repair it, the next pass plans the following step
+        await prisma.campaignProspect.updateMany({
+          where: { id: enrollment.id, status: "ACTIVE" },
+          data: { currentStep: step.order },
+        });
+      } else if (scheduled.existing === "FAILED" || scheduled.existing === "CANCELLED") {
+        await prisma.campaignProspect.updateMany({
+          where: { id: enrollment.id, status: "ACTIVE" },
+          data: { status: "PAUSED", pausedReason: "send_failed", pausedAt: now },
+        });
       }
     } else if (action.kind === "finish") {
       const { count } = await prisma.campaignProspect.updateMany({
@@ -163,6 +176,12 @@ export async function planEnrollments(
       if (count === 0) continue;
       if (enrollment.linkId) await releaseCampaignLink(enrollment.linkId);
       totals.finished++;
+    } else if (action.until) {
+      // Touched, so it goes to the back of the line until its time comes
+      await prisma.campaignProspect.updateMany({
+        where: { id: enrollment.id, status: "ACTIVE" },
+        data: { nextSendAt: action.until },
+      });
     }
   }
 

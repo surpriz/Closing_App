@@ -29,12 +29,17 @@ vi.mock("@/lib/db", () => ({
       create: (...a: unknown[]) => messageCreate(...a),
     },
     campaignStep: { findMany: (...a: unknown[]) => stepFindMany(...a) },
+    $transaction: (fn: (tx: unknown) => unknown) => fn(txStub),
     campaignProspect: {
       update: (...a: unknown[]) => enrollmentUpdate(...a),
       updateMany: (...a: unknown[]) => enrollmentUpdateMany(...a),
     },
   },
 }));
+const txStub = {
+  campaignMessage: { updateMany: (...a: unknown[]) => messageUpdateMany(...a) },
+  campaignProspect: { update: (...a: unknown[]) => enrollmentUpdate(...a) },
+};
 vi.mock("@/lib/env", () => ({ getEnv: () => ({ MAILBOX_DAILY_CAP_MAX: 50 }) }));
 vi.mock("@/lib/closing/settings", () => ({
   getWorkspaceSettings: async () => ({
@@ -75,7 +80,7 @@ const stopEnrollment = vi.fn();
 vi.mock("./enroll", () => ({ stopEnrollment: (...a: unknown[]) => stopEnrollment(...a) }));
 
 const { MailboxError } = await import("@/lib/mailboxes/errors");
-const { expireStaleLeases, sendDueMessages, sendTestMessage } = await import("./sender");
+const { expireStaleLeases, SEND_BUDGET_MS, sendDueMessages, sendTestMessage } = await import("./sender");
 
 const now = new Date("2026-11-18T10:00:00Z"); // Wednesday 11:00 in Paris
 const DAY = 86_400_000;
@@ -133,6 +138,8 @@ const deps = { connector: () => connector as never };
 let candidates: { id: string; attempts?: number }[];
 
 beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(now); // the lease is stamped with the real clock
   vi.clearAllMocks();
   calls.length = 0;
   candidates = [{ id: "m1" }];
@@ -141,6 +148,7 @@ beforeEach(() => {
   messageFindMany.mockImplementation(async () => candidates);
   messageUpdateMany.mockImplementation(async (args: { data: { status?: string } }) => {
     if (args.data.status === "SENDING") calls.push("reserve");
+    else if ("messageId" in args.data && !("status" in args.data)) calls.push("mark");
     return { count: 1 };
   });
   messageFindUnique.mockResolvedValue(message());
@@ -163,12 +171,16 @@ describe("sendDueMessages, success", () => {
   it("reserves, re-checks, counts, then sends, then records and plans the next step", async () => {
     const result = await sendDueMessages(now, {}, deps);
 
-    expect(calls).toEqual(["reserve", "suppression", "counter", "send"]);
+    expect(calls).toEqual(["reserve", "suppression", "counter", "mark", "send"]);
     expect(messageUpdateMany).toHaveBeenCalledWith({
       where: { id: "m1", status: "SCHEDULED" },
       data: { status: "SENDING", sendingAt: now, attempts: { increment: 1 } },
     });
     expect(reserveSend).toHaveBeenCalledWith("mb1", "2026-11-18", 30);
+    expect(messageUpdateMany).toHaveBeenCalledWith({
+      where: { id: "m1", status: "SENDING", sendingAt: now },
+      data: { messageId: "<generated@acme.io>" },
+    });
 
     const sent = send.mock.calls[0][0];
     expect(sent).toMatchObject({
@@ -177,6 +189,7 @@ describe("sendDueMessages, success", () => {
       inReplyTo: null,
       references: [],
       idempotencyKey: "cold:e1:s1",
+      messageId: "<generated@acme.io>",
       headers: {
         "List-Unsubscribe": "<https://app.test/api/unsubscribe/e1>",
         "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
@@ -185,8 +198,8 @@ describe("sendDueMessages, success", () => {
     expect(sent.text).toContain("https://app.test/u/e1");
     expect(sent.html).toContain("https://app.test/u/e1");
 
-    expect(messageUpdate).toHaveBeenCalledWith({
-      where: { id: "m1" },
+    expect(messageUpdateMany).toHaveBeenCalledWith({
+      where: { id: "m1", status: "SENDING", sendingAt: now },
       data: expect.objectContaining({
         status: "SENT",
         sentAt: now,
@@ -199,7 +212,7 @@ describe("sendDueMessages, success", () => {
         carriesLink: false,
       }),
     });
-    expect(enrollmentUpdate).toHaveBeenNthCalledWith(1, {
+    expect(enrollmentUpdate).toHaveBeenCalledWith({
       where: { id: "e1" },
       data: {
         currentStep: 1,
@@ -211,7 +224,10 @@ describe("sendDueMessages, success", () => {
     const next = messageCreate.mock.calls[0][0].data;
     expect(next).toMatchObject({ stepId: "s2", dedupeKey: "cold:e1:s2", status: "SCHEDULED", subject: "Re: Hello Paul" });
     expect(next.scheduledFor.getTime()).toBeGreaterThanOrEqual(now.getTime() + 3 * DAY);
-    expect(enrollmentUpdate).toHaveBeenNthCalledWith(2, { where: { id: "e1" }, data: { nextSendAt: next.scheduledFor } });
+    expect(enrollmentUpdateMany).toHaveBeenCalledWith({
+      where: { id: "e1", status: "ACTIVE" },
+      data: { nextSendAt: next.scheduledFor },
+    });
     expect(result).toEqual({ sent: 1, rescheduled: 0, failed: 0, cancelled: 0 });
   });
 
@@ -229,7 +245,7 @@ describe("sendDueMessages, success", () => {
     });
     // Last step: nothing to plan, the end is noticed by planEnrollments
     expect(messageCreate).not.toHaveBeenCalled();
-    expect(enrollmentUpdate).toHaveBeenLastCalledWith({ where: { id: "e1" }, data: { nextSendAt: null } });
+    expect(enrollmentUpdateMany).toHaveBeenLastCalledWith({ where: { id: "e1", status: "ACTIVE" }, data: { nextSendAt: null } });
   });
 
   it("appends the signature before the unsubscribe footer", async () => {
@@ -238,7 +254,8 @@ describe("sendDueMessages, success", () => {
     const sent = send.mock.calls[0][0];
     expect(sent.text.indexOf("Hi Paul\n\nJerome")).toBe(0);
     expect(sent.text.indexOf("https://app.test/u/e1")).toBeGreaterThan(sent.text.indexOf("Jerome"));
-    expect(messageUpdate.mock.calls[0][0].data.body).toBe("Hi Paul\n\nJerome");
+    const sentWrite = messageUpdateMany.mock.calls.find(([a]) => a.data.status === "SENT")![0];
+    expect(sentWrite.data.body).toBe("Hi Paul\n\nJerome");
   });
 });
 
@@ -253,12 +270,13 @@ describe("sendDueMessages, re-checks", () => {
 
   it("puts the message back outside the prospect's business hours, without sending", async () => {
     const night = new Date("2026-11-18T22:00:00Z");
+    vi.setSystemTime(night);
     const result = await sendDueMessages(night, {}, deps);
     expect(send).not.toHaveBeenCalled();
     expect(reserveSend).not.toHaveBeenCalled();
     const call = messageUpdateMany.mock.calls.find(([a]) => a.data.status === "SCHEDULED")![0];
-    expect(call.where).toEqual({ id: "m1", status: "SENDING" });
-    expect(call.data).toMatchObject({ status: "SCHEDULED", sendingAt: null, attempts: { decrement: 1 } });
+    expect(call.where).toEqual({ id: "m1", status: "SENDING", sendingAt: night });
+    expect(call.data).toMatchObject({ status: "SCHEDULED", sendingAt: null, messageId: null, attempts: { decrement: 1 } });
     expect(call.data.scheduledFor.getTime()).toBeGreaterThan(night.getTime());
     expect(result.rescheduled).toBe(1);
   });
@@ -267,7 +285,7 @@ describe("sendDueMessages, re-checks", () => {
     messageFindUnique.mockResolvedValue(message({ enrollment: { ...enrollment, status: "REPLIED" } }));
     const result = await sendDueMessages(now, {}, deps);
     expect(messageUpdateMany).toHaveBeenCalledWith({
-      where: { id: "m1", status: "SENDING" },
+      where: { id: "m1", status: "SENDING", sendingAt: now },
       data: { status: "CANCELLED", sendingAt: null },
     });
     expect(send).not.toHaveBeenCalled();
@@ -278,7 +296,7 @@ describe("sendDueMessages, re-checks", () => {
     stepFindMany.mockResolvedValue([step2]);
     const result = await sendDueMessages(now, {}, deps);
     expect(messageUpdateMany).toHaveBeenCalledWith({
-      where: { id: "m1", status: "SENDING" },
+      where: { id: "m1", status: "SENDING", sendingAt: now },
       data: { status: "CANCELLED", sendingAt: null, error: "step_removed" },
     });
     expect(result.cancelled).toBe(1);
@@ -288,8 +306,8 @@ describe("sendDueMessages, re-checks", () => {
     messageFindUnique.mockResolvedValue(message({ campaign: { status: "PAUSED", documentId: null, createdById: "u1" } }));
     await sendDueMessages(now, {}, deps);
     expect(messageUpdateMany).toHaveBeenCalledWith({
-      where: { id: "m1", status: "SENDING" },
-      data: { status: "SCHEDULED", sendingAt: null, attempts: { decrement: 1 } },
+      where: { id: "m1", status: "SENDING", sendingAt: now },
+      data: { status: "SCHEDULED", sendingAt: null, messageId: null, attempts: { decrement: 1 } },
     });
     expect(send).not.toHaveBeenCalled();
   });
@@ -320,7 +338,7 @@ describe("sendDueMessages, re-checks", () => {
     const result = await sendDueMessages(now, {}, deps);
     expect(createCampaignLink).toHaveBeenCalledWith("e1", { owned: true, now });
     expect(messageUpdateMany).toHaveBeenCalledWith({
-      where: { id: "m1", status: "SENDING" },
+      where: { id: "m1", status: "SENDING", sendingAt: now },
       data: { status: "FAILED", error: "plan_limit", sendingAt: null },
     });
     expect(enrollmentUpdateMany).toHaveBeenCalledWith({
@@ -337,7 +355,7 @@ describe("sendDueMessages, re-checks", () => {
     await sendDueMessages(now, {}, deps);
     expect(send.mock.calls[0][0].text).toContain("See https://app.test/v/acme-abc");
     expect(send.mock.calls[0][0].html).toContain('<a href="https://app.test/v/acme-abc">Devis</a>');
-    expect(messageUpdate.mock.calls[0][0].data.carriesLink).toBe(true);
+    expect(messageUpdateMany.mock.calls.find(([a]) => a.data.status === "SENT")![0].data.carriesLink).toBe(true);
   });
 });
 
@@ -350,7 +368,7 @@ describe("sendDueMessages, daily cap", () => {
     expect(send).not.toHaveBeenCalled();
     expect(messageFindUnique).toHaveBeenCalledTimes(1); // the second candidate is not even reserved
     const call = messageUpdateMany.mock.calls.find(([a]) => a.data.status === "SCHEDULED")![0];
-    expect(call.where).toEqual({ id: "m1", status: "SENDING" });
+    expect(call.where).toEqual({ id: "m1", status: "SENDING", sendingAt: now });
     // Tomorrow, Thursday 19 Nov, inside the opening hours (Paris, UTC+1)
     expect(call.data.scheduledFor.getTime()).toBeGreaterThanOrEqual(new Date("2026-11-19T08:00:00Z").getTime());
     expect(call.data.scheduledFor.getTime()).toBeLessThan(new Date("2026-11-19T17:00:00Z").getTime());
@@ -375,8 +393,8 @@ describe("sendDueMessages, send errors", () => {
       data: { status: "ERROR", lastError: "AUTH_REVOKED: token revoked", lastErrorAt: now },
     });
     expect(messageUpdateMany).toHaveBeenCalledWith({
-      where: { id: "m1", status: "SENDING" },
-      data: { status: "SCHEDULED", sendingAt: null, attempts: { decrement: 1 } },
+      where: { id: "m1", status: "SENDING", sendingAt: now },
+      data: { status: "SCHEDULED", sendingAt: null, messageId: null, attempts: { decrement: 1 } },
     });
     expect(notifyMailboxOwner).toHaveBeenCalledWith("mb1", "auth_revoked", "token revoked", now);
     expect(send).toHaveBeenCalledTimes(1);
@@ -388,10 +406,11 @@ describe("sendDueMessages, send errors", () => {
     send.mockRejectedValue(new MailboxError("RATE_LIMITED", "slow down", { retryAfterMs: 600_000 }));
     const result = await sendDueMessages(now, {}, deps);
     expect(messageUpdateMany).toHaveBeenCalledWith({
-      where: { id: "m1", status: "SENDING" },
+      where: { id: "m1", status: "SENDING", sendingAt: now },
       data: {
         status: "SCHEDULED",
         sendingAt: null,
+        messageId: null,
         attempts: { decrement: 1 },
         scheduledFor: new Date(now.getTime() + 600_000),
       },
@@ -404,7 +423,7 @@ describe("sendDueMessages, send errors", () => {
     send.mockRejectedValue(new MailboxError("REJECTED", "550 no such user"));
     const result = await sendDueMessages(now, {}, deps);
     expect(messageUpdateMany).toHaveBeenCalledWith({
-      where: { id: "m1", status: "SENDING" },
+      where: { id: "m1", status: "SENDING", sendingAt: now },
       data: { status: "FAILED", error: "550 no such user", sendingAt: null },
     });
     expect(enrollmentUpdateMany).toHaveBeenCalledWith({
@@ -412,15 +431,15 @@ describe("sendDueMessages, send errors", () => {
       data: { status: "PAUSED", pausedReason: "rejected", pausedAt: now },
     });
     expect(result.failed).toBe(1);
-    expect(messageUpdate).not.toHaveBeenCalled();
+    expect(enrollmentUpdate).not.toHaveBeenCalled();
   });
 
   it("TRANSIENT: tried again in 30 minutes while attempts remain", async () => {
     send.mockRejectedValue(new MailboxError("TRANSIENT", "timeout"));
     const result = await sendDueMessages(now, {}, deps);
     expect(messageUpdateMany).toHaveBeenCalledWith({
-      where: { id: "m1", status: "SENDING" },
-      data: { status: "SCHEDULED", sendingAt: null, scheduledFor: new Date(now.getTime() + 30 * 60_000) },
+      where: { id: "m1", status: "SENDING", sendingAt: now },
+      data: { status: "SCHEDULED", sendingAt: null, messageId: null, scheduledFor: new Date(now.getTime() + 30 * 60_000) },
     });
     expect(result.rescheduled).toBe(1);
   });
@@ -430,7 +449,7 @@ describe("sendDueMessages, send errors", () => {
     send.mockRejectedValue(new Error("boom"));
     const result = await sendDueMessages(now, {}, deps);
     expect(messageUpdateMany).toHaveBeenCalledWith({
-      where: { id: "m1", status: "SENDING" },
+      where: { id: "m1", status: "SENDING", sendingAt: now },
       data: { status: "FAILED", error: "boom", sendingAt: null },
     });
     expect(enrollmentUpdateMany).toHaveBeenCalledWith({
@@ -443,19 +462,111 @@ describe("sendDueMessages, send errors", () => {
 });
 
 describe("expireStaleLeases", () => {
-  it("requeues while attempts remain and fails the rest", async () => {
-    messageUpdateMany.mockResolvedValueOnce({ count: 2 }).mockResolvedValueOnce({ count: 1 });
+  const cutoff = new Date(now.getTime() - 5 * 60_000);
+  const stale = { status: "SENDING", sendingAt: { lt: cutoff } };
+
+  it("fails a stale row that has a Message-ID and pauses its enrollment, whatever the attempts", async () => {
+    messageFindMany.mockResolvedValueOnce([{ id: "m1", enrollmentId: "e1" }]).mockResolvedValueOnce([]);
+    messageUpdateMany.mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 0 });
     const result = await expireStaleLeases(now);
-    const cutoff = new Date(now.getTime() - 5 * 60_000);
-    expect(messageUpdateMany).toHaveBeenNthCalledWith(1, {
-      where: { status: "SENDING", sendingAt: { lt: cutoff }, attempts: { lt: 3 } },
-      data: { status: "SCHEDULED", sendingAt: null },
+
+    expect(messageFindMany).toHaveBeenNthCalledWith(1, {
+      where: { ...stale, messageId: { not: null } },
+      select: { id: true, enrollmentId: true },
     });
-    expect(messageUpdateMany).toHaveBeenNthCalledWith(2, {
-      where: { status: "SENDING", sendingAt: { lt: cutoff }, attempts: { gte: 3 } },
+    expect(messageUpdateMany).toHaveBeenNthCalledWith(1, {
+      where: { ...stale, id: { in: ["m1"] } },
       data: { status: "FAILED", error: "interrupted", sendingAt: null },
     });
+    expect(enrollmentUpdateMany).toHaveBeenCalledWith({
+      where: { id: { in: ["e1"] }, status: "ACTIVE" },
+      data: { status: "PAUSED", pausedReason: "interrupted", pausedAt: now },
+    });
+    expect(result).toEqual({ requeued: 0, failed: 1 });
+  });
+
+  it("requeues a stale row that never reached the connector, fails it once the attempts are used up", async () => {
+    messageFindMany.mockResolvedValueOnce([]).mockResolvedValueOnce([{ id: "m2", enrollmentId: "e2" }]);
+    messageUpdateMany.mockResolvedValueOnce({ count: 2 }).mockResolvedValueOnce({ count: 1 });
+    const result = await expireStaleLeases(now);
+
+    expect(messageUpdateMany).toHaveBeenNthCalledWith(1, {
+      where: { ...stale, messageId: null, attempts: { lt: 3 } },
+      data: { status: "SCHEDULED", sendingAt: null },
+    });
+    expect(messageFindMany).toHaveBeenNthCalledWith(2, {
+      where: { ...stale, messageId: null, attempts: { gte: 3 } },
+      select: { id: true, enrollmentId: true },
+    });
+    expect(enrollmentUpdateMany).toHaveBeenCalledWith({
+      where: { id: { in: ["e2"] }, status: "ACTIVE" },
+      data: { status: "PAUSED", pausedReason: "interrupted", pausedAt: now },
+    });
     expect(result).toEqual({ requeued: 2, failed: 1 });
+  });
+});
+
+describe("sendDueMessages, leases and failures", () => {
+  it("does not touch the row when the lease was taken over before the send is recorded", async () => {
+    messageUpdateMany.mockImplementation(async (args: { data: { status?: string } }) => ({
+      count: args.data.status === "SENT" ? 0 : 1,
+    }));
+    const result = await sendDueMessages(now, {}, deps);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(enrollmentUpdate).not.toHaveBeenCalled();
+    expect(messageCreate).not.toHaveBeenCalled();
+    expect(result.sent).toBe(0);
+  });
+
+  it("does not send when the Message-ID marker cannot be written under the lease", async () => {
+    messageUpdateMany.mockImplementation(async (args: { data: { messageId?: string; status?: string } }) => ({
+      count: args.data.messageId && !args.data.status ? 0 : 1,
+    }));
+    await sendDueMessages(now, {}, deps);
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it("plans no next message when the enrollment was stopped during the send", async () => {
+    enrollmentUpdateMany.mockResolvedValue({ count: 0 });
+    await sendDueMessages(now, {}, deps);
+    expect(messageCreate).not.toHaveBeenCalled();
+  });
+
+  it("stops taking new messages once the budget is spent", async () => {
+    candidates = [{ id: "m1" }, { id: "m2" }];
+    send.mockImplementation(async () => {
+      vi.setSystemTime(new Date(now.getTime() + SEND_BUDGET_MS + 1000));
+      return { messageId: "<sent@acme.io>", providerId: null, threadId: null };
+    });
+    const result = await sendDueMessages(now, {}, deps);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(result.sent).toBe(1);
+  });
+
+  it("requeues an unexpected error before the send and carries on with the next message", async () => {
+    candidates = [
+      { id: "m1", attempts: 0 },
+      { id: "m2", attempts: 0 },
+    ];
+    messageFindUnique.mockRejectedValueOnce(new Error("db down")).mockResolvedValue(message({ id: "m2" }));
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const result = await sendDueMessages(now, {}, deps);
+    spy.mockRestore();
+    expect(messageUpdateMany).toHaveBeenCalledWith({
+      where: { id: "m1", status: "SENDING", sendingAt: now },
+      data: { status: "SCHEDULED", sendingAt: null, scheduledFor: new Date(now.getTime() + 30 * 60_000) },
+    });
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(result.sent).toBe(1);
+    expect(result.rescheduled).toBe(1);
+  });
+
+  it("leaves a row SENDING when something breaks after the Message-ID was written", async () => {
+    enrollmentUpdate.mockRejectedValue(new Error("db down"));
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    await sendDueMessages(now, {}, deps);
+    spy.mockRestore();
+    expect(messageUpdateMany.mock.calls.filter(([a]) => a.data.status === "SCHEDULED")).toHaveLength(0);
   });
 });
 
