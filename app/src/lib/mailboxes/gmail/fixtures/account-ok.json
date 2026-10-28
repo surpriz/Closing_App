@@ -1,0 +1,1 @@
+{ "object": "Account", "id": "acc_1", "name": "state_1", "connection_params": { "mail": { "username": "Me@Acme.test" } }, "sources": [{ "id": "acc_1_src", "status": "OK" }] }

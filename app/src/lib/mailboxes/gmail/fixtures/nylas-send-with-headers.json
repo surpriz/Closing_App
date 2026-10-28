@@ -1,0 +1,1 @@
+{ "request_id": "r1", "data": { "id": "msg-1", "grant_id": "grant-123", "thread_id": "thr-1", "headers": [ { "name": "Message-Id", "value": "<abc123@mail.gmail.com>" }, { "name": "Subject", "value": "Hello" } ] } }
