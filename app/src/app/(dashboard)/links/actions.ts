@@ -759,3 +759,21 @@ export async function regenerateSequencerWebhook() {
   });
   revalidatePath("/links", "layout");
 }
+
+/**
+ * "C'est un test": the seller opened their own link, or a test send of their cold email tool filled in
+ * a real prospect's address. The reader drops out of every count and follow-up, and out of sight.
+ * Never on a link made for a contact the seller named: that one is a deal.
+ */
+export async function markLinkAsTest(linkId: string) {
+  const link = await requireOwnedLink(linkId);
+  const named = await prisma.prospect.count({ where: { linkId: link.id, origin: "SELLER" } });
+  if (link.shared || named > 0) {
+    const t = await getTranslations("deal.actions");
+    return { error: t("notATest") };
+  }
+  await prisma.link.update({ where: { id: link.id }, data: { isOnboardingTest: true, archivedAt: new Date() } });
+  await cancelOpenFollowups(link.id, "archived");
+  revalidateLink(link);
+  return { ok: true, documentId: link.documentId };
+}

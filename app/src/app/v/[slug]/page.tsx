@@ -282,8 +282,9 @@ export default async function ViewerPage({
 
   const sellerNotice = isSeller && (
     <SellerNotice>
-      Vous êtes connecté à Clozer : cette lecture ne compte pas. Testez dans un
-      autre navigateur.
+      {link.shared
+        ? "Vous êtes connecté à Clozer : cette lecture ne compte pas, et l'adresse du lien est ignorée. Pour tester ce Smart Link comme un prospect, copiez le lien de test depuis sa fiche et ouvrez-le en navigation privée."
+        : "Vous êtes connecté à Clozer : cette lecture ne compte pas. Testez dans un autre navigateur."}
     </SellerNotice>
   );
 

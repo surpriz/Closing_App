@@ -8,7 +8,8 @@ type Scope = { documentId: string } | { linkId: string };
 export async function getReadingAnalytics(scope: Scope) {
   const viewWhere =
     "documentId" in scope
-      ? { documentId: scope.documentId, isBot: false }
+      ? // The seller's own tests never weigh in the document's figures
+        { documentId: scope.documentId, isBot: false, link: { isOnboardingTest: false } }
       : { linkId: scope.linkId, isBot: false };
 
   const [totals, visitors, pages, locations, recentViews] = await Promise.all([

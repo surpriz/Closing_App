@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { randomSlug } from "@/lib/ids";
 
 import { companyFromEmail } from "../prospects/from-recipient";
+import { isWorkspaceAddress } from "./seller-address";
 
 /**
  * A reader gave their email on a shared link: their own link, a deal like any
@@ -58,8 +59,12 @@ export async function readerLinkFor(
   if (existing) return existing;
 
   const company = from.company ?? companyFromEmail(email);
-  // A first reader came through it: the shared link has gone out, it no longer waits to be sent
-  await prisma.link.updateMany({ where: { id: parent.id, draftAt: { not: null } }, data: { draftAt: null, sentAt: new Date() } });
+  // The seller trying their own link (their address, "+test" or not): a test, out of every count
+  const test = await isWorkspaceAddress(parent.organizationId, email);
+  // A first real reader came through it: the shared link has gone out, it no longer waits to be sent
+  if (!test) {
+    await prisma.link.updateMany({ where: { id: parent.id, draftAt: { not: null } }, data: { draftAt: null, sentAt: new Date() } });
+  }
   return prisma.link.create({
     data: {
       slug: randomSlug(12),
@@ -67,6 +72,7 @@ export async function readerLinkFor(
       organizationId: parent.organizationId,
       createdById: parent.createdById,
       parentLinkId: parent.id,
+      isOnboardingTest: test,
       name: company ?? name ?? email,
       // They just gave their email: the gate is behind them
       requireEmail: true,

@@ -125,7 +125,7 @@ export default async function DocumentDetailPage({
         },
       },
       links: {
-        where: { archivedAt: null, draftAt: null },
+        where: { archivedAt: null, draftAt: null, isOnboardingTest: false },
         orderBy: { createdAt: "desc" },
         include: {
           prospects: {
@@ -133,7 +133,7 @@ export default async function DocumentDetailPage({
             take: 1,
           },
           engagementScore: true,
-          _count: { select: { views: true, readerLinks: true } },
+          _count: { select: { views: true, readerLinks: { where: { isOnboardingTest: false } } } },
         },
       },
     },
