@@ -24,6 +24,7 @@ import { extensionProbe } from "@/lib/extension-config";
 import { connectedClients } from "@/lib/extension-tokens";
 import { prisma } from "@/lib/db";
 import { isEmailConfigured } from "@/lib/email";
+import { gmailConnector, isMicrosoftMailboxConfigured } from "@/lib/mailboxes/config";
 import { dailyAllowance } from "@/lib/mailboxes/caps/allowance";
 import { sentToday } from "@/lib/mailboxes/connect";
 import type { DnsReport } from "@/lib/mailboxes/dns/checks";
@@ -64,7 +65,14 @@ const ADVANCED = [
   { id: "donnees" },
 ] as const;
 
-export default async function SettingsPage() {
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const query = await searchParams;
+  const one = (value: string | string[] | undefined) => (typeof value === "string" ? value : null);
+  const flag = one(query.mailbox);
   const { user, organization, role } = await requireWorkspace();
   const isManager = isManagerRole(role);
   const billing = planFor(organization);
@@ -128,7 +136,12 @@ export default async function SettingsPage() {
             </div>
             {mailboxes && (
               <div className="max-w-2xl">
-                <MailboxSettings mailboxes={mailboxes} maxCap={getEnv().MAILBOX_DAILY_CAP_MAX} />
+                <MailboxSettings
+                  mailboxes={mailboxes}
+                  maxCap={getEnv().MAILBOX_DAILY_CAP_MAX}
+                  availability={{ google: gmailConnector(), microsoft: isMicrosoftMailboxConfigured() }}
+                  flash={flag ? { flag, code: one(query.code) } : null}
+                />
               </div>
             )}
             <SettingsForm
@@ -234,6 +247,8 @@ async function getMailboxes(userId: string, organizationId: string) {
       sentDay: true,
       sentCount: true,
       dnsDetail: true,
+      provider: true,
+      connector: true,
     },
   });
   return rows.map((row) => ({
@@ -245,6 +260,8 @@ async function getMailboxes(userId: string, organizationId: string) {
     allowance: dailyAllowance(row, now, { max: maxCap }),
     sentToday: sentToday(row, now),
     dns: (row.dnsDetail as DnsReport | null) ?? null,
+    provider: row.provider,
+    connector: row.connector,
   }));
 }
 

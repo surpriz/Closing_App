@@ -15,6 +15,7 @@ import {
   saveMailboxCap,
   type MailboxFormState,
 } from "@/app/(dashboard)/settings/mailbox-actions";
+import { AutoRefresh } from "@/components/dashboard/auto-refresh";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,7 +41,23 @@ export type MailboxRow = {
   allowance: number;
   sentToday: number;
   dns: DnsReport | null;
+  provider: "GOOGLE" | "MICROSOFT" | "IMAP";
+  connector: "SMTP" | "GRAPH" | "UNIPILE" | "NYLAS";
 };
+
+export type ProviderAvailability = { google: "UNIPILE" | "NYLAS" | null; microsoft: boolean };
+
+/** Where the user comes back from an OAuth round trip: `?mailbox=<flag>&code=<ConnectResult code>`. */
+export type MailboxFlash = { flag: string; code: string | null };
+
+const FLASH_FLAGS = ["connected", "pending", "cancelled", "expired", "error", "exists", "limit", "failed"] as const;
+const FLASH_CODES = ["AUTH_REVOKED", "QUOTA", "RATE_LIMITED", "REJECTED", "TRANSIENT", "CONFIG", "exists", "limit"] as const;
+
+function startHref(provider: "GOOGLE" | "MICROSOFT", email: string, mailboxId?: string) {
+  const params = new URLSearchParams({ login_hint: email });
+  if (mailboxId) params.set("mailboxId", mailboxId);
+  return `/api/mailboxes/${provider === "GOOGLE" ? "gmail" : "microsoft"}/start?${params}`;
+}
 
 type DnsState = "ok" | "weak" | "missing" | "unknown";
 
@@ -191,6 +208,33 @@ function LastError({ value }: { value: string }) {
   );
 }
 
+function FlashBanner({ flash }: { flash: MailboxFlash }) {
+  const t = useTranslations("settings.mailbox");
+  const [pendingOver, setPendingOver] = useState(false);
+  const flag = (FLASH_FLAGS as readonly string[]).includes(flash.flag) ? flash.flag : null;
+  const waiting = flag === "pending" && !pendingOver;
+  useEffect(() => {
+    if (flag !== "pending") return;
+    const timer = setTimeout(() => setPendingOver(true), 60_000);
+    return () => clearTimeout(timer);
+  }, [flag]);
+  if (!flag) return null;
+  const code = (FLASH_CODES as readonly string[]).includes(flash.code ?? "") ? flash.code : null;
+  const isError = flag !== "connected" && flag !== "pending";
+  return (
+    <div
+      role={isError ? "alert" : "status"}
+      className={cn("border-b border-border px-5 py-3 text-small", isError && "text-destructive")}
+    >
+      {waiting && <AutoRefresh intervalMs={5000} />}
+      <p>{t(`flash.${flag}` as "flash.connected")}</p>
+      {flag === "error" && code && (
+        <p className="text-muted-foreground">{t(`errors.${code}` as "errors.CONFIG")}</p>
+      )}
+    </div>
+  );
+}
+
 function MailboxItem({
   mailbox,
   maxCap,
@@ -213,16 +257,27 @@ function MailboxItem({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <p className="truncate text-body font-medium">{mailbox.email}</p>
+          <Badge variant="outline">{t(`providers.${mailbox.provider}`)}</Badge>
           <Badge variant={mailbox.status === "ACTIVE" ? "success" : mailbox.status === "ERROR" ? "destructive" : "secondary"}>
             {t(`status.${mailbox.status}`)}
           </Badge>
         </div>
         <div className="flex items-center gap-1">
-          {mailbox.status === "ERROR" && (
-            <Button variant="outline" size="sm" onClick={() => onReconnect({ email: mailbox.email, mailboxId: mailbox.id })}>
-              {t("reconnect")}
-            </Button>
-          )}
+          {mailbox.status === "ERROR" &&
+            (mailbox.provider === "IMAP" ? (
+              <Button variant="outline" size="sm" onClick={() => onReconnect({ email: mailbox.email, mailboxId: mailbox.id })}>
+                {t("reconnect")}
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                render={<a href={startHref(mailbox.provider, mailbox.email, mailbox.id)} />}
+                nativeButton={false}
+              >
+                {t("reconnect")}
+              </Button>
+            ))}
           <DisconnectButton id={mailbox.id} />
         </div>
       </div>
@@ -301,7 +356,13 @@ function Field({ label, htmlFor, children }: { label: string; htmlFor: string; c
 }
 
 /** `prefill` (a mailbox to reconnect) arrives through a remount: the password is always asked again. */
-function ConnectForm({ prefill }: { prefill: { email: string; mailboxId: string } | null }) {
+function ConnectForm({
+  prefill,
+  availability,
+}: {
+  prefill: { email: string; mailboxId: string } | null;
+  availability: ProviderAvailability;
+}) {
   const t = useTranslations("settings.mailbox");
   const [form, setForm] = useState({ ...EMPTY_FORM, email: prefill?.email ?? "" });
   const formRef = useRef<HTMLFormElement>(null);
@@ -323,7 +384,11 @@ function ConnectForm({ prefill }: { prefill: { email: string; mailboxId: string 
   }, null);
 
   const looksLikeEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim());
-  const blocked = detection?.provider === "MICROSOFT";
+  const microsoft = detection?.provider === "MICROSOFT";
+  const googleOauth = detection?.provider === "GOOGLE" && !!availability.google;
+  const [showImap, setShowImap] = useState(false);
+  // Microsoft has no IMAP path; Google gets the app-password form only on request when OAuth is available.
+  const imapVisible = !microsoft && (!googleOauth || showImap);
 
   function detect() {
     const email = form.email.trim().toLowerCase();
@@ -405,14 +470,37 @@ function ConnectForm({ prefill }: { prefill: { email: string; mailboxId: string 
           <p className="text-muted-foreground">
             {t("detected", { provider: t(`providers.${detection.provider}`), domain: detection.domain })}
           </p>
-          {detection.provider === "GOOGLE" && (
+          {detection.provider === "GOOGLE" && !googleOauth && (
             <p className="border-l-2 border-foreground bg-muted px-3 py-2">{t("googleNotice")}</p>
           )}
-          {blocked && <p className="border-l-2 border-foreground bg-muted px-3 py-2">{t("microsoftNotice")}</p>}
+          {(microsoft || googleOauth) && (
+            <div className="space-y-2">
+              <Button
+                type="button"
+                disabled={!looksLikeEmail || (microsoft && !availability.microsoft)}
+                render={looksLikeEmail ? <a href={startHref(microsoft ? "MICROSOFT" : "GOOGLE", form.email.trim())} /> : undefined}
+                nativeButton={false}
+              >
+                {microsoft ? t("oauth.microsoft") : t("oauth.google")}
+              </Button>
+              {microsoft && !availability.microsoft && (
+                <p className="border-l-2 border-foreground bg-muted px-3 py-2">{t("microsoftNotice")}</p>
+              )}
+              {googleOauth && (
+                <p>
+                  <button type="button" className="underline" onClick={() => setShowImap((v) => !v)}>
+                    {t("oauth.appPassword")}
+                  </button>
+                </p>
+              )}
+            </div>
+          )}
         </div>
       )}
 
-      <fieldset disabled={blocked} className={cn("space-y-4", blocked && "opacity-50")}>
+      {imapVisible && (
+      <>
+      <fieldset className="space-y-4">
         <Field label={t("displayName")} htmlFor="mailbox-name">
           <Input
             id="mailbox-name"
@@ -490,16 +578,28 @@ function ConnectForm({ prefill }: { prefill: { email: string; mailboxId: string 
 
       <Button
         type="submit"
-        disabled={pending || blocked || !looksLikeEmail || !form.password || !form.imapHost || !form.smtpHost}
+        disabled={pending || !looksLikeEmail || !form.password || !form.imapHost || !form.smtpHost}
       >
         {pending ? t("connecting") : t("connect")}
       </Button>
+      </>
+      )}
     </form>
   );
 }
 
 /** "Boîte mail": the seller's own IMAP/SMTP mailboxes, their DNS health and daily cap. Rendered only for the beta. */
-export function MailboxSettings({ mailboxes, maxCap }: { mailboxes: MailboxRow[]; maxCap: number }) {
+export function MailboxSettings({
+  mailboxes,
+  maxCap,
+  availability,
+  flash,
+}: {
+  mailboxes: MailboxRow[];
+  maxCap: number;
+  availability: ProviderAvailability;
+  flash: MailboxFlash | null;
+}) {
   const t = useTranslations("settings.mailbox");
   const [reconnect, setReconnect] = useState<{ email: string; mailboxId: string; n: number } | null>(null);
   return (
@@ -509,6 +609,7 @@ export function MailboxSettings({ mailboxes, maxCap }: { mailboxes: MailboxRow[]
         <p className="text-body text-muted-foreground">{t("description")}</p>
       </div>
       <div className="border-y border-foreground bg-card">
+        {flash && <FlashBanner flash={flash} />}
         {mailboxes.length === 0 ? (
           <p className="px-5 py-3 text-small text-muted-foreground">{t("empty")}</p>
         ) : (
@@ -525,6 +626,7 @@ export function MailboxSettings({ mailboxes, maxCap }: { mailboxes: MailboxRow[]
         )}
         <ConnectForm
           key={reconnect?.n ?? 0}
+          availability={availability}
           prefill={reconnect ? { email: reconnect.email, mailboxId: reconnect.mailboxId } : null}
         />
       </div>

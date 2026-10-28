@@ -290,8 +290,8 @@
       "MICROSOFT": "Microsoft 365",
       "IMAP": "IMAP / SMTP"
     },
-    "googleNotice": "Gmail and Microsoft 365 will get a dedicated connection (coming soon). Meanwhile, Gmail accepts an app password.",
-    "microsoftNotice": "Microsoft 365 is not available yet. The form is disabled for now.",
+    "googleNotice": "Google sign-in is not available on this workspace. Use an app password instead.",
+    "microsoftNotice": "Microsoft 365 sign-in is not set up on this server yet, so this button is disabled.",
     "appPasswordHint": "Use an app password, not your usual Google password.",
     "displayName": "Sender name",
     "servers": "Servers",
@@ -329,6 +329,21 @@
       "REJECTED": "The provider rejected the connection.",
       "TRANSIENT": "Cannot reach the mail servers right now. Check the hosts and ports, or try again in a few minutes.",
       "CONFIG": "This setup is not supported. Check the servers and ports."
+    },
+    "oauth": {
+      "google": "Sign in with Google",
+      "microsoft": "Sign in with Microsoft",
+      "appPassword": "or with an app password"
+    },
+    "flash": {
+      "connected": "Mailbox connected.",
+      "pending": "Connecting. The mailbox shows up in a few seconds.",
+      "cancelled": "Connection cancelled. Nothing was changed.",
+      "expired": "The sign-in took too long or was already used. Start again.",
+      "error": "The mailbox could not be connected.",
+      "exists": "This mailbox is already connected in your workspace.",
+      "limit": "You reached the maximum number of mailboxes.",
+      "failed": "The connection failed. Try again in a few minutes."
     }
   }
 }

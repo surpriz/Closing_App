@@ -290,8 +290,8 @@
       "MICROSOFT": "Microsoft 365",
       "IMAP": "IMAP / SMTP"
     },
-    "googleNotice": "Gmail et Microsoft 365 passeront par une connexion dédiée (bientôt). En attendant, Gmail accepte un mot de passe d'application.",
-    "microsoftNotice": "Microsoft 365 n'est pas encore disponible. Le formulaire est désactivé pour l'instant.",
+    "googleNotice": "La connexion Google n'est pas disponible sur cet espace. Utilisez plutôt un mot de passe d'application.",
+    "microsoftNotice": "La connexion Microsoft 365 n'est pas encore configurée sur ce serveur, le bouton est donc désactivé.",
     "appPasswordHint": "Utilisez un mot de passe d'application, pas votre mot de passe Google habituel.",
     "displayName": "Nom d'expéditeur",
     "servers": "Serveurs",
@@ -329,6 +329,21 @@
       "REJECTED": "Le fournisseur a refusé la connexion.",
       "TRANSIENT": "Impossible de joindre les serveurs de messagerie pour le moment. Vérifiez les hôtes et les ports, ou réessayez dans quelques minutes.",
       "CONFIG": "Cette configuration n'est pas prise en charge. Vérifiez les serveurs et les ports."
+    },
+    "oauth": {
+      "google": "Se connecter avec Google",
+      "microsoft": "Se connecter avec Microsoft",
+      "appPassword": "ou avec un mot de passe d'application"
+    },
+    "flash": {
+      "connected": "Boîte connectée.",
+      "pending": "Connexion en cours. La boîte apparaît dans quelques secondes.",
+      "cancelled": "Connexion annulée. Rien n'a été modifié.",
+      "expired": "La connexion a pris trop de temps ou a déjà été utilisée. Recommencez.",
+      "error": "Impossible de connecter la boîte.",
+      "exists": "Cette boîte est déjà connectée dans votre espace.",
+      "limit": "Vous avez atteint le nombre maximum de boîtes.",
+      "failed": "La connexion a échoué. Réessayez dans quelques minutes."
     }
   }
 }
