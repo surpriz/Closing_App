@@ -176,7 +176,7 @@ export async function planEnrollments(
       if (count === 0) continue;
       if (enrollment.linkId) await releaseCampaignLink(enrollment.linkId);
       totals.finished++;
-    } else if (action.until) {
+    } else if (action.kind === "wait" && action.until) {
       // After the last step: nothing more will be sent, so nextSendAt stays empty (it is not the finish time). The write
       // still bumps updatedAt, which sends it to the back of the least-recently-touched line
       await prisma.campaignProspect.updateMany({

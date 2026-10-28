@@ -1,9 +1,11 @@
 import type { EnrollmentStatus } from "@/generated/prisma/enums";
-import { DAY_MS } from "@/lib/closing/constants";
+import { DAY_MS, HOUR_MS, WARM_READ_MIN_MS } from "@/lib/closing/constants";
 import { getLocalParts, zonedTimeToUtc, type BusinessHours } from "@/lib/closing/scheduling/business-hours";
 import { nextSendSlot } from "@/lib/closing/scheduling/send-slot";
 import { localDayKey } from "@/lib/mailboxes/caps/allowance";
 import { nextWindowSlots } from "@/lib/mailboxes/caps/window";
+
+import type { EnrollmentSignals } from "./signals";
 
 export const MAX_SENDS_PER_TICK_PER_MAILBOX = 10;
 export const MAX_ATTEMPTS = 3;
@@ -14,26 +16,93 @@ export const FINISH_AFTER_LAST_STEP_MS = 3 * DAY_MS;
 
 export type PlannerStep = { id: string; order: number; delayDays: number };
 export type PlannerEnrollment = { status: EnrollmentStatus; currentStep: number; lastSentAt: Date | null };
+export type ReadingSettings = {
+  minDelayAfterReadingHours: number;
+  maxFollowupsPer30Days: number;
+  minDaysBetweenFollowups: number;
+  hotPricingThresholdSec: number;
+  reactivateAfterDays: 5;
+};
+export const REACTIVATE_AFTER_DAYS = 5;
+
 export type NextAction =
   | { kind: "send_step"; step: PlannerStep; earliest: Date }
   | { kind: "wait"; until: Date | null }
-  | { kind: "finish" };
+  | { kind: "finish" }
+  // followup is null once the 30-day cap is reached: the enrollment still pauses and the seller is still alerted.
+  | { kind: "pause_alert"; reason: "call_moment" | "deep_read"; followup: "COLD_READ_PRICING" | "COLD_READ" | null }
+  | { kind: "ai_followup"; trigger: "COLD_REACTIVATE" }
+  | { kind: "note_forward" };
 
-/** Fixed-step table only (reading signals arrive with lot 3). Pure. */
-export function nextStepFor(input: { enrollment: PlannerEnrollment; steps: PlannerStep[]; now: Date }): NextAction {
-  const { enrollment, steps, now } = input;
+/**
+ * Fixed steps plus, when `signals` and `settings` are given, the reading-driven table (first matching row wins).
+ * Without signals the lot 2 table applies unchanged. Pure.
+ */
+export function nextStepFor(input: {
+  enrollment: PlannerEnrollment;
+  steps: PlannerStep[];
+  signals?: EnrollmentSignals;
+  settings?: ReadingSettings;
+  now: Date;
+}): NextAction {
+  const { enrollment, steps, signals, settings, now } = input;
   if (enrollment.status !== "QUEUED" && enrollment.status !== "ACTIVE") return { kind: "wait", until: null };
 
   const next = steps.find((step) => step.order === enrollment.currentStep + 1);
-  if (next) {
-    if (enrollment.currentStep === 0 || !enrollment.lastSentAt) return { kind: "send_step", step: next, earliest: now };
-    const due = enrollment.lastSentAt.getTime() + next.delayDays * DAY_MS;
-    return { kind: "send_step", step: next, earliest: new Date(Math.max(now.getTime(), due)) };
+  const read = signals && settings ? { signals, settings } : null;
+
+  // Never right after a read, never too soon after the last mail (steps or follow-ups).
+  let earliest = now;
+  if (read) {
+    const { lastReadAt, lastSentAt } = read.signals;
+    const afterRead = lastReadAt ? lastReadAt.getTime() + read.settings.minDelayAfterReadingHours * HOUR_MS : 0;
+    const afterSent = lastSentAt ? lastSentAt.getTime() + read.settings.minDaysBetweenFollowups * DAY_MS : 0;
+    earliest = new Date(Math.max(now.getTime(), afterRead, afterSent));
   }
 
-  if (!enrollment.lastSentAt) return { kind: "finish" };
+  if (read) {
+    const { signals: sig, settings: cfg } = read;
+    const capped = sig.sentLast30 >= cfg.maxFollowupsPer30Days;
+
+    if (sig.replied) return { kind: "finish" };
+    if (sig.forwardedTo.length > 0 && sig.lastSignal !== "forward") return { kind: "note_forward" };
+    if (sig.pricingMs >= cfg.hotPricingThresholdSec * 1000 && sig.lastSignal !== "pricing") {
+      return { kind: "pause_alert", reason: "call_moment", followup: capped ? null : "COLD_READ_PRICING" };
+    }
+    if ((sig.deepRead || sig.sessions >= 2) && sig.lastSignal !== "deep" && sig.lastSignal !== "pricing") {
+      return { kind: "pause_alert", reason: "deep_read", followup: capped ? null : "COLD_READ" };
+    }
+    // A skim does not move the sequence forward faster; the next step only waits out the reading delay.
+    // With no step left the later rows apply.
+    if (sig.opened && sig.readingMs < WARM_READ_MIN_MS && next) return sendStep(enrollment, next, earliest, now);
+    if (
+      sig.opened &&
+      sig.lastReadAt &&
+      sig.lastReadAt.getTime() < now.getTime() - REACTIVATE_AFTER_DAYS * DAY_MS &&
+      !next &&
+      !sig.reactivatedAt
+    ) {
+      // At the cap the reactivation is not generated, it just waits.
+      return capped ? { kind: "wait", until: earliest } : { kind: "ai_followup", trigger: "COLD_REACTIVATE" };
+    }
+  }
+
+  if (next) return sendStep(enrollment, next, earliest, now);
+
+  if (!enrollment.lastSentAt) return finishOrWait(signals);
   const until = new Date(enrollment.lastSentAt.getTime() + FINISH_AFTER_LAST_STEP_MS);
-  return until.getTime() <= now.getTime() ? { kind: "finish" } : { kind: "wait", until };
+  return until.getTime() <= now.getTime() ? finishOrWait(signals) : { kind: "wait", until };
+}
+
+function sendStep(enrollment: PlannerEnrollment, step: PlannerStep, earliest: Date, now: Date): NextAction {
+  if (enrollment.currentStep === 0 || !enrollment.lastSentAt) return { kind: "send_step", step, earliest };
+  const due = enrollment.lastSentAt.getTime() + step.delayDays * DAY_MS;
+  return { kind: "send_step", step, earliest: new Date(Math.max(now.getTime(), earliest.getTime(), due)) };
+}
+
+/** A sequence is not over while a campaign follow-up is still open (draft, scheduled). */
+function finishOrWait(signals: EnrollmentSignals | undefined): NextAction {
+  return signals?.openFollowup ? { kind: "wait", until: null } : { kind: "finish" };
 }
 
 export function businessHoursOf(settings: {

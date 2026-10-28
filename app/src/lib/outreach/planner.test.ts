@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { DAY_MS } from "@/lib/closing/constants";
+import type { EnrollmentStatus } from "@/generated/prisma/enums";
+import { DAY_MS, HOUR_MS, WARM_READ_MIN_MS } from "@/lib/closing/constants";
 import { getLocalParts } from "@/lib/closing/scheduling/business-hours";
 
 import {
@@ -16,7 +17,9 @@ import {
   stepSendAt,
   templateVarsOf,
   type PlannerStep,
+  type ReadingSettings,
 } from "./planner";
+import type { EnrollmentSignals } from "./signals";
 
 const hours = { startHour: 9, endHour: 18, days: [1, 2, 3, 4, 5] };
 const steps: PlannerStep[] = [
@@ -45,7 +48,7 @@ describe("nextStepFor", () => {
 
   it("waits 3 days after the last step, then finishes", () => {
     const lastSentAt = new Date(now.getTime() - DAY_MS);
-    const enrollment = { status: "ACTIVE" as const, currentStep: 2, lastSentAt };
+    const enrollment = { status: "ACTIVE" as EnrollmentStatus, currentStep: 2, lastSentAt };
     expect(nextStepFor({ enrollment, steps, now })).toEqual({
       kind: "wait",
       until: new Date(lastSentAt.getTime() + FINISH_AFTER_LAST_STEP_MS),
@@ -171,5 +174,175 @@ describe("templateVarsOf", () => {
   it("copes with missing or malformed custom vars", () => {
     expect(templateVarsOf({ ...enrollment, vars: null }, null).link).toBeNull();
     expect(templateVarsOf({ ...enrollment, vars: ["x"] }, null)).not.toHaveProperty("0");
+  });
+});
+
+describe("nextStepFor with reading signals", () => {
+  const settings: ReadingSettings = {
+    minDelayAfterReadingHours: 4,
+    maxFollowupsPer30Days: 3,
+    minDaysBetweenFollowups: 2,
+    hotPricingThresholdSec: 20,
+    reactivateAfterDays: 5,
+  };
+  const quiet: EnrollmentSignals = {
+    opened: false,
+    readingMs: 0,
+    pricingMs: 0,
+    sessions: 0,
+    deepRead: false,
+    lastReadAt: null,
+    readTags: [],
+    forwardedTo: [],
+    replied: false,
+    lastSentAt: null,
+    sentLast30: 0,
+    lastSignal: null,
+    reactivatedAt: null,
+    openFollowup: false,
+  };
+  const ago = (ms: number) => new Date(now.getTime() - ms);
+  const sent1 = { status: "ACTIVE" as EnrollmentStatus, currentStep: 1, lastSentAt: ago(10 * DAY_MS) };
+  const lastStepDone = { status: "ACTIVE" as EnrollmentStatus, currentStep: 2, lastSentAt: ago(10 * DAY_MS) };
+  const plan = (signals: Partial<EnrollmentSignals>, enrollment = sent1) =>
+    nextStepFor({ enrollment, steps, signals: { ...quiet, ...signals }, settings, now });
+
+  it("keeps the lot 2 table when signals are absent", () => {
+    expect(nextStepFor({ enrollment: sent1, steps, now })).toEqual({
+      kind: "send_step",
+      step: steps[1],
+      earliest: now,
+    });
+    expect(nextStepFor({ enrollment: sent1, steps, settings, now })).toEqual(nextStepFor({ enrollment: sent1, steps, now }));
+  });
+
+  it("matches the lot 2 table for a quiet enrollment", () => {
+    expect(plan({})).toEqual(nextStepFor({ enrollment: sent1, steps, now }));
+    expect(plan({}, lastStepDone)).toEqual({ kind: "finish" });
+  });
+
+  it("finishes when the prospect replied, over everything else", () => {
+    const loud = { replied: true, forwardedTo: ["a@b.co"], pricingMs: 99_000, deepRead: true, opened: true };
+    expect(plan(loud)).toEqual({ kind: "finish" });
+  });
+
+  it("notes a forward once", () => {
+    expect(plan({ forwardedTo: ["a@b.co"] })).toEqual({ kind: "note_forward" });
+    expect(plan({ forwardedTo: ["a@b.co"], lastSignal: "forward" })).not.toEqual({ kind: "note_forward" });
+  });
+
+  it("pauses on a pricing read (call moment), once", () => {
+    expect(plan({ pricingMs: 20_000, opened: true })).toEqual({
+      kind: "pause_alert",
+      reason: "call_moment",
+      followup: "COLD_READ_PRICING",
+    });
+    expect(plan({ pricingMs: 19_999, opened: true, readingMs: 60_000 })).toMatchObject({ kind: "send_step" });
+    expect(plan({ pricingMs: 50_000, opened: true, lastSignal: "pricing" })).not.toMatchObject({ kind: "pause_alert" });
+  });
+
+  it("pauses on a deep read or a second session, unless already signalled", () => {
+    const deep = { kind: "pause_alert", reason: "deep_read", followup: "COLD_READ" };
+    expect(plan({ deepRead: true, opened: true })).toEqual(deep);
+    expect(plan({ sessions: 2, opened: true })).toEqual(deep);
+    expect(plan({ sessions: 1, opened: true, readingMs: 60_000 })).toMatchObject({ kind: "send_step" });
+    expect(plan({ deepRead: true, opened: true, lastSignal: "deep" })).not.toMatchObject({ kind: "pause_alert" });
+    expect(plan({ deepRead: true, opened: true, lastSignal: "pricing" })).not.toMatchObject({ kind: "pause_alert" });
+  });
+
+  it("lets a forward signal still allow a deep read alert", () => {
+    expect(plan({ deepRead: true, opened: true, lastSignal: "forward" })).toMatchObject({ reason: "deep_read" });
+  });
+
+  it("ranks forward over pricing, pricing over deep read", () => {
+    const both = { pricingMs: 30_000, deepRead: true, opened: true };
+    expect(plan(both)).toMatchObject({ reason: "call_moment" });
+    expect(plan({ ...both, forwardedTo: ["a@b.co"] })).toEqual({ kind: "note_forward" });
+  });
+
+  it("does not fall back to a deep read once pricing was signalled", () => {
+    expect(plan({ pricingMs: 30_000, deepRead: true, opened: true, lastSignal: "pricing" })).toMatchObject({
+      kind: "send_step",
+    });
+  });
+
+  it("pushes the next step past the reading delay after a skim", () => {
+    const lastReadAt = ago(HOUR_MS);
+    const action = plan({ opened: true, readingMs: WARM_READ_MIN_MS - 1, lastReadAt });
+    expect(action).toEqual({ kind: "send_step", step: steps[1], earliest: new Date(lastReadAt.getTime() + 4 * HOUR_MS) });
+  });
+
+  it("does not move a skim's step when the reading delay has passed", () => {
+    const action = plan({ opened: true, readingMs: 1_000, lastReadAt: ago(5 * HOUR_MS) });
+    expect(action).toEqual({ kind: "send_step", step: steps[1], earliest: now });
+  });
+
+  it("also holds the next step back after a warm read", () => {
+    const lastReadAt = ago(HOUR_MS);
+    const action = plan({ opened: true, readingMs: 60_000, lastReadAt });
+    expect(action).toMatchObject({ kind: "send_step", earliest: new Date(lastReadAt.getTime() + 4 * HOUR_MS) });
+  });
+
+  it("computes earliest as the max of now, read delay and the gap since the last mail", () => {
+    const enrollment = { status: "ACTIVE" as EnrollmentStatus, currentStep: 1, lastSentAt: ago(DAY_MS) };
+    // due by delayDays: lastSent + 3d; the gap rule (lastSent + 2d) is earlier, the fixed delay wins
+    const byDelay = plan({ lastSentAt: ago(DAY_MS) }, enrollment);
+    expect(byDelay).toMatchObject({ earliest: new Date(enrollment.lastSentAt.getTime() + 3 * DAY_MS) });
+    const stepsFast: PlannerStep[] = [steps[0], { id: "s2", order: 2, delayDays: 0 }];
+    const byGap = nextStepFor({ enrollment, steps: stepsFast, signals: { ...quiet, lastSentAt: ago(DAY_MS) }, settings, now });
+    expect(byGap).toMatchObject({ earliest: new Date(ago(DAY_MS).getTime() + 2 * DAY_MS) });
+    const byRead = nextStepFor({
+      enrollment,
+      steps: stepsFast,
+      signals: { ...quiet, lastSentAt: ago(DAY_MS), opened: true, readingMs: 60_000, lastReadAt: ago(0) },
+      settings: { ...settings, minDaysBetweenFollowups: 0 },
+      now,
+    });
+    expect(byRead).toMatchObject({ earliest: new Date(now.getTime() + 4 * HOUR_MS) });
+  });
+
+  it("reactivates a cold read once, when nothing is left to send", () => {
+    const cold = { opened: true, readingMs: 60_000, lastReadAt: ago(6 * DAY_MS) };
+    expect(plan(cold, lastStepDone)).toEqual({ kind: "ai_followup", trigger: "COLD_REACTIVATE" });
+    expect(plan({ ...cold, reactivatedAt: ago(DAY_MS) }, lastStepDone)).toEqual({ kind: "finish" });
+    expect(plan({ ...cold, lastReadAt: ago(4 * DAY_MS) }, lastStepDone)).toEqual({ kind: "finish" });
+    expect(plan(cold, sent1)).toMatchObject({ kind: "send_step" });
+  });
+
+  it("at the 30-day cap, pause_alert drops its follow-up but still pauses", () => {
+    expect(plan({ pricingMs: 30_000, opened: true, sentLast30: 3 })).toEqual({
+      kind: "pause_alert",
+      reason: "call_moment",
+      followup: null,
+    });
+    expect(plan({ deepRead: true, opened: true, sentLast30: 3 })).toEqual({
+      kind: "pause_alert",
+      reason: "deep_read",
+      followup: null,
+    });
+    expect(plan({ deepRead: true, opened: true, sentLast30: 2 })).toMatchObject({ followup: "COLD_READ" });
+  });
+
+  it("at the 30-day cap, ai_followup becomes a wait until earliest", () => {
+    const lastSentAt = ago(HOUR_MS);
+    const cold = { opened: true, readingMs: 60_000, lastReadAt: ago(6 * DAY_MS), sentLast30: 3, lastSentAt };
+    expect(plan(cold, lastStepDone)).toEqual({ kind: "wait", until: new Date(lastSentAt.getTime() + 2 * DAY_MS) });
+  });
+
+  it("does not finish while a campaign follow-up is open", () => {
+    expect(plan({ openFollowup: true }, lastStepDone)).toEqual({ kind: "wait", until: null });
+    const justSent = { ...lastStepDone, lastSentAt: ago(4 * DAY_MS) };
+    expect(plan({ openFollowup: true }, justSent)).toEqual({ kind: "wait", until: null });
+    expect(plan({ openFollowup: false }, justSent)).toEqual({ kind: "finish" });
+  });
+
+  it("still waits out the finish delay after the last step", () => {
+    const fresh = { ...lastStepDone, lastSentAt: ago(DAY_MS) };
+    expect(plan({}, fresh)).toEqual({ kind: "wait", until: new Date(fresh.lastSentAt.getTime() + FINISH_AFTER_LAST_STEP_MS) });
+  });
+
+  it("does nothing for a paused enrollment, whatever the signals", () => {
+    const paused = { ...sent1, status: "PAUSED" as EnrollmentStatus };
+    expect(plan({ pricingMs: 99_000, opened: true }, paused)).toEqual({ kind: "wait", until: null });
   });
 });
