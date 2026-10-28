@@ -10,6 +10,7 @@ const db = vi.hoisted(() => ({
   messageFindMany: vi.fn(),
   followupCount: vi.fn(),
   followupUpdateMany: vi.fn(),
+  followupFindMany: vi.fn(),
   prospectFindFirst: vi.fn(),
   queryRaw: vi.fn(),
 }));
@@ -24,7 +25,7 @@ vi.mock("@/lib/db", () => ({
     documentView: { findMany: db.viewFindMany },
     linkForward: { findMany: db.forwardFindMany },
     campaignMessage: { findMany: db.messageFindMany },
-    followup: { count: db.followupCount, updateMany: db.followupUpdateMany },
+    followup: { count: db.followupCount, updateMany: db.followupUpdateMany, findMany: db.followupFindMany },
     prospect: { findFirst: db.prospectFindFirst },
     $queryRaw: db.queryRaw,
   },
@@ -142,6 +143,7 @@ beforeEach(() => {
   queueFollowup.mockResolvedValue("f1");
   notifySeller.mockResolvedValue(true);
   db.followupUpdateMany.mockResolvedValue({ count: 1 });
+  db.followupFindMany.mockResolvedValue([{ trigger: "COLD_READ" }]);
   scheduleStepMessage.mockResolvedValue({ id: "m9" });
 });
 
@@ -286,6 +288,22 @@ describe("evaluateEnrollmentReading", () => {
       data: { status: "CANCELLED", cancelledAt: now, error: "Replaced by a newer analysis" },
     });
     expect(queueFollowup.mock.calls[0][0]).toMatchObject({ trigger: "COLD_READ_PRICING" });
+    expect(updatesOf()[0]).toEqual({
+      where: { id: "e1", status: "PAUSED" },
+      data: { lastSignal: "pricing", pausedReason: "call_moment" },
+    });
+  });
+
+  it("no upgrade when the open follow-up already is the pricing one: it stays, nothing is cancelled", async () => {
+    enrollment.status = "PAUSED";
+    enrollment.pausedReason = "deep_read";
+    enrollment.lastSignal = "deep";
+    db.followupCount.mockResolvedValue(1);
+    db.followupFindMany.mockResolvedValue([{ trigger: "COLD_READ_PRICING" }]);
+    readingOfLink.mockResolvedValue({ readingMs: 90_000, pricingMs: 45_000, tags: [] });
+    await evaluateEnrollmentReading("l1", now);
+    expect(db.followupUpdateMany).not.toHaveBeenCalled();
+    expect(queueFollowup).not.toHaveBeenCalled();
     expect(updatesOf()[0]).toEqual({
       where: { id: "e1", status: "PAUSED" },
       data: { lastSignal: "pricing", pausedReason: "call_moment" },

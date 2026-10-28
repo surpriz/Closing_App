@@ -293,9 +293,12 @@ describe("sendCampaignFollowup", () => {
     db.campaignMessage.findUnique.mockResolvedValue({ status: "CANCELLED" });
     expect(await sendCampaignFollowup("f1", now, { connector: () => fakeConnector() as never })).toBe("sent");
     expect(db.$transaction).toHaveBeenCalledTimes(1);
-    expect(db.campaignMessage.findUnique).toHaveBeenCalledWith({ where: { dedupeKey: "cold:e1:s2" }, select: { status: true } });
+    expect(db.campaignMessage.findUnique).toHaveBeenCalledWith({
+      where: { dedupeKey: "cold:e1:s2" },
+      select: { status: true, messageId: true },
+    });
     const reopen = db.campaignMessage.updateMany.mock.calls.find(([arg]) => arg.where.dedupeKey === "cold:e1:s2")![0];
-    expect(reopen.where).toEqual({ dedupeKey: "cold:e1:s2", status: { in: ["CANCELLED", "FAILED"] } });
+    expect(reopen.where).toEqual({ dedupeKey: "cold:e1:s2", OR: [{ status: "CANCELLED" }, { status: "FAILED", messageId: null }] });
     expect(reopen.data).toMatchObject({ status: "SCHEDULED", attempts: 0, messageId: null, sendingAt: null, error: null, mailboxId: "mb1" });
     // minDaysBetweenFollowups (3) is longer than the step's delay (2): it wins
     expect(reopen.data.scheduledFor.getTime()).toBeGreaterThanOrEqual(now.getTime() + 3 * 86_400_000);
@@ -303,6 +306,23 @@ describe("sendCampaignFollowup", () => {
       where: { id: "e1", status: "ACTIVE" },
       data: { nextSendAt: reopen.data.scheduledFor },
     });
+  });
+
+  it("re-opens a FAILED step that never got a Message-ID, never one that may have left", async () => {
+    db.campaignProspect.findUnique.mockResolvedValueOnce(enrollmentRow()).mockResolvedValueOnce({ status: "ACTIVE" });
+    db.campaignMessage.findUnique.mockResolvedValue({ status: "FAILED", messageId: null });
+    await sendCampaignFollowup("f1", now, { connector: () => fakeConnector() as never });
+    expect(db.campaignMessage.updateMany.mock.calls.some(([arg]) => arg.where.dedupeKey === "cold:e1:s2")).toBe(true);
+
+    db.campaignMessage.updateMany.mockClear();
+    db.followup.findUnique.mockResolvedValue(followup());
+    db.campaignProspect.findUnique.mockResolvedValueOnce(enrollmentRow()).mockResolvedValueOnce({ status: "ACTIVE" });
+    db.campaignMessage.findUnique.mockResolvedValue({ status: "FAILED", messageId: "<maybe-left@x>" });
+    db.campaignProspect.updateMany.mockClear();
+    await sendCampaignFollowup("f1", now, { connector: () => fakeConnector() as never });
+    expect(db.campaignMessage.updateMany.mock.calls.some(([arg]) => arg.where.dedupeKey === "cold:e1:s2")).toBe(false);
+    // Resumed all the same, but no nextSendAt for a step that is not planned
+    expect(db.campaignProspect.updateMany.mock.calls.some(([arg]) => "nextSendAt" in arg.data)).toBe(false);
   });
 
   it("moves a step still SCHEDULED, creates a missing one, and leaves a stopped enrollment's step alone", async () => {

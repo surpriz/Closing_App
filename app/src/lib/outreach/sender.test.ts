@@ -185,8 +185,9 @@ describe("sendDueMessages, success", () => {
     const result = await sendDueMessages(now, {}, deps);
 
     expect(calls).toEqual(["reserve", "suppression", "counter", "mark", "send"]);
+    // Still due at reservation time: a row pushed to later since the candidate list was read is not taken
     expect(messageUpdateMany).toHaveBeenCalledWith({
-      where: { id: "m1", status: "SCHEDULED" },
+      where: { id: "m1", status: "SCHEDULED", scheduledFor: { lte: now } },
       data: { status: "SENDING", sendingAt: now, attempts: { increment: 1 } },
     });
     expect(reserveSend).toHaveBeenCalledWith("mb1", "2026-11-18", 30);

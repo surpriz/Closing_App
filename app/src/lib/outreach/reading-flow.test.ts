@@ -40,7 +40,10 @@ const db = vi.hoisted(() => {
       throw new Error(`op ${op}`);
     });
   };
-  const matches = (row: Row, where: Where = {}) => Object.entries(where).every(([key, cond]) => matchValue(row[key], cond));
+  const matches = (row: Row, where: Where = {}): boolean =>
+    Object.entries(where).every(([key, cond]) =>
+      key === "OR" ? (cond as Where[]).some((branch) => matches(row, branch)) : matchValue(row[key], cond),
+    );
   const apply = (row: Row, data: Row) => {
     for (const [key, value] of Object.entries(data)) {
       if (isObject(value) && "increment" in value) row[key] = (row[key] as number) + (value.increment as number);

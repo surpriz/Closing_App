@@ -200,7 +200,15 @@ export async function evaluateEnrollmentReading(linkId: string, now: Date): Prom
     // One AI follow-up at a time: a pricing read only replaces the "deep read" one that is still open. Both effects
     // deduplicated means this reading was already acted on: the pause stays, it matches the alert already sent.
     if (followup) {
-      const upgrade = followup === "COLD_READ_PRICING" && enrollment.lastSignal === "deep";
+      let upgrade = followup === "COLD_READ_PRICING" && enrollment.lastSignal === "deep";
+      if (upgrade && signals.openFollowup) {
+        // The open one may already be the pricing follow-up (its dedupe key would refuse a second): then it stays
+        const open = await prisma.followup.findMany({
+          where: { campaignProspectId: enrollment.id, status: { in: [...OPEN_FOLLOWUP_STATUSES] } },
+          select: { trigger: true },
+        });
+        upgrade = !open.some((row) => row.trigger === "COLD_READ_PRICING");
+      }
       if (!signals.openFollowup) {
         await queueRead(followup, "next-morning", lastSignal);
       } else if (upgrade) {

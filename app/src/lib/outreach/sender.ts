@@ -203,8 +203,9 @@ export async function sendDueMessages(
       if (Date.now() - startedAt >= budgetMs) return totals;
       // Real clock, not the tick's `now`: the lease must tell two overlapping ticks apart
       const reservedAt = new Date();
+      // Still due: a row pushed to later since the candidates were read (E9, cap, retry) is not taken from a stale list
       const reserved = await prisma.campaignMessage.updateMany({
-        where: { id: candidate.id, status: "SCHEDULED" },
+        where: { id: candidate.id, status: "SCHEDULED", scheduledFor: { lte: now } },
         data: { status: "SENDING", sendingAt: reservedAt, attempts: { increment: 1 } },
       });
       if (reserved.count === 0) continue;

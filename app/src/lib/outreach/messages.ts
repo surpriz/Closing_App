@@ -113,14 +113,14 @@ function stepMessageData({ enrollment, step, campaignId, mailboxId, scheduledFor
 }
 
 /**
- * Plans a step again at `scheduledFor`, inside the caller's transaction: a SCHEDULED row is moved, a CANCELLED or FAILED
- * one (dropped while the enrollment was paused) is re-opened from `mailboxId`, a missing one is created. Looked up first
+ * Plans a step again at `scheduledFor`, inside the caller's transaction: a SCHEDULED row is moved, a CANCELLED one, or a
+ * FAILED one that never got a Message-ID (dropped while the enrollment was paused), is re-opened from `mailboxId`, a missing one is created. Looked up first
  * rather than create-and-catch, since a unique violation would abort the transaction. False when a row is under way or
  * already sent: nothing to plan.
  */
 export async function replanStepMessage(db: Prisma.TransactionClient, input: StepMessageInput): Promise<boolean> {
   const dedupeKey = dedupeKeyOf(input.enrollment.id, input.step.id);
-  const existing = await db.campaignMessage.findUnique({ where: { dedupeKey }, select: { status: true } });
+  const existing = await db.campaignMessage.findUnique({ where: { dedupeKey }, select: { status: true, messageId: true } });
   if (!existing) {
     await db.campaignMessage.create({ data: stepMessageData(input), select: { id: true } });
     return true;
@@ -132,9 +132,10 @@ export async function replanStepMessage(db: Prisma.TransactionClient, input: Ste
     });
     return count > 0;
   }
-  if (existing.status === "CANCELLED" || existing.status === "FAILED") {
+  // A FAILED row with a Message-ID may have left (interrupted mid-send): never re-opened here, the seller decides
+  if (existing.status === "CANCELLED" || (existing.status === "FAILED" && existing.messageId === null)) {
     const { count } = await db.campaignMessage.updateMany({
-      where: { dedupeKey, status: { in: ["CANCELLED", "FAILED"] } },
+      where: { dedupeKey, OR: [{ status: "CANCELLED" }, { status: "FAILED", messageId: null }] },
       data: {
         status: "SCHEDULED",
         scheduledFor: input.scheduledFor,
