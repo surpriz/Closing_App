@@ -21,6 +21,16 @@ vi.mock("@/lib/db", () => ({
   },
 }));
 vi.mock("@/lib/env", () => ({ getEnv: () => ({ MAILBOX_DAILY_CAP_DEFAULT: 30, MAILBOX_DAILY_CAP_MAX: 50 }) }));
+class PlanLimitError extends Error {
+  readonly reason = "mailbox";
+}
+vi.mock("@/lib/billing/workspace-plan", () => ({ PlanLimitError }));
+const assertCanConnect = vi.fn();
+const syncQuantity = vi.fn();
+vi.mock("@/lib/billing/mailboxes", () => ({
+  assertCanConnectMailbox: (...a: unknown[]) => assertCanConnect(...a),
+  syncMailboxQuantity: (...a: unknown[]) => syncQuantity(...a),
+}));
 const verify = vi.fn();
 vi.mock("./imap", () => ({ imapConnector: () => ({ verify: () => verify() }) }));
 const encode = vi.fn((c: unknown) => `enc:${(c as { kind: string }).kind}`);
@@ -66,6 +76,8 @@ beforeEach(() => {
   db.findUnique.mockResolvedValue(null);
   db.count.mockResolvedValue(0);
   db.upsert.mockResolvedValue({ id: "mb1" });
+  assertCanConnect.mockResolvedValue(undefined);
+  syncQuantity.mockResolvedValue("unchanged");
   verify.mockResolvedValue({ ok: true, address: "jean@acme.fr", displayName: "Jean" });
 });
 
@@ -87,6 +99,34 @@ describe("connectImapMailbox", () => {
     const { update } = db.upsert.mock.calls[0][0];
     expect(update).toMatchObject({ status: "ACTIVE", lastError: null, syncErrorCount: 0, userId: "u1" });
     expect(update).not.toHaveProperty("rampStartedAt");
+  });
+
+  it("refuses a workspace whose plan has no mailboxes before verifying anything", async () => {
+    assertCanConnect.mockRejectedValue(new PlanLimitError("plan_limit:mailbox"));
+    const res = await connectImapMailbox(input, { resolver, now });
+    expect(res).toMatchObject({ ok: false, code: "plan" });
+    expect(assertCanConnect).toHaveBeenCalledWith("org1");
+    expect(verify).not.toHaveBeenCalled();
+    expect(db.upsert).not.toHaveBeenCalled();
+    expect(syncQuantity).not.toHaveBeenCalled();
+  });
+
+  it("does not plan-check the owner reconnecting a mailbox in ERROR", async () => {
+    assertCanConnect.mockRejectedValue(new PlanLimitError("plan_limit:mailbox"));
+    db.findUnique.mockResolvedValue({ id: "mb1", status: "ERROR", userId: "u1", disconnectedAt: null });
+    const res = await connectImapMailbox(input, { resolver, now });
+    expect(res).toMatchObject({ ok: true });
+    expect(assertCanConnect).not.toHaveBeenCalled();
+  });
+
+  it("syncs the billed quantity after a connection, and a failing sync does not break it", async () => {
+    syncQuantity.mockRejectedValue(new Error("stripe down"));
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const res = await connectImapMailbox(input, { resolver, now });
+    expect(res).toMatchObject({ ok: true, mailboxId: "mb1" });
+    expect(syncQuantity).toHaveBeenCalledWith("org1");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    spy.mockRestore();
   });
 
   it("keeps refusing a mailbox in ERROR that belongs to another member", async () => {
@@ -249,6 +289,13 @@ describe("disconnectMailbox", () => {
     const args = db.updateMany.mock.calls[0][0];
     expect(args.where).toMatchObject({ id: "mb1", organizationId: "org1", userId: "u1" });
     expect(args.data).toMatchObject({ status: "DISCONNECTED", credentials: "", disconnectedAt: now });
+    expect(syncQuantity).toHaveBeenCalledWith("org1");
+  });
+
+  it("does not sync when nothing was disconnected", async () => {
+    db.updateMany.mockResolvedValue({ count: 0 });
+    expect(await disconnectMailbox("org1", "u1", "mb1", now)).toBe(false);
+    expect(syncQuantity).not.toHaveBeenCalled();
   });
 });
 

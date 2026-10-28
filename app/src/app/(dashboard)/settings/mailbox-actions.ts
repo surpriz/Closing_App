@@ -6,6 +6,7 @@ import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { logAudit } from "@/lib/audit";
+import { upgradePrompt, type UpgradePrompt } from "@/lib/billing/workspace-plan";
 import { getSellerPrefs, sellerTimezone } from "@/lib/closing/notify/preferences";
 import { dkimProbeRelayAddress } from "@/lib/closing/replies/inbound";
 import { prisma } from "@/lib/db";
@@ -21,7 +22,7 @@ import { decodeCredentials } from "@/lib/mailboxes/credentials";
 import { requireOutreach } from "@/lib/outreach/flag";
 import { consumeLimit } from "@/lib/rate-limit";
 
-export type MailboxFormState = { ok: true } | { error: string } | null;
+export type MailboxFormState = { ok: true } | { error: string } | UpgradePrompt | null;
 
 const emailSchema = z.string().trim().toLowerCase().pipe(z.email().max(254));
 const hostSchema = z.string().trim().min(1).max(253);
@@ -104,7 +105,7 @@ export async function connectMailbox(_prev: MailboxFormState, formData: FormData
     password: v.password,
     user: v.user || undefined,
   });
-  if (!result.ok) return { error: t(result.code) };
+  if (!result.ok) return result.code === "plan" ? await upgradePrompt("mailbox") : { error: t(result.code) };
 
   await logAudit({
     organizationId: organization.id,

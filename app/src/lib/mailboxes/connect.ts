@@ -1,5 +1,7 @@
 import type { Prisma } from "@/generated/prisma/client";
 import type { MailboxConnector as MailboxConnectorKind, MailboxProvider } from "@/generated/prisma/enums";
+import { assertCanConnectMailbox, syncMailboxQuantity } from "@/lib/billing/mailboxes";
+import { PlanLimitError } from "@/lib/billing/workspace-plan";
 import { prisma } from "@/lib/db";
 import { getEnv } from "@/lib/env";
 
@@ -115,7 +117,7 @@ export type ConnectInput = {
 
 export type ConnectResult =
   | { ok: true; mailboxId: string; dns: DnsReport }
-  | { ok: false; code: MailboxErrorCode | "exists" | "limit"; message: string };
+  | { ok: false; code: MailboxErrorCode | "exists" | "limit" | "plan"; message: string };
 
 type SharedConnect = {
   organizationId: string;
@@ -131,6 +133,11 @@ type SharedConnect = {
   /** Provider the DNS report is read for: IMAP mailboxes are checked against what the MX says (SPF includes, DKIM selectors) */
   reportProvider: (detected: { provider: MailboxProvider }) => MailboxProvider;
 };
+
+/** Brings the Stripe mailbox item to the new count: never blocks, never throws into the caller. */
+function syncBilledMailboxes(organizationId: string) {
+  syncMailboxQuantity(organizationId).catch((error) => console.error("[mailboxes] billing sync failed", organizationId, error));
+}
 
 /** The guards, verification, DNS report and upsert both the IMAP and the OAuth paths share. */
 async function connectMailbox(
@@ -152,8 +159,14 @@ async function connectMailbox(
   if (existing && (LIVE as readonly string[]).includes(existing.status) && !reconnecting) {
     return { ok: false, code: "exists", message: "mailbox already connected" };
   }
-  // A reconnect replaces a mailbox that already counts, so only new ones hit the per-member cap
+  // A reconnect replaces a mailbox that already counts, so only new ones hit the plan guard and the per-member cap
   if (!reconnecting) {
+    try {
+      await assertCanConnectMailbox(input.organizationId);
+    } catch (error) {
+      if (error instanceof PlanLimitError) return { ok: false, code: "plan", message: "plan does not include mailboxes" };
+      throw error;
+    }
     const live = await prisma.mailbox.count({
       where: { organizationId: input.organizationId, userId: input.userId, status: { in: [...LIVE] } },
     });
@@ -204,6 +217,7 @@ async function connectMailbox(
     },
     select: { id: true },
   });
+  syncBilledMailboxes(input.organizationId);
   return { ok: true, mailboxId: mailbox.id, dns };
 }
 
@@ -345,6 +359,7 @@ export async function disconnectMailbox(organizationId: string, userId: string, 
     where: { id: mailboxId, organizationId, userId, status: { not: "DISCONNECTED" } },
     data: { status: "DISCONNECTED", disconnectedAt: now, credentials: "" },
   });
+  if (count > 0) syncBilledMailboxes(organizationId);
   return count > 0;
 }
 

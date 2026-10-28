@@ -6,6 +6,8 @@ vi.mock("@/lib/app-origin", () => ({ getPublicAppUrl: () => "https://app.test" }
 vi.mock("@/lib/outreach/flag", () => ({
   requireOutreach: async () => ({ user: { id: "u1" }, organization: { id: "o1" } }),
 }));
+const canUseMailboxes = vi.fn(async () => true);
+vi.mock("@/lib/billing/mailboxes", () => ({ canUseMailboxes: () => canUseMailboxes() }));
 const consumeLimit = vi.fn(async () => true);
 vi.mock("@/lib/rate-limit", () => ({ consumeLimit: () => consumeLimit(), tooManyRequests: () => new Response(null, { status: 429 }) }));
 const gmailConnector = vi.fn();
@@ -27,6 +29,7 @@ const get = (query = "") => {
 beforeEach(() => {
   vi.clearAllMocks();
   consumeLimit.mockResolvedValue(true);
+  canUseMailboxes.mockResolvedValue(true);
   gmailConnector.mockReturnValue("UNIPILE");
   createOauthState.mockResolvedValue({ id: "st1" });
   createHostedAuthLink.mockResolvedValue("https://hosted.test/x");
@@ -34,6 +37,20 @@ beforeEach(() => {
 });
 
 describe("gmail start", () => {
+  it("sends a workspace without the mailbox add-on back to settings, before any state", async () => {
+    canUseMailboxes.mockResolvedValue(false);
+    const res = await get();
+    expect(res.headers.get("location")).toBe("https://app.test/settings?mailbox=error&code=plan#boite");
+    expect(createOauthState).not.toHaveBeenCalled();
+    expect(consumeLimit).not.toHaveBeenCalled();
+  });
+
+  it("lets a reconnection through whatever the plan", async () => {
+    canUseMailboxes.mockResolvedValue(false);
+    await get("?mailboxId=mb1");
+    expect(canUseMailboxes).not.toHaveBeenCalled();
+  });
+
   it("starts a new Unipile connection", async () => {
     const res = await get();
     expect(res.headers.get("location")).toBe("https://hosted.test/x");

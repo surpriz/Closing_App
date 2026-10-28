@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { getPublicAppUrl } from "@/lib/app-origin";
+import { canUseMailboxes } from "@/lib/billing/mailboxes";
 import { prisma } from "@/lib/db";
 import { gmailConnector } from "@/lib/mailboxes/config";
 import { nylasAuthorizeUrl } from "@/lib/mailboxes/gmail/nylas";
@@ -17,9 +18,13 @@ const EMAIL = /^[^\s@<>"']{1,64}@[^\s@<>"']{1,255}$/;
  */
 export async function GET(request: NextRequest) {
   const { user, organization } = await requireOutreach();
+  const settings = `${getPublicAppUrl()}/settings`;
+  // A reconnect (?mailboxId=) keeps a mailbox that already counts: only a new one needs a plan with the add-on
+  if (!request.nextUrl.searchParams.has("mailboxId") && !(await canUseMailboxes(organization.id))) {
+    return NextResponse.redirect(`${settings}?mailbox=error&code=plan#boite`, 302);
+  }
   if (!(await consumeLimit("mailboxConnect", request.headers, user.id))) return tooManyRequests();
 
-  const settings = `${getPublicAppUrl()}/settings`;
   // Reached from a link in the settings page: a browser lands back there, never on raw JSON
   const connector = gmailConnector();
   if (!connector) return NextResponse.redirect(`${settings}?mailbox=error&code=gmail_unavailable#boite`, 302);

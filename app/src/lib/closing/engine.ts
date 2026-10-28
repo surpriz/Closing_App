@@ -1,3 +1,4 @@
+import { reconcileMailboxes } from "@/lib/billing/mailboxes";
 import { reconcileSeats } from "@/lib/billing/seats";
 import { sendBillingEmails } from "@/lib/billing/send-emails";
 import { ACTIVE_WORKSPACE } from "@/lib/closing/active-workspace";
@@ -88,6 +89,7 @@ export async function runClosingTick(now = new Date()) {
     return null;
   });
   await reconcileSeats().catch((error) => console.error("[closing:seats]", error));
+  await reconcileMailboxes().catch((error) => console.error("[closing:mailboxes]", error));
   // Cold email last: its sync and sends are the slow part, so they get what is left of the cron's 300 s, with margin
   const outreach = await runOutreachTick(now, { deadline: new Date(now.getTime() + OUTREACH_DEADLINE_MS) }).catch((error) => {
     console.error("[closing:outreach]", error);
