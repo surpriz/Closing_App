@@ -11,6 +11,7 @@ import { inBackground } from "@/lib/closing/background";
 import { prisma } from "@/lib/db";
 import { requireOutreach } from "@/lib/outreach/flag";
 import { runOutreachTick } from "@/lib/outreach/tick";
+import { isManagerRole } from "@/lib/roles";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("campaigns");
@@ -21,7 +22,7 @@ export const maxDuration = 300;
 const REFRESH_MS = 30_000;
 
 export default async function CampaignsPage() {
-  const { user, organization } = await requireOutreach();
+  const { user, organization, role } = await requireOutreach();
   const now = new Date();
   const [t, locale] = await Promise.all([getTranslations("campaigns"), getLocale()]);
 
@@ -40,7 +41,7 @@ export default async function CampaignsPage() {
         name: true,
         status: true,
         updatedAt: true,
-        mailbox: { select: { email: true } },
+        mailbox: { select: { id: true, email: true } },
       },
     }),
     prisma.mailbox.findMany({
@@ -89,8 +90,15 @@ export default async function CampaignsPage() {
     updatedAt: campaign.updatedAt,
   }));
 
-  const active = mailboxes.filter((mailbox) => mailbox.status === "ACTIVE");
-  const failing = mailboxes.filter((mailbox) => mailbox.status === "ERROR");
+  // A member binds their own mailboxes; managers any of the workspace's
+  const manager = isManagerRole(role);
+  const active = mailboxes.filter((mailbox) => mailbox.status === "ACTIVE" && (manager || mailbox.userId === user.id));
+  const failing = mailboxes.filter((mailbox) => mailbox.status === "ERROR" && mailbox.userId === user.id);
+  // A teammate's mailbox in error only matters here when a campaign of the list sends from it; the raw detail stays theirs
+  const usedMailboxIds = new Set(campaigns.map((campaign) => campaign.mailbox?.id));
+  const teammatesFailing = mailboxes
+    .filter((mailbox) => mailbox.status === "ERROR" && mailbox.userId !== user.id && usedMailboxIds.has(mailbox.id))
+    .map(({ email, lastError }) => ({ email, lastError: lastError ? `${lastError.split(":")[0]}:` : null }));
   const own = active.find((mailbox) => mailbox.userId === user.id);
   const uiLocale = locale as UiLocale;
 
@@ -109,7 +117,7 @@ export default async function CampaignsPage() {
         }
       />
       {active.length === 0 && <p className="text-small text-muted-foreground">{t("page.noMailboxHint")}</p>}
-      <MailboxBanner mailboxes={failing} hasActive={active.length > 0} />
+      <MailboxBanner mailboxes={[...failing, ...teammatesFailing]} hasActive={active.length > 0} />
 
       {rows.length ? (
         <Surface>

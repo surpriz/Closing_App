@@ -91,7 +91,11 @@ export function StepsEditor({
       for (const step of steps) {
         const text = `${step.subject ?? ""}\n${step.body}`;
         if (!step.body.trim()) continue;
-        if (!hintCache.current.has(text)) hintCache.current.set(text, await trackingHintAction(text));
+        if (!hintCache.current.has(text)) {
+          // A failed check only loses the live warning; the server revalidates on send anyway
+          const found = await trackingHintAction(text).catch(() => null);
+          hintCache.current.set(text, found);
+        }
         next[step.key] = hintCache.current.get(text) ?? null;
       }
       if (!cancelled) setHints(next);

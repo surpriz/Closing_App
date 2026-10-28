@@ -127,7 +127,9 @@
     "linkOnReply": "Send the link with my reply",
     "linkOnReplyHint": "When a prospect answers, the link is created and added to the reply you write.",
     "save": "Save settings",
-    "saving": "Saving…"
+    "saving": "Saving…",
+    "mailboxTeammate": "Sends from {email}, a teammate's mailbox.",
+    "documentLost": "The document of this campaign is no longer available. Choose another one; saving clears it."
   },
   "steps": {
     "title": "Steps",
@@ -198,10 +200,11 @@
     "submit": "Import",
     "importing": "Importing…",
     "errors": {
-      "tooBig": "This file is too big (2 MB at most).",
+      "tooBig": "This file is too big (900 KB at most).",
       "campaign_not_found": "This campaign no longer exists.",
       "empty": "No rows found. The first line must hold the column names.",
-      "read": "The file couldn't be read."
+      "read": "The file couldn't be read.",
+      "failed": "The import failed. The file may be too big or the connection dropped; try again."
     },
     "columnNames": {
       "email": "email",
@@ -261,8 +264,12 @@
       "document_missing": "document missing",
       "suppressed": "on the stop list",
       "archived": "campaign archived",
-      "missingVariable": "missing variable: {name}"
-    }
+      "missingVariable": "missing variable: {name}",
+      "interrupted": "send interrupted: check your Sent folder"
+    },
+    "resumeTitle": "Resume this prospect?",
+    "resumeInterrupted": "The last email to {email} was interrupted: it may have left already. Check your Sent folder before resuming, otherwise the prospect could receive it twice.",
+    "resumeConfirm": "Resume anyway"
   },
   "testTools": {
     "title": "Test tools",
@@ -273,5 +280,8 @@
     "days": "Days",
     "prospect": "Prospect",
     "apply": "Apply"
+  },
+  "detail": {
+    "readOnly": "A teammate created this campaign: you can read it but not change it."
   }
 }

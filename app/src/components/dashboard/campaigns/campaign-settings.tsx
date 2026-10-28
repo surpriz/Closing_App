@@ -36,7 +36,7 @@ export function CampaignSettings({
   /** ACTIVE mailboxes of the workspace: the only ones a campaign can send from. */
   mailboxes: { id: string; email: string }[];
   /** The mailbox the campaign points at today, whatever its state. */
-  currentMailbox: { email: string; status: string } | null;
+  currentMailbox: { email: string; status: string; teammate: boolean } | null;
   documents: { id: string; title: string }[];
   /** A saved step carries the link, so a document is needed to start. */
   stepCarriesLink: boolean;
@@ -47,7 +47,9 @@ export function CampaignSettings({
   const [mailbox, setMailbox] = useState<string>(selectable && mailboxId ? mailboxId : "");
   // Controlled: a form action resets uncontrolled fields once it returns
   const [title, setTitle] = useState(name);
-  const [docId, setDocId] = useState(documentId ?? NO_DOCUMENT);
+  // An archived or deleted document is no longer offered: saving then clears it rather than failing
+  const documentLost = documentId !== null && !documents.some((item) => item.id === documentId);
+  const [docId, setDocId] = useState(documentId && !documentLost ? documentId : NO_DOCUMENT);
   const [language, setLanguage] = useState(locale);
   const [linkOnReplyOn, setLinkOnReplyOn] = useState(linkOnReply);
 
@@ -72,6 +74,7 @@ export function CampaignSettings({
   ];
   const needsDocument = (stepCarriesLink || linkOnReplyOn) && docId === NO_DOCUMENT;
   const mailboxLost = !selectable && currentMailbox !== null;
+  const mailboxTeammate = selectable && currentMailbox?.teammate === true;
 
   return (
     <form action={formAction} className="grid gap-5 sm:grid-cols-2">
@@ -116,6 +119,9 @@ export function CampaignSettings({
             {t("mailboxInactive", { email: currentMailbox.email })}
           </p>
         )}
+        {mailboxTeammate && currentMailbox && (
+          <p className="text-small text-muted-foreground">{t("mailboxTeammate", { email: currentMailbox.email })}</p>
+        )}
         {!currentMailbox && <p className="text-small text-warning-foreground">{t("mailboxNone")}</p>}
       </div>
 
@@ -139,6 +145,7 @@ export function CampaignSettings({
             ))}
           </SelectContent>
         </Select>
+        {documentLost && <p className="text-small text-warning-foreground">{t("documentLost")}</p>}
         <p className="text-small text-muted-foreground">{t("documentNote")}</p>
         {needsDocument && <p className="text-small text-warning-foreground">{t("documentRequired")}</p>}
       </div>

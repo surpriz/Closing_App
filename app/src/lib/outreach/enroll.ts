@@ -1,6 +1,7 @@
 import { isSupportedLocale } from "@/lib/closing/constants";
 import { prisma } from "@/lib/db";
 
+import { type Actor, canEditCampaign } from "./campaigns";
 import {
   guessColumnMapping,
   MAX_IMPORT_ROWS,
@@ -106,13 +107,14 @@ export async function importProspects(input: {
   campaignId: string;
   csv: string;
   sellerTimezone: string;
+  actor: Actor;
   now?: Date;
 }): Promise<ImportSummary | { error: "campaign_not_found" | "empty" }> {
   const campaign = await prisma.campaign.findFirst({
     where: { id: input.campaignId, organizationId: input.organizationId, status: { not: "ARCHIVED" } },
-    select: { locale: true },
+    select: { locale: true, createdById: true },
   });
-  if (!campaign) return { error: "campaign_not_found" };
+  if (!campaign || !canEditCampaign(campaign, input.actor)) return { error: "campaign_not_found" };
 
   const parsed = parseCsv(input.csv);
   if (parsed.rows.length === 0) return { error: "empty" };
@@ -226,7 +228,17 @@ export async function stopEnrollment(
   return enrollment.count > 0;
 }
 
-export async function pauseEnrollment(organizationId: string, id: string, now: Date): Promise<boolean> {
+/** The enrollment belongs to the workspace and to a campaign the actor may edit. */
+async function editableEnrollment(organizationId: string, id: string, actor: Actor): Promise<boolean> {
+  const enrollment = await prisma.campaignProspect.findFirst({
+    where: { id, organizationId },
+    select: { campaign: { select: { createdById: true } } },
+  });
+  return enrollment !== null && canEditCampaign(enrollment.campaign, actor);
+}
+
+export async function pauseEnrollment(organizationId: string, id: string, now: Date, actor: Actor): Promise<boolean> {
+  if (!(await editableEnrollment(organizationId, id, actor))) return false;
   const { count } = await prisma.campaignProspect.updateMany({
     where: { id, organizationId, status: "ACTIVE" },
     data: { status: "PAUSED", pausedReason: "seller", pausedAt: now },
@@ -238,7 +250,8 @@ export async function pauseEnrollment(organizationId: string, id: string, now: D
  * Scheduled messages stay as they are: the sender re-checks business hours before each one. A step that failed or was
  * cancelled while the enrollment was paused is re-opened, otherwise the catch-up would pause it again at once.
  */
-export async function resumeEnrollment(organizationId: string, id: string, now: Date): Promise<boolean> {
+export async function resumeEnrollment(organizationId: string, id: string, now: Date, actor: Actor): Promise<boolean> {
+  if (!(await editableEnrollment(organizationId, id, actor))) return false;
   return prisma.$transaction(async (tx) => {
     const { count } = await tx.campaignProspect.updateMany({
       where: { id, organizationId, status: "PAUSED" },
@@ -260,8 +273,7 @@ export async function resumeEnrollment(organizationId: string, id: string, now: 
   });
 }
 
-export async function removeEnrollment(organizationId: string, id: string, now: Date): Promise<boolean> {
-  const own = await prisma.campaignProspect.findFirst({ where: { id, organizationId }, select: { id: true } });
-  if (!own) return false;
+export async function removeEnrollment(organizationId: string, id: string, now: Date, actor: Actor): Promise<boolean> {
+  if (!(await editableEnrollment(organizationId, id, actor))) return false;
   return stopEnrollment(id, "STOPPED", "seller", now);
 }

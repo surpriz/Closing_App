@@ -33,11 +33,14 @@ export function CampaignHeader({
   name,
   status,
   counts,
+  canEdit,
 }: {
   id: string;
   name: string;
   status: CampaignStatus;
   counts: CampaignCounts;
+  /** The viewer created the campaign or manages the workspace. */
+  canEdit: boolean;
 }) {
   const t = useTranslations("campaigns");
   const [pending, startTransition] = useTransition();
@@ -58,7 +61,7 @@ export function CampaignHeader({
       done?.();
     });
 
-  const canActivate = status === "DRAFT" || status === "PAUSED";
+  const canActivate = canEdit && (status === "DRAFT" || status === "PAUSED");
 
   return (
     <div className="space-y-4">
@@ -83,12 +86,12 @@ export function CampaignHeader({
                 {pending ? t("header.activating") : t("header.activate")}
               </Button>
             )}
-            {status === "ACTIVE" && (
+            {canEdit && status === "ACTIVE" && (
               <Button variant="outline" disabled={pending} onClick={() => run(pauseCampaignAction)}>
                 {pending ? t("header.pausing") : t("header.pause")}
               </Button>
             )}
-            {status !== "ARCHIVED" && (
+            {canEdit && status !== "ARCHIVED" && (
               <Button variant="ghost" disabled={pending} onClick={() => setArchiving(true)}>
                 {t("header.archive")}
               </Button>

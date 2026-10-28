@@ -127,7 +127,9 @@
     "linkOnReply": "Envoyer le lien avec ma réponse",
     "linkOnReplyHint": "Quand un prospect répond, le lien est créé et ajouté à la réponse que vous rédigez.",
     "save": "Enregistrer les réglages",
-    "saving": "Enregistrement…"
+    "saving": "Enregistrement…",
+    "mailboxTeammate": "Envoie depuis {email}, la boîte d'un collègue.",
+    "documentLost": "Le document de cette campagne n'est plus disponible. Choisissez-en un autre ; l'enregistrement le retire."
   },
   "steps": {
     "title": "Étapes",
@@ -198,10 +200,11 @@
     "submit": "Importer",
     "importing": "Import…",
     "errors": {
-      "tooBig": "Ce fichier est trop gros (2 Mo au maximum).",
+      "tooBig": "Ce fichier est trop gros (900 Ko au maximum).",
       "campaign_not_found": "Cette campagne n'existe plus.",
       "empty": "Aucune ligne trouvée. La première ligne doit contenir les noms de colonnes.",
-      "read": "Le fichier n'a pas pu être lu."
+      "read": "Le fichier n'a pas pu être lu.",
+      "failed": "L'import a échoué. Le fichier est peut-être trop gros ou la connexion a coupé ; réessayez."
     },
     "columnNames": {
       "email": "email",
@@ -261,8 +264,12 @@
       "document_missing": "document manquant",
       "suppressed": "sur la liste d'arrêt",
       "archived": "campagne archivée",
-      "missingVariable": "variable manquante : {name}"
-    }
+      "missingVariable": "variable manquante : {name}",
+      "interrupted": "envoi interrompu : vérifiez vos éléments envoyés"
+    },
+    "resumeTitle": "Reprendre ce prospect ?",
+    "resumeInterrupted": "Le dernier email à {email} a été interrompu : il est peut-être déjà parti. Vérifiez vos éléments envoyés avant de reprendre, sinon le prospect pourrait le recevoir deux fois.",
+    "resumeConfirm": "Reprendre quand même"
   },
   "testTools": {
     "title": "Outils de test",
@@ -273,5 +280,8 @@
     "days": "Jours",
     "prospect": "Prospect",
     "apply": "Appliquer"
+  },
+  "detail": {
+    "readOnly": "Cette campagne a été créée par un collègue : vous pouvez la consulter mais pas la modifier."
   }
 }

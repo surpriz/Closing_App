@@ -56,7 +56,7 @@ const STATUS_VARIANT = {
   STOPPED: "secondary",
 } as const;
 
-const KNOWN_REASONS = ["rejected", "send_failed", "plan_limit", "document_missing", "suppressed", "archived"] as const;
+const KNOWN_REASONS = ["rejected", "send_failed", "plan_limit", "document_missing", "suppressed", "archived", "interrupted"] as const;
 const REMOVABLE: EnrollmentStatus[] = ["QUEUED", "ACTIVE", "PAUSED"];
 
 export function EnrollmentsTable({
@@ -77,6 +77,7 @@ export function EnrollmentsTable({
   const te = useTranslations("campaigns.enrollments");
   const [filter, setFilter] = useState<"all" | EnrollmentStatus>("all");
   const [removing, setRemoving] = useState<EnrollmentRow | null>(null);
+  const [resuming, setResuming] = useState<EnrollmentRow | null>(null);
   const [pending, startTransition] = useTransition();
 
   const present = (Object.keys(STATUS_VARIANT) as EnrollmentStatus[]).filter((status) =>
@@ -167,7 +168,7 @@ export function EnrollmentsTable({
                       </Button>
                     )}
                     {!disabled && row.status === "PAUSED" && (
-                      <Button variant="ghost" size="sm" disabled={pending} onClick={() => run(resumeEnrollmentAction, row.id)}>
+                      <Button variant="ghost" size="sm" disabled={pending} onClick={() => (row.pausedReason === "interrupted" ? setResuming(row) : run(resumeEnrollmentAction, row.id))}>
                         {te("resume")}
                       </Button>
                     )}
@@ -184,6 +185,27 @@ export function EnrollmentsTable({
         </TableBody>
       </Table>
       {truncated && <p className="text-small text-muted-foreground">{te("truncated", { count: rows.length })}</p>}
+
+      {/* An interrupted send may have left the mail: the seller checks before it can go out a second time */}
+      <Dialog open={resuming !== null} onOpenChange={(open) => !open && setResuming(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{te("resumeTitle")}</DialogTitle>
+            <DialogDescription>{te("resumeInterrupted", { email: resuming?.email ?? "" })}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" disabled={pending} onClick={() => setResuming(null)}>
+              {te("cancel")}
+            </Button>
+            <Button
+              disabled={pending}
+              onClick={() => resuming && run(resumeEnrollmentAction, resuming.id, () => setResuming(null))}
+            >
+              {te("resumeConfirm")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={removing !== null} onOpenChange={(open) => !open && setRemoving(null)}>
         <DialogContent className="sm:max-w-sm">

@@ -9,20 +9,24 @@ import { findTrackingHint } from "@/lib/closing/ai/guard";
 import { getSellerPrefs, sellerTimezone } from "@/lib/closing/notify/preferences";
 import { prisma } from "@/lib/db";
 import {
+  type Actor,
   activateCampaign,
   archiveCampaign,
   CAMPAIGN_LOCALES,
+  canEditCampaign,
   createCampaign,
   pauseCampaign,
   saveSteps,
   updateCampaign,
 } from "@/lib/outreach/campaigns";
 import { importProspects, type ImportSummary, pauseEnrollment, removeEnrollment, resumeEnrollment } from "@/lib/outreach/enroll";
+import { MAX_IMPORT_BYTES } from "@/lib/outreach/csv";
 import { requireOutreach } from "@/lib/outreach/flag";
 import { sendTestMessage } from "@/lib/outreach/sender";
 import type { StepIssue } from "@/lib/outreach/steps";
 import { shiftEnrollmentBack, shiftMailboxRampBack } from "@/lib/outreach/testing";
 import { runOutreachTick } from "@/lib/outreach/tick";
+import { isManagerRole } from "@/lib/roles";
 import { testToolsEnabled } from "@/lib/test-tools";
 
 export type ActionResult = { ok: true; notice?: string } | { error: string };
@@ -35,9 +39,15 @@ const createSchema = z.object({
 
 const idSchema = z.string().min(1).max(64);
 
+/** Who is acting. Never taken from an argument: it comes from the session. */
+function actorOf(workspace: { user: { id: string }; role: string }): Actor {
+  return { userId: workspace.user.id, isManager: isManagerRole(workspace.role) };
+}
+
 /** Creates the draft and opens it: the steps and the import happen on the detail page. */
 export async function createCampaignAction(formData: FormData): Promise<{ error: string } | undefined> {
-  const { user, organization } = await requireOutreach();
+  const workspace = await requireOutreach();
+  const { user, organization } = workspace;
   const t = await getTranslations("campaigns");
 
   const parsed = createSchema.safeParse({
@@ -56,6 +66,7 @@ export async function createCampaignAction(formData: FormData): Promise<{ error:
     name: parsed.data.name,
     locale,
     mailboxId: parsed.data.mailboxId ?? null,
+    actor: actorOf(workspace),
   });
   revalidatePath("/campaigns");
   redirect(`/campaigns/${id}`);
@@ -67,32 +78,35 @@ function refresh(id: string) {
 }
 
 export async function activateCampaignAction(id: string): Promise<ActionResult> {
-  const { organization } = await requireOutreach();
+  const workspace = await requireOutreach();
+  const { organization } = workspace;
   const t = await getTranslations("campaigns.actions");
   if (!idSchema.safeParse(id).success) return { error: t("invalid") };
 
-  const result = await activateCampaign(organization.id, id);
+  const result = await activateCampaign(organization.id, id, actorOf(workspace));
   if (!result.ok) return { error: t(`issues.${result.issue}`) };
   refresh(id);
   return { ok: true, notice: t("activated") };
 }
 
 export async function pauseCampaignAction(id: string): Promise<ActionResult> {
-  const { organization } = await requireOutreach();
+  const workspace = await requireOutreach();
+  const { organization } = workspace;
   const t = await getTranslations("campaigns.actions");
   if (!idSchema.safeParse(id).success) return { error: t("invalid") };
 
-  if (!(await pauseCampaign(organization.id, id))) return { error: t("notFound") };
+  if (!(await pauseCampaign(organization.id, id, actorOf(workspace)))) return { error: t("notFound") };
   refresh(id);
   return { ok: true, notice: t("paused") };
 }
 
 export async function archiveCampaignAction(id: string): Promise<ActionResult> {
-  const { organization } = await requireOutreach();
+  const workspace = await requireOutreach();
+  const { organization } = workspace;
   const t = await getTranslations("campaigns.actions");
   if (!idSchema.safeParse(id).success) return { error: t("invalid") };
 
-  if (!(await archiveCampaign(organization.id, id))) return { error: t("notFound") };
+  if (!(await archiveCampaign(organization.id, id, actorOf(workspace)))) return { error: t("notFound") };
   refresh(id);
   return { ok: true, notice: t("archived") };
 }
@@ -106,8 +120,6 @@ export async function runOutreachTickAction(): Promise<string> {
   return JSON.stringify(summary);
 }
 
-const MAX_CSV_BYTES = 2 * 1024 * 1024;
-
 const updateSchema = z.object({
   name: z.string().trim().min(1).max(120),
   // Empty means "leave as is": a mailbox that is no longer ACTIVE cannot be re-saved, only replaced
@@ -117,7 +129,8 @@ const updateSchema = z.object({
 });
 
 export async function updateCampaignAction(id: string, formData: FormData): Promise<ActionResult> {
-  const { organization } = await requireOutreach();
+  const workspace = await requireOutreach();
+  const { organization } = workspace;
   const t = await getTranslations("campaigns.actions");
   if (!idSchema.safeParse(id).success) return { error: t("invalid") };
 
@@ -129,13 +142,18 @@ export async function updateCampaignAction(id: string, formData: FormData): Prom
   });
   if (!parsed.success) return { error: t("invalidSettings") };
 
-  const ok = await updateCampaign(organization.id, id, {
-    name: parsed.data.name,
-    locale: parsed.data.locale,
-    linkOnReply: formData.get("linkOnReply") === "on",
-    ...(parsed.data.mailboxId ? { mailboxId: parsed.data.mailboxId } : {}),
-    documentId: parsed.data.documentId || null,
-  });
+  const ok = await updateCampaign(
+    organization.id,
+    id,
+    {
+      name: parsed.data.name,
+      locale: parsed.data.locale,
+      linkOnReply: formData.get("linkOnReply") === "on",
+      ...(parsed.data.mailboxId ? { mailboxId: parsed.data.mailboxId } : {}),
+      documentId: parsed.data.documentId || null,
+    },
+    actorOf(workspace),
+  );
   if (!ok) return { error: t("settingsRefused") };
   refresh(id);
   return { ok: true, notice: t("settingsSaved") };
@@ -157,7 +175,8 @@ const stepsSchema = z
 export type SaveStepsResult = { ok: true; notice: string } | { error: string; issues?: string[] };
 
 export async function saveStepsAction(id: string, stepsJson: string): Promise<SaveStepsResult> {
-  const { organization } = await requireOutreach();
+  const workspace = await requireOutreach();
+  const { organization } = workspace;
   const t = await getTranslations("campaigns");
   if (!idSchema.safeParse(id).success) return { error: t("actions.invalid") };
 
@@ -170,7 +189,7 @@ export async function saveStepsAction(id: string, stepsJson: string): Promise<Sa
   const parsed = stepsSchema.safeParse(raw);
   if (!parsed.success) return { error: t("actions.invalid") };
 
-  const result = await saveSteps(organization.id, id, parsed.data);
+  const result = await saveSteps(organization.id, id, parsed.data, actorOf(workspace));
   if (!result.ok) {
     if (result.issues.length === 0) return { error: t("actions.notFound") };
     const label = (issue: StepIssue) => t(`steps.issues.${issue.code}`, { order: "order" in issue ? issue.order : 0 });
@@ -183,19 +202,21 @@ export async function saveStepsAction(id: string, stepsJson: string): Promise<Sa
 /** The editor warns while typing; the check lives server side because the guard pulls in the whole message catalog. */
 export async function trackingHintAction(text: string): Promise<string | null> {
   await requireOutreach();
-  return findTrackingHint(text.slice(0, 20_000));
+  const parsed = z.string().max(20_000).safeParse(text);
+  return parsed.success ? findTrackingHint(parsed.data) : null;
 }
 
 export async function importProspectsAction(
   id: string,
   formData: FormData,
 ): Promise<ImportSummary | { error: string }> {
-  const { user, organization } = await requireOutreach();
+  const workspace = await requireOutreach();
+  const { user, organization } = workspace;
   const t = await getTranslations("campaigns");
   if (!idSchema.safeParse(id).success) return { error: t("actions.invalid") };
 
   const csv = formData.get("csv")?.toString() ?? "";
-  if (Buffer.byteLength(csv, "utf8") > MAX_CSV_BYTES) return { error: t("import.errors.tooBig") };
+  if (Buffer.byteLength(csv, "utf8") > MAX_IMPORT_BYTES) return { error: t("import.errors.tooBig") };
 
   const prefs = await getSellerPrefs(user.id, organization.id);
   const result = await importProspects({
@@ -203,6 +224,7 @@ export async function importProspectsAction(
     campaignId: id,
     csv,
     sellerTimezone: sellerTimezone(prefs),
+    actor: actorOf(workspace),
   });
   if ("error" in result) return { error: t(`import.errors.${result.error}`) };
   refresh(id);
@@ -211,15 +233,15 @@ export async function importProspectsAction(
 
 async function enrollmentAction(
   enrollmentId: string,
-  run: (organizationId: string, id: string, now: Date) => Promise<boolean>,
+  run: (organizationId: string, id: string, now: Date, actor: Actor) => Promise<boolean>,
   notice: "enrollmentPaused" | "enrollmentResumed" | "enrollmentRemoved",
 ): Promise<ActionResult> {
-  const { organization } = await requireOutreach();
+  const workspace = await requireOutreach();
   const t = await getTranslations("campaigns.actions");
   if (!idSchema.safeParse(enrollmentId).success) return { error: t("invalid") };
 
-  // The helpers filter on the workspace themselves; a foreign id simply matches nothing
-  if (!(await run(organization.id, enrollmentId, new Date()))) return { error: t("enrollmentUnchanged") };
+  // The helpers check the workspace and the campaign's creator themselves; a foreign id simply matches nothing
+  if (!(await run(workspace.organization.id, enrollmentId, new Date(), actorOf(workspace)))) return { error: t("enrollmentUnchanged") };
   revalidatePath("/campaigns", "layout");
   return { ok: true, notice: t(notice) };
 }
@@ -238,9 +260,15 @@ export async function removeEnrollmentAction(enrollmentId: string): Promise<Acti
 
 /** Sends the step to the signed-in seller only, never to a prospect. */
 export async function sendTestAction(campaignId: string, stepOrder: number): Promise<ActionResult> {
-  const { user, organization } = await requireOutreach();
+  const workspace = await requireOutreach();
+  const { user, organization } = workspace;
   const t = await getTranslations("campaigns");
   if (!idSchema.safeParse(campaignId).success || !Number.isInteger(stepOrder)) return { error: t("actions.invalid") };
+  const own = await prisma.campaign.findFirst({
+    where: { id: campaignId, organizationId: organization.id },
+    select: { createdById: true },
+  });
+  if (!own || !canEditCampaign(own, actorOf(workspace))) return { error: t("steps.test.not_found") };
 
   const result = await sendTestMessage({
     organizationId: organization.id,
@@ -262,16 +290,16 @@ const daysSchema = z.number().int().min(1).max(60);
 
 /** Test environments only. */
 export async function timeTravelEnrollmentAction(enrollmentId: string, days: number): Promise<ActionResult> {
-  const { organization } = await requireOutreach();
+  const workspace = await requireOutreach();
   if (!testToolsEnabled()) throw new Error("Test tools are disabled");
   const t = await getTranslations("campaigns.actions");
   if (!idSchema.safeParse(enrollmentId).success || !daysSchema.safeParse(days).success) return { error: t("invalid") };
 
   const own = await prisma.campaignProspect.findFirst({
-    where: { id: enrollmentId, organizationId: organization.id },
-    select: { id: true },
+    where: { id: enrollmentId, organizationId: workspace.organization.id },
+    select: { id: true, campaign: { select: { createdById: true } } },
   });
-  if (!own) return { error: t("invalid") };
+  if (!own || !canEditCampaign(own.campaign, actorOf(workspace))) return { error: t("invalid") };
   await shiftEnrollmentBack(own.id, days);
   revalidatePath("/campaigns", "layout");
   return { ok: true, notice: t("shifted") };
@@ -279,13 +307,14 @@ export async function timeTravelEnrollmentAction(enrollmentId: string, days: num
 
 /** Test environments only. */
 export async function shiftMailboxRampAction(mailboxId: string, days: number): Promise<ActionResult> {
-  const { organization } = await requireOutreach();
+  const workspace = await requireOutreach();
   if (!testToolsEnabled()) throw new Error("Test tools are disabled");
   const t = await getTranslations("campaigns.actions");
   if (!idSchema.safeParse(mailboxId).success || !daysSchema.safeParse(days).success) return { error: t("invalid") };
 
+  const actor = actorOf(workspace);
   const own = await prisma.mailbox.findFirst({
-    where: { id: mailboxId, organizationId: organization.id },
+    where: { id: mailboxId, organizationId: workspace.organization.id, ...(actor.isManager ? {} : { userId: actor.userId }) },
     select: { id: true },
   });
   if (!own) return { error: t("invalid") };

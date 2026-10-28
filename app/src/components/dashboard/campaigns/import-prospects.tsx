@@ -7,10 +7,9 @@ import { toast } from "sonner";
 import { importProspectsAction } from "@/app/(dashboard)/campaigns/actions";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { MAX_IMPORT_ROWS, PROSPECT_COLUMNS } from "@/lib/outreach/csv";
+import { MAX_IMPORT_BYTES, MAX_IMPORT_ROWS, PROSPECT_COLUMNS } from "@/lib/outreach/csv";
 import type { ImportSummary } from "@/lib/outreach/enroll";
 
-const MAX_BYTES = 2 * 1024 * 1024;
 const MAX_LISTED_REJECTIONS = 20;
 
 function readAsText(file: File): Promise<string> {
@@ -35,7 +34,7 @@ export function ImportProspects({ campaignId }: { campaignId: string }) {
   const onFile = async (file: File | undefined) => {
     if (!file) return;
     setError(null);
-    if (file.size > MAX_BYTES) {
+    if (file.size > MAX_IMPORT_BYTES) {
       setError(t("errors.tooBig"));
       return;
     }
@@ -47,13 +46,19 @@ export function ImportProspects({ campaignId }: { campaignId: string }) {
   };
 
   const submit = () => {
+    if (new Blob([csv]).size > MAX_IMPORT_BYTES) {
+      setError(t("errors.tooBig"));
+      return;
+    }
     setError(null);
     setSummary(null);
     startTransition(async () => {
       const formData = new FormData();
       formData.set("csv", csv);
-      const result = await importProspectsAction(campaignId, formData);
+      // A rejected action (body too large, network) must not reach the error boundary
+      const result = await importProspectsAction(campaignId, formData).catch(() => ({ error: t("errors.failed") }));
       if ("error" in result) {
+        toast.error(result.error);
         setError(result.error);
         return;
       }

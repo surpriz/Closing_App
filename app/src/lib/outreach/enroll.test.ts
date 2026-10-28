@@ -18,6 +18,8 @@ vi.mock("./suppression", () => ({ suppressedAmong: (...args: unknown[]) => suppr
 const { importProspects, prepareProspects, removeEnrollment, resumeEnrollment, stopEnrollment } = await import("./enroll");
 
 const NOW = new Date("2026-11-03T09:00:00Z");
+const ACTOR = { userId: "u1", isManager: false };
+const STRANGER = { userId: "u2", isManager: false };
 const row = (email: string, over: Partial<ProspectRow> = {}): ProspectRow => ({
   email,
   firstName: null,
@@ -72,11 +74,11 @@ describe("prepareProspects", () => {
 });
 
 describe("importProspects", () => {
-  const base = { organizationId: "org", campaignId: "c1", sellerTimezone: "Europe/Paris", now: NOW };
+  const base = { organizationId: "org", campaignId: "c1", sellerTimezone: "Europe/Paris", actor: ACTOR, now: NOW };
 
   beforeEach(() => {
     vi.clearAllMocks();
-    db.campaign.findFirst.mockResolvedValue({ locale: "fr" });
+    db.campaign.findFirst.mockResolvedValue({ locale: "fr", createdById: "u1" });
     db.member.findMany.mockResolvedValue([{ user: { email: "me@mine.com" } }]);
     suppressedAmong.mockResolvedValue(new Set());
     db.campaignProspect.findMany.mockResolvedValue([]);
@@ -87,6 +89,11 @@ describe("importProspects", () => {
     db.campaign.findFirst.mockResolvedValue(null);
     expect(await importProspects({ ...base, csv: "email\na@x.com" })).toEqual({ error: "campaign_not_found" });
     expect(db.campaign.findFirst.mock.calls[0][0].where).toMatchObject({ status: { not: "ARCHIVED" } });
+  });
+
+  it("refuses a teammate's campaign", async () => {
+    expect(await importProspects({ ...base, actor: STRANGER, csv: "email\na@x.com" })).toEqual({ error: "campaign_not_found" });
+    expect(db.campaignProspect.createMany).not.toHaveBeenCalled();
   });
 
   it("reports an empty file", async () => {
@@ -156,16 +163,23 @@ describe("removeEnrollment", () => {
   it("is scoped to the workspace", async () => {
     vi.clearAllMocks();
     db.campaignProspect.findFirst.mockResolvedValue(null);
-    expect(await removeEnrollment("org", "e1", NOW)).toBe(false);
+    expect(await removeEnrollment("org", "e1", NOW, ACTOR)).toBe(false);
+    expect(db.campaignProspect.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("refuses an enrollment of a teammate's campaign", async () => {
+    vi.clearAllMocks();
+    db.campaignProspect.findFirst.mockResolvedValue({ id: "e1", campaign: { createdById: "u1" } });
+    expect(await removeEnrollment("org", "e1", NOW, STRANGER)).toBe(false);
     expect(db.campaignProspect.updateMany).not.toHaveBeenCalled();
   });
 
   it("stops the enrollment as the seller", async () => {
     vi.clearAllMocks();
-    db.campaignProspect.findFirst.mockResolvedValue({ id: "e1" });
+    db.campaignProspect.findFirst.mockResolvedValue({ id: "e1", campaign: { createdById: "u1" } });
     db.campaignProspect.updateMany.mockResolvedValue({ count: 1 });
     db.campaignMessage.updateMany.mockResolvedValue({ count: 1 });
-    expect(await removeEnrollment("org", "e1", NOW)).toBe(true);
+    expect(await removeEnrollment("org", "e1", NOW, ACTOR)).toBe(true);
     expect(db.campaignProspect.findFirst.mock.calls[0][0].where).toEqual({ id: "e1", organizationId: "org" });
     expect(db.campaignProspect.updateMany.mock.calls[0][0].data).toMatchObject({ status: "STOPPED", pausedReason: "seller" });
   });
@@ -174,6 +188,7 @@ describe("removeEnrollment", () => {
 describe("resumeEnrollment", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    db.campaignProspect.findFirst.mockResolvedValue({ id: "e1", campaign: { createdById: "u1" } });
     db.campaignProspect.updateMany.mockResolvedValue({ count: 1 });
     db.campaignProspect.findUnique.mockResolvedValue({
       currentStep: 1,
@@ -188,7 +203,7 @@ describe("resumeEnrollment", () => {
   });
 
   it("flips to ACTIVE and re-opens the failed or cancelled next step in one transaction", async () => {
-    expect(await resumeEnrollment("org", "e1", NOW)).toBe(true);
+    expect(await resumeEnrollment("org", "e1", NOW, ACTOR)).toBe(true);
     expect(db.campaignProspect.updateMany).toHaveBeenCalledWith({
       where: { id: "e1", organizationId: "org", status: "PAUSED" },
       data: { status: "ACTIVE", pausedReason: null, pausedAt: null },
@@ -199,9 +214,14 @@ describe("resumeEnrollment", () => {
     });
   });
 
+  it("refuses a teammate's enrollment", async () => {
+    expect(await resumeEnrollment("org", "e1", NOW, STRANGER)).toBe(false);
+    expect(db.campaignProspect.updateMany).not.toHaveBeenCalled();
+  });
+
   it("does nothing when the enrollment was not paused", async () => {
     db.campaignProspect.updateMany.mockResolvedValue({ count: 0 });
-    expect(await resumeEnrollment("org", "e1", NOW)).toBe(false);
+    expect(await resumeEnrollment("org", "e1", NOW, ACTOR)).toBe(false);
     expect(db.campaignMessage.updateMany).not.toHaveBeenCalled();
   });
 });

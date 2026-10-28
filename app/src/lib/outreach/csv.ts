@@ -1,6 +1,8 @@
 export type CsvParseResult = { headers: string[]; rows: string[][]; delimiter: "," | ";" | "\t" };
 
 export const MAX_IMPORT_ROWS = 2000;
+// Next caps a Server Action body at 1 MB: the pasted or uploaded CSV has to fit with some margin
+export const MAX_IMPORT_BYTES = 900_000;
 
 const DELIMITERS = [",", ";", "\t"] as const;
 

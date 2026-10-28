@@ -14,8 +14,10 @@ import type { UiLocale } from "@/i18n/locale";
 import { inBackground } from "@/lib/closing/background";
 import { documentTitle } from "@/lib/closing/documents/link-title";
 import { prisma } from "@/lib/db";
+import { canEditCampaign } from "@/lib/outreach/campaigns";
 import { requireOutreach } from "@/lib/outreach/flag";
 import { runOutreachTick } from "@/lib/outreach/tick";
+import { isManagerRole } from "@/lib/roles";
 import { testToolsEnabled } from "@/lib/test-tools";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -29,7 +31,7 @@ const ENROLLMENTS_SHOWN = 200;
 
 export default async function CampaignPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { organization } = await requireOutreach();
+  const { user, organization, role } = await requireOutreach();
   const now = new Date();
   const [t, locale] = await Promise.all([getTranslations("campaigns"), getLocale()]);
 
@@ -37,13 +39,14 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
     where: { id, organizationId: organization.id },
     select: {
       id: true,
+      createdById: true,
       name: true,
       status: true,
       locale: true,
       linkOnReply: true,
       mailboxId: true,
       documentId: true,
-      mailbox: { select: { id: true, email: true, status: true } },
+      mailbox: { select: { id: true, email: true, status: true, userId: true } },
       steps: {
         orderBy: { order: "asc" },
         select: { order: true, delayDays: true, subject: true, newThread: true, body: true, carriesLink: true },
@@ -51,6 +54,8 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
     },
   });
   if (!campaign) notFound();
+  const manager = isManagerRole(role);
+  const canEdit = canEditCampaign(campaign, { userId: user.id, isManager: manager });
 
   inBackground("outreach-catch-up", () =>
     runOutreachTick(now, { organizationId: organization.id, syncBudgetMs: 15_000 }),
@@ -58,7 +63,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
 
   const [mailboxes, documents, currentDocument, enrollments, groups, sent, firstEnrollment] = await Promise.all([
     prisma.mailbox.findMany({
-      where: { organizationId: organization.id, status: "ACTIVE" },
+      where: { organizationId: organization.id, status: "ACTIVE", ...(manager ? {} : { userId: user.id }) },
       orderBy: { createdAt: "asc" },
       select: { id: true, email: true },
     }),
@@ -70,7 +75,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
     }),
     campaign.documentId
       ? prisma.document.findFirst({
-          where: { id: campaign.documentId, organizationId: organization.id },
+          where: { id: campaign.documentId, organizationId: organization.id, status: "READY", archivedAt: null },
           select: { id: true, name: true, displayTitle: true, docType: true },
         })
       : null,
@@ -91,9 +96,10 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
         nextSendAt: true,
         linkId: true,
         messages: {
-          orderBy: { createdAt: "desc" },
+          where: { sentAt: { not: null } },
+          orderBy: { sentAt: "desc" },
           take: 1,
-          select: { status: true, scheduledFor: true, sentAt: true, bouncedAt: true },
+          select: { sentAt: true },
         },
       },
     }),
@@ -143,9 +149,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
   );
 
   const rows = enrollments.map((enrollment) => {
-    const message = enrollment.messages[0];
     const live = enrollment.status === "QUEUED" || enrollment.status === "ACTIVE";
-    const pendingMessage = message && (message.status === "SCHEDULED" || message.status === "SENDING");
     return {
       id: enrollment.id,
       email: enrollment.email,
@@ -155,19 +159,32 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
       pausedReason: enrollment.pausedReason,
       currentStep: enrollment.currentStep,
       timezone: enrollment.timezone,
-      nextAt: live ? (pendingMessage ? message.scheduledFor : enrollment.nextSendAt) : null,
-      lastAt: message?.sentAt ?? null,
+      nextAt: live ? enrollment.nextSendAt : null,
+      lastAt: enrollment.messages[0]?.sentAt ?? null,
       linkId: enrollment.linkId,
     };
   });
 
+  // The mailbox select offers what the viewer may bind, plus the current one when it is a colleague's (shown, not changeable)
+  const mailboxOptions =
+    campaign.mailbox?.status === "ACTIVE" && !mailboxes.some((mailbox) => mailbox.id === campaign.mailbox?.id)
+      ? [...mailboxes, { id: campaign.mailbox.id, email: campaign.mailbox.email }]
+      : mailboxes;
   const archived = campaign.status === "ARCHIVED";
+  const locked = archived || !canEdit;
   const uiLocale = locale as UiLocale;
 
   return (
     <div className="space-y-10">
       {campaign.status === "ACTIVE" && <AutoRefresh intervalMs={REFRESH_MS} />}
-      <CampaignHeader id={campaign.id} name={campaign.name} status={campaign.status} counts={counts} />
+      <CampaignHeader
+        id={campaign.id}
+        name={campaign.name}
+        status={campaign.status}
+        counts={counts}
+        canEdit={canEdit}
+      />
+      {!canEdit && <p className="text-small text-muted-foreground">{t("detail.readOnly")}</p>}
 
       <section>
         <SectionTitle>{t("settings.title")}</SectionTitle>
@@ -178,11 +195,19 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
           documentId={campaign.documentId}
           locale={campaign.locale}
           linkOnReply={campaign.linkOnReply}
-          mailboxes={mailboxes}
-          currentMailbox={campaign.mailbox ? { email: campaign.mailbox.email, status: campaign.mailbox.status } : null}
+          mailboxes={mailboxOptions}
+          currentMailbox={
+            campaign.mailbox
+              ? {
+                  email: campaign.mailbox.email,
+                  status: campaign.mailbox.status,
+                  teammate: campaign.mailbox.userId !== user.id,
+                }
+              : null
+          }
           documents={documentOptions}
           stepCarriesLink={campaign.steps.some((step) => step.carriesLink)}
-          disabled={archived}
+          disabled={locked}
         />
       </section>
 
@@ -195,11 +220,11 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
           sampleVars={sampleVars}
           sampleEmail={firstEnrollment?.email ?? null}
           canTest={campaign.mailbox?.status === "ACTIVE"}
-          disabled={archived}
+          disabled={locked}
         />
       </section>
 
-      {!archived && (
+      {!locked && (
         <section>
           <SectionTitle>{t("import.title")}</SectionTitle>
           <ImportProspects campaignId={campaign.id} />
@@ -213,13 +238,13 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
             rows={rows}
             totalSteps={campaign.steps.length}
             locale={uiLocale}
-            disabled={archived}
+            disabled={locked}
             truncated={total > rows.length}
           />
         </Surface>
       </section>
 
-      {testToolsEnabled() && (
+      {testToolsEnabled() && canEdit && (
         <CampaignTestTools
           enrollments={rows.slice(0, 50).map(({ id: enrollmentId, email }) => ({ id: enrollmentId, email }))}
           mailboxId={campaign.mailboxId}
