@@ -90,7 +90,10 @@
     "enrollmentResumed": "Prospect resumed.",
     "enrollmentRemoved": "Prospect removed from the sequence.",
     "enrollmentUnchanged": "Nothing changed: this prospect is no longer in that state.",
-    "shifted": "Done."
+    "shifted": "Done.",
+    "noLink": "This prospect has no link yet.",
+    "readingSimulated": "Reading recorded.",
+    "readingEvaluated": "Evaluation done: {kind}."
   },
   "header": {
     "back": "All campaigns",
@@ -247,7 +250,9 @@
       "step": "Step",
       "next": "Next email",
       "last": "Last email",
-      "actions": "Actions"
+      "actions": "Actions",
+      "signal": "Signal",
+      "followup": "Follow-up"
     },
     "never": "–",
     "openLink": "Open the link",
@@ -271,7 +276,22 @@
     },
     "resumeTitle": "Resume this prospect?",
     "resumeInterrupted": "The last email to {email} was interrupted: it may have left already. Check your Sent folder before resuming, otherwise the prospect could receive it twice.",
-    "resumeConfirm": "Resume anyway"
+    "resumeConfirm": "Resume anyway",
+    "signals": {
+      "pricing": "Read the pricing",
+      "deep": "Read closely",
+      "reread": "Read it again",
+      "forward": "Forwarded it",
+      "reactivate": "Back after a while"
+    },
+    "callThem": "Call them",
+    "clicked": "Clicked",
+    "noSignal": "–",
+    "followup": {
+      "draft": "Draft to review",
+      "scheduled": "Scheduled {date}",
+      "sent": "Sent {date}"
+    }
   },
   "testTools": {
     "title": "Test tools",
@@ -281,9 +301,28 @@
     "shiftMailbox": "Age the mailbox",
     "days": "Days",
     "prospect": "Prospect",
-    "apply": "Apply"
+    "apply": "Apply",
+    "simulate": "Simulate a reading",
+    "pricingSeconds": "Seconds on pricing",
+    "totalSeconds": "Total seconds",
+    "simulateApply": "Record",
+    "evaluate": "Evaluate the reading",
+    "evaluateApply": "Evaluate",
+    "noLinkOption": "no link"
   },
   "detail": {
     "readOnly": "A teammate created this campaign: you can read it but not change it."
+  },
+  "forwarded": {
+    "title": "Forwarded contacts",
+    "description": "People your prospects forwarded the document to. Nothing is sent to them until you add them.",
+    "email": "Contact",
+    "forwardedAt": "Forwarded",
+    "add": "Add to campaign",
+    "added": "Contact added to the campaign.",
+    "invalid": "Invalid request.",
+    "duplicate": "This contact is already in the campaign.",
+    "suppressed": "This contact is on the stop list.",
+    "not_found": "This contact can't be added."
   }
 }

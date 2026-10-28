@@ -6,8 +6,10 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import {
+  evaluateReadingAction,
   runOutreachTickAction,
   shiftMailboxRampAction,
+  simulateReadingAction,
   timeTravelEnrollmentAction,
 } from "@/app/(dashboard)/campaigns/actions";
 import { Button } from "@/components/ui/button";
@@ -19,7 +21,7 @@ export function CampaignTestTools({
   enrollments,
   mailboxId,
 }: {
-  enrollments: { id: string; email: string }[];
+  enrollments: { id: string; email: string; hasLink: boolean }[];
   mailboxId: string | null;
 }) {
   const t = useTranslations("campaigns.testTools");
@@ -28,7 +30,11 @@ export function CampaignTestTools({
   const [enrollmentId, setEnrollmentId] = useState(enrollments[0]?.id ?? "");
   const [enrollmentDays, setEnrollmentDays] = useState(1);
   const [mailboxDays, setMailboxDays] = useState(7);
+  const [readingId, setReadingId] = useState(enrollments.find((item) => item.hasLink)?.id ?? "");
+  const [pricingSeconds, setPricingSeconds] = useState(60);
+  const [totalSeconds, setTotalSeconds] = useState(120);
   const enrollmentItems = enrollments.map((item) => ({ value: item.id, label: item.email }));
+  const linkedItems = enrollments.filter((item) => item.hasLink).map((item) => ({ value: item.id, label: item.email }));
 
   const report = (result: { ok: true; notice?: string } | { error: string }) => {
     if ("error" in result) toast.error(result.error);
@@ -92,6 +98,65 @@ export function CampaignTestTools({
             >
               {t("apply")}
             </Button>
+          </div>
+        )}
+
+        {linkedItems.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <span>{t("simulate")}</span>
+              <Select items={linkedItems} value={readingId} onValueChange={(value) => value && setReadingId(value)}>
+                <SelectTrigger aria-label={t("prospect")} size="sm" className="w-56 bg-card">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {linkedItems.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                type="number"
+                min={0}
+                max={3600}
+                aria-label={t("pricingSeconds")}
+                value={pricingSeconds}
+                onChange={(event) => setPricingSeconds(event.target.valueAsNumber)}
+                className="w-24"
+              />
+              <Input
+                type="number"
+                min={0}
+                max={3600}
+                aria-label={t("totalSeconds")}
+                value={totalSeconds}
+                onChange={(event) => setTotalSeconds(event.target.valueAsNumber)}
+                className="w-24"
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={pending || !readingId || !(pricingSeconds >= 0) || !(totalSeconds >= 0)}
+                onClick={() =>
+                  startTransition(async () => report(await simulateReadingAction(readingId, pricingSeconds, totalSeconds)))
+                }
+              >
+                {t("simulateApply")}
+              </Button>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span>{t("evaluate")}</span>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={pending || !readingId}
+                onClick={() => startTransition(async () => report(await evaluateReadingAction(readingId)))}
+              >
+                {t("evaluateApply")}
+              </Button>
+            </div>
           </div>
         )}
 

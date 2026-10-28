@@ -90,7 +90,10 @@
     "enrollmentResumed": "Prospect repris.",
     "enrollmentRemoved": "Prospect retiré de la séquence.",
     "enrollmentUnchanged": "Rien n'a changé : ce prospect n'est plus dans cet état.",
-    "shifted": "C'est fait."
+    "shifted": "C'est fait.",
+    "noLink": "Ce prospect n'a pas encore de lien.",
+    "readingSimulated": "Lecture enregistrée.",
+    "readingEvaluated": "Évaluation faite : {kind}."
   },
   "header": {
     "back": "Toutes les campagnes",
@@ -247,7 +250,9 @@
       "step": "Étape",
       "next": "Prochain envoi",
       "last": "Dernier envoi",
-      "actions": "Actions"
+      "actions": "Actions",
+      "signal": "Signal",
+      "followup": "Relance"
     },
     "never": "–",
     "openLink": "Ouvrir le lien",
@@ -271,7 +276,22 @@
     },
     "resumeTitle": "Reprendre ce prospect ?",
     "resumeInterrupted": "Le dernier email à {email} a été interrompu : il est peut-être déjà parti. Vérifiez vos éléments envoyés avant de reprendre, sinon le prospect pourrait le recevoir deux fois.",
-    "resumeConfirm": "Reprendre quand même"
+    "resumeConfirm": "Reprendre quand même",
+    "signals": {
+      "pricing": "A lu les tarifs",
+      "deep": "Lecture attentive",
+      "reread": "Relecture",
+      "forward": "A transféré le document",
+      "reactivate": "De retour après un moment"
+    },
+    "callThem": "Appelez-le",
+    "clicked": "A cliqué",
+    "noSignal": "–",
+    "followup": {
+      "draft": "Brouillon à relire",
+      "scheduled": "Programmée {date}",
+      "sent": "Envoyée {date}"
+    }
   },
   "testTools": {
     "title": "Outils de test",
@@ -281,9 +301,28 @@
     "shiftMailbox": "Vieillir la boîte",
     "days": "Jours",
     "prospect": "Prospect",
-    "apply": "Appliquer"
+    "apply": "Appliquer",
+    "simulate": "Simuler une lecture",
+    "pricingSeconds": "Secondes sur les tarifs",
+    "totalSeconds": "Secondes au total",
+    "simulateApply": "Enregistrer",
+    "evaluate": "Évaluer la lecture",
+    "evaluateApply": "Évaluer",
+    "noLinkOption": "sans lien"
   },
   "detail": {
     "readOnly": "Cette campagne a été créée par un collègue : vous pouvez la consulter mais pas la modifier."
+  },
+  "forwarded": {
+    "title": "Contacts transférés",
+    "description": "Les personnes à qui vos prospects ont transféré le document. Rien ne leur est envoyé tant que vous ne les ajoutez pas.",
+    "email": "Contact",
+    "forwardedAt": "Transféré",
+    "add": "Ajouter à la campagne",
+    "added": "Contact ajouté à la campagne.",
+    "invalid": "Requête invalide.",
+    "duplicate": "Ce contact est déjà dans la campagne.",
+    "suppressed": "Ce contact figure sur la liste d'arrêt.",
+    "not_found": "Ce contact ne peut pas être ajouté."
   }
 }

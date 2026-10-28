@@ -7,6 +7,7 @@ import { CampaignHeader } from "@/components/dashboard/campaigns/campaign-header
 import { CampaignSettings } from "@/components/dashboard/campaigns/campaign-settings";
 import { CampaignTestTools } from "@/components/dashboard/campaigns/campaign-test-tools";
 import { EnrollmentsTable } from "@/components/dashboard/campaigns/enrollments-table";
+import { ForwardedContacts } from "@/components/dashboard/campaigns/forwarded-contacts";
 import { ImportProspects } from "@/components/dashboard/campaigns/import-prospects";
 import { StepsEditor } from "@/components/dashboard/campaigns/steps-editor";
 import { SectionTitle, Surface } from "@/components/dashboard/page-header";
@@ -28,6 +29,7 @@ export const maxDuration = 300;
 
 const REFRESH_MS = 30_000;
 const ENROLLMENTS_SHOWN = 200;
+const FORWARDS_SHOWN = 100;
 
 export default async function CampaignPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -61,7 +63,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
     runOutreachTick(now, { organizationId: organization.id, syncBudgetMs: 15_000 }),
   );
 
-  const [mailboxes, documents, currentDocument, enrollments, groups, sent, firstEnrollment] = await Promise.all([
+  const [mailboxes, documents, currentDocument, enrollments, groups, sent, firstEnrollment, clicks, forwards] = await Promise.all([
     prisma.mailbox.findMany({
       where: { organizationId: organization.id, status: "ACTIVE", ...(manager ? {} : { userId: user.id }) },
       orderBy: { createdAt: "asc" },
@@ -95,6 +97,13 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
         timezone: true,
         nextSendAt: true,
         linkId: true,
+        lastSignal: true,
+        followups: {
+          where: { status: { in: ["DRAFT", "GENERATED", "SCHEDULED", "SENT"] } },
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          select: { status: true, scheduledFor: true, sentAt: true },
+        },
         messages: {
           where: { sentAt: { not: null } },
           orderBy: { sentAt: "desc" },
@@ -115,7 +124,42 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
       orderBy: { createdAt: "asc" },
       select: { email: true, firstName: true, lastName: true, company: true, title: true, vars: true },
     }),
+    prisma.campaignMessage.findMany({
+      where: { campaignId: campaign.id, clickedAt: { not: null } },
+      select: { enrollmentId: true },
+      distinct: ["enrollmentId"],
+    }),
+    // E8: recipients of a forward on one of this campaign's links
+    prisma.linkForward.findMany({
+      where: { link: { organizationId: organization.id, campaignProspect: { campaignId: campaign.id } } },
+      orderBy: { createdAt: "desc" },
+      take: FORWARDS_SHOWN,
+      select: { createdAt: true, toProspect: { select: { id: true, email: true, name: true, company: true } } },
+    }),
   ]);
+
+  const enrolledForwards = forwards.length
+    ? new Set(
+        (
+          await prisma.campaignProspect.findMany({
+            where: {
+              campaignId: campaign.id,
+              email: { in: forwards.map((forward) => forward.toProspect.email.trim().toLowerCase()) },
+            },
+            select: { email: true },
+          })
+        ).map((row) => row.email),
+      )
+    : new Set<string>();
+  const forwardedSeen = new Set<string>();
+  const forwardedContacts = forwards.flatMap((forward) => {
+    const contact = forward.toProspect;
+    const email = contact.email.trim().toLowerCase();
+    if (enrolledForwards.has(email) || forwardedSeen.has(email)) return [];
+    forwardedSeen.add(email);
+    return [{ prospectId: contact.id, email, name: contact.name, company: contact.company, forwardedAt: forward.createdAt }];
+  });
+  const clicked = new Set(clicks.map((click) => click.enrollmentId));
 
   const byStatus = new Map(groups.map((group) => [group.status, group._count._all]));
   const total = groups.reduce((sum, group) => sum + group._count._all, 0);
@@ -162,6 +206,14 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
       nextAt: live ? enrollment.nextSendAt : null,
       lastAt: enrollment.messages[0]?.sentAt ?? null,
       linkId: enrollment.linkId,
+      lastSignal: enrollment.lastSignal,
+      followup: enrollment.followups[0]
+        ? {
+            status: enrollment.followups[0].status,
+            at: enrollment.followups[0].status === "SENT" ? enrollment.followups[0].sentAt : enrollment.followups[0].scheduledFor,
+          }
+        : null,
+      clicked: clicked.has(enrollment.id),
     };
   });
 
@@ -231,6 +283,13 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
         </section>
       )}
 
+      {!locked && forwardedContacts.length > 0 && (
+        <section>
+          <SectionTitle>{t("forwarded.title")}</SectionTitle>
+          <ForwardedContacts campaignId={campaign.id} contacts={forwardedContacts} locale={uiLocale} />
+        </section>
+      )}
+
       <section>
         <SectionTitle>{t("enrollments.title")}</SectionTitle>
         <Surface>
@@ -246,7 +305,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
 
       {testToolsEnabled() && canEdit && (
         <CampaignTestTools
-          enrollments={rows.slice(0, 50).map(({ id: enrollmentId, email }) => ({ id: enrollmentId, email }))}
+          enrollments={rows.slice(0, 50).map(({ id: enrollmentId, email, linkId }) => ({ id: enrollmentId, email, hasLink: linkId !== null }))}
           mailboxId={campaign.mailboxId}
         />
       )}

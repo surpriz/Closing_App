@@ -19,12 +19,19 @@ import {
   saveSteps,
   updateCampaign,
 } from "@/lib/outreach/campaigns";
-import { importProspects, type ImportSummary, pauseEnrollment, removeEnrollment, resumeEnrollment } from "@/lib/outreach/enroll";
+import {
+  enrollForwardedContact,
+  importProspects,
+  type ImportSummary,
+  pauseEnrollment,   removeEnrollment,
+  resumeEnrollment,
+} from "@/lib/outreach/enroll";
 import { MAX_IMPORT_BYTES } from "@/lib/outreach/csv";
 import { requireOutreach } from "@/lib/outreach/flag";
+import { evaluateEnrollmentReading } from "@/lib/outreach/reading";
 import { sendTestMessage } from "@/lib/outreach/sender";
 import type { StepIssue } from "@/lib/outreach/steps";
-import { shiftEnrollmentBack, shiftMailboxRampBack } from "@/lib/outreach/testing";
+import { shiftEnrollmentBack, shiftMailboxRampBack, simulateReading } from "@/lib/outreach/testing";
 import { runOutreachTick } from "@/lib/outreach/tick";
 import { isManagerRole } from "@/lib/roles";
 import { testToolsEnabled } from "@/lib/test-tools";
@@ -324,4 +331,71 @@ export async function shiftMailboxRampAction(mailboxId: string, days: number): P
   await shiftMailboxRampBack(own.id, days);
   revalidatePath("/campaigns", "layout");
   return { ok: true, notice: t("shifted") };
+}
+
+/** E8: the seller adds, by hand, a contact the prospect forwarded the document to. */
+export async function addForwardedContactAction(campaignId: string, prospectId: string): Promise<ActionResult> {
+  const workspace = await requireOutreach();
+  const t = await getTranslations("campaigns.forwarded");
+  if (!idSchema.safeParse(campaignId).success || !idSchema.safeParse(prospectId).success) return { error: t("invalid") };
+
+  const result = await enrollForwardedContact(
+    campaignId,
+    prospectId,
+    actorOf(workspace),
+    new Date(),
+    workspace.organization.id,
+  );
+  if (result !== "enrolled") return { error: t(result) };
+  refresh(campaignId);
+  return { ok: true, notice: t("added") };
+}
+
+const secondsSchema = z.number().int().min(0).max(3600);
+
+/** The enrollment belongs to the workspace, and the actor may edit its campaign. */
+async function ownEnrollment(organizationId: string, enrollmentId: string, actor: Actor) {
+  const own = await prisma.campaignProspect.findFirst({
+    where: { id: enrollmentId, organizationId },
+    select: { id: true, linkId: true, campaign: { select: { createdById: true } } },
+  });
+  return own && canEditCampaign(own.campaign, actor) ? own : null;
+}
+
+/** Test environments only: records a reading on the enrollment's link. */
+export async function simulateReadingAction(
+  enrollmentId: string,
+  pricingSeconds: number,
+  totalSeconds: number,
+): Promise<ActionResult> {
+  const workspace = await requireOutreach();
+  if (!testToolsEnabled()) throw new Error("Test tools are disabled");
+  const t = await getTranslations("campaigns.actions");
+  if (
+    !idSchema.safeParse(enrollmentId).success ||
+    !secondsSchema.safeParse(pricingSeconds).success ||
+    !secondsSchema.safeParse(totalSeconds).success
+  ) {
+    return { error: t("invalid") };
+  }
+  const own = await ownEnrollment(workspace.organization.id, enrollmentId, actorOf(workspace));
+  if (!own) return { error: t("invalid") };
+  if (!(await simulateReading(own.id, { pricingSeconds, totalSeconds }))) return { error: t("noLink") };
+  revalidatePath("/campaigns", "layout");
+  return { ok: true, notice: t("readingSimulated") };
+}
+
+/** Test environments only: runs the reading evaluation now and says what it decided. */
+export async function evaluateReadingAction(enrollmentId: string): Promise<ActionResult> {
+  const workspace = await requireOutreach();
+  if (!testToolsEnabled()) throw new Error("Test tools are disabled");
+  const t = await getTranslations("campaigns.actions");
+  if (!idSchema.safeParse(enrollmentId).success) return { error: t("invalid") };
+  const own = await ownEnrollment(workspace.organization.id, enrollmentId, actorOf(workspace));
+  if (!own) return { error: t("invalid") };
+  if (!own.linkId) return { error: t("noLink") };
+
+  const kind = await evaluateEnrollmentReading(own.linkId, new Date());
+  revalidatePath("/campaigns", "layout");
+  return { ok: true, notice: t("readingEvaluated", { kind: kind ?? "none" }) };
 }

@@ -5,7 +5,8 @@ import type { ProspectRow } from "./csv";
 const db = {
   campaign: { findFirst: vi.fn() },
   member: { findMany: vi.fn() },
-  campaignProspect: { findMany: vi.fn(), createMany: vi.fn(), updateMany: vi.fn(), findFirst: vi.fn(), findUnique: vi.fn() },
+  linkForward: { findFirst: vi.fn() },
+  campaignProspect: { findMany: vi.fn(), createMany: vi.fn(), create: vi.fn(), updateMany: vi.fn(), findFirst: vi.fn(), findUnique: vi.fn() },
   campaignMessage: { updateMany: vi.fn() },
   $transaction: vi.fn(async (arg: unknown) =>
     typeof arg === "function" ? (arg as (tx: unknown) => unknown)(db) : Promise.all(arg as Promise<unknown>[]),
@@ -13,9 +14,17 @@ const db = {
 };
 vi.mock("@/lib/db", () => ({ prisma: db }));
 const suppressedAmong = vi.fn();
-vi.mock("./suppression", () => ({ suppressedAmong: (...args: unknown[]) => suppressedAmong(...args) }));
+const isSuppressed = vi.fn();
+vi.mock("./suppression", () => ({
+  suppressedAmong: (...args: unknown[]) => suppressedAmong(...args),
+  isSuppressed: (...args: unknown[]) => isSuppressed(...args),
+}));
+vi.mock("@/lib/closing/notify/preferences", () => ({
+  getSellerPrefs: vi.fn(async () => ({ timezone: "Europe/Paris" })),
+  sellerTimezone: (prefs: { timezone: string | null }) => prefs.timezone ?? "UTC",
+}));
 
-const { importProspects, prepareProspects, removeEnrollment, resumeEnrollment, stopEnrollment } = await import("./enroll");
+const { enrollForwardedContact, importProspects, prepareProspects, removeEnrollment, resumeEnrollment, stopEnrollment } = await import("./enroll");
 
 const NOW = new Date("2026-11-03T09:00:00Z");
 const ACTOR = { userId: "u1", isManager: false };
@@ -241,5 +250,59 @@ describe("resumeEnrollment", () => {
     db.campaignProspect.updateMany.mockResolvedValue({ count: 0 });
     expect(await resumeEnrollment("org", "e1", NOW, ACTOR)).toBe(false);
     expect(db.campaignMessage.updateMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("enrollForwardedContact", () => {
+  const forward = { toProspect: { id: "p9", email: "Boss@Acme.com", name: "Jane Roe Smith", company: "Acme" } };
+  beforeEach(() => {
+    vi.clearAllMocks();
+    db.campaign.findFirst.mockResolvedValue({ locale: "fr", createdById: "u1" });
+    db.linkForward.findFirst.mockResolvedValue(forward);
+    isSuppressed.mockResolvedValue(false);
+    db.campaignProspect.findFirst.mockResolvedValue(null);
+    db.campaignProspect.create.mockResolvedValue({});
+  });
+
+  it("enrolls the contact in a fresh QUEUED enrollment tagged with its origin", async () => {
+    expect(await enrollForwardedContact("c1", "p9", ACTOR, NOW, "o1")).toBe("enrolled");
+    expect(db.campaignProspect.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        campaignId: "c1",
+        organizationId: "o1",
+        email: "boss@acme.com",
+        firstName: "Jane",
+        lastName: "Roe Smith",
+        company: "Acme",
+        vars: { source: "forward:p9" },
+        timezone: "Europe/Paris",
+        locale: "fr",
+        status: "QUEUED",
+      }),
+    });
+  });
+
+  it("skips an address already enrolled", async () => {
+    db.campaignProspect.findFirst.mockResolvedValue({ id: "e1" });
+    expect(await enrollForwardedContact("c1", "p9", ACTOR, NOW, "o1")).toBe("duplicate");
+    expect(db.campaignProspect.create).not.toHaveBeenCalled();
+  });
+
+  it("treats a lost unique race as a duplicate", async () => {
+    db.campaignProspect.create.mockRejectedValue({ code: "P2002" });
+    expect(await enrollForwardedContact("c1", "p9", ACTOR, NOW, "o1")).toBe("duplicate");
+  });
+
+  it("skips a suppressed address", async () => {
+    isSuppressed.mockResolvedValue(true);
+    expect(await enrollForwardedContact("c1", "p9", ACTOR, NOW, "o1")).toBe("suppressed");
+    expect(db.campaignProspect.create).not.toHaveBeenCalled();
+  });
+
+  it("refuses a prospect that is not a forward recipient of the campaign, or a non-editor", async () => {
+    db.linkForward.findFirst.mockResolvedValue(null);
+    expect(await enrollForwardedContact("c1", "p9", ACTOR, NOW, "o1")).toBe("not_found");
+    db.linkForward.findFirst.mockResolvedValue(forward);
+    expect(await enrollForwardedContact("c1", "p9", STRANGER, NOW, "o1")).toBe("not_found");
   });
 });

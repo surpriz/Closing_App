@@ -1,4 +1,5 @@
 import { isSupportedLocale } from "@/lib/closing/constants";
+import { getSellerPrefs, sellerTimezone } from "@/lib/closing/notify/preferences";
 import { prisma } from "@/lib/db";
 
 import { type Actor, canEditCampaign } from "./campaigns";
@@ -13,7 +14,7 @@ import {
 } from "./csv";
 import { templateVarsOf } from "./planner";
 import { renderTemplate } from "./render";
-import { suppressedAmong } from "./suppression";
+import { isSuppressed, suppressedAmong } from "./suppression";
 import { detectCountryTimezone } from "./timezone";
 
 const LIVE_ENROLLMENT = ["QUEUED", "ACTIVE", "PAUSED"] as const;
@@ -301,4 +302,59 @@ export async function resumeEnrollment(organizationId: string, id: string, now: 
 export async function removeEnrollment(organizationId: string, id: string, now: Date, actor: Actor): Promise<boolean> {
   if (!(await editableEnrollment(organizationId, id, actor))) return false;
   return stopEnrollment(id, "STOPPED", "seller", now);
+}
+
+export type ForwardedEnrollment = "enrolled" | "duplicate" | "suppressed" | "not_found";
+
+/**
+ * E8: a contact the prospect forwarded the document to joins the campaign on the seller's say-so, as a fresh QUEUED
+ * enrollment with its own thread. The prospect must be a recipient of a forward on one of this campaign's links.
+ */
+export async function enrollForwardedContact(
+  campaignId: string,
+  prospectId: string,
+  actor: Actor,
+  _now: Date,
+  organizationId: string,
+): Promise<ForwardedEnrollment> {
+  const campaign = await prisma.campaign.findFirst({
+    where: { id: campaignId, organizationId, status: { not: "ARCHIVED" } },
+    select: { locale: true, createdById: true },
+  });
+  if (!campaign || !canEditCampaign(campaign, actor)) return "not_found";
+
+  const forward = await prisma.linkForward.findFirst({
+    where: { toProspectId: prospectId, link: { organizationId, campaignProspect: { campaignId } } },
+    select: { toProspect: { select: { id: true, email: true, name: true, company: true } } },
+  });
+  if (!forward) return "not_found";
+  const contact = forward.toProspect;
+  const email = contact.email.trim().toLowerCase();
+
+  if (await isSuppressed(organizationId, email)) return "suppressed";
+  const existing = await prisma.campaignProspect.findFirst({ where: { campaignId, email }, select: { id: true } });
+  if (existing) return "duplicate";
+
+  const [firstName, ...rest] = (contact.name ?? "").trim().split(/\s+/).filter(Boolean);
+  const prefs = await getSellerPrefs(campaign.createdById, organizationId);
+  try {
+    await prisma.campaignProspect.create({
+      data: {
+        campaignId,
+        organizationId,
+        email,
+        firstName: firstName ?? null,
+        lastName: rest.length > 0 ? rest.join(" ") : null,
+        company: contact.company,
+        vars: { source: `forward:${contact.id}` },
+        timezone: sellerTimezone(prefs),
+        locale: campaign.locale,
+        status: "QUEUED",
+      },
+    });
+  } catch (error) {
+    if (typeof error === "object" && error !== null && "code" in error && error.code === "P2002") return "duplicate";
+    throw error;
+  }
+  return "enrolled";
 }

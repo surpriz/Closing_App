@@ -42,6 +42,9 @@ export type EnrollmentRow = {
   nextAt: Date | null;
   lastAt: Date | null;
   linkId: string | null;
+  lastSignal: string | null;
+  followup: { status: string; at: Date | null } | null;
+  clicked: boolean;
 };
 
 const STATUS_VARIANT = {
@@ -57,6 +60,8 @@ const STATUS_VARIANT = {
 } as const;
 
 const KNOWN_REASONS = ["rejected", "send_failed", "plan_limit", "document_missing", "suppressed", "archived", "interrupted"] as const;
+const SIGNALS = ["pricing", "deep", "reread", "forward", "reactivate"] as const;
+const CALL_REASONS = ["call_moment", "deep_read"];
 const REMOVABLE: EnrollmentStatus[] = ["QUEUED", "ACTIVE", "PAUSED"];
 
 export function EnrollmentsTable({
@@ -103,6 +108,11 @@ export function EnrollmentsTable({
 
   const when = (date: Date | null, row: EnrollmentRow) => (date ? formatInTimeZone(date, row.timezone, locale) : te("never"));
 
+  const signalLabel = (row: EnrollmentRow) =>
+    row.lastSignal && (SIGNALS as readonly string[]).includes(row.lastSignal)
+      ? te(`signals.${row.lastSignal as (typeof SIGNALS)[number]}`)
+      : null;
+
   if (rows.length === 0) return <p className="text-small text-muted-foreground">{te("empty")}</p>;
 
   return (
@@ -128,6 +138,8 @@ export function EnrollmentsTable({
             <TableHead>{te("columns.email")}</TableHead>
             <TableHead>{te("columns.status")}</TableHead>
             <TableHead>{te("columns.step")}</TableHead>
+            <TableHead>{te("columns.signal")}</TableHead>
+            <TableHead>{te("columns.followup")}</TableHead>
             <TableHead>{te("columns.next")}</TableHead>
             <TableHead>{te("columns.last")}</TableHead>
             <TableHead className="text-right">{te("columns.actions")}</TableHead>
@@ -152,6 +164,32 @@ export function EnrollmentsTable({
                 </TableCell>
                 <TableCell className="tabular-nums">
                   {row.currentStep}/{totalSteps}
+                  {row.clicked && <p className="text-small text-muted-foreground">{te("clicked")}</p>}
+                </TableCell>
+                <TableCell>
+                  {signalLabel(row) ?? <span className="text-muted-foreground">{te("noSignal")}</span>}
+                  {row.status === "PAUSED" && row.pausedReason && CALL_REASONS.includes(row.pausedReason) && (
+                    <p className="mt-0.5 text-small font-medium">
+                      {row.linkId ? (
+                        <Link href={`/links/${row.linkId}`} className="underline underline-offset-2">
+                          {te("callThem")}
+                        </Link>
+                      ) : (
+                        te("callThem")
+                      )}
+                    </p>
+                  )}
+                </TableCell>
+                <TableCell className="text-muted-foreground">
+                  {row.followup?.status === "DRAFT" && (
+                    <Link href="/drafts" className="underline underline-offset-2">
+                      {te("followup.draft")}
+                    </Link>
+                  )}
+                  {(row.followup?.status === "GENERATED" || row.followup?.status === "SCHEDULED") &&
+                    te("followup.scheduled", { date: when(row.followup.at, row) })}
+                  {row.followup?.status === "SENT" && te("followup.sent", { date: when(row.followup.at, row) })}
+                  {!row.followup && te("noSignal")}
                 </TableCell>
                 <TableCell className="text-muted-foreground">{when(row.nextAt, row)}</TableCell>
                 <TableCell className="text-muted-foreground">{when(row.lastAt, row)}</TableCell>

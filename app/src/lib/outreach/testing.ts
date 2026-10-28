@@ -34,3 +34,74 @@ export async function shiftMailboxRampBack(mailboxId: string, days: number) {
   await prisma.$executeRaw`UPDATE "mailboxes" SET "rampStartedAt" = "rampStartedAt" - make_interval(days => ${d}::int)
     WHERE "id" = ${mailboxId}`;
 }
+
+const MAX_SIMULATED_SECONDS = 3600;
+const boundedSeconds = (value: number) => Math.max(0, Math.min(MAX_SIMULATED_SECONDS, Math.round(Number.isFinite(value) ? value : 0)));
+/** Old enough for the catch-up, which waits until a reading has settled. */
+const SETTLED_MS = 6 * 60 * 1000;
+
+/**
+ * Test helper: records a human reading on an enrollment's link. The pricing page (first PRICING-tagged one, else
+ * page 1) gets `pricingSeconds`, the rest of `totalSeconds` goes to page 1 or the next page. False without a link.
+ */
+export async function simulateReading(
+  enrollmentId: string,
+  input: { pricingSeconds: number; totalSeconds: number },
+  now: Date = new Date(),
+): Promise<boolean> {
+  const pricingMs = boundedSeconds(input.pricingSeconds) * 1000;
+  const totalMs = Math.max(pricingMs, boundedSeconds(input.totalSeconds) * 1000);
+  const enrollment = await prisma.campaignProspect.findUnique({
+    where: { id: enrollmentId },
+    select: { linkId: true, prospectId: true, link: { select: { documentId: true } } },
+  });
+  if (!enrollment?.linkId || !enrollment.link) return false;
+  const { linkId } = enrollment;
+
+  const pricingPage = await prisma.documentPage.findFirst({
+    where: { documentId: enrollment.link.documentId, tags: { has: "PRICING" } },
+    orderBy: { pageNumber: "asc" },
+    select: { pageNumber: true },
+  });
+  const pricingNumber = pricingPage?.pageNumber ?? 1;
+  const otherNumber = pricingNumber === 1 ? 2 : 1;
+  const otherMs = totalMs - pricingMs;
+  const settledAt = new Date(now.getTime() - SETTLED_MS);
+  const startedAt = new Date(settledAt.getTime() - totalMs);
+
+  const view = await prisma.documentView.create({
+    data: {
+      linkId,
+      documentId: enrollment.link.documentId,
+      prospectId: enrollment.prospectId,
+      visitorId: `sim-${enrollmentId}-${now.getTime()}`,
+      isBot: false,
+      fromSeller: false,
+      startedAt,
+      lastSeenAt: settledAt,
+      totalDurationMs: totalMs,
+      maxPageReached: otherMs > 0 ? Math.max(pricingNumber, otherNumber) : pricingNumber,
+    },
+    select: { id: true },
+  });
+  const pages = [
+    { pageNumber: pricingNumber, ms: pricingMs },
+    ...(otherMs > 0 ? [{ pageNumber: otherNumber, ms: otherMs }] : []),
+  ].filter((page) => page.ms > 0);
+  if (pages.length > 0) {
+    await prisma.pageView.createMany({
+      data: pages.map((page) => ({
+        viewId: view.id,
+        linkId,
+        pageNumber: page.pageNumber,
+        totalDurationMs: page.ms,
+        hits: Math.max(1, Math.round(page.ms / 5000)),
+        maxScrollDepth: 1,
+        firstSeenAt: startedAt,
+        lastSeenAt: settledAt,
+      })),
+    });
+  }
+  await prisma.link.update({ where: { id: linkId }, data: { lastActivityAt: settledAt } });
+  return true;
+}
