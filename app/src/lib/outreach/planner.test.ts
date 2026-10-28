@@ -16,6 +16,7 @@ import {
   retryAt,
   stepSendAt,
   templateVarsOf,
+  type PlannerEnrollment,
   type PlannerStep,
   type ReadingSettings,
 } from "./planner";
@@ -183,7 +184,6 @@ describe("nextStepFor with reading signals", () => {
     maxFollowupsPer30Days: 3,
     minDaysBetweenFollowups: 2,
     hotPricingThresholdSec: 20,
-    reactivateAfterDays: 5,
   };
   const quiet: EnrollmentSignals = {
     opened: false,
@@ -204,7 +204,7 @@ describe("nextStepFor with reading signals", () => {
   const ago = (ms: number) => new Date(now.getTime() - ms);
   const sent1 = { status: "ACTIVE" as EnrollmentStatus, currentStep: 1, lastSentAt: ago(10 * DAY_MS) };
   const lastStepDone = { status: "ACTIVE" as EnrollmentStatus, currentStep: 2, lastSentAt: ago(10 * DAY_MS) };
-  const plan = (signals: Partial<EnrollmentSignals>, enrollment = sent1) =>
+  const plan = (signals: Partial<EnrollmentSignals>, enrollment: PlannerEnrollment = sent1) =>
     nextStepFor({ enrollment, steps, signals: { ...quiet, ...signals }, settings, now });
 
   it("keeps the lot 2 table when signals are absent", () => {
@@ -339,6 +339,33 @@ describe("nextStepFor with reading signals", () => {
   it("still waits out the finish delay after the last step", () => {
     const fresh = { ...lastStepDone, lastSentAt: ago(DAY_MS) };
     expect(plan({}, fresh)).toEqual({ kind: "wait", until: new Date(fresh.lastSentAt.getTime() + FINISH_AFTER_LAST_STEP_MS) });
+  });
+
+  it("never pauses an unopened enrollment, even with a pricing threshold of 0", () => {
+    const zero = { ...settings, hotPricingThresholdSec: 0 };
+    expect(nextStepFor({ enrollment: sent1, steps, signals: quiet, settings: zero, now })).toMatchObject({
+      kind: "send_step",
+    });
+    expect(nextStepFor({ enrollment: sent1, steps, signals: { ...quiet, opened: true }, settings: zero, now })).toMatchObject({
+      kind: "send_step",
+    });
+  });
+
+  it("sends the step right away with signals when no mail went out yet", () => {
+    const fresh = { status: "QUEUED" as EnrollmentStatus, currentStep: 0, lastSentAt: null };
+    expect(plan({}, fresh)).toEqual({ kind: "send_step", step: steps[0], earliest: now });
+    const stranded = { status: "ACTIVE" as EnrollmentStatus, currentStep: 1, lastSentAt: null };
+    expect(plan({}, stranded)).toEqual({ kind: "send_step", step: steps[1], earliest: now });
+  });
+
+  it("with a cap of 0, pauses without a follow-up and reactivation waits", () => {
+    const zero = { ...settings, maxFollowupsPer30Days: 0 };
+    const run = (signals: Partial<EnrollmentSignals>, enrollment: PlannerEnrollment = sent1) =>
+      nextStepFor({ enrollment, steps, signals: { ...quiet, ...signals }, settings: zero, now });
+    expect(run({ deepRead: true, opened: true })).toEqual({ kind: "pause_alert", reason: "deep_read", followup: null });
+    const lastSentAt = lastStepDone.lastSentAt;
+    const cold = { opened: true, readingMs: 60_000, lastReadAt: ago(6 * DAY_MS), lastSentAt };
+    expect(run(cold, lastStepDone)).toEqual({ kind: "wait", until: new Date(now.getTime()) });
   });
 
   it("does nothing for a paused enrollment, whatever the signals", () => {

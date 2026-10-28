@@ -21,7 +21,6 @@ export type ReadingSettings = {
   maxFollowupsPer30Days: number;
   minDaysBetweenFollowups: number;
   hotPricingThresholdSec: number;
-  reactivateAfterDays: 5;
 };
 export const REACTIVATE_AFTER_DAYS = 5;
 
@@ -66,7 +65,12 @@ export function nextStepFor(input: {
 
     if (sig.replied) return { kind: "finish" };
     if (sig.forwardedTo.length > 0 && sig.lastSignal !== "forward") return { kind: "note_forward" };
-    if (sig.pricingMs >= cfg.hotPricingThresholdSec * 1000 && sig.lastSignal !== "pricing") {
+    if (
+      sig.opened &&
+      sig.pricingMs > 0 &&
+      sig.pricingMs >= cfg.hotPricingThresholdSec * 1000 &&
+      sig.lastSignal !== "pricing"
+    ) {
       return { kind: "pause_alert", reason: "call_moment", followup: capped ? null : "COLD_READ_PRICING" };
     }
     if ((sig.deepRead || sig.sessions >= 2) && sig.lastSignal !== "deep" && sig.lastSignal !== "pricing") {
