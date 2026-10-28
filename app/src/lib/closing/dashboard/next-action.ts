@@ -93,6 +93,11 @@ const URGENCY: NextAction["kind"][] = [
   "snoozed",
 ];
 
+/** Someone reads right now: the live dot, the top of the list. */
+export function isLive(action: NextAction) {
+  return action.kind === "call_now" || (action.kind === "identify" && action.live);
+}
+
 /** The seller has something to do, as opposed to waiting. */
 export function isUrgent(action: NextAction) {
   if (action.kind === "ai_advice") return action.urgent;
@@ -103,7 +108,6 @@ export function isUrgent(action: NextAction) {
 const FACTUAL: NextAction["kind"][] = [
   "close_won",
   "call_now",
-  "identify",
   "reactivate",
   "reply",
   "review_draft",
@@ -122,7 +126,8 @@ export function withAiAdvice(
   action: NextAction,
   advice: { type: string; timing: string; priority: number } | null,
 ): NextAction {
-  if (!advice || FACTUAL.includes(action.kind)) return action;
+  // A reader unknown reading right now is a fact; one who read a lot is a reading the analysis may weigh
+  if (!advice || FACTUAL.includes(action.kind) || (action.kind === "identify" && action.live)) return action;
   return {
     kind: "ai_advice",
     adviceType: advice.type,

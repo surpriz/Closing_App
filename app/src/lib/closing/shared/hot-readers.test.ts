@@ -55,6 +55,15 @@ describe("groupReadersByAddress", () => {
     expect(abel).toMatchObject({ linkId: "laptop", readingMs: 60_000, links: 2 });
   });
 
+  it("lets a decided or hotter link speak for the person, never a test", () => {
+    const [person] = groupReadersByAddress([
+      { ...row("signed", "abel@photoroom.com", 1, 60), dealStatus: "VALIDATED" },
+      { ...row("phone", "abel@photoroom.com", 1, 1), dealStatus: "OPEN" },
+      { ...row("test", "abel@photoroom.com", 1, 0), isOnboardingTest: true },
+    ]);
+    expect(person).toMatchObject({ linkId: "signed", links: 3 });
+  });
+
   it("keeps readers without an address apart", () => {
     expect(groupReadersByAddress([row("a", null, 1, 1), row("b", null, 1, 2)])).toHaveLength(2);
   });

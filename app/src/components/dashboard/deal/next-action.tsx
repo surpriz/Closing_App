@@ -6,6 +6,7 @@ import type { StoredInsight } from "@/lib/closing/brain/latest";
 import type { DealCta } from "@/lib/closing/dashboard/deal-cta";
 import {
   describeNextAction,
+  isLive,
   isUrgent,
   type NextAction,
 } from "@/lib/closing/dashboard/next-action";
@@ -82,7 +83,7 @@ export function DealNextAction({
             !urgent && "font-normal",
           )}
         >
-          {action.kind === "call_now" ? (
+          {isLive(action) ? (
             <LiveDot className="mt-2 size-2.5 shrink-0" />
           ) : (
             <ArrowRight className="mt-1 size-5 shrink-0" aria-hidden />

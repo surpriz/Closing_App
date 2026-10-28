@@ -1,7 +1,9 @@
 import { prisma } from "@/lib/db";
 
+import { ENGAGEMENT_TIER_THRESHOLDS } from "../constants";
 import { videoProvider } from "../documents/web-link";
 import { getWorkspaceSettings } from "../settings";
+import { countPeople } from "./people";
 import { computeEngagementScore } from "./scoring";
 
 // Recomputes and stores the Hot/Warm/Cold score of a link
@@ -41,7 +43,7 @@ export async function refreshEngagementScore(linkId: string, now = new Date()) {
       _sum: { totalDurationMs: true },
       _max: { lastSeenAt: true, maxPageReached: true },
     }),
-    prisma.documentView.groupBy({ by: ["visitorId"], where: viewWhere }),
+    prisma.documentView.groupBy({ by: ["visitorId", "email"], where: viewWhere }),
     pricingPages.length > 0
       ? prisma.pageView.aggregate({
           where: { linkId, pageNumber: { in: pricingPages }, view: { isBot: false } },
@@ -60,13 +62,14 @@ export async function refreshEngagementScore(linkId: string, now = new Date()) {
     prisma.viewSignal.count({ where: { linkId, type: { in: ["COPY_TEXT", "PRINT"] } } }),
   ]);
 
+  const people = countPeople(visitors);
   const result = computeEngagementScore({
     now,
     dealStatus: link.dealStatus,
     lastActivityAt: totals._max.lastSeenAt,
     totalDurationMs: totals._sum.totalDurationMs ?? 0,
     visitCount: totals._count._all,
-    uniqueViewers: visitors.length,
+    uniqueViewers: people,
     pricingDurationMs: pricing?._sum.totalDurationMs ?? 0,
     pricingThresholdMs: (link.hotPricingThresholdSec ?? settings.hotPricingThresholdSec) * 1000,
     completionRatio: depth
@@ -84,12 +87,12 @@ export async function refreshEngagementScore(linkId: string, now = new Date()) {
     replied: link.repliedAt !== null,
   });
 
-  // Hot means someone to call: a link nobody is named on stays warm at most, whatever was read
-  const tier = result.tier === "HOT" && link._count.prospects === 0 ? "WARM" : result.tier;
+  // Hot means someone to call: an open link nobody is named on stays warm at most, score and tier alike
+  const capped = result.tier === "HOT" && link._count.prospects === 0 && link.dealStatus === "OPEN";
   const data = {
-    score: result.score,
-    tier,
-    uniqueViewers: visitors.length,
+    score: capped ? ENGAGEMENT_TIER_THRESHOLDS.HOT - 1 : result.score,
+    tier: capped ? ("WARM" as const) : result.tier,
+    uniqueViewers: people,
     visitCount: totals._count._all,
     totalDurationMs: totals._sum.totalDurationMs ?? 0,
     reasons: JSON.parse(JSON.stringify(result.reasons)),

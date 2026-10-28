@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 
 import { linkLabelSelect } from "./dashboard/labels";
+import { countPeople } from "./engagement/people";
 
 type Scope = { documentId: string } | { linkId: string };
 
@@ -47,8 +48,7 @@ export async function getReadingAnalytics(scope: Scope) {
 
   return {
     viewCount: totals._count._all,
-    // One person per address, whatever the browsers; anonymous readers per browser
-    uniqueVisitors: new Set(visitors.map((v) => v.email?.toLowerCase() ?? `visitor:${v.visitorId}`)).size,
+    uniqueVisitors: countPeople(visitors),
     totalDurationMs: totals._sum.totalDurationMs ?? 0,
     lastActivityAt: totals._max.lastSeenAt,
     pages: pages

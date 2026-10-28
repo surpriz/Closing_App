@@ -1,4 +1,4 @@
-import { compareByUrgency, type NextAction } from "./next-action";
+import { compareByUrgency, isLive, type NextAction } from "./next-action";
 
 /**
  * Order of the "À traiter" list once the deal analysis is in. Pure.
@@ -42,9 +42,14 @@ function priority(row: RankedRow) {
   return row.aiPriority ?? RULE_PRIORITY[row.action.kind];
 }
 
+/** Position among the facts of the moment, -1 when not one. An unknown reader live ranks with a call. */
+function realTime(action: NextAction) {
+  return isLive(action) ? REAL_TIME.indexOf("call_now") : REAL_TIME.indexOf(action.kind);
+}
+
 export function compareDeals(a: RankedRow, b: RankedRow) {
-  const aNow = REAL_TIME.indexOf(a.action.kind);
-  const bNow = REAL_TIME.indexOf(b.action.kind);
+  const aNow = realTime(a.action);
+  const bNow = realTime(b.action);
   if (aNow !== -1 || bNow !== -1) {
     if (aNow === -1) return 1;
     if (bNow === -1) return -1;
