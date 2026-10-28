@@ -39,6 +39,7 @@ export default async function DraftsPage() {
       body: true,
       rationale: true,
       error: true,
+      campaignProspect: { select: { campaign: { select: { name: true } } } },
       prospect: { select: { name: true, email: true } },
       link: { select: { ...linkLabelSelect, expiresAt: true } },
     },
@@ -67,6 +68,7 @@ export default async function DraftsPage() {
                     </Link>
                     <span className="text-small text-muted-foreground">
                       {" · "}
+                      {draft.campaignProspect && <>{t("campaign", { name: draft.campaignProspect.campaign.name })} · </>}
                       {tl(`followupTrigger.${draft.trigger}`)} · {tl(`channel.${draft.channel}`)} ·{" "}
                       {draft.prospect.name ?? draft.prospect.email}
                     </span>

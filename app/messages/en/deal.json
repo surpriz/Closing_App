@@ -70,9 +70,11 @@
     "notToApprove": "This follow-up no longer needs approval.",
     "alreadyGone": "This follow-up was already sent or cancelled.",
     "cannotRewrite": "This follow-up can't be rewritten anymore.",
-    "cancelledBySeller": "Cancelled by the salesperson"
+    "cancelledBySeller": "Cancelled by the salesperson",
+    "campaignOwned": "Follow-ups are driven by a campaign: they can't be switched here."
   },
   "dealHeader": {
+    "campaign": "Campaign {name} · step {step}/{steps}",
     "notSent": "Not sent yet",
     "reads": "{count, plural, one {# read} other {# reads}}",
     "readingNow": "Reading now",
@@ -196,7 +198,8 @@
     "ariaLabel": "Automatic follow-ups",
     "enabled": "Follow-ups on",
     "disabled": "Follow-ups off, pending ones cancelled",
-    "failed": "Couldn't save the change"
+    "failed": "Couldn't save the change",
+    "drivenByCampaign": "Follow-ups driven by campaign {name}"
   },
   "linkSettingsForm": {
     "name": "Link name",

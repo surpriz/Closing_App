@@ -1,4 +1,5 @@
 {
+  "campaign": "Campagne {name}",
   "metaTitle": "Relances à valider",
   "title": "Relances à valider",
   "description": "Tout ce qui attend votre accord avant de partir. Chaque relance est revérifiée au moment de l'envoi : si le prospect a répondu ou ouvert entre-temps, elle ne part pas.",

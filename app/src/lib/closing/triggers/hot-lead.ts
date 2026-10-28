@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { isCampaignOwned } from "@/lib/outreach/ownership";
 import { toUiLocale } from "@/lib/seller-locale";
 
 import { DAY_MS, LIVE_VIEW_WINDOW_MS } from "../constants";
@@ -54,12 +55,23 @@ export async function evaluateHotLead(viewId: string, resumed: boolean, now = ne
       id: true,
       linkId: true,
       isBot: true,
-      link: { select: { organizationId: true, dealStatus: true, archivedAt: true, shared: true, parentLinkId: true } },
+      link: {
+        select: {
+          organizationId: true,
+          dealStatus: true,
+          archivedAt: true,
+          shared: true,
+          parentLinkId: true,
+          campaignOwned: true,
+        },
+      },
     },
   });
   // A shared link is read by many by design: its readers show on its page, not as calls to make
   if (!view || view.isBot || view.link.archivedAt || view.link.shared) return;
   if (view.link.dealStatus === "WON" || view.link.dealStatus === "LOST") return;
+  // The campaign raises its own call moment on this link
+  if (isCampaignOwned(view.link)) return;
   if (await alreadySignaled(view.linkId, now)) return;
 
   const settings = await getWorkspaceSettings(view.link.organizationId);
@@ -125,6 +137,7 @@ export async function evaluatePricingCallMoment(viewId: string, now = new Date()
           dealStatus: true,
           archivedAt: true,
           shared: true,
+          campaignOwned: true,
           hotPricingThresholdSec: true,
           document: { select: { pages: { where: { tags: { has: "PRICING" } }, select: { pageNumber: true } } } },
         },
@@ -133,6 +146,8 @@ export async function evaluatePricingCallMoment(viewId: string, now = new Date()
   });
   if (!view || view.isBot || view.leftAt || view.link.archivedAt || view.link.shared) return;
   if (view.link.dealStatus !== "OPEN" && view.link.dealStatus !== "CHANGE_REQUESTED") return;
+  // The campaign raises its own call moment on this link
+  if (isCampaignOwned(view.link)) return;
   const pricingPages = view.link.document.pages.map((p) => p.pageNumber);
   if (pricingPages.length === 0) return;
   if (await alreadySignaled(view.linkId, now)) return;

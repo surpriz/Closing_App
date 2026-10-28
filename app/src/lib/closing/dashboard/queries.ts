@@ -6,6 +6,7 @@ import { isManagerRole } from "@/lib/roles";
 import { DAY_MS } from "../constants";
 import { hasReason } from "../engagement/reasons";
 import { deadState, REVIVAL_ALERT_TYPES, REVIVAL_VISIBLE_DAYS, revivalSignal } from "../revival";
+import { linkCampaign, linkCampaignSelect } from "./campaign";
 import type { FeedSource } from "./feed";
 import type { FunnelLinkFacts } from "./funnel";
 import { dealLabel, firstProspect, linkLabelSelect } from "./labels";
@@ -135,6 +136,7 @@ export async function getOpenDeals(
       gateSeenAt: true,
       archivedAt: true,
       expiresAt: true,
+      ...linkCampaignSelect,
       engagementScore: { select: { score: true, tier: true, reasons: true } },
       document: { select: { name: true, displayTitle: true, docType: true, numPages: true, archivedAt: true } },
       alerts: {
@@ -175,12 +177,13 @@ export async function getOpenDeals(
     },
   });
 
-  const rows = deals.map(({ views, sellerActivities, _count, insights, alerts, ...deal }) => {
+  const rows = deals.map(({ views, sellerActivities, _count, insights, alerts, campaignProspect, ...deal }) => {
     // .at() keeps "maybe none" in the types, unlike destructuring
     const lastView = views.at(0);
     return {
       ...deal,
       revival: revivalSignal(deadState(deal, now), alerts.at(0) ?? null),
+      campaign: linkCampaign({ campaignOwned: deal.campaignOwned, campaignProspect }),
       insight: insights.at(0) ?? null,
       draftCount: _count.followups,
       lastSellerContactAt: sellerActivities.at(0)?.occurredAt ?? null,

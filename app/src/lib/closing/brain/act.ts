@@ -1,5 +1,6 @@
 import { DEFAULT_UI_LOCALE } from "@/i18n/locale";
 import { prisma } from "@/lib/db";
+import { isCampaignOwned } from "@/lib/outreach/ownership";
 import { toUiLocale } from "@/lib/seller-locale";
 import { getNamespaceTranslator } from "@/lib/server-translator";
 
@@ -83,6 +84,7 @@ export async function actOnInsight(insightId: string, { force = false, now = new
       quoteRequested: link.quoteRequestedAt !== null,
       // A follow-up the seller asks for is theirs to send
       replied: !force && link.repliedAt !== null,
+      campaignOwned: isCampaignOwned(link),
       decisionDeadline: link.decisionDeadline,
       expiresAt: link.expiresAt,
       channels: resolved.channels,

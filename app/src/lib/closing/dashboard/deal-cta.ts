@@ -103,6 +103,7 @@ export function dealCta(
         ? null
         : { kind: "copy_link", label: t("today.dealCta.copyLink") };
     case "in_touch":
+    case "campaign":
     case "snoozed":
       return null;
   }

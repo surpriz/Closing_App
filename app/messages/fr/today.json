@@ -134,6 +134,7 @@
     "pause": "Tout valider moi-même"
   },
   "nextAction": {
+    "campaign": "Campagne {name} · étape {step}/{steps}",
     "aiWait": "Rien à faire pour l'instant, Clozer surveille.",
     "aiCloseLost": "Prospect sans doute perdu : à classer ?",
     "aiAdvice": "{verb} {timing}.",

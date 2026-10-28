@@ -152,7 +152,8 @@
       "noChannel": "No sending channel available.",
       "afterExpiry": "It would go out after the link expires.",
       "bounced": "The contact's email address bounced.",
-      "replied": "The prospect replied by email: it's your conversation now."
+      "replied": "The prospect replied by email: it's your conversation now.",
+      "campaignOwned": "Follow-ups are driven by the campaign."
     },
     "act": {
       "insightNotFound": "Analysis not found.",

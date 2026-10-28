@@ -150,6 +150,35 @@ describe("describeNextAction", () => {
   });
 });
 
+describe("campaign-owned deals", () => {
+  const campaign = { name: "Q4 DAF", step: 2, steps: 4 };
+
+  it("leaves the plan to the campaign, whatever the temperature", () => {
+    expect(computeNextAction({ ...base, campaign, tier: "HOT" })).toEqual({ kind: "campaign", ...campaign });
+    expect(computeNextAction({ ...base, campaign, opened: false, lastActivityAt: null })).toEqual({
+      kind: "campaign",
+      ...campaign,
+    });
+  });
+
+  it("still lets facts of the moment through", () => {
+    expect(computeNextAction({ ...base, campaign, readingNow: true })).toEqual({ kind: "call_now" });
+    expect(computeNextAction({ ...base, campaign, draftToReview: true })).toEqual({ kind: "review_draft" });
+  });
+
+  it("keeps the analysis from overriding it, and is not urgent", () => {
+    const action = computeNextAction({ ...base, campaign });
+    expect(withAiAdvice(action, { type: "send_followup", timing: "now", priority: 5 })).toEqual(action);
+    expect(isUrgent(action)).toBe(false);
+  });
+
+  it("is described with its step", () => {
+    const action = { kind: "campaign", ...campaign } as const;
+    expect(describeNextAction(action, now, en)).toBe("Campaign Q4 DAF · step 2/4");
+    expect(describeNextAction(action, now, i18n)).toBe("Campagne Q4 DAF · étape 2/4");
+  });
+});
+
 describe("isUrgent", () => {
   it("separates things to do from waiting", () => {
     expect(isUrgent({ kind: "call_now" })).toBe(true);
