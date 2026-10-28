@@ -74,6 +74,7 @@ describe("gmail start", () => {
       id: "other",
       organizationId: "o1",
       userId: "u1",
+      status: "ERROR",
       provider: "GOOGLE",
     });
     expect(createOauthState).not.toHaveBeenCalled();

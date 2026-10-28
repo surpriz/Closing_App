@@ -20,7 +20,7 @@
         "followups": "Unlimited AI follow-ups, autopilot",
         "assistant": "Prospect assistant, translation, voice notes",
         "branding": "No Clozer badge for your prospects",
-        "mailbox": "Connected mailboxes for your campaigns: €15 excl. VAT per mailbox per month"
+        "mailbox": "Connected mailboxes for your campaigns: {price} excl. VAT per mailbox per month"
       }
     },
     "team": {
@@ -31,7 +31,7 @@
         "teamView": "Team view for the manager",
         "integrations": "Slack and webhooks",
         "seats": "Billed per member, 2 minimum",
-        "mailbox": "Connected mailboxes for your campaigns: €15 excl. VAT per mailbox per month"
+        "mailbox": "Connected mailboxes for your campaigns: {price} excl. VAT per mailbox per month"
       }
     },
     "enterprise": {

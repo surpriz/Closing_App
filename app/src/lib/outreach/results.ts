@@ -13,6 +13,9 @@ export type CampaignOutcome = {
   status: CampaignStatus;
   enrolled: number;
   sent: number;
+  /** Distinct prospects with at least one email sent: the denominator of the three rates. */
+  contacted: number;
+  /** Prospects who reopened at least one email. */
   clicked: number;
   replied: number;
   bounced: number;
@@ -63,6 +66,7 @@ async function sentRows(where: Record<string, unknown>): Promise<FollowupRow[]> 
       followup: { select: { trigger: true } },
       enrollment: { select: { timezone: true, link: { select: { meetingBookedAt: true } } } },
     },
+    orderBy: { sentAt: "desc" },
     take: MESSAGES_READ,
   });
   if (messages.length === 0) return [];
@@ -105,11 +109,12 @@ export async function getCampaignResults(organizationId: string, owner: SellerSc
   ]);
 
   const ids = campaigns.map((campaign) => campaign.id);
-  const [enrollments, messages] = ids.length
+  // One line per prospect reached: the rates are shares of prospects, not of messages
+  const [enrollments, perProspect] = ids.length
     ? await Promise.all([
         prisma.campaignProspect.groupBy({ by: ["campaignId", "status"], where: { campaignId: { in: ids } }, _count: { _all: true } }),
         prisma.campaignMessage.groupBy({
-          by: ["campaignId"],
+          by: ["campaignId", "enrollmentId"],
           where: { campaignId: { in: ids }, status: "SENT" },
           _count: { _all: true, clickedAt: true },
         }),
@@ -119,14 +124,15 @@ export async function getCampaignResults(organizationId: string, owner: SellerSc
   const byCampaign = campaigns.map((campaign): CampaignOutcome => {
     const mine = enrollments.filter((group) => group.campaignId === campaign.id);
     const count = (status: string) => mine.find((group) => group.status === status)?._count._all ?? 0;
-    const sent = messages.find((group) => group.campaignId === campaign.id)?._count;
+    const prospects = perProspect.filter((group) => group.campaignId === campaign.id);
     return {
       id: campaign.id,
       name: campaign.name,
       status: campaign.status,
       enrolled: mine.reduce((sum, group) => sum + group._count._all, 0),
-      sent: sent?._all ?? 0,
-      clicked: sent?.clickedAt ?? 0,
+      sent: prospects.reduce((sum, group) => sum + group._count._all, 0),
+      contacted: prospects.length,
+      clicked: prospects.filter((group) => group._count.clickedAt > 0).length,
       replied: count("REPLIED"),
       bounced: count("BOUNCED"),
       unsubscribed: count("UNSUBSCRIBED"),

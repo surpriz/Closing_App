@@ -58,6 +58,7 @@
     "noMailbox": "Connectez une boîte pour envoyer.",
     "connect": "Connecter une boîte",
     "planBlocked": "Vos campagnes sont en pause : connecter une boîte et envoyer des campagnes demande Solo ou Équipe.",
+    "planNeeded": "Envoyer des campagnes demande Solo ou Équipe.",
     "seePlans": "Voir les offres"
   },
   "errors": {

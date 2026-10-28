@@ -119,7 +119,12 @@ export default async function CampaignsPage() {
         }
       />
       {active.length === 0 && <p className="text-small text-muted-foreground">{t("page.noMailboxHint")}</p>}
-      <MailboxBanner mailboxes={[...failing, ...teammatesFailing]} hasActive={active.length > 0} planBlocked={!planAllowed} />
+      <MailboxBanner
+        mailboxes={[...failing, ...teammatesFailing]}
+        hasActive={active.length > 0}
+        planBlocked={!planAllowed}
+        campaignsRunning={campaigns.some((campaign) => campaign.status === "ACTIVE")}
+      />
 
       {rows.length ? (
         <Surface>

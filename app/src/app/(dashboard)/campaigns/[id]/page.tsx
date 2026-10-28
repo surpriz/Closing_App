@@ -9,12 +9,14 @@ import { CampaignTestTools } from "@/components/dashboard/campaigns/campaign-tes
 import { EnrollmentsTable } from "@/components/dashboard/campaigns/enrollments-table";
 import { ForwardedContacts } from "@/components/dashboard/campaigns/forwarded-contacts";
 import { ImportProspects } from "@/components/dashboard/campaigns/import-prospects";
+import { MailboxBanner } from "@/components/dashboard/campaigns/mailbox-banner";
 import { StepStats } from "@/components/dashboard/campaigns/step-stats";
 import { StepsEditor } from "@/components/dashboard/campaigns/steps-editor";
 import { SectionTitle, Surface } from "@/components/dashboard/page-header";
 import type { UiLocale } from "@/i18n/locale";
 import { inBackground } from "@/lib/closing/background";
 import { documentTitle } from "@/lib/closing/documents/link-title";
+import { canUseMailboxes } from "@/lib/billing/mailboxes";
 import { prisma } from "@/lib/db";
 import { canEditCampaign } from "@/lib/outreach/campaigns";
 import { requireOutreach } from "@/lib/outreach/flag";
@@ -238,10 +240,12 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
   const archived = campaign.status === "ARCHIVED";
   const locked = archived || !canEdit;
   const uiLocale = locale as UiLocale;
+  const planBlocked = campaign.status === "ACTIVE" && !(await canUseMailboxes(organization.id));
 
   return (
     <div className="space-y-10">
       {campaign.status === "ACTIVE" && <AutoRefresh intervalMs={REFRESH_MS} />}
+      {planBlocked && <MailboxBanner mailboxes={[]} hasActive planBlocked />}
       <CampaignHeader
         id={campaign.id}
         name={campaign.name}

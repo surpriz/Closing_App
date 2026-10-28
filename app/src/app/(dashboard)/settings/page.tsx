@@ -222,6 +222,7 @@ export default async function SettingsPage({
               canManage={isManager}
               billingEnabled={isBillingEnabled()}
               hasCustomer={!!organization.stripeCustomerId}
+              outreach={outreach}
               offerEndsAt={billing.subscribed === null ? (offerEndsAt(organization, new Date())?.toISOString() ?? null) : null}
             />
             <AdvancedSettingsBlock className="space-y-10">

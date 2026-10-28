@@ -45,9 +45,11 @@
   },
   "campaigns": {
     "title": "Campaigns",
-    "hint": "emails sent from your mailbox, last {days} days",
+    "hint": "Rates over prospects contacted",
+    "recent": "emails sent from your mailbox, last {days} days",
     "name": "Campaign",
     "enrolled": "Enrolled",
+    "contacted": "Contacted",
     "sent": "Sent",
     "clicked": "Reopened",
     "replied": "Replied",

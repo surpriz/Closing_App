@@ -93,7 +93,7 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
                 where: { kind: "STEP", status: "SENT", sentAt: { not: null } },
                 orderBy: { sentAt: "desc" },
                 take: 3,
-                select: { sentAt: true, subject: true, body: true },
+                select: { sentAt: true, subject: true, body: true, stepId: true },
               },
             },
           },
@@ -132,10 +132,24 @@ export async function generateFollowupMessage(followupId: string, regenerateInst
   const brief = followup.trigger === "AI_DECISION" ? (context.brief ?? null) : null;
   const now = new Date();
   // Only this follow-up's enrollment: a link's earlier enrollment (re-enrolled contact) is another story
-  const campaignSteps =
+  const sentSteps =
     followup.campaignProspectId && link.campaignProspectId === followup.campaignProspectId
       ? (link.campaignProspect?.messages ?? [])
       : [];
+  // A body purged after 90 days is empty: the step's template tells the writer what was said
+  const purged = sentSteps.filter((step) => step.body === "" && step.stepId).map((step) => step.stepId as string);
+  const templates = purged.length
+    ? new Map(
+        (await prisma.campaignStep.findMany({ where: { id: { in: purged } }, select: { id: true, body: true } })).map((step) => [
+          step.id,
+          step.body,
+        ]),
+      )
+    : null;
+  const campaignSteps = sentSteps.map((step) => ({
+    ...step,
+    body: step.body === "" && step.stepId ? (templates?.get(step.stepId) ?? "") : step.body,
+  }));
   // The link no longer opens: a message pointing to it would be off-key, and the writer call wasted
   if (isLinkExpired(link, now)) {
     await prisma.followup.updateMany({

@@ -58,6 +58,7 @@
     "noMailbox": "Connect a mailbox to send campaigns.",
     "connect": "Connect a mailbox",
     "planBlocked": "Your campaigns are paused: connecting a mailbox and sending campaigns takes Solo or Team.",
+    "planNeeded": "Sending campaigns takes Solo or Team.",
     "seePlans": "See plans"
   },
   "errors": {

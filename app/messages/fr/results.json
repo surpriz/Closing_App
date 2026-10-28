@@ -45,9 +45,11 @@
   },
   "campaigns": {
     "title": "Campagnes",
-    "hint": "emails envoyés depuis votre boîte, {days} derniers jours",
+    "hint": "Taux sur les prospects contactés",
+    "recent": "emails envoyés depuis votre boîte, {days} derniers jours",
     "name": "Campagne",
     "enrolled": "Inscrits",
+    "contacted": "Contactés",
     "sent": "Envoyés",
     "clicked": "Rouverts",
     "replied": "Réponses",

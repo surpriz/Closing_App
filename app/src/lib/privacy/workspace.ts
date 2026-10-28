@@ -1,6 +1,7 @@
 import Stripe from "stripe";
 
 import { isPaidStatus } from "@/lib/billing/plans";
+import { syncMailboxQuantity } from "@/lib/billing/mailboxes";
 import { syncSeats } from "@/lib/billing/seats";
 import { getStripe } from "@/lib/billing/stripe";
 import { listPrivateBlobPaths, organizationPrefix } from "@/lib/blob";
@@ -89,6 +90,8 @@ export async function deleteAccount(userId: string) {
   // The membership went with the user, no auth hook ran: one Team seat fewer
   for (const { organizationId } of memberships) {
     await syncSeats(organizationId).catch((error) => console.error("[billing:seats]", organizationId, error));
+    // Their mailboxes cascaded away with them
+    await syncMailboxQuantity(organizationId).catch((error) => console.error("[billing:mailboxes]", organizationId, error));
   }
 }
 

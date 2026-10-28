@@ -20,7 +20,7 @@
         "followups": "Relances IA illimitées, pilote automatique",
         "assistant": "Assistant prospect, traduction, messages vocaux",
         "branding": "Pas de badge Clozer chez vos prospects",
-        "mailbox": "Boîtes connectées pour vos campagnes : 15 € HT par boîte et par mois"
+        "mailbox": "Boîtes connectées pour vos campagnes : {price} HT par boîte et par mois"
       }
     },
     "team": {
@@ -31,7 +31,7 @@
         "teamView": "Vue équipe pour le manager",
         "integrations": "Slack et webhooks",
         "seats": "Facturé par membre, 2 minimum",
-        "mailbox": "Boîtes connectées pour vos campagnes : 15 € HT par boîte et par mois"
+        "mailbox": "Boîtes connectées pour vos campagnes : {price} HT par boîte et par mois"
       }
     },
     "enterprise": {

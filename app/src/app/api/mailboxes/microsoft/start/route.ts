@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
   const mailbox =
     asked && /^[\w-]{1,64}$/.test(asked)
       ? await prisma.mailbox.findFirst({
-          where: { id: asked, organizationId: organization.id, userId: user.id },
+          where: { id: asked, organizationId: organization.id, userId: user.id, status: "ERROR" },
           select: { id: true, email: true },
         })
       : null;

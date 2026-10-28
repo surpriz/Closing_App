@@ -21,11 +21,14 @@ export function MailboxBanner({
   mailboxes,
   hasActive,
   planBlocked = false,
+  campaignsRunning = true,
 }: {
   mailboxes: { email: string; lastError: string | null }[];
   hasActive: boolean;
   /** The plan no longer sells the mailbox add-on: campaigns are paused until the workspace upgrades. */
   planBlocked?: boolean;
+  /** At least one campaign is ACTIVE: "paused" is true only then, otherwise the line just says what sending takes. */
+  campaignsRunning?: boolean;
 }) {
   const t = useTranslations("campaigns.banner");
   const te = useTranslations("campaigns.errors");
@@ -36,7 +39,7 @@ export function MailboxBanner({
     <div role="status" className="space-y-2 border-l-2 border-foreground bg-muted px-4 py-3 text-small">
       {planBlocked && (
         <p>
-          {t("planBlocked")}{" "}
+          {t(campaignsRunning ? "planBlocked" : "planNeeded")}{" "}
           <Link href={BILLING_HREF} className="font-medium underline underline-offset-2">
             {t("seePlans")}
           </Link>

@@ -81,7 +81,7 @@ describe("microsoft start", () => {
   it("reconnects one of the seller's own mailboxes, with its address as hint", async () => {
     prisma.mailbox.findFirst.mockResolvedValue({ id: "mb1", email: "me@acme.fr" });
     const res = await get("?mailboxId=mb1");
-    expect(prisma.mailbox.findFirst.mock.calls[0][0].where).toEqual({ id: "mb1", organizationId: "o1", userId: "u1" });
+    expect(prisma.mailbox.findFirst.mock.calls[0][0].where).toEqual({ id: "mb1", organizationId: "o1", userId: "u1", status: "ERROR" });
     expect(createOauthState).toHaveBeenCalledWith(expect.objectContaining({ redirectTo: "mb1" }));
     expect(new URL(res.headers.get("location")!).searchParams.get("login_hint")).toBe("me@acme.fr");
   });

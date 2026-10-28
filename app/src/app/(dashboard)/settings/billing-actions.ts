@@ -6,8 +6,17 @@ import { getLocale, getTranslations } from "next-intl/server";
 
 import { getAppOrigin } from "@/lib/app-origin";
 import { checkoutOffer } from "@/lib/billing/offers";
-import { BILLING_HREF, isPaidPlanId, isPaidStatus, planItemOf, seatQuantity, type Interval } from "@/lib/billing/plans";
-import { getStripe, resolvePortalConfiguration, resolvePrice } from "@/lib/billing/stripe";
+import {
+  BILLING_HREF,
+  isPaidPlanId,
+  isPaidStatus,
+  mailboxItemOf,
+  mailboxLookupKeyFor,
+  planItemOf,
+  seatQuantity,
+  type Interval,
+} from "@/lib/billing/plans";
+import { getStripe, resolvePortalConfiguration, resolvePrice, resolvePriceByKey } from "@/lib/billing/stripe";
 import { syncSubscription } from "@/lib/billing/webhook";
 import { prisma } from "@/lib/db";
 import { requireManager } from "@/lib/session";
@@ -124,8 +133,18 @@ export async function switchToTeam(interval: Interval): Promise<BillingState & {
     const subscription = await stripe.subscriptions.retrieve(organization.stripeSubscriptionId);
     const item = planItemOf(subscription);
     if (!item) return { error: t("generic") };
+    // The mailbox add-on follows the plan's interval: Stripe refuses mixed intervals on one subscription
+    const mailboxItem = mailboxItemOf(subscription);
+    const items = [{ id: item.id, price: await resolvePrice(stripe, "team", interval), quantity: seatQuantity(members) }];
+    if (mailboxItem) {
+      items.push({
+        id: mailboxItem.id,
+        price: await resolvePriceByKey(stripe, mailboxLookupKeyFor(interval)),
+        quantity: mailboxItem.quantity ?? 1,
+      });
+    }
     await stripe.subscriptions.update(subscription.id, {
-      items: [{ id: item.id, price: await resolvePrice(stripe, "team", interval), quantity: seatQuantity(members) }],
+      items,
       proration_behavior: "always_invoice",
       // A declined card leaves the subscription on Solo instead of a Team left unpaid
       payment_behavior: "error_if_incomplete",

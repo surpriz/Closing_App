@@ -122,6 +122,7 @@ describe("getCampaignResults", () => {
     expect(where.campaign).toEqual({ organizationId: "org1" });
     expect(where.sentAt.gte).toEqual(new Date("2026-08-20T10:00:00Z"));
     expect(messageFindMany.mock.calls[0][0].take).toBe(5000);
+    expect(messageFindMany.mock.calls[0][0].orderBy).toEqual({ sentAt: "desc" });
     expect(stepFindMany).not.toHaveBeenCalled();
     expect(result).toMatchObject({ sent: 0, byStep: [], byHour: [], byCampaign: [] });
   });
@@ -143,18 +144,49 @@ describe("getCampaignResults", () => {
       { id: "c1", name: "Alpha", status: "ACTIVE" },
       { id: "c2", name: "Beta", status: "DRAFT" },
     ]);
+    // 100 prospects reached, 300 emails, 20 replies: 20 %, not 7 %
+    messageGroupBy.mockResolvedValue([
+      ...Array.from({ length: 100 }, (_, i) => ({
+        campaignId: "c1",
+        enrollmentId: `e${i}`,
+        _count: { _all: 3, clickedAt: i < 4 ? 1 : 0 },
+      })),
+    ]);
     enrollmentGroupBy.mockResolvedValue([
-      { campaignId: "c1", status: "ACTIVE", _count: { _all: 6 } },
-      { campaignId: "c1", status: "REPLIED", _count: { _all: 3 } },
+      { campaignId: "c1", status: "ACTIVE", _count: { _all: 80 } },
+      { campaignId: "c1", status: "REPLIED", _count: { _all: 20 } },
       { campaignId: "c1", status: "BOUNCED", _count: { _all: 1 } },
       { campaignId: "c1", status: "UNSUBSCRIBED", _count: { _all: 1 } },
     ]);
-    messageGroupBy.mockResolvedValue([{ campaignId: "c1", _count: { _all: 20, clickedAt: 4 } }]);
     const result = await getCampaignResults("org1", null, now);
+    expect(messageGroupBy.mock.calls[0][0].by).toEqual(["campaignId", "enrollmentId"]);
     expect(result.byCampaign).toEqual([
-      { id: "c1", name: "Alpha", status: "ACTIVE", enrolled: 11, sent: 20, clicked: 4, replied: 3, bounced: 1, unsubscribed: 1 },
-      { id: "c2", name: "Beta", status: "DRAFT", enrolled: 0, sent: 0, clicked: 0, replied: 0, bounced: 0, unsubscribed: 0 },
+      {
+        id: "c1",
+        name: "Alpha",
+        status: "ACTIVE",
+        enrolled: 102,
+        sent: 300,
+        contacted: 100,
+        clicked: 4,
+        replied: 20,
+        bounced: 1,
+        unsubscribed: 1,
+      },
+      {
+        id: "c2",
+        name: "Beta",
+        status: "DRAFT",
+        enrolled: 0,
+        sent: 0,
+        contacted: 0,
+        clicked: 0,
+        replied: 0,
+        bounced: 0,
+        unsubscribed: 0,
+      },
     ]);
+    expect(Math.round((result.byCampaign[0].replied / result.byCampaign[0].contacted) * 100)).toBe(20);
   });
 });
 

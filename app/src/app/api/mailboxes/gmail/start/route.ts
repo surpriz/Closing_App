@@ -32,7 +32,8 @@ export async function GET(request: NextRequest) {
   if (asked !== null) {
     if (!/^[\w-]{1,64}$/.test(asked)) return NextResponse.redirect(`${settings}?mailbox=error#boite`, 302);
     reconnect = await prisma.mailbox.findFirst({
-      where: { id: asked, organizationId: organization.id, userId: user.id, provider: "GOOGLE" },
+      // Only a mailbox in error is a reconnect: a DISCONNECTED one is taken over as a new connection (plan guard applies)
+      where: { id: asked, organizationId: organization.id, userId: user.id, status: "ERROR", provider: "GOOGLE" },
       select: { id: true, email: true, connector: true, externalAccountId: true },
     });
     if (!reconnect) return NextResponse.redirect(`${settings}?mailbox=error#boite`, 302);

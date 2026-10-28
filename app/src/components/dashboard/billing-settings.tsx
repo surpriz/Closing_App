@@ -41,6 +41,8 @@ export type BillingSettingsProps = {
   hasCustomer: boolean;
   /** Campaign discount still to take: the date it lapses. */
   offerEndsAt: string | null;
+  /** The mailbox add-on is only on sale to workspaces that can run campaigns. */
+  outreach: boolean;
 };
 
 // Same inbox as the landing (landing/src/components/links.ts)
@@ -83,8 +85,10 @@ export function BillingSettings(props: BillingSettingsProps) {
   const mailboxLine = (() => {
     const { connected } = props.mailboxes;
     if (connected <= 0 || !PLANS[props.plan].mailboxAddon) return null;
-    if (props.plan === "enterprise") return t("current.mailboxesIncluded", { count: connected });
-    return t("current.mailboxes", { count: connected, price: money(MAILBOX_MONTHLY_PRICE_CENTS[props.interval ?? "month"]) });
+    // The price only for a real subscription; trial, beta, comped and enterprise have them included
+    if (props.source !== "subscription") return t("current.mailboxesIncluded", { count: connected });
+    const count = props.mailboxes.billed ?? connected;
+    return t("current.mailboxes", { count, price: money(MAILBOX_MONTHLY_PRICE_CENTS[props.interval ?? "month"]) });
   })();
 
   const status = (() => {
@@ -208,10 +212,12 @@ export function BillingSettings(props: BillingSettingsProps) {
                     )}
                   </div>
                   <ul className="flex-1 space-y-1 text-small">
-                    {FEATURES[plan].map((feature) => (
+                    {FEATURES[plan]
+                      .filter((feature) => feature !== "mailbox" || props.outreach)
+                      .map((feature) => (
                       <li key={feature} className="flex gap-1.5">
                         <Check className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-                        {t(`plans.${plan}.features.${feature}` as never)}
+                        {t(`plans.${plan}.features.${feature}` as never, { price: money(MAILBOX_MONTHLY_PRICE_CENTS[interval]) } as never)}
                       </li>
                     ))}
                   </ul>

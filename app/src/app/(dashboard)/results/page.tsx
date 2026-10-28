@@ -87,11 +87,11 @@ export default async function ResultsPage(props: PageProps<"/results">) {
       {campaigns && campaigns.sent > 0 && (
         <section className="space-y-8">
           <div>
-            <SectionTitle hint={t("campaigns.hint", { days: RESULTS_FOLLOWUP_DAYS })}>{t("campaigns.title")}</SectionTitle>
+            <SectionTitle hint={t("campaigns.hint")}>{t("campaigns.title")}</SectionTitle>
             <CampaignTable campaigns={campaigns.byCampaign} t={t} />
           </div>
           <div>
-            <SectionTitle>{t("campaigns.byStep")}</SectionTitle>
+            <SectionTitle hint={t("campaigns.recent", { days: RESULTS_FOLLOWUP_DAYS })}>{t("campaigns.byStep")}</SectionTitle>
             <OutcomeTable
               label={t("campaigns.step")}
               groups={campaigns.byStep.map((g) => ({
@@ -104,7 +104,9 @@ export default async function ResultsPage(props: PageProps<"/results">) {
           </div>
           {campaigns.byHour.length > 0 && (
             <div>
-              <SectionTitle hint={t("byHourHint")}>{t("campaigns.byHour")}</SectionTitle>
+              <SectionTitle hint={`${t("byHourHint")} · ${t("campaigns.recent", { days: RESULTS_FOLLOWUP_DAYS })}`}>
+                {t("campaigns.byHour")}
+              </SectionTitle>
               <OutcomeTable
                 label={t("table.hour")}
                 groups={campaigns.byHour.map((g) => ({ ...g, label: `${g.key} h` }))}
@@ -201,6 +203,7 @@ function CampaignTable({
             <TableHead className="pl-4">{t("campaigns.name")}</TableHead>
             <TableHead className="text-right">{t("campaigns.enrolled")}</TableHead>
             <TableHead className="text-right">{t("campaigns.sent")}</TableHead>
+            <TableHead className="text-right">{t("campaigns.contacted")}</TableHead>
             <TableHead className="text-right">{t("campaigns.clicked")}</TableHead>
             <TableHead className="text-right">{t("campaigns.replied")}</TableHead>
             <TableHead className="pr-4 text-right">{t("campaigns.bounced")}</TableHead>
@@ -216,9 +219,10 @@ function CampaignTable({
               </TableCell>
               <TableCell className="text-right tabular-nums">{c.enrolled}</TableCell>
               <TableCell className="text-right tabular-nums">{c.sent}</TableCell>
-              <TableCell className="text-right tabular-nums">{percent(c.clicked, c.sent)}</TableCell>
-              <TableCell className="text-right tabular-nums">{percent(c.replied, c.sent)}</TableCell>
-              <TableCell className="pr-4 text-right tabular-nums">{percent(c.bounced, c.sent)}</TableCell>
+              <TableCell className="text-right tabular-nums">{c.contacted}</TableCell>
+              <TableCell className="text-right tabular-nums">{percent(c.clicked, c.contacted)}</TableCell>
+              <TableCell className="text-right tabular-nums">{percent(c.replied, c.contacted)}</TableCell>
+              <TableCell className="pr-4 text-right tabular-nums">{percent(c.bounced, c.contacted)}</TableCell>
             </TableRow>
           ))}
         </TableBody>
