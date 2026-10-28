@@ -17,8 +17,10 @@ vi.mock("@/lib/env", () => ({
     MAILBOX_WEBHOOK_TOKEN: "good-token-good-token-good-token",
   }),
 }));
+vi.stubEnv("ENCRYPTION_KEY", "k".repeat(40));
 vi.mock("@/lib/app-origin", () => ({ getPublicAppUrl: () => "https://app.test" }));
 
+const { notifySignature, unipileHeaderToken } = await import("../webhooks/unipile-secrets");
 const { createHostedAuthLink, ensureUnipileWebhook, unipileConnector } = await import("./unipile");
 
 type Call = { url: string; init: RequestInit };
@@ -99,6 +101,10 @@ describe("error mapping", () => {
     expect((await code(500))?.code).toBe("TRANSIENT");
     expect((await code(422, { type: "errors/invalid_recipient" }))?.code).toBe("REJECTED");
     expect((await code(409, { type: "errors/disconnected_account" }))?.code).toBe("AUTH_REVOKED");
+    expect((await code(401, { type: "errors/expired_credentials" }))?.code).toBe("AUTH_REVOKED");
+    expect((await code(403, { type: "errors/insufficient_permissions" }))?.code).toBe("AUTH_REVOKED");
+    expect((await code(400, { type: "errors/invalid_recipient_address" }))?.code).toBe("REJECTED");
+    expect((await code(400, { type: "errors/invalid_parameters" }))?.code).toBe("CONFIG");
     const limited = await code(429, {}, { "retry-after": "7" });
     expect(limited?.code).toBe("RATE_LIMITED");
     expect(limited?.options.retryAfterMs).toBe(7000);
@@ -142,20 +148,36 @@ describe("listNewMessages", () => {
     expect(second.hasMore).toBe(false);
     expect(second.messages[0].isDsn).toBe(true);
     expect(second.messages[0].dsn?.failedRecipient).toBe("bob@nowhere.test");
-    expect(JSON.parse(second.cursor!).after).toBe("2026-10-27T11:29:59.000Z");
+    expect(JSON.parse(second.cursor!).after).toBe("2026-10-27T10:30:00.000Z");
 
     // next poll starts from the date
     responder = () => json({ items: [], cursor: null });
     const third = await connector().listNewMessages(second.cursor, listOpts);
-    expect(new URL(calls[2].url).searchParams.get("after")).toBe("2026-10-27T11:29:59.000Z");
+    expect(new URL(calls[2].url).searchParams.get("after")).toBe("2026-10-27T10:30:00.000Z");
     expect(new URL(calls[2].url).searchParams.has("cursor")).toBe(false);
-    expect(JSON.parse(third.cursor!).after).toBe("2026-10-27T11:29:59.000Z");
+    expect(JSON.parse(third.cursor!).after).toBe("2026-10-27T10:30:00.000Z");
   });
 
   it("treats a corrupt cursor as never synced", async () => {
     responder = () => json({ items: [] });
     await connector().listNewMessages("not json", listOpts);
     expect(new URL(calls[0].url).searchParams.get("after")).toBe("2026-10-20T00:00:00.000Z");
+  });
+});
+
+describe("cursor boundary", () => {
+  it("ignores items without a valid date and keeps a one hour overlap", async () => {
+    responder = () =>
+      json({
+        items: [
+          { id: "a", date: "2026-10-27T10:00:00.000Z", from_attendee: { identifier: "a@b.test" } },
+          { id: "b", date: "garbage", from_attendee: { identifier: "a@b.test" } },
+          { id: "c", from_attendee: { identifier: "a@b.test" } },
+        ],
+      });
+    const out = await connector().listNewMessages(null, listOpts);
+    expect(out.messages).toHaveLength(3);
+    expect(JSON.parse(out.cursor!).after).toBe("2026-10-27T09:00:00.000Z");
   });
 });
 
@@ -206,7 +228,7 @@ describe("hosted auth link", () => {
       failure_redirect_url: "https://app.test/ko",
     });
     expect(body.notify_url).toBe(
-      "https://app.test/api/webhooks/mailboxes/unipile/notify?token=good-token-good-token-good-token",
+      `https://app.test/api/webhooks/mailboxes/unipile/notify?token=good-token-good-token-good-token&sig=${notifySignature("st1")}`,
     );
     expect(body.reconnect_account).toBeUndefined();
   });
@@ -235,8 +257,10 @@ describe("ensureUnipileWebhook", () => {
     expect(registered[0]).toMatchObject({
       source: "email",
       events: ["mail_received"],
-      headers: [{ key: "x-clozer-token", value: "good-token-good-token-good-token" }],
+      headers: [{ key: "x-clozer-token", value: unipileHeaderToken() }],
     });
     expect(await ensureUnipileWebhook({ http })).toEqual({ created: 0 });
+    expect(unipileHeaderToken()).not.toContain("good-token");
+    expect(JSON.stringify(calls.map((c) => c.url))).not.toContain(unipileHeaderToken());
   });
 });

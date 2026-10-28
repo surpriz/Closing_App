@@ -1,15 +1,13 @@
-import { timingSafeEqual } from "node:crypto";
-
 import { prisma } from "@/lib/db";
-import { getEnv } from "@/lib/env";
 import { logAudit } from "@/lib/audit";
 import { getSellerPrefs, sellerTimezone } from "@/lib/closing/notify/preferences";
 
 import { connectProviderMailbox } from "../connect";
-import { getUnipileAccount } from "../gmail/unipile";
+import { getUnipileAccount, unipileConnector } from "../gmail/unipile";
 import type { ConnectorDeps } from "../index";
 import { notifyMailboxOwner } from "../notify-owner";
 import { consumeOauthState } from "../oauth/state";
+import { verifyUnipileHeaderToken } from "./unipile-secrets";
 
 type Json = Record<string, unknown>;
 
@@ -21,13 +19,13 @@ function str(value: unknown) {
   return typeof value === "string" && value ? value : null;
 }
 
-/** Unipile cannot sign: the same token also arrives as a custom header, so a leaked URL alone is not enough. */
-export function hasUnipileHeaderToken(request: Request, env: ReturnType<typeof getEnv> = getEnv()): boolean {
-  const secret = env.MAILBOX_WEBHOOK_TOKEN;
-  if (!secret) return false;
-  const given = Buffer.from(request.headers.get("x-clozer-token") ?? "");
-  const expected = Buffer.from(secret);
-  return given.length === expected.length && timingSafeEqual(given, expected);
+/** Unipile cannot sign: a derived secret also arrives as a custom header, so a leaked URL alone is not enough. */
+export function hasUnipileHeaderToken(request: Request): boolean {
+  try {
+    return verifyUnipileHeaderToken(request.headers.get("x-clozer-token"));
+  } catch {
+    return false;
+  }
 }
 
 export type NotifyOutcome = "connected" | "ignored" | "invalid_state" | "failed";
@@ -44,14 +42,39 @@ export async function handleUnipileNotify(
   if ((status !== "CREATION_SUCCESS" && status !== "RECONNECTED") || !accountId || !stateId) return { outcome: "ignored" };
 
   const state = await consumeOauthState(stateId, deps.now);
-  if (!state) return { outcome: "invalid_state" };
+  if (!state || state.provider !== "GOOGLE") return { outcome: "invalid_state" };
 
   try {
     const account = await getUnipileAccount(accountId, deps);
-    if (!account.address) {
-      console.error("[mailboxes] unipile account without an address");
+    // The account must be the one created for this very state: the payload alone is not proof
+    if (account.name !== stateId) {
+      console.error("[mailboxes] unipile account does not match the state");
+      return { outcome: "invalid_state" };
+    }
+    // Another workspace already runs this account: never let a second one take it over
+    const taken = await prisma.mailbox.findFirst({
+      where: {
+        connector: "UNIPILE",
+        externalAccountId: accountId,
+        status: { in: ["ACTIVE", "ERROR", "CONNECTING"] },
+        organizationId: { not: state.organizationId },
+      },
+      select: { id: true },
+    });
+    if (taken) {
+      console.error("[mailboxes] unipile account already used elsewhere");
       return { outcome: "failed" };
     }
+    if (!account.address) {
+      console.error("[mailboxes] unipile account without an address");
+      await dropOrphanAccount(accountId, deps);
+      return { outcome: "failed" };
+    }
+    const email = account.address.trim().toLowerCase();
+    const previous = await prisma.mailbox.findUnique({
+      where: { organizationId_email: { organizationId: state.organizationId, email } },
+      select: { connector: true, externalAccountId: true },
+    });
     const prefs = await getSellerPrefs(state.userId, state.organizationId);
     const result = await connectProviderMailbox(
       {
@@ -59,7 +82,7 @@ export async function handleUnipileNotify(
         userId: state.userId,
         provider: "GOOGLE",
         connector: "UNIPILE",
-        email: account.address,
+        email,
         displayName: null,
         credentials: { v: 1, kind: "unipile", accountId },
         externalAccountId: accountId,
@@ -69,6 +92,7 @@ export async function handleUnipileNotify(
     );
     if (!result.ok) {
       console.error("[mailboxes] unipile connect refused", result.code);
+      await dropOrphanAccount(accountId, deps);
       return { outcome: "failed" };
     }
     await logAudit({
@@ -79,10 +103,29 @@ export async function handleUnipileNotify(
       targetId: result.mailboxId,
       metadata: { provider: "GOOGLE", connector: "UNIPILE" },
     });
+    // A reconnect that came back with a new account leaves the old one billed and listening
+    if (previous?.connector === "UNIPILE" && previous.externalAccountId && previous.externalAccountId !== accountId) {
+      await dropOrphanAccount(previous.externalAccountId, deps);
+    }
     return { outcome: "connected", mailboxId: result.mailboxId };
   } catch (error) {
     console.error("[mailboxes] unipile notify failed", error instanceof Error ? error.message : "unknown");
+    await dropOrphanAccount(accountId, deps);
     return { outcome: "failed" };
+  }
+}
+
+/** Deletes a Unipile account no mailbox points at (best effort): otherwise it would linger, connected and billed. */
+export async function dropOrphanAccount(accountId: string, deps: Pick<ConnectorDeps, "http"> = {}) {
+  try {
+    const used = await prisma.mailbox.findFirst({
+      where: { connector: "UNIPILE", externalAccountId: accountId },
+      select: { id: true },
+    });
+    if (used) return;
+    await unipileConnector({ email: "", displayName: null }, { v: 1, kind: "unipile", accountId }, deps).disconnect();
+  } catch (error) {
+    console.error("[mailboxes] unipile orphan cleanup failed", error instanceof Error ? error.message : "unknown");
   }
 }
 
@@ -105,7 +148,11 @@ function readEvent(payload: unknown) {
 }
 
 /** The payload is only a trigger: it names an account, never content. Unknown shapes and accounts do nothing. */
-export async function handleUnipileEvent(payload: unknown, now = new Date()): Promise<EventOutcome> {
+export async function handleUnipileEvent(
+  payload: unknown,
+  now = new Date(),
+  deps: Pick<ConnectorDeps, "http"> = {},
+): Promise<EventOutcome> {
   const { event, accountId, status } = readEvent(payload);
   if (!event || !accountId) return { action: "none" };
   const mailbox = await prisma.mailbox.findFirst({
@@ -120,7 +167,10 @@ export async function handleUnipileEvent(payload: unknown, now = new Date()): Pr
     return { action: "sync", mailboxId: mailbox.id };
   }
   if (event === "account_status" && (status === "CREDENTIALS" || status === "DISCONNECTED")) {
-    const detail = `unipile ${status}`;
+    // The payload is only a hint: our own call to Unipile decides
+    const live = await getUnipileAccount(accountId, deps).catch(() => null);
+    if (!live?.status || !/CREDENTIALS|DISCONNECTED|PERMISSIONS/i.test(live.status)) return { action: "none" };
+    const detail = `unipile ${live.status}`;
     const { count } = await prisma.mailbox.updateMany({
       where: { id: mailbox.id, status: "ACTIVE" },
       data: { status: "ERROR", lastError: `AUTH_REVOKED: ${detail}`, lastErrorAt: now },

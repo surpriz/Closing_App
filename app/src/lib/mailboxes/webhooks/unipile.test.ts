@@ -6,11 +6,13 @@ const h = vi.hoisted(() => ({
   account: vi.fn(),
   notifyOwner: vi.fn(async () => true),
   findFirst: vi.fn(),
+  findUnique: vi.fn(async (): Promise<unknown> => null),
+  disconnect: vi.fn(async () => {}),
   update: vi.fn(async () => ({})),
   updateMany: vi.fn(async () => ({ count: 1 })),
 }));
 
-vi.mock("@/lib/db", () => ({ prisma: { mailbox: { findFirst: h.findFirst, update: h.update, updateMany: h.updateMany } } }));
+vi.mock("@/lib/db", () => ({ prisma: { mailbox: { findFirst: h.findFirst, findUnique: h.findUnique, update: h.update, updateMany: h.updateMany } } }));
 vi.mock("@/lib/env", () => ({ getEnv: () => ({ MAILBOX_WEBHOOK_TOKEN: "good-token-good-token-good-token" }) }));
 vi.mock("@/lib/audit", () => ({ logAudit: vi.fn(async () => {}) }));
 vi.mock("@/lib/closing/notify/preferences", () => ({
@@ -19,10 +21,15 @@ vi.mock("@/lib/closing/notify/preferences", () => ({
 }));
 vi.mock("../oauth/state", () => ({ consumeOauthState: h.consume }));
 vi.mock("../connect", () => ({ connectProviderMailbox: h.connect }));
-vi.mock("../gmail/unipile", () => ({ getUnipileAccount: h.account }));
+vi.mock("../gmail/unipile", () => ({
+  getUnipileAccount: h.account,
+  unipileConnector: () => ({ disconnect: h.disconnect }),
+}));
+vi.stubEnv("ENCRYPTION_KEY", "k".repeat(40));
 vi.mock("../notify-owner", () => ({ notifyMailboxOwner: h.notifyOwner }));
 
 const { handleUnipileEvent, handleUnipileNotify, hasUnipileHeaderToken } = await import("./unipile");
+const { unipileHeaderToken } = await import("./unipile-secrets");
 
 const NOW = new Date("2026-10-28T10:00:00Z");
 const created = { status: "CREATION_SUCCESS", account_id: "acc_1", name: "state_1" };
@@ -30,6 +37,9 @@ const created = { status: "CREATION_SUCCESS", account_id: "acc_1", name: "state_
 beforeEach(() => {
   vi.clearAllMocks();
   h.account.mockResolvedValue({ address: "me@acme.test", name: "state_1", status: "OK" });
+  h.findFirst.mockReset();
+  h.findFirst.mockResolvedValue(null);
+  h.findUnique.mockResolvedValue(null);
   h.connect.mockResolvedValue({ ok: true, mailboxId: "mb1", dns: {} });
 });
 
@@ -74,6 +84,68 @@ describe("handleUnipileNotify", () => {
     h.consume.mockResolvedValueOnce({ organizationId: "org1", userId: "u1", provider: "GOOGLE" });
     h.connect.mockResolvedValueOnce({ ok: false, code: "limit", message: "too many mailboxes" });
     expect((await handleUnipileNotify(created)).outcome).toBe("failed");
+    // nothing points at the account: it is deleted
+    expect(h.disconnect).toHaveBeenCalledTimes(1);
+  });
+
+  const state = { organizationId: "org1", userId: "u1", provider: "GOOGLE" };
+
+  it("refuses a state of another provider", async () => {
+    h.consume.mockResolvedValueOnce({ ...state, provider: "MICROSOFT" });
+    expect((await handleUnipileNotify(created)).outcome).toBe("invalid_state");
+    expect(h.connect).not.toHaveBeenCalled();
+  });
+
+  it("refuses an account that was not created for this state", async () => {
+    h.consume.mockResolvedValueOnce(state);
+    h.account.mockResolvedValueOnce({ address: "me@acme.test", name: "other_state", status: "OK" });
+    expect((await handleUnipileNotify(created)).outcome).toBe("invalid_state");
+    expect(h.connect).not.toHaveBeenCalled();
+    expect(h.disconnect).not.toHaveBeenCalled();
+  });
+
+  it("refuses an account a live mailbox of another workspace already uses", async () => {
+    h.consume.mockResolvedValueOnce(state);
+    h.findFirst.mockResolvedValueOnce({ id: "other" });
+    expect((await handleUnipileNotify(created)).outcome).toBe("failed");
+    expect(h.findFirst.mock.calls[0][0].where).toMatchObject({
+      connector: "UNIPILE",
+      externalAccountId: "acc_1",
+      organizationId: { not: "org1" },
+    });
+    expect(h.connect).not.toHaveBeenCalled();
+    expect(h.disconnect).not.toHaveBeenCalled();
+  });
+
+  it("deletes the account when it has no address or the lookup throws", async () => {
+    h.consume.mockResolvedValue(state);
+    h.account.mockResolvedValueOnce({ address: null, name: "state_1", status: "OK" });
+    expect((await handleUnipileNotify(created)).outcome).toBe("failed");
+    h.account.mockRejectedValueOnce(new Error("boom"));
+    expect((await handleUnipileNotify(created)).outcome).toBe("failed");
+    expect(h.disconnect).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps an account some mailbox still points at", async () => {
+    h.consume.mockResolvedValueOnce(state);
+    h.connect.mockResolvedValueOnce({ ok: false, code: "exists", message: "x" });
+    h.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce({ id: "live" });
+    await handleUnipileNotify(created);
+    expect(h.disconnect).not.toHaveBeenCalled();
+  });
+
+  it("deletes the previous account when a reconnect brings a new one", async () => {
+    h.consume.mockResolvedValueOnce(state);
+    h.findUnique.mockResolvedValueOnce({ connector: "UNIPILE", externalAccountId: "acc_old" });
+    expect((await handleUnipileNotify(created)).outcome).toBe("connected");
+    expect(h.disconnect).toHaveBeenCalledTimes(1);
+  });
+
+  it("leaves the account alone on a reconnect to the same one", async () => {
+    h.consume.mockResolvedValueOnce(state);
+    h.findUnique.mockResolvedValueOnce({ connector: "UNIPILE", externalAccountId: "acc_1" });
+    await handleUnipileNotify(created);
+    expect(h.disconnect).not.toHaveBeenCalled();
   });
 });
 
@@ -88,6 +160,7 @@ describe("handleUnipileEvent", () => {
 
   it("CREDENTIALS puts the mailbox in error and tells the owner", async () => {
     h.findFirst.mockResolvedValueOnce({ id: "mb1", status: "ACTIVE" });
+    h.account.mockResolvedValueOnce({ address: null, name: null, status: "CREDENTIALS" });
     const out = await handleUnipileEvent({ event: "account_status", account_id: "acc_1", status: "CREDENTIALS" }, NOW);
     expect(out).toEqual({ action: "auth_revoked", mailboxId: "mb1" });
     expect(h.updateMany).toHaveBeenCalledWith({
@@ -99,8 +172,18 @@ describe("handleUnipileEvent", () => {
 
   it("reads the nested account status shape", async () => {
     h.findFirst.mockResolvedValueOnce({ id: "mb1", status: "ACTIVE" });
+    h.account.mockResolvedValueOnce({ address: null, name: null, status: "DISCONNECTED" });
     const out = await handleUnipileEvent({ AccountStatus: { account_id: "acc_1", message: "DISCONNECTED" } }, NOW);
     expect(out.action).toBe("auth_revoked");
+  });
+
+  it("does not trust an account_status that Unipile does not confirm", async () => {
+    h.findFirst.mockResolvedValue({ id: "mb1", status: "ACTIVE" });
+    h.account.mockResolvedValueOnce({ address: null, name: null, status: "OK" });
+    expect((await handleUnipileEvent({ event: "account_status", account_id: "acc_1", status: "CREDENTIALS" })).action).toBe("none");
+    h.account.mockRejectedValueOnce(new Error("down"));
+    expect((await handleUnipileEvent({ event: "account_status", account_id: "acc_1", status: "CREDENTIALS" })).action).toBe("none");
+    expect(h.updateMany).not.toHaveBeenCalled();
   });
 
   it("does nothing for unknown events, healthy statuses, unknown accounts or bad payloads", async () => {
@@ -118,6 +201,7 @@ describe("handleUnipileEvent", () => {
 
   it("does not notify when the mailbox was not active", async () => {
     h.findFirst.mockResolvedValueOnce({ id: "mb1", status: "ERROR" });
+    h.account.mockResolvedValueOnce({ address: null, name: null, status: "CREDENTIALS" });
     h.updateMany.mockResolvedValueOnce({ count: 0 });
     const out = await handleUnipileEvent({ event: "account_status", account_id: "acc_1", status: "CREDENTIALS" });
     expect(out.action).toBe("none");
@@ -126,10 +210,10 @@ describe("handleUnipileEvent", () => {
 });
 
 describe("hasUnipileHeaderToken", () => {
-  const req = (token?: string) =>
-    new Request("https://app.test/x", { headers: token ? { "x-clozer-token": token } : {} });
-  it("matches the shared token only", () => {
-    expect(hasUnipileHeaderToken(req("good-token-good-token-good-token"))).toBe(true);
+  const req = (token?: string) => new Request("https://app.test/x", { headers: token ? { "x-clozer-token": token } : {} });
+  it("matches the derived token only, not the URL token", () => {
+    expect(hasUnipileHeaderToken(req(unipileHeaderToken()))).toBe(true);
+    expect(hasUnipileHeaderToken(req("good-token-good-token-good-token"))).toBe(false);
     expect(hasUnipileHeaderToken(req("bad"))).toBe(false);
     expect(hasUnipileHeaderToken(req())).toBe(false);
   });

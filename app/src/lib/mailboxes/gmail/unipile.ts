@@ -6,6 +6,7 @@ import type { ConnectorDeps } from "../index";
 import { parseAuthenticationResults, domainOf } from "../inbound/auth";
 import { dsnFromHeaders } from "../inbound/dsn";
 import { mailboxWebhookUrl } from "../config";
+import { notifySignature, unipileHeaderToken } from "../webhooks/unipile-secrets";
 import type { InboundHeaders, InboundMessage, MailboxConnector, SendResult, SyncCursor, VerifyResult } from "../types";
 
 // Every Unipile field name we depend on is read in this file; the mapping functions are the single place to adjust
@@ -14,7 +15,7 @@ import type { InboundHeaders, InboundMessage, MailboxConnector, SendResult, Sync
 const EXCERPT_MAX = 1000;
 const PAGE_MAX = 100;
 const LINK_TTL_MS = 15 * 60_000;
-const OVERLAP_MS = 1000;
+const OVERLAP_MS = 60 * 60_000; // late-dated replies must not fall behind the boundary; duplicates are absorbed downstream
 const RFC_MESSAGE_ID = /^<[^<>\s@]+@[^<>\s]+>$/;
 const KEPT_HEADERS = [
   "auto-submitted",
@@ -59,15 +60,20 @@ async function mapUnipileError(response: Response, context: "send" | "account" |
   const type = str(body.type) ?? "";
   const detail = `unipile ${response.status}${type ? ` ${type.slice(0, 80)}` : ""}`;
   const { status } = response;
-  if (status === 401 || status === 403) return new MailboxError("CONFIG", "unipile rejected our API key", { detail });
-  if (status === 429) return new MailboxError("RATE_LIMITED", "unipile rate limit", { retryAfterMs: retryAfterMs(response), detail });
-  if (status >= 500) return new MailboxError("TRANSIENT", "unipile unavailable", { detail });
+  // Account-level problems first: a 401/403 carrying one of these is the mailbox, not our key
   if (/disconnected|credentials|invalid_account|permissions/i.test(type)) {
     return new MailboxError("AUTH_REVOKED", "the mailbox must be reconnected", { detail });
   }
+  if (status === 401 || status === 403) return new MailboxError("CONFIG", "unipile rejected our API key", { detail });
+  if (status === 429) return new MailboxError("RATE_LIMITED", "unipile rate limit", { retryAfterMs: retryAfterMs(response), detail });
+  if (status >= 500) return new MailboxError("TRANSIENT", "unipile unavailable", { detail });
   if (status === 404 && context === "account") return new MailboxError("AUTH_REVOKED", "unipile account not found", { detail });
   if (context === "send" && (status === 400 || status === 422)) {
-    return new MailboxError("REJECTED", "recipient or message rejected", { detail });
+    // A bare 400 is more likely our request than the recipient: only recipient-looking types reject the message
+    if (status === 422 || /recipient|address|attendee/i.test(type)) {
+      return new MailboxError("REJECTED", "recipient or message rejected", { detail });
+    }
+    return new MailboxError("CONFIG", "unipile refused the request", { detail });
   }
   return new MailboxError("TRANSIENT", "unexpected unipile answer", { detail });
 }
@@ -107,6 +113,13 @@ function accountInfo(doc: Json) {
 export async function getUnipileAccount(accountId: string, deps: Deps = {}) {
   const doc = await call(deps, `/api/v1/accounts/${encodeURIComponent(accountId)}`, { method: "GET", context: "account" });
   return accountInfo(doc);
+}
+
+/** Recipient fields of the multipart form; isolated because the exact encoding (`to[0][identifier]`) is spike-verified. */
+function recipientFields(to: { address: string; name?: string | null }): [string, string][] {
+  const fields: [string, string][] = [["to[0][identifier]", to.address]];
+  if (to.name) fields.push(["to[0][display_name]", to.name]);
+  return fields;
 }
 
 /** custom_headers entries as the multipart form carries them; isolated because the exact encoding is spike-verified. */
@@ -200,8 +213,7 @@ export function unipileConnector(
     async send(message): Promise<SendResult> {
       const form = new FormData();
       form.set("account_id", creds.accountId);
-      form.set("to[0][identifier]", message.to.address);
-      if (message.to.name) form.set("to[0][display_name]", message.to.name);
+      for (const [name, value] of recipientFields(message.to)) form.set(name, value);
       form.set("subject", message.subject);
       form.set("body", message.html);
       for (const [name, value] of customHeaderFields(message.headers ?? {})) form.set(name, value);
@@ -246,7 +258,11 @@ export function unipileConnector(
         .map((item) => mapEmail(obj(item)))
         .filter((m): m is InboundMessage => m !== null);
       let max = state?.max ?? null;
-      for (const m of messages) if (!max || m.date.toISOString() > max) max = m.date.toISOString();
+      for (const raw of Array.isArray(page.items) ? page.items : []) {
+        // An item without a valid date must not move the boundary (mapEmail falls back to "now" for it)
+        const time = Date.parse(str(obj(raw).date) ?? "");
+        if (!Number.isNaN(time) && (!max || new Date(time).toISOString() > max)) max = new Date(time).toISOString();
+      }
       const next = str(page.cursor);
       if (next) {
         return { messages, cursor: JSON.stringify({ after, max, next } satisfies PageCursor), hasMore: true };
@@ -303,6 +319,7 @@ export async function createHostedAuthLink(
   // The webhook URL already carries ?token=: the path segment goes on the pathname, not after the query
   const notify = new URL(mailboxWebhookUrl("unipile"));
   notify.pathname = `${notify.pathname.replace(/\/$/, "")}/notify`;
+  notify.searchParams.set("sig", notifySignature(input.stateId));
   const now = deps.now ?? new Date();
   const doc = await call(deps, "/api/v1/hosted/accounts/link", {
     method: "POST",
@@ -352,7 +369,7 @@ export async function ensureUnipileWebhook(deps: Deps = {}): Promise<{ created: 
       body: JSON.stringify({
         source: spec.source,
         request_url: requestUrl,
-        headers: [{ key: "x-clozer-token", value: token }],
+        headers: [{ key: "x-clozer-token", value: unipileHeaderToken() }],
         ...(spec.events ? { events: spec.events } : {}),
       }),
       context: "account",
