@@ -62,7 +62,8 @@
     "trialEnding": {
       "subject": "{days, plural, one {Your Team trial ends tomorrow} other {Your Team trial ends in # days}}",
       "title": "Your trial ends on {date}",
-      "body": "You've had everything in Clozer for two weeks. To keep it, pick Solo (19 € a month) or Team (39 € per member)."
+      "body": "You've had everything in Clozer during your trial. To keep it, pick Solo (19 € a month) or Team (39 € per member).",
+      "offer": "Your 30% discount for 12 months is valid until the end of the trial. If you pick a plan now, you only pay from that date, except in the last two days, when billing starts right away."
     },
     "trialEnded": {
       "subject": "Your Clozer trial is over",

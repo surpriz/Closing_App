@@ -36,7 +36,7 @@
         },
         "replied": {
           "title": "Il répond par email",
-          "body": "La réponse arrive dans votre boîte, comme d'habitude. Clozer la voit aussi, quand elle répond à une relance de Clozer ou à un fil Gmail avec l'extension : les relances automatiques s'arrêtent et vous êtes prévenu. « Reprendre les relances » sur la fiche pour les relancer."
+          "body": "La réponse arrive dans votre boîte, comme d'habitude. Clozer la voit aussi quand elle répond à une relance de Clozer, à un fil Gmail avec l'extension, ou quand votre outil de cold email la lui signale (Smart Link) : les relances automatiques s'arrêtent et vous êtes prévenu. « Reprendre les relances » sur la fiche pour les relancer."
         },
         "decided": {
           "title": "Il valide, demande un ajustement ou prend rendez-vous",
@@ -62,7 +62,7 @@
       },
       "open": {
         "title": "Votre prospect ouvre son lien",
-        "body": "Il voit votre document normalement. Clozer note, page par page, combien de temps il y passe, quand, sur quel appareil, et si d'autres personnes l'ouvrent. Les aperçus automatiques (Slack, LinkedIn) et vos propres lectures ne comptent pas. Si vous êtes sur Clozer à ce moment-là, vous le voyez lire en direct."
+        "body": "Il voit votre document normalement. Clozer note, page par page, combien de temps il y passe, quand, sur quel appareil, et si d'autres personnes l'ouvrent. Une lecture ne compte qu'à partir de son premier geste (défiler, bouger la souris, toucher l'écran) : les robots de messagerie, les aperçus automatiques (Slack, LinkedIn) et vos propres lectures ne comptent pas. Si vous êtes sur Clozer à ce moment-là, vous le voyez lire en direct."
       },
       "analyze": {
         "title": "Il referme : Clozer fait le point",
@@ -87,7 +87,7 @@
     },
     "indicatorsTitle": "Deux indicateurs, deux questions",
     "temperatureTitle": "Température (sur 100)",
-    "temperatureBody": "<b>Combien il lit.</b> Calculée sans IA : lecture récente, temps passé, visites répétées, plusieurs lecteurs, tarifs lus, lecture jusqu'au bout. Chaque point a sa raison, affichée sur la fiche.",
+    "temperatureBody": "<b>Combien il lit.</b> Calculée sans IA : lecture récente, temps passé, visites répétées, plusieurs lecteurs, tarifs lus, lecture jusqu'au bout. Chaque point a sa raison, affichée sur la fiche. Un lecteur que personne n'a nommé ne passe jamais « Chaud » : il n'y a encore personne à appeler.",
     "aiReadTitle": "Lecture IA (et sa fiabilité)",
     "aiReadBody": "<b>Ce que ça veut dire.</b> L'IA interprète : un prospect peut être « chaud » (beaucoup de lectures) avec une lecture IA prudente (lectures courtes, trop tôt pour conclure). La fiabilité dit à quel point l'IA est sûre d'elle : faible quand il y a peu de signaux.",
     "rulesTitle": "Les règles qu'il respecte toujours",
@@ -109,7 +109,7 @@
     "underTheHood2": "Aucune adresse email ni adresse IP n'est envoyée à l'IA : les lecteurs sont désignés par une lettre (lecteur A, lecteur B…). Une analyse n'est relancée que s'il s'est passé quelque chose de nouveau.",
     "notYetTitle": "Ce qui n'est pas encore là",
     "notYet1": "Les relances partent de l'adresse de Clozer, avec votre email en adresse de réponse.",
-    "notYet2": "Les réponses envoyées à votre propre email (hors relance Clozer) ne sont vues qu'avec l'extension, dans Gmail : sinon, notez-les sur la fiche du prospect.",
+    "notYet2": "Les réponses envoyées à votre propre email (hors relance Clozer) ne sont vues qu'avec l'extension dans Gmail, ou quand votre outil de cold email les signale : sinon, notez-les sur la fiche du prospect.",
     "notYet3": "Les relances WhatsApp arrivent bientôt."
   },
   "faq": {

@@ -8,7 +8,20 @@ import { APP_LOGIN_URL, appUrl } from "./links";
  * The report's "Client" field is the signup itself: the email travels to the app's login page,
  * which sends the link at once. No JS needed. `lang` rides along so the account gets the page's language.
  */
-export async function SignupForm({ id, locale, tone = "light" }: { id: string; locale: Locale; tone?: "light" | "dark" }) {
+export async function SignupForm({
+  id,
+  locale,
+  tone = "light",
+  extraParams = {},
+  submitLabel,
+}: {
+  id: string;
+  locale: Locale;
+  tone?: "light" | "dark";
+  /** Forwarded to the login page on both paths (email and Google), e.g. an offer code and utm values. */
+  extraParams?: Record<string, string>;
+  submitLabel?: string;
+}) {
   const t = await getTranslations({ locale, namespace: "signup" });
   const dark = tone === "dark";
   const line = dark ? "border-sheet/30" : "border-ink";
@@ -33,17 +46,20 @@ export async function SignupForm({ id, locale, tone = "light" }: { id: string; l
         className={`block h-14 w-full border-b ${line} bg-transparent px-4 text-lead outline-none placeholder:text-ink-soft/70 focus-visible:outline-2 focus-visible:-outline-offset-2 ${dark ? "placeholder:text-sheet/50" : ""}`}
       />
       <input type="hidden" name="lang" value={locale} />
+      {Object.entries(extraParams).map(([name, value]) => (
+        <input key={name} type="hidden" name={name} value={value} />
+      ))}
       <button
         type="submit"
         className={`group flex h-16 w-full items-center justify-between px-4 text-left text-lead font-semibold transition-colors ${
           dark ? "bg-sheet text-ink hover:bg-iron-4" : "bg-ink text-sheet hover:bg-ink/90"
         }`}
       >
-        {t("submit")}
+        {submitLabel ?? t("submit")}
         <Arrow />
       </button>
       <a
-        href={appUrl(locale, { provider: "google" })}
+        href={appUrl(locale, { ...extraParams, provider: "google" })}
         className={`flex h-14 items-center gap-3 border-t ${line} px-4 text-body font-medium transition-colors ${
           dark ? "hover:bg-sheet/10" : "hover:bg-muted"
         }`}

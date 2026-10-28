@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
 import { LoginForm } from "@/components/auth/login-form";
 import { ProductPanel } from "@/components/auth/product-panel";
 import { LocaleSwitcher } from "@/components/locale-switcher";
+import { SIGNUP_SOURCE_COOKIE, appendSource, parseSource } from "@/lib/acquisition";
 import { googleEnabled } from "@/lib/auth";
 import { maskEmail } from "@/lib/closing/prospects/mask-email";
 import { prisma } from "@/lib/db";
@@ -41,6 +43,9 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   // From an invitation link, before any sign-in: the workspace and a masked address, nothing more
   const invitation = await pendingInvitation(next);
   const tInvite = await getTranslations("auth.invitation");
+  // The magic link may open on another device: carry the campaign source in its callbackURL
+  const source = parseSource((await cookies()).get(SIGNUP_SOURCE_COOKIE)?.value);
+  const formNext = source ? appendSource(next, source) : next;
 
   return (
     <main className="grid flex-1 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
@@ -53,7 +58,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
           )}
           <LoginForm
             devMode={devMagicLinksEnabled()}
-            next={next}
+            next={formNext}
             initialError={error}
             google={googleEnabled}
             initialEmail={error ? "" : email}

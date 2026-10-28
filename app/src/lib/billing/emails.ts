@@ -62,6 +62,8 @@ export type BillingEmailData = {
   locale: UiLocale;
   /** The trial or beta end. */
   endsAt?: Date | null;
+  /** The workspace still has its campaign discount to take. */
+  offer?: boolean;
   now: Date;
 };
 
@@ -83,6 +85,7 @@ export function buildBillingEmail(kind: BillingEmailKind, data: BillingEmailData
           blocks: [
             { kind: "text", text: hello },
             { kind: "text", text: t("trialEnding.body") },
+            ...(data.offer ? [{ kind: "text" as const, text: t("trialEnding.offer") }] : []),
             { kind: "text", text: t("afterFree") },
             button(t("choose")),
           ],

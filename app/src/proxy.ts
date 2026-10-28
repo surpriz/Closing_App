@@ -4,6 +4,15 @@ import { LOCALE_COOKIE, LOCALE_COOKIE_MAX_AGE, isUiLocale } from "@/i18n/locale"
 
 import { bareSlug } from "@/lib/closing/link-url";
 import {
+  SIGNUP_SOURCE_COOKIE,
+  SIGNUP_SOURCE_MAX_AGE,
+  SOURCE_PARAMS,
+  mergeSource,
+  parseSource,
+  serializeSource,
+  sourceFromParams,
+} from "@/lib/acquisition";
+import {
   VISITOR_COOKIE,
   VISITOR_COOKIE_MAX_AGE,
 } from "@/lib/closing/tracking/visitor";
@@ -18,14 +27,32 @@ const EXT_CORS = {
 };
 
 export function proxy(request: NextRequest) {
-  // The landing site links here with ?lang=en|fr: remember it before sign-up, then drop it from the URL.
-  const lang = request.nextUrl.searchParams.get("lang");
-  if (lang !== null && !request.nextUrl.pathname.startsWith("/api/")) {
+  // The landing site links here with ?lang=en|fr and, from a campaign, ?offer= and utm_*:
+  // remember them before sign-up, then drop them from the URL.
+  const { searchParams } = request.nextUrl;
+  const lang = searchParams.get("lang");
+  // A proposal link is the prospect's, never a seller signup: its utm_* stay put and leave no source cookie
+  const trackSource = !request.nextUrl.pathname.startsWith("/v/");
+  const hasSourceParam = trackSource && SOURCE_PARAMS.some((param) => searchParams.has(param));
+  if ((lang !== null || hasSourceParam) && !request.nextUrl.pathname.startsWith("/api/")) {
+    const incoming = trackSource ? sourceFromParams(searchParams, new Date()) : null;
+    // The sign-in callback carries the source again: keep the time of the first request
+    const source = incoming && mergeSource(parseSource(request.cookies.get(SIGNUP_SOURCE_COOKIE)?.value), incoming);
     const url = request.nextUrl.clone();
     url.searchParams.delete("lang");
+    if (trackSource) for (const param of SOURCE_PARAMS) url.searchParams.delete(param);
     const response = NextResponse.redirect(url);
-    if (isUiLocale(lang)) {
+    if (lang !== null && isUiLocale(lang)) {
       response.cookies.set(LOCALE_COOKIE, lang, { maxAge: LOCALE_COOKIE_MAX_AGE, path: "/", sameSite: "lax" });
+    }
+    if (source) {
+      response.cookies.set(SIGNUP_SOURCE_COOKIE, serializeSource(source), {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: request.nextUrl.protocol === "https:",
+        maxAge: SIGNUP_SOURCE_MAX_AGE,
+        path: "/",
+      });
     }
     return response;
   }
@@ -64,7 +91,12 @@ export const config = {
   matcher: [
     "/v/:path*",
     "/api/ext/:path*",
-    // Pages reached with ?lang= from the landing site
+    // Pages reached with ?lang= or a campaign source from the landing site
     { source: "/((?!api|_next|.*\\..*).*)", has: [{ type: "query", key: "lang" }] },
+    { source: "/((?!api|_next|.*\\..*).*)", has: [{ type: "query", key: "offer" }] },
+    { source: "/((?!api|_next|.*\\..*).*)", has: [{ type: "query", key: "utm_source" }] },
+    { source: "/((?!api|_next|.*\\..*).*)", has: [{ type: "query", key: "utm_medium" }] },
+    { source: "/((?!api|_next|.*\\..*).*)", has: [{ type: "query", key: "utm_campaign" }] },
+    { source: "/((?!api|_next|.*\\..*).*)", has: [{ type: "query", key: "utm_content" }] },
   ],
 };

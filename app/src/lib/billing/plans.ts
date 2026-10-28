@@ -183,8 +183,8 @@ export function seatQuantity(memberCount: number) {
   return Math.max(TEAM_MIN_SEATS, memberCount);
 }
 
-export function trialEndsAtFor(createdAt: Date) {
-  return new Date(createdAt.getTime() + TRIAL_DAYS * DAY_MS);
+export function trialEndsAtFor(createdAt: Date, days = TRIAL_DAYS) {
+  return new Date(createdAt.getTime() + days * DAY_MS);
 }
 
 export function startOfUtcMonth(now: Date) {

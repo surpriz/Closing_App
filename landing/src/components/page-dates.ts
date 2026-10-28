@@ -13,4 +13,5 @@ export const UPDATED_AT: Record<AppPathname, Date> = {
   "/security": new Date("2026-10-22"),
   "/dpa": new Date("2026-10-18"),
   "/support": new Date("2026-10-13"),
+  "/cold-email": new Date("2026-10-24"),
 };

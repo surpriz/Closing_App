@@ -58,4 +58,11 @@ describe("buildBillingEmail", () => {
       }
     }
   });
+
+  it("adds the campaign discount to the trial-ending email only when asked", () => {
+    const data = { appUrl: "https://app.test", firstName: "Ana", locale: "fr", endsAt: later(2), now: NOW } as const;
+    expect(buildBillingEmail("billing_trial_ending", { ...data, offer: true }).html).toContain("30 %");
+    expect(buildBillingEmail("billing_trial_ending", { ...data, offer: false }).html).not.toContain("30 %");
+    expect(buildBillingEmail("billing_trial_ending", { ...data, locale: "en", offer: true }).html).toContain("30% discount");
+  });
 });
