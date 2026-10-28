@@ -39,7 +39,7 @@ export type DsnDetails = {
 
 export type InboundHeaders = Partial<
   Record<
-    "auto-submitted" | "precedence" | "x-autoreply" | "x-autorespond" | "content-type" | "list-id" | "x-failed-recipients",
+    "auto-submitted" | "authentication-results" | "precedence" | "x-autoreply" | "x-autorespond" | "content-type" | "list-id" | "x-failed-recipients",
     string
   >
 >;
@@ -57,6 +57,8 @@ export type InboundMessage = {
   isDsn: boolean;
   dsn: DsnDetails | null;
   headers: InboundHeaders;
+  /** Sender authentication from the receiving server's header: null when unknown (absent or inconclusive) */
+  authenticated?: boolean | null;
   threadId: string | null;
 };
 

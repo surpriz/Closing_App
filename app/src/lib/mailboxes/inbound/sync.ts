@@ -174,7 +174,8 @@ export async function syncMailboxesDue(
       credentials: true,
       syncErrorCount: true,
     },
-    orderBy: [{ syncRequestedAt: "asc" }, { nextSyncAt: "asc" }],
+    // Never-synced mailboxes first, or a backlog of due ones could starve them
+    orderBy: [{ syncRequestedAt: "asc" }, { nextSyncAt: { sort: "asc", nulls: "first" } }],
     take: MAX_MAILBOXES_PER_TICK,
   });
 

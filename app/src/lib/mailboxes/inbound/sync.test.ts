@@ -155,7 +155,7 @@ describe("syncMailboxesDue", () => {
       messages: { some: { status: "SENT", sentAt: { gte: new Date(NOW.getTime() - 60 * 86_400_000) } } },
       OR: [{ syncRequestedAt: { not: null } }, { nextSyncAt: null }, { nextSyncAt: { lte: NOW } }],
     });
-    expect(query.orderBy).toEqual([{ syncRequestedAt: "asc" }, { nextSyncAt: "asc" }]);
+    expect(query.orderBy).toEqual([{ syncRequestedAt: "asc" }, { nextSyncAt: { sort: "asc", nulls: "first" } }]);
     expect(query.take).toBe(20);
     expect(prisma.mailbox.updateMany).toHaveBeenCalledWith({
       where: {

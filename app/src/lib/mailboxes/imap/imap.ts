@@ -5,6 +5,7 @@ import { replyExcerpt } from "@/lib/closing/replies/text";
 
 import type { ImapCredentials } from "../credentials";
 import { MailboxError } from "../errors";
+import { parseAuthenticationResults } from "../inbound/auth";
 import { dsnFromHeaders, parseDsn } from "../inbound/dsn";
 import { assertSafeMailHost, NETWORK_CODES } from "../safe-host";
 import type { InboundHeaders, InboundMessage, SyncCursor } from "../types";
@@ -15,6 +16,7 @@ const TEXT_LIMIT = 64 * 1024;
 const DSN_LIMIT = 256 * 1024;
 const HEADER_NAMES = [
   "references",
+  "authentication-results",
   "auto-submitted",
   "precedence",
   "x-autoreply",
@@ -163,6 +165,7 @@ function toInbound(msg: FetchMessageObject, uidValidity: number): Omit<InboundMe
     subject: env?.subject ?? null,
     date: date ? new Date(date) : new Date(),
     headers,
+    authenticated: parseAuthenticationResults(headers["authentication-results"]),
     threadId: null,
   };
 }

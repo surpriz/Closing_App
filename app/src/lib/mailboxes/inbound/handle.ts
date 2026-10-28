@@ -121,6 +121,12 @@ async function apply(
   };
 
   if (match.kind === "reply") {
+    // A reply found by address or domain is only a guess about who wrote: a spoofed sender must not stop a sequence.
+    // Thread-matched replies carry one of our Message-IDs and stay accepted whatever the header (lot 2 ruling)
+    if (match.via !== "thread" && message.authenticated === false) {
+      await prisma.mailboxInboundEvent.update({ where: { id: eventId }, data: { dsnClass: "unauthenticated" } });
+      return "ignored";
+    }
     await prisma.mailboxInboundEvent.update({
       where: { id: eventId },
       data: { dsnClass: "retry:reply", enrollmentId: match.enrollmentId, matchedMessageId: match.messageId },
@@ -140,7 +146,7 @@ async function apply(
     where: { id: eventId },
     data: { dsnClass: "retry:bounce", enrollmentId: target?.enrollmentId ?? null, matchedMessageId: target?.messageId ?? null },
   });
-  const { effect, enrollmentId } = await onBounce(mailbox, dsn, dsnClass, target, now);
+  const { effect, enrollmentId } = await onBounce(mailbox, dsn, dsnClass, target, now, resume?.dsnClass === "retry:bounce");
   await prisma.mailboxInboundEvent.update({
     where: { id: eventId },
     data: {
@@ -228,6 +234,7 @@ async function onBounce(
   dsnClass: ReturnType<typeof classifyDsn>,
   target: Target | null,
   now: Date,
+  alreadyCounted: boolean,
 ): Promise<{ effect: InboundEffect; enrollmentId: string | null }> {
   const enrollmentId = target?.enrollmentId ?? null;
   const diagnostic = (dsn.diagnostic ?? "").slice(0, DETAIL_MAX);
@@ -235,16 +242,19 @@ async function onBounce(
   if (dsnClass === "policy") {
     // Only a bounce of one of our own messages says something about this mailbox; any stranger's DSN is noise
     if (!target?.messageId) return { effect: "bounce_transient", enrollmentId };
-    const day = localDayKey(now, mailbox.timezone);
-    const same = await prisma.mailbox.updateMany({
-      where: { id: mailbox.id, policyBounceDay: day },
-      data: { policyBounceCount: { increment: 1 } },
-    });
-    if (same.count === 0) {
-      await prisma.mailbox.updateMany({
-        where: { id: mailbox.id },
-        data: { policyBounceDay: day, policyBounceCount: 1 },
+    // A replay of the same event (its intent was stored, "retry:bounce") must not count the Message-ID twice
+    if (!alreadyCounted) {
+      const day = localDayKey(now, mailbox.timezone);
+      const same = await prisma.mailbox.updateMany({
+        where: { id: mailbox.id, policyBounceDay: day },
+        data: { policyBounceCount: { increment: 1 } },
       });
+      if (same.count === 0) {
+        await prisma.mailbox.updateMany({
+          where: { id: mailbox.id },
+          data: { policyBounceDay: day, policyBounceCount: 1 },
+        });
+      }
     }
     const fresh = await prisma.mailbox.findUnique({ where: { id: mailbox.id }, select: { policyBounceCount: true } });
     if ((fresh?.policyBounceCount ?? 0) >= POLICY_BOUNCE_LIMIT) {

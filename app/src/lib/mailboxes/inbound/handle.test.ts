@@ -418,4 +418,58 @@ describe("handleInbound", () => {
     expect(prisma.mailbox.updateMany).not.toHaveBeenCalled();
     expect(pauseCampaignsOfMailbox).not.toHaveBeenCalled();
   });
+
+  it("does not count a policy DSN again when replaying the same event", async () => {
+    prisma.mailboxInboundEvent.create.mockRejectedValue({ code: "P2002" });
+    prisma.mailboxInboundEvent.findUnique.mockResolvedValue({
+      id: "ev0",
+      kind: "IGNORED",
+      dsnClass: "retry:bounce",
+      enrollmentId: "en1",
+      matchedMessageId: "cm1",
+    });
+    prisma.mailbox.findUnique.mockResolvedValueOnce({ policyBounceCount: 1 });
+    const effect = await handleInbound(mailbox(), dsnMessage({ status: "5.7.1" }), ctx, NOW);
+    expect(effect).toBe("bounce_policy");
+    expect(prisma.mailbox.updateMany).not.toHaveBeenCalled();
+    expect(pauseCampaignsOfMailbox).not.toHaveBeenCalled();
+  });
+
+  it("counts a policy DSN on the retry of a placeholder that never stored its intent", async () => {
+    prisma.mailboxInboundEvent.create.mockRejectedValue({ code: "P2002" });
+    prisma.mailboxInboundEvent.findUnique.mockResolvedValue({ id: "ev0", kind: "IGNORED", dsnClass: "pending", enrollmentId: null, matchedMessageId: null });
+    prisma.mailbox.findUnique.mockResolvedValueOnce({ policyBounceCount: 1 });
+    await handleInbound(mailbox(), dsnMessage({ status: "5.7.1" }), ctx, NOW);
+    expect(prisma.mailbox.updateMany).toHaveBeenCalledWith({
+      where: { id: "mb1", policyBounceDay: "2026-10-28" },
+      data: { policyBounceCount: { increment: 1 } },
+    });
+  });
+});
+
+describe("handleInbound sender authentication", () => {
+  const byAddress = () => message({ inReplyTo: null, references: [], subject: "Re: hello", date: new Date("2026-10-28T09:00:00Z") });
+
+  it("ignores an address-matched reply whose sender failed authentication", async () => {
+    expect(await handleInbound(mailbox(), { ...byAddress(), authenticated: false }, ctx, NOW)).toBe("ignored");
+    expect(prisma.mailboxInboundEvent.update).toHaveBeenCalledWith({ where: { id: "ev1" }, data: { dsnClass: "unauthenticated" } });
+    expect(stopEnrollment).not.toHaveBeenCalled();
+    expect(recordProspectReply).not.toHaveBeenCalled();
+  });
+
+  it("ignores a domain-matched reply whose sender failed authentication", async () => {
+    const colleague = { ...byAddress(), from: { address: "alice@target.io", name: null }, authenticated: false };
+    expect(await handleInbound(mailbox(), colleague, ctx, NOW)).toBe("ignored");
+    expect(stopEnrollment).not.toHaveBeenCalled();
+  });
+
+  it.each([true, null, undefined])("accepts an address-matched reply when authenticated is %s", async (authenticated) => {
+    expect(await handleInbound(mailbox(), { ...byAddress(), authenticated }, ctx, NOW)).toBe("reply");
+    expect(stopEnrollment).toHaveBeenCalled();
+  });
+
+  it("keeps a thread-matched reply whatever the header says", async () => {
+    expect(await handleInbound(mailbox(), message({ authenticated: false }), ctx, NOW)).toBe("reply");
+    expect(stopEnrollment).toHaveBeenCalled();
+  });
 });
