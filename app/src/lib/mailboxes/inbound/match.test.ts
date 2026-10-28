@@ -118,6 +118,15 @@ describe("matchInbound", () => {
     expect(matchInbound(message({ from, subject: "Réf: proposal" }), ctx)).toMatchObject({ via: "domain" });
   });
 
+  it("does not match by domain an enrollment last sent to more than 60 days ago", () => {
+    const from = { address: "assistant@example.org", name: null };
+    const stale: MatchContext = {
+      ...ctx,
+      enrollments: [{ enrollmentId: "enr-3", email: "old@example.org", lastSentAt: new Date(now.getTime() - 90 * day) }],
+    };
+    expect(matchInbound(message({ from, subject: "Re: hello" }), stale).kind).toBe("unrelated");
+  });
+
   it("does not match by domain without a Re: subject", () => {
     expect(matchInbound(message({ from: { address: "assistant@example.net", name: null }, subject: "Invoice" }), ctx).kind).toBe("unrelated");
   });

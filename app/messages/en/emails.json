@@ -86,5 +86,21 @@
       "body": "Stripe will try again over the next few days. Update your card to keep your plan, it takes a minute.",
       "button": "Update my card"
     }
+  },
+  "mailbox": {
+    "subject": {
+      "auth_revoked": "Your mailbox {mailbox} needs to be reconnected",
+      "policy_bounces": "Your campaigns are paused: too many rejected emails",
+      "send_failed": "Sending from {mailbox} keeps failing",
+      "sync_failed": "Clozer can't read replies in {mailbox}"
+    },
+    "intro": {
+      "auth_revoked": "Access to {mailbox} was revoked or expired, so sending is stopped until you reconnect it.",
+      "policy_bounces": "{mailbox} got several rejections from recipients' servers today. Your active campaigns are paused so your reputation isn't hurt further. Resume them once you've checked the list.",
+      "send_failed": "Several emails from {mailbox} could not be sent. The affected contacts are paused.",
+      "sync_failed": "Clozer could not check {mailbox} for replies. Replies may show up late until this is fixed."
+    },
+    "detail": "Detail: {detail}",
+    "action": "Open settings"
   }
 }

@@ -48,7 +48,7 @@ export type AlertPayload = {
   decisionMaker?: boolean;
   /** PROSPECT_REPLIED: the start of the answer, and where Clozer caught it. */
   replyExcerpt?: string | null;
-  replySource?: "INBOUND" | "EXTENSION";
+  replySource?: "INBOUND" | "EXTENSION" | "MAILBOX";
   /** Revival alerts: who came back, and why the link no longer opened. */
   prospectId?: string | null;
   deadState?: "archived" | "expired";

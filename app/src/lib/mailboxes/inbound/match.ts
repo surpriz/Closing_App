@@ -73,7 +73,7 @@ export function matchInbound(message: InboundMessage, ctx: MatchContext): MatchR
   const domain = emailDomain(from);
   if (domain && REPLY_SUBJECT.test(message.subject ?? "")) {
     const byDomain = ctx.enrollments
-      .filter((e) => emailDomain(e.email) === domain)
+      .filter((e) => emailDomain(e.email) === domain && e.lastSentAt.getTime() > nowMs - ADDRESS_WINDOW_MS)
       .sort((a, b) => b.lastSentAt.getTime() - a.lastSentAt.getTime())[0];
     if (byDomain) return { kind: "reply", enrollmentId: byDomain.enrollmentId, via: "domain", messageId: null };
   }
