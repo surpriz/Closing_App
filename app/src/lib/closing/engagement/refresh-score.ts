@@ -16,6 +16,7 @@ export async function refreshEngagementScore(linkId: string, now = new Date()) {
       meetingBookedAt: true,
       quoteRequestedAt: true,
       repliedAt: true,
+      _count: { select: { prospects: true } },
       document: {
         select: {
           kind: true,
@@ -83,9 +84,11 @@ export async function refreshEngagementScore(linkId: string, now = new Date()) {
     replied: link.repliedAt !== null,
   });
 
+  // Hot means someone to call: a link nobody is named on stays warm at most, whatever was read
+  const tier = result.tier === "HOT" && link._count.prospects === 0 ? "WARM" : result.tier;
   const data = {
     score: result.score,
-    tier: result.tier,
+    tier,
     uniqueViewers: visitors.length,
     visitCount: totals._count._all,
     totalDurationMs: totals._sum.totalDurationMs ?? 0,
