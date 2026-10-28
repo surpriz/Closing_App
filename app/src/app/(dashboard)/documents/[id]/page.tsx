@@ -301,8 +301,21 @@ export default async function DocumentDetailPage({
         )
       : null;
 
+  // A Smart Link reader opening from several browsers has a link per browser: one row, the latest
+  const readerBrowsers = new Map<string, number>();
+  const people = document.links.filter((link) => {
+    const email = link.parentLinkId ? link.prospects[0]?.email?.toLowerCase() : null;
+    if (!email) return true;
+    const key = `${link.parentLinkId}:${email}`;
+    readerBrowsers.set(key, (readerBrowsers.get(key) ?? 0) + 1);
+    return readerBrowsers.get(key) === 1;
+  });
+  const browsersOf = (link: (typeof people)[number]) => {
+    const email = link.parentLinkId ? link.prospects[0]?.email?.toLowerCase() : null;
+    return email ? (readerBrowsers.get(`${link.parentLinkId}:${email}`) ?? 1) : 1;
+  };
   // The Smart Link first: the one to paste in a sequence, its readers below as their own rows
-  const orderedLinks = [...document.links].sort((a, b) => Number(b.shared) - Number(a.shared));
+  const orderedLinks = [...people].sort((a, b) => Number(b.shared) - Number(a.shared));
   const prospectRows: ProspectLinkRow[] = orderedLinks.map((link) => {
     const prospect = link.prospects[0];
     const score = link.engagementScore;
@@ -312,7 +325,11 @@ export default async function DocumentDetailPage({
       id: link.id,
       label: dealLabel({ ...link, document }, link.shared ? t("sharedLink") : undefined),
       contact:
-        [prospect?.company ? prospect.name : null, prospect?.email]
+        [
+          prospect?.company ? prospect.name : null,
+          prospect?.email,
+          browsersOf(link) > 1 ? t("browsers", { count: browsersOf(link) }) : null,
+        ]
           .filter(Boolean)
           .join(" · ") ||
         t("createdAgo", { when: formatRelative(link.createdAt, locale, now) }),

@@ -550,7 +550,8 @@
     "replySeen": "Reply from {from} seen in your inbox",
     "textCopied": "text copied (p. {pages})",
     "printed": "printed",
-    "testReader": "Test (out of the figures)"
+    "testReader": "Test (out of the figures)",
+    "devices": "{count} browsers"
   },
   "heat": {
     "notRead": "Not read yet"

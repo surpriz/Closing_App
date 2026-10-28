@@ -26,3 +26,32 @@ export function rankSharedReaders<T extends ReaderReading>(readers: T[], thresho
       return b.lastActivityAt.getTime() - a.lastActivityAt.getTime();
     });
 }
+
+/**
+ * One row per person: a reader opening from their phone, then their laptop,
+ * gets a link per browser (reader-link.ts) but is one person. Grouped by
+ * address, readings added up, the most recently active link leads. Readers
+ * without an address stay alone. Pure.
+ */
+export function groupReadersByAddress<T extends ReaderReading & { email: string | null }>(readers: T[]) {
+  const groups = new Map<string, { lead: T; readingMs: number; pricingMs: number; links: number }>();
+  for (const reader of readers) {
+    const key = reader.email?.trim().toLowerCase() || `link:${reader.linkId}`;
+    const group = groups.get(key);
+    if (!group) {
+      groups.set(key, { lead: reader, readingMs: reader.readingMs, pricingMs: reader.pricingMs, links: 1 });
+      continue;
+    }
+    group.readingMs += reader.readingMs;
+    group.pricingMs += reader.pricingMs;
+    group.links += 1;
+    if (reader.lastActivityAt > group.lead.lastActivityAt) group.lead = reader;
+  }
+  return [...groups.values()].map(({ lead, readingMs, pricingMs, links }) => ({
+    ...lead,
+    readingMs,
+    pricingMs,
+    /** How many browsers or devices this person read from. */
+    links,
+  }));
+}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isHotReader, rankSharedReaders } from "./hot-readers";
+import { groupReadersByAddress, isHotReader, rankSharedReaders } from "./hot-readers";
 
 const reader = (linkId: string, readingSec: number, pricingSec: number, minutesAgo: number) => ({
   linkId,
@@ -33,5 +33,29 @@ describe("rankSharedReaders", () => {
   it("keeps the others by latest activity", () => {
     const ranked = rankSharedReaders([reader("older", 5, 0, 50), reader("newer", 5, 0, 5)], 90);
     expect(ranked.map((r) => r.linkId)).toEqual(["newer", "older"]);
+  });
+});
+
+describe("groupReadersByAddress", () => {
+  const at = (minutesAgo: number) => new Date(Date.UTC(2026, 9, 28, 12, 0) - minutesAgo * 60_000);
+  const row = (linkId: string, email: string | null, readingMs: number, minutesAgo: number) => ({
+    linkId,
+    email,
+    readingMs,
+    pricingMs: 0,
+    lastActivityAt: at(minutesAgo),
+  });
+
+  it("adds up one person's browsers, led by the latest", () => {
+    const [abel, ...rest] = groupReadersByAddress([
+      row("phone", "Abel@Photoroom.com", 20_000, 30),
+      row("laptop", "abel@photoroom.com", 40_000, 5),
+    ]);
+    expect(rest).toHaveLength(0);
+    expect(abel).toMatchObject({ linkId: "laptop", readingMs: 60_000, links: 2 });
+  });
+
+  it("keeps readers without an address apart", () => {
+    expect(groupReadersByAddress([row("a", null, 1, 1), row("b", null, 1, 2)])).toHaveLength(2);
   });
 });

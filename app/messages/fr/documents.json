@@ -164,7 +164,8 @@
     "followupsIntro": "Les relances de tous les prospects de ce document. Clozer en écrit une quand il juge que c'est le bon moment ; vous la relisez ici ou sur la fiche du prospect, puis vous la validez.",
     "alertsTitle": "Alertes",
     "pendingTitle": "Votre lien est prêt, il n'est pas encore parti.",
-    "pendingDescription": "Envoyez-le à votre prospect : il apparaîtra ici dès qu'il l'ouvre."
+    "pendingDescription": "Envoyez-le à votre prospect : il apparaîtra ici dès qu'il l'ouvre.",
+    "browsers": "{count} navigateurs"
   },
   "content": {
     "videoRead": "Ce que vous dites dans chaque passage de la vidéo, lu par l'IA depuis la transcription. Les étiquettes disent à Clozer quand vous parlez tarifs, planning… Corrigez-les si besoin.",
