@@ -91,8 +91,16 @@ export async function findUnsubscribeTarget(token: string) {
   };
 }
 
-/** Flags every prospect of the workspace with this address and cancels their open follow-ups. */
-async function stopClosingSide(organizationId: string, email: string, reason: string) {
+/**
+ * Flags every prospect of the workspace with this address (unsubscribed, or bounced) and cancels
+ * their open follow-ups, theirs only: a colleague on the same deal keeps his.
+ */
+export async function stopClosingSide(
+  organizationId: string,
+  email: string,
+  reason: string,
+  mark: "unsubscribedAt" | "bouncedAt" = "unsubscribedAt",
+) {
   const now = new Date();
   const sameAddress = {
     email: { equals: email, mode: "insensitive" as const },
@@ -100,8 +108,8 @@ async function stopClosingSide(organizationId: string, email: string, reason: st
   };
   await prisma.$transaction([
     prisma.prospect.updateMany({
-      where: { ...sameAddress, unsubscribedAt: null },
-      data: { unsubscribedAt: now },
+      where: { ...sameAddress, [mark]: null },
+      data: { [mark]: now },
     }),
     prisma.followup.updateMany({
       where: {

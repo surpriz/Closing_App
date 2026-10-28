@@ -868,6 +868,7 @@ async function loadSharedReaders(
       dealStatus: true,
       lastActivityAt: true,
       createdAt: true,
+      isOnboardingTest: true,
       engagementScore: { select: { tier: true } },
       prospects: {
         select: { email: true, name: true, company: true },
@@ -911,8 +912,10 @@ async function loadSharedReaders(
       ]
         .filter(Boolean)
         .join(" · "),
-      state:
-        reader.dealStatus !== "OPEN"
+      // Shown, never hidden: an address anyone can type is no proof, the seller sees what was set aside
+      state: reader.isOnboardingTest
+        ? t("testReader")
+        : reader.dealStatus !== "OPEN"
           ? tl(`dealStatus.${reader.dealStatus}`)
           : reader.engagementScore
             ? tl(`tier.${reader.engagementScore.tier}`)

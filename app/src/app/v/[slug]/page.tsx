@@ -282,8 +282,7 @@ export default async function ViewerPage({
 
   const sellerNotice = isSeller && (
     <SellerNotice>
-      Vous êtes connecté à Clozer : cette lecture ne compte pas. Testez dans un
-      autre navigateur.
+      {link.shared ? labels.sellerNoticeShared : labels.sellerNotice}
     </SellerNotice>
   );
 

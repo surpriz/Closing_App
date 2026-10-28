@@ -6,12 +6,17 @@ import {
   randomBytes,
 } from "node:crypto";
 
-function encryptionKey() {
+/** ENCRYPTION_KEY as is, for HMAC-signed tokens. */
+export function signingSecret() {
   const secret = process.env.ENCRYPTION_KEY;
   if (!secret || secret.length < 32) {
     throw new Error("ENCRYPTION_KEY must be at least 32 characters");
   }
-  return createHash("sha256").update(secret).digest();
+  return secret;
+}
+
+function encryptionKey() {
+  return createHash("sha256").update(signingSecret()).digest();
 }
 
 // AES-256-GCM, stored as v1:<iv>:<tag>:<ciphertext> (base64url)

@@ -20,7 +20,7 @@ import { linkDefaultsFor, SHARED_LINK_SETTINGS } from "@/lib/closing/documents/s
 import { getSellerPrefs, sellerTimezone } from "@/lib/closing/notify/preferences";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
 import { EXTENSION_DAYS, expiryError, extendExpiry, isLinkExpired, reactivates, viewerDeadline } from "@/lib/closing/expiry";
-import { cancelOpenFollowups, isUniqueViolation } from "@/lib/closing/followups/queue";
+import { cancelOpenFollowups, isUniqueViolation, OPEN_FOLLOWUP_STATUSES } from "@/lib/closing/followups/queue";
 import { prospectFromRecipient } from "@/lib/closing/prospects/from-recipient";
 import { notifyReactivated } from "@/lib/closing/reactivation";
 import { deadState, interestFollowupTarget } from "@/lib/closing/revival";
@@ -216,6 +216,11 @@ export async function reactivateLink(
       },
       data: { archivedAt: null },
     }),
+    // A Smart Link reader marked as a test by mistake and brought back is a reader again
+    prisma.link.updateMany({
+      where: { id: link.id, parentLinkId: { not: null }, isOnboardingTest: true },
+      data: { isOnboardingTest: false },
+    }),
     // Out of the purge too. The document's other links stay archived
     ...(link.document.archivedAt
       ? [prisma.document.update({ where: { id: link.documentId }, data: { archivedAt: null } })]
@@ -310,6 +315,18 @@ export async function setLinkSwitch(linkId: string, key: LinkSwitch, value: bool
   });
   if (field === "followupsEnabled" && !value) {
     await cancelOpenFollowups(link.id, "followupsOff");
+  }
+  // A Smart Link's readers follow it: one switch for the whole campaign, never two that disagree
+  if (link.shared && field === "followupsEnabled") {
+    const readers = { parentLinkId: link.id, isOnboardingTest: false };
+    await prisma.link.updateMany({ where: readers, data: { followupsEnabled: value } });
+    if (!value) {
+      const t = await getTranslations("server.followups.dispatch");
+      await prisma.followup.updateMany({
+        where: { link: readers, status: { in: [...OPEN_FOLLOWUP_STATUSES] } },
+        data: { status: "CANCELLED", cancelledAt: new Date(), error: t("followupsOff") },
+      });
+    }
   }
   revalidateLink(link);
   return { ok: true };
@@ -734,4 +751,36 @@ export async function prepareFollowupFromInsight(linkId: string) {
   const result = await actOnInsight(insight.id, { force: true });
   revalidateLink(link);
   return result.ok ? { ok: true } : { error: result.reasons.join(" ") || t("cannotPrepare") };
+}
+
+/** Revokes the address the workspace's cold email tools report replies to: the old one stops working at once. */
+export async function regenerateSequencerWebhook() {
+  const { organization, role } = await requireWorkspace();
+  if (!isManagerRole(role)) throw new Error("Réservé aux managers");
+  await prisma.workspaceSettings.upsert({
+    where: { organizationId: organization.id },
+    create: { organizationId: organization.id, sequencerTokenVersion: 1 },
+    update: { sequencerTokenVersion: { increment: 1 } },
+  });
+  revalidatePath("/links", "layout");
+}
+
+/**
+ * "C'est un test": a Smart Link reader that was the seller's own test, or a test send of their cold
+ * email tool that filled in a real prospect's address. It drops out of every count and follow-up.
+ * Bringing it back from the archive makes it a reader again.
+ */
+export async function markLinkAsTest(linkId: string) {
+  const link = await requireOwnedLink(linkId);
+  // Smart Link readers only: they never count in the link quota, and a campaign or named deal is never one
+  const reader = await prisma.link.findUniqueOrThrow({ where: { id: link.id }, select: { parentLinkId: true } });
+  if (!reader.parentLinkId) {
+    const t = await getTranslations("deal.actions");
+    return { error: t("notATest") };
+  }
+  await prisma.link.update({ where: { id: link.id }, data: { isOnboardingTest: true, archivedAt: new Date() } });
+  await cancelOpenFollowups(link.id, "archived");
+  revalidateLink(link);
+  revalidatePath(`/links/${reader.parentLinkId}`);
+  return { ok: true, documentId: link.documentId };
 }

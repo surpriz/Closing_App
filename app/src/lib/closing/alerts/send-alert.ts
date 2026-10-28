@@ -48,7 +48,7 @@ export type AlertPayload = {
   decisionMaker?: boolean;
   /** PROSPECT_REPLIED: the start of the answer, and where Clozer caught it. */
   replyExcerpt?: string | null;
-  replySource?: "INBOUND" | "EXTENSION" | "MAILBOX";
+  replySource?: "INBOUND" | "EXTENSION" | "MAILBOX" | "SEQUENCER";
   /** Revival alerts: who came back, and why the link no longer opened. */
   prospectId?: string | null;
   deadState?: "archived" | "expired";
@@ -365,7 +365,14 @@ export function alertMessage(
       const blocks: EmailBlock[] = [
         {
           kind: "text",
-          text: t(payload.replySource === "EXTENSION" ? "message.prospectReplied.bodyThread" : "message.prospectReplied.body", { who, doc }),
+          text: t(
+            payload.replySource === "EXTENSION"
+              ? "message.prospectReplied.bodyThread"
+              : payload.replySource === "SEQUENCER"
+                ? "message.prospectReplied.bodySequencer"
+                : "message.prospectReplied.body",
+            { who, doc },
+          ),
         },
       ];
       if (payload.replyExcerpt) blocks.push({ kind: "quote", text: payload.replyExcerpt });

@@ -81,7 +81,8 @@ export async function createDocumentLink(input: {
       chatEnabled: defaults.chatEnabled && plan.limits.prospectChat,
       voiceCommentsEnabled: defaults.voiceCommentsEnabled && plan.limits.voiceComments,
       translationEnabled: plan.limits.translation,
-      followupsEnabled: input.followupsEnabled ?? defaults.followupsEnabled,
+      // A Smart Link goes in a sequence that follows up already: the seller turns Clozer's on if they want
+      followupsEnabled: input.followupsEnabled ?? (input.smart ? false : defaults.followupsEnabled),
       ctaEnabled: defaults.ctaEnabled,
       bookingEnabled: defaults.bookingEnabled,
       shared: input.smart ? SHARED_LINK_SETTINGS.shared : defaults.shared,

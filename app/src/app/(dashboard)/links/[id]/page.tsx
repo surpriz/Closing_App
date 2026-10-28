@@ -13,6 +13,7 @@ import {
 import { DealSettings } from "@/components/dashboard/deal/deal-settings";
 import { loadDeal } from "@/components/dashboard/deal/load-deal";
 import { DealNextAction } from "@/components/dashboard/deal/next-action";
+import { MarkAsTestButton } from "@/components/dashboard/deal/mark-as-test-button";
 import { SmartLinkProblemNotice } from "@/components/dashboard/deal/smart-link-problem";
 import { ThermalBand } from "@/components/dashboard/deal/thermal-band";
 import { DealContextForm } from "@/components/dashboard/deal-context-form";
@@ -44,7 +45,10 @@ import { showsCountdown } from "@/lib/closing/expiry";
 import { firstNameOf, guessMailClient } from "@/lib/closing/share/compose";
 import { settingsSummary } from "@/lib/closing/share/summary";
 import type { SmartLinkProblem } from "@/lib/closing/shared/smart-params";
+import { sequencerWebhookUrl } from "@/lib/closing/sequencer/apply";
+import { testAddress } from "@/lib/closing/shared/seller-address";
 import { prisma } from "@/lib/db";
+import { isManagerRole } from "@/lib/roles";
 import { formatDate } from "@/lib/format";
 import { requireWorkspace } from "@/lib/session";
 import { testToolsEnabled } from "@/lib/test-tools";
@@ -173,6 +177,7 @@ export default async function LinkDetailPage({
 
       <div className="space-y-6">
         <DealHeader deal={deal} />
+        {canEdit && link.parentLinkId && !link.isOnboardingTest && <MarkAsTestButton linkId={link.id} />}
         <SmartLinkProblemNotice
           problems={smartProblems}
           linkId={link.id}
@@ -320,7 +325,14 @@ export default async function LinkDetailPage({
                     title={t("smartLinkTitle")}
                     hint={t("smartLinkHint")}
                   >
-                    <SmartLinkTemplate url={url} />
+                    <SmartLinkTemplate
+                      url={url}
+                      linkId={link.id}
+                      followupsEnabled={link.followupsEnabled}
+                      repliesWebhookUrl={await sequencerWebhookUrl(link.organizationId).catch(() => null)}
+                      canRotate={isManagerRole(workspace.role)}
+                      testUrl={`${url}?email=${encodeURIComponent(testAddress(workspace.user.email))}`}
+                    />
                   </DealSection>
                 )}
               </>

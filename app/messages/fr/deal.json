@@ -60,7 +60,8 @@
     "cannotPrepare": "Impossible de préparer une relance.",
     "expiryPast": "Choisissez une date à venir.",
     "expiryTooFar": "Un an maximum.",
-    "callScriptFailed": "Impossible de préparer l'appel pour l'instant, réessayez dans un moment."
+    "callScriptFailed": "Impossible de préparer l'appel pour l'instant, réessayez dans un moment.",
+    "notATest": "Seul un lecteur de Smart Link peut être marqué comme test. Archivez ce lien si besoin."
   },
   "followupActions": {
     "emptyMessage": "Le message est vide.",
@@ -256,7 +257,17 @@
     "toolAria": "Outil de cold email",
     "documented": "Les variables sont celles de {tool}.",
     "undocumented": "Vérifiez le nom des variables dans l'éditeur de votre outil. Seul l'email compte : la société et le prénom sont un bonus.",
-    "webhook": "Pour mettre la séquence en pause dès qu'un prospect lit, branchez le <link>webhook</link>."
+    "webhook": "Pour mettre la séquence en pause dès qu'un prospect lit, branchez le <link>webhook</link>.",
+    "followupsTitle": "Relances Clozer après lecture",
+    "followupsOn": "Clozer prépare une relance adaptée à ce que chaque lecteur a lu, à valider avant envoi. Retirez l'étape équivalente de votre séquence, sinon le prospect en reçoit deux.",
+    "followupsOff": "Coupées : votre outil d'envoi fait les relances. Activez-les seulement si vous retirez une étape de votre séquence.",
+    "followupsFailed": "Le réglage n'a pas été enregistré. Réessayez.",
+    "repliesTitle": "Réponses reçues par votre outil",
+    "repliesHint": "Clozer ne voit pas les réponses à vos emails de séquence : elles arrivent dans votre boîte. Pour qu'il arrête ses relances et vous prévienne, faites envoyer par votre outil (webhook, ou Zapier / Make) un POST à cette adresse à chaque réponse, désinscription ou rebond : <code>'{'\"email\": \"…\", \"event\": \"replied\"'}'</code>. Gardez-la pour vous : elle vaut pour tout votre espace.",
+    "repliesRotate": "Régénérer l'adresse",
+    "repliesRotated": "Nouvelle adresse : l'ancienne ne marche plus. Mettez-la à jour dans votre outil.",
+    "testTitle": "Tester comme un prospect",
+    "testHint": "Ouvrez ce lien dans une fenêtre de navigation privée, sans vous connecter : connecté, Clozer vous reconnaît et ne compte rien. La fiche créée porte votre adresse : elle est marquée test, sans relance ni statistiques. N'utilisez pas l'envoi de test de votre outil : il remplit les variables avec un vrai prospect."
   },
   "shareReady": {
     "copiedToast": "Lien copié. Collez-le dans votre message.",
@@ -541,7 +552,8 @@
     "replyCaught": "Réponse de {from} par email",
     "replySeen": "Réponse de {from} vue dans votre boîte mail",
     "textCopied": "texte copié (p. {pages})",
-    "printed": "imprimé"
+    "printed": "imprimé",
+    "testReader": "Test (hors statistiques)"
   },
   "heat": {
     "notRead": "Pas encore lu"
@@ -592,5 +604,11 @@
     "bodyTag": "Des lecteurs sont arrivés avec la variable telle quelle dans le lien : ils ont dû taper leur email pour lire. Vérifiez la syntaxe exacte de la variable dans votre outil, puis faites un vrai envoi à votre propre adresse.",
     "bodyPersonalNamed": "Des lecteurs sont arrivés avec leur adresse dans le lien (?email=…), comme depuis une séquence de cold email. Ce lien est au nom d'un contact : il ignore cette adresse. Créez un Smart Link sur le document et mettez-le dans votre séquence.",
     "createSmartLinkOnly": "Créer un Smart Link sur le document"
+  },
+  "markAsTest": {
+    "question": "C'est un de vos tests ?",
+    "action": "L'effacer des statistiques",
+    "confirm": "Ce lecteur sort des statistiques, du rapport du jour et des relances. Continuer ?",
+    "done": "Test effacé."
   }
 }

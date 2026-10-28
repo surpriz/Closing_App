@@ -104,7 +104,7 @@ export type DealFactsInput = {
     note: string | null;
     occurredAt: Date;
     /** INBOUND, EXTENSION and MAILBOX: caught by Clozer, the note is the prospect's own words. */
-    source?: "MANUAL" | "INBOUND" | "EXTENSION" | "MAILBOX";
+    source?: "MANUAL" | "INBOUND" | "EXTENSION" | "MAILBOX" | "SEQUENCER";
   }[];
   score: { score: number; tier: "HOT" | "WARM" | "COLD" } | null;
 };
