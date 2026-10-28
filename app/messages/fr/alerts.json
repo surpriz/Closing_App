@@ -124,7 +124,8 @@
       "line": "{who} a répondu par email au sujet de {doc}",
       "body": "{who} a répondu à votre relance sur {doc}. Sa réponse vous a été transférée.",
       "bodyThread": "{who} a répondu dans votre fil d'emails sur {doc}.",
-      "stopped": "Les relances automatiques sont arrêtées : la suite est entre vos mains."
+      "stopped": "Les relances automatiques sont arrêtées : la suite est entre vos mains.",
+      "bodySequencer": "{who} a répondu à votre séquence de cold email au sujet de {doc}. Votre outil d'envoi l'a signalé à Clozer : la réponse est dans votre boîte."
     },
     "emailBounced": {
       "subject": "Adresse invalide : {email}",

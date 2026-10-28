@@ -393,6 +393,7 @@ enum ActivitySource {
   MANUAL // typed by the seller
   INBOUND // a reply to an email Clozer sent, caught by the reply relay
   EXTENSION // a reply seen by the extension in the seller's Gmail or Outlook thread
+  SEQUENCER // a reply the seller's cold email tool reported through its webhook (Smart Link)
 }
 
 // Why a deal was lost, picked by the seller in one click

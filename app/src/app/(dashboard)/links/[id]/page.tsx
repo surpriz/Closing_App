@@ -44,6 +44,7 @@ import { showsCountdown } from "@/lib/closing/expiry";
 import { firstNameOf, guessMailClient } from "@/lib/closing/share/compose";
 import { settingsSummary } from "@/lib/closing/share/summary";
 import type { SmartLinkProblem } from "@/lib/closing/shared/smart-params";
+import { sequencerWebhookUrl } from "@/lib/closing/sequencer/apply";
 import { prisma } from "@/lib/db";
 import { formatDate } from "@/lib/format";
 import { requireWorkspace } from "@/lib/session";
@@ -320,7 +321,12 @@ export default async function LinkDetailPage({
                     title={t("smartLinkTitle")}
                     hint={t("smartLinkHint")}
                   >
-                    <SmartLinkTemplate url={url} linkId={link.id} followupsEnabled={link.followupsEnabled} />
+                    <SmartLinkTemplate
+                      url={url}
+                      linkId={link.id}
+                      followupsEnabled={link.followupsEnabled}
+                      repliesWebhookUrl={sequencerWebhookUrl(link.organizationId)}
+                    />
                   </DealSection>
                 )}
               </>

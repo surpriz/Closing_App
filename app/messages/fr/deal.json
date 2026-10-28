@@ -257,7 +257,9 @@
     "followupsTitle": "Relances Clozer après lecture",
     "followupsOn": "Clozer prépare une relance adaptée à ce que chaque lecteur a lu, à valider avant envoi. Retirez l'étape équivalente de votre séquence, sinon le prospect en reçoit deux.",
     "followupsOff": "Coupées : votre outil d'envoi fait les relances. Activez-les seulement si vous retirez une étape de votre séquence.",
-    "followupsFailed": "Le réglage n'a pas été enregistré. Réessayez."
+    "followupsFailed": "Le réglage n'a pas été enregistré. Réessayez.",
+    "repliesTitle": "Réponses reçues par votre outil",
+    "repliesHint": "Clozer ne voit pas les réponses à vos emails de séquence : elles arrivent dans votre boîte. Pour qu'il arrête ses relances et vous prévienne, faites envoyer par votre outil (webhook, ou Zapier / Make) un POST à cette adresse à chaque réponse, désinscription ou rebond : <code>'{'\"email\": \"…\", \"event\": \"replied\"'}'</code>. Gardez-la pour vous : elle vaut pour tout votre espace."
   },
   "shareReady": {
     "copiedToast": "Lien copié. Collez-le dans votre message.",

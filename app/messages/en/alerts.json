@@ -124,7 +124,8 @@
       "line": "{who} replied by email about {doc}",
       "body": "{who} replied to your follow-up about {doc}. We forwarded the reply to you.",
       "bodyThread": "{who} replied in your email thread about {doc}.",
-      "stopped": "Automatic follow-ups are off for this deal: it's your conversation now."
+      "stopped": "Automatic follow-ups are off for this deal: it's your conversation now.",
+      "bodySequencer": "{who} answered your cold email sequence about {doc}. Your sending tool told Clozer: the reply is in your inbox."
     },
     "emailBounced": {
       "subject": "Invalid address: {email}",
