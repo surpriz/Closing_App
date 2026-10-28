@@ -109,7 +109,8 @@
       "team": "La vue équipe est incluse dans l'offre Équipe.",
       "invites": "Inviter des collègues, c'est avec l'offre Équipe.",
       "slack": "Les alertes Slack sont incluses dans l'offre Équipe.",
-      "webhooks": "Les webhooks sont inclus dans l'offre Équipe."
+      "webhooks": "Les webhooks sont inclus dans l'offre Équipe.",
+      "mailbox": "Connecter une boîte pour vos campagnes, c'est avec Solo ou Équipe : 15 € HT par boîte et par mois, inclus dans Entreprise."
     }
   },
   "badge": {

@@ -6,7 +6,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 
 import { getAppOrigin } from "@/lib/app-origin";
 import { checkoutOffer } from "@/lib/billing/offers";
-import { BILLING_HREF, isPaidPlanId, isPaidStatus, seatQuantity, type Interval } from "@/lib/billing/plans";
+import { BILLING_HREF, isPaidPlanId, isPaidStatus, planItemOf, seatQuantity, type Interval } from "@/lib/billing/plans";
 import { getStripe, resolvePortalConfiguration, resolvePrice } from "@/lib/billing/stripe";
 import { syncSubscription } from "@/lib/billing/webhook";
 import { prisma } from "@/lib/db";
@@ -122,7 +122,7 @@ export async function switchToTeam(interval: Interval): Promise<BillingState & {
   try {
     const members = await prisma.member.count({ where: { organizationId: organization.id } });
     const subscription = await stripe.subscriptions.retrieve(organization.stripeSubscriptionId);
-    const item = subscription.items.data[0];
+    const item = planItemOf(subscription);
     if (!item) return { error: t("generic") };
     await stripe.subscriptions.update(subscription.id, {
       items: [{ id: item.id, price: await resolvePrice(stripe, "team", interval), quantity: seatQuantity(members) }],

@@ -31,6 +31,15 @@ const CATALOGUE = [
       { lookupKey: "clozer_team_yearly", interval: "year", amount: 38400 },
     ],
   },
+  {
+    plan: "mailbox",
+    name: "Clozer Boîte connectée",
+    unitLabel: "mailbox",
+    prices: [
+      { lookupKey: "clozer_mailbox_monthly", interval: "month", amount: 1500 },
+      { lookupKey: "clozer_mailbox_yearly", interval: "year", amount: 14400 },
+    ],
+  },
 ];
 
 async function ensureProduct({ plan, name, unitLabel }) {
@@ -59,7 +68,8 @@ for (const entry of CATALOGUE) {
   const product = await ensureProduct(entry);
   const prices = [];
   for (const price of entry.prices) prices.push((await ensurePrice(product, price)).id);
-  portalProducts.push({ product: product.id, prices });
+  // The add-on is sold from Clozer: the portal offers plans only
+  if (entry.plan !== "mailbox") portalProducts.push({ product: product.id, prices });
   console.log(`${entry.name}: ${product.id} · ${prices.join(", ")}`);
 }
 

@@ -33,6 +33,10 @@ export type PlanLimits = {
   invites: boolean;
   slack: boolean;
   webhooks: boolean;
+  /** Connected mailboxes can be bought as the add-on. */
+  mailboxAddon: boolean;
+  /** Mailboxes included in the plan; the rest are billed. Null: all included. */
+  includedMailboxes: number | null;
 };
 
 const SOLO: PlanLimits = {
@@ -49,6 +53,8 @@ const SOLO: PlanLimits = {
   invites: false,
   slack: false,
   webhooks: false,
+  mailboxAddon: true,
+  includedMailboxes: 0,
 };
 
 const TEAM: PlanLimits = { ...SOLO, rank: 2, teamView: true, invites: true, slack: true, webhooks: true };
@@ -68,10 +74,12 @@ export const PLANS: Record<PlanId, PlanLimits> = {
     invites: false,
     slack: false,
     webhooks: false,
+    mailboxAddon: false,
+    includedMailboxes: 0,
   },
   solo: SOLO,
   team: TEAM,
-  enterprise: { ...TEAM, rank: 3 },
+  enterprise: { ...TEAM, rank: 3, includedMailboxes: null },
 };
 
 /** Euro cents, excl. VAT, per month (per seat for Team). Yearly is billed at once: 12 × this. */
@@ -90,6 +98,11 @@ export const LOOKUP_KEYS: Record<PaidPlanId, Record<Interval, string>> = {
   solo: { month: "clozer_solo_monthly", year: "clozer_solo_yearly" },
   team: { month: "clozer_team_monthly", year: "clozer_team_yearly" },
 };
+
+/** Euro cents, excl. VAT, per connected mailbox: monthly, and per month on a yearly plan. */
+export const MAILBOX_MONTHLY_PRICE_CENTS: Record<Interval, number> = { month: 1500, year: 1200 };
+
+export const MAILBOX_LOOKUP_KEYS: Record<Interval, string> = { month: "clozer_mailbox_monthly", year: "clozer_mailbox_yearly" };
 
 export function isPlanId(value: unknown): value is PlanId {
   return typeof value === "string" && (PLAN_IDS as readonly string[]).includes(value);
@@ -110,6 +123,27 @@ export function planFromLookupKey(key: string | null | undefined): { plan: PaidP
     }
   }
   return null;
+}
+
+export function mailboxLookupKeyFor(interval: Interval) {
+  return MAILBOX_LOOKUP_KEYS[interval];
+}
+
+export function isMailboxLookupKey(key: string | null | undefined) {
+  return !!key && (Object.values(MAILBOX_LOOKUP_KEYS) as string[]).includes(key);
+}
+
+export function mailboxIntervalFromLookupKey(key: string | null | undefined): Interval | null {
+  for (const interval of ["month", "year"] as const) {
+    if (MAILBOX_LOOKUP_KEYS[interval] === key) return interval;
+  }
+  return null;
+}
+
+/** Mailboxes charged on the add-on: those over what the plan includes. */
+export function billableMailboxes(count: number, limits: Pick<PlanLimits, "includedMailboxes">) {
+  if (limits.includedMailboxes === null) return 0;
+  return Math.max(0, count - limits.includedMailboxes);
 }
 
 /** Stripe statuses that keep the paid plan: past_due too, while Stripe retries the card. */
@@ -222,9 +256,26 @@ export type SubscriptionLike = {
   cancel_at_period_end: boolean;
   metadata?: Record<string, string> | null;
   items: {
-    data: { quantity?: number | null; current_period_end?: number | null; price: { lookup_key?: string | null; recurring?: { interval?: string } | null } }[];
+    data: { id?: string; quantity?: number | null; current_period_end?: number | null; price: { lookup_key?: string | null; recurring?: { interval?: string } | null } }[];
   };
 };
+
+type SubscriptionItem = SubscriptionLike["items"]["data"][number];
+
+/** The mailbox add-on item, found by its price's lookup key (never by position). */
+export function mailboxItemOf<T extends SubscriptionItem>(sub: { items: { data: T[] } }): T | undefined {
+  return sub.items.data.find((item) => isMailboxLookupKey(item.price.lookup_key));
+}
+
+/** The plan item: the one with a plan lookup key, else the first that is not the mailbox add-on, else the first. */
+export function planItemOf<T extends SubscriptionItem>(sub: { items: { data: T[] } }): T | undefined {
+  const { data } = sub.items;
+  return (
+    data.find((item) => planFromLookupKey(item.price.lookup_key)) ??
+    data.find((item) => !isMailboxLookupKey(item.price.lookup_key)) ??
+    data[0]
+  );
+}
 
 const ENDED_STATUSES = ["canceled", "incomplete_expired", "unpaid"];
 
@@ -238,7 +289,7 @@ export function isEndedStatus(status: string) {
  * falls back on the plan written at checkout, then on the plan already stored: a payer never drops to Free.
  */
 export function subscriptionFields(sub: SubscriptionLike, currentPlan: string) {
-  const item = sub.items.data[0];
+  const item = planItemOf(sub);
   const priced = planFromLookupKey(item?.price.lookup_key);
   const ended = isEndedStatus(sub.status);
   const interval = priced?.interval ?? (item?.price.recurring?.interval === "year" ? "year" : "month");
@@ -252,5 +303,6 @@ export function subscriptionFields(sub: SubscriptionLike, currentPlan: string) {
     seats: item?.quantity ?? null,
     currentPeriodEnd: item?.current_period_end ? new Date(item.current_period_end * 1000) : null,
     cancelAtPeriodEnd: !ended && sub.cancel_at_period_end,
+    mailboxQuantity: ended ? null : (mailboxItemOf(sub)?.quantity ?? null),
   };
 }

@@ -19,7 +19,11 @@ const prices = new Map<string, { id: string; at: number }>();
 
 /** The Stripe price for a plan, found by lookup key so a new amount needs no deploy (scripts/stripe-setup.mjs). */
 export async function resolvePrice(stripe: Stripe, plan: PaidPlanId, interval: Interval) {
-  const key = lookupKeyFor(plan, interval);
+  return resolvePriceByKey(stripe, lookupKeyFor(plan, interval));
+}
+
+/** Same lookup for any key, the mailbox add-on included. */
+export async function resolvePriceByKey(stripe: Stripe, key: string) {
   const cached = prices.get(key);
   if (cached && Date.now() - cached.at < PRICE_TTL_MS) return cached.id;
   const { data } = await stripe.prices.list({ lookup_keys: [key], active: true, limit: 1 });

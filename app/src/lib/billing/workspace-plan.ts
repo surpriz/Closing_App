@@ -61,7 +61,8 @@ export type UpgradeReason =
   | "team"
   | "invites"
   | "slack"
-  | "webhooks";
+  | "webhooks"
+  | "mailbox";
 
 /** A server answer over the plan: the client opens the upgrade dialog with `error` (components/billing/upgrade-dialog). */
 export type UpgradePrompt = { error: string; upgrade: UpgradeReason };

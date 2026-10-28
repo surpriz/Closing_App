@@ -1,9 +1,15 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  PLANS,
   bannerFor,
+  billableMailboxes,
   effectivePlan,
+  isMailboxLookupKey,
   lookupKeyFor,
+  mailboxIntervalFromLookupKey,
+  mailboxLookupKeyFor,
+  planItemOf,
   planFromLookupKey,
   quota,
   seatQuantity,
@@ -144,6 +150,7 @@ describe("subscriptionFields", () => {
       seats: 3,
       currentPeriodEnd: new Date(1_800_000_000_000),
       cancelAtPeriodEnd: false,
+      mailboxQuantity: null,
     });
   });
 
@@ -160,5 +167,64 @@ describe("subscriptionFields", () => {
 
   it("grants nothing for an unknown price on a workspace that never paid", () => {
     expect(subscriptionFields({ id: "sub_1", status: "active", cancel_at_period_end: false, items: { data: [item("unknown")] } }, "free").plan).toBe("free");
+  });
+});
+
+describe("mailbox add-on", () => {
+  const item = (lookup: string, quantity: number, id: string) => ({
+    id,
+    quantity,
+    current_period_end: 1_800_000_000,
+    price: { lookup_key: lookup, recurring: { interval: "month" } },
+  });
+  const sub = (status: string) => ({
+    id: "sub_1",
+    status,
+    cancel_at_period_end: false,
+    items: { data: [item("clozer_mailbox_monthly", 2, "si_box"), item("clozer_team_monthly", 4, "si_plan")] },
+  });
+
+  it("reads the plan from its own item when the mailbox item comes first", () => {
+    expect(subscriptionFields(sub("active"), "free")).toMatchObject({
+      plan: "team",
+      billingInterval: "month",
+      seats: 4,
+      mailboxQuantity: 2,
+    });
+    expect(planItemOf(sub("active"))?.id).toBe("si_plan");
+  });
+
+  it("drops the mailbox quantity once the subscription is over", () => {
+    expect(subscriptionFields(sub("canceled"), "team").mailboxQuantity).toBeNull();
+  });
+
+  it("falls back on the first non-mailbox item, then on the only item", () => {
+    const unknown = { items: { data: [item("clozer_mailbox_monthly", 1, "a"), item("legacy", 3, "b")] } };
+    expect(planItemOf(unknown)?.id).toBe("b");
+    expect(planItemOf({ items: { data: [item("", 1, "only")] } })?.id).toBe("only");
+    expect(planItemOf({ items: { data: [] } })).toBeUndefined();
+  });
+
+  it("knows the mailbox lookup keys", () => {
+    expect(mailboxLookupKeyFor("year")).toBe("clozer_mailbox_yearly");
+    expect(isMailboxLookupKey("clozer_mailbox_monthly")).toBe(true);
+    expect(isMailboxLookupKey("clozer_team_monthly")).toBe(false);
+    expect(isMailboxLookupKey(null)).toBe(false);
+    expect(mailboxIntervalFromLookupKey("clozer_mailbox_yearly")).toBe("year");
+    expect(mailboxIntervalFromLookupKey("nope")).toBeNull();
+  });
+
+  it("bills the mailboxes over what the plan includes", () => {
+    expect(billableMailboxes(3, { includedMailboxes: 0 })).toBe(3);
+    expect(billableMailboxes(3, { includedMailboxes: null })).toBe(0);
+    expect(billableMailboxes(1, { includedMailboxes: 2 })).toBe(0);
+    expect(billableMailboxes(5, { includedMailboxes: 2 })).toBe(3);
+  });
+
+  it("sells the add-on on paid plans only", () => {
+    expect(PLANS.free).toMatchObject({ mailboxAddon: false, includedMailboxes: 0 });
+    expect(PLANS.solo).toMatchObject({ mailboxAddon: true, includedMailboxes: 0 });
+    expect(PLANS.team).toMatchObject({ mailboxAddon: true, includedMailboxes: 0 });
+    expect(PLANS.enterprise).toMatchObject({ mailboxAddon: true, includedMailboxes: null });
   });
 });

@@ -109,7 +109,8 @@
       "team": "The team view comes with the Team plan.",
       "invites": "Inviting teammates comes with the Team plan.",
       "slack": "Slack alerts come with the Team plan.",
-      "webhooks": "Webhooks come with the Team plan."
+      "webhooks": "Webhooks come with the Team plan.",
+      "mailbox": "Connecting a mailbox for your campaigns comes with Solo or Team: €15 excl. VAT per mailbox per month, included in Enterprise."
     }
   },
   "badge": {
