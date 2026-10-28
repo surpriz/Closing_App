@@ -45,7 +45,7 @@ export const FAQ: FaqSection[] = [
       {
         id: "tester",
         q: "Comment tester mon lien sans fausser les chiffres ?",
-        a: "Ouvrez votre lien dans une fenêtre de navigation privée. Vos propres lectures, quand vous êtes connecté à Clozer, ne comptent pas. Les robots et les aperçus automatiques (Slack, LinkedIn) sont écartés aussi.",
+        a: "Ouvrez votre lien dans une fenêtre de navigation privée, sans vous connecter : connecté, Clozer vous reconnaît et ne compte rien.\n\nPour un Smart Link, copiez le lien de test de sa fiche (« Tester comme un prospect ») : il porte votre adresse avec +test. Toute lecture faite avec l'adresse d'un membre de votre espace est marquée test : pas de relance, rien dans les chiffres. Un lecteur créé par erreur se retire avec « C'est un de vos tests ? » sur sa fiche.\n\nN'utilisez pas l'envoi de test de votre outil de cold email : il remplit les variables avec un vrai prospect.",
       },
       {
         id: "prise-en-main",
@@ -129,7 +129,17 @@ export const FAQ: FaqSection[] = [
       {
         id: "lien-partage",
         q: "Puis-je envoyer un même lien à beaucoup de monde ?",
-        a: "Oui, avec « Lien ouvert à tous » sur l'écran de partage : c'est un lien partagé, pratique pour une plaquette, un post LinkedIn ou une signature. Chaque lecteur donne son email et reçoit son propre lien, suivi comme un prospect ; ses relances attendent toujours votre feu vert.\n\nUn lien déjà lu ou attribué à un contact ne peut plus devenir partagé : créez-en un nouveau.",
+        a: "Oui, avec un Smart Link : bouton « Smart Link pour cold email » sur la fiche du document. Il sert pour une séquence de cold email, une plaquette, un post LinkedIn ou une signature. Chaque lecteur est identifié, par l'adresse que votre outil met dans le lien ou par l'email qu'il tape à l'ouverture, et reçoit son propre lien, suivi comme un prospect.\n\nUn lien personnel peut devenir un Smart Link tant qu'aucun contact n'y est nommé, même s'il a déjà été lu : son adresse ne change pas.",
+      },
+      {
+        id: "smart-link-outil",
+        q: "Comment utiliser un Smart Link dans Lemlist, Manyreach ou un autre outil ?",
+        a: "Sur la fiche du Smart Link, choisissez votre outil : Clozer vous donne l'adresse à coller dans la séquence, avec la variable de l'email (par exemple ?email={{EMAIL}} pour Manyreach). Seul l'email compte, la société et le prénom sont un bonus.\n\nSi un lecteur arrive avec la variable non remplacée, ou si un lien personnel reçoit un ?email=, Clozer vous prévient : c'est le signe qu'un réglage cloche dans votre séquence.\n\nUne même personne qui lit sur son téléphone puis sur son ordinateur reste une seule ligne.",
+      },
+      {
+        id: "smart-link-relances",
+        q: "Mon outil de cold email fait déjà les relances. Clozer va-t-il relancer aussi ?",
+        a: "Non, par défaut. Sur un Smart Link, « Relances Clozer après lecture » est coupé : votre outil garde la main. Activez-le seulement si vous retirez une étape de votre séquence, sinon le prospect reçoit deux relances.\n\nClozer ne voit pas les réponses à vos emails de séquence : elles arrivent dans votre boîte. Pour qu'il les connaisse, faites envoyer par votre outil (webhook, ou Zapier / Make) un message à l'adresse « Réponses reçues par votre outil » du Smart Link, à chaque réponse, désinscription ou rebond. Il arrête alors ses relances et vous prévient.",
       },
       {
         id: "envoyer",
@@ -204,9 +214,14 @@ export const FAQ: FaqSection[] = [
         a: "Bloc « Prospect » de la fiche : chaque contact avec ce qu'il a lu, puis « Autres lecteurs », regroupés par société ou réseau, avec leur rôle (Décideur, Finance / achats, Technique…), deviné depuis l'email ou choisi par vous. Deux lettres différentes = souvent deux personnes.",
       },
       {
+        id: "lecteur-inconnu",
+        q: "Un lecteur « Sans destinataire » lit beaucoup. Que faire ?",
+        a: "Personne n'est nommé sur ce lien : Clozer ne sait pas qui lit. Il ne le classe donc jamais « Chaud » et vous propose de l'identifier plutôt que d'appeler : comparez l'heure de lecture avec vos envois. En cold email, un Smart Link évite ce cas.",
+      },
+      {
         id: "pas-de-lecture",
         q: "Mon prospect dit avoir lu, mais Clozer ne montre rien. Pourquoi ?",
-        a: "Vérifiez qu'il a bien ouvert le lien Clozer et pas une pièce jointe envoyée en plus. Les aperçus automatiques et les robots ne comptent pas, et vos propres ouvertures en étant connecté non plus. Si le problème persiste, signalez-le via l'assistant d'aide.",
+        a: "Vérifiez qu'il a bien ouvert le lien Clozer et pas une pièce jointe envoyée en plus. Les aperçus automatiques et les robots ne comptent pas, et vos propres ouvertures en étant connecté non plus. Si le problème persiste, signalez-le via l'assistant d'aide.\n\nUne lecture ne compte qu'après un premier geste du lecteur (défiler, bouger la souris, toucher l'écran) : les robots de messagerie, qui ouvrent les liens sans bouger, sont écartés.",
       },
     ],
   },
@@ -315,7 +330,7 @@ export const FAQ: FaqSection[] = [
       {
         id: "reponses",
         q: "Clozer voit-il les réponses de mes prospects ?",
-        a: "Oui, dans deux cas. Quand le prospect répond à une relance envoyée par Clozer : la réponse arrive dans votre boîte comme d'habitude, et Clozer en reçoit une copie. Et dans Gmail avec l'extension, quand un fil qui contient votre lien Clozer reçoit une réponse du prospect.\n\nLa réponse s'affiche sur la fiche, les relances automatiques s'arrêtent et vous êtes prévenu. « Reprendre les relances » sur la fiche pour les relancer.\n\nUne réponse que Clozer ne peut pas voir (Outlook, téléphone) : notez-la sur la fiche (Noter un échange → Réponse reçue).",
+        a: "Oui, dans deux cas. Quand le prospect répond à une relance envoyée par Clozer : la réponse arrive dans votre boîte comme d'habitude, et Clozer en reçoit une copie. Et dans Gmail avec l'extension, quand un fil qui contient votre lien Clozer reçoit une réponse du prospect.\n\nLa réponse s'affiche sur la fiche, les relances automatiques s'arrêtent et vous êtes prévenu. « Reprendre les relances » sur la fiche pour les relancer.\n\nUne réponse que Clozer ne peut pas voir (Outlook, téléphone) : notez-la sur la fiche (Noter un échange → Réponse reçue).\n\nAvec un Smart Link en cold email, votre outil d'envoi peut aussi prévenir Clozer des réponses : voir « Mon outil de cold email fait déjà les relances ».",
       },
       {
         id: "arreter",

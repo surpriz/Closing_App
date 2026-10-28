@@ -36,7 +36,7 @@
         },
         "replied": {
           "title": "They reply by email",
-          "body": "The reply lands in your inbox as usual. Clozer sees it too, when it answers a Clozer follow-up or a Gmail thread with the extension: automatic follow-ups stop and you're notified. “Resume follow-ups” on the prospect's page turns them back on."
+          "body": "The reply lands in your inbox as usual. Clozer sees it too when it answers a Clozer follow-up, a Gmail thread with the extension, or when your cold email tool reports it (Smart Link): automatic follow-ups stop and you're notified. “Resume follow-ups” on the prospect's page turns them back on."
         },
         "decided": {
           "title": "They approve, ask for a change or book a meeting",
@@ -62,7 +62,7 @@
       },
       "open": {
         "title": "Your prospect opens their link",
-        "body": "They see your document as usual. Clozer notes, page by page, how long they spend, when, on which device, and whether other people open it. Automatic previews (Slack, LinkedIn) and your own reads don't count. If you're on Clozer at that moment, you watch them read live."
+        "body": "They see your document as usual. Clozer notes, page by page, how long they spend, when, on which device, and whether other people open it. A read only counts from their first gesture (scrolling, moving the mouse, touching the screen): mail security bots, automatic previews (Slack, LinkedIn) and your own reads don't count. If you're on Clozer at that moment, you watch them read live."
       },
       "analyze": {
         "title": "They close it: Clozer takes stock",
@@ -87,7 +87,7 @@
     },
     "indicatorsTitle": "Two indicators, two questions",
     "temperatureTitle": "Temperature (out of 100)",
-    "temperatureBody": "<b>How much they read.</b> Computed without AI: recent reading, time spent, repeat visits, several readers, pricing read, read to the end. Every point has its reason, shown on the prospect's page.",
+    "temperatureBody": "<b>How much they read.</b> Computed without AI: recent reading, time spent, repeat visits, several readers, pricing read, read to the end. Every point has its reason, shown on the prospect's page. A reader nobody named never turns “Hot”: there is no one to call yet.",
     "aiReadTitle": "AI read (and its confidence)",
     "aiReadBody": "<b>What it means.</b> The AI interprets: a prospect can be “hot” (lots of reads) with a cautious AI read (short reads, too early to tell). Confidence says how sure the AI is: low when there are few signals.",
     "rulesTitle": "The rules it always follows",
@@ -109,7 +109,7 @@
     "underTheHood2": "No email address or IP address is sent to the AI: readers go by a letter (reader A, reader B…). An analysis only reruns when something new has happened.",
     "notYetTitle": "What's not there yet",
     "notYet1": "Follow-ups go out from Clozer's address, with your email as the reply-to.",
-    "notYet2": "Replies to your own email (not a Clozer follow-up) are only seen with the extension, in Gmail: otherwise, log them on the prospect's page.",
+    "notYet2": "Replies to your own email (not a Clozer follow-up) are only seen with the extension in Gmail, or when your cold email tool reports them: otherwise, log them on the prospect's page.",
     "notYet3": "WhatsApp follow-ups are coming soon."
   },
   "faq": {
