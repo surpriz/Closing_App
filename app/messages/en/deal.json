@@ -60,7 +60,8 @@
     "cannotPrepare": "Couldn't prepare a follow-up.",
     "expiryPast": "Pick a future date.",
     "expiryTooFar": "One year max.",
-    "callScriptFailed": "Couldn't prepare the call right now. Try again in a moment."
+    "callScriptFailed": "Couldn't prepare the call right now. Try again in a moment.",
+    "notATest": "This is a contact you named: not a test. Archive it if needed."
   },
   "followupActions": {
     "emptyMessage": "The message is empty.",
@@ -261,7 +262,9 @@
     "repliesTitle": "Replies your tool receives",
     "repliesHint": "Clozer can't see replies to your sequence emails: they land in your inbox. To make it stop its follow-ups and tell you, have your tool (webhook, or Zapier / Make) POST to this address on every reply, unsubscribe or bounce: <code>'{'\"email\": \"…\", \"event\": \"replied\"'}'</code>. Keep it private: it works for your whole workspace.",
     "repliesRotate": "Regenerate the address",
-    "repliesRotated": "New address: the old one no longer works. Update it in your tool."
+    "repliesRotated": "New address: the old one no longer works. Update it in your tool.",
+    "testTitle": "Test it as a prospect",
+    "testHint": "Open this link in a private window (signed in, Clozer knows it's you and counts nothing). The reader it creates has your address: it's marked as a test and stays out of every figure. Don't use your tool's test send: it fills the variables with a real prospect."
   },
   "shareReady": {
     "copiedToast": "Link copied. Paste it into your message.",
@@ -597,5 +600,11 @@
     "bodyTag": "Readers came with the variable left as is in the link: they had to type their email to read. Check the exact variable syntax in your tool, then send a real email to your own address.",
     "bodyPersonalNamed": "Readers came with their address in the link (?email=…), as if from a cold email sequence. This link belongs to a contact: it ignores that address. Create a Smart Link on the document and put it in your sequence.",
     "createSmartLinkOnly": "Create a Smart Link on the document"
+  },
+  "markAsTest": {
+    "question": "One of your own tests?",
+    "action": "Remove it from the figures",
+    "confirm": "This reader leaves the figures, the daily report and the follow-ups. Continue?",
+    "done": "Test removed."
   }
 }

@@ -24,6 +24,7 @@ export function SmartLinkTemplate({
   followupsEnabled,
   repliesWebhookUrl,
   canRotate,
+  testUrl,
 }: {
   url: string;
   linkId: string;
@@ -32,6 +33,8 @@ export function SmartLinkTemplate({
   repliesWebhookUrl: string | null;
   /** Managers can revoke the address when it leaked. */
   canRotate: boolean;
+  /** The Smart Link with the seller's own "+test" address: the reader it makes is a test. */
+  testUrl: string;
 }) {
   const [tool, setTool] = useState<SmartLinkTool>("lemlist");
   const value = smartLinkUrl(url, tool);
@@ -78,6 +81,14 @@ export function SmartLinkTemplate({
           ),
         })}
       </p>
+      <div className="space-y-2 border-t border-border pt-3">
+        <p className="font-medium text-foreground">{t("testTitle")}</p>
+        <p className="text-muted-foreground">{t("testHint")}</p>
+        <div className="flex items-center gap-2 rounded-sm border border-border bg-card py-1.5 pr-1 pl-3">
+          <code className="min-w-0 flex-1 truncate font-mono text-micro">{testUrl}</code>
+          <CopyButton value={testUrl} />
+        </div>
+      </div>
       <label className="flex items-start gap-3 border-t border-border pt-3">
         <Switch
           size="sm"

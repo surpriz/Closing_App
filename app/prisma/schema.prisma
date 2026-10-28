@@ -786,7 +786,8 @@ model Link {
   // One link for many readers (a deck posted or forwarded): each reader gives their email and
   // becomes a lead the seller can turn into a personal link. Never a deal of its own.
   shared       Boolean   @default(false)
-  // Opened by the seller during the welcome tour to see the prospect side: never a deal, never counted
+  // The seller's own test, never a deal, never counted: the welcome tour's link, a Smart Link opened
+  // with a member's address, or a reader the seller marked as a test
   isOnboardingTest Boolean @default(false)
   // A reader of a shared link gets their own link at the gate: a deal like any other
   parentLinkId String?

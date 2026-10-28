@@ -60,7 +60,8 @@
     "cannotPrepare": "Impossible de préparer une relance.",
     "expiryPast": "Choisissez une date à venir.",
     "expiryTooFar": "Un an maximum.",
-    "callScriptFailed": "Impossible de préparer l'appel pour l'instant, réessayez dans un moment."
+    "callScriptFailed": "Impossible de préparer l'appel pour l'instant, réessayez dans un moment.",
+    "notATest": "C'est un contact que vous avez nommé : ce n'est pas un test. Archivez-le si besoin."
   },
   "followupActions": {
     "emptyMessage": "Le message est vide.",
@@ -261,7 +262,9 @@
     "repliesTitle": "Réponses reçues par votre outil",
     "repliesHint": "Clozer ne voit pas les réponses à vos emails de séquence : elles arrivent dans votre boîte. Pour qu'il arrête ses relances et vous prévienne, faites envoyer par votre outil (webhook, ou Zapier / Make) un POST à cette adresse à chaque réponse, désinscription ou rebond : <code>'{'\"email\": \"…\", \"event\": \"replied\"'}'</code>. Gardez-la pour vous : elle vaut pour tout votre espace.",
     "repliesRotate": "Régénérer l'adresse",
-    "repliesRotated": "Nouvelle adresse : l'ancienne ne marche plus. Mettez-la à jour dans votre outil."
+    "repliesRotated": "Nouvelle adresse : l'ancienne ne marche plus. Mettez-la à jour dans votre outil.",
+    "testTitle": "Tester comme un prospect",
+    "testHint": "Ouvrez ce lien dans une fenêtre de navigation privée (connecté, Clozer vous reconnaît et ne compte rien). La fiche créée porte votre adresse : elle est marquée test et n'entre dans aucune statistique. N'utilisez pas l'envoi de test de votre outil : il remplit les variables avec un vrai prospect."
   },
   "shareReady": {
     "copiedToast": "Lien copié. Collez-le dans votre message.",
@@ -597,5 +600,11 @@
     "bodyTag": "Des lecteurs sont arrivés avec la variable telle quelle dans le lien : ils ont dû taper leur email pour lire. Vérifiez la syntaxe exacte de la variable dans votre outil, puis faites un vrai envoi à votre propre adresse.",
     "bodyPersonalNamed": "Des lecteurs sont arrivés avec leur adresse dans le lien (?email=…), comme depuis une séquence de cold email. Ce lien est au nom d'un contact : il ignore cette adresse. Créez un Smart Link sur le document et mettez-le dans votre séquence.",
     "createSmartLinkOnly": "Créer un Smart Link sur le document"
+  },
+  "markAsTest": {
+    "question": "C'est un de vos tests ?",
+    "action": "L'effacer des statistiques",
+    "confirm": "Ce lecteur sort des statistiques, du rapport du jour et des relances. Continuer ?",
+    "done": "Test effacé."
   }
 }
