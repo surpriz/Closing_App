@@ -38,11 +38,8 @@ export type LinkDefaults = {
 /** Documents a prospect can say yes to. */
 const AGREEABLE_DOC_TYPES = ["QUOTE", "PROPOSAL", "CONTRACT"];
 
-/**
- * "Valider & signer" and "Demander un ajustement" only make sense on a deal: never on a résumé,
- * a deck or a case study, even on a link made before Clozer knew the type. Unknown: offered.
- */
-export function offersAnswers(docType: string | null | undefined) {
+/** "Valider & signer" and "Demander un ajustement" only make sense on a deal. Unknown type: offered. */
+function offersAnswers(docType: string | null | undefined) {
   return !docType || AGREEABLE_DOC_TYPES.includes(docType);
 }
 
