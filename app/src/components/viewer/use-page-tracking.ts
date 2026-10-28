@@ -18,6 +18,9 @@ const startRequests = new Map<string, Promise<string | null>>();
 
 const FOLLOWUP_KEY = (slug: string) => `clozer-r-${slug}`;
 
+// How far down the view must be before a scroll counts as the reader's
+const SCROLL_GESTURE_PX = 40;
+
 /**
  * The follow-up this visit came from (?r= on the link it carries). Kept for the tab, because the
  * email gate reloads the page without it.
@@ -105,10 +108,12 @@ export function usePageTracking(
   // Mail scanners (Safe Links, Proofpoint…) open every link in a real browser and sit there for
   // a while, without ever moving: the opening is only confirmed, and time only counted, after a gesture
   const [human, setHuman] = useState(false);
+  const humanRef = useRef(false);
 
   const getViewId = useCallback(() => viewIdRef.current, []);
   const markActive = useCallback(() => {
     lastInteractionRef.current = Date.now();
+    humanRef.current = true;
     setHuman(true);
   }, []);
 
@@ -124,7 +129,10 @@ export function usePageTracking(
 
   const setActive = useCallback((active: boolean) => {
     activeRef.current = active;
-    if (active) setHuman(true);
+    if (active) {
+      humanRef.current = true;
+      setHuman(true);
+    }
   }, []);
 
   // `left` is sent even without reading time, so the seller stops seeing the
@@ -164,16 +172,24 @@ export function usePageTracking(
 
   useEffect(() => {
     if (human || !pageCount) return;
-    const gestures = ["pointermove", "pointerdown", "scroll", "wheel", "keydown", "touchstart"] as const;
-    const onGesture = () => setHuman(true);
+    // Not a mouse move: some scanners fake one, sit ~20s on page 1 and leave
+    const gestures = ["pointerdown", "wheel", "keydown", "touchstart"] as const;
+    const onGesture = () => markActive();
+    // A scroll event alone proves nothing (layout shifts fire one too): the view has to move down
+    const onScroll = (event: Event) => {
+      const scroller = event.target instanceof Element ? event.target : document.scrollingElement;
+      if ((scroller?.scrollTop ?? 0) > SCROLL_GESTURE_PX) markActive();
+    };
     gestures.forEach((name) => window.addEventListener(name, onGesture, { passive: true, once: true }));
+    window.addEventListener("scroll", onScroll, { passive: true, capture: true });
     // Clicking into an embedded page blurs this window: a gesture this window never sees
     if (embedded) window.addEventListener("blur", onGesture, { once: true });
     return () => {
       gestures.forEach((name) => window.removeEventListener(name, onGesture));
+      window.removeEventListener("scroll", onScroll, { capture: true });
       window.removeEventListener("blur", onGesture);
     };
-  }, [human, pageCount, embedded]);
+  }, [human, pageCount, embedded, markActive]);
 
   useEffect(() => {
     if (!pageCount) return;
@@ -222,7 +238,11 @@ export function usePageTracking(
 
     const idleTimeoutMs = embedded ? EMBED_IDLE_TIMEOUT_MS : IDLE_TIMEOUT_MS;
     const activityEvents = ["scroll", "mousemove", "keydown", "touchstart", "wheel", "click"] as const;
-    if (!manual) activityEvents.forEach((name) => window.addEventListener(name, markActive, { passive: true }));
+    // Keeps a confirmed reader's clock running; confirming is the gesture effect's job
+    const onActivity = () => {
+      if (humanRef.current) lastInteractionRef.current = Date.now();
+    };
+    if (!manual) activityEvents.forEach((name) => window.addEventListener(name, onActivity, { passive: true }));
     // Focus moving into the iframe blurs this window
     if (embedded) window.addEventListener("blur", markActive);
 
@@ -271,7 +291,7 @@ export function usePageTracking(
     window.addEventListener("pagehide", onPageHide);
 
     return () => {
-      activityEvents.forEach((name) => window.removeEventListener(name, markActive));
+      activityEvents.forEach((name) => window.removeEventListener(name, onActivity));
       window.removeEventListener("blur", markActive);
       clearInterval(tick);
       clearInterval(flushTimer);
