@@ -165,7 +165,8 @@
     "alertsTitle": "Alerts",
     "pendingTitle": "Your link is ready, it hasn't gone out yet.",
     "pendingDescription": "Send it to your prospect: they'll show up here as soon as they open it.",
-    "browsers": "{count} browsers"
+    "browsers": "{count} browsers",
+    "titleKeepsLinks": "New link addresses use this title. The ones already sent keep working."
   },
   "content": {
     "videoRead": "What you say in each part of the video, read by AI from the transcript. Tags tell Clozer when you talk pricing, timeline… Fix them if needed.",

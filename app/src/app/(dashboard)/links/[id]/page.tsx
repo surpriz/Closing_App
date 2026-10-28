@@ -177,6 +177,7 @@ export default async function LinkDetailPage({
 
       <div className="space-y-6">
         <DealHeader deal={deal} />
+        {link.parentLinkId && <p className="text-small text-muted-foreground">{t("readerLinkNote")}</p>}
         {canEdit && link.parentLinkId && !link.isOnboardingTest && <MarkAsTestButton linkId={link.id} />}
         <SmartLinkProblemNotice
           problems={smartProblems}
