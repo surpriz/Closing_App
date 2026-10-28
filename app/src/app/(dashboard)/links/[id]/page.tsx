@@ -46,6 +46,7 @@ import { settingsSummary } from "@/lib/closing/share/summary";
 import type { SmartLinkProblem } from "@/lib/closing/shared/smart-params";
 import { sequencerWebhookUrl } from "@/lib/closing/sequencer/apply";
 import { prisma } from "@/lib/db";
+import { isManagerRole } from "@/lib/roles";
 import { formatDate } from "@/lib/format";
 import { requireWorkspace } from "@/lib/session";
 import { testToolsEnabled } from "@/lib/test-tools";
@@ -325,7 +326,8 @@ export default async function LinkDetailPage({
                       url={url}
                       linkId={link.id}
                       followupsEnabled={link.followupsEnabled}
-                      repliesWebhookUrl={sequencerWebhookUrl(link.organizationId)}
+                      repliesWebhookUrl={await sequencerWebhookUrl(link.organizationId).catch(() => null)}
+                      canRotate={isManagerRole(workspace.role)}
                     />
                   </DealSection>
                 )}

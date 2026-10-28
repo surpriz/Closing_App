@@ -20,7 +20,7 @@ import { linkDefaultsFor, SHARED_LINK_SETTINGS } from "@/lib/closing/documents/s
 import { getSellerPrefs, sellerTimezone } from "@/lib/closing/notify/preferences";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
 import { EXTENSION_DAYS, expiryError, extendExpiry, isLinkExpired, reactivates, viewerDeadline } from "@/lib/closing/expiry";
-import { cancelOpenFollowups, isUniqueViolation } from "@/lib/closing/followups/queue";
+import { cancelOpenFollowups, isUniqueViolation, OPEN_FOLLOWUP_STATUSES } from "@/lib/closing/followups/queue";
 import { prospectFromRecipient } from "@/lib/closing/prospects/from-recipient";
 import { notifyReactivated } from "@/lib/closing/reactivation";
 import { deadState, interestFollowupTarget } from "@/lib/closing/revival";
@@ -310,6 +310,18 @@ export async function setLinkSwitch(linkId: string, key: LinkSwitch, value: bool
   });
   if (field === "followupsEnabled" && !value) {
     await cancelOpenFollowups(link.id, "followupsOff");
+  }
+  // A Smart Link's readers follow it: one switch for the whole campaign, never two that disagree
+  if (link.shared && field === "followupsEnabled") {
+    const readers = { parentLinkId: link.id };
+    await prisma.link.updateMany({ where: readers, data: { followupsEnabled: value } });
+    if (!value) {
+      const t = await getTranslations("server.followups.dispatch");
+      await prisma.followup.updateMany({
+        where: { link: readers, status: { in: [...OPEN_FOLLOWUP_STATUSES] } },
+        data: { status: "CANCELLED", cancelledAt: new Date(), error: t("followupsOff") },
+      });
+    }
   }
   revalidateLink(link);
   return { ok: true };
@@ -736,18 +748,14 @@ export async function prepareFollowupFromInsight(linkId: string) {
   return result.ok ? { ok: true } : { error: result.reasons.join(" ") || t("cannotPrepare") };
 }
 
-/**
- * Clozer's follow-ups after a Smart Link reader read: off when the seller's cold email tool
- * already follows up, so the prospect never gets two. Applies to the readers already in too.
- */
-export async function setSmartLinkFollowups(linkId: string, enabled: boolean) {
-  const link = await requireOwnedLink(linkId);
-  if (!link.shared) throw new Error("Pas un Smart Link");
-  const readers = await prisma.link.findMany({ where: { parentLinkId: link.id }, select: { id: true } });
-  await prisma.link.updateMany({
-    where: { id: { in: [link.id, ...readers.map((reader) => reader.id)] } },
-    data: { followupsEnabled: enabled },
+/** Revokes the address the workspace's cold email tools report replies to: the old one stops working at once. */
+export async function regenerateSequencerWebhook() {
+  const { organization, role } = await requireWorkspace();
+  if (!isManagerRole(role)) throw new Error("Réservé aux managers");
+  await prisma.workspaceSettings.upsert({
+    where: { organizationId: organization.id },
+    create: { organizationId: organization.id, sequencerTokenVersion: 1 },
+    update: { sequencerTokenVersion: { increment: 1 } },
   });
-  if (!enabled) for (const reader of readers) await cancelOpenFollowups(reader.id, "followupsOff");
-  revalidateLink(link);
+  revalidatePath("/links", "layout");
 }

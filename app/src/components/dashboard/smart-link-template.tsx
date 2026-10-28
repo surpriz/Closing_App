@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useOptimistic, useState, useTransition } from "react";
 import { toast } from "sonner";
 
-import { setSmartLinkFollowups } from "@/app/(dashboard)/links/actions";
+import { regenerateSequencerWebhook, setLinkSwitch } from "@/app/(dashboard)/links/actions";
+import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 
 import { SMART_LINK_TOOLS, smartLinkUrl, type SmartLinkTool } from "@/lib/closing/shared/smart-params";
@@ -21,18 +23,22 @@ export function SmartLinkTemplate({
   linkId,
   followupsEnabled,
   repliesWebhookUrl,
+  canRotate,
 }: {
   url: string;
   linkId: string;
   followupsEnabled: boolean;
   /** Where the cold email tool reports replies: Clozer never sees those emails otherwise. */
-  repliesWebhookUrl: string;
+  repliesWebhookUrl: string | null;
+  /** Managers can revoke the address when it leaked. */
+  canRotate: boolean;
 }) {
   const [tool, setTool] = useState<SmartLinkTool>("lemlist");
   const value = smartLinkUrl(url, tool);
   const t = useTranslations("deal.smartLinkTemplate");
   const [followups, setFollowups] = useOptimistic(followupsEnabled);
-  const [, startTransition] = useTransition();
+  const [rotating, startTransition] = useTransition();
+  const router = useRouter();
 
   return (
     <div className="space-y-3 py-4 text-small">
@@ -80,11 +86,8 @@ export function SmartLinkTemplate({
           onCheckedChange={(checked) =>
             startTransition(async () => {
               setFollowups(checked);
-              try {
-                await setSmartLinkFollowups(linkId, checked);
-              } catch {
-                toast.error(t("followupsFailed"));
-              }
+              const result = await setLinkSwitch(linkId, "followupsEnabled", checked).catch(() => null);
+              if (!result || !("ok" in result)) toast.error(t("followupsFailed"));
             })
           }
         />
@@ -93,6 +96,7 @@ export function SmartLinkTemplate({
           <span className="block text-muted-foreground">{followups ? t("followupsOn") : t("followupsOff")}</span>
         </span>
       </label>
+      {repliesWebhookUrl && (
       <div className="space-y-2 border-t border-border pt-3">
         <p className="font-medium text-foreground">{t("repliesTitle")}</p>
         <p className="text-muted-foreground">
@@ -102,7 +106,24 @@ export function SmartLinkTemplate({
           <code className="min-w-0 flex-1 truncate font-mono text-micro">{repliesWebhookUrl}</code>
           <CopyButton value={repliesWebhookUrl} />
         </div>
+        {canRotate && (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={rotating}
+            onClick={() =>
+              startTransition(async () => {
+                await regenerateSequencerWebhook();
+                toast.success(t("repliesRotated"));
+                router.refresh();
+              })
+            }
+          >
+            {t("repliesRotate")}
+          </Button>
+        )}
       </div>
+      )}
     </div>
   );
 }

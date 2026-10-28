@@ -550,6 +550,8 @@ model WorkspaceSettings {
   slackWebhookUrl    String? // encrypted at rest
   outboundWebhookUrl String?
   webhookSecret      String? // encrypted at rest, signs outbound webhooks
+  // Bumped to revoke the cold email tool's webhook address (Smart Link replies): folded into its signature
+  sequencerTokenVersion Int @default(0)
 
   aiTone          String? // free text guidance for generated messages
   senderName      String?
