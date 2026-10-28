@@ -59,6 +59,15 @@ export async function consumeOauthState(
   });
 }
 
+/**
+ * True only for a state that ran out without ever being used. A consumed state says nothing of the kind: a sibling
+ * delivery is (or was) handling it. A purged one is unknown, so false too.
+ */
+export async function isExpiredUnusedOauthState(id: string, now = new Date()): Promise<boolean> {
+  const row = await prisma.mailboxOauthState.findUnique({ where: { id }, select: { consumedAt: true, expiresAt: true } });
+  return !!row && row.consumedAt === null && row.expiresAt.getTime() <= now.getTime();
+}
+
 /** Housekeeping for the sync tick: states expired for over an hour, used or not. */
 export async function purgeOauthStates(now: Date): Promise<number> {
   const { count } = await prisma.mailboxOauthState.deleteMany({

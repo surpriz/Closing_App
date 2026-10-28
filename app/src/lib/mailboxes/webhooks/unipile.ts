@@ -6,7 +6,7 @@ import { connectProviderMailbox } from "../connect";
 import { getUnipileAccount, unipileConnector } from "../gmail/unipile";
 import type { ConnectorDeps } from "../index";
 import { notifyMailboxOwner } from "../notify-owner";
-import { consumeOauthState } from "../oauth/state";
+import { consumeOauthState, isExpiredUnusedOauthState } from "../oauth/state";
 import { verifyUnipileHeaderToken } from "./unipile-secrets";
 
 type Json = Record<string, unknown>;
@@ -57,9 +57,9 @@ export async function handleUnipileNotify(
 
   const state = await consumeOauthState(stateId, deps.now);
   if (!state) {
-    // Made for this state, which expired or was spent: nobody will claim the account, it would linger connected and
-    // billed. The orphan guard keeps it when a mailbox already points at it (a replayed notification)
-    await dropOrphanAccount(accountId, deps);
+    // Made for this state, which expired unused: nobody will claim the account, it would linger connected and billed.
+    // A consumed state is left alone: a sibling delivery may be connecting it right now, with no mailbox row yet
+    if (await isExpiredUnusedOauthState(stateId, deps.now)) await dropOrphanAccount(accountId, deps);
     return { outcome: "invalid_state" };
   }
   if (state.provider !== "GOOGLE") return { outcome: "invalid_state" };

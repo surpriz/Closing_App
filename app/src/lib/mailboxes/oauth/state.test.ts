@@ -14,7 +14,7 @@ vi.mock("@/lib/db", () => ({
   },
 }));
 
-const { createOauthState, consumeOauthState, purgeOauthStates } = await import("./state");
+const { createOauthState, consumeOauthState, isExpiredUnusedOauthState, purgeOauthStates } = await import("./state");
 const now = new Date("2026-10-28T10:00:00Z");
 
 beforeEach(() => vi.clearAllMocks());
@@ -45,6 +45,17 @@ describe("oauth state", () => {
     expect(await consumeOauthState("st1", now, { userId: "u2", organizationId: "o" })).toBeNull();
     expect(db.updateMany.mock.calls[0][0].where).toMatchObject({ id: "st1", userId: "u2", organizationId: "o" });
     expect(db.findUnique).not.toHaveBeenCalled();
+  });
+
+  it("tells an expired unused state from a consumed or purged one", async () => {
+    db.findUnique.mockResolvedValueOnce({ consumedAt: null, expiresAt: new Date(now.getTime() - 1) });
+    expect(await isExpiredUnusedOauthState("st1", now)).toBe(true);
+    db.findUnique.mockResolvedValueOnce({ consumedAt: now, expiresAt: new Date(now.getTime() - 1) });
+    expect(await isExpiredUnusedOauthState("st1", now)).toBe(false);
+    db.findUnique.mockResolvedValueOnce({ consumedAt: null, expiresAt: new Date(now.getTime() + 1) });
+    expect(await isExpiredUnusedOauthState("st1", now)).toBe(false);
+    db.findUnique.mockResolvedValueOnce(null);
+    expect(await isExpiredUnusedOauthState("st1", now)).toBe(false);
   });
 
   it("purges states expired for over an hour", async () => {

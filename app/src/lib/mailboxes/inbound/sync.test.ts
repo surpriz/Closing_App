@@ -351,6 +351,23 @@ describe("syncMailboxNow", () => {
     expect(prisma.mailbox.updateMany).toHaveBeenLastCalledWith({ where: { id: "mb1" }, data: { syncRequestedAt: NOW } });
   });
 
+  it("leaves a mailbox in backoff to the tick: no lease, no sync, the request kept", async () => {
+    prisma.mailbox.findFirst.mockResolvedValue({ ...row, syncErrorCount: 2, nextSyncAt: new Date(NOW.getTime() + 60_000) });
+    const list = okList();
+    expect(await syncMailboxNow("mb1", NOW, { connector: () => fakeConnector(list) })).toEqual({ outcome: "backoff" });
+    expect(list).not.toHaveBeenCalled();
+    expect(prisma.mailbox.updateMany).toHaveBeenCalledTimes(1);
+    expect(prisma.mailbox.updateMany).toHaveBeenCalledWith({ where: { id: "mb1" }, data: { syncRequestedAt: NOW } });
+    expect(notifyMailboxOwner).not.toHaveBeenCalled();
+  });
+
+  it("syncs a failing mailbox once its backoff is over, and a healthy one whatever nextSyncAt says", async () => {
+    prisma.mailbox.findFirst.mockResolvedValue({ ...row, syncErrorCount: 2, nextSyncAt: NOW });
+    expect((await syncMailboxNow("mb1", NOW, { connector: () => fakeConnector(okList()) })).outcome).toBe("synced");
+    prisma.mailbox.findFirst.mockResolvedValue({ ...row, syncErrorCount: 0, nextSyncAt: new Date(NOW.getTime() + 60_000) });
+    expect((await syncMailboxNow("mb1", NOW, { connector: () => fakeConnector(okList()) })).outcome).toBe("synced");
+  });
+
   it("syncs under the lease, clears the request and gives the lease back", async () => {
     const list = okList();
     expect(await syncMailboxNow("mb1", NOW, { connector: () => fakeConnector(list, true) })).toEqual({ outcome: "synced" });

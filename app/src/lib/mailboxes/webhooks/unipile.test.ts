@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const h = vi.hoisted(() => ({
   consume: vi.fn(),
+  expired: vi.fn(async () => false),
   connect: vi.fn(),
   account: vi.fn(),
   notifyOwner: vi.fn(async () => true),
@@ -19,7 +20,7 @@ vi.mock("@/lib/closing/notify/preferences", () => ({
   getSellerPrefs: vi.fn(async () => ({ timezone: "Europe/Paris" })),
   sellerTimezone: (p: { timezone: string }) => p.timezone,
 }));
-vi.mock("../oauth/state", () => ({ consumeOauthState: h.consume }));
+vi.mock("../oauth/state", () => ({ consumeOauthState: h.consume, isExpiredUnusedOauthState: h.expired }));
 vi.mock("../connect", () => ({ connectProviderMailbox: h.connect }));
 vi.mock("../gmail/unipile", () => ({
   getUnipileAccount: h.account,
@@ -41,6 +42,7 @@ beforeEach(() => {
   h.findFirst.mockResolvedValue(null);
   h.findUnique.mockResolvedValue(null);
   h.connect.mockResolvedValue({ ok: true, mailboxId: "mb1", dns: {} });
+  h.expired.mockResolvedValue(false);
 });
 
 describe("handleUnipileNotify", () => {
@@ -73,16 +75,36 @@ describe("handleUnipileNotify", () => {
     expect(h.connect).toHaveBeenCalledTimes(1);
   });
 
-  it("drops the account made for a state that expired or was spent, unless a mailbox points at it", async () => {
+  it("drops the account made for a state that expired unused, unless a mailbox points at it", async () => {
     h.consume.mockResolvedValueOnce(null);
-    expect((await handleUnipileNotify(created)).outcome).toBe("invalid_state");
+    h.expired.mockResolvedValueOnce(true);
+    expect((await handleUnipileNotify(created, { now: NOW })).outcome).toBe("invalid_state");
+    expect(h.expired).toHaveBeenCalledWith("state_1", NOW);
     expect(h.connect).not.toHaveBeenCalled();
     expect(h.disconnect).toHaveBeenCalledTimes(1);
 
     h.consume.mockResolvedValueOnce(null);
+    h.expired.mockResolvedValueOnce(true);
     h.findFirst.mockResolvedValueOnce({ id: "mb1" });
     expect((await handleUnipileNotify(created)).outcome).toBe("invalid_state");
     expect(h.disconnect).toHaveBeenCalledTimes(1);
+  });
+
+  it("a duplicate delivery never deletes the account a sibling is still connecting", async () => {
+    // A consumed the state and sits in connectProviderMailbox: no mailbox row points at the account yet
+    let finishA!: () => void;
+    h.consume.mockResolvedValueOnce(state).mockResolvedValueOnce(null);
+    h.connect.mockImplementationOnce(
+      () => new Promise((resolve) => (finishA = () => resolve({ ok: true, mailboxId: "mb1", dns: {} }))),
+    );
+    const a = handleUnipileNotify(created);
+    await vi.waitFor(() => expect(h.connect).toHaveBeenCalledTimes(1));
+    // B finds the state consumed (not expired): it leaves the account alone
+    expect((await handleUnipileNotify(created)).outcome).toBe("invalid_state");
+    expect(h.disconnect).not.toHaveBeenCalled();
+    finishA();
+    expect((await a).outcome).toBe("connected");
+    expect(h.disconnect).not.toHaveBeenCalled();
   });
 
   it("ignores other statuses and malformed payloads without touching the state", async () => {

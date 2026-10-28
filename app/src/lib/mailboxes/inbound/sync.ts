@@ -211,7 +211,7 @@ export async function syncMailboxesDue(
   return { synced, errors };
 }
 
-export type SyncNowOutcome = "skipped" | "busy" | "synced" | "failed" | "idle";
+export type SyncNowOutcome = "skipped" | "busy" | "backoff" | "synced" | "failed" | "idle";
 
 /**
  * A webhook asked for this mailbox: sync it now, under the same lease and kill switch as the tick, so a webhook pass
@@ -231,11 +231,27 @@ export async function syncMailboxNow(
       ...ACTIVE_WORKSPACE,
       messages: { some: { status: "SENT", sentAt: { gte: new Date(now.getTime() - SENT_WINDOW_MS) } } },
     },
-    select: { id: true, provider: true, connector: true, email: true, displayName: true, credentials: true, syncErrorCount: true },
+    select: {
+      id: true,
+      provider: true,
+      connector: true,
+      email: true,
+      displayName: true,
+      credentials: true,
+      syncErrorCount: true,
+      nextSyncAt: true,
+    },
   });
   if (!mailbox) return { outcome: "skipped" };
+  const keepRequest = () => prisma.mailbox.updateMany({ where: { id: mailbox.id }, data: { syncRequestedAt: now } });
+  // A failing mailbox keeps its backoff: every webhook retrying it would burn the failure count and warn the owner
+  // over a short provider hiccup. The tick takes the request at nextSyncAt
+  if (mailbox.syncErrorCount > 0 && mailbox.nextSyncAt && mailbox.nextSyncAt > now) {
+    await keepRequest();
+    return { outcome: "backoff" };
+  }
   if (!(await claimSyncLease(mailbox.id, now))) {
-    await prisma.mailbox.updateMany({ where: { id: mailbox.id }, data: { syncRequestedAt: now } });
+    await keepRequest();
     return { outcome: "busy" };
   }
   return { outcome: await syncUnderLease(mailbox, now, deps.budgetMs ?? SYNC_BUDGET_PER_MAILBOX_MS, deps) };
