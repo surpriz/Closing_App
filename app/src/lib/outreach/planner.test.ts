@@ -226,9 +226,9 @@ describe("nextStepFor with reading signals", () => {
     expect(plan(loud)).toEqual({ kind: "finish" });
   });
 
-  it("notes a forward once", () => {
+  it("notes a forward when signals report a new one", () => {
     expect(plan({ forwardedTo: ["a@b.co"] })).toEqual({ kind: "note_forward" });
-    expect(plan({ forwardedTo: ["a@b.co"], lastSignal: "forward" })).not.toEqual({ kind: "note_forward" });
+    expect(plan({ forwardedTo: [] })).not.toEqual({ kind: "note_forward" });
   });
 
   it("pauses on a pricing read (call moment), once", () => {
@@ -251,7 +251,7 @@ describe("nextStepFor with reading signals", () => {
   });
 
   it("lets a forward signal still allow a deep read alert", () => {
-    expect(plan({ deepRead: true, opened: true, lastSignal: "forward" })).toMatchObject({ reason: "deep_read" });
+    expect(plan({ deepRead: true, opened: true })).toMatchObject({ reason: "deep_read" });
   });
 
   it("ranks forward over pricing, pricing over deep read", () => {

@@ -64,7 +64,7 @@ export function nextStepFor(input: {
     const capped = sig.sentLast30 >= cfg.maxFollowupsPer30Days;
 
     if (sig.replied) return { kind: "finish" };
-    if (sig.forwardedTo.length > 0 && sig.lastSignal !== "forward") return { kind: "note_forward" };
+    if (sig.forwardedTo.length > 0) return { kind: "note_forward" };
     if (
       sig.opened &&
       sig.pricingMs > 0 &&

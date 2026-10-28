@@ -87,8 +87,6 @@ export async function POST(request: NextRequest) {
         where: { linkId_email: { linkId: link.id, email: access.email } },
       })
     : null;
-  // A campaign link has no gate: its reader is the enrolled address
-  const campaignProspectId = gated ? null : await campaignProspectFor(link);
   const prospect = gated;
 
   const recentView = await prisma.documentView.findFirst({
@@ -100,6 +98,9 @@ export async function POST(request: NextRequest) {
     orderBy: { lastSeenAt: "desc" },
     select: { id: true },
   });
+
+  // A campaign link has no gate: its reader is the enrolled address
+  const campaignProspectId = gated || recentView || excluded ? null : await campaignProspectFor(link);
 
   const viewId =
     recentView?.id ??

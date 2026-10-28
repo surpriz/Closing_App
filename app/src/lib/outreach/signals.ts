@@ -24,7 +24,9 @@ export function signalsFrom(input: {
   reading: LinkReading;
   views: { startedAt: Date; lastSeenAt: Date; isBot: boolean }[];
   deepRead: boolean;
-  forwards: { toEmail: string }[];
+  /** Forwards of the link; only those created after `since` are news. */
+  forwards: { toEmail: string; createdAt: Date }[];
+  since: Date | null;
   enrollment: { repliedAt: Date | null; lastSignal: string | null; reactivatedAt: Date | null };
   sent: { sentAt: Date; kind: "STEP" | "FOLLOWUP" }[];
   openFollowup: boolean;
@@ -50,7 +52,13 @@ export function signalsFrom(input: {
     deepRead: input.deepRead,
     lastReadAt,
     readTags: reading.tags,
-    forwardedTo: [...new Set(input.forwards.map((forward) => forward.toEmail.trim().toLowerCase()))],
+    forwardedTo: [
+      ...new Set(
+        input.forwards
+          .filter((forward) => !input.since || forward.createdAt > input.since)
+          .map((forward) => forward.toEmail.trim().toLowerCase()),
+      ),
+    ],
     replied: enrollment.repliedAt !== null,
     lastSentAt,
     sentLast30: input.sent.filter((message) => message.sentAt.getTime() >= since).length,

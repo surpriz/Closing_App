@@ -61,6 +61,7 @@ export async function POST(request: Request) {
       visitorId: true,
       prospectId: true,
       isBot: true,
+      totalDurationMs: true,
       link: {
         select: {
           expiresAt: true,
@@ -164,7 +165,8 @@ export async function POST(request: Request) {
       }
     });
     // A campaign link: the enrollment reads the new signals (the tick catches what this misses)
-    if (view.link.campaignProspectId) {
+    // Not on every flush: the first one of the session and the one when the reader leaves
+    if (view.link.campaignProspectId && (left || view.totalDurationMs === 0)) {
       inBackground("outreach-read", () => evaluateEnrollmentReading(view.linkId, now));
     }
     // A Smart Link reader: a follow-up on what they read, and the cold email tool hears when they get hot

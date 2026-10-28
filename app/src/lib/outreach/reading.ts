@@ -1,3 +1,5 @@
+import { Prisma } from "@/generated/prisma/client";
+import { DAY_MS } from "@/lib/closing/constants";
 import { isDeepRead } from "@/lib/closing/dashboard/funnel";
 import { hasReason } from "@/lib/closing/engagement/reasons";
 import { generateFollowupMessage, OPEN_FOLLOWUP_STATUSES, queueFollowup } from "@/lib/closing/followups/queue";
@@ -11,13 +13,14 @@ import { getNamespaceTranslator } from "@/lib/server-translator";
 
 import { dedupeKeyOf, scheduleStepMessage, type StepRow } from "./messages";
 import { releaseCampaignLink } from "./ownership";
-import { businessHoursOf, nextStepFor, stepSendAt, type NextAction } from "./planner";
-import { organizationWhere, type OutreachScope } from "./scope";
+import { businessHoursOf, nextStepFor, REACTIVATE_AFTER_DAYS, stepSendAt, type NextAction } from "./planner";
+import type { OutreachScope } from "./scope";
 import { signalsFrom } from "./signals";
 
 /** A reader still on the page is not evaluated: the tick waits until the reading has settled. */
 const SETTLE_MS = 5 * 60 * 1000;
 const TICK_BATCH = 100;
+const REACTIVATION_BATCH = 50;
 const STEP_SELECT = {
   id: true,
   order: true,
@@ -54,9 +57,13 @@ export async function evaluateEnrollmentReading(linkId: string, now: Date): Prom
     include: { campaign: { select: { id: true, status: true, mailboxId: true, steps: { orderBy: { order: "asc" }, select: STEP_SELECT } } } },
   });
   if (!enrollment || (enrollment.status !== "ACTIVE" && enrollment.status !== "PAUSED")) return null;
-  if (enrollment.campaign.status !== "ACTIVE") return null;
+  // Stamped even when nothing applies, so the tick does not pick the same enrollment up again and again
+  const stamp = () => prisma.campaignProspect.updateMany({ where: { id: enrollment.id }, data: { readEvaluatedAt: now } });
   const paused = enrollment.status === "PAUSED";
-  if (paused && !READING_PAUSES.includes(enrollment.pausedReason ?? "")) return null;
+  if (enrollment.campaign.status !== "ACTIVE" || (paused && !READING_PAUSES.includes(enrollment.pausedReason ?? ""))) {
+    await stamp();
+    return null;
+  }
 
   const [reading, views, forwards, sent, openFollowups, settings] = await Promise.all([
     readingOfLink(link.id, link.documentId),
@@ -64,7 +71,10 @@ export async function evaluateEnrollmentReading(linkId: string, now: Date): Prom
       where: { linkId: link.id, isBot: false },
       select: { startedAt: true, lastSeenAt: true, isBot: true, totalDurationMs: true, maxPageReached: true },
     }),
-    prisma.linkForward.findMany({ where: { linkId: link.id }, select: { toProspect: { select: { email: true } } } }),
+    prisma.linkForward.findMany({
+      where: { linkId: link.id },
+      select: { createdAt: true, toProspect: { select: { email: true } } },
+    }),
     prisma.campaignMessage.findMany({
       where: { enrollmentId: enrollment.id, status: "SENT", sentAt: { not: null } },
       select: { sentAt: true, kind: true },
@@ -88,7 +98,8 @@ export async function evaluateEnrollmentReading(linkId: string, now: Date): Prom
     reading,
     views,
     deepRead,
-    forwards: forwards.map((forward) => ({ toEmail: forward.toProspect.email })),
+    forwards: forwards.map((forward) => ({ toEmail: forward.toProspect.email, createdAt: forward.createdAt })),
+    since: enrollment.readEvaluatedAt,
     enrollment,
     sent: sentMessages,
     openFollowup: openFollowups > 0,
@@ -117,8 +128,8 @@ export async function evaluateEnrollmentReading(linkId: string, now: Date): Prom
   });
   const timezone = prospect?.timezone ?? enrollment.timezone;
 
-  const queueRead = async (trigger: Trigger, mode: "asap" | "next-morning", key: string) => {
-    if (!prospect) return;
+  const queueRead = async (trigger: Trigger, mode: "asap" | "next-morning", key: string): Promise<boolean> => {
+    if (!prospect) return false;
     const hour = await habitualSendHour({
       prospectId: prospect.id,
       organizationId: enrollment.organizationId,
@@ -138,33 +149,52 @@ export async function evaluateEnrollmentReading(linkId: string, now: Date): Prom
       context: { readTags: signals.readTags, campaignProspectId: enrollment.id },
       campaignProspectId: enrollment.id,
     });
-    if (followupId) await generateFollowupMessage(followupId);
+    if (!followupId) return false;
+    await generateFollowupMessage(followupId);
+    return true;
   };
 
   if (action.kind === "pause_alert") {
     const lastSignal = action.reason === "call_moment" ? "pricing" : "deep";
-    if (paused) {
-      await prisma.campaignProspect.updateMany({ where: { id: enrollment.id, status: "PAUSED" }, data: { lastSignal } });
-    } else {
-      await prisma.campaignProspect.updateMany({
-        where: { id: enrollment.id, status: "ACTIVE" },
-        data: { status: "PAUSED", pausedReason: action.reason, pausedAt: now, lastSignal },
-      });
-    }
     const t = getNamespaceTranslator(toUiLocale(link.createdBy?.locale), "alerts.callMoment");
-    await notifySeller({
+    const alerted = await notifySeller({
       linkId: link.id,
       type: "CALL_MOMENT",
       dedupeKey: `cold_call:${link.id}:${action.reason}`,
       payload: { reason: t(action.reason === "call_moment" ? "campaignPricing" : "campaignDeepRead") },
       now,
     });
-    if (action.followup) await queueRead(action.followup, "next-morning", action.followup === "COLD_READ_PRICING" ? "pricing" : "deep");
+    // One AI follow-up at a time: a pricing read only replaces the "deep read" one that is still open
+    let created = false;
+    if (action.followup) {
+      const upgrade = action.followup === "COLD_READ_PRICING" && enrollment.lastSignal === "deep";
+      if (!signals.openFollowup) {
+        created = await queueRead(action.followup, "next-morning", lastSignal);
+      } else if (upgrade) {
+        const replaced = getNamespaceTranslator(toUiLocale(link.createdBy?.locale), "server.followups.act")("replaced");
+        await prisma.followup.updateMany({
+          where: { campaignProspectId: enrollment.id, trigger: "COLD_READ", status: { in: [...OPEN_FOLLOWUP_STATUSES] } },
+          data: { status: "CANCELLED", cancelledAt: now, error: replaced },
+        });
+        created = await queueRead(action.followup, "next-morning", lastSignal);
+      }
+    }
+    // Both deduplicated: this reading was already acted on, nothing moves
+    if (alerted || created) {
+      if (paused) {
+        await prisma.campaignProspect.updateMany({
+          where: { id: enrollment.id, status: "PAUSED" },
+          data: { lastSignal, pausedReason: action.reason },
+        });
+      } else {
+        await prisma.campaignProspect.updateMany({
+          where: { id: enrollment.id, status: "ACTIVE" },
+          data: { status: "PAUSED", pausedReason: action.reason, pausedAt: now, lastSignal },
+        });
+      }
+    }
   } else if (action.kind === "note_forward") {
-    await prisma.campaignProspect.updateMany({
-      where: { id: enrollment.id, status: enrollment.status },
-      data: { lastSignal: "forward" },
-    });
+    // Nothing to write but the stamp below: forwards newer than it are the news, the schedule stays as is
   } else if (!paused && action.kind === "ai_followup") {
     await queueRead(action.trigger, "asap", "reactivate");
     await prisma.campaignProspect.updateMany({
@@ -192,22 +222,36 @@ export async function evaluateEnrollmentReading(linkId: string, now: Date): Prom
     if (count > 0) await releaseCampaignLink(link.id);
   }
 
-  await prisma.campaignProspect.updateMany({ where: { id: enrollment.id }, data: { readEvaluatedAt: now } });
+  await stamp();
   return action.kind;
 }
 
+/** The scope as SQL on the enrollment alias `cp` (the query builder cannot express the cross-table comparisons below). */
+function scopeSql(scope: OutreachScope) {
+  const { organizationId, organizationIds } = scope;
+  if (organizationIds) {
+    const allowed = organizationId ? organizationIds.filter((id) => id === organizationId) : organizationIds;
+    return allowed.length > 0 ? Prisma.sql`AND cp."organizationId" IN (${Prisma.join(allowed)})` : Prisma.sql`AND FALSE`;
+  }
+  return organizationId ? Prisma.sql`AND cp."organizationId" = ${organizationId}` : Prisma.empty;
+}
+
 /**
- * The tick's catch-up for readings the hooks missed: enrollments whose link saw a human page view after the last
- * evaluation, once the reader has been quiet for a few minutes. Returns how many were evaluated.
+ * The tick's catch-up. First the readings the hooks missed: a human page view after the last evaluation, once the
+ * reader has been quiet for a few minutes. Then the time-based pass: a sequence with no step left whose reader went
+ * quiet for REACTIVATE_AFTER_DAYS (no view arrives to trigger that one). Returns how many were evaluated.
  */
 export async function evaluateReadingSignals(now: Date, scope: OutreachScope = {}): Promise<number> {
   const quietSince = new Date(now.getTime() - SETTLE_MS);
-  // The comparison runs between two tables' columns, which the query builder cannot express
-  const due = await prisma.$queryRaw<{ id: string }[]>`
-    SELECT cp."id"
-    FROM "campaign_prospects" cp
+  const scoped = scopeSql(scope);
+  const live = Prisma.sql`
     JOIN "links" l ON l."id" = cp."linkId"
-    WHERE cp."status" IN ('ACTIVE', 'PAUSED')
+    JOIN "campaigns" c ON c."id" = cp."campaignId" AND c."status" = 'ACTIVE'
+    JOIN "organizations" o ON o."id" = cp."organizationId" AND o."suspendedAt" IS NULL`;
+  const reading = await prisma.$queryRaw<{ linkId: string }[]>`
+    SELECT cp."linkId"
+    FROM "campaign_prospects" cp ${live}
+    WHERE (cp."status" = 'ACTIVE' OR (cp."status" = 'PAUSED' AND cp."pausedReason" IN ('call_moment', 'deep_read')))
       AND l."lastActivityAt" IS NOT NULL
       AND l."lastActivityAt" <= ${quietSince}
       AND (
@@ -218,29 +262,30 @@ export async function evaluateReadingSignals(now: Date, scope: OutreachScope = {
           WHERE pv."linkId" = l."id" AND dv."isBot" = false AND pv."lastSeenAt" > cp."readEvaluatedAt"
         )
       )
+      ${scoped}
     ORDER BY cp."readEvaluatedAt" ASC NULLS FIRST
-    LIMIT ${TICK_BATCH * 3}`;
-  if (due.length === 0) return 0;
+    LIMIT ${TICK_BATCH}`;
 
-  const rows = await prisma.campaignProspect.findMany({
-    where: {
-      id: { in: due.map((row) => row.id) },
-      ...organizationWhere(scope),
-      campaign: { status: "ACTIVE", organization: { suspendedAt: null } },
-      linkId: { not: null },
-    },
-    select: { linkId: true },
-    take: TICK_BATCH,
-  });
+  const reactivation = await prisma.$queryRaw<{ linkId: string }[]>`
+    SELECT cp."linkId"
+    FROM "campaign_prospects" cp ${live}
+    WHERE cp."status" = 'ACTIVE'
+      AND cp."reactivatedAt" IS NULL
+      AND cp."currentStep" >= (SELECT COUNT(*) FROM "campaign_steps" s WHERE s."campaignId" = cp."campaignId")
+      AND l."lastActivityAt" < ${new Date(now.getTime() - REACTIVATE_AFTER_DAYS * DAY_MS)}
+      AND (cp."readEvaluatedAt" IS NULL OR cp."readEvaluatedAt" < ${new Date(now.getTime() - DAY_MS)})
+      ${scoped}
+    ORDER BY cp."readEvaluatedAt" ASC NULLS FIRST
+    LIMIT ${REACTIVATION_BATCH}`;
+
   let evaluated = 0;
-  for (const row of rows) {
-    if (!row.linkId) continue;
+  for (const linkId of new Set([...reading, ...reactivation].map((row) => row.linkId))) {
     try {
-      await evaluateEnrollmentReading(row.linkId, now);
+      await evaluateEnrollmentReading(linkId, now);
       evaluated++;
     } catch (error) {
       // One enrollment must not keep the others from being read
-      console.error(`[outreach-reading] ${row.linkId}`, error);
+      console.error(`[outreach-reading] ${linkId}`, error);
     }
   }
   return evaluated;

@@ -11,6 +11,7 @@ const base = {
   views: [],
   deepRead: false,
   forwards: [],
+  since: null,
   enrollment: { repliedAt: null, lastSignal: null, reactivatedAt: null },
   sent: [],
   openFollowup: false,
@@ -46,8 +47,28 @@ describe("signalsFrom", () => {
   });
 
   it("dedupes forwards case-insensitively", () => {
-    const s = signalsFrom({ ...base, forwards: [{ toEmail: "Bob@Acme.com" }, { toEmail: "bob@acme.com" }, { toEmail: "eve@acme.com" }] });
+    const at = ago(1);
+    const s = signalsFrom({
+      ...base,
+      forwards: [
+        { toEmail: "Bob@Acme.com", createdAt: at },
+        { toEmail: "bob@acme.com", createdAt: at },
+        { toEmail: "eve@acme.com", createdAt: at },
+      ],
+    });
     expect(s.forwardedTo).toEqual(["bob@acme.com", "eve@acme.com"]);
+  });
+
+  it("only counts forwards created after the last evaluation", () => {
+    const s = signalsFrom({
+      ...base,
+      since: ago(2),
+      forwards: [
+        { toEmail: "old@acme.com", createdAt: ago(3) },
+        { toEmail: "new@acme.com", createdAt: ago(1) },
+      ],
+    });
+    expect(s.forwardedTo).toEqual(["new@acme.com"]);
   });
 
   it("takes lastSentAt across both kinds and counts the last 30 days", () => {
