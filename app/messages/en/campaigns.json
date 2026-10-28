@@ -1,0 +1,86 @@
+{
+  "metaTitle": "Campaigns",
+  "page": {
+    "title": "Campaigns",
+    "description": "Email sequences sent from your own mailbox. Replies and bounces stop the sequence on their own.",
+    "empty": "No campaign yet. Create one, write the steps, import your prospects, then start it.",
+    "newCampaign": "New campaign",
+    "noMailboxHint": "Connect a mailbox to create a campaign.",
+    "columns": {
+      "name": "Campaign",
+      "mailbox": "Mailbox",
+      "status": "Status",
+      "enrolled": "Enrolled",
+      "sent": "Sent",
+      "replied": "Replied",
+      "bounced": "Bounced",
+      "updated": "Updated"
+    },
+    "noMailbox": "No mailbox"
+  },
+  "status": {
+    "DRAFT": "Draft",
+    "ACTIVE": "Running",
+    "PAUSED": "Paused",
+    "DONE": "Done",
+    "ARCHIVED": "Archived"
+  },
+  "enrollmentStatus": {
+    "QUEUED": "Waiting",
+    "ACTIVE": "In progress",
+    "PAUSED": "Paused",
+    "REPLIED": "Replied",
+    "BOUNCED": "Bounced",
+    "UNSUBSCRIBED": "Unsubscribed",
+    "SUPPRESSED": "Excluded",
+    "FINISHED": "Finished",
+    "STOPPED": "Stopped"
+  },
+  "new": {
+    "title": "New campaign",
+    "description": "You will write the steps and import the prospects on the next screen.",
+    "name": "Name",
+    "namePlaceholder": "Quote follow-up, Q4",
+    "mailbox": "Mailbox",
+    "locale": "Language of the emails",
+    "localeFr": "French",
+    "localeEn": "English",
+    "cancel": "Cancel",
+    "create": "Create",
+    "creating": "Creating…",
+    "errors": {
+      "invalid": "Give the campaign a name of 120 characters at most."
+    }
+  },
+  "banner": {
+    "mailboxError": "{mailbox}: {error}",
+    "fix": "Fix it in settings",
+    "noMailbox": "Connect a mailbox to send campaigns.",
+    "connect": "Connect a mailbox"
+  },
+  "errors": {
+    "AUTH_REVOKED": "The server refused the credentials. Reconnect the mailbox with a valid password.",
+    "QUOTA": "The provider's sending quota is reached.",
+    "RATE_LIMITED": "The provider is limiting sends.",
+    "REJECTED": "The provider rejected the message.",
+    "TRANSIENT": "The mail servers cannot be reached.",
+    "CONFIG": "The mailbox configuration is invalid. Check the servers and ports.",
+    "POLICY": "Too many bounces: sending was paused to protect your reputation.",
+    "unknown": "The mailbox reported an error."
+  },
+  "actions": {
+    "invalid": "Invalid request.",
+    "notFound": "This campaign no longer exists.",
+    "activated": "Campaign started.",
+    "paused": "Campaign paused.",
+    "archived": "Campaign archived.",
+    "issues": {
+      "not_found": "This campaign can't be started from its current state.",
+      "no_mailbox": "Choose a mailbox before starting.",
+      "mailbox_not_active": "The mailbox is not connected. Reconnect it in settings.",
+      "steps": "Some steps are incomplete.",
+      "document_required": "Choose the document the Clozer link opens.",
+      "no_enrollment": "Import at least one prospect before starting."
+    }
+  }
+}

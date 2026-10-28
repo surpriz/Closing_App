@@ -19,6 +19,7 @@ import { dealDocumentMeta, dealLabel, linkLabelSelect } from "@/lib/closing/dash
 import { sellerLinks } from "@/lib/closing/dashboard/queries";
 import { prisma } from "@/lib/db";
 import { isPlatformAdminEmail } from "@/lib/platform-admin";
+import { isOutreachAllowed } from "@/lib/outreach/flag";
 import { isProspectingAllowed } from "@/lib/prospecting/flag";
 import { isManagerRole } from "@/lib/roles";
 import { requireWorkspace } from "@/lib/session";
@@ -87,7 +88,12 @@ export default async function DashboardLayout({
           >
             <Logo />
           </Link>
-          <DashboardNav isManager={isManager} hasTeam={hasTeam} prospecting={isProspectingAllowed(user, organization.id)} />
+          <DashboardNav
+            isManager={isManager}
+            hasTeam={hasTeam}
+            prospecting={isProspectingAllowed(user, organization.id)}
+            campaigns={isOutreachAllowed(user, organization.id)}
+          />
           <div className="ml-auto flex items-center gap-2">
             <UploadButton
               uploadPrefix={documentUploadPrefix(organization.id)}

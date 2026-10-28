@@ -10,6 +10,7 @@ import en_documents from "../../messages/en/documents.json";
 import en_team from "../../messages/en/team.json";
 import en_settings from "../../messages/en/settings.json";
 import en_prospecting from "../../messages/en/prospecting.json";
+import en_campaigns from "../../messages/en/campaigns.json";
 import en_help from "../../messages/en/help.json";
 import en_onboarding from "../../messages/en/onboarding.json";
 import en_auth from "../../messages/en/auth.json";
@@ -29,6 +30,7 @@ import fr_documents from "../../messages/fr/documents.json";
 import fr_team from "../../messages/fr/team.json";
 import fr_settings from "../../messages/fr/settings.json";
 import fr_prospecting from "../../messages/fr/prospecting.json";
+import fr_campaigns from "../../messages/fr/campaigns.json";
 import fr_help from "../../messages/fr/help.json";
 import fr_onboarding from "../../messages/fr/onboarding.json";
 import fr_auth from "../../messages/fr/auth.json";
@@ -53,6 +55,7 @@ const en = {
   team: en_team,
   settings: en_settings,
   prospecting: en_prospecting,
+  campaigns: en_campaigns,
   help: en_help,
   onboarding: en_onboarding,
   auth: en_auth,
@@ -75,6 +78,7 @@ const fr = {
   team: fr_team,
   settings: fr_settings,
   prospecting: fr_prospecting,
+  campaigns: fr_campaigns,
   help: fr_help,
   onboarding: fr_onboarding,
   auth: fr_auth,

@@ -1,0 +1,86 @@
+{
+  "metaTitle": "Campagnes",
+  "page": {
+    "title": "Campagnes",
+    "description": "Des séquences d'emails envoyées depuis votre propre boîte. Une réponse ou un rebond arrête la séquence automatiquement.",
+    "empty": "Aucune campagne pour l'instant. Créez-en une, rédigez les étapes, importez vos prospects, puis lancez-la.",
+    "newCampaign": "Nouvelle campagne",
+    "noMailboxHint": "Connectez une boîte pour créer une campagne.",
+    "columns": {
+      "name": "Campagne",
+      "mailbox": "Boîte",
+      "status": "Statut",
+      "enrolled": "Inscrits",
+      "sent": "Envoyés",
+      "replied": "Répondus",
+      "bounced": "Rebonds",
+      "updated": "Mise à jour"
+    },
+    "noMailbox": "Aucune boîte"
+  },
+  "status": {
+    "DRAFT": "Brouillon",
+    "ACTIVE": "En cours",
+    "PAUSED": "En pause",
+    "DONE": "Terminée",
+    "ARCHIVED": "Archivée"
+  },
+  "enrollmentStatus": {
+    "QUEUED": "En attente",
+    "ACTIVE": "En cours",
+    "PAUSED": "En pause",
+    "REPLIED": "A répondu",
+    "BOUNCED": "Rebond",
+    "UNSUBSCRIBED": "Désinscrit",
+    "SUPPRESSED": "Exclu",
+    "FINISHED": "Terminé",
+    "STOPPED": "Arrêté"
+  },
+  "new": {
+    "title": "Nouvelle campagne",
+    "description": "Vous rédigerez les étapes et importerez les prospects sur l'écran suivant.",
+    "name": "Nom",
+    "namePlaceholder": "Relance devis, T4",
+    "mailbox": "Boîte",
+    "locale": "Langue des emails",
+    "localeFr": "Français",
+    "localeEn": "Anglais",
+    "cancel": "Annuler",
+    "create": "Créer",
+    "creating": "Création…",
+    "errors": {
+      "invalid": "Donnez un nom à la campagne, 120 caractères au maximum."
+    }
+  },
+  "banner": {
+    "mailboxError": "{mailbox} : {error}",
+    "fix": "Corriger dans les réglages",
+    "noMailbox": "Connectez une boîte pour envoyer.",
+    "connect": "Connecter une boîte"
+  },
+  "errors": {
+    "AUTH_REVOKED": "Le serveur a refusé les identifiants. Reconnectez la boîte avec un mot de passe valide.",
+    "QUOTA": "Le quota d'envoi du fournisseur est atteint.",
+    "RATE_LIMITED": "Le fournisseur limite les envois.",
+    "REJECTED": "Le fournisseur a refusé le message.",
+    "TRANSIENT": "Les serveurs de messagerie sont injoignables.",
+    "CONFIG": "La configuration de la boîte est invalide. Vérifiez les serveurs et les ports.",
+    "POLICY": "Trop de rebonds : les envois ont été mis en pause pour protéger votre réputation.",
+    "unknown": "La boîte a signalé une erreur."
+  },
+  "actions": {
+    "invalid": "Requête invalide.",
+    "notFound": "Cette campagne n'existe plus.",
+    "activated": "Campagne lancée.",
+    "paused": "Campagne mise en pause.",
+    "archived": "Campagne archivée.",
+    "issues": {
+      "not_found": "Cette campagne ne peut pas être lancée dans son état actuel.",
+      "no_mailbox": "Choisissez une boîte avant de lancer.",
+      "mailbox_not_active": "La boîte n'est pas connectée. Reconnectez-la dans les réglages.",
+      "steps": "Certaines étapes sont incomplètes.",
+      "document_required": "Choisissez le document que le lien Clozer ouvre.",
+      "no_enrollment": "Importez au moins un prospect avant de lancer."
+    }
+  }
+}

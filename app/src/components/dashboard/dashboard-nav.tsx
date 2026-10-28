@@ -1,6 +1,6 @@
 "use client";
 
-import { ChartColumn, FileText, Settings2, Sun, Telescope, Users } from "lucide-react";
+import { ChartColumn, FileText, Send, Settings2, Sun, Telescope, Users } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 type Item = {
   href: string;
   /** Key in "nav.dashboardNav". */
-  label: "today" | "team" | "documents" | "results" | "prospecting" | "settings";
+  label: "today" | "team" | "documents" | "results" | "prospecting" | "campaigns" | "settings";
   icon: typeof Sun;
   match: string[];
   /** Owners and admins only. */
@@ -19,6 +19,8 @@ type Item = {
   teamOnly?: boolean;
   /** Prospecting POC workspaces only, and not in the phone tab bar (5 columns at most). */
   prospectingOnly?: boolean;
+  /** Native cold email beta workspaces only, and not in the phone tab bar either. */
+  campaignsOnly?: boolean;
 };
 
 const ITEMS: Item[] = [
@@ -27,14 +29,16 @@ const ITEMS: Item[] = [
   { href: "/documents", label: "documents", icon: FileText, match: ["/documents"] },
   { href: "/results", label: "results", icon: ChartColumn, match: ["/results"] },
   { href: "/prospecting", label: "prospecting", icon: Telescope, match: ["/prospecting"], prospectingOnly: true },
+  { href: "/campaigns", label: "campaigns", icon: Send, match: ["/campaigns"], campaignsOnly: true },
   { href: "/settings", label: "settings", icon: Settings2, match: ["/settings"] },
 ];
 
-type Access = { isManager: boolean; hasTeam: boolean; prospecting?: boolean };
+type Access = { isManager: boolean; hasTeam: boolean; prospecting?: boolean; campaigns?: boolean };
 
-const itemsFor = ({ isManager, hasTeam, prospecting }: Access) =>
+const itemsFor = ({ isManager, hasTeam, prospecting, campaigns }: Access) =>
   ITEMS.filter(
-    (item) => (isManager || !item.managerOnly) && (hasTeam || !item.teamOnly) && (prospecting || !item.prospectingOnly),
+    (item) => (isManager || !item.managerOnly) && (hasTeam || !item.teamOnly) && (prospecting || !item.prospectingOnly) &&
+      (campaigns || !item.campaignsOnly),
   );
 
 function useActive() {
@@ -75,7 +79,7 @@ export function DashboardNav(access: Access) {
 export function MobileNav({ isManager, hasTeam }: { isManager: boolean; hasTeam: boolean }) {
   const isActive = useActive();
   const t = useTranslations("nav.dashboardNav");
-  const items = itemsFor({ isManager, hasTeam }).filter((item) => !item.prospectingOnly);
+  const items = itemsFor({ isManager, hasTeam }).filter((item) => !item.prospectingOnly && !item.campaignsOnly);
 
   return (
     <nav
