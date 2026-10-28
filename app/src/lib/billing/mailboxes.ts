@@ -22,10 +22,7 @@ import { PlanLimitError, getWorkspacePlan } from "./workspace-plan";
 export type StripeForMailboxes = {
   subscriptions: { retrieve(id: string): Promise<SubscriptionLike & { id: string }> };
   subscriptionItems: {
-    create(
-      params: { subscription: string; price: string; quantity: number; proration_behavior: "always_invoice" },
-      options?: { idempotencyKey?: string },
-    ): Promise<unknown>;
+    create(params: { subscription: string; price: string; quantity: number; proration_behavior: "always_invoice" }): Promise<unknown>;
     update(id: string, params: { price?: string; quantity: number; proration_behavior: "always_invoice" }): Promise<unknown>;
     del(id: string, params: { proration_behavior: "always_invoice" }): Promise<unknown>;
   };
@@ -79,10 +76,8 @@ export async function syncMailboxQuantity(
     result = "removed";
   } else if (!item && quantity > 0) {
     const price = await resolvePriceByKey(stripe as unknown as Stripe, key);
-    await stripe.subscriptionItems.create(
-      { subscription: subscription.id, price, quantity, proration_behavior: "always_invoice" },
-      { idempotencyKey: `mailbox-item-${subscription.id}-${quantity}` },
-    );
+    // No idempotency key: Stripe replays it for 24 h, so delete then re-add would get the deleted item back
+    await stripe.subscriptionItems.create({ subscription: subscription.id, price, quantity, proration_behavior: "always_invoice" });
     result = "added";
   } else if (item && (item.quantity !== quantity || item.price.lookup_key !== key)) {
     // A plan switched month <-> year in the portal leaves the add-on on the old interval: move it too

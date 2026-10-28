@@ -79,10 +79,7 @@ describe("syncMailboxQuantity", () => {
     stripe.subscriptions.retrieve.mockResolvedValue(sub(PLAN_ITEM("clozer_solo_monthly")));
     expect(await syncMailboxQuantity("org1", { stripe })).toBe("added");
     expect(stripe.prices.list.mock.calls[0][0].lookup_keys).toEqual(["clozer_mailbox_monthly"]);
-    expect(stripe.subscriptionItems.create).toHaveBeenCalledWith(
-      { subscription: "sub_1", price: "price_mb", quantity: 1, ...PROTECTED },
-      { idempotencyKey: "mailbox-item-sub_1-1" },
-    );
+    expect(stripe.subscriptionItems.create).toHaveBeenCalledWith({ subscription: "sub_1", price: "price_mb", quantity: 1, ...PROTECTED });
     expect(db.update.mock.calls[0][0].data).toEqual({ mailboxQuantity: 1 });
   });
 
