@@ -343,7 +343,8 @@
       "error": "Impossible de connecter la boîte.",
       "exists": "Cette boîte est déjà connectée dans votre espace.",
       "limit": "Vous avez atteint le nombre maximum de boîtes.",
-      "failed": "La connexion a échoué. Réessayez dans quelques minutes."
+      "failed": "La connexion a échoué. Réessayez dans quelques minutes.",
+      "pendingSlow": "Toujours rien. Rechargez dans un instant, ou reconnectez la boîte."
     }
   }
 }

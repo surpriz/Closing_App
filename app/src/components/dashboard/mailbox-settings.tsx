@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -42,7 +42,6 @@ export type MailboxRow = {
   sentToday: number;
   dns: DnsReport | null;
   provider: "GOOGLE" | "MICROSOFT" | "IMAP";
-  connector: "SMTP" | "GRAPH" | "UNIPILE" | "NYLAS";
 };
 
 export type ProviderAvailability = { google: "UNIPILE" | "NYLAS" | null; microsoft: boolean };
@@ -208,11 +207,11 @@ function LastError({ value }: { value: string }) {
   );
 }
 
-function FlashBanner({ flash }: { flash: MailboxFlash }) {
+function FlashBanner({ flash, arrived }: { flash: MailboxFlash; arrived: boolean }) {
   const t = useTranslations("settings.mailbox");
   const [pendingOver, setPendingOver] = useState(false);
   const flag = (FLASH_FLAGS as readonly string[]).includes(flash.flag) ? flash.flag : null;
-  const waiting = flag === "pending" && !pendingOver;
+  const waiting = flag === "pending" && !pendingOver && !arrived;
   useEffect(() => {
     if (flag !== "pending") return;
     const timer = setTimeout(() => setPendingOver(true), 60_000);
@@ -227,7 +226,13 @@ function FlashBanner({ flash }: { flash: MailboxFlash }) {
       className={cn("border-b border-border px-5 py-3 text-small", isError && "text-destructive")}
     >
       {waiting && <AutoRefresh intervalMs={5000} />}
-      <p>{t(`flash.${flag}` as "flash.connected")}</p>
+      <p>
+        {flag === "pending" && arrived
+          ? t("flash.connected")
+          : flag === "pending" && pendingOver
+            ? t("flash.pendingSlow")
+            : t(`flash.${flag}` as "flash.connected")}
+      </p>
       {flag === "error" && code && (
         <p className="text-muted-foreground">{t(`errors.${code}` as "errors.CONFIG")}</p>
       )}
@@ -478,7 +483,7 @@ function ConnectForm({
               <Button
                 type="button"
                 disabled={!looksLikeEmail || (microsoft && !availability.microsoft)}
-                render={looksLikeEmail ? <a href={startHref(microsoft ? "MICROSOFT" : "GOOGLE", form.email.trim())} /> : undefined}
+                render={looksLikeEmail && (!microsoft || availability.microsoft) ? <a href={startHref(microsoft ? "MICROSOFT" : "GOOGLE", form.email.trim())} /> : undefined}
                 nativeButton={false}
               >
                 {microsoft ? t("oauth.microsoft") : t("oauth.google")}
@@ -602,6 +607,14 @@ export function MailboxSettings({
 }) {
   const t = useTranslations("settings.mailbox");
   const [reconnect, setReconnect] = useState<{ email: string; mailboxId: string; n: number } | null>(null);
+  // The banner lives in state so the query flags can be stripped from the URL without losing it.
+  const [shownFlash] = useState(flash);
+  const [initialCount] = useState(mailboxes.length);
+  const router = useRouter();
+  const pathname = usePathname();
+  useEffect(() => {
+    if (shownFlash) router.replace(`${pathname}#boite`, { scroll: false });
+  }, [shownFlash, router, pathname]);
   return (
     <section id="boite" className="scroll-mt-24 space-y-3">
       <div className="space-y-1">
@@ -609,7 +622,7 @@ export function MailboxSettings({
         <p className="text-body text-muted-foreground">{t("description")}</p>
       </div>
       <div className="border-y border-foreground bg-card">
-        {flash && <FlashBanner flash={flash} />}
+        {shownFlash && <FlashBanner flash={shownFlash} arrived={mailboxes.length > initialCount} />}
         {mailboxes.length === 0 ? (
           <p className="px-5 py-3 text-small text-muted-foreground">{t("empty")}</p>
         ) : (

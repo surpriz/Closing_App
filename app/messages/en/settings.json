@@ -343,7 +343,8 @@
       "error": "The mailbox could not be connected.",
       "exists": "This mailbox is already connected in your workspace.",
       "limit": "You reached the maximum number of mailboxes.",
-      "failed": "The connection failed. Try again in a few minutes."
+      "failed": "The connection failed. Try again in a few minutes.",
+      "pendingSlow": "Still not there. Reload in a moment, or connect again."
     }
   }
 }
