@@ -18,7 +18,7 @@ vi.mock("./handle", () => ({ handleInbound: (...a: unknown[]) => handleInbound(.
 const notifyMailboxOwner = vi.fn();
 vi.mock("../notify-owner", () => ({ notifyMailboxOwner: (...a: unknown[]) => notifyMailboxOwner(...a) }));
 
-const { syncMailbox, syncMailboxesDue, SYNC_INTERVAL_MS, SYNC_INTERVAL_WEBHOOK_MS, SYNC_LEASE_MS, MAX_SYNC_BACKOFF_MS } =
+const { syncMailbox, syncMailboxesDue, MIN_SYNC_BUDGET_MS, SYNC_INTERVAL_MS, SYNC_INTERVAL_WEBHOOK_MS, SYNC_LEASE_MS, MAX_SYNC_BACKOFF_MS } =
   await import("./sync");
 
 const NOW = new Date("2026-10-28T10:00:00Z");
@@ -102,13 +102,15 @@ describe("syncMailbox", () => {
     expect(list.mock.calls[0][1].notBefore).toEqual(created);
   });
 
-  it("keeps going when one message fails", async () => {
-    handleInbound.mockRejectedValueOnce(new Error("boom")).mockResolvedValueOnce("ignored");
-    const list = vi.fn().mockResolvedValue({ messages: [msg("a"), msg("b")], cursor: "c1", hasMore: false });
-    const result = await syncMailbox("mb1", NOW, { connector: () => fakeConnector(list) });
+  it("a throwing effect leaves the cursor at the previous page and the sync fails", async () => {
+    handleInbound.mockResolvedValueOnce("reply").mockRejectedValueOnce(new Error("db blip"));
+    const list = vi
+      .fn()
+      .mockResolvedValueOnce({ messages: [msg("a")], cursor: "c1", hasMore: true })
+      .mockResolvedValueOnce({ messages: [msg("b"), msg("c")], cursor: "c2", hasMore: false });
+    await expect(syncMailbox("mb1", NOW, { connector: () => fakeConnector(list) })).rejects.toThrow("db blip");
+    expect(calls).toEqual(["cursor:c1"]);
     expect(handleInbound).toHaveBeenCalledTimes(2);
-    expect(result?.effects.ignored).toBe(1);
-    expect(calls).toContain("cursor:c1");
   });
 
   it("stops cleanly when the budget runs out between pages, keeping the first cursor", async () => {
@@ -136,7 +138,7 @@ describe("syncMailbox", () => {
 describe("syncMailboxesDue", () => {
   const due = (over: object = {}) => ({ ...row, syncErrorCount: 0, ...over });
   const okList = () => vi.fn().mockResolvedValue({ messages: [], cursor: "c1", hasMore: false });
-  const lastUpdate = () => prisma.mailbox.update.mock.calls.at(-1)?.[0];
+  const lastUpdate = () => prisma.mailbox.updateMany.mock.calls.at(-1)?.[0];
 
   beforeEach(() => {
     prisma.mailbox.findMany.mockResolvedValue([due()]);
@@ -171,7 +173,7 @@ describe("syncMailboxesDue", () => {
       errors: 0,
     });
     expect(lastUpdate()).toEqual({
-      where: { id: "mb1" },
+      where: { id: "mb1", syncClaimedAt: NOW },
       data: { lastSyncAt: NOW, nextSyncAt: new Date(NOW.getTime() + SYNC_INTERVAL_MS), syncErrorCount: 0, syncClaimedAt: null },
     });
 
@@ -187,7 +189,7 @@ describe("syncMailboxesDue", () => {
       errors: 0,
     });
     expect(list).not.toHaveBeenCalled();
-    expect(prisma.mailbox.update).not.toHaveBeenCalled();
+    expect(prisma.mailbox.updateMany).toHaveBeenCalledTimes(1); // the refused lease only
   });
 
   it("a revoked login puts the mailbox in error, backs off and tells the owner", async () => {
@@ -195,7 +197,7 @@ describe("syncMailboxesDue", () => {
     const result = await syncMailboxesDue(NOW, { budgetMs: 60_000, connector: () => fakeConnector(list) });
     expect(result).toEqual({ synced: 0, errors: 1 });
     expect(lastUpdate()).toEqual({
-      where: { id: "mb1" },
+      where: { id: "mb1", syncClaimedAt: NOW },
       data: {
         syncErrorCount: 1,
         nextSyncAt: new Date(NOW.getTime() + SYNC_INTERVAL_MS * 2),
@@ -230,7 +232,34 @@ describe("syncMailboxesDue", () => {
     const result = await syncMailboxesDue(NOW, { budgetMs: 60_000, connector });
     expect(result).toEqual({ synced: 1, errors: 1 });
     expect(notifyMailboxOwner).not.toHaveBeenCalled();
-    const bad = prisma.mailbox.update.mock.calls.find((c) => c[0].where.id === "bad")?.[0];
+    const bad = prisma.mailbox.updateMany.mock.calls.find((c) => c[0].where.id === "bad" && c[0].data.lastError)?.[0];
     expect(bad.data.lastError).toBe("TRANSIENT: weird");
+  });
+
+  it("does not start a mailbox when too little budget is left", async () => {
+    const list = okList();
+    const result = await syncMailboxesDue(NOW, { budgetMs: MIN_SYNC_BUDGET_MS - 1, connector: () => fakeConnector(list) });
+    expect(result).toEqual({ synced: 0, errors: 0 });
+    expect(prisma.mailbox.updateMany).not.toHaveBeenCalled();
+    expect(list).not.toHaveBeenCalled();
+  });
+
+  it("an abort before the first page is no progress: lease released, no error counted", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    try {
+      const list = vi.fn().mockImplementation(
+        (_c: unknown, o: { signal: AbortSignal }) =>
+          new Promise((_, reject) => o.signal.addEventListener("abort", () => reject(new Error("aborted")))),
+      );
+      const run = syncMailboxesDue(NOW, { budgetMs: MIN_SYNC_BUDGET_MS, connector: () => fakeConnector(list) });
+      await vi.advanceTimersByTimeAsync(MIN_SYNC_BUDGET_MS);
+      expect(await run).toEqual({ synced: 0, errors: 0 });
+    } finally {
+      vi.useRealTimers();
+    }
+    // lease claim, then a release that leaves the schedule and the error state alone
+    expect(prisma.mailbox.updateMany).toHaveBeenCalledTimes(2);
+    expect(lastUpdate()).toEqual({ where: { id: "mb1", syncClaimedAt: NOW }, data: { syncClaimedAt: null } });
+    expect(notifyMailboxOwner).not.toHaveBeenCalled();
   });
 });

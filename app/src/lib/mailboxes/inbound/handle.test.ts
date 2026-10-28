@@ -3,11 +3,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { InboundMessage } from "../types";
 
 const prisma = {
-  mailboxInboundEvent: { create: vi.fn(), update: vi.fn(), delete: vi.fn() },
+  mailboxInboundEvent: { create: vi.fn(), update: vi.fn(), findUnique: vi.fn() },
   campaignMessage: { updateMany: vi.fn(), update: vi.fn() },
   campaignProspect: { findUnique: vi.fn() },
   prospect: { updateMany: vi.fn() },
-  mailbox: { update: vi.fn() },
+  mailbox: { updateMany: vi.fn(), findUnique: vi.fn() },
 };
 vi.mock("@/lib/db", () => ({ prisma }));
 
@@ -82,7 +82,9 @@ const dsnMessage = (dsn: Partial<NonNullable<InboundMessage["dsn"]>>) =>
 beforeEach(() => {
   vi.resetAllMocks();
   prisma.mailboxInboundEvent.create.mockResolvedValue({ id: "ev1" });
-  prisma.mailboxInboundEvent.delete.mockResolvedValue({});
+  prisma.mailboxInboundEvent.update.mockResolvedValue({});
+  prisma.mailbox.updateMany.mockResolvedValue({ count: 1 });
+  vi.spyOn(console, "error").mockImplementation(() => {});
   prisma.campaignProspect.findUnique.mockResolvedValue({
     email: "bob@target.io",
     linkId: null,
@@ -95,6 +97,7 @@ beforeEach(() => {
 describe("handleInbound", () => {
   it("records the event first and reports a duplicate key without any effect", async () => {
     prisma.mailboxInboundEvent.create.mockRejectedValue({ code: "P2002" });
+    prisma.mailboxInboundEvent.findUnique.mockResolvedValue({ id: "ev0", kind: "REPLY", dsnClass: null });
     expect(await handleInbound(mailbox(), message(), ctx, NOW)).toBe("duplicate");
     expect(prisma.mailboxInboundEvent.create).toHaveBeenCalledWith({
       data: { mailboxId: "mb1", externalKey: "mailbox:mb1:m1", kind: "IGNORED", receivedAt: message().date },
@@ -168,10 +171,58 @@ describe("handleInbound", () => {
     expect(recordProspectReply).not.toHaveBeenCalled();
   });
 
-  it("removes the event again when an effect fails so the message can be retried", async () => {
+  it("marks the event for retry when an effect fails, then rethrows", async () => {
     stopEnrollment.mockRejectedValue(new Error("db down"));
     await expect(handleInbound(mailbox(), message(), ctx, NOW)).rejects.toThrow("db down");
-    expect(prisma.mailboxInboundEvent.delete).toHaveBeenCalledWith({ where: { id: "ev1" } });
+    expect(prisma.mailboxInboundEvent.update).toHaveBeenCalledWith({
+      where: { id: "ev1" },
+      data: { kind: "IGNORED", dsnClass: "retry" },
+    });
+  });
+
+  it("processes a message marked for retry again, on the same event row", async () => {
+    prisma.mailboxInboundEvent.create.mockRejectedValue({ code: "P2002" });
+    prisma.mailboxInboundEvent.findUnique.mockResolvedValue({ id: "ev7", kind: "IGNORED", dsnClass: "retry" });
+    expect(await handleInbound(mailbox(), message(), ctx, NOW)).toBe("reply");
+    expect(stopEnrollment).toHaveBeenCalledWith("en1", "REPLIED", null, NOW);
+    expect(prisma.mailboxInboundEvent.update).toHaveBeenCalledWith({
+      where: { id: "ev7" },
+      data: expect.objectContaining({ kind: "REPLY", dsnClass: null }),
+    });
+  });
+
+  it("gives up on the second failure without throwing", async () => {
+    prisma.mailboxInboundEvent.create.mockRejectedValue({ code: "P2002" });
+    prisma.mailboxInboundEvent.findUnique.mockResolvedValue({ id: "ev7", kind: "IGNORED", dsnClass: "retry" });
+    stopEnrollment.mockRejectedValue(new Error("still down"));
+    expect(await handleInbound(mailbox(), message(), ctx, NOW)).toBe("ignored");
+    expect(prisma.mailboxInboundEvent.update).toHaveBeenLastCalledWith({
+      where: { id: "ev7" },
+      data: { dsnClass: "failed" },
+    });
+  });
+
+  it("treats an event already given up on as a duplicate", async () => {
+    prisma.mailboxInboundEvent.create.mockRejectedValue({ code: "P2002" });
+    prisma.mailboxInboundEvent.findUnique.mockResolvedValue({ id: "ev7", kind: "IGNORED", dsnClass: "failed" });
+    expect(await handleInbound(mailbox(), message(), ctx, NOW)).toBe("duplicate");
+    expect(stopEnrollment).not.toHaveBeenCalled();
+  });
+
+  it("an address-only permanent bounce ends the sequence but suppresses and notifies nothing", async () => {
+    prisma.campaignProspect.findUnique.mockResolvedValue({ email: "bob@target.io", linkId: "l1" });
+    expect(await handleInbound(mailbox(), dsnMessage({ originalMessageId: null }), ctx, NOW)).toBe("bounce");
+    expect(stopEnrollment).toHaveBeenCalledWith("en1", "BOUNCED", "5.1.1", NOW);
+    expect(addSuppression).not.toHaveBeenCalled();
+    expect(prisma.prospect.updateMany).not.toHaveBeenCalled();
+    expect(notifySeller).not.toHaveBeenCalled();
+  });
+
+  it("a refused-message DSN found by address only changes nothing", async () => {
+    const effect = await handleInbound(mailbox(), dsnMessage({ status: "5.2.3", originalMessageId: null }), ctx, NOW);
+    expect(effect).toBe("bounce_transient");
+    expect(prisma.campaignMessage.update).not.toHaveBeenCalled();
+    expect(stopEnrollment).not.toHaveBeenCalled();
   });
 
   it("a permanent bounce ends the enrollment, suppresses the address and warns the seller when a link exists", async () => {
@@ -208,9 +259,8 @@ describe("handleInbound", () => {
 
   it("a permanent bounce without a link neither touches prospects nor notifies", async () => {
     prisma.campaignProspect.findUnique.mockResolvedValue({ email: "bob@target.io", linkId: null });
-    expect(await handleInbound(mailbox(), dsnMessage({ originalMessageId: null }), ctx, NOW)).toBe("bounce");
+    expect(await handleInbound(mailbox(), dsnMessage({}), ctx, NOW)).toBe("bounce");
     expect(stopEnrollment).toHaveBeenCalledWith("en1", "BOUNCED", "5.1.1", NOW);
-    expect(prisma.campaignMessage.update).not.toHaveBeenCalled();
     expect(addSuppression).toHaveBeenCalled();
     expect(prisma.prospect.updateMany).not.toHaveBeenCalled();
     expect(notifySeller).not.toHaveBeenCalled();
@@ -253,35 +303,43 @@ describe("handleInbound", () => {
     });
   });
 
-  it("pauses the campaigns and warns the owner on the 3rd policy bounce of the local day", async () => {
-    const mb = mailbox();
+  it("pauses the campaigns and warns the owner once the day's counter reaches 3", async () => {
     const policy = dsnMessage({ status: "5.7.1", diagnostic: "blocked by spam policy" });
-
-    expect(await handleInbound(mb, { ...policy, id: "a" }, ctx, NOW)).toBe("bounce_policy");
-    expect(prisma.mailbox.update).toHaveBeenLastCalledWith({
-      where: { id: "mb1" },
-      data: { policyBounceDay: "2026-10-28", policyBounceCount: 1 },
-    });
-    await handleInbound(mb, { ...policy, id: "b" }, ctx, NOW);
+    prisma.mailbox.findUnique.mockResolvedValueOnce({ policyBounceCount: 2 });
+    expect(await handleInbound(mailbox(), policy, ctx, NOW)).toBe("bounce_policy");
     expect(pauseCampaignsOfMailbox).not.toHaveBeenCalled();
-
-    await handleInbound(mb, { ...policy, id: "c" }, ctx, NOW);
-    expect(prisma.mailbox.update).toHaveBeenLastCalledWith({
-      where: { id: "mb1" },
-      data: { policyBounceDay: "2026-10-28", policyBounceCount: 3 },
+    expect(prisma.mailbox.updateMany).toHaveBeenCalledWith({
+      where: { id: "mb1", policyBounceDay: "2026-10-28" },
+      data: { policyBounceCount: { increment: 1 } },
     });
+
+    prisma.mailbox.findUnique.mockResolvedValueOnce({ policyBounceCount: 3 });
+    await handleInbound(mailbox(), { ...policy, id: "c" }, ctx, NOW);
     expect(pauseCampaignsOfMailbox).toHaveBeenCalledWith("mb1", NOW);
     expect(notifyMailboxOwner).toHaveBeenCalledWith("mb1", "policy_bounces", "blocked by spam policy", NOW);
     expect(stopEnrollment).not.toHaveBeenCalled();
   });
 
-  it("restarts the policy counter when the local day changes", async () => {
-    const mb = { ...mailbox(), policyBounceDay: "2026-10-27", policyBounceCount: 2 };
-    await handleInbound(mb, dsnMessage({ status: "5.7.1" }), ctx, NOW);
-    expect(prisma.mailbox.update).toHaveBeenCalledWith({
+  it("restarts the counter at 1 when the local day changed", async () => {
+    prisma.mailbox.updateMany.mockResolvedValueOnce({ count: 0 });
+    prisma.mailbox.findUnique.mockResolvedValueOnce({ policyBounceCount: 1 });
+    await handleInbound(mailbox(), dsnMessage({ status: "5.7.1" }), ctx, NOW);
+    expect(prisma.mailbox.updateMany).toHaveBeenLastCalledWith({
       where: { id: "mb1" },
       data: { policyBounceDay: "2026-10-28", policyBounceCount: 1 },
     });
+    expect(pauseCampaignsOfMailbox).not.toHaveBeenCalled();
+  });
+
+  it("does not count a policy DSN that matches none of our Message-IDs", async () => {
+    const effect = await handleInbound(
+      mailbox(),
+      dsnMessage({ status: "5.7.1", originalMessageId: "<stranger@x>" }),
+      ctx,
+      NOW,
+    );
+    expect(effect).toBe("bounce_transient");
+    expect(prisma.mailbox.updateMany).not.toHaveBeenCalled();
     expect(pauseCampaignsOfMailbox).not.toHaveBeenCalled();
   });
 });

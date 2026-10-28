@@ -34,8 +34,8 @@ type HandledMailbox = {
 
 /**
  * One inbox message: recorded once (externalKey), then its effect on the enrollment it concerns.
- * The policy-bounce counter on `mailbox` is updated in place, so the next message of the same page sees it.
- * On failure the event is removed again so a later pass can retry the message.
+ * A failing effect leaves the event marked dsnClass "retry" and rethrows; the next pass processes the message again
+ * and, if it fails once more, gives up ("failed") rather than blocking the mailbox. Two attempts at most.
  */
 export async function handleInbound(
   mailbox: HandledMailbox,
@@ -44,21 +44,40 @@ export async function handleInbound(
   now: Date,
 ): Promise<InboundEffect> {
   const externalKey = `mailbox:${mailbox.id}:${message.id}`;
-  let event: { id: string };
+  let eventId: string;
+  let retrying = false;
   try {
-    event = await prisma.mailboxInboundEvent.create({
+    const event = await prisma.mailboxInboundEvent.create({
       data: { mailboxId: mailbox.id, externalKey, kind: "IGNORED", receivedAt: message.date },
       select: { id: true },
     });
+    eventId = event.id;
   } catch (error) {
-    if (isUniqueViolation(error)) return "duplicate";
-    throw error;
+    if (!isUniqueViolation(error)) throw error;
+    const existing = await prisma.mailboxInboundEvent.findUnique({
+      where: { externalKey },
+      select: { id: true, kind: true, dsnClass: true },
+    });
+    if (!existing || existing.kind !== "IGNORED" || existing.dsnClass !== "retry") return "duplicate";
+    eventId = existing.id;
+    retrying = true;
   }
 
   try {
-    return await apply(mailbox, message, ctx, now, event.id);
+    const effect = await apply(mailbox, message, ctx, now, eventId);
+    if (retrying && effect === "ignored") {
+      await prisma.mailboxInboundEvent.update({ where: { id: eventId }, data: { dsnClass: null } });
+    }
+    return effect;
   } catch (error) {
-    await prisma.mailboxInboundEvent.delete({ where: { id: event.id } }).catch(() => {});
+    if (retrying) {
+      console.error(`[mailbox-sync] giving up on ${externalKey}`, error);
+      await prisma.mailboxInboundEvent.update({ where: { id: eventId }, data: { dsnClass: "failed" } }).catch(() => {});
+      return "ignored";
+    }
+    await prisma.mailboxInboundEvent
+      .update({ where: { id: eventId }, data: { kind: "IGNORED", dsnClass: "retry" } })
+      .catch(() => {});
     throw error;
   }
 }
@@ -86,7 +105,7 @@ async function apply(
     await onReply(mailbox, message, match.enrollmentId, match.messageId, now);
     await prisma.mailboxInboundEvent.update({
       where: { id: eventId },
-      data: { kind: "REPLY", ...base, enrollmentId: match.enrollmentId, matchedMessageId: match.messageId },
+      data: { kind: "REPLY", ...base, enrollmentId: match.enrollmentId, matchedMessageId: match.messageId, dsnClass: null },
     });
     return "reply";
   }
@@ -123,7 +142,7 @@ async function onReply(
 
   const enrollment = await prisma.campaignProspect.findUnique({
     where: { id: enrollmentId },
-    select: { linkId: true, prospectId: true, campaign: { select: { documentId: true } } },
+    select: { linkId: true, prospectId: true },
   });
   if (!enrollment) return;
 
@@ -134,6 +153,7 @@ async function onReply(
     try {
       const created = await createCampaignLink(enrollmentId, { owned: false, now });
       linkId = created?.linkId ?? null;
+      if (!linkId) console.error(`[mailbox-sync] ${mailbox.id} no link for reply, enrollment ${enrollmentId}`);
       prospectId = created?.prospectId ?? prospectId;
     } catch (error) {
       if (!(error instanceof PlanLimitError)) throw error;
@@ -180,16 +200,21 @@ async function onBounce(
   const diagnostic = (dsn.diagnostic ?? "").slice(0, DETAIL_MAX);
 
   if (dsnClass === "policy") {
-    // Our side (reputation, authentication), not the prospect's address: count it against the mailbox
+    // Only a bounce of one of our own messages says something about this mailbox; any stranger's DSN is noise
+    if (!target?.messageId) return { effect: "bounce_transient", enrollmentId };
     const day = localDayKey(now, mailbox.timezone);
-    const count = mailbox.policyBounceDay === day ? mailbox.policyBounceCount + 1 : 1;
-    await prisma.mailbox.update({
-      where: { id: mailbox.id },
-      data: { policyBounceDay: day, policyBounceCount: count },
+    const same = await prisma.mailbox.updateMany({
+      where: { id: mailbox.id, policyBounceDay: day },
+      data: { policyBounceCount: { increment: 1 } },
     });
-    mailbox.policyBounceDay = day;
-    mailbox.policyBounceCount = count;
-    if (count >= POLICY_BOUNCE_LIMIT) {
+    if (same.count === 0) {
+      await prisma.mailbox.updateMany({
+        where: { id: mailbox.id },
+        data: { policyBounceDay: day, policyBounceCount: 1 },
+      });
+    }
+    const fresh = await prisma.mailbox.findUnique({ where: { id: mailbox.id }, select: { policyBounceCount: true } });
+    if ((fresh?.policyBounceCount ?? 0) >= POLICY_BOUNCE_LIMIT) {
       await pauseCampaignsOfMailbox(mailbox.id, now);
       await notifyMailboxOwner(mailbox.id, "policy_bounces", diagnostic || dsn.status, now);
     }
@@ -206,7 +231,9 @@ async function onBounce(
       data: { bouncedAt: now, bounceDetail: diagnostic },
     });
   }
-  if (dsnClass === "permanent_message") return { effect: "bounce", enrollmentId };
+  if (dsnClass === "permanent_message") {
+    return { effect: target.messageId ? "bounce" : "bounce_transient", enrollmentId };
+  }
 
   const enrollment = await prisma.campaignProspect.findUnique({
     where: { id: target.enrollmentId },
@@ -214,7 +241,9 @@ async function onBounce(
   });
   const email = enrollment?.email ?? target.email;
   await stopEnrollment(target.enrollmentId, "BOUNCED", dsn.status, now);
-  if (email) {
+  // A DSN found by address alone could be forged: it ends the sequence, but only one of our Message-IDs
+  // is proof enough to suppress the address workspace-wide
+  if (target.messageId && email) {
     await addSuppression({
       organizationId: mailbox.organizationId,
       email,
@@ -222,23 +251,23 @@ async function onBounce(
       source: "mailbox_sync",
       detail: [dsn.status, diagnostic].filter(Boolean).join(" "),
     });
-  }
-  if (email && enrollment?.linkId) {
-    await prisma.prospect.updateMany({
-      where: {
-        link: { organizationId: mailbox.organizationId },
-        email: { equals: email, mode: "insensitive" },
-        bouncedAt: null,
-      },
-      data: { bouncedAt: now, bounceDetail: diagnostic },
-    });
-    await notifySeller({
-      linkId: enrollment.linkId,
-      type: "EMAIL_BOUNCED",
-      dedupeKey: `email_bounced:cold:${target.enrollmentId}`,
-      payload: { prospectEmail: email, detail: diagnostic },
-      now,
-    });
+    if (enrollment?.linkId) {
+      await prisma.prospect.updateMany({
+        where: {
+          link: { organizationId: mailbox.organizationId },
+          email: { equals: email, mode: "insensitive" },
+          bouncedAt: null,
+        },
+        data: { bouncedAt: now, bounceDetail: diagnostic },
+      });
+      await notifySeller({
+        linkId: enrollment.linkId,
+        type: "EMAIL_BOUNCED",
+        dedupeKey: `email_bounced:cold:${target.enrollmentId}`,
+        payload: { prospectEmail: email, detail: diagnostic },
+        now,
+      });
+    }
   }
   return { effect: "bounce", enrollmentId };
 }

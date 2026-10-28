@@ -218,6 +218,8 @@ export async function listNewImapMessages(
             textExcerpt = replyExcerpt(await downloadText(client, msg.uid, msg.bodyStructure));
           }
         } catch {
+          // An aborted download is not a poison message: dropping it keeps the cursor before a possible bounce
+          if (opts.signal.aborted) break;
           // One poison message must not block the cursor forever: keep the header-only view and move on
           textExcerpt = null;
           dsn = likelyDsn;

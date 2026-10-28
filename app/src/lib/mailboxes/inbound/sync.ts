@@ -18,6 +18,8 @@ export const SYNC_BUDGET_PER_MAILBOX_MS = 25_000;
 export const MAX_SYNC_BACKOFF_MS = 2 * HOUR_MS;
 export const MAX_MAILBOXES_PER_TICK = 20;
 export const PAGE_LIMIT = 50;
+/** Below this a connect + page cannot finish: the mailbox waits for the next tick instead of failing. */
+export const MIN_SYNC_BUDGET_MS = 5_000;
 export const LOOKBACK_MS = 7 * DAY_MS;
 export const SENT_WINDOW_MS = 60 * DAY_MS;
 /** Consecutive failures (other than a revoked login) before the owner hears about it. */
@@ -85,16 +87,12 @@ export async function syncMailbox(
         });
       } catch (error) {
         // Out of time mid-page: what earlier pages stored stays, the next pass resumes from there
-        if (controller.signal.aborted && pages > 0) break;
+        if (controller.signal.aborted) break;
         throw error;
       }
-      for (const message of page.messages) {
-        try {
-          effects[await handleInbound(mailbox, message, ctx, now)]++;
-        } catch (error) {
-          console.error(`[mailbox-sync] ${mailbox.id} message ${message.id}`, error);
-        }
-      }
+      // A throw stops the page before its cursor is stored: the messages already handled come back as duplicates,
+      // the failing one is retried (handleInbound marks it), and the caller applies the backoff
+      for (const message of page.messages) effects[await handleInbound(mailbox, message, ctx, now)]++;
       pages++;
       cursor = page.cursor;
       await prisma.mailbox.update({ where: { id: mailbox.id }, data: { syncCursor: cursor } });
@@ -179,7 +177,8 @@ export async function syncMailboxesDue(
   let errors = 0;
   for (const mailbox of due) {
     const remaining = deadline - Date.now();
-    if (remaining <= 0) break;
+    // Too little left to connect and read a page: leave it, still due, for the next tick
+    if (remaining < MIN_SYNC_BUDGET_MS) break;
     try {
       const lease = await prisma.mailbox.updateMany({
         where: {
@@ -202,13 +201,14 @@ export async function syncMailboxesDue(
         connector: () => connector,
         budgetMs: Math.min(SYNC_BUDGET_PER_MAILBOX_MS, remaining),
       });
-      if (!result) {
-        await prisma.mailbox.update({ where: { id: mailbox.id }, data: { syncClaimedAt: null } });
+      if (!result || result.pages === 0) {
+        // Not ACTIVE any more, or out of time before a single page: no progress, no failure
+        await release(mailbox.id, now);
         continue;
       }
       const interval = connector.capabilities.webhooks ? SYNC_INTERVAL_WEBHOOK_MS : SYNC_INTERVAL_MS;
-      await prisma.mailbox.update({
-        where: { id: mailbox.id },
+      await prisma.mailbox.updateMany({
+        where: { id: mailbox.id, syncClaimedAt: now },
         data: { lastSyncAt: now, nextSyncAt: new Date(now.getTime() + interval), syncErrorCount: 0, syncClaimedAt: null },
       });
       synced++;
@@ -220,6 +220,11 @@ export async function syncMailboxesDue(
   return { synced, errors };
 }
 
+/** Gives the lease back without touching the schedule; only if it is still ours. */
+async function release(mailboxId: string, claimedAt: Date) {
+  await prisma.mailbox.updateMany({ where: { id: mailboxId, syncClaimedAt: claimedAt }, data: { syncClaimedAt: null } });
+}
+
 async function recordFailure(mailboxId: string, failures: number, error: unknown, now: Date) {
   try {
     const code = isMailboxError(error) ? error.code : "TRANSIENT";
@@ -228,8 +233,8 @@ async function recordFailure(mailboxId: string, failures: number, error: unknown
     const lastError = `${code}: ${detail}`;
     console.error(`[mailbox-sync] ${mailboxId}`, lastError);
     const backoff = Math.min(SYNC_INTERVAL_MS * 2 ** failures, MAX_SYNC_BACKOFF_MS);
-    await prisma.mailbox.update({
-      where: { id: mailboxId },
+    await prisma.mailbox.updateMany({
+      where: { id: mailboxId, syncClaimedAt: now },
       data: {
         syncErrorCount: failures,
         nextSyncAt: new Date(now.getTime() + backoff),
