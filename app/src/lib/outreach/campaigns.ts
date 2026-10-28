@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 
-import { linkStep, type StepInput, type StepIssue, validateSteps } from "./steps";
+import { organizationWhere, type OutreachScope } from "./scope";
+import { linkStep, type StepInput, type StepIssue, unknownVariablesWithoutFallback, validateSteps } from "./steps";
 
 export const CAMPAIGN_LOCALES = ["fr", "en"] as const;
 
@@ -102,10 +103,17 @@ export async function updateCampaign(
     }
     data.documentId = patch.documentId;
   }
-  const { count } = await prisma.campaign.updateMany({
-    where: { id, organizationId, status: { not: "ARCHIVED" } },
-    data,
-  });
+  // What is still to send follows the campaign to its new mailbox; the thread fields stay with the enrollment
+  const moved = typeof patch.mailboxId === "string" && patch.mailboxId !== current.mailboxId ? patch.mailboxId : null;
+  const [{ count }] = await prisma.$transaction([
+    prisma.campaign.updateMany({
+      where: { id, organizationId, status: { not: "ARCHIVED" } },
+      data,
+    }),
+    ...(moved
+      ? [prisma.campaignMessage.updateMany({ where: { campaignId: id, status: "SCHEDULED" }, data: { mailboxId: moved } })]
+      : []),
+  ]);
   return count > 0;
 }
 
@@ -144,7 +152,14 @@ export async function saveSteps(
   return { ok: true };
 }
 
-export type ActivationIssue = "not_found" | "no_mailbox" | "mailbox_not_active" | "steps" | "document_required" | "no_enrollment";
+export type ActivationIssue =
+  | "not_found"
+  | "no_mailbox"
+  | "mailbox_not_active"
+  | "steps"
+  | "document_required"
+  | "no_enrollment"
+  | "unknown_variables";
 
 /** DRAFT, PAUSED or DONE to ACTIVE, once the campaign can really send. */
 export async function activateCampaign(
@@ -152,7 +167,7 @@ export async function activateCampaign(
   id: string,
   actor: Actor,
   now: Date = new Date(),
-): Promise<{ ok: true } | { ok: false; issue: ActivationIssue; steps?: StepIssue[] }> {
+): Promise<{ ok: true } | { ok: false; issue: ActivationIssue; steps?: StepIssue[]; variables?: string[] }> {
   const campaign = await prisma.campaign.findFirst({
     where: { id, organizationId, status: { in: [...RESTARTABLE] } },
     select: {
@@ -180,6 +195,17 @@ export async function activateCampaign(
     select: { id: true },
   });
   if (!enrolled) return { ok: false, issue: "no_enrollment" };
+  // A variable without fallback that no one has (neither built in nor an imported column) would pause everyone at send
+  const rows = await prisma.campaignProspect.findMany({
+    where: { campaignId: id, status: { in: [...LIVE_ENROLLMENT] } },
+    select: { vars: true },
+  });
+  const columns = new Set<string>();
+  for (const { vars } of rows) {
+    if (vars && typeof vars === "object" && !Array.isArray(vars)) for (const key of Object.keys(vars)) columns.add(key);
+  }
+  const variables = unknownVariablesWithoutFallback(campaign.steps, [...columns]);
+  if (variables.length > 0) return { ok: false, issue: "unknown_variables", variables };
 
   const { count } = await prisma.campaign.updateMany({
     where: { id, organizationId, status: { in: [...RESTARTABLE] } },
@@ -218,13 +244,14 @@ export async function archiveCampaign(organizationId: string, id: string, actor:
 }
 
 /** An ACTIVE campaign nobody is in anymore, with nothing left to send, is done. Conditions are rechecked in the update. */
-export async function finishIdleCampaigns(now: Date, scope: { organizationId?: string } = {}): Promise<number> {
+export async function finishIdleCampaigns(now: Date, scope: OutreachScope = {}): Promise<number> {
   const { count } = await prisma.campaign.updateMany({
     where: {
       status: "ACTIVE",
-      ...(scope.organizationId ? { organizationId: scope.organizationId } : {}),
+      ...organizationWhere(scope),
       enrollments: { some: {}, none: { status: { in: [...LIVE_ENROLLMENT] } } },
-      messages: { none: { status: { in: [...PENDING_MESSAGE] } } },
+      // Only rows of live enrollments count: a SENDING row left by an ended enrollment must not hold the campaign open
+      messages: { none: { status: { in: [...PENDING_MESSAGE] }, enrollment: { status: { in: [...LIVE_ENROLLMENT] } } } },
     },
     data: { status: "DONE", finishedAt: now },
   });

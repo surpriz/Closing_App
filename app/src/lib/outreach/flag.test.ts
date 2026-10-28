@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isOutreachAllowed } from "./flag";
+import { isOutreachAllowed, outreachOrgIds } from "./flag";
 
 const verified = { emailVerified: true };
 
@@ -15,6 +15,11 @@ describe("isOutreachAllowed", () => {
 
   it("refuses an unverified email", () => {
     expect(isOutreachAllowed({ emailVerified: false }, "org-a", { orgIds: "org-a" })).toBe(false);
+  });
+
+  it("parses the list, and an unset one is empty", () => {
+    expect(outreachOrgIds({ OUTREACH_ORG_IDS: " org-a, ,org-b " })).toEqual(["org-a", "org-b"]);
+    expect(outreachOrgIds({})).toEqual([]);
   });
 
   it("refuses everyone when the list is empty", () => {

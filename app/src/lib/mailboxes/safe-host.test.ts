@@ -38,6 +38,12 @@ describe("assertSafeMailHost", () => {
     await expect(assertSafeMailHost({ host: "evil.example.com", port: 587, kind: "smtp" })).rejects.toMatchObject({ code: "CONFIG" });
   });
 
+  it("treats a resolver failure as transient, not as a refused address", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    lookup.mockRejectedValue(Object.assign(new Error("getaddrinfo EAI_AGAIN"), { code: "EAI_AGAIN" }));
+    await expect(assertSafeMailHost({ host: "imap.example.com", port: 993, kind: "imap" })).rejects.toMatchObject({ code: "TRANSIENT" });
+  });
+
   it("accepts a public IP literal", async () => {
     await expect(assertSafeMailHost({ host: "8.8.8.8", port: 465, kind: "smtp" })).resolves.toMatchObject({ address: "8.8.8.8" });
   });

@@ -5,7 +5,7 @@ import type { InboundMessage } from "../types";
 const prisma = {
   mailboxInboundEvent: { create: vi.fn(), update: vi.fn(), findUnique: vi.fn() },
   campaignMessage: { updateMany: vi.fn(), update: vi.fn() },
-  campaignProspect: { findUnique: vi.fn() },
+  campaignProspect: { findUnique: vi.fn(), updateMany: vi.fn() },
   prospect: { updateMany: vi.fn() },
   mailbox: { updateMany: vi.fn(), findUnique: vi.fn() },
 };
@@ -109,6 +109,21 @@ describe("handleInbound", () => {
     });
     expect(stopEnrollment).not.toHaveBeenCalled();
     expect(prisma.mailboxInboundEvent.update).not.toHaveBeenCalled();
+  });
+
+  it("turns an enrollment that already FINISHED into REPLIED, so late replies count", async () => {
+    stopEnrollment.mockResolvedValue(false);
+    expect(await handleInbound(mailbox(), message(), ctx, NOW)).toBe("reply");
+    expect(prisma.campaignProspect.updateMany).toHaveBeenCalledWith({
+      where: { id: "en1", status: "FINISHED" },
+      data: { status: "REPLIED", repliedAt: NOW },
+    });
+  });
+
+  it("leaves the FINISHED transition alone when the enrollment was still live", async () => {
+    stopEnrollment.mockResolvedValue(true);
+    await handleInbound(mailbox(), message(), ctx, NOW);
+    expect(prisma.campaignProspect.updateMany).not.toHaveBeenCalled();
   });
 
   it("keeps nothing but the key for a message that is not ours", async () => {

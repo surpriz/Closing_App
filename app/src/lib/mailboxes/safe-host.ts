@@ -5,8 +5,12 @@ import { isPrivateAddress } from "@/lib/closing/channels/public-address";
 
 import { MailboxError } from "./errors";
 
-/** Error codes that mean "could not reach the server", shared by the IMAP and SMTP error mappers. */
-export const NETWORK_CODES = /^(ECONNECTION|ETIMEDOUT|ESOCKET|EDNS|ECONNREFUSED|ECONNRESET|ENOTFOUND|EHOSTUNREACH|NoConnection)$/;
+/**
+ * Error codes that mean "could not reach the server right now", shared by the IMAP and SMTP error mappers. They are
+ * TRANSIENT, not CONFIG: a network blip must not put a working mailbox in ERROR.
+ */
+export const NETWORK_CODES =
+  /^(ECONNECTION|ETIMEDOUT|ESOCKET|EDNS|ECONNREFUSED|ECONNRESET|ENOTFOUND|EHOSTUNREACH|EPIPE|EAI_AGAIN|NoConnection)$/;
 
 const ALLOWED_PORTS = { imap: [143, 993], smtp: [25, 465, 587, 2525] } as const;
 
@@ -41,6 +45,10 @@ export async function assertSafeMailHost(input: {
     if (found.length === 0 || found.some(({ address }) => isPrivateAddress(address))) throw unsafe();
     return { address: found[0].address, servername: host };
   } catch (error) {
-    throw error instanceof MailboxError ? error : unsafe();
+    if (error instanceof MailboxError) throw error;
+    // A resolver failure is a network problem, retried later; only an address we refuse is a configuration one
+    const code = (error as { code?: string } | null)?.code;
+    if (code && NETWORK_CODES.test(code)) throw new MailboxError("TRANSIENT", "mail server unreachable", { detail: code });
+    throw unsafe();
   }
 }

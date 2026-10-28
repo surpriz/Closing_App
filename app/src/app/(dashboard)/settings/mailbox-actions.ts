@@ -17,6 +17,7 @@ import {
   updateMailboxCap,
   type MailboxDetection,
 } from "@/lib/mailboxes/connect";
+import { decodeCredentials } from "@/lib/mailboxes/credentials";
 import { requireOutreach } from "@/lib/outreach/flag";
 import { consumeLimit } from "@/lib/rate-limit";
 
@@ -45,6 +46,42 @@ export async function detectMailbox(email: string): Promise<MailboxDetection | n
   await requireOutreach();
   const parsed = emailSchema.safeParse(email);
   return parsed.success ? detectMailboxFor(parsed.data) : null;
+}
+
+export type ReconnectDefaults = {
+  displayName: string | null;
+  user: string;
+  imap: { host: string; port: number; secure: boolean };
+  smtp: { host: string; port: number; secure: boolean };
+};
+
+/**
+ * What the reconnect form starts from: the settings the mailbox was connected with, so custom hosts are not replaced by
+ * a fresh detection. Only for the owner's own mailbox in ERROR, and never the password.
+ */
+export async function reconnectDefaults(mailboxId: string): Promise<ReconnectDefaults | null> {
+  const { user, organization } = await requireOutreach();
+  if (!z.string().min(1).max(64).safeParse(mailboxId).success) return null;
+  const mailbox = await prisma.mailbox.findFirst({
+    where: { id: mailboxId, organizationId: organization.id, status: "ERROR" },
+    select: { userId: true, displayName: true, credentials: true },
+  });
+  if (!mailbox || mailbox.userId !== user.id) return null;
+  let credentials;
+  try {
+    credentials = decodeCredentials(mailbox.credentials);
+  } catch {
+    // Unreadable (rotated key, old format): the form falls back on detection
+    return null;
+  }
+  if (credentials.kind !== "imap") return null;
+  const { imap, smtp } = credentials;
+  return {
+    displayName: mailbox.displayName,
+    user: imap.user,
+    imap: { host: imap.host, port: imap.port, secure: imap.secure },
+    smtp: { host: smtp.host, port: smtp.port, secure: smtp.secure },
+  };
 }
 
 export async function connectMailbox(_prev: MailboxFormState, formData: FormData): Promise<MailboxFormState> {

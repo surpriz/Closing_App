@@ -78,7 +78,7 @@ describe("importProspects", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    db.campaign.findFirst.mockResolvedValue({ locale: "fr", createdById: "u1" });
+    db.campaign.findFirst.mockResolvedValue({ locale: "fr", createdById: "u1", steps: [] });
     db.member.findMany.mockResolvedValue([{ user: { email: "me@mine.com" } }]);
     suppressedAmong.mockResolvedValue(new Set());
     db.campaignProspect.findMany.mockResolvedValue([]);
@@ -131,6 +131,23 @@ describe("importProspects", () => {
     expect(result).toMatchObject({ team: 1, suppressed: 1, duplicates: 2, elsewhere: 1, enrolled: 2 });
     const emails = db.campaignProspect.createMany.mock.calls[0][0].data.map((d: { email: string }) => d.email);
     expect(emails).toEqual(["stop@x.com", "busy@x.com", "new@x.com"]);
+  });
+
+  it("counts the enrolled rows that lack a variable the steps use without fallback", async () => {
+    db.campaign.findFirst.mockResolvedValue({
+      locale: "fr",
+      createdById: "u1",
+      steps: [
+        { subject: "Hi {{firstName}}", body: "About {{city}}, {{role|your team}} and {{link}}" },
+        { subject: null, body: "Still in {{City}}?" },
+      ],
+    });
+    suppressedAmong.mockResolvedValue(new Set(["stop@x.com"]));
+    const csv = "email,Prénom,city\nann@x.com,Ann,Lyon\nbob@x.com,,Paris\ncy@x.com,Cy,\nstop@x.com,,\n";
+    const result = await importProspects({ ...base, csv });
+    // bob has no first name, cy no city; the suppressed row never sends, {{role}} has a fallback, {{link}} is ours
+    expect(result).toMatchObject({ enrolled: 3, missingVariables: 2 });
+    expect(db.campaign.findFirst.mock.calls[0][0].select).toMatchObject({ steps: { select: { subject: true, body: true } } });
   });
 });
 

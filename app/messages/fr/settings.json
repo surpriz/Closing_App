@@ -327,7 +327,7 @@
       "QUOTA": "Le fournisseur indique que le quota d'envoi est atteint. Réessayez plus tard.",
       "RATE_LIMITED": "Trop de tentatives côté fournisseur. Réessayez dans quelques minutes.",
       "REJECTED": "Le fournisseur a refusé la connexion.",
-      "TRANSIENT": "Impossible de joindre les serveurs de messagerie. Vérifiez les hôtes et les ports, puis réessayez.",
+      "TRANSIENT": "Impossible de joindre les serveurs de messagerie pour le moment. Vérifiez les hôtes et les ports, ou réessayez dans quelques minutes.",
       "CONFIG": "Cette configuration n'est pas prise en charge. Vérifiez les serveurs et les ports."
     }
   }

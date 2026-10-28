@@ -61,7 +61,8 @@ export function CampaignHeader({
       done?.();
     });
 
-  const canActivate = canEdit && (status === "DRAFT" || status === "PAUSED");
+  // DONE too: prospects imported into a finished campaign restart it
+  const canActivate = canEdit && (status === "DRAFT" || status === "PAUSED" || status === "DONE");
 
   return (
     <div className="space-y-4">

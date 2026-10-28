@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const db = {
   campaign: { create: vi.fn(), findFirst: vi.fn(), findMany: vi.fn(), updateMany: vi.fn() },
   campaignStep: { upsert: vi.fn((arg: unknown) => ({ upsert: arg })), deleteMany: vi.fn((arg: unknown) => ({ deleteMany: arg })) },
-  campaignProspect: { findFirst: vi.fn(), updateMany: vi.fn(async () => ({ count: 1 })) },
+  campaignProspect: { findFirst: vi.fn(), findMany: vi.fn(), updateMany: vi.fn(async () => ({ count: 1 })) },
   campaignMessage: { updateMany: vi.fn(async () => ({ count: 1 })) },
   mailbox: { findFirst: vi.fn() },
   document: { findFirst: vi.fn() },
@@ -34,6 +34,7 @@ function campaign(over: Record<string, unknown> = {}) {
 beforeEach(() => {
   vi.clearAllMocks();
   db.campaign.updateMany.mockResolvedValue({ count: 1 });
+  db.campaignProspect.findMany.mockResolvedValue([]);
 });
 
 describe("activateCampaign", () => {
@@ -97,6 +98,26 @@ describe("activateCampaign", () => {
     });
   });
 
+  it("refuses a variable without fallback that neither a built-in nor an imported column fills", async () => {
+    const steps = [{ ...goodStep, body: "Hi {{firstName}}, about {{project}} and {{budget|your budget}} in {{city}}" }];
+    db.campaign.findFirst.mockResolvedValue(campaign({ steps }));
+    db.campaignProspect.findFirst.mockResolvedValue({ id: "e1" });
+    db.campaignProspect.findMany.mockResolvedValue([{ vars: { City: "Lyon" } }, { vars: null }]);
+    expect(await activateCampaign("org", "c1", ACTOR, NOW)).toEqual({
+      ok: false,
+      issue: "unknown_variables",
+      variables: ["project"],
+    });
+    expect(db.campaignProspect.findMany.mock.calls[0][0]).toEqual({
+      where: { campaignId: "c1", status: { in: ["QUEUED", "ACTIVE", "PAUSED"] } },
+      select: { vars: true },
+    });
+    expect(db.campaign.updateMany).not.toHaveBeenCalled();
+
+    db.campaignProspect.findMany.mockResolvedValue([{ vars: { project: "CRM" } }, { vars: { city: "Paris" } }]);
+    expect(await activateCampaign("org", "c1", ACTOR, NOW)).toEqual({ ok: true });
+  });
+
   it("starts the campaign and keeps the first start date", async () => {
     const started = new Date("2026-10-01T00:00:00Z");
     db.campaign.findFirst.mockResolvedValue(campaign({ startedAt: started }));
@@ -158,10 +179,15 @@ describe("finishIdleCampaigns", () => {
         status: "ACTIVE",
         organizationId: "org",
         enrollments: { some: {}, none: { status: { in: ["QUEUED", "ACTIVE", "PAUSED"] } } },
-        messages: { none: { status: { in: ["SCHEDULED", "SENDING"] } } },
+        messages: { none: { status: { in: ["SCHEDULED", "SENDING"] }, enrollment: { status: { in: ["QUEUED", "ACTIVE", "PAUSED"] } } } },
       },
       data: { status: "DONE", finishedAt: NOW },
     });
+  });
+
+  it("restricts to the beta workspaces", async () => {
+    await finishIdleCampaigns(NOW, { organizationIds: ["org", "org2"] });
+    expect(db.campaign.updateMany.mock.calls[0][0].where.organizationId).toEqual({ in: ["org", "org2"] });
   });
 });
 
@@ -260,6 +286,21 @@ describe("updateCampaign", () => {
   it("accepts the mailbox the campaign already uses, even a colleague's, without a lookup", async () => {
     expect(await updateCampaign("org", "c1", { mailboxId: "mine" }, ACTOR)).toBe(true);
     expect(db.mailbox.findFirst).not.toHaveBeenCalled();
+  });
+
+  it("moves the messages still SCHEDULED to the new mailbox, in the same transaction", async () => {
+    db.mailbox.findFirst.mockResolvedValue({ id: "m2" });
+    expect(await updateCampaign("org", "c1", { mailboxId: "m2" }, ACTOR)).toBe(true);
+    expect(db.$transaction).toHaveBeenCalledTimes(1);
+    expect(db.campaignMessage.updateMany).toHaveBeenCalledWith({
+      where: { campaignId: "c1", status: "SCHEDULED" },
+      data: { mailboxId: "m2" },
+    });
+  });
+
+  it("leaves the messages alone when the mailbox does not change", async () => {
+    expect(await updateCampaign("org", "c1", { mailboxId: "mine", name: "New" }, ACTOR)).toBe(true);
+    expect(db.campaignMessage.updateMany).not.toHaveBeenCalled();
   });
 
   it("rejects an unsupported locale", async () => {

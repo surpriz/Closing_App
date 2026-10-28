@@ -28,7 +28,7 @@ export function mapImapError(error: unknown): MailboxError {
   const e = (error ?? {}) as { authenticationFailed?: boolean; code?: string; responseText?: string; message?: string };
   if (e.authenticationFailed || e.code === "AUTHENTICATIONFAILED" || /AUTHENTICATIONFAILED|invalid credentials/i.test(e.responseText ?? ""))
     return new MailboxError("AUTH_REVOKED", "IMAP authentication failed", { detail: e.responseText });
-  if (e.code && NETWORK_CODES.test(e.code)) return new MailboxError("CONFIG", "IMAP server unreachable", { detail: e.code });
+  if (e.code && NETWORK_CODES.test(e.code)) return new MailboxError("TRANSIENT", "IMAP server unreachable", { detail: e.code });
   return new MailboxError("TRANSIENT", "IMAP error", { detail: e.responseText ?? e.message });
 }
 

@@ -131,9 +131,11 @@ export async function unsubscribeByToken(token: string) {
       source: "unsubscribe_page",
     });
     await prisma.$transaction([
+      // Only a running enrollment changes: a REPLIED, BOUNCED or STOPPED one keeps its outcome (the suppression above
+      // already covers the address)
       prisma.campaignProspect.updateMany({
-        where: { id, status: { notIn: ["UNSUBSCRIBED"] } },
-        data: { status: "UNSUBSCRIBED" },
+        where: { id, status: { in: ["QUEUED", "ACTIVE", "PAUSED"] } },
+        data: { status: "UNSUBSCRIBED", finishedAt: new Date() },
       }),
       prisma.campaignMessage.updateMany({
         where: { enrollmentId: id, status: "SCHEDULED" },

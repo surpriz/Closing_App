@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { linkStep, type StepInput, unknownVariables, validateSteps } from "./steps";
+import { linkStep, type StepInput, unknownVariables, unknownVariablesWithoutFallback, validateSteps } from "./steps";
 
 const step = (over: Partial<StepInput> = {}): StepInput => ({
   order: 1,
@@ -71,6 +71,14 @@ describe("unknownVariables", () => {
     const steps = [step({ subject: "{{offer}}", body: "{{Role}} {{offer}} {{role}}" })];
     expect(unknownVariables(steps)).toEqual(["offer", "Role"]);
     expect(unknownVariables(steps, ["role"])).toEqual(["offer"]);
+  });
+});
+
+describe("unknownVariablesWithoutFallback", () => {
+  it("ignores a variable that always has a fallback, keeps one used bare at least once", () => {
+    const steps = [step({ subject: "{{offer|our offer}}", body: "{{city|}} {{offer}} {{team|you}}" })];
+    expect(unknownVariablesWithoutFallback(steps)).toEqual(["city", "offer"]);
+    expect(unknownVariablesWithoutFallback(steps, ["Offer"])).toEqual(["city"]);
   });
 });
 

@@ -63,7 +63,7 @@
     "QUOTA": "Le quota d'envoi du fournisseur est atteint.",
     "RATE_LIMITED": "Le fournisseur limite les envois.",
     "REJECTED": "Le fournisseur a refusé le message.",
-    "TRANSIENT": "Les serveurs de messagerie sont injoignables.",
+    "TRANSIENT": "Les serveurs de messagerie sont injoignables pour le moment. Réessayez dans quelques minutes.",
     "CONFIG": "La configuration de la boîte est invalide. Vérifiez les serveurs et les ports.",
     "POLICY": "Trop de rebonds : les envois ont été mis en pause pour protéger votre réputation.",
     "unknown": "La boîte a signalé une erreur."
@@ -80,7 +80,8 @@
       "mailbox_not_active": "La boîte n'est pas connectée. Reconnectez-la dans les réglages.",
       "steps": "Certaines étapes sont incomplètes.",
       "document_required": "Choisissez le document que le lien Clozer ouvre.",
-      "no_enrollment": "Importez au moins un prospect avant de lancer."
+      "no_enrollment": "Importez au moins un prospect avant de lancer.",
+      "unknown_variables": "Aucune colonne importée ne remplit {variables}. Ajoutez une valeur par défaut dans l'étape ou importez la colonne."
     },
     "invalidSettings": "Vérifiez le nom et la langue.",
     "settingsRefused": "Ces réglages ont été refusés. Vérifiez que la boîte et le document sont toujours disponibles.",
@@ -158,7 +159,7 @@
     "test": {
       "button": "M'envoyer un test",
       "sending": "Envoi…",
-      "sent": "Test envoyé à {email}.",
+      "sent": "Test envoyé à {email}. Il compte dans la limite d'envoi du jour de la boîte.",
       "not_found": "Cette étape n'existe plus.",
       "no_mailbox": "La boîte n'est pas connectée.",
       "cap": "La limite d'envoi du jour de la boîte est atteinte."
@@ -227,6 +228,7 @@
       "team": "{count, plural, one {# adresse de votre équipe ignorée} other {# adresses de votre équipe ignorées}}",
       "elsewhere": "{count} aussi dans une autre campagne en cours",
       "personal": "{count, plural, one {# adresse personnelle} other {# adresses personnelles}}",
+      "missingVariables": "{count, plural, one {# prospect n'a pas une variable utilisée sans valeur par défaut : il sera mis en pause à l'envoi} other {# prospects n'ont pas une variable utilisée sans valeur par défaut : ils seront mis en pause à l'envoi}}",
       "rejected": "{count, plural, one {# ligne rejetée} other {# lignes rejetées}}",
       "reasonNoEmail": "pas d'adresse",
       "reasonInvalidEmail": "adresse invalide",

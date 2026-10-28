@@ -58,9 +58,10 @@ describe("unsubscribe, enrollment subject", () => {
   it("stops the enrollment, cancels pending messages and suppresses the address", async () => {
     expect(await unsubscribeByToken(unsubscribeToken({ kind: "enrollment", id: "enr1" }))).toBe(true);
 
+    // Only from a running status, and with an end date; REPLIED, BOUNCED or STOPPED keep their outcome
     expect(db.campaignProspect.updateMany).toHaveBeenCalledWith({
-      where: { id: "enr1", status: { notIn: ["UNSUBSCRIBED"] } },
-      data: { status: "UNSUBSCRIBED" },
+      where: { id: "enr1", status: { in: ["QUEUED", "ACTIVE", "PAUSED"] } },
+      data: { status: "UNSUBSCRIBED", finishedAt: expect.any(Date) },
     });
     expect(db.campaignMessage.updateMany).toHaveBeenCalledWith({
       where: { enrollmentId: "enr1", status: "SCHEDULED" },

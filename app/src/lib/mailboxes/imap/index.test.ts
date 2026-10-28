@@ -34,6 +34,7 @@ vi.mock("imapflow", () => ({
 import nodemailer from "nodemailer";
 
 import { MailboxError } from "../errors";
+import { mapImapError } from "./imap";
 import { imapConnector } from "./index";
 
 const creds = {
@@ -85,7 +86,11 @@ describe("imapConnector.send", () => {
     [{ responseCode: 421, response: "421 too many connections" }, "RATE_LIMITED"],
     [{ responseCode: 552, response: "552 mailbox quota exceeded" }, "QUOTA"],
     [{ responseCode: 550, response: "550 no such user\nmore" }, "REJECTED"],
-    [{ code: "ETIMEDOUT" }, "CONFIG"],
+    // Network failures are retried later, never a configuration error that would put the mailbox in ERROR
+    [{ code: "ETIMEDOUT" }, "TRANSIENT"],
+    [{ code: "ECONNRESET" }, "TRANSIENT"],
+    [{ code: "EPIPE" }, "TRANSIENT"],
+    [{ code: "ENOTFOUND" }, "TRANSIENT"],
   ])("maps %j to %s", async (failure, code) => {
     sendMail.mockRejectedValue(Object.assign(new Error("boom"), failure));
     const err = await connector()
@@ -184,6 +189,19 @@ describe("transport security options", () => {
       }),
     ).rejects.toMatchObject({ code: "CONFIG" });
     expect(sendMail).not.toHaveBeenCalled();
+  });
+});
+
+describe("mapImapError", () => {
+  it.each(["ETIMEDOUT", "ECONNRESET", "ESOCKET", "EDNS", "ECONNREFUSED", "EHOSTUNREACH", "ENOTFOUND", "EPIPE"])(
+    "maps %s to TRANSIENT",
+    (code) => {
+      expect(mapImapError(Object.assign(new Error("x"), { code })).code).toBe("TRANSIENT");
+    },
+  );
+
+  it("keeps a refused login as AUTH_REVOKED", () => {
+    expect(mapImapError({ authenticationFailed: true }).code).toBe("AUTH_REVOKED");
   });
 });
 

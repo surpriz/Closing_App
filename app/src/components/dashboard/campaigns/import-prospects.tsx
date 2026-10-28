@@ -128,6 +128,7 @@ function ImportResult({ summary }: { summary: ImportSummary }) {
     { key: "team", count: summary.team },
     { key: "elsewhere", count: summary.elsewhere },
     { key: "personal", count: summary.personal },
+    { key: "missingVariables", count: summary.missingVariables },
   ] as const;
 
   return (

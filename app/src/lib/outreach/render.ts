@@ -38,6 +38,19 @@ export function templateVariables(body: string): string[] {
   return names;
 }
 
+/** Distinct names used at least once without a usable fallback (`{{x}}` or `{{x|}}`): those render empty and block the send. */
+export function variablesWithoutFallback(body: string): string[] {
+  const seen = new Set<string>();
+  const names: string[] = [];
+  for (const match of body.matchAll(VARIABLE)) {
+    const key = match[1].toLowerCase();
+    if (match[2]?.trim() || seen.has(key)) continue;
+    seen.add(key);
+    names.push(match[1]);
+  }
+  return names;
+}
+
 export function threadSubject(
   step: { order: number; subject: string | null; newThread: boolean },
   threadSubject: string | null,

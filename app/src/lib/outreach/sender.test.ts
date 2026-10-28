@@ -177,8 +177,9 @@ describe("sendDueMessages, success", () => {
       data: { status: "SENDING", sendingAt: now, attempts: { increment: 1 } },
     });
     expect(reserveSend).toHaveBeenCalledWith("mb1", "2026-11-18", 30);
+    // The marker re-reads both statuses: a stop or a pause up to here keeps the mail from leaving
     expect(messageUpdateMany).toHaveBeenCalledWith({
-      where: { id: "m1", status: "SENDING", sendingAt: now },
+      where: { id: "m1", status: "SENDING", sendingAt: now, enrollment: { status: "ACTIVE" }, campaign: { status: "ACTIVE" } },
       data: { messageId: "<generated@acme.io>" },
     });
 
@@ -246,6 +247,22 @@ describe("sendDueMessages, success", () => {
     // Last step: nothing to plan, the end is noticed by planEnrollments
     expect(messageCreate).not.toHaveBeenCalled();
     expect(enrollmentUpdateMany).toHaveBeenLastCalledWith({ where: { id: "e1", status: "ACTIVE" }, data: { nextSendAt: null } });
+  });
+
+  it("starts a new thread on a newThread step: no reference to the old one, and it becomes the thread start", async () => {
+    const step3 = { id: "s3", order: 3, delayDays: 2, subject: "Another idea", newThread: true, body: "New topic", carriesLink: false };
+    stepFindMany.mockResolvedValue([step1, step2, step3]);
+    const thread = { ...enrollment, currentStep: 2, threadSubject: "Hello Paul", firstMessageId: "<first@acme.io>", providerThreadId: "t0" };
+    messageFindUnique.mockResolvedValue(message({ stepId: "s3", dedupeKey: "cold:e1:s3", enrollment: thread }));
+    messageFindFirst.mockResolvedValue({ messageId: "<second@acme.io>", sentAt: new Date(now.getTime() - 3 * DAY) });
+
+    await sendDueMessages(now, {}, deps);
+
+    expect(send.mock.calls[0][0]).toMatchObject({ subject: "Another idea", inReplyTo: null, references: [] });
+    expect(enrollmentUpdate).toHaveBeenCalledWith({
+      where: { id: "e1" },
+      data: { currentStep: 3, threadSubject: "Another idea", firstMessageId: "<sent@acme.io>", providerThreadId: "t1" },
+    });
   });
 
   it("appends the signature before the unsubscribe footer", async () => {
@@ -317,15 +334,28 @@ describe("sendDueMessages, re-checks", () => {
     const result = await sendDueMessages(now, {}, deps);
     expect(isSuppressed).toHaveBeenCalledWith("org", "paul@acme.com");
     expect(stopEnrollment).toHaveBeenCalledWith("e1", "SUPPRESSED", "suppressed", now);
+    // stopEnrollment leaves SENDING rows alone: the sender cancels its own, under the lease
+    expect(messageUpdateMany).toHaveBeenCalledWith({
+      where: { id: "m1", status: "SENDING", sendingAt: now },
+      data: { status: "CANCELLED", sendingAt: null, error: "suppressed" },
+    });
     expect(send).not.toHaveBeenCalled();
     expect(result.cancelled).toBe(1);
   });
 
-  it("stops the enrollment on a missing variable", async () => {
+  it("pauses the enrollment on a missing variable and cancels the row, so a resume can retry it", async () => {
     messageFindUnique.mockResolvedValue(message({ enrollment: { ...enrollment, firstName: null } }));
     stepFindMany.mockResolvedValue([{ ...step1, subject: "Hello", body: "Hi {{firstName}}" }, step2]);
     const result = await sendDueMessages(now, {}, deps);
-    expect(stopEnrollment).toHaveBeenCalledWith("e1", "SUPPRESSED", "missing_variable:firstName", now);
+    expect(stopEnrollment).not.toHaveBeenCalled();
+    expect(enrollmentUpdateMany).toHaveBeenCalledWith({
+      where: { id: "e1", status: "ACTIVE" },
+      data: { status: "PAUSED", pausedReason: "missing_variable:firstName", pausedAt: now },
+    });
+    expect(messageUpdateMany).toHaveBeenCalledWith({
+      where: { id: "m1", status: "SENDING", sendingAt: now },
+      data: { status: "CANCELLED", sendingAt: null, error: "missing_variable:firstName" },
+    });
     expect(reserveSend).not.toHaveBeenCalled();
     expect(send).not.toHaveBeenCalled();
     expect(result.cancelled).toBe(1);
@@ -401,6 +431,16 @@ describe("sendDueMessages, send errors", () => {
     expect(result).toEqual({ sent: 0, rescheduled: 0, failed: 0, cancelled: 0 });
   });
 
+  it("CONFIG: mailbox in ERROR too, but the owner hears the sending failed, not that the login was revoked", async () => {
+    send.mockRejectedValue(new MailboxError("CONFIG", "mail server address is not allowed"));
+    await sendDueMessages(now, {}, deps);
+    expect(mailboxUpdate).toHaveBeenCalledWith({
+      where: { id: "mb1" },
+      data: { status: "ERROR", lastError: "CONFIG: mail server address is not allowed", lastErrorAt: now },
+    });
+    expect(notifyMailboxOwner).toHaveBeenCalledWith("mb1", "send_failed", "mail server address is not allowed", now);
+  });
+
   it("RATE_LIMITED: waits for retryAfterMs and stops the mailbox", async () => {
     candidates = [{ id: "m1" }, { id: "m2" }];
     send.mockRejectedValue(new MailboxError("RATE_LIMITED", "slow down", { retryAfterMs: 600_000 }));
@@ -465,16 +505,37 @@ describe("expireStaleLeases", () => {
   const cutoff = new Date(now.getTime() - 5 * 60_000);
   const stale = { status: "SENDING", sendingAt: { lt: cutoff } };
 
+  it("cancels, first, a stale row without Message-ID whose enrollment is no longer live, instead of requeuing it", async () => {
+    messageFindMany.mockResolvedValue([]);
+    messageUpdateMany.mockResolvedValueOnce({ count: 2 }).mockResolvedValueOnce({ count: 0 });
+    const result = await expireStaleLeases(now);
+    expect(messageUpdateMany).toHaveBeenNthCalledWith(1, {
+      where: { ...stale, messageId: null, enrollment: { status: { notIn: ["QUEUED", "ACTIVE", "PAUSED"] } } },
+      data: { status: "CANCELLED", error: "interrupted", sendingAt: null },
+    });
+    expect(result).toEqual({ requeued: 0, failed: 0, cancelled: 2 });
+  });
+
+  it("restricts every pass to the beta workspaces", async () => {
+    messageFindMany.mockResolvedValue([]);
+    messageUpdateMany.mockResolvedValue({ count: 0 });
+    await expireStaleLeases(now, { organizationIds: ["org", "org2"] });
+    const scoped = { ...stale, campaign: { organizationId: { in: ["org", "org2"] } } };
+    expect(messageUpdateMany.mock.calls[0][0].where).toMatchObject(scoped);
+    expect(messageFindMany.mock.calls[0][0].where).toMatchObject(scoped);
+    expect(messageUpdateMany.mock.calls[1][0].where).toMatchObject(scoped);
+  });
+
   it("fails a stale row that has a Message-ID and pauses its enrollment, whatever the attempts", async () => {
     messageFindMany.mockResolvedValueOnce([{ id: "m1", enrollmentId: "e1" }]).mockResolvedValueOnce([]);
-    messageUpdateMany.mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 0 });
+    messageUpdateMany.mockResolvedValueOnce({ count: 0 }).mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 0 });
     const result = await expireStaleLeases(now);
 
     expect(messageFindMany).toHaveBeenNthCalledWith(1, {
       where: { ...stale, messageId: { not: null } },
       select: { id: true, enrollmentId: true },
     });
-    expect(messageUpdateMany).toHaveBeenNthCalledWith(1, {
+    expect(messageUpdateMany).toHaveBeenNthCalledWith(2, {
       where: { ...stale, id: "m1" },
       data: { status: "FAILED", error: "interrupted", sendingAt: null },
     });
@@ -482,7 +543,7 @@ describe("expireStaleLeases", () => {
       where: { id: "e1", status: "ACTIVE" },
       data: { status: "PAUSED", pausedReason: "interrupted", pausedAt: now },
     });
-    expect(result).toEqual({ requeued: 0, failed: 1 });
+    expect(result).toEqual({ requeued: 0, failed: 1, cancelled: 0 });
   });
 
   it("pauses only the enrollments whose row really transitioned", async () => {
@@ -493,6 +554,7 @@ describe("expireStaleLeases", () => {
       ])
       .mockResolvedValueOnce([]);
     messageUpdateMany
+      .mockResolvedValueOnce({ count: 0 }) // nothing to cancel
       .mockResolvedValueOnce({ count: 0 }) // m1 finished meanwhile
       .mockResolvedValueOnce({ count: 1 })
       .mockResolvedValueOnce({ count: 0 });
@@ -507,10 +569,10 @@ describe("expireStaleLeases", () => {
 
   it("requeues a stale row that never reached the connector, fails it once the attempts are used up", async () => {
     messageFindMany.mockResolvedValueOnce([]).mockResolvedValueOnce([{ id: "m2", enrollmentId: "e2" }]);
-    messageUpdateMany.mockResolvedValueOnce({ count: 2 }).mockResolvedValueOnce({ count: 1 });
+    messageUpdateMany.mockResolvedValueOnce({ count: 0 }).mockResolvedValueOnce({ count: 2 }).mockResolvedValueOnce({ count: 1 });
     const result = await expireStaleLeases(now);
 
-    expect(messageUpdateMany).toHaveBeenNthCalledWith(1, {
+    expect(messageUpdateMany).toHaveBeenNthCalledWith(2, {
       where: { ...stale, messageId: null, attempts: { lt: 3 } },
       data: { status: "SCHEDULED", sendingAt: null },
     });
@@ -522,7 +584,7 @@ describe("expireStaleLeases", () => {
       where: { id: "e2", status: "ACTIVE" },
       data: { status: "PAUSED", pausedReason: "interrupted", pausedAt: now },
     });
-    expect(result).toEqual({ requeued: 2, failed: 1 });
+    expect(result).toEqual({ requeued: 2, failed: 1, cancelled: 0 });
   });
 });
 
@@ -561,6 +623,39 @@ describe("sendDueMessages, leases and failures", () => {
     const result = await sendDueMessages(now, {}, deps);
     expect(send).toHaveBeenCalledTimes(1);
     expect(result.sent).toBe(1);
+  });
+
+  it("stops sooner when the scope's deadline comes before the budget", async () => {
+    candidates = [{ id: "m1" }, { id: "m2" }];
+    send.mockImplementation(async () => {
+      vi.setSystemTime(new Date(now.getTime() + 20_000));
+      return { messageId: "<sent@acme.io>", providerId: null, threadId: null };
+    });
+    const result = await sendDueMessages(now, { deadline: new Date(now.getTime() + 10_000) }, deps);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(result.sent).toBe(1);
+  });
+
+  it("restricts the mailboxes to the beta workspaces", async () => {
+    await sendDueMessages(now, { organizationIds: ["org", "org2"] }, deps);
+    expect(mailboxFindMany.mock.calls[0][0].where.organizationId).toEqual({ in: ["org", "org2"] });
+  });
+
+  it("fails and pauses when an unexpected error uses up the last attempt, so the enrollment never stays ACTIVE", async () => {
+    candidates = [{ id: "m1", attempts: 2, enrollmentId: "e1" } as never];
+    messageFindUnique.mockRejectedValueOnce(new Error("db down"));
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const result = await sendDueMessages(now, {}, deps);
+    spy.mockRestore();
+    expect(messageUpdateMany).toHaveBeenCalledWith({
+      where: { id: "m1", status: "SENDING", sendingAt: now },
+      data: { status: "FAILED", error: "db down", sendingAt: null },
+    });
+    expect(enrollmentUpdateMany).toHaveBeenCalledWith({
+      where: { id: "e1", status: "ACTIVE" },
+      data: { status: "PAUSED", pausedReason: "send_failed", pausedAt: now },
+    });
+    expect(result.failed).toBe(1);
   });
 
   it("requeues an unexpected error before the send and carries on with the next message", async () => {
@@ -614,6 +709,16 @@ describe("sendTestMessage", () => {
     expect(sent.text).toBe("Hi Marie");
     expect(messageCreate).not.toHaveBeenCalled();
     expect(messageUpdate).not.toHaveBeenCalled();
+  });
+
+  it("stands a placeholder in the campaign's language for the link", async () => {
+    const linkStepRow = { ...step1, carriesLink: true, body: "See {{link}}" };
+    campaignFindFirst.mockResolvedValueOnce({ ...campaign, steps: [linkStepRow] });
+    await sendTestMessage({ organizationId: "org", campaignId: "c1", stepOrder: 1, to: "me@x.io", now }, deps);
+    expect(send.mock.calls[0][0].text).toBe("See [lien Clozer]");
+    campaignFindFirst.mockResolvedValueOnce({ ...campaign, locale: "en", steps: [linkStepRow] });
+    await sendTestMessage({ organizationId: "org", campaignId: "c1", stepOrder: 1, to: "me@x.io", now }, deps);
+    expect(send.mock.calls[1][0].text).toBe("See [Clozer link]");
   });
 
   it("reports a full day as cap", async () => {

@@ -166,6 +166,11 @@ describe("syncMailboxesDue", () => {
     });
   });
 
+  it("only looks at the beta workspaces of the kill switch list", async () => {
+    await syncMailboxesDue(NOW, { budgetMs: 60_000, organizationIds: ["org1", "org2"], connector: () => fakeConnector(okList()) });
+    expect(prisma.mailbox.findMany.mock.calls[0][0].where.organizationId).toEqual({ in: ["org1", "org2"] });
+  });
+
   it("schedules the next pass 5 minutes out, 15 with webhooks, and clears errors and lease", async () => {
     prisma.mailbox.findMany.mockResolvedValue([due({ syncErrorCount: 2 })]);
     expect(await syncMailboxesDue(NOW, { budgetMs: 60_000, connector: () => fakeConnector(okList()) })).toEqual({

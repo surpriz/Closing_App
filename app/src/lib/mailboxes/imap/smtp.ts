@@ -35,7 +35,7 @@ export function mapSmtpError(error: unknown): MailboxError {
   const status = e.responseCode;
 
   if (e.code === "EAUTH" || status === 535) return new MailboxError("AUTH_REVOKED", "SMTP authentication failed", { detail: firstLine });
-  if (e.code && NETWORK_CODES.test(e.code)) return new MailboxError("CONFIG", "SMTP server unreachable", { detail: e.code });
+  if (e.code && NETWORK_CODES.test(e.code)) return new MailboxError("TRANSIENT", "SMTP server unreachable", { detail: e.code });
   if (status !== undefined && status >= 400 && status < 500) {
     // A 4xx is a temporary refusal; rate wording means we should slow down rather than just retry
     const limited = /limit|rate|too many/i.test(response);

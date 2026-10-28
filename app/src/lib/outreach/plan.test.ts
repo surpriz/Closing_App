@@ -164,11 +164,26 @@ describe("planEnrollments, catch-up", () => {
     stranded = [stuck({ currentStep: 2, messages: [{ sentAt: new Date(now.getTime() - DAY) }] })];
     const result = await planEnrollments(now);
     expect(result).toEqual({ started: 0, continued: 0, finished: 0 });
-    // Touched, so it moves to the back of the least-recently-updated order
+    // Touched, so it moves to the back of the least-recently-updated order; nothing is due, so no nextSendAt
     expect(enrollmentUpdateMany).toHaveBeenCalledWith({
       where: { id: "e1", status: "ACTIVE" },
-      data: { nextSendAt: new Date(now.getTime() + 2 * DAY) },
+      data: { nextSendAt: null },
     });
+  });
+
+  it("skips enrollments waiting for a later time", async () => {
+    mailboxFindMany.mockResolvedValue([]);
+    await planEnrollments(now);
+    const call = enrollmentFindMany.mock.calls.find(([a]) => a.where.status === "ACTIVE")![0];
+    expect(call.where.OR).toEqual([{ nextSendAt: null }, { nextSendAt: { lte: now } }]);
+  });
+
+  it("restricts both passes to the beta workspaces", async () => {
+    mailboxFindMany.mockResolvedValue([]);
+    await planEnrollments(now, { organizationIds: ["org", "org2"] });
+    expect(mailboxFindMany.mock.calls[0][0].where.organizationId).toEqual({ in: ["org", "org2"] });
+    const call = enrollmentFindMany.mock.calls.find(([a]) => a.where.status === "ACTIVE")![0];
+    expect(call.where.organizationId).toEqual({ in: ["org", "org2"] });
   });
 
   it.each([

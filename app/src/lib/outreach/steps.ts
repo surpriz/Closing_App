@@ -1,4 +1,4 @@
-import { templateVariables } from "./render";
+import { templateVariables, variablesWithoutFallback } from "./render";
 
 export type StepInput = {
   order: number;
@@ -51,12 +51,13 @@ export function validateSteps(steps: StepInput[]): StepIssue[] {
 }
 
 /** Variables used in the sequence that are neither built in nor among `extra` (CSV columns). Case-insensitive, distinct, in order. */
-export function unknownVariables(steps: StepInput[], extra: string[] = []): string[] {
+export function unknownVariables(steps: StepInput[], extra: string[] = [], { withoutFallbackOnly = false } = {}): string[] {
   const known = new Set<string>([...KNOWN_VARIABLES, ...extra].map((name) => name.toLowerCase()));
+  const names = withoutFallbackOnly ? variablesWithoutFallback : templateVariables;
   const seen = new Set<string>();
   const unknown: string[] = [];
   for (const step of [...steps].sort((a, b) => a.order - b.order)) {
-    for (const name of [...templateVariables(step.subject ?? ""), ...templateVariables(step.body)]) {
+    for (const name of [...names(step.subject ?? ""), ...names(step.body)]) {
       const key = name.toLowerCase();
       if (known.has(key) || seen.has(key)) continue;
       seen.add(key);
@@ -64,6 +65,11 @@ export function unknownVariables(steps: StepInput[], extra: string[] = []): stri
     }
   }
   return unknown;
+}
+
+/** Same, ignoring variables that have a fallback: only these would leave a prospect stuck at send time. */
+export function unknownVariablesWithoutFallback(steps: StepInput[], extra: string[] = []): string[] {
+  return unknownVariables(steps, extra, { withoutFallbackOnly: true });
 }
 
 /** Order of the step that carries the link, if any. */

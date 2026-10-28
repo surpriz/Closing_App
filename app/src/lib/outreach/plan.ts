@@ -7,6 +7,7 @@ import { remainingToday } from "@/lib/mailboxes/caps/allowance";
 import { dedupeKeyOf, scheduleStepMessage, type StepRow } from "./messages";
 import { releaseCampaignLink } from "./ownership";
 import { businessHoursOf, firstSendSlots, localDayBounds, nextStepFor, stepSendAt } from "./planner";
+import { organizationWhere, type OutreachScope } from "./scope";
 
 const CATCH_UP_BATCH = 200;
 const STEP_SELECT = {
@@ -25,13 +26,10 @@ const STEP_SELECT = {
  */
 export async function planEnrollments(
   now: Date,
-  scope: { organizationId?: string } = {},
+  scope: OutreachScope = {},
 ): Promise<{ started: number; continued: number; finished: number }> {
   const totals = { started: 0, continued: 0, finished: 0 };
-  const orgFilter = {
-    ...(scope.organizationId ? { organizationId: scope.organizationId } : {}),
-    organization: { suspendedAt: null },
-  };
+  const orgFilter = { ...organizationWhere(scope), organization: { suspendedAt: null } };
   const hoursByOrg = new Map<string, BusinessHours>();
   const hoursOf = async (organizationId: string) => {
     let hours = hoursByOrg.get(organizationId);
@@ -116,6 +114,8 @@ export async function planEnrollments(
       ...orgFilter,
       campaign: { status: "ACTIVE", mailbox: { status: "ACTIVE" } },
       messages: { none: { status: { in: ["SCHEDULED", "SENDING"] } } },
+      // One waiting for a later time is left alone until then: no point re-reading it every tick
+      OR: [{ nextSendAt: null }, { nextSendAt: { lte: now } }],
     },
     // Least recently touched first, so a long list of waiting enrollments cannot starve the others
     orderBy: { updatedAt: "asc" },
@@ -177,10 +177,11 @@ export async function planEnrollments(
       if (enrollment.linkId) await releaseCampaignLink(enrollment.linkId);
       totals.finished++;
     } else if (action.until) {
-      // Touched, so it goes to the back of the line until its time comes
+      // After the last step: nothing more will be sent, so nextSendAt stays empty (it is not the finish time). The write
+      // still bumps updatedAt, which sends it to the back of the least-recently-touched line
       await prisma.campaignProspect.updateMany({
         where: { id: enrollment.id, status: "ACTIVE" },
-        data: { nextSendAt: action.until },
+        data: { nextSendAt: null },
       });
     }
   }

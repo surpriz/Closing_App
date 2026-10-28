@@ -162,7 +162,13 @@ async function onReply(
   matchedMessageId: string | null,
   now: Date,
 ) {
-  await stopEnrollment(enrollmentId, "REPLIED", null, now);
+  if (!(await stopEnrollment(enrollmentId, "REPLIED", null, now))) {
+    // A late reply, after the sequence finished, is still a reply: the campaign stats must count it
+    await prisma.campaignProspect.updateMany({
+      where: { id: enrollmentId, status: "FINISHED" },
+      data: { status: "REPLIED", repliedAt: now },
+    });
+  }
   if (matchedMessageId) {
     await prisma.campaignMessage.updateMany({ where: { id: matchedMessageId }, data: { repliedAt: message.date } });
   }

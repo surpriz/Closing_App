@@ -2,6 +2,7 @@ import type { Mailbox } from "@/generated/prisma/client";
 import { ACTIVE_WORKSPACE } from "@/lib/closing/active-workspace";
 import { DAY_MS, HOUR_MS } from "@/lib/closing/constants";
 import { prisma } from "@/lib/db";
+import { organizationWhere, type OutreachScope } from "@/lib/outreach/scope";
 
 import { isMailboxError, MailboxError } from "../errors";
 import { connectorFor } from "../index";
@@ -13,6 +14,8 @@ import { normalizeMessageId, type MatchContext } from "./match";
 
 export const SYNC_INTERVAL_MS = 5 * 60_000; // connectors without webhooks (IMAP)
 export const SYNC_INTERVAL_WEBHOOK_MS = 15 * 60_000;
+// Must stay >= the cron route's maxDuration (300 s): a lease that expires while its tick still runs would let a second
+// tick replay the same `pending` inbox events concurrently
 export const SYNC_LEASE_MS = 5 * 60_000;
 export const SYNC_BUDGET_PER_MAILBOX_MS = 25_000;
 export const MAX_SYNC_BACKOFF_MS = 2 * HOUR_MS;
@@ -150,13 +153,13 @@ async function buildContext(
 /** The tick: due mailboxes one by one under a shared budget, each isolated so one failure never stops the rest. */
 export async function syncMailboxesDue(
   now: Date,
-  opts: { budgetMs: number; organizationId?: string } & SyncDeps,
+  opts: { budgetMs: number } & Pick<OutreachScope, "organizationId" | "organizationIds"> & SyncDeps,
 ): Promise<{ synced: number; errors: number }> {
   const deadline = Date.now() + opts.budgetMs;
   const due = await prisma.mailbox.findMany({
     where: {
       status: "ACTIVE",
-      ...(opts.organizationId ? { organizationId: opts.organizationId } : {}),
+      ...organizationWhere(opts),
       ...ACTIVE_WORKSPACE,
       // D13: nothing to look for in an inbox we never wrote from
       messages: { some: { status: "SENT", sentAt: { gte: new Date(now.getTime() - SENT_WINDOW_MS) } } },

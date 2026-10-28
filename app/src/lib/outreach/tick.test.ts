@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   sendDueMessages: vi.fn(),
   finishIdleCampaigns: vi.fn(),
   captureException: vi.fn(),
+  orgIds: ["org1", "org2"] as string[],
 }));
 
 vi.mock("@sentry/nextjs", () => ({ captureException: mocks.captureException }));
@@ -15,6 +16,7 @@ vi.mock("./sender", () => ({ expireStaleLeases: mocks.expireStaleLeases, sendDue
 vi.mock("@/lib/mailboxes/inbound/sync", () => ({ syncMailboxesDue: mocks.syncMailboxesDue }));
 vi.mock("./plan", () => ({ planEnrollments: mocks.planEnrollments }));
 vi.mock("./campaigns", () => ({ finishIdleCampaigns: mocks.finishIdleCampaigns }));
+vi.mock("./flag", () => ({ outreachOrgIds: () => mocks.orgIds }));
 
 const { runOutreachTick } = await import("./tick");
 
@@ -23,6 +25,8 @@ const now = new Date("2026-10-28T10:00:00Z");
 beforeEach(() => {
   calls.length = 0;
   vi.clearAllMocks();
+  vi.useRealTimers();
+  mocks.orgIds = ["org1", "org2"];
   vi.spyOn(console, "error").mockImplementation(() => {});
   const track = (name: string, value: unknown) =>
     vi.fn(async () => {
@@ -60,14 +64,42 @@ describe("runOutreachTick", () => {
     expect(mocks.captureException).toHaveBeenCalledWith(boom, { tags: { outreach: "sync" } });
   });
 
-  it("forwards the scope and defaults the sync budget to 60s", async () => {
+  it("forwards the scope with the beta list and defaults the sync budget to 60s", async () => {
     await runOutreachTick(now, { organizationId: "org1" });
-    expect(mocks.syncMailboxesDue).toHaveBeenCalledWith(now, { budgetMs: 60_000, organizationId: "org1" });
-    expect(mocks.planEnrollments).toHaveBeenCalledWith(now, { organizationId: "org1" });
-    expect(mocks.sendDueMessages).toHaveBeenCalledWith(now, { organizationId: "org1" });
-    expect(mocks.finishIdleCampaigns).toHaveBeenCalledWith(now, { organizationId: "org1" });
+    const scope = { organizationId: "org1", organizationIds: ["org1", "org2"] };
+    expect(mocks.expireStaleLeases).toHaveBeenCalledWith(now, scope);
+    expect(mocks.syncMailboxesDue).toHaveBeenCalledWith(now, { budgetMs: 60_000, ...scope });
+    expect(mocks.planEnrollments).toHaveBeenCalledWith(now, scope);
+    expect(mocks.sendDueMessages).toHaveBeenCalledWith(now, scope);
+    expect(mocks.finishIdleCampaigns).toHaveBeenCalledWith(now, scope);
 
     await runOutreachTick(now, { organizationId: "org1", syncBudgetMs: 5000 });
-    expect(mocks.syncMailboxesDue).toHaveBeenLastCalledWith(now, { budgetMs: 5000, organizationId: "org1" });
+    expect(mocks.syncMailboxesDue).toHaveBeenLastCalledWith(now, { budgetMs: 5000, ...scope });
+  });
+
+  it("without a workspace, restricts every step to the beta list", async () => {
+    await runOutreachTick(now);
+    expect(mocks.planEnrollments).toHaveBeenCalledWith(now, { organizationIds: ["org1", "org2"] });
+  });
+
+  it("runs nothing when the list is empty or the workspace is not in it (kill switch)", async () => {
+    mocks.orgIds = [];
+    expect(await runOutreachTick(now)).toEqual({ stale: null, synced: null, planned: null, sent: null, finished: null });
+    mocks.orgIds = ["org2"];
+    await runOutreachTick(now, { organizationId: "org1" });
+    expect(calls).toEqual([]);
+  });
+
+  it("fits the sync and the send in what is left before the deadline", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(now);
+    const deadline = new Date(now.getTime() + 30_000);
+    await runOutreachTick(now, { deadline });
+    expect(mocks.syncMailboxesDue).toHaveBeenCalledWith(now, { budgetMs: 30_000, organizationIds: ["org1", "org2"] });
+    expect(mocks.sendDueMessages).toHaveBeenCalledWith(now, { organizationIds: ["org1", "org2"], deadline });
+
+    await runOutreachTick(now, { deadline: new Date(now.getTime() + 600_000) });
+    expect(mocks.syncMailboxesDue).toHaveBeenLastCalledWith(now, { budgetMs: 60_000, organizationIds: ["org1", "org2"] });
+    vi.useRealTimers();
   });
 });

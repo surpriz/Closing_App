@@ -327,7 +327,7 @@
       "QUOTA": "The provider says the sending quota is reached. Try again later.",
       "RATE_LIMITED": "Too many attempts on the provider side. Try again in a few minutes.",
       "REJECTED": "The provider rejected the connection.",
-      "TRANSIENT": "Could not reach the mail servers. Check the hosts and ports, then try again.",
+      "TRANSIENT": "Cannot reach the mail servers right now. Check the hosts and ports, or try again in a few minutes.",
       "CONFIG": "This setup is not supported. Check the servers and ports."
     }
   }

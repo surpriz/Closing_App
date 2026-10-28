@@ -3,7 +3,9 @@ import { captureException } from "@sentry/nextjs";
 import { syncMailboxesDue } from "@/lib/mailboxes/inbound/sync";
 
 import { finishIdleCampaigns } from "./campaigns";
+import { outreachOrgIds } from "./flag";
 import { planEnrollments } from "./plan";
+import { budgetLeft, type OutreachScope } from "./scope";
 import { expireStaleLeases, sendDueMessages } from "./sender";
 
 const DEFAULT_SYNC_BUDGET_MS = 60_000;
@@ -19,15 +21,25 @@ async function step<T>(label: string, task: () => Promise<T>): Promise<T | null>
   }
 }
 
+/**
+ * `deadline` (real clock) is when the caller must be done: the sync and the send budgets shrink to fit before it.
+ * Only the beta workspaces of OUTREACH_ORG_IDS run: emptying the variable stops every send and sync at once.
+ */
 export async function runOutreachTick(
   now = new Date(),
-  scope: { organizationId?: string; syncBudgetMs?: number } = {},
+  scope: { organizationId?: string; syncBudgetMs?: number; deadline?: Date } = {},
 ) {
-  const stale = await step("stale", () => expireStaleLeases(now));
-  const budgetMs = scope.syncBudgetMs ?? DEFAULT_SYNC_BUDGET_MS;
-  const synced = await step("sync", () => syncMailboxesDue(now, { budgetMs, organizationId: scope.organizationId }));
-  const planned = await step("plan", () => planEnrollments(now, scope));
-  const sent = await step("send", () => sendDueMessages(now, scope));
-  const finished = await step("finish", () => finishIdleCampaigns(now, scope));
+  const organizationIds = outreachOrgIds();
+  if (organizationIds.length === 0 || (scope.organizationId !== undefined && !organizationIds.includes(scope.organizationId))) {
+    return { stale: null, synced: null, planned: null, sent: null, finished: null };
+  }
+  const base: OutreachScope = { ...(scope.organizationId ? { organizationId: scope.organizationId } : {}), organizationIds };
+
+  const stale = await step("stale", () => expireStaleLeases(now, base));
+  const budgetMs = budgetLeft(scope.syncBudgetMs ?? DEFAULT_SYNC_BUDGET_MS, scope.deadline);
+  const synced = await step("sync", () => syncMailboxesDue(now, { budgetMs, ...base }));
+  const planned = await step("plan", () => planEnrollments(now, base));
+  const sent = await step("send", () => sendDueMessages(now, { ...base, ...(scope.deadline ? { deadline: scope.deadline } : {}) }));
+  const finished = await step("finish", () => finishIdleCampaigns(now, base));
   return { stale, synced, planned, sent, finished };
 }

@@ -92,7 +92,7 @@ export function StepsEditor({
         const text = `${step.subject ?? ""}\n${step.body}`;
         if (!step.body.trim()) continue;
         if (!hintCache.current.has(text)) {
-          // A failed check only loses the live warning; the server revalidates on send anyway
+          // A failed check only loses the live warning: it is advisory, nothing server side blocks such wording
           const found = await trackingHintAction(text).catch(() => null);
           hintCache.current.set(text, found);
         }

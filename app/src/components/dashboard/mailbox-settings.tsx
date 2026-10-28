@@ -11,6 +11,7 @@ import {
   disconnectMailbox,
   getDkimProbeAddress,
   recheckDns,
+  reconnectDefaults,
   saveMailboxCap,
   type MailboxFormState,
 } from "@/app/(dashboard)/settings/mailbox-actions";
@@ -197,7 +198,7 @@ function MailboxItem({
 }: {
   mailbox: MailboxRow;
   maxCap: number;
-  onReconnect: (email: string) => void;
+  onReconnect: (target: { email: string; mailboxId: string }) => void;
 }) {
   const t = useTranslations("settings.mailbox");
   const [cap, setCap] = useState(String(mailbox.dailyCap));
@@ -218,7 +219,7 @@ function MailboxItem({
         </div>
         <div className="flex items-center gap-1">
           {mailbox.status === "ERROR" && (
-            <Button variant="outline" size="sm" onClick={() => onReconnect(mailbox.email)}>
+            <Button variant="outline" size="sm" onClick={() => onReconnect({ email: mailbox.email, mailboxId: mailbox.id })}>
               {t("reconnect")}
             </Button>
           )}
@@ -300,12 +301,12 @@ function Field({ label, htmlFor, children }: { label: string; htmlFor: string; c
 }
 
 /** `prefill` (a mailbox to reconnect) arrives through a remount: the password is always asked again. */
-function ConnectForm({ prefill }: { prefill: string | null }) {
+function ConnectForm({ prefill }: { prefill: { email: string; mailboxId: string } | null }) {
   const t = useTranslations("settings.mailbox");
-  const [form, setForm] = useState({ ...EMPTY_FORM, email: prefill ?? "" });
+  const [form, setForm] = useState({ ...EMPTY_FORM, email: prefill?.email ?? "" });
   const formRef = useRef<HTMLFormElement>(null);
   const [detection, setDetection] = useState<MailboxDetection | null>(null);
-  const [detectedFor, setDetectedFor] = useState(prefill?.trim().toLowerCase() ?? "");
+  const [detectedFor, setDetectedFor] = useState(prefill?.email.trim().toLowerCase() ?? "");
   const [detecting, startDetecting] = useTransition();
   const set = <K extends keyof typeof EMPTY_FORM>(key: K, value: (typeof EMPTY_FORM)[K]) =>
     setForm((current) => ({ ...current, [key]: value }));
@@ -352,7 +353,23 @@ function ConnectForm({ prefill }: { prefill: string | null }) {
 
   useEffect(() => {
     if (!prefill) return;
-    runDetection(prefill.trim().toLowerCase());
+    const email = prefill.email.trim().toLowerCase();
+    // The stored settings first: a fresh detection would blank custom hosts. Detection only when there are none
+    startDetecting(async () => {
+      const stored = await reconnectDefaults(prefill.mailboxId).catch(() => null);
+      if (!stored) return runDetection(email);
+      setForm((current) => ({
+        ...current,
+        displayName: stored.displayName ?? current.displayName,
+        user: stored.user.trim().toLowerCase() === email ? "" : stored.user,
+        imapHost: stored.imap.host,
+        imapPort: String(stored.imap.port),
+        imapSecure: stored.imap.secure,
+        smtpHost: stored.smtp.host,
+        smtpPort: String(stored.smtp.port),
+        smtpSecure: stored.smtp.secure,
+      }));
+    });
     formRef.current?.scrollIntoView({ block: "center" });
     formRef.current?.querySelector<HTMLInputElement>("#mailbox-password")?.focus();
     // Once per prefill: the form is remounted for each one
@@ -484,7 +501,7 @@ function ConnectForm({ prefill }: { prefill: string | null }) {
 /** "Boîte mail": the seller's own IMAP/SMTP mailboxes, their DNS health and daily cap. Rendered only for the beta. */
 export function MailboxSettings({ mailboxes, maxCap }: { mailboxes: MailboxRow[]; maxCap: number }) {
   const t = useTranslations("settings.mailbox");
-  const [reconnect, setReconnect] = useState<{ email: string; n: number } | null>(null);
+  const [reconnect, setReconnect] = useState<{ email: string; mailboxId: string; n: number } | null>(null);
   return (
     <section id="boite" className="scroll-mt-24 space-y-3">
       <div className="space-y-1">
@@ -501,12 +518,15 @@ export function MailboxSettings({ mailboxes, maxCap }: { mailboxes: MailboxRow[]
                 key={mailbox.id}
                 mailbox={mailbox}
                 maxCap={maxCap}
-                onReconnect={(email) => setReconnect((current) => ({ email, n: (current?.n ?? 0) + 1 }))}
+                onReconnect={(target) => setReconnect((current) => ({ ...target, n: (current?.n ?? 0) + 1 }))}
               />
             ))}
           </ul>
         )}
-        <ConnectForm key={reconnect?.n ?? 0} prefill={reconnect?.email ?? null} />
+        <ConnectForm
+          key={reconnect?.n ?? 0}
+          prefill={reconnect ? { email: reconnect.email, mailboxId: reconnect.mailboxId } : null}
+        />
       </div>
     </section>
   );

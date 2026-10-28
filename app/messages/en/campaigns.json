@@ -63,7 +63,7 @@
     "QUOTA": "The provider's sending quota is reached.",
     "RATE_LIMITED": "The provider is limiting sends.",
     "REJECTED": "The provider rejected the message.",
-    "TRANSIENT": "The mail servers cannot be reached.",
+    "TRANSIENT": "The mail servers cannot be reached right now. Try again in a few minutes.",
     "CONFIG": "The mailbox configuration is invalid. Check the servers and ports.",
     "POLICY": "Too many bounces: sending was paused to protect your reputation.",
     "unknown": "The mailbox reported an error."
@@ -80,7 +80,8 @@
       "mailbox_not_active": "The mailbox is not connected. Reconnect it in settings.",
       "steps": "Some steps are incomplete.",
       "document_required": "Choose the document the Clozer link opens.",
-      "no_enrollment": "Import at least one prospect before starting."
+      "no_enrollment": "Import at least one prospect before starting.",
+      "unknown_variables": "No imported column fills {variables}. Add a fallback in the step, or import the column."
     },
     "invalidSettings": "Check the name and the language.",
     "settingsRefused": "These settings were refused. Check that the mailbox and the document are still available.",
@@ -158,7 +159,7 @@
     "test": {
       "button": "Send me a test",
       "sending": "Sending…",
-      "sent": "Test sent to {email}.",
+      "sent": "Test sent to {email}. It counts in today's sending limit of the mailbox.",
       "not_found": "This step no longer exists.",
       "no_mailbox": "The mailbox is not connected.",
       "cap": "Today's sending limit of the mailbox is reached."
@@ -227,6 +228,7 @@
       "team": "{count, plural, one {# address of your team skipped} other {# addresses of your team skipped}}",
       "elsewhere": "{count} also in another running campaign",
       "personal": "{count, plural, one {# personal address} other {# personal addresses}}",
+      "missingVariables": "{count, plural, one {# prospect lacks a variable used without fallback: they will be paused at sending} other {# prospects lack a variable used without fallback: they will be paused at sending}}",
       "rejected": "{count, plural, one {# row rejected} other {# rows rejected}}",
       "reasonNoEmail": "no address",
       "reasonInvalidEmail": "invalid address",

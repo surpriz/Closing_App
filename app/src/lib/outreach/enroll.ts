@@ -11,6 +11,8 @@ import {
   type ProspectRow,
   rowsToProspects,
 } from "./csv";
+import { templateVarsOf } from "./planner";
+import { renderTemplate } from "./render";
 import { suppressedAmong } from "./suppression";
 import { detectCountryTimezone } from "./timezone";
 
@@ -49,6 +51,7 @@ export type ImportSummary = {
   team: number;
   elsewhere: number;
   personal: number;
+  missingVariables: number; // enrolled rows lacking a variable the steps use without fallback: they will pause at send
   rejected: ImportRejection[];
   tooMany: boolean; // more rows than MAX_IMPORT_ROWS: nothing was imported
 };
@@ -112,7 +115,7 @@ export async function importProspects(input: {
 }): Promise<ImportSummary | { error: "campaign_not_found" | "empty" }> {
   const campaign = await prisma.campaign.findFirst({
     where: { id: input.campaignId, organizationId: input.organizationId, status: { not: "ARCHIVED" } },
-    select: { locale: true, createdById: true },
+    select: { locale: true, createdById: true, steps: { select: { subject: true, body: true } } },
   });
   if (!campaign || !canEditCampaign(campaign, input.actor)) return { error: "campaign_not_found" };
 
@@ -133,6 +136,7 @@ export async function importProspects(input: {
     team: 0,
     elsewhere: 0,
     personal: 0,
+    missingVariables: 0,
     rejected: [],
     tooMany: false,
   };
@@ -179,6 +183,13 @@ export async function importProspects(input: {
   summary.duplicates += prepared.prospects.length - fresh.length;
   summary.elsewhere = fresh.filter((prospect) => elsewhere.has(prospect.email)).length;
   summary.suppressed = fresh.filter((prospect) => prospect.status === "SUPPRESSED").length;
+  // Checked against the steps as they are now: editing them later (a fallback, say) changes the outcome
+  const stepsText = campaign.steps.map((step) => `${step.subject ?? ""}\n${step.body}`).join("\n");
+  summary.missingVariables = fresh.filter(
+    (prospect) =>
+      prospect.status === "QUEUED" &&
+      renderTemplate(stepsText, templateVarsOf(prospect, null)).missing.some((name) => name.toLowerCase() !== "link"),
+  ).length;
 
   if (fresh.length > 0) {
     const { count } = await prisma.campaignProspect.createMany({
@@ -207,7 +218,8 @@ export async function importProspects(input: {
 
 /**
  * Ends an enrollment and cancels what it still had in the outbox. False when it was already over.
- * A SENDING row belongs to its lease: the sender re-checks the enrollment before sending and records the truth.
+ * A SENDING row belongs to its lease and is left alone: a send already under way may still go out (the sender only
+ * re-checks the enrollment up to the moment it writes the Message-ID), and the sender records what really happened.
  */
 export async function stopEnrollment(
   id: string,

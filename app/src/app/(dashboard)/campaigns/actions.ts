@@ -84,7 +84,10 @@ export async function activateCampaignAction(id: string): Promise<ActionResult> 
   if (!idSchema.safeParse(id).success) return { error: t("invalid") };
 
   const result = await activateCampaign(organization.id, id, actorOf(workspace));
-  if (!result.ok) return { error: t(`issues.${result.issue}`) };
+  if (!result.ok) {
+    const variables = (result.variables ?? []).map((name) => `{{${name}}}`).join(", ");
+    return { error: t(`issues.${result.issue}`, { variables }) };
+  }
   refresh(id);
   return { ok: true, notice: t("activated") };
 }
