@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useActionState, useState, useTransition } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import {
@@ -168,7 +168,37 @@ function DisconnectButton({ id }: { id: string }) {
   );
 }
 
-function MailboxItem({ mailbox, maxCap }: { mailbox: MailboxRow; maxCap: number }) {
+const ERROR_CODES = ["AUTH_REVOKED", "QUOTA", "RATE_LIMITED", "REJECTED", "TRANSIENT", "CONFIG", "POLICY"] as const;
+type ErrorCode = (typeof ERROR_CODES)[number];
+
+/** `lastError` is stored as "<CODE>: <detail>": the code is translated, the detail stays as the server wrote it. */
+function parseLastError(value: string): { code: ErrorCode; detail: string } | null {
+  const match = /^([A-Z_]+):\s*([\s\S]*)$/.exec(value);
+  const code = match?.[1];
+  return code && (ERROR_CODES as readonly string[]).includes(code) ? { code: code as ErrorCode, detail: match[2].trim() } : null;
+}
+
+function LastError({ value }: { value: string }) {
+  const t = useTranslations("settings.mailbox.lastError");
+  const parsed = parseLastError(value);
+  if (!parsed) return <p className="text-small text-destructive">{value}</p>;
+  return (
+    <p className="text-small text-destructive">
+      {t(parsed.code)}
+      {parsed.detail && <span className="text-muted-foreground"> ({parsed.detail})</span>}
+    </p>
+  );
+}
+
+function MailboxItem({
+  mailbox,
+  maxCap,
+  onReconnect,
+}: {
+  mailbox: MailboxRow;
+  maxCap: number;
+  onReconnect: (email: string) => void;
+}) {
   const t = useTranslations("settings.mailbox");
   const [cap, setCap] = useState(String(mailbox.dailyCap));
   const [saving, startSaving] = useTransition();
@@ -186,11 +216,16 @@ function MailboxItem({ mailbox, maxCap }: { mailbox: MailboxRow; maxCap: number 
             {t(`status.${mailbox.status}`)}
           </Badge>
         </div>
-        <DisconnectButton id={mailbox.id} />
+        <div className="flex items-center gap-1">
+          {mailbox.status === "ERROR" && (
+            <Button variant="outline" size="sm" onClick={() => onReconnect(mailbox.email)}>
+              {t("reconnect")}
+            </Button>
+          )}
+          <DisconnectButton id={mailbox.id} />
+        </div>
       </div>
-      {mailbox.status === "ERROR" && mailbox.lastError && (
-        <p className="text-small text-destructive">{mailbox.lastError}</p>
-      )}
+      {mailbox.status === "ERROR" && mailbox.lastError && <LastError value={mailbox.lastError} />}
       <DnsLine dns={mailbox.dns} mailboxId={mailbox.id} />
       <Button
         variant="outline"
@@ -264,11 +299,13 @@ function Field({ label, htmlFor, children }: { label: string; htmlFor: string; c
   );
 }
 
-function ConnectForm() {
+/** `prefill` (a mailbox to reconnect) arrives through a remount: the password is always asked again. */
+function ConnectForm({ prefill }: { prefill: string | null }) {
   const t = useTranslations("settings.mailbox");
-  const [form, setForm] = useState(EMPTY_FORM);
+  const [form, setForm] = useState({ ...EMPTY_FORM, email: prefill ?? "" });
+  const formRef = useRef<HTMLFormElement>(null);
   const [detection, setDetection] = useState<MailboxDetection | null>(null);
-  const [detectedFor, setDetectedFor] = useState("");
+  const [detectedFor, setDetectedFor] = useState(prefill?.trim().toLowerCase() ?? "");
   const [detecting, startDetecting] = useTransition();
   const set = <K extends keyof typeof EMPTY_FORM>(key: K, value: (typeof EMPTY_FORM)[K]) =>
     setForm((current) => ({ ...current, [key]: value }));
@@ -291,6 +328,10 @@ function ConnectForm() {
     const email = form.email.trim().toLowerCase();
     if (!looksLikeEmail || email === detectedFor) return;
     setDetectedFor(email);
+    runDetection(email);
+  }
+
+  function runDetection(email: string) {
     startDetecting(async () => {
       const found = await detectMailbox(email);
       setDetection(found);
@@ -309,10 +350,20 @@ function ConnectForm() {
     });
   }
 
+  useEffect(() => {
+    if (!prefill) return;
+    runDetection(prefill.trim().toLowerCase());
+    formRef.current?.scrollIntoView({ block: "center" });
+    formRef.current?.querySelector<HTMLInputElement>("#mailbox-password")?.focus();
+    // Once per prefill: the form is remounted for each one
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const userDiffers = !!form.user.trim() && form.user.trim().toLowerCase() !== form.email.trim().toLowerCase();
   const passwordHint = detection?.hint === "app_password" ? t("appPasswordHint") : null;
 
   return (
-    <form action={formAction} className="space-y-4 border-t border-border px-5 py-4">
+    <form ref={formRef} action={formAction} className="space-y-4 border-t border-border px-5 py-4">
       <p className="text-body font-semibold">{t("connectTitle")}</p>
 
       <Field label={t("email")} htmlFor="mailbox-email">
@@ -393,6 +444,11 @@ function ConnectForm() {
             value={form.user}
             onChange={(event) => set("user", event.target.value)}
           />
+          {userDiffers && (
+            <p className="border-l-2 border-foreground bg-muted px-3 py-2 text-small">
+              {t("form.userDiffers", { email: form.email.trim().toLowerCase() })}
+            </p>
+          )}
         </Field>
 
         <Field label={t("password")} htmlFor="mailbox-password">
@@ -428,6 +484,7 @@ function ConnectForm() {
 /** "Boîte mail": the seller's own IMAP/SMTP mailboxes, their DNS health and daily cap. Rendered only for the beta. */
 export function MailboxSettings({ mailboxes, maxCap }: { mailboxes: MailboxRow[]; maxCap: number }) {
   const t = useTranslations("settings.mailbox");
+  const [reconnect, setReconnect] = useState<{ email: string; n: number } | null>(null);
   return (
     <section id="boite" className="scroll-mt-24 space-y-3">
       <div className="space-y-1">
@@ -440,11 +497,16 @@ export function MailboxSettings({ mailboxes, maxCap }: { mailboxes: MailboxRow[]
         ) : (
           <ul className="divide-y divide-border">
             {mailboxes.map((mailbox) => (
-              <MailboxItem key={mailbox.id} mailbox={mailbox} maxCap={maxCap} />
+              <MailboxItem
+                key={mailbox.id}
+                mailbox={mailbox}
+                maxCap={maxCap}
+                onReconnect={(email) => setReconnect((current) => ({ email, n: (current?.n ?? 0) + 1 }))}
+              />
             ))}
           </ul>
         )}
-        <ConnectForm />
+        <ConnectForm key={reconnect?.n ?? 0} prefill={reconnect?.email ?? null} />
       </div>
     </section>
   );

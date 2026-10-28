@@ -304,11 +304,25 @@
     "password": "Mot de passe",
     "connect": "Connecter",
     "connecting": "Connexion…",
+    "reconnect": "Reconnecter",
+    "form": {
+      "userDiffers": "Les mails partiront au nom de {email} ; vérifiez que ce compte a le droit d'envoyer pour cette adresse."
+    },
+    "lastError": {
+      "AUTH_REVOKED": "Le serveur a refusé les identifiants. Reconnectez la boîte avec un mot de passe valide.",
+      "QUOTA": "Le quota d'envoi du fournisseur est atteint.",
+      "RATE_LIMITED": "Le fournisseur limite les envois.",
+      "REJECTED": "Le fournisseur a refusé le message.",
+      "TRANSIENT": "Les serveurs de messagerie sont injoignables.",
+      "CONFIG": "La configuration de la boîte est invalide. Vérifiez les serveurs et les ports.",
+      "POLICY": "Trop de rebonds : les envois ont été mis en pause pour protéger votre réputation."
+    },
     "connected": "Boîte connectée",
     "errors": {
       "invalid": "Vérifiez les champs : email, serveurs, ports et mot de passe sont obligatoires.",
       "exists": "Cette boîte est déjà connectée dans votre espace.",
       "limit": "Vous avez atteint le nombre maximum de boîtes.",
+      "tooMany": "Trop de tentatives de connexion. Réessayez dans une heure.",
       "AUTH_REVOKED": "Le serveur a refusé ces identifiants. Vérifiez l'identifiant et le mot de passe.",
       "QUOTA": "Le fournisseur indique que le quota d'envoi est atteint. Réessayez plus tard.",
       "RATE_LIMITED": "Trop de tentatives côté fournisseur. Réessayez dans quelques minutes.",

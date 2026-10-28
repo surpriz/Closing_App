@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
@@ -17,6 +18,7 @@ import {
   type MailboxDetection,
 } from "@/lib/mailboxes/connect";
 import { requireOutreach } from "@/lib/outreach/flag";
+import { consumeLimit } from "@/lib/rate-limit";
 
 export type MailboxFormState = { ok: true } | { error: string } | null;
 
@@ -48,6 +50,7 @@ export async function detectMailbox(email: string): Promise<MailboxDetection | n
 export async function connectMailbox(_prev: MailboxFormState, formData: FormData): Promise<MailboxFormState> {
   const { user, organization } = await requireOutreach();
   const t = await getTranslations("settings.mailbox.errors");
+  if (!(await consumeLimit("mailboxConnect", await headers(), user.id))) return { error: t("tooMany") };
   const parsed = connectSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: t("invalid") };
   const v = parsed.data;

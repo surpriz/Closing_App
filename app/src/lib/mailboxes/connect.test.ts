@@ -62,6 +62,25 @@ describe("connectImapMailbox", () => {
     expect(db.upsert).not.toHaveBeenCalled();
   });
 
+  it("lets the owner reconnect a mailbox in ERROR: verified again, ACTIVE, ramp kept", async () => {
+    db.findUnique.mockResolvedValue({ id: "mb1", status: "ERROR", userId: "u1", disconnectedAt: null });
+    db.count.mockResolvedValue(3);
+    const res = await connectImapMailbox(input, { resolver, now });
+    expect(res).toMatchObject({ ok: true, mailboxId: "mb1" });
+    expect(verify).toHaveBeenCalledTimes(1);
+    const { update } = db.upsert.mock.calls[0][0];
+    expect(update).toMatchObject({ status: "ACTIVE", lastError: null, syncErrorCount: 0, userId: "u1" });
+    expect(update).not.toHaveProperty("rampStartedAt");
+  });
+
+  it("keeps refusing a mailbox in ERROR that belongs to another member", async () => {
+    db.findUnique.mockResolvedValue({ id: "mb1", status: "ERROR", userId: "u2", disconnectedAt: null });
+    const res = await connectImapMailbox(input, { resolver, now });
+    expect(res).toMatchObject({ ok: false, code: "exists" });
+    expect(verify).not.toHaveBeenCalled();
+    expect(db.upsert).not.toHaveBeenCalled();
+  });
+
   it("writes nothing when verification fails", async () => {
     verify.mockResolvedValue({ ok: false, code: "AUTH_REVOKED", message: "bad login" });
     const res = await connectImapMailbox(input, { resolver, now });

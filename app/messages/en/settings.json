@@ -304,11 +304,25 @@
     "password": "Password",
     "connect": "Connect",
     "connecting": "Connecting…",
+    "reconnect": "Reconnect",
+    "form": {
+      "userDiffers": "Emails will go out as {email}. Make sure this account is allowed to send for that address."
+    },
+    "lastError": {
+      "AUTH_REVOKED": "The server refused the credentials. Reconnect the mailbox with a valid password.",
+      "QUOTA": "The provider's sending quota is reached.",
+      "RATE_LIMITED": "The provider is limiting sending.",
+      "REJECTED": "The provider rejected the message.",
+      "TRANSIENT": "The mail servers could not be reached.",
+      "CONFIG": "The mailbox setup is invalid. Check the servers and ports.",
+      "POLICY": "Too many bounces: sending was paused to protect your reputation."
+    },
     "connected": "Mailbox connected",
     "errors": {
       "invalid": "Check the fields: email, servers, ports and password are required.",
       "exists": "This mailbox is already connected in your workspace.",
       "limit": "You reached the maximum number of mailboxes.",
+      "tooMany": "Too many connection attempts. Try again in an hour.",
       "AUTH_REVOKED": "The server refused these credentials. Check the username and password.",
       "QUOTA": "The provider says the sending quota is reached. Try again later.",
       "RATE_LIMITED": "Too many attempts on the provider side. Try again in a few minutes.",

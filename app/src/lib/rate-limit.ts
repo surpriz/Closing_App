@@ -25,6 +25,8 @@ export const LIMITS = {
   pairCreate: { max: 20, windowSeconds: 10 * 60 },
   // Per address, report only: sign-in links asked for one inbox from many IPs
   magicLinkEmail: { max: 10, windowSeconds: 60 * 60 },
+  // Per seller: each attempt opens IMAP and SMTP sessions to a host the seller typed
+  mailboxConnect: { max: 5, windowSeconds: 60 * 60 },
 } satisfies Record<string, Limit>;
 
 export type LimitScope = keyof typeof LIMITS;

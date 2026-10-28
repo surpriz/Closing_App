@@ -129,13 +129,17 @@ export async function connectImapMailbox(
     where: { organizationId_email: { organizationId: input.organizationId, email } },
     select: { id: true, status: true, disconnectedAt: true, userId: true },
   });
-  if (existing && (LIVE as readonly string[]).includes(existing.status)) {
+  // The owner of a broken mailbox reconnects it with a new password; it already counts in their live mailboxes
+  const reconnecting = existing?.status === "ERROR" && existing.userId === input.userId;
+  if (existing && (LIVE as readonly string[]).includes(existing.status) && !reconnecting) {
     return { ok: false, code: "exists", message: "mailbox already connected" };
   }
-  const live = await prisma.mailbox.count({
-    where: { organizationId: input.organizationId, userId: input.userId, status: { in: [...LIVE] } },
-  });
-  if (live >= MAX_MAILBOXES_PER_USER) return { ok: false, code: "limit", message: "too many mailboxes" };
+  if (!reconnecting) {
+    const live = await prisma.mailbox.count({
+      where: { organizationId: input.organizationId, userId: input.userId, status: { in: [...LIVE] } },
+    });
+    if (live >= MAX_MAILBOXES_PER_USER) return { ok: false, code: "limit", message: "too many mailboxes" };
+  }
 
   const user = input.user?.trim() || email;
   const creds: ImapCredentials = {
