@@ -553,7 +553,8 @@
     "replySeen": "Réponse de {from} vue dans votre boîte mail",
     "textCopied": "texte copié (p. {pages})",
     "printed": "imprimé",
-    "testReader": "Test (hors statistiques)"
+    "testReader": "Test (hors statistiques)",
+    "devices": "{count} navigateurs"
   },
   "heat": {
     "notRead": "Pas encore lu"

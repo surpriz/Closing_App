@@ -19,7 +19,7 @@ export async function getReadingAnalytics(scope: Scope) {
       _sum: { totalDurationMs: true },
       _max: { lastSeenAt: true },
     }),
-    prisma.documentView.groupBy({ by: ["visitorId"], where: viewWhere }),
+    prisma.documentView.groupBy({ by: ["visitorId", "email"], where: viewWhere }),
     prisma.pageView.groupBy({
       by: ["pageNumber"],
       where: { view: viewWhere },
@@ -47,7 +47,8 @@ export async function getReadingAnalytics(scope: Scope) {
 
   return {
     viewCount: totals._count._all,
-    uniqueVisitors: visitors.length,
+    // One person per address, whatever the browsers; anonymous readers per browser
+    uniqueVisitors: new Set(visitors.map((v) => v.email?.toLowerCase() ?? `visitor:${v.visitorId}`)).size,
     totalDurationMs: totals._sum.totalDurationMs ?? 0,
     lastActivityAt: totals._max.lastSeenAt,
     pages: pages

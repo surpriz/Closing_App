@@ -55,7 +55,7 @@ import { freshEngagementScore } from "@/lib/closing/engagement/refresh-score";
 import { getLinkLiveState } from "@/lib/closing/live";
 import { getSellerPrefs } from "@/lib/closing/notify/preferences";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
-import { rankSharedReaders } from "@/lib/closing/shared/hot-readers";
+import { groupReadersByAddress, rankSharedReaders } from "@/lib/closing/shared/hot-readers";
 import { readingByLink } from "@/lib/closing/shared/reading-time";
 import { languageName } from "@/lib/closing/translation/translation";
 import { getLanguageModel } from "@/lib/closing/ai/provider";
@@ -883,13 +883,17 @@ async function loadSharedReaders(
     documentId,
   );
   const ranked = rankSharedReaders(
-    links.map((reader) => ({
-      ...reader,
-      linkId: reader.id,
-      readingMs: reading.get(reader.id)?.readingMs ?? 0,
-      pricingMs: reading.get(reader.id)?.pricingMs ?? 0,
-      lastActivityAt: reader.lastActivityAt ?? reader.createdAt,
-    })),
+    // One row per person, whatever the browsers they read from
+    groupReadersByAddress(
+      links.map((reader) => ({
+        ...reader,
+        linkId: reader.id,
+        email: reader.prospects[0]?.email ?? null,
+        readingMs: reading.get(reader.id)?.readingMs ?? 0,
+        pricingMs: reading.get(reader.id)?.pricingMs ?? 0,
+        lastActivityAt: reader.lastActivityAt ?? reader.createdAt,
+      })),
+    ),
     thresholdSec,
   );
   return ranked.map((reader) => {
@@ -907,6 +911,7 @@ async function loadSharedReaders(
       detail: [
         prospect?.name ? prospect.email : null,
         prospect?.company,
+        reader.links > 1 ? t("devices", { count: reader.links }) : null,
         t("readAgo", {
           when: formatRelative(reader.lastActivityAt, locale, now),
         }),

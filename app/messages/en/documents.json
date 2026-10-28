@@ -164,7 +164,8 @@
     "followupsIntro": "Follow-ups for every prospect of this document. Clozer writes one when it thinks the timing is right; you review it here or on the prospect's page, then approve it.",
     "alertsTitle": "Alerts",
     "pendingTitle": "Your link is ready, it hasn't gone out yet.",
-    "pendingDescription": "Send it to your prospect: they'll show up here as soon as they open it."
+    "pendingDescription": "Send it to your prospect: they'll show up here as soon as they open it.",
+    "browsers": "{count} browsers"
   },
   "content": {
     "videoRead": "What you say in each part of the video, read by AI from the transcript. Tags tell Clozer when you talk pricing, timeline… Fix them if needed.",
