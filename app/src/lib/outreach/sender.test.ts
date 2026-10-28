@@ -249,11 +249,12 @@ describe("sendDueMessages, success", () => {
   it("answers in the thread of the previous mail", async () => {
     const thread = { ...enrollment, currentStep: 1, threadSubject: "Hello Paul", firstMessageId: "<first@acme.io>", providerThreadId: "t1" };
     messageFindUnique.mockResolvedValue(message({ stepId: "s2", dedupeKey: "cold:e1:s2", enrollment: thread }));
-    messageFindFirst.mockResolvedValue({ messageId: "<first@acme.io>", sentAt: new Date(now.getTime() - 3 * DAY) });
+    messageFindFirst.mockResolvedValue({ messageId: "<first@acme.io>", providerMessageId: "prov-1", sentAt: new Date(now.getTime() - 3 * DAY) });
 
     await sendDueMessages(now, {}, deps);
 
     expect(send.mock.calls[0][0]).toMatchObject({
+      replyToProviderId: "prov-1",
       subject: "Re: Hello Paul",
       inReplyTo: "<first@acme.io>",
       references: ["<first@acme.io>"],

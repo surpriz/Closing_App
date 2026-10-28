@@ -363,7 +363,7 @@ export async function sendCampaignFollowup(
     const last = await prisma.campaignMessage.findFirst({
       where: { enrollmentId: enrollment.id, status: "SENT" },
       orderBy: { sentAt: "desc" },
-      select: { messageId: true },
+      select: { messageId: true, providerMessageId: true },
     });
     const share = shareLink(getPublicAppUrl(), { slug: followup.link.slug, document: followup.link.document, company: followup.prospect.company });
     const footer = unsubscribeFooter(unsubscribePageUrl({ kind: "enrollment", id: enrollment.id }), enrollment.locale);
@@ -386,6 +386,7 @@ export async function sendCampaignFollowup(
         messageId: outgoingId,
         inReplyTo: sameThread ? (last?.messageId ?? null) : null,
         references: sameThread ? uniq([enrollment.firstMessageId, last?.messageId]) : [],
+        replyToProviderId: sameThread ? (last?.providerMessageId ?? null) : null,
         headers: connector.capabilities.listUnsubscribe
           ? {
               "List-Unsubscribe": `<${unsubscribeOneClickUrl({ kind: "enrollment", id: enrollment.id })}>`,

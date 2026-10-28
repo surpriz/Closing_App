@@ -6,7 +6,10 @@ import { prisma } from "@/lib/db";
 
 import { decodeCredentials } from "./credentials";
 import { MailboxError } from "./errors";
+import { nylasConnector } from "./gmail/nylas";
+import { unipileConnector } from "./gmail/unipile";
 import { imapConnector } from "./imap";
+import { graphConnector } from "./microsoft/graph";
 import type { MailboxConnector } from "./types";
 
 export type ConnectorDeps = {
@@ -25,20 +28,28 @@ export function defaultPersist(mailboxId: string): (encoded: string) => Promise<
   };
 }
 
-// `deps` is for the OAuth connectors added next; the IMAP one has nothing to rotate
 export function connectorFor(mailbox: ConnectorMailbox, deps: ConnectorDeps = {}): MailboxConnector {
-  void deps;
   switch (mailbox.connector) {
     case "SMTP": {
       const creds = decodeCredentials(mailbox.credentials);
       if (creds.kind !== "imap") throw new MailboxError("CONFIG", "credentials do not match the SMTP connector");
       return imapConnector(mailbox, creds);
     }
-    case "GRAPH":
-    case "UNIPILE":
-    case "NYLAS":
-      // Arrives with lot 4
-      throw new MailboxError("CONFIG", "connector not available yet");
+    case "GRAPH": {
+      const creds = decodeCredentials(mailbox.credentials);
+      if (creds.kind !== "microsoft") throw new MailboxError("CONFIG", "credentials do not match the Graph connector");
+      return graphConnector(mailbox, creds, { ...deps, persistCredentials: deps.persistCredentials ?? defaultPersist(mailbox.id) });
+    }
+    case "UNIPILE": {
+      const creds = decodeCredentials(mailbox.credentials);
+      if (creds.kind !== "unipile") throw new MailboxError("CONFIG", "credentials do not match the Unipile connector");
+      return unipileConnector(mailbox, creds, deps);
+    }
+    case "NYLAS": {
+      const creds = decodeCredentials(mailbox.credentials);
+      if (creds.kind !== "nylas") throw new MailboxError("CONFIG", "credentials do not match the Nylas connector");
+      return nylasConnector(mailbox, creds, deps);
+    }
   }
 }
 

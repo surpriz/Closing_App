@@ -7,6 +7,7 @@ import { organizationWhere, type OutreachScope } from "@/lib/outreach/scope";
 import { isMailboxError, MailboxError } from "../errors";
 import { connectorFor } from "../index";
 import { notifyMailboxOwner } from "../notify-owner";
+import { maintainSubscriptions } from "../subscriptions";
 import type { MailboxConnector } from "../types";
 
 import { handleInbound, type InboundEffect } from "./handle";
@@ -20,6 +21,7 @@ export const SYNC_LEASE_MS = 5 * 60_000;
 export const SYNC_BUDGET_PER_MAILBOX_MS = 25_000;
 export const MAX_SYNC_BACKOFF_MS = 2 * HOUR_MS;
 export const MAX_MAILBOXES_PER_TICK = 20;
+export const SUBSCRIPTIONS_BUDGET_MS = 10_000;
 export const PAGE_LIMIT = 50;
 /** Below this a connect + page cannot finish: the mailbox waits for the next tick instead of failing. */
 export const MIN_SYNC_BUDGET_MS = 5_000;
@@ -160,6 +162,12 @@ export async function syncMailboxesDue(
   opts: { budgetMs: number } & Pick<OutreachScope, "organizationId" | "organizationIds"> & SyncDeps,
 ): Promise<{ synced: number; errors: number }> {
   const deadline = Date.now() + opts.budgetMs;
+  // Push subscriptions first, on their own small budget: a slow Graph never eats the sync time
+  try {
+    await maintainSubscriptions(now, { ...opts, budgetMs: Math.min(SUBSCRIPTIONS_BUDGET_MS, opts.budgetMs) });
+  } catch (error) {
+    console.error("[mailbox-sync] subscriptions", error);
+  }
   const due = await prisma.mailbox.findMany({
     where: {
       status: "ACTIVE",

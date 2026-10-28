@@ -1,6 +1,7 @@
 import { captureException } from "@sentry/nextjs";
 
 import { syncMailboxesDue } from "@/lib/mailboxes/inbound/sync";
+import { purgeOauthStates } from "@/lib/mailboxes/oauth/state";
 
 import { finishIdleCampaigns } from "./campaigns";
 import { outreachOrgIds } from "./flag";
@@ -39,6 +40,7 @@ export async function runOutreachTick(
   const stale = await step("stale", () => expireStaleLeases(now, base));
   const budgetMs = budgetLeft(scope.syncBudgetMs ?? DEFAULT_SYNC_BUDGET_MS, scope.deadline);
   const synced = await step("sync", () => syncMailboxesDue(now, { budgetMs, ...base }));
+  await step("purge-oauth", () => purgeOauthStates(now));
   const planned = await step("plan", () => planEnrollments(now, base));
   const sent = await step("send", () => sendDueMessages(now, { ...base, ...(scope.deadline ? { deadline: scope.deadline } : {}) }));
   const read = await step("read", () => evaluateReadingSignals(now, { ...base, ...(scope.deadline ? { deadline: scope.deadline } : {}) }));

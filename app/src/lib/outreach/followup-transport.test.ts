@@ -101,7 +101,7 @@ beforeEach(() => {
   db.followup.updateMany.mockImplementation(track("claim"));
   db.followup.update.mockResolvedValue({});
   db.campaignMessage.create.mockImplementation(track("mirror", { id: "m1" }));
-  db.campaignMessage.findFirst.mockResolvedValue({ messageId: "<prev@x>" });
+  db.campaignMessage.findFirst.mockResolvedValue({ messageId: "<prev@x>", providerMessageId: "prov-prev" });
   db.campaignMessage.updateMany.mockResolvedValue({ count: 1 });
   db.campaignProspect.updateMany.mockImplementation(track("resume"));
   // No step left by default: the resume alone
@@ -140,7 +140,10 @@ describe("sendCampaignFollowup", () => {
     expect(calls).toEqual(["mirror", "claim", "reserve", "send", "resume"]);
     expect(db.followup.updateMany.mock.calls[0][0].data).toMatchObject({ status: "SENT", sentVia: "MAILBOX" });
     const sent = connector.send.mock.calls[0][0] as Record<string, unknown>;
-    expect(sent).toMatchObject({ subject: "Re: Devis cuisine", inReplyTo: "<prev@x>", references: ["<first@x>", "<prev@x>"] });
+    expect(sent).toMatchObject({ subject: "Re: Devis cuisine", inReplyTo: "<prev@x>",
+      references: ["<first@x>", "<prev@x>"],
+      replyToProviderId: "prov-prev",
+    });
     expect(String(sent.text)).toContain("comme promis");
     expect(sent.headers).toBeTruthy();
     expect(db.campaignMessage.create.mock.calls[0][0].data).toMatchObject({
