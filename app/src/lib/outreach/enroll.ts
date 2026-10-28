@@ -211,16 +211,17 @@ export async function stopEnrollment(
   reason: string | null,
   now: Date,
 ): Promise<boolean> {
-  const { count } = await prisma.campaignProspect.updateMany({
-    where: { id, status: { in: [...LIVE_ENROLLMENT] } },
-    data: { status: to, finishedAt: now, pausedReason: reason, ...(to === "REPLIED" ? { repliedAt: now } : {}) },
-  });
-  if (count === 0) return false;
-  await prisma.campaignMessage.updateMany({
-    where: { enrollmentId: id, status: { in: [...PENDING_MESSAGE] } },
-    data: { status: "CANCELLED" },
-  });
-  return true;
+  const [enrollment] = await prisma.$transaction([
+    prisma.campaignProspect.updateMany({
+      where: { id, status: { in: [...LIVE_ENROLLMENT] } },
+      data: { status: to, finishedAt: now, pausedReason: reason, ...(to === "REPLIED" ? { repliedAt: now } : {}) },
+    }),
+    prisma.campaignMessage.updateMany({
+      where: { enrollmentId: id, status: { in: [...PENDING_MESSAGE] } },
+      data: { status: "CANCELLED" },
+    }),
+  ]);
+  return enrollment.count > 0;
 }
 
 export async function pauseEnrollment(organizationId: string, id: string, now: Date): Promise<boolean> {

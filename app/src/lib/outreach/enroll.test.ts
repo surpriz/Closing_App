@@ -7,6 +7,7 @@ const db = {
   member: { findMany: vi.fn() },
   campaignProspect: { findMany: vi.fn(), createMany: vi.fn(), updateMany: vi.fn(), findFirst: vi.fn() },
   campaignMessage: { updateMany: vi.fn() },
+  $transaction: vi.fn(async (ops: Promise<unknown>[]) => Promise.all(ops)),
 };
 vi.mock("@/lib/db", () => ({ prisma: db }));
 const suppressedAmong = vi.fn();
@@ -128,6 +129,7 @@ describe("stopEnrollment", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     db.campaignProspect.updateMany.mockResolvedValue({ count: 1 });
+    db.campaignMessage.updateMany.mockResolvedValue({ count: 0 });
   });
 
   it("only touches live enrollments and cancels their pending messages", async () => {
@@ -145,7 +147,6 @@ describe("stopEnrollment", () => {
   it("leaves a finished enrollment alone", async () => {
     db.campaignProspect.updateMany.mockResolvedValue({ count: 0 });
     expect(await stopEnrollment("e1", "BOUNCED", null, NOW)).toBe(false);
-    expect(db.campaignMessage.updateMany).not.toHaveBeenCalled();
   });
 });
 
@@ -155,5 +156,15 @@ describe("removeEnrollment", () => {
     db.campaignProspect.findFirst.mockResolvedValue(null);
     expect(await removeEnrollment("org", "e1", NOW)).toBe(false);
     expect(db.campaignProspect.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("stops the enrollment as the seller", async () => {
+    vi.clearAllMocks();
+    db.campaignProspect.findFirst.mockResolvedValue({ id: "e1" });
+    db.campaignProspect.updateMany.mockResolvedValue({ count: 1 });
+    db.campaignMessage.updateMany.mockResolvedValue({ count: 1 });
+    expect(await removeEnrollment("org", "e1", NOW)).toBe(true);
+    expect(db.campaignProspect.findFirst.mock.calls[0][0].where).toEqual({ id: "e1", organizationId: "org" });
+    expect(db.campaignProspect.updateMany.mock.calls[0][0].data).toMatchObject({ status: "STOPPED", pausedReason: "seller" });
   });
 });

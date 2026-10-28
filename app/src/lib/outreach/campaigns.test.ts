@@ -3,15 +3,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const db = {
   campaign: { create: vi.fn(), findFirst: vi.fn(), findMany: vi.fn(), updateMany: vi.fn() },
   campaignStep: { upsert: vi.fn((arg: unknown) => ({ upsert: arg })), deleteMany: vi.fn((arg: unknown) => ({ deleteMany: arg })) },
-  campaignProspect: { findFirst: vi.fn(), updateMany: vi.fn((arg: unknown) => ({ pros: arg })) },
-  campaignMessage: { updateMany: vi.fn((arg: unknown) => ({ msg: arg })) },
+  campaignProspect: { findFirst: vi.fn(), updateMany: vi.fn(async () => ({ count: 1 })) },
+  campaignMessage: { updateMany: vi.fn(async () => ({ count: 1 })) },
   mailbox: { findFirst: vi.fn() },
   document: { findFirst: vi.fn() },
-  $transaction: vi.fn(async (ops: unknown[]) => ops),
+  $transaction: vi.fn(async (ops: Promise<unknown>[]) => Promise.all(ops)),
 };
 vi.mock("@/lib/db", () => ({ prisma: db }));
 
-const { activateCampaign, archiveCampaign, finishIdleCampaigns, saveSteps, updateCampaign } = await import("./campaigns");
+const { activateCampaign, archiveCampaign, createCampaign, finishIdleCampaigns, pauseCampaignsOfMailbox, saveSteps, updateCampaign } = await import("./campaigns");
 
 const NOW = new Date("2026-11-03T09:00:00Z");
 const goodStep = { order: 1, delayDays: 0, subject: "Hi", newThread: false, body: "Hello", carriesLink: false };
@@ -21,7 +21,7 @@ function campaign(over: Record<string, unknown> = {}) {
     startedAt: null,
     documentId: null,
     linkOnReply: false,
-    mailbox: { status: "ACTIVE" },
+    mailbox: { status: "ACTIVE", organizationId: "org" },
     steps: [goodStep],
     ...over,
   };
@@ -41,7 +41,7 @@ describe("activateCampaign", () => {
   it("needs a mailbox, and an ACTIVE one", async () => {
     db.campaign.findFirst.mockResolvedValueOnce(campaign({ mailbox: null }));
     expect(await activateCampaign("org", "c1", NOW)).toEqual({ ok: false, issue: "no_mailbox" });
-    db.campaign.findFirst.mockResolvedValueOnce(campaign({ mailbox: { status: "ERROR" } }));
+    db.campaign.findFirst.mockResolvedValueOnce(campaign({ mailbox: { status: "ERROR", organizationId: "org" } }));
     expect(await activateCampaign("org", "c1", NOW)).toEqual({ ok: false, issue: "mailbox_not_active" });
   });
 
@@ -63,6 +63,19 @@ describe("activateCampaign", () => {
     expect(await activateCampaign("org", "c1", NOW)).toEqual({ ok: false, issue: "document_required" });
   });
 
+  it("refuses a mailbox from another workspace", async () => {
+    db.campaign.findFirst.mockResolvedValue(campaign({ mailbox: { status: "ACTIVE", organizationId: "other" } }));
+    expect(await activateCampaign("org", "c1", NOW)).toEqual({ ok: false, issue: "no_mailbox" });
+  });
+
+  it("restarts a DONE campaign and clears its finish date", async () => {
+    db.campaign.findFirst.mockResolvedValue(campaign({ startedAt: NOW }));
+    db.campaignProspect.findFirst.mockResolvedValue({ id: "e1" });
+    expect(await activateCampaign("org", "c1", NOW)).toEqual({ ok: true });
+    expect(db.campaign.findFirst.mock.calls[0][0].where.status).toEqual({ in: ["DRAFT", "PAUSED", "DONE"] });
+    expect(db.campaign.updateMany.mock.calls[0][0].data).toMatchObject({ status: "ACTIVE", finishedAt: null });
+  });
+
   it("needs someone to write to", async () => {
     db.campaign.findFirst.mockResolvedValue(campaign());
     db.campaignProspect.findFirst.mockResolvedValue(null);
@@ -79,8 +92,8 @@ describe("activateCampaign", () => {
     db.campaignProspect.findFirst.mockResolvedValue({ id: "e1" });
     expect(await activateCampaign("org", "c1", NOW)).toEqual({ ok: true });
     expect(db.campaign.updateMany).toHaveBeenCalledWith({
-      where: { id: "c1", organizationId: "org", status: { in: ["DRAFT", "PAUSED"] } },
-      data: { status: "ACTIVE", startedAt: started, pausedAt: null },
+      where: { id: "c1", organizationId: "org", status: { in: ["DRAFT", "PAUSED", "DONE"] } },
+      data: { status: "ACTIVE", startedAt: started, pausedAt: null, finishedAt: null },
     });
   });
 });
@@ -93,42 +106,72 @@ describe("archiveCampaign", () => {
       data: { status: "ARCHIVED", archivedAt: NOW },
     });
     expect(db.campaignMessage.updateMany).toHaveBeenCalledWith({
-      where: { campaignId: "c1", status: { in: ["SCHEDULED", "SENDING"] } },
+      where: { campaignId: "c1", campaign: { organizationId: "org" }, status: { in: ["SCHEDULED", "SENDING"] } },
       data: { status: "CANCELLED" },
     });
     expect(db.campaignProspect.updateMany).toHaveBeenCalledWith({
-      where: { campaignId: "c1", status: { in: ["QUEUED", "ACTIVE", "PAUSED"] } },
+      where: { campaignId: "c1", organizationId: "org", status: { in: ["QUEUED", "ACTIVE", "PAUSED"] } },
       data: { status: "STOPPED", finishedAt: NOW, pausedReason: "archived" },
     });
   });
 
-  it("does nothing on a campaign already archived", async () => {
+  it("flips the status last, in the same transaction, so a failure can be retried", async () => {
+    const order: string[] = [];
+    db.campaignMessage.updateMany.mockImplementationOnce(async () => (order.push("messages"), { count: 1 }));
+    db.campaignProspect.updateMany.mockImplementationOnce(async () => (order.push("enrollments"), { count: 1 }));
+    db.campaign.updateMany.mockImplementationOnce(async () => (order.push("status"), { count: 1 }));
+    await archiveCampaign("org", "c1", NOW);
+    expect(db.$transaction).toHaveBeenCalledTimes(1);
+    expect(order).toEqual(["messages", "enrollments", "status"]);
+  });
+
+  it("reports false on a campaign already archived", async () => {
     db.campaign.updateMany.mockResolvedValue({ count: 0 });
     expect(await archiveCampaign("org", "c1", NOW)).toBe(false);
-    expect(db.campaignMessage.updateMany).not.toHaveBeenCalled();
   });
 });
 
 describe("finishIdleCampaigns", () => {
-  it("finishes the ACTIVE campaigns nobody is in anymore", async () => {
-    db.campaign.findMany.mockResolvedValue([{ id: "c1" }, { id: "c2" }]);
+  it("finishes ACTIVE campaigns nobody is in anymore, rechecking the conditions in the update", async () => {
     expect(await finishIdleCampaigns(NOW, { organizationId: "org" })).toBe(1);
-    expect(db.campaign.findMany.mock.calls[0][0].where).toEqual({
-      status: "ACTIVE",
-      organizationId: "org",
-      enrollments: { some: {}, none: { status: { in: ["QUEUED", "ACTIVE", "PAUSED"] } } },
-      messages: { none: { status: { in: ["SCHEDULED", "SENDING"] } } },
-    });
     expect(db.campaign.updateMany).toHaveBeenCalledWith({
-      where: { id: { in: ["c1", "c2"] }, status: "ACTIVE" },
+      where: {
+        status: "ACTIVE",
+        organizationId: "org",
+        enrollments: { some: {}, none: { status: { in: ["QUEUED", "ACTIVE", "PAUSED"] } } },
+        messages: { none: { status: { in: ["SCHEDULED", "SENDING"] } } },
+      },
       data: { status: "DONE", finishedAt: NOW },
     });
   });
+});
 
-  it("skips the update when nothing is idle", async () => {
-    db.campaign.findMany.mockResolvedValue([]);
-    expect(await finishIdleCampaigns(NOW)).toBe(0);
-    expect(db.campaign.updateMany).not.toHaveBeenCalled();
+describe("pauseCampaignsOfMailbox", () => {
+  it("pauses the running campaigns of the mailbox", async () => {
+    db.campaign.updateMany.mockResolvedValue({ count: 2 });
+    expect(await pauseCampaignsOfMailbox("m1", NOW)).toBe(2);
+    expect(db.campaign.updateMany).toHaveBeenCalledWith({
+      where: { mailboxId: "m1", status: "ACTIVE" },
+      data: { status: "PAUSED", pausedAt: NOW },
+    });
+  });
+});
+
+describe("createCampaign", () => {
+  const input = { organizationId: "org", createdById: "u1", name: " Q4 ", locale: "en", mailboxId: "m1", now: NOW };
+  beforeEach(() => db.campaign.create.mockResolvedValue({ id: "c1" }));
+
+  it("binds an ACTIVE mailbox of the workspace", async () => {
+    db.mailbox.findFirst.mockResolvedValue({ id: "m1" });
+    expect(await createCampaign(input)).toEqual({ id: "c1" });
+    expect(db.mailbox.findFirst.mock.calls[0][0].where).toEqual({ id: "m1", organizationId: "org", status: "ACTIVE" });
+    expect(db.campaign.create.mock.calls[0][0].data).toMatchObject({ mailboxId: "m1", name: "Q4", locale: "en" });
+  });
+
+  it("drops a mailbox that is not the workspace's and falls back on the first locale", async () => {
+    db.mailbox.findFirst.mockResolvedValue(null);
+    await createCampaign({ ...input, locale: "de" });
+    expect(db.campaign.create.mock.calls[0][0].data).toMatchObject({ mailboxId: null, locale: "fr" });
   });
 });
 
@@ -160,6 +203,12 @@ describe("saveSteps", () => {
   it("writes nothing when the sequence is invalid", async () => {
     const result = await saveSteps("org", "c1", []);
     expect(result).toEqual({ ok: false, issues: [{ code: "no_steps" }] });
+    expect(db.$transaction).not.toHaveBeenCalled();
+  });
+
+  it("reports a missing campaign without writing", async () => {
+    db.campaign.findFirst.mockResolvedValue(null);
+    expect(await saveSteps("org", "nope", [goodStep])).toEqual({ ok: false, issues: [] });
     expect(db.$transaction).not.toHaveBeenCalled();
   });
 

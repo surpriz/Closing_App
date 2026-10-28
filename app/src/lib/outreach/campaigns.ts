@@ -5,6 +5,8 @@ import { linkStep, type StepInput, type StepIssue, validateSteps } from "./steps
 export const CAMPAIGN_LOCALES = ["fr", "en"] as const;
 
 const LIVE_ENROLLMENT = ["QUEUED", "ACTIVE", "PAUSED"] as const;
+// DONE too: people can be imported into a finished campaign, which then starts again
+const RESTARTABLE = ["DRAFT", "PAUSED", "DONE"] as const;
 const PENDING_MESSAGE = ["SCHEDULED", "SENDING"] as const;
 
 export async function createCampaign(input: {
@@ -15,13 +17,22 @@ export async function createCampaign(input: {
   mailboxId: string | null;
   now?: Date;
 }): Promise<{ id: string }> {
+  // A mailbox of another workspace, or one that is not ACTIVE, is dropped: the UI then shows "no mailbox"
+  const mailbox = input.mailboxId
+    ? await prisma.mailbox.findFirst({
+        where: { id: input.mailboxId, organizationId: input.organizationId, status: "ACTIVE" },
+        select: { id: true },
+      })
+    : null;
+  // An unsupported locale falls back to the first supported one rather than failing the creation
+  const locale = (CAMPAIGN_LOCALES as readonly string[]).includes(input.locale) ? input.locale : CAMPAIGN_LOCALES[0];
   const campaign = await prisma.campaign.create({
     data: {
       organizationId: input.organizationId,
       createdById: input.createdById,
       name: input.name.trim(),
-      locale: input.locale,
-      mailboxId: input.mailboxId,
+      locale,
+      mailboxId: mailbox?.id ?? null,
       status: "DRAFT",
       steps: { create: [{ order: 1, delayDays: 0, subject: "", body: "", newThread: false, carriesLink: false }] },
     },
@@ -109,19 +120,19 @@ export async function saveSteps(
 
 export type ActivationIssue = "not_found" | "no_mailbox" | "mailbox_not_active" | "steps" | "document_required" | "no_enrollment";
 
-/** DRAFT or PAUSED to ACTIVE, once the campaign can really send. */
+/** DRAFT, PAUSED or DONE to ACTIVE, once the campaign can really send. */
 export async function activateCampaign(
   organizationId: string,
   id: string,
   now: Date = new Date(),
 ): Promise<{ ok: true } | { ok: false; issue: ActivationIssue; steps?: StepIssue[] }> {
   const campaign = await prisma.campaign.findFirst({
-    where: { id, organizationId, status: { in: ["DRAFT", "PAUSED"] } },
+    where: { id, organizationId, status: { in: [...RESTARTABLE] } },
     select: {
       startedAt: true,
       documentId: true,
       linkOnReply: true,
-      mailbox: { select: { status: true } },
+      mailbox: { select: { status: true, organizationId: true } },
       steps: {
         orderBy: { order: "asc" },
         select: { order: true, delayDays: true, subject: true, newThread: true, body: true, carriesLink: true },
@@ -129,7 +140,7 @@ export async function activateCampaign(
     },
   });
   if (!campaign) return { ok: false, issue: "not_found" };
-  if (!campaign.mailbox) return { ok: false, issue: "no_mailbox" };
+  if (!campaign.mailbox || campaign.mailbox.organizationId !== organizationId) return { ok: false, issue: "no_mailbox" };
   if (campaign.mailbox.status !== "ACTIVE") return { ok: false, issue: "mailbox_not_active" };
   const stepIssues = validateSteps(campaign.steps);
   if (stepIssues.length > 0) return { ok: false, issue: "steps", steps: stepIssues };
@@ -143,8 +154,8 @@ export async function activateCampaign(
   if (!enrolled) return { ok: false, issue: "no_enrollment" };
 
   const { count } = await prisma.campaign.updateMany({
-    where: { id, organizationId, status: { in: ["DRAFT", "PAUSED"] } },
-    data: { status: "ACTIVE", startedAt: campaign.startedAt ?? now, pausedAt: null },
+    where: { id, organizationId, status: { in: [...RESTARTABLE] } },
+    data: { status: "ACTIVE", startedAt: campaign.startedAt ?? now, pausedAt: null, finishedAt: null },
   });
   return count > 0 ? { ok: true } : { ok: false, issue: "not_found" };
 }
@@ -157,40 +168,34 @@ export async function pauseCampaign(organizationId: string, id: string, now: Dat
   return count > 0;
 }
 
-/** Cancels what has not left yet and stops everyone still in the sequence. */
+/** Cancels what has not left yet and stops everyone still in the sequence. Status flips last: a failed run can be retried. */
 export async function archiveCampaign(organizationId: string, id: string, now: Date = new Date()): Promise<boolean> {
-  const { count } = await prisma.campaign.updateMany({
-    where: { id, organizationId, status: { not: "ARCHIVED" } },
-    data: { status: "ARCHIVED", archivedAt: now },
-  });
-  if (count === 0) return false;
-  await prisma.$transaction([
+  const results = await prisma.$transaction([
     prisma.campaignMessage.updateMany({
-      where: { campaignId: id, status: { in: [...PENDING_MESSAGE] } },
+      where: { campaignId: id, campaign: { organizationId }, status: { in: [...PENDING_MESSAGE] } },
       data: { status: "CANCELLED" },
     }),
     prisma.campaignProspect.updateMany({
-      where: { campaignId: id, status: { in: [...LIVE_ENROLLMENT] } },
+      where: { campaignId: id, organizationId, status: { in: [...LIVE_ENROLLMENT] } },
       data: { status: "STOPPED", finishedAt: now, pausedReason: "archived" },
     }),
+    prisma.campaign.updateMany({
+      where: { id, organizationId, status: { not: "ARCHIVED" } },
+      data: { status: "ARCHIVED", archivedAt: now },
+    }),
   ]);
-  return true;
+  return results[2].count > 0;
 }
 
-/** An ACTIVE campaign nobody is in anymore, with nothing left to send, is done. */
+/** An ACTIVE campaign nobody is in anymore, with nothing left to send, is done. Conditions are rechecked in the update. */
 export async function finishIdleCampaigns(now: Date, scope: { organizationId?: string } = {}): Promise<number> {
-  const idle = await prisma.campaign.findMany({
+  const { count } = await prisma.campaign.updateMany({
     where: {
       status: "ACTIVE",
       ...(scope.organizationId ? { organizationId: scope.organizationId } : {}),
       enrollments: { some: {}, none: { status: { in: [...LIVE_ENROLLMENT] } } },
       messages: { none: { status: { in: [...PENDING_MESSAGE] } } },
     },
-    select: { id: true },
-  });
-  if (idle.length === 0) return 0;
-  const { count } = await prisma.campaign.updateMany({
-    where: { id: { in: idle.map((campaign) => campaign.id) }, status: "ACTIVE" },
     data: { status: "DONE", finishedAt: now },
   });
   return count;
