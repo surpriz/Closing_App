@@ -22,7 +22,10 @@ import { PlanLimitError, getWorkspacePlan } from "./workspace-plan";
 export type StripeForMailboxes = {
   subscriptions: { retrieve(id: string): Promise<SubscriptionLike & { id: string }> };
   subscriptionItems: {
-    create(params: { subscription: string; price: string; quantity: number; proration_behavior: "always_invoice" }): Promise<unknown>;
+    create(
+      params: { subscription: string; price: string; quantity: number; proration_behavior: "always_invoice" },
+      options?: { idempotencyKey?: string },
+    ): Promise<unknown>;
     update(id: string, params: { price?: string; quantity: number; proration_behavior: "always_invoice" }): Promise<unknown>;
     del(id: string, params: { proration_behavior: "always_invoice" }): Promise<unknown>;
   };
@@ -57,12 +60,15 @@ export async function syncMailboxQuantity(
   if (!stripe) return "skipped";
   const org = await prisma.organization.findUnique({
     where: { id: organizationId },
-    select: { plan: true, planStatus: true, stripeSubscriptionId: true, billingInterval: true },
+    select: { plan: true, planStatus: true, stripeSubscriptionId: true, billingInterval: true, mailboxQuantity: true },
   });
   if (!org?.stripeSubscriptionId || !isPaidStatus(org.planStatus) || !isPaidPlanId(org.plan)) return "skipped";
 
-  const quantity = billableMailboxes(await countBillableMailboxes(organizationId), PLANS[org.plan]);
   const subscription = await stripe.subscriptions.retrieve(org.stripeSubscriptionId);
+  // Counted after the retrieve: narrows the window in which a concurrent sync could write a stale quantity
+  const quantity = billableMailboxes(await countBillableMailboxes(organizationId), PLANS[org.plan]);
+  // Matched by lookup key: an item left on a price whose key moved elsewhere would not be found. Keep the keys on
+  // the same price when amounts change (stripe-setup uses transfer_lookup_key, which moves the key with the price)
   const item = mailboxItemOf(subscription);
   const interval: Interval = planFromLookupKey(planItemOf(subscription)?.price.lookup_key)?.interval ?? asInterval(org.billingInterval);
   const key = mailboxLookupKeyFor(interval);
@@ -73,12 +79,10 @@ export async function syncMailboxQuantity(
     result = "removed";
   } else if (!item && quantity > 0) {
     const price = await resolvePriceByKey(stripe as unknown as Stripe, key);
-    await stripe.subscriptionItems.create({
-      subscription: subscription.id,
-      price,
-      quantity,
-      proration_behavior: "always_invoice",
-    });
+    await stripe.subscriptionItems.create(
+      { subscription: subscription.id, price, quantity, proration_behavior: "always_invoice" },
+      { idempotencyKey: `mailbox-item-${subscription.id}-${quantity}` },
+    );
     result = "added";
   } else if (item && (item.quantity !== quantity || item.price.lookup_key !== key)) {
     // A plan switched month <-> year in the portal leaves the add-on on the old interval: move it too
@@ -90,6 +94,9 @@ export async function syncMailboxQuantity(
     });
     result = "updated";
   } else {
+    // Stripe already holds the right value: only the mirror may be stale, and reconcile would flag it forever
+    const held = item?.quantity ?? null;
+    if (held !== org.mailboxQuantity) await prisma.organization.update({ where: { id: organizationId }, data: { mailboxQuantity: held } });
     return "unchanged";
   }
   // Optimistic mirror of what the webhook will write (null once the item is gone)

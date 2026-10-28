@@ -41,13 +41,21 @@ describe("microsoft start", () => {
     const res = await get();
     expect(res.headers.get("location")).toBe("https://app.test/settings?mailbox=error&code=plan#boite");
     expect(createOauthState).not.toHaveBeenCalled();
-    expect(consumeLimit).not.toHaveBeenCalled();
   });
 
-  it("lets a reconnection through whatever the plan", async () => {
+  it("does not let a junk or foreign mailboxId bypass the plan guard", async () => {
     canUseMailboxes.mockResolvedValue(false);
+    prisma.mailbox.findFirst.mockResolvedValue(null);
+    const res = await get("?mailboxId=other");
+    expect(res.headers.get("location")).toContain("mailbox=error");
+    expect(createOauthState).not.toHaveBeenCalled();
+  });
+
+  it("lets the reconnection of an own mailbox through whatever the plan", async () => {
+    canUseMailboxes.mockResolvedValue(false);
+    prisma.mailbox.findFirst.mockResolvedValue({ id: "mb1", email: "a@b.io", connector: "UNIPILE", externalAccountId: "acc1" });
     await get("?mailboxId=mb1");
-    expect(canUseMailboxes).not.toHaveBeenCalled();
+    expect(createOauthState).toHaveBeenCalled();
   });
 
   it("creates a state and sends the seller to Microsoft with PKCE and the mail scopes", async () => {

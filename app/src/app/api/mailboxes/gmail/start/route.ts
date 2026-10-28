@@ -19,10 +19,6 @@ const EMAIL = /^[^\s@<>"']{1,64}@[^\s@<>"']{1,255}$/;
 export async function GET(request: NextRequest) {
   const { user, organization } = await requireOutreach();
   const settings = `${getPublicAppUrl()}/settings`;
-  // A reconnect (?mailboxId=) keeps a mailbox that already counts: only a new one needs a plan with the add-on
-  if (!request.nextUrl.searchParams.has("mailboxId") && !(await canUseMailboxes(organization.id))) {
-    return NextResponse.redirect(`${settings}?mailbox=error&code=plan#boite`, 302);
-  }
   if (!(await consumeLimit("mailboxConnect", request.headers, user.id))) return tooManyRequests();
 
   // Reached from a link in the settings page: a browser lands back there, never on raw JSON
@@ -44,6 +40,10 @@ export async function GET(request: NextRequest) {
   // A mailbox keeps the connector it was created with: after GMAIL_CONNECTOR changes, reconnecting it is a plain
   // connection (the email upsert in connect.ts keeps the row)
   if (reconnect && reconnect.connector !== connector) reconnect = null;
+  // A reconnect of the caller's own mailbox already counts; anything else creates one and needs the add-on
+  if (!reconnect && !(await canUseMailboxes(organization.id))) {
+    return NextResponse.redirect(`${settings}?mailbox=error&code=plan#boite`, 302);
+  }
   const hint = params.get("login_hint");
   const loginHint = reconnect?.email ?? (hint && EMAIL.test(hint) ? hint : null);
 

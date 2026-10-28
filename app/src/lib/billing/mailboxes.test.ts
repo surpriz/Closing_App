@@ -49,6 +49,7 @@ function org(over: Record<string, unknown> = {}) {
     planStatus: "active",
     stripeSubscriptionId: "sub_1",
     billingInterval: "month",
+    mailboxQuantity: 1,
     ...over,
   });
 }
@@ -78,12 +79,10 @@ describe("syncMailboxQuantity", () => {
     stripe.subscriptions.retrieve.mockResolvedValue(sub(PLAN_ITEM("clozer_solo_monthly")));
     expect(await syncMailboxQuantity("org1", { stripe })).toBe("added");
     expect(stripe.prices.list.mock.calls[0][0].lookup_keys).toEqual(["clozer_mailbox_monthly"]);
-    expect(stripe.subscriptionItems.create).toHaveBeenCalledWith({
-      subscription: "sub_1",
-      price: "price_mb",
-      quantity: 1,
-      ...PROTECTED,
-    });
+    expect(stripe.subscriptionItems.create).toHaveBeenCalledWith(
+      { subscription: "sub_1", price: "price_mb", quantity: 1, ...PROTECTED },
+      { idempotencyKey: "mailbox-item-sub_1-1" },
+    );
     expect(db.update.mock.calls[0][0].data).toEqual({ mailboxQuantity: 1 });
   });
 
@@ -110,10 +109,32 @@ describe("syncMailboxQuantity", () => {
     expect(db.update).not.toHaveBeenCalled();
   });
 
+  it("refreshes a stale mirror when Stripe already holds the right quantity", async () => {
+    db.count.mockResolvedValue(2);
+    org({ mailboxQuantity: 1 });
+    stripe.subscriptions.retrieve.mockResolvedValue(sub(PLAN_ITEM("clozer_solo_monthly"), MAILBOX_ITEM("clozer_mailbox_monthly", 2)));
+    expect(await syncMailboxQuantity("org1", { stripe })).toBe("unchanged");
+    expect(db.update.mock.calls[0][0].data).toEqual({ mailboxQuantity: 2 });
+    expect(stripe.subscriptionItems.update).not.toHaveBeenCalled();
+  });
+
+  it("updates an item that reports no quantity", async () => {
+    stripe.subscriptions.retrieve.mockResolvedValue(
+      sub(PLAN_ITEM("clozer_solo_monthly"), { id: "si_mb", price: { lookup_key: "clozer_mailbox_monthly" } }),
+    );
+    expect(await syncMailboxQuantity("org1", { stripe })).toBe("updated");
+    expect(stripe.subscriptionItems.update).toHaveBeenCalledWith("si_mb", { quantity: 1, ...PROTECTED });
+  });
+
   it("does nothing with no mailbox and no item", async () => {
     db.count.mockResolvedValue(0);
+    org({ mailboxQuantity: null });
     stripe.subscriptions.retrieve.mockResolvedValue(sub(PLAN_ITEM("clozer_solo_monthly")));
     expect(await syncMailboxQuantity("org1", { stripe })).toBe("unchanged");
+    expect(db.update).not.toHaveBeenCalled();
+    expect(stripe.subscriptionItems.create).not.toHaveBeenCalled();
+    expect(stripe.subscriptionItems.update).not.toHaveBeenCalled();
+    expect(stripe.subscriptionItems.del).not.toHaveBeenCalled();
   });
 
   it("moves the item to the yearly price when the plan switched interval", async () => {
