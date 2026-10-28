@@ -425,8 +425,6 @@ export default async function DocumentDetailPage({
                 {t("openHost", { host: webHost ?? "" })}
                 <ExternalLink className="size-3.5" aria-hidden />
               </a>
-            ) : document.displayTitle && document.links.length > 0 ? (
-              t("titleKeepsLinks")
             ) : !ready && !isVideo ? (
               <span className="inline-flex items-center gap-2">
                 <span
@@ -435,6 +433,8 @@ export default async function DocumentDetailPage({
                 />
                 {t("analyzing")}
               </span>
+            ) : document.displayTitle && document.links.length > 0 ? (
+              t("titleKeepsLinks")
             ) : undefined
           }
           action={

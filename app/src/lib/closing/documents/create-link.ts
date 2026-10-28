@@ -67,7 +67,8 @@ export async function createDocumentLink(input: {
     allowShared: !prospect && !input.source && !input.onboardingTest,
     kind: document.kind,
   });
-  const autoSettings = !input.smart && input.requireEmail === undefined && input.expiresAt === undefined;
+  // A Smart Link follows the type too (no "Valider" on a résumé), its mode never moves (followDocumentType)
+  const autoSettings = input.requireEmail === undefined && input.expiresAt === undefined;
   const link = await prisma.link.create({
     data: {
       slug: randomSlug(12),
@@ -181,7 +182,9 @@ export async function followDocumentType(documentId: string, now = new Date()) {
     const defaults = linkDefaultsFor(document.docType, settings, now, timeZone, {
       allowShared: !link.source && link._count.prospects === 0,
     });
-    const { ctaEnabled, bookingEnabled, shared } = defaults;
+    const { ctaEnabled, bookingEnabled } = defaults;
+    // A Smart Link stays one: the type changes its buttons, never its mode
+    const shared = link.shared || defaults.shared;
     // A deadline already there stays put: reading the document again must not slide or reopen it
     const expiresAt = link.expiresAt && defaults.expiresAt ? link.expiresAt : defaults.expiresAt;
     const same =

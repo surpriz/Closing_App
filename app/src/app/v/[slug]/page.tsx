@@ -33,7 +33,6 @@ import { loadChatSetup } from "@/lib/closing/chat/queries";
 import { showsCountdown, viewerDeadline } from "@/lib/closing/expiry";
 import type { SupportedLocale } from "@/lib/closing/constants";
 import { documentTitle } from "@/lib/closing/documents/link-title";
-import { offersAnswers } from "@/lib/closing/documents/smart-defaults";
 import { canForward } from "@/lib/closing/forward/rules";
 import {
   chosenLocale,
@@ -356,7 +355,7 @@ export default async function ViewerPage({
             embedUrl={link.document.embedUrl}
             readerHtml={reader?.readerHtml ?? null}
             labels={labels}
-            ctaEnabled={link.ctaEnabled && offersAnswers(link.document.docType)}
+            ctaEnabled={link.ctaEnabled}
             signerName={signerName}
             booking={booking}
             forward={forward}
@@ -394,7 +393,7 @@ export default async function ViewerPage({
           documentName={documentTitle(link.document)}
           senderName={senderName}
           labels={labels}
-          ctaEnabled={link.ctaEnabled && offersAnswers(link.document.docType)}
+          ctaEnabled={link.ctaEnabled}
           signerName={signerName}
           booking={booking}
           forward={forward}

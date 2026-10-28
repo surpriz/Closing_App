@@ -130,10 +130,11 @@ export function DealHeader({ deal }: { deal: Deal }) {
                 href={`/links/${link.parentLink.id}`}
                 className="text-muted-foreground hover:text-foreground hover:underline"
               >
-                {/* The name the seller chose, never the file name the link got at creation */}
-                {customLinkName({ name: link.parentLink.name, document: link.document, prospects: [] })
-                  ? t("viaSharedNamed", { name: link.parentLink.name ?? "" })
-                  : t("viaShared")}
+                {(() => {
+                  // The name the seller chose, never the file name the link got at creation
+                  const named = customLinkName({ name: link.parentLink.name, document: link.document, prospects: [] });
+                  return named ? t("viaSharedNamed", { name: named }) : t("viaShared");
+                })()}
               </Link>
             )}
           </div>
