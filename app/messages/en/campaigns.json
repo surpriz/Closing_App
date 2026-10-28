@@ -331,5 +331,11 @@
     "suppressed": "This contact is on the stop list.",
     "campaign_closed": "This campaign is over: start a new one to reach this contact.",
     "not_found": "This contact can't be added."
+  },
+  "stats": {
+    "title": "Results by step",
+    "step": "Step",
+    "stepLabel": "Step {order}",
+    "aiLabel": "AI follow-up: {label}"
   }
 }

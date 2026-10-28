@@ -9,6 +9,7 @@ import { CampaignTestTools } from "@/components/dashboard/campaigns/campaign-tes
 import { EnrollmentsTable } from "@/components/dashboard/campaigns/enrollments-table";
 import { ForwardedContacts } from "@/components/dashboard/campaigns/forwarded-contacts";
 import { ImportProspects } from "@/components/dashboard/campaigns/import-prospects";
+import { StepStats } from "@/components/dashboard/campaigns/step-stats";
 import { StepsEditor } from "@/components/dashboard/campaigns/steps-editor";
 import { SectionTitle, Surface } from "@/components/dashboard/page-header";
 import type { UiLocale } from "@/i18n/locale";
@@ -294,6 +295,8 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
           disabled={locked}
         />
       </section>
+
+      <StepStats campaignId={campaign.id} />
 
       {!locked && (
         <section>

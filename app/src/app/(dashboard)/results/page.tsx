@@ -12,6 +12,8 @@ import type { DealProfile } from "@/lib/closing/results/stats";
 import { prisma } from "@/lib/db";
 import { formatDuration } from "@/lib/format";
 import { isManagerRole } from "@/lib/roles";
+import { isOutreachAllowed } from "@/lib/outreach/flag";
+import { getCampaignResults, type CampaignOutcome } from "@/lib/outreach/results";
 import { requireWorkspace } from "@/lib/session";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -28,7 +30,12 @@ export default async function ResultsPage(props: PageProps<"/results">) {
   const manager = isManagerRole(workspace.role);
   const mine = !manager || (await props.searchParams).scope === "mine";
   const [t, tl] = await Promise.all([getTranslations("results"), getTranslations("labels")]);
-  const results = await getResults(workspace.organization.id, mine ? workspace.scope : null);
+  const owner = mine ? workspace.scope : null;
+  const outreach = isOutreachAllowed(workspace.user, workspace.organization.id);
+  const [results, campaigns] = await Promise.all([
+    getResults(workspace.organization.id, owner),
+    outreach ? getCampaignResults(workspace.organization.id, owner) : null,
+  ]);
 
   const members = manager && !mine
     ? await prisma.member.findMany({
@@ -51,7 +58,7 @@ export default async function ResultsPage(props: PageProps<"/results">) {
     </div>
   );
 
-  const empty = results.sent === 0 && results.won.count + results.lost.count === 0;
+  const empty = results.sent === 0 && !campaigns?.sent && results.won.count + results.lost.count === 0;
   if (empty) {
     return (
       <div className="space-y-10">
@@ -76,6 +83,36 @@ export default async function ResultsPage(props: PageProps<"/results">) {
           <p className="text-small text-muted-foreground">{t("noFollowups")}</p>
         )}
       </section>
+
+      {campaigns && campaigns.sent > 0 && (
+        <section className="space-y-8">
+          <div>
+            <SectionTitle hint={t("campaigns.hint", { days: RESULTS_FOLLOWUP_DAYS })}>{t("campaigns.title")}</SectionTitle>
+            <CampaignTable campaigns={campaigns.byCampaign} t={t} />
+          </div>
+          <div>
+            <SectionTitle>{t("campaigns.byStep")}</SectionTitle>
+            <OutcomeTable
+              label={t("campaigns.step")}
+              groups={campaigns.byStep.map((g) => ({
+                ...g,
+                label: g.key.startsWith("step:")
+                  ? t("campaigns.stepLabel", { order: g.key.slice(5) })
+                  : t("campaigns.aiLabel", { label: label(g.key, "followupTrigger") }),
+              }))}
+            />
+          </div>
+          {campaigns.byHour.length > 0 && (
+            <div>
+              <SectionTitle hint={t("byHourHint")}>{t("campaigns.byHour")}</SectionTitle>
+              <OutcomeTable
+                label={t("table.hour")}
+                groups={campaigns.byHour.map((g) => ({ ...g, label: `${g.key} h` }))}
+              />
+            </div>
+          )}
+        </section>
+      )}
 
       {results.byGoal.length > 0 && (
         <section>
@@ -141,6 +178,51 @@ export default async function ResultsPage(props: PageProps<"/results">) {
           </div>
         </section>
       )}
+    </div>
+  );
+}
+
+function percent(part: number, whole: number) {
+  return whole ? `${Math.round((part / whole) * 100)} %` : "–";
+}
+
+function CampaignTable({
+  campaigns,
+  t,
+}: {
+  campaigns: CampaignOutcome[];
+  t: Awaited<ReturnType<typeof getTranslations<"results">>>;
+}) {
+  return (
+    <div className="border-b border-foreground bg-card">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="pl-4">{t("campaigns.name")}</TableHead>
+            <TableHead className="text-right">{t("campaigns.enrolled")}</TableHead>
+            <TableHead className="text-right">{t("campaigns.sent")}</TableHead>
+            <TableHead className="text-right">{t("campaigns.clicked")}</TableHead>
+            <TableHead className="text-right">{t("campaigns.replied")}</TableHead>
+            <TableHead className="pr-4 text-right">{t("campaigns.bounced")}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {campaigns.map((c) => (
+            <TableRow key={c.id}>
+              <TableCell className="pl-4">
+                <Link href={`/campaigns/${c.id}`} className="underline-offset-4 hover:underline">
+                  {c.name}
+                </Link>
+              </TableCell>
+              <TableCell className="text-right tabular-nums">{c.enrolled}</TableCell>
+              <TableCell className="text-right tabular-nums">{c.sent}</TableCell>
+              <TableCell className="text-right tabular-nums">{percent(c.clicked, c.sent)}</TableCell>
+              <TableCell className="text-right tabular-nums">{percent(c.replied, c.sent)}</TableCell>
+              <TableCell className="pr-4 text-right tabular-nums">{percent(c.bounced, c.sent)}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }

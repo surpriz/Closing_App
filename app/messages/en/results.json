@@ -42,5 +42,20 @@
     "clicked": "Reopened",
     "replied": "Replies",
     "meetings": "Meetings within 14 d"
+  },
+  "campaigns": {
+    "title": "Campaigns",
+    "hint": "emails sent from your mailbox, last {days} days",
+    "name": "Campaign",
+    "enrolled": "Enrolled",
+    "sent": "Sent",
+    "clicked": "Reopened",
+    "replied": "Replied",
+    "bounced": "Bounced",
+    "byStep": "By step",
+    "step": "Step",
+    "stepLabel": "Step {order}",
+    "aiLabel": "AI follow-up: {label}",
+    "byHour": "By time received"
   }
 }
