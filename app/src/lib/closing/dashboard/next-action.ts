@@ -46,12 +46,16 @@ export type NextActionInput = {
   revival?: { at: Date; asked: boolean; state: "archived" | "expired" } | null;
   /** A campaign still drives this link: its sequence is the plan, nothing to chase. */
   campaign?: { name: string; step: number; steps: number } | null;
+  /** Nobody known on the link: whoever reads, there is no one to call yet. */
+  anonymous?: boolean;
 };
 
 export type NextAction =
   /** The prospect signed: one click to record the sale. */
   | { kind: "close_won" }
   | { kind: "call_now" }
+  /** Someone nobody knows reads now (live) or read a lot: find out who before calling anyone. */
+  | { kind: "identify"; live: boolean }
   /** A change request, a quote asked for, or an email answer, not answered yet. */
   | { kind: "reply"; quote?: boolean; email?: boolean }
   /** The link no longer opens and the prospect came back to it: reopen it while the interest is there. */
@@ -78,6 +82,7 @@ const URGENCY: NextAction["kind"][] = [
   "reply",
   "review_draft",
   "call",
+  "identify",
   "ai_advice",
   "nudge",
   "followup_planned",
@@ -98,6 +103,7 @@ export function isUrgent(action: NextAction) {
 const FACTUAL: NextAction["kind"][] = [
   "close_won",
   "call_now",
+  "identify",
   "reactivate",
   "reply",
   "review_draft",
@@ -161,7 +167,7 @@ function daysSince(date: Date, now: Date) {
 export function computeNextAction(input: NextActionInput): NextAction {
   const { now } = input;
   if (input.dealStatus === "VALIDATED") return { kind: "close_won" };
-  if (input.readingNow) return { kind: "call_now" };
+  if (input.readingNow) return input.anonymous ? { kind: "identify", live: true } : { kind: "call_now" };
   // Nothing else can happen on a link that does not open: reopening it comes first
   if (input.revival) return { kind: "reactivate", ...input.revival };
   if (input.dealStatus === "CHANGE_REQUESTED") return { kind: "reply" };
@@ -201,7 +207,9 @@ export function computeNextAction(input: NextActionInput): NextAction {
     input.pricingFocus &&
     input.lastActivityAt !== null &&
     now.getTime() - input.lastActivityAt.getTime() <= PRICING_CALL_WINDOW_MS;
-  if (input.tier === "HOT" || recentPricing) return { kind: "call", pricing: recentPricing };
+  if (input.tier === "HOT" || recentPricing) {
+    return input.anonymous ? { kind: "identify", live: false } : { kind: "call", pricing: recentPricing };
+  }
 
   if (input.nextFollowup) return { kind: "followup_planned", at: input.nextFollowup.scheduledFor, opened: true };
 
@@ -219,6 +227,8 @@ export function describeNextAction(action: NextAction, now: Date, i18n: Dashboar
       return t("today.nextAction.closeWon");
     case "call_now":
       return t("today.nextAction.callNow");
+    case "identify":
+      return action.live ? t("today.nextAction.identifyLive") : t("today.nextAction.identify");
     case "reactivate":
       return action.asked
         ? t("today.nextAction.reactivateAsked", { when: formatRelative(action.at, locale, now) })

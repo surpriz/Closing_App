@@ -25,6 +25,7 @@ const RULE_PRIORITY: Record<NextAction["kind"], number> = {
   reply: 5,
   review_draft: 5,
   call: 4,
+  identify: 4,
   nudge: 3,
   followup_planned: 2,
   meeting_booked: 1,

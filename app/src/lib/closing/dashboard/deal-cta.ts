@@ -45,6 +45,8 @@ export function dealCta(
       return callCta(ctx, t);
     case "reactivate":
       return { kind: "href", label: t("today.dealCta.reactivate"), href: DEAL_ANCHORS.reactivate };
+    case "identify":
+      return { kind: "href", label: t("today.dealCta.seeReads"), href: DEAL_ANCHORS.activity };
     case "reply":
       return ctx.email
         ? {

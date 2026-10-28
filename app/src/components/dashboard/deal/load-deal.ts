@@ -416,6 +416,7 @@ export async function loadDeal(
       repliedAt: link.repliedAt,
       gateSeenAt: link.gateSeenAt,
       snoozedUntil: link.snoozedUntil,
+      anonymous: link.prospects.length === 0,
       meetingBookedAt: link.meetingBookedAt,
       meetingAt: link.meetingAt,
       quoteRequestedAt: link.quoteRequestedAt,

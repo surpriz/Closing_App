@@ -321,3 +321,30 @@ describe("reactivate", () => {
     expect(describeNextAction({ kind: "reactivate", ...revival, asked: false }, now, en)).toMatch(/^Back on the link .+: reactivate it\.$/);
   });
 });
+
+describe("computeNextAction on a link nobody is named on", () => {
+  const base = {
+    now: new Date("2026-10-28T10:00:00Z"),
+    dealStatus: "OPEN" as const,
+    opened: true,
+    tier: "HOT" as const,
+    pricingFocus: false,
+    lastActivityAt: new Date("2026-10-28T09:00:00Z"),
+    sentAt: new Date("2026-10-27T09:00:00Z"),
+    followupsEnabled: true,
+    nextFollowup: null,
+    draftToReview: false,
+    lastSellerContactAt: null,
+    snoozedUntil: null,
+    anonymous: true,
+  };
+
+  it("asks to find out who reads instead of calling no one", () => {
+    expect(computeNextAction({ ...base, readingNow: true })).toEqual({ kind: "identify", live: true });
+    expect(computeNextAction({ ...base, readingNow: false })).toEqual({ kind: "identify", live: false });
+  });
+
+  it("still calls when the reader is known", () => {
+    expect(computeNextAction({ ...base, anonymous: false, readingNow: true })).toEqual({ kind: "call_now" });
+  });
+});

@@ -163,7 +163,9 @@
     "wait": "Rien à faire pour l'instant.",
     "replyEmail": "Il vous a répondu par email : à vous de jouer.",
     "clickedNotRead": "A cliqué sur le lien, mais n'a pas passé l'écran email.",
-    "nudgeClicked": "A cliqué il y a {days} jours sans aller plus loin : renvoyez-lui le lien."
+    "nudgeClicked": "A cliqué il y a {days} jours sans aller plus loin : renvoyez-lui le lien.",
+    "identifyLive": "Un lecteur inconnu lit en ce moment : comparez l'heure avec vos envois pour savoir qui c'est.",
+    "identify": "Un lecteur inconnu a beaucoup lu : retrouvez qui c'est avant d'appeler qui que ce soit."
   },
   "dealCta": {
     "sendQuote": "Envoyer le devis",
@@ -177,7 +179,8 @@
     "call": "Appeler",
     "logCall": "Noter l'appel",
     "followUpByEmail": "Relancer par email",
-    "reactivate": "Réactiver le lien"
+    "reactivate": "Réactiver le lien",
+    "seeReads": "Voir les lectures"
   },
   "feed": {
     "openedDocument": "a ouvert le document",
