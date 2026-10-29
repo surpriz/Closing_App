@@ -129,8 +129,9 @@ export async function planEnrollments(
     where: {
       status: "ACTIVE",
       currentStep: { gt: 0 },
-      ...orgFilter,
-      campaign: { status: "ACTIVE", mailbox: { status: "ACTIVE" } },
+      // An enrollment only carries the organization's id, not the relation: the suspension is checked on the campaign
+      ...organizationWhere(scope),
+      campaign: { status: "ACTIVE", mailbox: { status: "ACTIVE" }, organization: { suspendedAt: null } },
       // A pending step, that is: a campaign follow-up on its way does not stand for the next step
       messages: { none: { kind: "STEP", status: { in: ["SCHEDULED", "SENDING"] } } },
       // One waiting for a later time is left alone until then: no point re-reading it every tick

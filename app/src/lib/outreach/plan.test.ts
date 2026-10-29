@@ -155,6 +155,10 @@ describe("planEnrollments, catch-up", () => {
 
     expect(messageCreate.mock.calls[0][0].data).toMatchObject({ stepId: "s2", dedupeKey: "cold:e1:s2" });
     expect(result).toEqual({ started: 0, continued: 1, finished: 0 });
+    // An enrollment has no `organization` relation: filtering on it made Prisma reject the whole query on staging
+    const where = enrollmentFindMany.mock.calls.find(([a]) => a.where.status === "ACTIVE")![0].where;
+    expect(where.organization).toBeUndefined();
+    expect(where.campaign).toMatchObject({ organization: { suspendedAt: null } });
   });
 
   it("leaves the end of a linked enrollment to the reading evaluator, which has the signals", async () => {
