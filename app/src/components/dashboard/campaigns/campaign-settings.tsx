@@ -170,6 +170,7 @@ export function CampaignSettings({
             ))}
           </SelectContent>
         </Select>
+        <p className="text-small text-muted-foreground">{t("localeHint")}</p>
       </div>
 
       <div className="flex items-start gap-3 sm:col-span-2">

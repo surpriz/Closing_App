@@ -102,6 +102,7 @@ export function NewCampaignDialog({
                 ))}
               </SelectContent>
             </Select>
+            <p className="text-small text-muted-foreground">{t("localeHint")}</p>
           </div>
 
           {state && (

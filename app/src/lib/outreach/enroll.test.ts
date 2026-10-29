@@ -124,6 +124,19 @@ describe("importProspects", () => {
     expect(await importProspects({ ...base, csv: "email\n" })).toEqual({ error: "empty" });
   });
 
+  it("refuses a file without a header line, naming what it read", async () => {
+    const csv = "laval0jerome@gmail.com;Jerome;Google\r\njerome@waltio.co;Jerome;Waltio\r\n";
+    expect(await importProspects({ ...base, csv })).toEqual({
+      error: "no_header",
+      headers: ["laval0jerome@gmail.com", "Jerome", "Google"],
+    });
+    expect(await importProspects({ ...base, csv: "Prénom,Société\nAda,Acme\n" })).toEqual({
+      error: "no_email_column",
+      headers: ["Prénom", "Société"],
+    });
+    expect(db.campaignProspect.createMany).not.toHaveBeenCalled();
+  });
+
   it("imports nothing past the row limit", async () => {
     const csv = ["email", ...Array.from({ length: 2001 }, (_, i) => `p${i}@x.com`)].join("\n");
     const result = await importProspects({ ...base, csv });

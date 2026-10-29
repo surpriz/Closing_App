@@ -10,6 +10,7 @@ import { getNamespaceTranslator } from "@/lib/server-translator";
 import { type Actor, canEditCampaign } from "./campaigns";
 import {
   guessColumnMapping,
+  headerLooksLikeData,
   MAX_IMPORT_ROWS,
   parseCsv,
   PROSPECT_COLUMNS,
@@ -63,6 +64,11 @@ export type ImportSummary = {
   rejected: ImportRejection[];
   tooMany: boolean; // more rows than MAX_IMPORT_ROWS: nothing was imported
 };
+
+export type ImportError =
+  | { error: "campaign_not_found" | "empty" }
+  // no_header: the first line is a prospect (the file has no header row); no_email_column: a header row, no email in it
+  | { error: "no_header" | "no_email_column"; headers: string[] };
 
 export type PreparedProspect = ProspectRow & {
   timezone: string;
@@ -120,7 +126,7 @@ export async function importProspects(input: {
   sellerTimezone: string;
   actor: Actor;
   now?: Date;
-}): Promise<ImportSummary | { error: "campaign_not_found" | "empty" }> {
+}): Promise<ImportSummary | ImportError> {
   const campaign = await prisma.campaign.findFirst({
     where: { id: input.campaignId, organizationId: input.organizationId, status: { not: "ARCHIVED" } },
     select: { locale: true, createdById: true, steps: { select: { subject: true, body: true } } },
@@ -131,6 +137,10 @@ export async function importProspects(input: {
   if (parsed.rows.length === 0) return { error: "empty" };
 
   const indexes = guessColumnMapping(parsed.headers);
+  // Without an email column every row would be rejected one by one: better say why up front, nothing imported
+  if (indexes.email === undefined) {
+    return { error: headerLooksLikeData(parsed.headers) ? "no_header" : "no_email_column", headers: parsed.headers };
+  }
   const mapping: ImportSummary["mapping"] = {};
   for (const column of PROSPECT_COLUMNS) {
     const index = indexes[column];

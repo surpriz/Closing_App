@@ -315,16 +315,19 @@ export function StepsEditor({
               </details>
 
               {!disabled && (
-                <div className="flex flex-wrap items-center gap-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={!canTest || dirty || testing !== null}
-                    onClick={() => sendTest(step)}
-                  >
-                    {testing === step.key ? t("test.sending") : t("test.button")}
-                  </Button>
-                  {dirty && <span className="text-small text-muted-foreground">{t("saveFirst")}</span>}
+                <div className="space-y-1.5">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={!canTest || dirty || testing !== null}
+                      onClick={() => sendTest(step)}
+                    >
+                      {testing === step.key ? t("test.sending") : t("test.button")}
+                    </Button>
+                    {dirty && <span className="text-small text-muted-foreground">{t("saveFirst")}</span>}
+                  </div>
+                  <p className="text-small text-muted-foreground">{t("test.hint")}</p>
                 </div>
               )}
             </li>

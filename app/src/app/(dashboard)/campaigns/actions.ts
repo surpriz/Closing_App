@@ -241,7 +241,10 @@ export async function importProspectsAction(
     sellerTimezone: sellerTimezone(prefs),
     actor: actorOf(workspace),
   });
-  if ("error" in result) return { error: t(`import.errors.${result.error}`) };
+  if ("error" in result) {
+    const headers = "headers" in result ? result.headers.filter(Boolean).join(" ; ") : "";
+    return { error: t(`import.errors.${result.error}`, { headers }) };
+  }
   refresh(id);
   return result;
 }

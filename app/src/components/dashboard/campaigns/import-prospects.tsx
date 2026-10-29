@@ -1,13 +1,13 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { importProspectsAction } from "@/app/(dashboard)/campaigns/actions";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { MAX_IMPORT_BYTES, MAX_IMPORT_ROWS, PROSPECT_COLUMNS } from "@/lib/outreach/csv";
+import { MAX_IMPORT_BYTES, MAX_IMPORT_ROWS, PROSPECT_COLUMNS, sampleCsv } from "@/lib/outreach/csv";
 import type { ImportSummary } from "@/lib/outreach/enroll";
 
 const MAX_LISTED_REJECTIONS = 20;
@@ -23,6 +23,7 @@ function readAsText(file: File): Promise<string> {
 
 export function ImportProspects({ campaignId }: { campaignId: string }) {
   const t = useTranslations("campaigns.import");
+  const locale = useLocale();
   const [csv, setCsv] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<ImportSummary | null>(null);
@@ -98,6 +99,16 @@ export function ImportProspects({ campaignId }: { campaignId: string }) {
       </div>
 
       <ul className="space-y-0.5 text-small text-muted-foreground">
+        <li>
+          {t("sample")}{" "}
+          <a
+            href={`data:text/csv;charset=utf-8,${encodeURIComponent(sampleCsv(locale))}`}
+            download={t("sampleFile")}
+            className="underline underline-offset-2 hover:text-foreground"
+          >
+            {t("sampleLink")}
+          </a>
+        </li>
         <li>{t("columns", { columns })}</li>
         <li>{t("limit", { max: MAX_IMPORT_ROWS })}</li>
         <li>{t("personal")}</li>

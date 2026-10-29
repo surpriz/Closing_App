@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { guessColumnMapping, MAX_IMPORT_ROWS, parseCsv, PROSPECT_COLUMNS, rowsToProspects } from "./csv";
+import { guessColumnMapping, headerLooksLikeData, MAX_IMPORT_ROWS, parseCsv, PROSPECT_COLUMNS, rowsToProspects, sampleCsv } from "./csv";
 
 describe("parseCsv", () => {
   it("parses commas", () => {
@@ -120,5 +120,26 @@ describe("rowsToProspects", () => {
       { email: 0 },
     );
     expect(prospects[0].vars).toEqual({ taille: "10" });
+  });
+});
+
+describe("headerLooksLikeData", () => {
+  it("spots a file whose first line is already a prospect", () => {
+    expect(headerLooksLikeData(["laval0jerome@gmail.com", "Jerome", "Google"])).toBe(true);
+    expect(headerLooksLikeData(["email", "prénom", "société"])).toBe(false);
+    expect(headerLooksLikeData([])).toBe(false);
+  });
+});
+
+describe("sampleCsv", () => {
+  it("parses back with every known column mapped, in both languages", () => {
+    for (const locale of ["fr", "en-US"]) {
+      const parsed = parseCsv(sampleCsv(locale));
+      expect(parsed.rows).toHaveLength(2);
+      expect(guessColumnMapping(parsed.headers)).toEqual({ email: 0, firstName: 1, lastName: 2, company: 3, title: 4 });
+      expect(rowsToProspects(parsed, guessColumnMapping(parsed.headers)).rejected).toEqual([]);
+    }
+    expect(parseCsv(sampleCsv("fr")).delimiter).toBe(";");
+    expect(parseCsv(sampleCsv("en")).delimiter).toBe(",");
   });
 });

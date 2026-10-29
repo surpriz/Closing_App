@@ -122,6 +122,24 @@ export type ProspectRow = {
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/** A first line holding an address is a prospect, not a header row: the file has no header. */
+export function headerLooksLikeData(headers: string[]) {
+  return headers.some((header) => EMAIL.test(header.trim()));
+}
+
+const SAMPLE_ROWS = [
+  ["marie.dupont@exemple.fr", "Marie", "Dupont", "Exemple SAS", "Directrice commerciale"],
+  ["paul.martin@acme.fr", "Paul", "Martin", "Acme", "Responsable achats"],
+];
+
+/** A ready-to-fill file in the seller's language: French headers and `;` open cleanly in a French Excel. */
+export function sampleCsv(locale: string) {
+  const fr = locale.toLowerCase().startsWith("fr");
+  const headers = fr ? ["email", "prénom", "nom", "société", "poste"] : ["email", "firstName", "lastName", "company", "title"];
+  const delimiter = fr ? ";" : ",";
+  return "\uFEFF" + [headers, ...SAMPLE_ROWS].map((row) => row.join(delimiter)).join("\r\n") + "\r\n";
+}
+
 /** Applies a mapping; other columns become `vars` keyed by a slug of the header. Rows without a plausible email are rejected with their line number. */
 export function rowsToProspects(
   parsed: CsvParseResult,
