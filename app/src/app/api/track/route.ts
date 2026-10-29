@@ -102,6 +102,8 @@ export async function POST(request: Request) {
     if (left) {
       await prisma.documentView.update({ where: { id: view.id }, data: { leftAt: now } });
       if (!view.isBot) inBackground("brain", () => analyzeDeal(view.linkId, "SESSION_ENDED"));
+      // The reader usually leaves right after a flush, with nothing new to count: the enrollment still reads the session
+      if (view.link.campaignProspectId) inBackground("outreach-read", () => evaluateEnrollmentReading(view.linkId, now));
     }
     return new Response(null, { status: 204 });
   }
