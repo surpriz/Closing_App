@@ -159,10 +159,11 @@ describe("evaluateEnrollmentReading", () => {
     expect(notifySeller).not.toHaveBeenCalled();
   });
 
-  it("applies nothing but stamps readEvaluatedAt when the campaign is not ACTIVE", async () => {
+  it("applies nothing and leaves the reading unevaluated when the campaign is not ACTIVE", async () => {
     (enrollment.campaign as { status: string }).status = "PAUSED";
     expect(await evaluateEnrollmentReading("l1", now)).toBeNull();
-    expect(updatesOf()).toEqual([{ where: { id: "e1" }, data: { readEvaluatedAt: now } }]);
+    // Not stamped: once the campaign resumes, the catch-up still sees this reading
+    expect(db.enrollmentUpdateMany).not.toHaveBeenCalled();
     expect(notifySeller).not.toHaveBeenCalled();
   });
 
@@ -327,7 +328,8 @@ describe("evaluateEnrollmentReading", () => {
     expect(await evaluateEnrollmentReading("l1", now)).toBeNull();
     expect(notifySeller).not.toHaveBeenCalled();
     expect(queueFollowup).not.toHaveBeenCalled();
-    expect(updatesOf()).toEqual([{ where: { id: "e1" }, data: { readEvaluatedAt: now } }]);
+    // Not stamped either: the reading is evaluated once the seller resumes it
+    expect(db.enrollmentUpdateMany).not.toHaveBeenCalled();
   });
 
   it("reactivation: queues COLD_REACTIVATE asap and stamps reactivatedAt", async () => {

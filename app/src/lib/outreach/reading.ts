@@ -72,10 +72,9 @@ export async function evaluateEnrollmentReading(linkId: string, now: Date): Prom
   // Stamped even when nothing applies, so the tick does not pick the same enrollment up again and again
   const stamp = () => prisma.campaignProspect.updateMany({ where: { id: enrollment.id }, data: { readEvaluatedAt: now } });
   const paused = enrollment.status === "PAUSED";
-  if (enrollment.campaign.status !== "ACTIVE" || (paused && !READING_PAUSES.includes(enrollment.pausedReason ?? ""))) {
-    await stamp();
-    return null;
-  }
+  // Not stamped: the tick's catch-up only looks at ACTIVE campaigns and reading pauses, and a reading that happens
+  // during a pause is still news once the campaign or the enrollment resumes
+  if (enrollment.campaign.status !== "ACTIVE" || (paused && !READING_PAUSES.includes(enrollment.pausedReason ?? ""))) return null;
 
   const [reading, views, forwards, sent, openFollowups, settings] = await Promise.all([
     readingOfLink(link.id, link.documentId),
