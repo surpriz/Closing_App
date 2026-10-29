@@ -294,6 +294,8 @@
     "reopened": "Back after {days} days without reading",
     "pricing": "Lingering on the pricing",
     "firstOpen": "Opening your proposal for the first time",
-    "hotDeal": "Hot prospect, reading it again"
+    "hotDeal": "Hot prospect, reading it again",
+    "campaignPricing": "Lingering on the pricing (cold campaign)",
+    "campaignDeepRead": "Reading your proposal closely (cold campaign)"
   }
 }

@@ -1,0 +1,16 @@
+{
+  "@odata.deltaLink": "https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages/delta?$deltatoken=DELTA1",
+  "value": [
+    { "id": "AAMkAGI2-gone=", "@removed": { "reason": "deleted" } },
+    {
+      "id": "AAMkAGI2-bounce=",
+      "internetMessageId": "<bounce-1@outlook.example>",
+      "conversationId": "AAQkAGI2-conv2=",
+      "from": { "emailAddress": { "address": "postmaster@outlook.example", "name": "Microsoft Outlook" } },
+      "toRecipients": [{ "emailAddress": { "address": "me@seller.com" } }],
+      "subject": "Undeliverable: Quick question",
+      "receivedDateTime": "2026-10-27T10:00:00Z",
+      "bodyPreview": "Delivery has failed to these recipients"
+    }
+  ]
+}

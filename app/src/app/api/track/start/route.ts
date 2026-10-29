@@ -24,6 +24,8 @@ import {
 import { followupOfLink, markFollowupClicked } from "@/lib/closing/followups/attribution";
 import { evaluateReaders } from "@/lib/closing/triggers/committee";
 import { evaluateHotLead } from "@/lib/closing/triggers/hot-lead";
+import { campaignProspectFor, claimCampaignClick } from "@/lib/outreach/attribution";
+import { evaluateEnrollmentReading } from "@/lib/outreach/reading";
 import { prisma } from "@/lib/db";
 import { consumeLimit, perLink, tooManyRequests } from "@/lib/rate-limit";
 import { isWorkspaceMember } from "@/lib/session";
@@ -34,6 +36,8 @@ const bodySchema = z.object({
   locale: z.string().max(35).optional(),
   // ?r= on the link of a follow-up: the message that brought the reader back
   followupId: z.string().max(40).nullish(),
+  // ?c= on the link of a campaign message
+  campaignMessageId: z.string().max(40).nullish(),
   // False at page load, true at the reader's first gesture: mail scanners never make one.
   // Missing (a page loaded before this field): a human, as before
   human: z.boolean().optional(),
@@ -83,11 +87,12 @@ export async function POST(request: NextRequest) {
   const locale = context.locale ?? parsed.data.locale ?? null;
   const now = new Date();
 
-  const prospect = access.email
+  const gated = access.email
     ? await prisma.prospect.findUnique({
         where: { linkId_email: { linkId: link.id, email: access.email } },
       })
     : null;
+  const prospect = gated;
 
   const recentView = await prisma.documentView.findFirst({
     where: {
@@ -108,6 +113,9 @@ export async function POST(request: NextRequest) {
   }
   const fresh = !recentView || confirming;
 
+  // A campaign link has no gate: its reader is the enrolled address
+  const campaignProspectId = gated || recentView || excluded ? null : await campaignProspectFor(link);
+
   const viewId =
     recentView?.id ??
     (
@@ -115,7 +123,7 @@ export async function POST(request: NextRequest) {
         data: {
           linkId: link.id,
           documentId: link.document.id,
-          prospectId: prospect?.id,
+          prospectId: prospect?.id ?? campaignProspectId ?? undefined,
           visitorId,
           email: access.email,
           ipHash: context.ipHash,
@@ -156,6 +164,7 @@ export async function POST(request: NextRequest) {
   if (!excluded && !pending) {
     await confirmDraftOnOpen(link.id, now);
     if (parsed.data.followupId) await markFollowupClicked(parsed.data.followupId, link.id, now);
+    await claimCampaignClick(parsed.data.campaignMessageId, link.campaignProspectId, now);
     // The seller's "aha": someone opened what they sent. Nothing about the reader goes out
     if (fresh && link.createdById) {
       captureProductEvent("proposal_opened", link.createdById, { onboarding_test: link.isOnboardingTest });
@@ -167,6 +176,10 @@ export async function POST(request: NextRequest) {
       if (!readerAlert) await evaluateHotLead(viewId, !fresh, now);
       await refreshEngagementScore(link.id);
     });
+    // A new session on a campaign link: its enrollment reads the signals now rather than at the next tick
+    if (fresh && link.campaignProspectId) {
+      inBackground("outreach-read", () => evaluateEnrollmentReading(link.id, now));
+    }
     // Someone a reader forwarded it to: opened, once per forward, and the forwarder told if they asked
     if (prospect) inBackground("forward-opened", () => markForwardsOpened(prospect.id, now));
     // A Smart Link reader really reading: their cold email sequence can stop. Apart, so nothing above can skip it

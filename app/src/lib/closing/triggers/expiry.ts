@@ -1,5 +1,6 @@
 import { ACTIVE_WORKSPACE } from "@/lib/closing/active-workspace";
 import { prisma } from "@/lib/db";
+import { NOT_CAMPAIGN_OWNED } from "@/lib/outreach/ownership";
 import { toUiLocale } from "@/lib/seller-locale";
 import { getNamespaceTranslator } from "@/lib/server-translator";
 
@@ -42,6 +43,7 @@ export async function scanExpiryReminders(now = new Date()) {
       AND: [{ OR: [{ snoozedUntil: null }, { snoozedUntil: { lte: now } }] }],
       prospects: { some: { unsubscribedAt: null, bouncedAt: null, origin: "SELLER" } },
       ...ACTIVE_WORKSPACE,
+      ...NOT_CAMPAIGN_OWNED,
     },
     include: {
       prospects: {

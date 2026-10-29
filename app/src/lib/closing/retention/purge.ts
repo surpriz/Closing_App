@@ -13,6 +13,45 @@ export const SIGNATURE_RETENTION_YEARS = 5;
 const LINK_BATCH = 20;
 const DOCUMENT_BATCH = 10;
 
+// Sent campaign bodies and inbound mailbox events: stated in the privacy policy too
+export const MESSAGE_BODY_RETENTION_DAYS = 90;
+const BODY_BATCH = 200;
+const INBOUND_BATCH = 500;
+
+export function messageBodyCutoff(now: Date) {
+  return new Date(now.getTime() - MESSAGE_BODY_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+}
+
+/** Blanks the rendered body, keeps the row: subject, dates, Message-ID and outcomes feed results and threading. */
+export async function purgeCampaignMessageBodies(now: Date, batch = BODY_BATCH): Promise<number> {
+  const cutoff = messageBodyCutoff(now);
+  const rows = await prisma.campaignMessage.findMany({
+    where: {
+      body: { not: "" },
+      OR: [{ sentAt: { lt: cutoff } }, { status: { in: ["FAILED", "CANCELLED", "SKIPPED"] }, updatedAt: { lt: cutoff } }],
+    },
+    select: { id: true },
+    take: batch,
+  });
+  if (rows.length === 0) return 0;
+  const { count } = await prisma.campaignMessage.updateMany({
+    where: { id: { in: rows.map((row) => row.id) } },
+    data: { body: "" },
+  });
+  return count;
+}
+
+export async function purgeInboundEvents(now: Date, batch = INBOUND_BATCH): Promise<number> {
+  const rows = await prisma.mailboxInboundEvent.findMany({
+    where: { receivedAt: { lt: messageBodyCutoff(now) } },
+    select: { id: true },
+    take: batch,
+  });
+  if (rows.length === 0) return 0;
+  const { count } = await prisma.mailboxInboundEvent.deleteMany({ where: { id: { in: rows.map((row) => row.id) } } });
+  return count;
+}
+
 export function retentionCutoffs(now: Date) {
   const tracking = new Date(now);
   tracking.setUTCMonth(tracking.getUTCMonth() - RETENTION_MONTHS);
@@ -92,6 +131,9 @@ export async function purgeExpiredData(now = new Date()) {
   const requestLimits = await purgeRequestLimits(now);
   const auditLogs = await prisma.auditLog.deleteMany({ where: { createdAt: { lt: cutoffs.tracking } } });
 
+  const messageBodiesPurged = await purgeCampaignMessageBodies(now);
+  const inboundEventsDeleted = await purgeInboundEvents(now);
+
   return {
     linksErased: links.length,
     documentsDeleted: documents.length,
@@ -100,5 +142,7 @@ export async function purgeExpiredData(now = new Date()) {
     verificationsDeleted: verifications.count,
     requestLimitsDeleted: requestLimits,
     auditLogsDeleted: auditLogs.count,
+    messageBodiesPurged,
+    inboundEventsDeleted,
   };
 }

@@ -23,7 +23,7 @@ export type ProspectReply = {
   /** The new text of the reply, quoted history removed. */
   excerpt: string | null;
   occurredAt: Date;
-  source: Extract<ActivitySource, "INBOUND" | "EXTENSION" | "SEQUENCER">;
+  source: Extract<ActivitySource, "INBOUND" | "EXTENSION" | "MAILBOX" | "SEQUENCER">;
   /** One email, logged once whatever path reports it again. */
   externalKey: string;
 };

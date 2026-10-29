@@ -1,10 +1,12 @@
 import { getPublicAppUrl } from "@/lib/app-origin";
 import { signingSecret } from "@/lib/crypto";
 import { prisma } from "@/lib/db";
+import { addSuppression } from "@/lib/outreach/suppression";
 import { toUiLocale } from "@/lib/seller-locale";
 import { getNamespaceTranslator } from "@/lib/server-translator";
 
 import { recordProspectReply } from "../replies/record";
+import { stopClosingSide } from "../unsubscribe";
 import { type SequencerEvent, sequencerToken, verifySequencerToken } from "./event";
 
 /** A reply the mailbox sync, the reply relay or the extension logged this recently is the same reply. */
@@ -51,7 +53,13 @@ export async function applySequencerEvent(organizationId: string, event: Sequenc
     const reason = getNamespaceTranslator(toUiLocale(contact?.link.createdBy?.locale), "server.followups.dispatch")(
       event.kind,
     );
-    await stopAddress(organizationId, event.email, reason, event.kind === "bounced" ? "bouncedAt" : "unsubscribedAt");
+    await addSuppression({
+      organizationId,
+      email: event.email,
+      reason: event.kind === "bounced" ? "BOUNCE" : "UNSUBSCRIBE",
+      source: "sequencer_webhook",
+    });
+    await stopClosingSide(organizationId, event.email, reason, event.kind === "bounced" ? "bouncedAt" : "unsubscribedAt");
     return;
   }
 
@@ -83,20 +91,4 @@ export async function applySequencerEvent(organizationId: string, event: Sequenc
       externalKey: `seq:${contact.linkId}:${event.email}:${day}`,
     });
   }
-}
-
-/**
- * Flags every prospect of the workspace with this address and cancels their open follow-ups,
- * theirs only: a colleague on the same deal keeps theirs. Same rule as the unsubscribe page.
- */
-async function stopAddress(organizationId: string, email: string, reason: string, mark: "unsubscribedAt" | "bouncedAt") {
-  const now = new Date();
-  const sameAddress = { email: { equals: email, mode: "insensitive" as const }, link: { organizationId } };
-  await prisma.$transaction([
-    prisma.prospect.updateMany({ where: { ...sameAddress, [mark]: null }, data: { [mark]: now } }),
-    prisma.followup.updateMany({
-      where: { prospect: sameAddress, status: { in: ["PENDING", "DRAFT", "GENERATED", "SCHEDULED"] } },
-      data: { status: "CANCELLED", cancelledAt: now, error: reason },
-    }),
-  ]);
 }

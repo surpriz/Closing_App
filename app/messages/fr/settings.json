@@ -14,7 +14,8 @@
       "extension": "Chrome et Outlook",
       "equipe": "Équipe",
       "facturation": "Facturation",
-      "donnees": "Données"
+      "donnees": "Données",
+      "boite": "Boîte mail"
     },
     "instantSave": "Ces sections s'enregistrent dès que vous les modifiez."
   },
@@ -226,5 +227,163 @@
     "codeHint": "Le code s'affiche dans le volet Clozer de votre Outlook. Ne saisissez jamais un code envoyé par quelqu'un d'autre.",
     "connecting": "Connexion…",
     "connect": "Connecter Outlook"
+  },
+  "mailbox": {
+    "title": "Boîte mail",
+    "description": "Vos campagnes partent de votre propre boîte. Clozer lit vos réponses pour arrêter les séquences.",
+    "empty": "Aucune boîte connectée pour l'instant.",
+    "status": {
+      "ACTIVE": "Active",
+      "ERROR": "Erreur",
+      "CONNECTING": "Connexion",
+      "DISCONNECTED": "Déconnectée"
+    },
+    "dns": {
+      "spf": "SPF",
+      "dkim": "DKIM",
+      "dmarc": "DMARC",
+      "ok": "ok",
+      "weak": "faible",
+      "missing": "manquant",
+      "probe": {
+        "button": "Tester par email",
+        "instruction": "Envoyez n'importe quel email depuis cette boîte à cette adresse, puis cliquez sur Rafraîchir.",
+        "refresh": "Rafraîchir"
+      },
+      "unknown": "inconnu",
+      "managed": "Adresse {provider} : SPF, DKIM et DMARC sont gérés par {provider}, rien à configurer.",
+      "help": {
+        "spf": {
+          "missing": "Aucun enregistrement SPF trouvé sur votre domaine. Ajoutez-en un pour que les destinataires vous fassent confiance.",
+          "duplicate": "Votre domaine a deux enregistrements SPF, ce qui casse la vérification. Fusionnez-les en un seul.",
+          "missing_provider": "Votre SPF n'inclut pas votre fournisseur de messagerie. Ajoutez-le."
+        },
+        "dkim": {
+          "unknown": "Clé DKIM introuvable. Elle utilise peut-être un sélecteur que nous n'avons pas essayé. Voyez avec votre fournisseur.",
+          "revoked": "La clé DKIM est révoquée. Publiez-en une nouvelle chez votre fournisseur."
+        },
+        "dmarc": {
+          "missing": "Aucun enregistrement DMARC trouvé. Ajoutez-en un, même avec une politique souple.",
+          "none_policy": "Votre politique DMARC est sur none. Ça fonctionne, mais ça protège peu."
+        }
+      }
+    },
+    "sentToday": "Envoyés aujourd'hui : {sent} / {allowance}",
+    "ramping": "boîte récente, la limite monte sur trois semaines",
+    "cap": "Plafond par jour",
+    "capHint": "De 1 à {max} par jour.",
+    "save": "Enregistrer",
+    "capSaved": "Plafond enregistré",
+    "recheck": "Re-vérifier le DNS",
+    "rechecking": "Vérification…",
+    "disconnect": "Déconnecter",
+    "disconnecting": "Déconnexion…",
+    "cancel": "Annuler",
+    "disconnectTitle": "Déconnecter cette boîte ?",
+    "disconnectDescription": "Les campagnes qui l'utilisent arrêteront d'envoyer. Votre mot de passe est effacé de Clozer.",
+    "connectTitle": "Connecter une boîte",
+    "email": "Adresse email",
+    "detect": "Détecter",
+    "detecting": "Détection…",
+    "detected": "Détecté : {provider} ({domain})",
+    "providers": {
+      "GOOGLE": "Google",
+      "MICROSOFT": "Microsoft 365",
+      "IMAP": "IMAP / SMTP"
+    },
+    "googleNotice": "La connexion Google n'est pas disponible sur cet espace. Utilisez plutôt un mot de passe d'application.",
+    "microsoftNotice": "La connexion Microsoft 365 n'est pas encore configurée sur ce serveur, le bouton est donc désactivé.",
+    "appPasswordHint": "Utilisez un mot de passe d'application, pas votre mot de passe Google habituel.",
+    "displayName": "Nom d'expéditeur",
+    "servers": "Serveurs",
+    "imapHost": "Serveur IMAP",
+    "smtpHost": "Serveur SMTP",
+    "port": "Port",
+    "secure": "SSL/TLS direct (ports 465 / 993)",
+    "secureHelp": "Cochez SSL/TLS direct seulement pour les ports 465 (SMTP) et 993 (IMAP). Sinon, STARTTLS est requis (ports 587 / 143).",
+    "user": "Identifiant (par défaut, votre email)",
+    "password": "Mot de passe",
+    "connect": "Connecter",
+    "connecting": "Connexion…",
+    "reconnect": "Reconnecter",
+    "form": {
+      "userDiffers": "Les mails partiront au nom de {email} ; vérifiez que ce compte a le droit d'envoyer pour cette adresse."
+    },
+    "lastError": {
+      "AUTH_REVOKED": "Le serveur a refusé les identifiants. Reconnectez la boîte avec un mot de passe valide.",
+      "QUOTA": "Le quota d'envoi du fournisseur est atteint.",
+      "RATE_LIMITED": "Le fournisseur limite les envois.",
+      "REJECTED": "Le fournisseur a refusé le message.",
+      "TRANSIENT": "Les serveurs de messagerie sont injoignables.",
+      "CONFIG": "La configuration de la boîte est invalide. Vérifiez les serveurs et les ports.",
+      "POLICY": "Trop de rebonds : les envois ont été mis en pause pour protéger votre réputation."
+    },
+    "connected": "Boîte connectée",
+    "errors": {
+      "invalid": "Vérifiez les champs : email, serveurs, ports et mot de passe sont obligatoires.",
+      "exists": "Cette boîte est déjà connectée dans votre espace.",
+      "limit": "Vous avez atteint le nombre maximum de boîtes.",
+      "tooMany": "Trop de tentatives de connexion. Réessayez dans une heure.",
+      "AUTH_REVOKED": "Le serveur a refusé ces identifiants. Vérifiez l'identifiant et le mot de passe.",
+      "QUOTA": "Le fournisseur indique que le quota d'envoi est atteint. Réessayez plus tard.",
+      "RATE_LIMITED": "Trop de tentatives côté fournisseur. Réessayez dans quelques minutes.",
+      "REJECTED": "Le fournisseur a refusé la connexion.",
+      "TRANSIENT": "Impossible de joindre les serveurs de messagerie pour le moment. Vérifiez les hôtes et les ports, ou réessayez dans quelques minutes.",
+      "CONFIG": "Cette configuration n'est pas prise en charge. Vérifiez les serveurs et les ports.",
+      "plan": "Connecter une boîte demande l'offre Solo ou Équipe."
+    },
+    "oauth": {
+      "google": "Se connecter avec Google",
+      "microsoft": "Se connecter avec Microsoft",
+      "appPassword": "ou avec un mot de passe d'application"
+    },
+    "flash": {
+      "connected": "Boîte connectée.",
+      "pending": "Connexion en cours. La boîte apparaît dans quelques secondes.",
+      "cancelled": "Connexion annulée. Rien n'a été modifié.",
+      "expired": "La connexion a pris trop de temps ou a déjà été utilisée. Recommencez.",
+      "error": "Impossible de connecter la boîte.",
+      "exists": "Cette boîte est déjà connectée dans votre espace.",
+      "limit": "Vous avez atteint le nombre maximum de boîtes.",
+      "failed": "La connexion a échoué. Réessayez dans quelques minutes.",
+      "pendingSlow": "Toujours rien. Rechargez dans un instant, ou reconnectez la boîte."
+    }
+  },
+  "suppressions": {
+    "title": "Liste d'arrêt",
+    "description": "Ces adresses ne recevront plus aucun mail de campagne de cet espace.",
+    "count": "{count, plural, =0 {Aucune adresse} one {# adresse} other {# adresses}}",
+    "latest": "Les {count} dernières sont affichées. L'export CSV les contient toutes.",
+    "empty": "Personne pour l'instant. Les désinscriptions, rebonds et plaintes apparaîtront ici.",
+    "export": "Exporter en CSV",
+    "columns": {
+      "email": "Email",
+      "reason": "Raison",
+      "source": "Source",
+      "date": "Date"
+    },
+    "reason": {
+      "UNSUBSCRIBE": "Désinscrit",
+      "BOUNCE": "Rebond",
+      "COMPLAINT": "Plainte",
+      "MANUAL": "Ajout manuel"
+    },
+    "remove": "Retirer",
+    "removing": "Retrait…",
+    "cancel": "Annuler",
+    "removeTitle": "Retirer cette adresse ?",
+    "removeDescription": "{email} pourra de nouveau recevoir vos campagnes.",
+    "addLabel": "Adresse email à ajouter",
+    "placeholder": "prenom@entreprise.com",
+    "add": "Ajouter une adresse",
+    "adding": "Ajout…",
+    "added": "Adresse ajoutée",
+    "errors": {
+      "invalid": "Cette adresse email n'est pas valide.",
+      "exists": "Cette adresse est déjà dans la liste.",
+      "notRemovable": "Seules les adresses ajoutées à la main peuvent être retirées.",
+      "managerOnly": "Seuls les propriétaires et administrateurs peuvent retirer une adresse."
+    },
+    "removed": "Adresse retirée"
   }
 }

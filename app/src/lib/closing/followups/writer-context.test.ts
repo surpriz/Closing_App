@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { guardSourceText, pickRelevantSections } from "./writer-context";
+import { guardSourceText, pickRelevantSections, previousMessagesOf } from "./writer-context";
 
 const pages = [
   { tags: ["SCOPE" as const], summary: "Refonte complète du site", keyFacts: ["8 semaines"], text: "Périmètre" },
@@ -45,5 +45,33 @@ describe("guardSourceText", () => {
     expect(text).toContain("12 000 € HT");
     expect(text).toContain("+18 % de conversion");
     expect(text).toContain("06 12 34 56 78");
+  });
+});
+
+describe("previousMessagesOf", () => {
+  const now = new Date("2026-11-18T10:00:00Z");
+  const ago = (days: number) => new Date(now.getTime() - days * 86_400_000);
+
+  it("merges the link's follow-ups and the campaign's steps, newest first, three at most", () => {
+    const result = previousMessagesOf(
+      [{ sentAt: ago(2), channel: "EMAIL", subject: "Suite", body: "Relance IA" }],
+      [
+        { sentAt: ago(9), subject: "Devis", body: "x".repeat(400) },
+        { sentAt: ago(6), subject: null, body: "Étape 2" },
+        { sentAt: ago(12), subject: "Plus vieux", body: "Jamais" },
+      ],
+      now,
+    );
+    expect(result).toEqual([
+      { daysAgo: 2, channel: "EMAIL", subject: "Suite", excerpt: "Relance IA" },
+      { daysAgo: 6, channel: "EMAIL", subject: null, excerpt: "Étape 2" },
+      { daysAgo: 9, channel: "EMAIL", subject: "Devis", excerpt: "x".repeat(300) },
+    ]);
+  });
+
+  it("is the link's follow-ups alone outside a campaign", () => {
+    expect(previousMessagesOf([{ sentAt: ago(1), channel: "WHATSAPP", subject: null, body: null }], [], now)).toEqual([
+      { daysAgo: 1, channel: "WHATSAPP", subject: null, excerpt: "" },
+    ]);
   });
 });

@@ -5,6 +5,7 @@ import { captureProductEvent } from "@/lib/analytics/server";
 import { isUniqueViolation } from "@/lib/closing/followups/queue";
 import { prisma } from "@/lib/db";
 
+import { syncMailboxQuantity } from "./mailboxes";
 import { isPaidStatus, seatQuantity, subscriptionFields } from "./plans";
 import { syncSeats } from "./seats";
 import { sendPaymentFailedEmail } from "./send-emails";
@@ -64,6 +65,10 @@ export async function syncSubscription(stripe: Stripe, subscriptionId: string) {
   }
   // Switched from Solo to Team in the portal: one seat billed, bring it to the member count
   if (fields.plan === "team" && fields.seats !== seatQuantity(org._count.members)) await syncSeats(org.id);
+  // The add-on follows the paid subscription; its own update comes back here as "unchanged"
+  if (isPaidStatus(fields.planStatus)) {
+    await syncMailboxQuantity(org.id).catch((error) => console.error("[billing:mailboxes]", org.id, error));
+  }
   return org.id;
 }
 

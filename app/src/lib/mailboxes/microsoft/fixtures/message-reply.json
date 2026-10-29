@@ -1,0 +1,10 @@
+{
+  "id": "AAMkAGI2-msg1=",
+  "internetMessageHeaders": [
+    { "name": "Authentication-Results", "value": "spf=pass smtp.mailfrom=target.io; dkim=pass header.d=target.io; dmarc=pass action=none header.from=target.io" },
+    { "name": "In-Reply-To", "value": "<sent-1@seller.com>" },
+    { "name": "References", "value": "<sent-0@seller.com> <sent-1@seller.com>" },
+    { "name": "Content-Type", "value": "multipart/alternative; boundary=abc" }
+  ],
+  "uniqueBody": { "contentType": "text", "content": "Sounds interesting, call me tomorrow\n\nOn Mon, Jane wrote:\n> old" }
+}

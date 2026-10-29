@@ -42,5 +42,22 @@
     "clicked": "Rouvertes",
     "replied": "Réponses",
     "meetings": "RDV sous 14 j"
+  },
+  "campaigns": {
+    "title": "Campagnes",
+    "hint": "Taux sur les prospects contactés",
+    "recent": "emails envoyés depuis votre boîte, {days} derniers jours",
+    "name": "Campagne",
+    "enrolled": "Inscrits",
+    "contacted": "Contactés",
+    "sent": "Envoyés",
+    "clicked": "Rouverts",
+    "replied": "Réponses",
+    "bounced": "Rebonds",
+    "byStep": "Par étape",
+    "step": "Étape",
+    "stepLabel": "Étape {order}",
+    "aiLabel": "Relance IA : {label}",
+    "byHour": "Par heure de réception"
   }
 }

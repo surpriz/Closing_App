@@ -152,7 +152,8 @@
       "noChannel": "Aucun canal d'envoi disponible.",
       "afterExpiry": "L'envoi tomberait après l'expiration du lien.",
       "bounced": "L'adresse email du contact est invalide.",
-      "replied": "Le prospect a répondu par email : la suite est entre vos mains."
+      "replied": "Le prospect a répondu par email : la suite est entre vos mains.",
+      "campaignOwned": "Les relances sont pilotées par la campagne."
     },
     "act": {
       "insightNotFound": "Analyse introuvable.",
@@ -185,7 +186,13 @@
       "validatedByProspect": "Proposition validée par le prospect",
       "changeRequestedByProspect": "Ajustement demandé par le prospect",
       "bounced": "Adresse email invalide (bounce)",
-      "replied": "Le prospect a répondu par email"
+      "replied": "Le prospect a répondu par email",
+      "campaign": "Les relances sont gérées par la campagne",
+      "campaignStopped": "La campagne s'est arrêtée pour ce contact",
+      "campaignEnded": "La campagne est terminée",
+      "enrollmentEnded": "Ce contact ne fait plus partie de la campagne",
+      "suppressed": "Adresse sur la liste d'arrêt",
+      "noMailbox": "La campagne n'a pas de boîte mail connectée"
     },
     "queue": {
       "toReview": "À relire : {issues}",

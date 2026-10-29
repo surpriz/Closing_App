@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { isCampaignOwned } from "@/lib/outreach/ownership";
 
 import { WARM_READ_MIN_MS } from "../constants";
 import { isLinkExpired } from "../expiry";
@@ -28,6 +29,7 @@ export async function evaluateWarmRead(viewId: string, now = new Date()) {
           organizationId: true,
           documentId: true,
           followupsEnabled: true,
+          campaignOwned: true,
           dealStatus: true,
           archivedAt: true,
           meetingBookedAt: true,
@@ -47,6 +49,8 @@ export async function evaluateWarmRead(viewId: string, now = new Date()) {
   if (!view || view.isBot) return;
 
   const { link, prospect } = view;
+  // A campaign still drives this prospect: its own engine reads the same signals
+  if (isCampaignOwned(link)) return;
   if (!link.parentLinkId || prospect?.origin !== "COLD_EMAIL" || prospect.unsubscribedAt || prospect.bouncedAt) return;
   if (!link.followupsEnabled || link.dealStatus !== "OPEN" || link.archivedAt || link.meetingBookedAt || link.quoteRequestedAt || link.repliedAt) return;
   if (link.snoozedUntil && link.snoozedUntil > now) return;

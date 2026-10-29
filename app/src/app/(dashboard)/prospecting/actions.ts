@@ -349,7 +349,7 @@ export async function createOutreachLinkAction(suggestionId: string, documentId:
   const footer = outreachFooter({
     signature: settings?.senderSignature ?? null,
     senderName: settings?.senderName ?? user.name,
-    unsubscribeUrl: unsubscribePageUrl(link.prospects[0].id),
+    unsubscribeUrl: unsubscribePageUrl({ kind: "prospect", id: link.prospects[0].id }),
   });
 
   revalidatePath("/prospecting");

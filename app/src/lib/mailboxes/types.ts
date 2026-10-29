@@ -1,0 +1,85 @@
+import type { MailboxErrorCode } from "./errors";
+
+import type { MailboxProvider, MailboxConnector as MailboxConnectorKind } from "@/generated/prisma/enums";
+
+// Re-exported so existing importers keep working; the connector enum is aliased to avoid clashing with the
+// MailboxConnector interface below.
+export type { MailboxProvider, MailboxConnectorKind };
+
+export type Capabilities = {
+  customHeaders: boolean;
+  listUnsubscribe: boolean;
+  webhooks: boolean;
+  threadId: boolean;
+  ownMessageId: boolean;
+};
+
+export type OutboundMessage = {
+  to: { address: string; name?: string | null };
+  subject: string;
+  text: string;
+  html: string;
+  messageId: string;
+  inReplyTo?: string | null;
+  references?: string[];
+  replyToProviderId?: string | null;
+  headers?: Record<string, string>;
+  idempotencyKey: string;
+};
+
+export type SendResult = { messageId: string; providerId: string | null; threadId: string | null };
+
+export type DsnDetails = {
+  action: "failed" | "delayed" | "other";
+  status: string | null;
+  diagnostic: string | null;
+  failedRecipient: string | null;
+  originalMessageId: string | null;
+};
+
+export type InboundHeaders = Partial<
+  Record<
+    "auto-submitted" | "authentication-results" | "precedence" | "x-autoreply" | "x-autorespond" | "content-type" | "list-id" | "x-failed-recipients",
+    string
+  >
+>;
+
+export type InboundMessage = {
+  id: string;
+  messageId: string | null;
+  inReplyTo: string | null;
+  references: string[];
+  from: { address: string; name: string | null };
+  to: string[];
+  subject: string | null;
+  date: Date;
+  textExcerpt: string | null;
+  isDsn: boolean;
+  dsn: DsnDetails | null;
+  headers: InboundHeaders;
+  /** Sender authentication from the receiving server's header: null when unknown (absent or inconclusive) */
+  authenticated?: boolean | null;
+  threadId: string | null;
+};
+
+export type SyncCursor = string | null;
+
+export type VerifyResult =
+  | { ok: true; address: string; displayName: string | null }
+  | { ok: false; code: MailboxErrorCode; message: string };
+
+export interface MailboxConnector {
+  readonly provider: MailboxProvider;
+  readonly capabilities: Capabilities;
+  send(message: OutboundMessage): Promise<SendResult>;
+  listNewMessages(
+    cursor: SyncCursor,
+    opts: { limit: number; notBefore: Date; signal: AbortSignal; candidateSenders?: Set<string> },
+  ): Promise<{ messages: InboundMessage[]; cursor: SyncCursor; hasMore: boolean }>;
+  getMessage?(id: string): Promise<InboundMessage | null>;
+  verify(): Promise<VerifyResult>;
+  disconnect(): Promise<void>;
+  subscribe?(input: { notificationUrl: string; clientState: string }): Promise<{ subscriptionId: string; expiresAt: Date }>;
+  renew?(subscriptionId: string): Promise<{ expiresAt: Date }>;
+  unsubscribe?(subscriptionId: string): Promise<void>;
+}

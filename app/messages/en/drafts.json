@@ -1,4 +1,5 @@
 {
+  "campaign": "Campaign {name}",
   "metaTitle": "Follow-ups to review",
   "title": "Follow-ups to review",
   "description": "Everything waiting for your OK before it goes out. Each follow-up is checked again at send time: if the prospect replied or opened it in the meantime, it doesn't go.",

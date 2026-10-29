@@ -11,6 +11,7 @@ import { getPublicAppUrl } from "@/lib/app-origin";
 import { syncSeats } from "@/lib/billing/seats";
 import { getWorkspacePlan } from "@/lib/billing/workspace-plan";
 import { inBackground } from "@/lib/closing/background";
+import { disconnectMemberMailboxes } from "@/lib/mailboxes/disconnect-member";
 import { prisma } from "@/lib/db";
 import {
   devMagicLinksEnabled,
@@ -170,7 +171,11 @@ export const auth = betterAuth({
         beforeAcceptInvitation: ({ organization }) => requireTeamPlan(organization.id),
         afterAddMember: async ({ organization }) => inBackground("seat-sync", () => syncSeats(organization.id)),
         afterAcceptInvitation: async ({ organization }) => inBackground("seat-sync", () => syncSeats(organization.id)),
-        afterRemoveMember: async ({ organization }) => inBackground("seat-sync", () => syncSeats(organization.id)),
+        afterRemoveMember: async ({ organization, member }) => {
+          inBackground("seat-sync", () => syncSeats(organization.id));
+          // The mailbox is the member's own: once they leave the workspace, its stored password must go too
+          inBackground("mailbox-disconnect", () => disconnectMemberMailboxes(organization.id, member.userId));
+        },
       },
       sendInvitationEmail: async ({ id, email, organization, inviter }) => {
         const url = `${getPublicAppUrl()}/invitation/${id}`;

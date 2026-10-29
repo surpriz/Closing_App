@@ -14,7 +14,8 @@
       "extension": "Chrome and Outlook",
       "equipe": "Team",
       "facturation": "Billing",
-      "donnees": "Data"
+      "donnees": "Data",
+      "boite": "Mailbox"
     },
     "instantSave": "These sections save as soon as you change them."
   },
@@ -226,5 +227,163 @@
     "codeHint": "The code shows up in the Clozer pane in your Outlook. Never enter a code someone else sent you.",
     "connecting": "Connecting…",
     "connect": "Connect Outlook"
+  },
+  "mailbox": {
+    "title": "Mailbox",
+    "description": "Your campaigns go out from your own mailbox. Clozer reads your replies to stop sequences.",
+    "empty": "No mailbox connected yet.",
+    "status": {
+      "ACTIVE": "Active",
+      "ERROR": "Error",
+      "CONNECTING": "Connecting",
+      "DISCONNECTED": "Disconnected"
+    },
+    "dns": {
+      "spf": "SPF",
+      "dkim": "DKIM",
+      "dmarc": "DMARC",
+      "ok": "ok",
+      "weak": "weak",
+      "missing": "missing",
+      "probe": {
+        "button": "Test by email",
+        "instruction": "Send any email from this mailbox to this address, then click Refresh.",
+        "refresh": "Refresh"
+      },
+      "unknown": "unknown",
+      "managed": "{provider} address: SPF, DKIM and DMARC are handled by {provider}, nothing to set up.",
+      "help": {
+        "spf": {
+          "missing": "No SPF record found for your domain. Add one so receivers trust your messages.",
+          "duplicate": "Your domain has two SPF records, which breaks the check. Merge them into one.",
+          "missing_provider": "Your SPF record does not include your mail provider. Add it."
+        },
+        "dkim": {
+          "unknown": "We could not find a DKIM key. It may use a selector we did not try. Check with your provider.",
+          "revoked": "The DKIM key is revoked. Publish a new one with your provider."
+        },
+        "dmarc": {
+          "missing": "No DMARC record found. Add one, even with a soft policy.",
+          "none_policy": "Your DMARC policy is set to none. It works, but it protects little."
+        }
+      }
+    },
+    "sentToday": "Sent today: {sent} / {allowance}",
+    "ramping": "new mailbox, the limit rises over three weeks",
+    "cap": "Daily limit",
+    "capHint": "From 1 to {max} a day.",
+    "save": "Save",
+    "capSaved": "Limit saved",
+    "recheck": "Re-check DNS",
+    "rechecking": "Checking…",
+    "disconnect": "Disconnect",
+    "disconnecting": "Disconnecting…",
+    "cancel": "Cancel",
+    "disconnectTitle": "Disconnect this mailbox?",
+    "disconnectDescription": "Campaigns using it will stop sending. Your password is erased from Clozer.",
+    "connectTitle": "Connect a mailbox",
+    "email": "Email address",
+    "detect": "Detect",
+    "detecting": "Detecting…",
+    "detected": "Detected: {provider} ({domain})",
+    "providers": {
+      "GOOGLE": "Google",
+      "MICROSOFT": "Microsoft 365",
+      "IMAP": "IMAP / SMTP"
+    },
+    "googleNotice": "Google sign-in is not available on this workspace. Use an app password instead.",
+    "microsoftNotice": "Microsoft 365 sign-in is not set up on this server yet, so this button is disabled.",
+    "appPasswordHint": "Use an app password, not your usual Google password.",
+    "displayName": "Sender name",
+    "servers": "Servers",
+    "imapHost": "IMAP server",
+    "smtpHost": "SMTP server",
+    "port": "Port",
+    "secure": "Direct SSL/TLS (ports 465 / 993)",
+    "secureHelp": "Tick direct SSL/TLS only for ports 465 (SMTP) and 993 (IMAP). Otherwise the connection must support STARTTLS (ports 587 / 143).",
+    "user": "Username (defaults to your email)",
+    "password": "Password",
+    "connect": "Connect",
+    "connecting": "Connecting…",
+    "reconnect": "Reconnect",
+    "form": {
+      "userDiffers": "Emails will go out as {email}. Make sure this account is allowed to send for that address."
+    },
+    "lastError": {
+      "AUTH_REVOKED": "The server refused the credentials. Reconnect the mailbox with a valid password.",
+      "QUOTA": "The provider's sending quota is reached.",
+      "RATE_LIMITED": "The provider is limiting sending.",
+      "REJECTED": "The provider rejected the message.",
+      "TRANSIENT": "The mail servers could not be reached.",
+      "CONFIG": "The mailbox setup is invalid. Check the servers and ports.",
+      "POLICY": "Too many bounces: sending was paused to protect your reputation."
+    },
+    "connected": "Mailbox connected",
+    "errors": {
+      "invalid": "Check the fields: email, servers, ports and password are required.",
+      "exists": "This mailbox is already connected in your workspace.",
+      "limit": "You reached the maximum number of mailboxes.",
+      "tooMany": "Too many connection attempts. Try again in an hour.",
+      "AUTH_REVOKED": "The server refused these credentials. Check the username and password.",
+      "QUOTA": "The provider says the sending quota is reached. Try again later.",
+      "RATE_LIMITED": "Too many attempts on the provider side. Try again in a few minutes.",
+      "REJECTED": "The provider rejected the connection.",
+      "TRANSIENT": "Cannot reach the mail servers right now. Check the hosts and ports, or try again in a few minutes.",
+      "CONFIG": "This setup is not supported. Check the servers and ports.",
+      "plan": "Connecting a mailbox takes the Solo or Team plan."
+    },
+    "oauth": {
+      "google": "Sign in with Google",
+      "microsoft": "Sign in with Microsoft",
+      "appPassword": "or with an app password"
+    },
+    "flash": {
+      "connected": "Mailbox connected.",
+      "pending": "Connecting. The mailbox shows up in a few seconds.",
+      "cancelled": "Connection cancelled. Nothing was changed.",
+      "expired": "The sign-in took too long or was already used. Start again.",
+      "error": "The mailbox could not be connected.",
+      "exists": "This mailbox is already connected in your workspace.",
+      "limit": "You reached the maximum number of mailboxes.",
+      "failed": "The connection failed. Try again in a few minutes.",
+      "pendingSlow": "Still not there. Reload in a moment, or connect again."
+    }
+  },
+  "suppressions": {
+    "title": "Stop list",
+    "description": "These addresses will no longer receive any campaign email from this workspace.",
+    "count": "{count, plural, =0 {No address} one {# address} other {# addresses}}",
+    "latest": "Showing the latest {count}. The CSV export has them all.",
+    "empty": "Nobody on the list yet. Unsubscribes, bounces and complaints show up here.",
+    "export": "Export as CSV",
+    "columns": {
+      "email": "Email",
+      "reason": "Reason",
+      "source": "Source",
+      "date": "Date"
+    },
+    "reason": {
+      "UNSUBSCRIBE": "Unsubscribed",
+      "BOUNCE": "Bounced",
+      "COMPLAINT": "Complaint",
+      "MANUAL": "Added by hand"
+    },
+    "remove": "Remove",
+    "removing": "Removing…",
+    "cancel": "Cancel",
+    "removeTitle": "Remove this address?",
+    "removeDescription": "{email} will be able to receive your campaigns again.",
+    "addLabel": "Email address to add",
+    "placeholder": "name@company.com",
+    "add": "Add an address",
+    "adding": "Adding…",
+    "added": "Address added",
+    "errors": {
+      "invalid": "This email address is not valid.",
+      "exists": "This address is already on the list.",
+      "notRemovable": "Only addresses added by hand can be removed.",
+      "managerOnly": "Only owners and admins can remove an address."
+    },
+    "removed": "Address removed"
   }
 }

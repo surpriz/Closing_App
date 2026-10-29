@@ -72,9 +72,11 @@
     "notToApprove": "Cette relance n'est plus à valider.",
     "alreadyGone": "Cette relance est déjà partie ou annulée.",
     "cannotRewrite": "Cette relance ne peut plus être réécrite.",
-    "cancelledBySeller": "Annulée par le vendeur"
+    "cancelledBySeller": "Annulée par le vendeur",
+    "campaignOwned": "Les relances sont pilotées par une campagne : impossible de les modifier ici."
   },
   "dealHeader": {
+    "campaign": "Campagne {name} · étape {step}/{steps}",
     "notSent": "Pas encore envoyé",
     "reads": "{count, plural, one {# lecture} other {# lectures}}",
     "readingNow": "En lecture",
@@ -198,7 +200,8 @@
     "ariaLabel": "Relances automatiques",
     "enabled": "Relances activées",
     "disabled": "Relances désactivées, relances en attente annulées",
-    "failed": "Modification impossible"
+    "failed": "Modification impossible",
+    "drivenByCampaign": "Relances gérées par la campagne {name}"
   },
   "linkSettingsForm": {
     "name": "Nom du lien",

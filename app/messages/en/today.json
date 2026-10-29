@@ -134,6 +134,7 @@
     "pause": "Approve everything myself"
   },
   "nextAction": {
+    "campaign": "Campaign {name} · step {step}/{steps}",
     "aiWait": "Nothing to do for now, Clozer is watching.",
     "aiCloseLost": "Prospect probably lost: close it?",
     "aiAdvice": "{verb} {timing}.",

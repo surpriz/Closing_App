@@ -1,26 +1,44 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
-// Unsubscribe links carry `<prospectId>.<signature>` so a prospect can opt out
-// without an account, and nobody can opt out someone else by guessing ids.
-// Pure: the secret is passed in, which keeps it testable.
+export type UnsubscribeSubject = { kind: "prospect" | "enrollment"; id: string };
 
-function sign(prospectId: string, secret: string) {
-  return createHmac("sha256", secret).update(`unsubscribe:${prospectId}`).digest("base64url");
+const PREFIX = { prospect: "p", enrollment: "e" } as const;
+
+function sign(subject: string, secret: string) {
+  return createHmac("sha256", secret).update(`unsubscribe:${subject}`).digest("base64url");
 }
 
-export function createUnsubscribeToken(prospectId: string, secret: string) {
-  return `${prospectId}.${sign(prospectId, secret)}`;
+/**
+ * "p-<id>" or "e-<id>": the kind is signed with the id, so a token cannot be replayed on another table.
+ * "-" (not ":") because Next re-encodes page params and ":" would arrive as "%3A"; cuids never contain "-".
+ */
+export function encodeUnsubscribeSubject(s: UnsubscribeSubject): string {
+  return `${PREFIX[s.kind]}-${s.id}`;
 }
 
-// Returns the prospect id, or null if the token was tampered with
+/** Accepts "p-"/"e-", the legacy "p:"/"e:" forms, and a bare id (a prospect: links sent before enrollments existed). */
+export function parseUnsubscribeSubject(subject: string): UnsubscribeSubject | null {
+  const match = /^([a-z])[-:](.*)$/.exec(subject);
+  if (!match) return subject ? { kind: "prospect", id: subject } : null;
+  const [, prefix, id] = match;
+  if (!id) return null;
+  if (prefix === PREFIX.prospect) return { kind: "prospect", id };
+  if (prefix === PREFIX.enrollment) return { kind: "enrollment", id };
+  return null;
+}
+
+export function createUnsubscribeToken(subject: string, secret: string) {
+  return `${subject}.${sign(subject, secret)}`;
+}
+
 export function verifyUnsubscribeToken(token: string, secret: string): string | null {
   const dot = token.lastIndexOf(".");
   if (dot <= 0) return null;
 
-  const prospectId = token.slice(0, dot);
+  const subject = token.slice(0, dot);
   const given = Buffer.from(token.slice(dot + 1));
-  const expected = Buffer.from(sign(prospectId, secret));
+  const expected = Buffer.from(sign(subject, secret));
   if (given.length !== expected.length || !timingSafeEqual(given, expected)) return null;
 
-  return prospectId;
+  return subject;
 }

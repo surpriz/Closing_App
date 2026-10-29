@@ -5,6 +5,8 @@ import { shareLink } from "@/lib/closing/link-url";
 import { prisma } from "@/lib/db";
 import { isEmailConfigured } from "@/lib/email";
 import { toUiLocale } from "@/lib/seller-locale";
+import { reconcileFollowupMirrors, sendCampaignFollowup } from "@/lib/outreach/followup-transport";
+import { isCampaignOwned } from "@/lib/outreach/ownership";
 import { getNamespaceTranslator } from "@/lib/server-translator";
 
 import { isWhatsAppConfigured, sendWhatsApp } from "../channels/whatsapp";
@@ -23,6 +25,11 @@ async function finish(id: string, status: "CANCELLED" | "SKIPPED" | "FAILED", re
       ...(status === "CANCELLED" ? { cancelledAt: new Date() } : {}),
       ...(status === "FAILED" ? { sentAt: null } : {}),
     },
+  });
+  // A campaign follow-up that ends here must not leave its mirror waiting in the campaign's history
+  await prisma.campaignMessage.updateMany({
+    where: { followupId: id, status: { in: ["SCHEDULED", "SENDING"] } },
+    data: { status: "CANCELLED", sendingAt: null },
   });
 }
 
@@ -55,7 +62,12 @@ export async function sendFollowup(
   // Reasons are stored on the follow-up and shown to the seller
   const t = getNamespaceTranslator(toUiLocale(link.createdBy?.locale), "server.followups.dispatch");
 
-  if (link.archivedAt || !link.followupsEnabled) {
+  // A campaign drives its link: only its own follow-ups go out (checked first, campaign links have follow-ups off)
+  if (isCampaignOwned(link) && !followup.campaignProspectId) {
+    await finish(followup.id, "CANCELLED", t("campaign"));
+    return "cancelled";
+  }
+  if (link.archivedAt || (!link.followupsEnabled && !followup.campaignProspectId)) {
     await finish(followup.id, "CANCELLED", t("followupsOff"));
     return "cancelled";
   }
@@ -139,6 +151,11 @@ export async function sendFollowup(
     }
   }
 
+  if (followup.campaignProspectId) {
+    // The campaign's mailbox sends it, in the enrollment's thread (and mirrors it as a campaign message)
+    const outcome = await sendCampaignFollowup(followup.id, now, { approvedById });
+    return outcome === "rescheduled" || outcome === "plan" ? "ignored" : outcome;
+  }
   // Claim it so two concurrent ticks can't send the same message twice
   const claimed = await prisma.followup.updateMany({
     where: { id: followup.id, status: { in: statuses } },
@@ -197,6 +214,11 @@ export async function sendFollowup(
 }
 
 export async function dispatchDueFollowups(now = new Date(), limit = 25) {
+  try {
+    await reconcileFollowupMirrors(now);
+  } catch (error) {
+    console.error("[followups] mirror reconciliation", error);
+  }
   const due = await prisma.followup.findMany({
     where: { status: { in: SENDABLE }, scheduledFor: { lte: now }, link: ACTIVE_WORKSPACE },
     orderBy: { scheduledFor: "asc" },
@@ -206,7 +228,13 @@ export async function dispatchDueFollowups(now = new Date(), limit = 25) {
 
   const counts: Record<Outcome, number> = { sent: 0, failed: 0, cancelled: 0, skipped: 0, ignored: 0 };
   for (const { id } of due) {
-    counts[await sendFollowup(id)]++;
+    try {
+      counts[await sendFollowup(id)]++;
+    } catch (error) {
+      // One bad follow-up must not stop the others
+      console.error(`[followups] ${id}`, error);
+      counts.failed++;
+    }
   }
   return counts;
 }

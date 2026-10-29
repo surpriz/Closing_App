@@ -1,0 +1,4 @@
+{ "request_id": "r5", "data": [
+  { "id": "m2", "thread_id": "t2", "from": [ { "email": "mailer-daemon@googlemail.com", "name": "Mail Delivery Subsystem" } ], "to": [ { "email": "jerome@acme.io" } ], "subject": "Delivery Status Notification (Failure)", "date": 1793000500, "snippet": "Address not found. 550 5.1.1 The email account that you tried to reach does not exist. nobody@corp.com",
+    "headers": [ { "name": "Message-ID", "value": "<dsn@googlemail.com>" }, { "name": "X-Failed-Recipients", "value": "nobody@corp.com" } ] }
+] }

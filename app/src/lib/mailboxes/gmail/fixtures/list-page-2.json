@@ -1,0 +1,20 @@
+{
+  "object": "EmailList",
+  "items": [
+    {
+      "id": "in_2",
+      "message_id": "<dsn-1@googlemail.com>",
+      "from_attendee": { "identifier": "mailer-daemon@googlemail.com", "display_name": "Mail Delivery Subsystem" },
+      "to_attendees": [{ "identifier": "me@acme.test" }],
+      "subject": "Delivery Status Notification (Failure)",
+      "date": "2026-10-27T11:30:00.000Z",
+      "body_plain": "Status: 5.1.1 The email account that you tried to reach does not exist. bob@nowhere.test",
+      "thread_id": "thr_10",
+      "headers": [
+        { "name": "X-Failed-Recipients", "value": "bob@nowhere.test" },
+        { "name": "Content-Type", "value": "multipart/report; report-type=delivery-status" }
+      ]
+    }
+  ],
+  "cursor": null
+}

@@ -1,0 +1,8 @@
+{
+  "id": "AAMkAGI2-bounce=",
+  "internetMessageHeaders": [
+    { "name": "Content-Type", "value": "multipart/report; report-type=delivery-status; boundary=xyz" },
+    { "name": "X-Failed-Recipients", "value": "ghost@target.io" }
+  ],
+  "uniqueBody": { "contentType": "text", "content": "Delivery has failed to these recipients.\nghost@target.io\nDiagnostic: 550 5.1.10 RESOLVER.ADR.RecipientNotFound; Recipient not found" }
+}

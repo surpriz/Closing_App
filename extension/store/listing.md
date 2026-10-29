@@ -1,6 +1,6 @@
 # Chrome Web Store listing
 
-Copy for the developer dashboard. Keep it in step with the privacy page (`landing/src/app/confidentialite`) and `wxt.config.ts`: Google rejects listings whose permissions or data use don't match the code.
+Copy for the developer dashboard. Keep it in step with the privacy page (`landing/src/app/[locale]/privacy`) and `wxt.config.ts`: Google rejects listings whose permissions or data use don't match the code.
 
 ## Store listing
 

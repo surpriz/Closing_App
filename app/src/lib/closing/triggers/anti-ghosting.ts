@@ -1,5 +1,6 @@
 import { ACTIVE_WORKSPACE } from "@/lib/closing/active-workspace";
 import { prisma } from "@/lib/db";
+import { NOT_CAMPAIGN_OWNED } from "@/lib/outreach/ownership";
 import { toUiLocale } from "@/lib/seller-locale";
 import { getNamespaceTranslator } from "@/lib/server-translator";
 
@@ -36,6 +37,7 @@ export async function scanAntiGhosting(now = new Date()) {
       views: { none: { isBot: false } },
       prospects: { some: { unsubscribedAt: null, bouncedAt: null } },
       ...ACTIVE_WORKSPACE,
+      ...NOT_CAMPAIGN_OWNED,
     },
     include: {
       prospects: { where: { unsubscribedAt: null, bouncedAt: null } },

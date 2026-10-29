@@ -11,7 +11,7 @@ import { onLinkExpiryChanged } from "../triggers/expiry";
 import { linkTitle } from "./link-title";
 import { linkDefaultsFor, SHARED_LINK_SETTINGS } from "./smart-defaults";
 
-export type LinkSource = "extension_gmail" | "extension_outlook" | "outlook_addin" | "prospecting";
+export type LinkSource = "extension_gmail" | "extension_outlook" | "outlook_addin" | "prospecting" | "campaign";
 
 /**
  * One link = one proposal sent to one prospect company.
@@ -26,7 +26,7 @@ export async function createDocumentLink(input: {
     email: string;
     name?: string | null;
     company?: string | null;
-    origin?: "SELLER" | "PROSPECTING";
+    origin?: "SELLER" | "PROSPECTING" | "CAMPAIGN";
   } | null;
   /** Left out: the workspace defaults, adjusted to the document type (and again once the AI knows it). */
   requireEmail?: boolean;

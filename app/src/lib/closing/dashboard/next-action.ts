@@ -44,6 +44,8 @@ export type NextActionInput = {
   gateSeenAt?: Date | null;
   /** The prospect came back to the link after it was archived or expired (revival.ts). */
   revival?: { at: Date; asked: boolean; state: "archived" | "expired" } | null;
+  /** A campaign still drives this link: its sequence is the plan, nothing to chase. */
+  campaign?: { name: string; step: number; steps: number } | null;
   /** Nobody known on the link: whoever reads, there is no one to call yet. */
   anonymous?: boolean;
 };
@@ -64,6 +66,8 @@ export type NextAction =
   | { kind: "nudge"; days: number; opened: boolean; clicked?: boolean }
   | { kind: "wait"; days: number; opened: boolean; tier: Tier | null; clicked?: boolean }
   | { kind: "in_touch"; at: Date }
+  /** The campaign owns the follow-ups: the seller waits for its next step. */
+  | { kind: "campaign"; name: string; step: number; steps: number }
   /** A meeting is in the seller's calendar: follow-ups stopped, nothing to chase. */
   | { kind: "meeting_booked"; at: Date; meetingAt: Date | null }
   | { kind: "snoozed"; until: Date }
@@ -84,6 +88,7 @@ const URGENCY: NextAction["kind"][] = [
   "followup_planned",
   "meeting_booked",
   "in_touch",
+  "campaign",
   "wait",
   "snoozed",
 ];
@@ -108,6 +113,7 @@ const FACTUAL: NextAction["kind"][] = [
   "review_draft",
   "meeting_booked",
   "in_touch",
+  "campaign",
   "snoozed",
 ];
 
@@ -190,6 +196,9 @@ export function computeNextAction(input: NextActionInput): NextAction {
     return { kind: "in_touch", at: input.lastSellerContactAt };
   }
 
+  // The campaign raises its own call moments and schedules its own steps
+  if (input.campaign) return { kind: "campaign", ...input.campaign };
+
   if (!input.opened) {
     // Anti-ghosting follow-ups only exist for links never opened.
     if (input.nextFollowup) return { kind: "followup_planned", at: input.nextFollowup.scheduledFor, opened: false };
@@ -243,6 +252,8 @@ export function describeNextAction(action: NextAction, now: Date, i18n: Dashboar
         : t("today.nextAction.meetingPast");
     case "in_touch":
       return t("today.nextAction.inTouch", { when: formatRelative(action.at, locale, now) });
+    case "campaign":
+      return t("today.nextAction.campaign", { name: action.name, step: action.step, steps: action.steps });
     case "ai_advice":
       return describeAiAdvice(action, i18n);
     case "snoozed":

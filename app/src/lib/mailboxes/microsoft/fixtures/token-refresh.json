@@ -1,0 +1,1 @@
+{ "token_type": "Bearer", "scope": "Mail.ReadWrite Mail.Send User.Read openid profile email", "expires_in": 3599, "access_token": "at-new", "refresh_token": "rt-new" }

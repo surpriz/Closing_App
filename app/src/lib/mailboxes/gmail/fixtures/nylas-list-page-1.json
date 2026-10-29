@@ -1,0 +1,4 @@
+{ "request_id": "r4", "next_cursor": "tok-2", "data": [
+  { "id": "m1", "thread_id": "t1", "from": [ { "email": "Alice@Corp.com", "name": "Alice" } ], "to": [ { "email": "jerome@acme.io" } ], "subject": "Re: Hello", "date": 1793000000, "snippet": "Merci, ca m'interesse.",
+    "headers": [ { "name": "Message-ID", "value": "<r1@corp.com>" }, { "name": "In-Reply-To", "value": "<abc123@mail.gmail.com>" }, { "name": "References", "value": "<x@y.z> <abc123@mail.gmail.com>" }, { "name": "Authentication-Results", "value": "mx.google.com; dkim=pass header.d=corp.com; spf=pass smtp.mailfrom=corp.com; dmarc=pass header.from=corp.com" }, { "name": "X-Other", "value": "ignored" } ] }
+] }

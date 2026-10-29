@@ -63,6 +63,25 @@ describe("templateFollowup", () => {
   });
 });
 
+describe("cold sequence triggers", () => {
+  const triggers = ["COLD_READ", "COLD_READ_PRICING", "COLD_REACTIVATE"] as const;
+
+  it.each(triggers)("%s has a goal in the prompt that never hints at tracking", (trigger) => {
+    const prompt = buildFollowupPrompt({ ...input, trigger });
+    expect(prompt).toContain("Goal");
+    expect(prompt).not.toMatch(/you (saw|noticed|know) (that )?they/i);
+  });
+
+  it.each(triggers)("%s templates stay clean in French and English", (trigger) => {
+    for (const locale of ["fr-FR", "en-US"]) {
+      const draft = templateFollowup({ ...input, trigger, locale });
+      expect(draft.body).toContain(input.proposalUrl);
+      expect(draft.body).toContain("Refonte e-commerce");
+      expect(draft.body).not.toMatch(/secondes|seconds|consulté|viewed|opened|tracked/i);
+    }
+  });
+});
+
 describe("writer with a brief", () => {
   const input = {
     trigger: "AI_DECISION" as const,

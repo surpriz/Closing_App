@@ -18,6 +18,7 @@ import {
   updateFollowupDraft,
 } from "@/lib/closing/followups/review";
 import { prisma } from "@/lib/db";
+import { isCampaignOwned } from "@/lib/outreach/ownership";
 import { requireWorkspace } from "@/lib/session";
 import { testToolsEnabled } from "@/lib/test-tools";
 
@@ -56,9 +57,16 @@ function assertTestTools() {
 
 export async function toggleLinkFollowups(linkId: string, enabled: boolean) {
   const link = await requireOwnedLink(linkId);
+  // A campaign drives this link's messages: the seller leaves it to the campaign (or stops it there)
+  const owner = await prisma.link.findUnique({ where: { id: link.id }, select: { campaignOwned: true } });
+  if (owner && isCampaignOwned(owner)) {
+    const t = await getTranslations("deal.followupActions");
+    return { ok: false as const, error: t("campaignOwned") };
+  }
   await prisma.link.update({ where: { id: link.id }, data: { followupsEnabled: enabled } });
   if (!enabled) await cancelOpenFollowups(link.id, "followupsOff");
   revalidatePath(`/documents/${link.documentId}`);
+  return { ok: true as const };
 }
 
 export async function sendFollowupNow(followupId: string) {

@@ -1,7 +1,9 @@
+import { reconcileMailboxes } from "@/lib/billing/mailboxes";
 import { reconcileSeats } from "@/lib/billing/seats";
 import { sendBillingEmails } from "@/lib/billing/send-emails";
 import { ACTIVE_WORKSPACE } from "@/lib/closing/active-workspace";
 import { prisma } from "@/lib/db";
+import { runOutreachTick } from "@/lib/outreach/tick";
 import { runProspectingTick } from "@/lib/prospecting/tick";
 
 import { sendMorningDigests } from "./alerts/morning-digest";
@@ -19,6 +21,8 @@ import { scanAntiGhosting } from "./triggers/anti-ghosting";
 import { scanExpiringLinks, scanExpiryReminders } from "./triggers/expiry";
 
 const STALE_PENDING_MS = 5 * 60 * 1000;
+// From the start of the tick: leaves a minute of the cron route's 300 s maxDuration for the rest
+const OUTREACH_DEADLINE_MS = 240_000;
 const HOUR_MS = 60 * 60 * 1000;
 // Recency points drop at 24 h, 3 days and 7 days after the last reading
 const SCORE_DECAY_WINDOW_MS = 8 * 24 * HOUR_MS;
@@ -85,6 +89,12 @@ export async function runClosingTick(now = new Date()) {
     return null;
   });
   await reconcileSeats().catch((error) => console.error("[closing:seats]", error));
+  await reconcileMailboxes().catch((error) => console.error("[closing:mailboxes]", error));
+  // Cold email last: its sync and sends are the slow part, so they get what is left of the cron's 300 s, with margin
+  const outreach = await runOutreachTick(now, { deadline: new Date(now.getTime() + OUTREACH_DEADLINE_MS) }).catch((error) => {
+    console.error("[closing:outreach]", error);
+    return null;
+  });
   return {
     expiredCancelled,
     antiGhostingQueued,
@@ -101,6 +111,7 @@ export async function runClosingTick(now = new Date()) {
     draftsArchived,
     purged,
     prospecting,
+    outreach,
     billingEmails,
   };
 }

@@ -87,5 +87,21 @@
       "body": "Stripe va réessayer dans les prochains jours. Mettez à jour votre carte pour garder votre offre, ça prend une minute.",
       "button": "Mettre à jour ma carte"
     }
+  },
+  "mailbox": {
+    "subject": {
+      "auth_revoked": "Votre boîte {mailbox} doit être reconnectée",
+      "policy_bounces": "Vos campagnes sont en pause : trop d'emails rejetés",
+      "send_failed": "Les envois depuis {mailbox} échouent",
+      "sync_failed": "Clozer ne peut plus lire les réponses de {mailbox}"
+    },
+    "intro": {
+      "auth_revoked": "L'accès à {mailbox} a été révoqué ou a expiré. Les envois sont arrêtés tant que vous ne l'avez pas reconnectée.",
+      "policy_bounces": "{mailbox} a reçu plusieurs rejets des serveurs des destinataires aujourd'hui. Vos campagnes actives sont en pause pour ne pas abîmer votre réputation. Reprenez-les une fois la liste vérifiée.",
+      "send_failed": "Plusieurs emails de {mailbox} n'ont pas pu partir. Les contacts concernés sont en pause.",
+      "sync_failed": "Clozer n'a pas pu consulter {mailbox} pour y chercher des réponses. Elles peuvent apparaître avec du retard tant que ce n'est pas réglé."
+    },
+    "detail": "Détail : {detail}",
+    "action": "Ouvrir les réglages"
   }
 }

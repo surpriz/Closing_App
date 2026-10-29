@@ -1,0 +1,1 @@
+{ "request_id": "r3", "data": { "id": "msg-2", "thread_id": "thr-2", "headers": [ { "name": "Message-ID", "value": "<def456@mail.gmail.com>" } ] } }

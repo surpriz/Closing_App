@@ -19,7 +19,8 @@
         "links": "Liens illimités",
         "followups": "Relances IA illimitées, pilote automatique",
         "assistant": "Assistant prospect, traduction, messages vocaux",
-        "branding": "Pas de badge Clozer chez vos prospects"
+        "branding": "Pas de badge Clozer chez vos prospects",
+        "mailbox": "Boîtes connectées pour vos campagnes : {price} HT par boîte et par mois"
       }
     },
     "team": {
@@ -29,7 +30,8 @@
         "solo": "Tout Solo, pour chaque commercial",
         "teamView": "Vue équipe pour le manager",
         "integrations": "Slack et webhooks",
-        "seats": "Facturé par membre, 2 minimum"
+        "seats": "Facturé par membre, 2 minimum",
+        "mailbox": "Boîtes connectées pour vos campagnes : {price} HT par boîte et par mois"
       }
     },
     "enterprise": {
@@ -67,7 +69,9 @@
     "free": "Offre gratuite.",
     "unbilled": "La facturation n'est pas configurée ici : tout est ouvert.",
     "paymentIssue": "Le dernier paiement a échoué. Stripe va réessayer : mettez à jour votre carte pour garder votre offre.",
-    "seats": "{count, plural, one {# membre} other {# membres}}"
+    "seats": "{count, plural, one {# membre} other {# membres}}",
+    "mailboxes": "{count, plural, one {# boîte connectée} other {# boîtes connectées}} · {price} HT par boîte et par mois",
+    "mailboxesIncluded": "{count, plural, one {# boîte connectée} other {# boîtes connectées}} · incluses"
   },
   "usage": {
     "title": "Ce mois-ci",
@@ -109,7 +113,8 @@
       "team": "La vue équipe est incluse dans l'offre Équipe.",
       "invites": "Inviter des collègues, c'est avec l'offre Équipe.",
       "slack": "Les alertes Slack sont incluses dans l'offre Équipe.",
-      "webhooks": "Les webhooks sont inclus dans l'offre Équipe."
+      "webhooks": "Les webhooks sont inclus dans l'offre Équipe.",
+      "mailbox": "Connecter une boîte pour vos campagnes, c'est avec Solo ou Équipe : 15 € HT par boîte et par mois, inclus dans Entreprise."
     }
   },
   "badge": {

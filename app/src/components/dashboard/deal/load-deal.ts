@@ -26,6 +26,7 @@ import { catchUpInBackground } from "@/lib/closing/catch-up";
 import { DAY_MS } from "@/lib/closing/constants";
 import { getReaderMap } from "@/lib/closing/committee/queries";
 import { getLinkAnalytics } from "@/lib/closing/analytics";
+import { linkCampaign, linkCampaignSelect } from "@/lib/closing/dashboard/campaign";
 import { dealCta } from "@/lib/closing/dashboard/deal-cta";
 import { dealPlates } from "@/lib/closing/dashboard/deal-plates";
 import { ACTION_KIND } from "@/lib/closing/dashboard/feed";
@@ -112,9 +113,11 @@ export async function loadDeal(
       prospects: { orderBy: { createdAt: "asc" } },
       engagementScore: true,
       parentLink: { select: { id: true, name: true } },
+      campaignProspect: linkCampaignSelect.campaignProspect,
     },
   });
   if (!link) return null;
+  const campaign = linkCampaign(link);
 
   // A teammate's deal opens read-only: its seller and the managers make the calls
   const canEdit = canEditDeal(link.createdById, workspace);
@@ -418,6 +421,7 @@ export async function loadDeal(
       meetingAt: link.meetingAt,
       quoteRequestedAt: link.quoteRequestedAt,
       revival,
+      campaign,
     }),
     insightCurrent && insight
       ? {
@@ -792,6 +796,7 @@ export async function loadDeal(
 
   return {
     link,
+    campaign,
     now,
     canEdit,
     seller,

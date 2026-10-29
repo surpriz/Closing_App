@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { isCampaignOwned } from "@/lib/outreach/ownership";
 import { toUiLocale } from "@/lib/seller-locale";
 
 import { generateFollowupMessage, queueFollowup } from "../followups/queue";
@@ -17,10 +18,12 @@ export async function queueInterestFollowup(linkId: string, prospectId: string, 
       id: true,
       locale: true,
       timezone: true,
-      link: { select: { createdBy: { select: { locale: true } } } },
+      link: { select: { campaignOwned: true, createdBy: { select: { locale: true } } } },
     },
   });
   if (!prospect) return;
+  // The campaign decides what this prospect receives
+  if (isCampaignOwned(prospect.link)) return;
 
   const followupId = await queueFollowup({
     linkId,

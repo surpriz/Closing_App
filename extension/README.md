@@ -18,14 +18,14 @@ To load a build by hand: `chrome://extensions` → Developer mode → Load unpac
 
 ## How it fits together
 
-- `entrypoints/background.ts` is the only part that talks to the app (`/api/ext/*`, Bearer token). It holds the token in `chrome.storage.local` and uploads PDFs straight to Vercel Blob through `/api/ext/upload`.
-- `entrypoints/capture.content.ts` runs in the page (MAIN world) at `document_start`. Gmail and Outlook attach files through a hidden `<input type=file>` they create and `click()`, so it hooks that call and forwards PDFs to the isolated script. It never blocks the mail app.
-- `entrypoints/mail.content.ts` finds open composes, shows the button and panel (shadow DOM overlay positioned over the message body, not injected into the mail app's markup), and runs the replace flow.
-- `adapters/mail.ts` holds every Gmail and Outlook selector. All lookups may return null: the extension then does less, never breaks the compose.
+- `src/entrypoints/background.ts` is the only part that talks to the app (`/api/ext/*`, Bearer token). It holds the token in `chrome.storage.local` and uploads PDFs straight to Vercel Blob through `/api/ext/upload`.
+- `src/entrypoints/capture.content.ts` runs in the page (MAIN world) at `document_start`. Gmail and Outlook attach files through a hidden `<input type=file>` they create and `click()`, so it hooks that call and forwards PDFs to the isolated script. It never blocks the mail app.
+- `src/entrypoints/mail.content.ts` finds open composes, shows the button and panel (shadow DOM overlay positioned over the message body, not injected into the mail app's markup), and runs the replace flow.
+- `src/adapters/mail.ts` holds every Gmail and Outlook selector. All lookups may return null: the extension then does less, never breaks the compose.
 
 ## Connecting
 
-The popup opens `/extension/connect?nonce=…` on the app. The seller signs in if needed, clicks "Connecter Clozer", and the page hands a token to the extension through `externally_connectable`. Only the hash is stored server side (`extension_tokens`). Tokens are listed and revocable in Réglages.
+The popup opens `/extension/connect?nonce=…` on the app. The seller signs in if needed, clicks "Connecter Clozer", and the page hands a token to the extension through `externally_connectable`. Only the hash is stored server side (`extension_tokens`). Tokens are listed and revocable in Settings.
 
 The app only sends tokens to extension IDs listed in `EXTENSION_IDS`. Dev and staging builds pin their ID with `WXT_MANIFEST_KEY` (public key, in `.env.development` / `.env.staging`): `oidkcbbpbinommpbbpabnlhlnffekbjb`. Production uses the Web Store ID, `fnefeeodeepechnhbijpfmjjcolopmmj` ([listing](https://chromewebstore.google.com/detail/clozer/fnefeeodeepechnhbijpfmjjcolopmmj)).
 
@@ -41,7 +41,7 @@ The staging build can sit next to the Store one ("Clozer (staging)", loaded unpa
 ## When Gmail or Outlook breaks it
 
 1. Switch the host off without a release: `EXTENSION_DISABLED_HOSTS=gmail` (or `outlook`) on the app, or force an update with `EXTENSION_MIN_VERSION`. Older versions then stop acting and show "Clozer doit être mis à jour" (from 1.1.0), whose button asks Chrome for the new version right away.
-2. Save the compose HTML (DevTools → Copy outerHTML of the compose), update the fixture in `adapters/mail.test.ts`, fix `adapters/mail.ts`.
+2. Save the compose HTML (DevTools → Copy outerHTML of the compose), update the fixture in `src/adapters/mail.test.ts`, fix `src/adapters/mail.ts`.
 
 ## Not covered yet
 

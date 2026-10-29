@@ -47,6 +47,7 @@ import { getLanguageModel } from "@/lib/closing/ai/provider";
 import { getDocumentAnalytics } from "@/lib/closing/analytics";
 import { WELCOME_PAGE } from "@/lib/closing/capsules/resolve";
 import { catchUpInBackground } from "@/lib/closing/catch-up";
+import { linkCampaign, linkCampaignSelect } from "@/lib/closing/dashboard/campaign";
 import { buildDocumentFrictions } from "@/lib/closing/dashboard/frictions";
 import { dealLabel, linkLabelSelect } from "@/lib/closing/dashboard/labels";
 import { pageHeat } from "@/lib/closing/dashboard/page-heat";
@@ -134,6 +135,7 @@ export default async function DocumentDetailPage({
             take: 1,
           },
           engagementScore: true,
+          campaignProspect: linkCampaignSelect.campaignProspect,
           _count: { select: { views: { where: { isBot: false } } } },
         },
       },
@@ -367,6 +369,7 @@ export default async function DocumentDetailPage({
       heat: pages && pages.length > 0 ? pageHeat(pages, heatPages) : null,
       ...shareLink(origin, { slug: link.slug, document, company: prospect?.company }),
       followupsEnabled: link.followupsEnabled,
+      campaign: linkCampaign(link),
     };
   });
 

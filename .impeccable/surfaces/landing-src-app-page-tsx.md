@@ -1,13 +1,13 @@
 ---
 version: 1
 slug: "landing-src-app-page-tsx"
-primary_target: "landing/src/app/page.tsx"
+primary_target: "landing/src/app/[locale]/page.tsx"
 related_targets: []
 ---
 
 # Landing clozer.club
 
-Mode: Persuade. Visitor: seller (indé, agence, PME, grand compte) who sends quotes and gets silence. Action: create an account (Google one-click or email) and reach a first live link. Proof: the mechanism shown on a labelled example quote; no customers, numbers or prices exist. Constraints: free during beta, segments (Solo / Équipe / Entreprise) without prices, French only.
+Mode: Persuade. Visitor: seller (indé, agence, PME, grand compte) who sends quotes and gets silence. Action: create an account (Google one-click or email) and reach a first live link. Proof: the mechanism shown on a labelled example quote; no customers or numbers exist. Constraints: paid plans live (Free / Solo / Team / Enterprise, prices on /tarifs), French and English (`/fr`, `/en`).
 
 ## Direction contract
 THESIS: The quote seen through a thermal camera: the visitor sees where it heats up. Refuses the split hero with a screenshot and a row of feature cards.

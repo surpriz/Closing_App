@@ -152,7 +152,8 @@
       "noChannel": "No sending channel available.",
       "afterExpiry": "It would go out after the link expires.",
       "bounced": "The contact's email address bounced.",
-      "replied": "The prospect replied by email: it's your conversation now."
+      "replied": "The prospect replied by email: it's your conversation now.",
+      "campaignOwned": "Follow-ups are driven by the campaign."
     },
     "act": {
       "insightNotFound": "Analysis not found.",
@@ -185,7 +186,13 @@
       "validatedByProspect": "Proposal approved by the prospect",
       "changeRequestedByProspect": "Changes requested by the prospect",
       "bounced": "Invalid email address (bounced)",
-      "replied": "The prospect replied by email"
+      "replied": "The prospect replied by email",
+      "campaign": "Follow-ups are driven by the campaign",
+      "campaignStopped": "The campaign stopped for this contact",
+      "campaignEnded": "The campaign is over",
+      "enrollmentEnded": "This contact is no longer in the campaign",
+      "suppressed": "Address on the stop list",
+      "noMailbox": "The campaign has no connected mailbox"
     },
     "queue": {
       "toReview": "To review: {issues}",

@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { BillingSettings } from "@/components/dashboard/billing-settings";
 import { ExtensionTokens } from "@/components/dashboard/extension-tokens";
+import { MailboxSettings } from "@/components/dashboard/mailbox-settings";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { PrivacySettings } from "@/components/dashboard/privacy-settings";
 import {
@@ -12,7 +13,9 @@ import {
   SettingsNav,
 } from "@/components/dashboard/settings-advanced";
 import { SettingsForm } from "@/components/dashboard/settings-form";
+import { SuppressionList } from "@/components/dashboard/suppression-list";
 import { TeamSettings } from "@/components/dashboard/team-settings";
+import { countBillableMailboxes } from "@/lib/billing/mailboxes";
 import { offerEndsAt } from "@/lib/billing/offers";
 import { countAiFollowupsThisMonth, countLinksCreatedThisMonth, countVideoPitches, isBillingEnabled, planFor } from "@/lib/billing/workspace-plan";
 import { getLanguageModel } from "@/lib/closing/ai/provider";
@@ -24,6 +27,12 @@ import { extensionProbe } from "@/lib/extension-config";
 import { connectedClients } from "@/lib/extension-tokens";
 import { prisma } from "@/lib/db";
 import { isEmailConfigured } from "@/lib/email";
+import { gmailConnector, isMicrosoftMailboxConfigured } from "@/lib/mailboxes/config";
+import { dailyAllowance } from "@/lib/mailboxes/caps/allowance";
+import { sentToday } from "@/lib/mailboxes/connect";
+import type { DnsReport } from "@/lib/mailboxes/dns/checks";
+import { isOutreachAllowed } from "@/lib/outreach/flag";
+import { countSuppressions, listSuppressions } from "@/lib/outreach/suppression";
 import { isManagerRole, isOwnerRole } from "@/lib/roles";
 import { requireWorkspace } from "@/lib/session";
 
@@ -44,6 +53,7 @@ export async function generateMetadata(): Promise<Metadata> {
 // Chrome and Outlook lead: the call alerts depend on them
 const ESSENTIAL = [
   { id: "extension" },
+  { id: "boite", outreachOnly: true },
   { id: "pilote" },
   { id: "alertes" },
   { id: "agenda" },
@@ -59,11 +69,19 @@ const ADVANCED = [
   { id: "donnees" },
 ] as const;
 
-export default async function SettingsPage() {
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const query = await searchParams;
+  const one = (value: string | string[] | undefined) => (typeof value === "string" ? value : null);
+  const flag = one(query.mailbox);
   const { user, organization, role } = await requireWorkspace();
   const isManager = isManagerRole(role);
   const billing = planFor(organization);
-  const [settings, tokens, prefs, team, usage] = await Promise.all([
+  const outreach = isOutreachAllowed(user, organization.id);
+  const [settings, tokens, prefs, team, usage, mailboxes, stopList, connectedMailboxes] = await Promise.all([
     getWorkspaceSettings(organization.id),
     prisma.extensionToken.findMany({
       where: {
@@ -83,6 +101,9 @@ export default async function SettingsPage() {
     getSellerPrefs(user.id, organization.id),
     isManager ? getTeam(organization.id) : null,
     getBillingUsage(organization.id),
+    outreach ? getMailboxes(user.id, organization.id) : null,
+    outreach ? getStopList(organization.id) : null,
+    countBillableMailboxes(organization.id),
   ]);
   const llm = getLanguageModel("followup");
   const t = await getTranslations("settings.page");
@@ -98,7 +119,10 @@ export default async function SettingsPage() {
       <AdvancedSettingsProvider>
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-[11rem_minmax(0,1fr)]">
           <SettingsNav
-            essential={ESSENTIAL.map(({ id }) => ({ id, label: t(`nav.${id}`) }))}
+            essential={ESSENTIAL.filter((section) => outreach || !("outreachOnly" in section)).map(({ id }) => ({
+              id,
+              label: t(`nav.${id}`),
+            }))}
             advanced={ADVANCED.filter(
               (section) => isManager || !("managerOnly" in section),
             ).map(({ id }) => ({ id, label: t(`nav.${id}`) }))}
@@ -116,6 +140,25 @@ export default async function SettingsPage() {
                 probe={extensionProbe(user.email, tokens)}
               />
             </div>
+            {mailboxes && (
+              <div className="max-w-2xl">
+                <MailboxSettings
+                  mailboxes={mailboxes}
+                  maxCap={getEnv().MAILBOX_DAILY_CAP_MAX}
+                  availability={{ google: gmailConnector(), microsoft: isMicrosoftMailboxConfigured() }}
+                  flash={flag ? { flag, code: one(query.code) } : null}
+                />
+              </div>
+            )}
+            {stopList && (
+              <div className="max-w-2xl">
+                <SuppressionList
+                  rows={stopList.rows.map((row) => ({ ...row, createdAt: row.createdAt.toISOString() }))}
+                  total={stopList.total}
+                  canRemove={isManager}
+                />
+              </div>
+            )}
             <SettingsForm
               initial={{
                 version: settings.updatedAt.toISOString(),
@@ -175,9 +218,11 @@ export default async function SettingsPage() {
                 aiFollowups: { used: usage.aiFollowups, max: billing.limits.aiFollowupsPerMonth },
                 videoPitches: { used: usage.videoPitches, max: billing.limits.videoPitches },
               }}
+              mailboxes={{ connected: connectedMailboxes, billed: organization.mailboxQuantity }}
               canManage={isManager}
               billingEnabled={isBillingEnabled()}
               hasCustomer={!!organization.stripeCustomerId}
+              outreach={outreach}
               offerEndsAt={billing.subscribed === null ? (offerEndsAt(organization, new Date())?.toISOString() ?? null) : null}
             />
             <AdvancedSettingsBlock className="space-y-10">
@@ -201,6 +246,46 @@ export default async function SettingsPage() {
       </AdvancedSettingsProvider>
     </div>
   );
+}
+
+async function getStopList(organizationId: string) {
+  const [rows, total] = await Promise.all([listSuppressions(organizationId), countSuppressions(organizationId)]);
+  return { rows, total };
+}
+
+async function getMailboxes(userId: string, organizationId: string) {
+  const now = new Date();
+  const maxCap = getEnv().MAILBOX_DAILY_CAP_MAX;
+  const rows = await prisma.mailbox.findMany({
+    where: { userId, organizationId, status: { not: "DISCONNECTED" } },
+    orderBy: { createdAt: "asc" },
+    select: {
+      id: true,
+      email: true,
+      status: true,
+      lastError: true,
+      dailyCap: true,
+      rampStartedAt: true,
+      timezone: true,
+      sentDay: true,
+      sentCount: true,
+      dnsDetail: true,
+      provider: true,
+      connector: true,
+    },
+  });
+  return rows.map((row) => ({
+    id: row.id,
+    email: row.email,
+    status: row.status,
+    lastError: row.lastError,
+    dailyCap: row.dailyCap,
+    allowance: dailyAllowance(row, now, { max: maxCap }),
+    sentToday: sentToday(row, now),
+    dns: (row.dnsDetail as DnsReport | null) ?? null,
+    provider: row.provider,
+    connector: row.connector,
+  }));
 }
 
 async function getBillingUsage(organizationId: string) {

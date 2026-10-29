@@ -1,8 +1,18 @@
 import { getPublicAppUrl } from "@/lib/app-origin";
 import { prisma } from "@/lib/db";
+import { stopEnrollment } from "@/lib/outreach/enroll";
+import { addSuppression } from "@/lib/outreach/suppression";
 import { addOptOut } from "@/lib/prospecting/opt-out";
+import { getSellerLocale, toUiLocale } from "@/lib/seller-locale";
+import { getNamespaceTranslator } from "@/lib/server-translator";
 
-import { createUnsubscribeToken, verifyUnsubscribeToken } from "./token";
+import {
+  createUnsubscribeToken,
+  encodeUnsubscribeSubject,
+  parseUnsubscribeSubject,
+  verifyUnsubscribeToken,
+  type UnsubscribeSubject,
+} from "./token";
 
 // ENCRYPTION_KEY never rotates (it would make stored secrets unreadable),
 // so links already sent keep working.
@@ -14,62 +24,142 @@ function unsubscribeSecret() {
   return secret;
 }
 
-export function unsubscribeToken(prospectId: string) {
-  return createUnsubscribeToken(prospectId, unsubscribeSecret());
+export function unsubscribeToken(subject: UnsubscribeSubject) {
+  return createUnsubscribeToken(encodeUnsubscribeSubject(subject), unsubscribeSecret());
 }
 
-export function unsubscribePageUrl(prospectId: string) {
-  return `${getPublicAppUrl()}/u/${unsubscribeToken(prospectId)}`;
+export function unsubscribePageUrl(subject: UnsubscribeSubject) {
+  return `${getPublicAppUrl()}/u/${unsubscribeToken(subject)}`;
 }
 
-// Target of the List-Unsubscribe header (RFC 8058 one-click POST)
-export function unsubscribeOneClickUrl(prospectId: string) {
-  return `${getPublicAppUrl()}/api/unsubscribe/${unsubscribeToken(prospectId)}`;
+export function unsubscribeOneClickUrl(subject: UnsubscribeSubject) {
+  return `${getPublicAppUrl()}/api/unsubscribe/${unsubscribeToken(subject)}`;
 }
 
-export async function findProspectByUnsubscribeToken(token: string) {
-  const prospectId = verifyUnsubscribeToken(token, unsubscribeSecret());
-  if (!prospectId) return null;
-  return prisma.prospect.findUnique({
-    where: { id: prospectId },
+/** What a token points at: a one-off prospect (closing follow-ups) or a campaign enrollment (cold sequence). */
+export async function findUnsubscribeTarget(token: string) {
+  // Page params can arrive percent-encoded (legacy "p:" links show up as "p%3A..."): decode once
+  let decoded = token;
+  try {
+    decoded = decodeURIComponent(token);
+  } catch {
+    // keep the raw token, the signature check will refuse it
+  }
+  const raw = verifyUnsubscribeToken(decoded, unsubscribeSecret());
+  const subject = raw ? parseUnsubscribeSubject(raw) : null;
+  if (!subject) return null;
+
+  if (subject.kind === "enrollment") {
+    const enrollment = await prisma.campaignProspect.findUnique({
+      where: { id: subject.id },
+      select: {
+        id: true,
+        email: true,
+        status: true,
+        organizationId: true,
+        campaign: { select: { createdById: true, mailbox: { select: { displayName: true, email: true } } } },
+      },
+    });
+    if (!enrollment) return null;
+    return {
+      kind: "enrollment" as const,
+      email: enrollment.email,
+      alreadyDone: enrollment.status === "UNSUBSCRIBED",
+      organizationId: enrollment.organizationId,
+      enrollment: { id: enrollment.id, campaign: enrollment.campaign },
+    };
+  }
+
+  const prospect = await prisma.prospect.findUnique({
+    where: { id: subject.id },
     select: {
       id: true,
       email: true,
       unsubscribedAt: true,
       origin: true,
       linkId: true,
-      link: { select: { organizationId: true } },
+      link: { select: { organizationId: true, createdBy: { select: { locale: true } } } },
     },
   });
+  if (!prospect) return null;
+  return {
+    kind: "prospect" as const,
+    email: prospect.email,
+    alreadyDone: !!prospect.unsubscribedAt,
+    organizationId: prospect.link.organizationId,
+    prospect,
+  };
 }
 
-// Opts the address out of every proposal of the same workspace: a prospect
-// who says stop means this sender, not just this one link.
-export async function unsubscribeByToken(token: string) {
-  const prospect = await findProspectByUnsubscribeToken(token);
-  if (!prospect) return false;
-
+/**
+ * Flags every prospect of the workspace with this address (unsubscribed, or bounced) and cancels
+ * their open follow-ups, theirs only: a colleague on the same deal keeps his.
+ */
+export async function stopClosingSide(
+  organizationId: string,
+  email: string,
+  reason: string,
+  mark: "unsubscribedAt" | "bouncedAt" = "unsubscribedAt",
+) {
   const now = new Date();
   const sameAddress = {
-    email: { equals: prospect.email, mode: "insensitive" as const },
-    link: { organizationId: prospect.link.organizationId },
+    email: { equals: email, mode: "insensitive" as const },
+    link: { organizationId },
   };
-
   await prisma.$transaction([
     prisma.prospect.updateMany({
-      where: { ...sameAddress, unsubscribedAt: null },
-      data: { unsubscribedAt: now },
+      where: { ...sameAddress, [mark]: null },
+      data: { [mark]: now },
     }),
     prisma.followup.updateMany({
       where: {
         prospect: sameAddress,
         status: { in: ["PENDING", "DRAFT", "GENERATED", "SCHEDULED"] },
       },
-      data: { status: "CANCELLED", cancelledAt: now, error: "Prospect désinscrit" },
+      data: { status: "CANCELLED", cancelledAt: now, error: reason },
     }),
   ]);
+}
 
-  // Found by Clozer prospecting: nobody will be suggested this person again
+export async function unsubscribeByToken(token: string) {
+  const target = await findUnsubscribeTarget(token);
+  if (!target) return false;
+
+  if (target.kind === "enrollment") {
+    const { id, campaign } = target.enrollment;
+    // The reason lands on follow-ups the seller reads: in the seller's language, like the other cancellations
+    const locale = await getSellerLocale(campaign.createdById);
+    const reason = getNamespaceTranslator(locale, "server.followups.dispatch")("unsubscribed");
+
+    // Suppression first: it is the workspace-wide, legally relevant part and idempotent (skipDuplicates), so a
+    // failure later leaves the page retryable instead of showing "already done" with the address still live
+    await addSuppression({
+      organizationId: target.organizationId,
+      email: target.email,
+      reason: "UNSUBSCRIBE",
+      source: "unsubscribe_page",
+    });
+    // Only a running enrollment changes: a REPLIED, BOUNCED or STOPPED one keeps its outcome (the suppression above
+    // already covers the address). Like any stop, the link goes back to the seller and the campaign's AI follow-ups end
+    await stopEnrollment(id, "UNSUBSCRIBED", "unsubscribed", new Date());
+    // The same person may already hold a closing link in this workspace
+    await stopClosingSide(target.organizationId, target.email, reason);
+    return true;
+  }
+
+  const { prospect } = target;
+  const reason = getNamespaceTranslator(toUiLocale(prospect.link.createdBy?.locale), "server.followups.dispatch")(
+    "unsubscribed",
+  );
+  // Suppression first, same reasoning as the enrollment branch: safe to retry
+  await addSuppression({
+    organizationId: target.organizationId,
+    email: prospect.email,
+    reason: "UNSUBSCRIBE",
+    source: "unsubscribe_page",
+  });
+  await stopClosingSide(target.organizationId, prospect.email, reason);
+
   if (prospect.origin === "PROSPECTING") {
     const suggestion = await prisma.prospectSuggestion.findFirst({
       where: { linkId: prospect.linkId },

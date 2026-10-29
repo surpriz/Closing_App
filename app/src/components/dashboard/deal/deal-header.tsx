@@ -28,6 +28,7 @@ const UNDATED_MEETING_ASK_MS = 3 * DAY_MS;
 export function DealHeader({ deal }: { deal: Deal }) {
   const {
     link,
+    campaign,
     analytics,
     now,
     url,
@@ -135,6 +136,14 @@ export function DealHeader({ deal }: { deal: Deal }) {
                   const named = customLinkName({ name: link.parentLink.name, document: link.document, prospects: [] });
                   return named ? t("viaSharedNamed", { name: named }) : t("viaShared");
                 })()}
+              </Link>
+            )}
+            {campaign && (
+              <Link
+                href={`/campaigns/${campaign.id}`}
+                className="inline-flex h-7 items-center rounded-sm border border-border px-2 text-small text-muted-foreground hover:text-foreground hover:underline"
+              >
+                {t("campaign", { name: campaign.name, step: campaign.step, steps: campaign.steps })}
               </Link>
             )}
           </div>

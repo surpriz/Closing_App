@@ -18,6 +18,7 @@ import { evaluatePricingCallMoment } from "@/lib/closing/triggers/hot-lead";
 import { evaluateHotPricing } from "@/lib/closing/triggers/hot-pricing";
 import { evaluateWarmRead } from "@/lib/closing/triggers/warm-read";
 import { prisma } from "@/lib/db";
+import { evaluateEnrollmentReading } from "@/lib/outreach/reading";
 
 // The deal analysis runs after the response when a reader leaves
 export const maxDuration = 120;
@@ -60,11 +61,13 @@ export async function POST(request: Request) {
       visitorId: true,
       prospectId: true,
       isBot: true,
+      totalDurationMs: true,
       link: {
         select: {
           expiresAt: true,
           dealStatus: true,
           parentLinkId: true,
+          campaignProspectId: true,
           document: { select: { numPages: true } },
           organization: { select: { suspendedAt: true } },
         },
@@ -99,6 +102,8 @@ export async function POST(request: Request) {
     if (left) {
       await prisma.documentView.update({ where: { id: view.id }, data: { leftAt: now } });
       if (!view.isBot) inBackground("brain", () => analyzeDeal(view.linkId, "SESSION_ENDED"));
+      // The reader usually leaves right after a flush, with nothing new to count: the enrollment still reads the session
+      if (view.link.campaignProspectId) inBackground("outreach-read", () => evaluateEnrollmentReading(view.linkId, now));
     }
     return new Response(null, { status: 204 });
   }
@@ -161,6 +166,11 @@ export async function POST(request: Request) {
         await evaluatePricingCallMoment(view.id, now);
       }
     });
+    // A campaign link: the enrollment reads the new signals (the tick catches what this misses)
+    // Not on every flush: the first one of the session and the one when the reader leaves
+    if (view.link.campaignProspectId && (left || view.totalDurationMs === 0)) {
+      inBackground("outreach-read", () => evaluateEnrollmentReading(view.linkId, now));
+    }
     // A Smart Link reader: a follow-up on what they read, and the cold email tool hears when they get hot
     if (view.link.parentLinkId) {
       inBackground("warm-read", () => evaluateWarmRead(view.id, now));
