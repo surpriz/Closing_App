@@ -7,7 +7,7 @@ const ascii = (text: string) => [...text].map((c) => c.charCodeAt(0));
 
 describe("decodeCsv", () => {
   it("keeps valid UTF-8 as is (the BOM is dropped)", () => {
-    expect(decodeCsv(new TextEncoder().encode("﻿email;prénom").buffer)).toBe("﻿email;prénom");
+    expect(decodeCsv(bytes(...new TextEncoder().encode("\uFEFFemail;prénom")))).toBe("email;prénom");
   });
 
   it("reads Excel for Mac's Mac Roman", () => {
