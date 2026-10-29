@@ -335,6 +335,20 @@ async function sendOne(ctx: {
     }
   }
 
+  // Variables are checked before any link exists: a prospect paused for a missing one must not own a link (and a deal)
+  const dry = renderStep(step, enrollment, step.carriesLink ? "pending" : null);
+  if (dry.missing.length > 0) {
+    // Not a dead end: the seller can add a fallback to the step and resume, which re-opens this cancelled message
+    const reason = `missing_variable:${dry.missing[0]}`;
+    await prisma.campaignProspect.updateMany({
+      where: { id: enrollment.id, status: "ACTIVE" },
+      data: { status: "PAUSED", pausedReason: reason, pausedAt: now },
+    });
+    await cancel(message.id, reservedAt, reason);
+    totals.cancelled++;
+    return "next";
+  }
+
   // Link: created with the first message that carries it, then reused by every retry
   let link: CampaignLink | null = null;
   if (step.carriesLink) {
@@ -356,17 +370,6 @@ async function sendOne(ctx: {
   // ?c= credits the opening to this very message
   const messageUrl = link ? campaignMessageUrl(link.url, message.id) : null;
   const rendered = renderStep(step, enrollment, messageUrl);
-  if (rendered.missing.length > 0) {
-    // Not a dead end: the seller can add a fallback to the step and resume, which re-opens this cancelled message
-    const reason = `missing_variable:${rendered.missing[0]}`;
-    await prisma.campaignProspect.updateMany({
-      where: { id: enrollment.id, status: "ACTIVE" },
-      data: { status: "PAUSED", pausedReason: reason, pausedAt: now },
-    });
-    await cancel(message.id, reservedAt, reason);
-    totals.cancelled++;
-    return "next";
-  }
   const visible = signature ? `${rendered.body}\n\n${signature}` : rendered.body;
   const footer = unsubscribeFooter(unsubscribePageUrl({ kind: "enrollment", id: enrollment.id }), enrollment.locale);
   const text = visible + footer.text;

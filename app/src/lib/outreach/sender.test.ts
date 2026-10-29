@@ -435,6 +435,18 @@ describe("sendDueMessages, re-checks", () => {
     expect(result.cancelled).toBe(1);
   });
 
+  it("checks the variables before creating the link: a paused prospect owns no link", async () => {
+    messageFindUnique.mockResolvedValue(message({ enrollment: { ...enrollment, firstName: null } }));
+    stepFindMany.mockResolvedValue([{ ...step1, carriesLink: true, body: "Hi {{firstName}}, see {{link}}" }, step2]);
+    const result = await sendDueMessages(now, {}, deps);
+    expect(createCampaignLink).not.toHaveBeenCalled();
+    expect(enrollmentUpdateMany).toHaveBeenCalledWith({
+      where: { id: "e1", status: "ACTIVE" },
+      data: { status: "PAUSED", pausedReason: "missing_variable:firstName", pausedAt: now },
+    });
+    expect(result.cancelled).toBe(1);
+  });
+
   it("fails the message and pauses the enrollment when the plan refuses the link", async () => {
     const { PlanLimitError } = await import("@/lib/billing/workspace-plan");
     stepFindMany.mockResolvedValue([{ ...step1, carriesLink: true, body: "See {{link}}" }, step2]);

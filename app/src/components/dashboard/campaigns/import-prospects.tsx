@@ -8,18 +8,13 @@ import { importProspectsAction } from "@/app/(dashboard)/campaigns/actions";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { MAX_IMPORT_BYTES, MAX_IMPORT_ROWS, PROSPECT_COLUMNS, sampleCsv } from "@/lib/outreach/csv";
+import { decodeCsv } from "@/lib/outreach/decode";
 import type { ImportSummary } from "@/lib/outreach/enroll";
 
 const MAX_LISTED_REJECTIONS = 20;
 
-/** Excel's plain "CSV" export is Windows-1252, not UTF-8: read as UTF-8 first, fall back when the bytes refuse. */
 async function readAsText(file: File): Promise<string> {
-  const bytes = await file.arrayBuffer();
-  try {
-    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
-  } catch {
-    return new TextDecoder("windows-1252").decode(bytes);
-  }
+  return decodeCsv(await file.arrayBuffer());
 }
 
 export function ImportProspects({ campaignId }: { campaignId: string }) {
