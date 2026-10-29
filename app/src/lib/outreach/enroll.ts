@@ -63,6 +63,7 @@ export type ImportSummary = {
   missingVariables: number; // enrolled rows lacking a variable the steps use without fallback: they will pause at send
   rejected: ImportRejection[];
   tooMany: boolean; // more rows than MAX_IMPORT_ROWS: nothing was imported
+  needsActivation: boolean; // the campaign is not running (draft, paused or finished): nothing goes out until it is
 };
 
 export type ImportError =
@@ -129,7 +130,7 @@ export async function importProspects(input: {
 }): Promise<ImportSummary | ImportError> {
   const campaign = await prisma.campaign.findFirst({
     where: { id: input.campaignId, organizationId: input.organizationId, status: { not: "ARCHIVED" } },
-    select: { locale: true, createdById: true, steps: { select: { subject: true, body: true } } },
+    select: { locale: true, createdById: true, status: true, steps: { select: { subject: true, body: true } } },
   });
   if (!campaign || !canEditCampaign(campaign, input.actor)) return { error: "campaign_not_found" };
 
@@ -157,6 +158,7 @@ export async function importProspects(input: {
     missingVariables: 0,
     rejected: [],
     tooMany: false,
+    needsActivation: campaign.status !== "ACTIVE",
   };
   if (parsed.rows.length > MAX_IMPORT_ROWS) return { ...summary, tooMany: true };
 

@@ -102,7 +102,7 @@ describe("importProspects", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    db.campaign.findFirst.mockResolvedValue({ locale: "fr", createdById: "u1", steps: [] });
+    db.campaign.findFirst.mockResolvedValue({ locale: "fr", createdById: "u1", status: "ACTIVE", steps: [] });
     db.member.findMany.mockResolvedValue([{ user: { email: "me@mine.com" } }]);
     suppressedAmong.mockResolvedValue(new Set());
     db.campaignProspect.findMany.mockResolvedValue([]);
@@ -168,6 +168,13 @@ describe("importProspects", () => {
     expect(result).toMatchObject({ team: 1, suppressed: 1, duplicates: 2, elsewhere: 1, enrolled: 2 });
     const emails = db.campaignProspect.createMany.mock.calls[0][0].data.map((d: { email: string }) => d.email);
     expect(emails).toEqual(["stop@x.com", "busy@x.com", "new@x.com"]);
+  });
+
+  it("says when the campaign is not running, so the seller knows to activate it", async () => {
+    db.campaign.findFirst.mockResolvedValue({ locale: "fr", createdById: "u1", status: "DONE", steps: [] });
+    expect(await importProspects({ ...base, csv: "email\nnew@x.com\n" })).toMatchObject({ enrolled: 1, needsActivation: true });
+    db.campaign.findFirst.mockResolvedValue({ locale: "fr", createdById: "u1", status: "ACTIVE", steps: [] });
+    expect(await importProspects({ ...base, csv: "email\nnew@x.com\n" })).toMatchObject({ needsActivation: false });
   });
 
   it("re-adds a prospect the seller removed before any send, with the file's data", async () => {

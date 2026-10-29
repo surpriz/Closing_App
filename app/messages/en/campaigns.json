@@ -248,7 +248,8 @@
       "rejected": "{count, plural, one {# row rejected} other {# rows rejected}}",
       "reasonNoEmail": "no address",
       "reasonInvalidEmail": "invalid address",
-      "line": "line {line}: {reason}"
+      "line": "line {line}: {reason}",
+      "needsActivation": "The campaign is not running: nothing goes out until you click \"Activate\" at the top of the page."
     }
   },
   "enrollments": {

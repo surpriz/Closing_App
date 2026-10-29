@@ -248,7 +248,8 @@
       "rejected": "{count, plural, one {# ligne rejetée} other {# lignes rejetées}}",
       "reasonNoEmail": "pas d'adresse",
       "reasonInvalidEmail": "adresse invalide",
-      "line": "ligne {line} : {reason}"
+      "line": "ligne {line} : {reason}",
+      "needsActivation": "La campagne n'est pas en cours : rien ne partira tant que vous ne cliquez pas « Activer » en haut de la page."
     }
   },
   "enrollments": {

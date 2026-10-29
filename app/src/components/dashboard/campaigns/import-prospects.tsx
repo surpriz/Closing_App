@@ -152,6 +152,9 @@ function ImportResult({ summary }: { summary: ImportSummary }) {
             ))}
         </ul>
       )}
+      {!summary.tooMany && summary.enrolled > 0 && summary.needsActivation && (
+        <p className="text-warning-foreground">{t("result.needsActivation")}</p>
+      )}
 
       <div className="space-y-0.5">
         <p className="font-medium">{t("result.mapping")}</p>
