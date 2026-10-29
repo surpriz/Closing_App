@@ -196,6 +196,7 @@ export function EnrollmentsTable({
                   )}
                 </TableCell>
                 <TableCell className="text-muted-foreground">
+                  {row.followup?.status === "PENDING" && te("followup.pending")}
                   {row.followup?.status === "DRAFT" && (
                     <Link href="/drafts" className="underline underline-offset-2">
                       {te("followup.draft")}

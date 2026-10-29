@@ -306,6 +306,7 @@
     "clicked": "A cliqué",
     "noSignal": "–",
     "followup": {
+      "pending": "En préparation",
       "draft": "Brouillon à relire",
       "scheduled": "Programmée {date}",
       "sent": "Envoyée {date}"

@@ -103,7 +103,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
         lastSignal: true,
         reactivatedAt: true,
         followups: {
-          where: { status: { in: ["DRAFT", "GENERATED", "SCHEDULED", "SENT"] } },
+          where: { status: { in: ["PENDING", "DRAFT", "GENERATED", "SCHEDULED", "SENT"] } },
           orderBy: { createdAt: "desc" },
           take: 1,
           select: { status: true, scheduledFor: true, sentAt: true },
