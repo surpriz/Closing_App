@@ -170,6 +170,24 @@ describe("importProspects", () => {
     expect(emails).toEqual(["stop@x.com", "busy@x.com", "new@x.com"]);
   });
 
+  it("re-adds a prospect the seller removed before any send, with the file's data", async () => {
+    db.campaignProspect.findMany.mockResolvedValue([
+      { id: "e1", email: "back@x.com", campaignId: "c1", status: "STOPPED", currentStep: 0 },
+      { id: "e2", email: "sent@x.com", campaignId: "c1", status: "STOPPED", currentStep: 1 },
+    ]);
+    db.campaignProspect.updateMany.mockResolvedValue({ count: 1 });
+    const csv = "email,prénom\nback@x.com,Ada\nsent@x.com,Bob\n";
+    const result = await importProspects({ ...base, csv });
+    expect(result).toMatchObject({ enrolled: 1, duplicates: 1 });
+    expect(db.campaignProspect.createMany).not.toHaveBeenCalled();
+    expect(db.campaignProspect.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "e1", status: "STOPPED", currentStep: 0 },
+        data: expect.objectContaining({ firstName: "Ada", status: "QUEUED", finishedAt: null, nextSendAt: null }),
+      }),
+    );
+  });
+
   it("counts the enrolled rows that lack a variable the steps use without fallback", async () => {
     db.campaign.findFirst.mockResolvedValue({
       locale: "fr",

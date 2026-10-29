@@ -187,10 +187,10 @@ export async function importProspects(input: {
           email: { in: prepared.prospects.map((prospect) => prospect.email) },
           OR: [{ campaignId: input.campaignId }, { status: { in: [...LIVE_ENROLLMENT] } }],
         },
-        select: { email: true, campaignId: true, status: true },
+        select: { id: true, email: true, campaignId: true, status: true, currentStep: true },
       })
     : [];
-  const inThisCampaign = new Set(known.filter((row) => row.campaignId === input.campaignId).map((row) => row.email));
+  const inThisCampaign = new Map(known.filter((row) => row.campaignId === input.campaignId).map((row) => [row.email, row]));
   const elsewhere = new Set(
     known
       .filter((row) => row.campaignId !== input.campaignId && (LIVE_ENROLLMENT as readonly string[]).includes(row.status))
@@ -198,12 +198,18 @@ export async function importProspects(input: {
   );
 
   const fresh = prepared.prospects.filter((prospect) => !inThisCampaign.has(prospect.email));
-  summary.duplicates += prepared.prospects.length - fresh.length;
-  summary.elsewhere = fresh.filter((prospect) => elsewhere.has(prospect.email)).length;
-  summary.suppressed = fresh.filter((prospect) => prospect.status === "SUPPRESSED").length;
+  // Removed by the seller before anything went out: re-added with the file's data, as if imported for the first time
+  const revived = prepared.prospects.filter((prospect) => {
+    const existing = inThisCampaign.get(prospect.email);
+    return existing?.status === "STOPPED" && existing.currentStep === 0;
+  });
+  const added = [...fresh, ...revived];
+  summary.duplicates += prepared.prospects.length - added.length;
+  summary.elsewhere = added.filter((prospect) => elsewhere.has(prospect.email)).length;
+  summary.suppressed = added.filter((prospect) => prospect.status === "SUPPRESSED").length;
   // Checked against the steps as they are now: editing them later (a fallback, say) changes the outcome
   const stepsText = campaign.steps.map((step) => `${step.subject ?? ""}\n${step.body}`).join("\n");
-  summary.missingVariables = fresh.filter(
+  summary.missingVariables = added.filter(
     (prospect) =>
       prospect.status === "QUEUED" &&
       renderTemplate(stepsText, templateVarsOf(prospect, null)).missing.some((name) => name.toLowerCase() !== "link"),
@@ -229,8 +235,30 @@ export async function importProspects(input: {
     });
     // a concurrent import may have won some rows: they are duplicates too
     summary.duplicates += fresh.length - count;
-    summary.enrolled = Math.max(0, count - summary.suppressed);
+    summary.enrolled += count;
   }
+  for (const prospect of revived) {
+    const { count } = await prisma.campaignProspect.updateMany({
+      where: { id: inThisCampaign.get(prospect.email)!.id, status: "STOPPED", currentStep: 0 },
+      data: {
+        firstName: prospect.firstName,
+        lastName: prospect.lastName,
+        company: prospect.company,
+        title: prospect.title,
+        vars: prospect.vars,
+        timezone: prospect.timezone,
+        locale: prospect.locale,
+        status: prospect.status,
+        pausedReason: prospect.pausedReason,
+        pausedAt: null,
+        finishedAt: null,
+        nextSendAt: null,
+      },
+    });
+    summary.enrolled += count;
+    summary.duplicates += 1 - count;
+  }
+  summary.enrolled = Math.max(0, summary.enrolled - summary.suppressed);
   return summary;
 }
 
