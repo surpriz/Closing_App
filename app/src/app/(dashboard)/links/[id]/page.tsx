@@ -94,6 +94,8 @@ export default async function LinkDetailPage({
     canEdit ? loadSmartLinkProblems(link.id, link.shared, now) : [],
   ]);
   const uploadPrefix = capsuleUploadPrefix(workspace.organization.id);
+  // The follow-up chip says the same thing as the follow-ups section
+  const summaryOpts = { autonomy: settings.autonomy, campaign: deal.campaign?.name ?? null };
 
   const welcome = deal.welcome ? (
     <WelcomeMessage
@@ -144,7 +146,7 @@ export default async function LinkDetailPage({
         }
         signature={settings.senderSignature}
         processing={deal.reading}
-        summary={settingsSummary(link, now, locale)}
+        summary={settingsSummary(link, now, locale, summaryOpts)}
         shared={link.shared}
         welcome={welcome}
         notice={
@@ -429,7 +431,7 @@ export default async function LinkDetailPage({
 
         {canEdit && (
           <DealSettings
-            summary={settingsSummary(link, now, locale)}
+            summary={settingsSummary(link, now, locale, summaryOpts)}
             name={link.name ?? ""}
             panel={deal.settingsPanel}
             welcome={!deal.sharing ? welcome : null}
