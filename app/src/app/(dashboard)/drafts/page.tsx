@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 
 import { ApproveAllButton, ApproveDraftButton } from "@/components/dashboard/drafts/approve-buttons";
 import { EmptyState } from "@/components/dashboard/empty-state";
@@ -8,7 +8,10 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { dealLabel, linkLabelSelect } from "@/lib/closing/dashboard/labels";
 import { sellerLinks } from "@/lib/closing/dashboard/queries";
 import { isLinkExpired } from "@/lib/closing/expiry";
+import { followupSender, followupSenderLabel } from "@/lib/closing/followups/sender";
+import { getWorkspaceSettings } from "@/lib/closing/settings";
 import { prisma } from "@/lib/db";
+import { formatInTimeZone } from "@/lib/format";
 import { requireWorkspace } from "@/lib/session";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -22,8 +25,12 @@ export async function generateMetadata(): Promise<Metadata> {
  */
 export default async function DraftsPage() {
   const workspace = await requireWorkspace("/drafts");
-  const t = await getTranslations("drafts");
-  const tl = await getTranslations("labels");
+  const [t, tl, locale, settings] = await Promise.all([
+    getTranslations("drafts"),
+    getTranslations("labels"),
+    getLocale(),
+    getWorkspaceSettings(workspace.organization.id),
+  ]);
   const noRecipient = (await getTranslations("today.page"))("noRecipient");
   const now = new Date();
 
@@ -39,12 +46,26 @@ export default async function DraftsPage() {
       body: true,
       rationale: true,
       error: true,
-      campaignProspect: { select: { campaign: { select: { name: true } } } },
+      scheduledFor: true,
+      timezone: true,
+      sentVia: true,
+      campaignProspect: { select: { campaign: { select: { name: true, mailbox: { select: { email: true } } } } } },
       prospect: { select: { name: true, email: true } },
       link: { select: { ...linkLabelSelect, expiresAt: true } },
     },
   });
   const approvable = drafts.filter((draft) => !isLinkExpired(draft.link, now)).length;
+  const senderLine = (draft: (typeof drafts)[number]) => {
+    const campaign = draft.campaignProspect?.campaign;
+    const sender = followupSenderLabel(
+      followupSender({
+        sentVia: draft.sentVia,
+        campaign: campaign ? { name: campaign.name, mailbox: campaign.mailbox?.email ?? null } : null,
+      }),
+      settings.senderName,
+    );
+    return `${t("goesOut", { date: formatInTimeZone(draft.scheduledFor, draft.timezone, locale) })} ${tl(`followupSender.${sender.key}`, sender.values)}`;
+  };
 
   return (
     <div className="space-y-8">
@@ -79,6 +100,7 @@ export default async function DraftsPage() {
                     <ApproveDraftButton followupId={draft.id} />
                   )}
                 </div>
+                <p className="text-small text-muted-foreground">{senderLine(draft)}</p>
                 {draft.rationale && <p className="text-small text-muted-foreground">{draft.rationale}</p>}
                 {draft.subject && <p className="text-small font-medium">{draft.subject}</p>}
                 <p className="line-clamp-6 text-small whitespace-pre-line">{draft.body}</p>

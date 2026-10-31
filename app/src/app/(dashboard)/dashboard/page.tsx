@@ -38,6 +38,7 @@ import {
   buildHeatDistribution,
 } from "@/lib/closing/dashboard/funnel";
 import { dealDocumentMeta, dealLabel } from "@/lib/closing/dashboard/labels";
+import { followupSender, followupSenderLabel } from "@/lib/closing/followups/sender";
 import { parsePeriod, periodStart } from "@/lib/closing/dashboard/period";
 import { pageHeat } from "@/lib/closing/dashboard/page-heat";
 import type { AppT } from "@/lib/closing/dashboard/i18n";
@@ -424,29 +425,53 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
 
           {drafts.length > 0 && (
             <section>
-              <SectionTitle hint={t("today.page.draftsHint")}>
+              <SectionTitle
+                hint={t(
+                  settings.autonomy === "AUTOPILOT"
+                    ? "today.page.draftsHintAutopilot"
+                    : "today.page.draftsHint",
+                )}
+              >
                 {t("today.page.draftsTitle")}
               </SectionTitle>
               <ul className="space-y-3 text-sm">
-                {drafts.map((draft) => (
-                  <li key={draft.id} className="flex gap-3">
-                    <PenLine className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
-                    <div className="min-w-0">
-                      <Link
-                        href={`/links/${draft.link.id}#relances`}
-                        className="font-medium hover:underline"
-                      >
-                        {draft.prospect.company ??
-                          draft.prospect.name ??
-                          draft.prospect.email}
-                      </Link>
-                      <p className="truncate text-muted-foreground">
-                        {t(`labels.channel.${draft.channel}`)}
-                        {draft.subject ? ` : ${draft.subject}` : ""}
-                      </p>
-                    </div>
-                  </li>
-                ))}
+                {drafts.map((draft) => {
+                  const campaign = draft.campaignProspect?.campaign;
+                  const sender = followupSenderLabel(
+                    followupSender({
+                      sentVia: draft.sentVia,
+                      campaign: campaign
+                        ? { name: campaign.name, mailbox: campaign.mailbox?.email ?? null }
+                        : null,
+                    }),
+                    settings.senderName,
+                  );
+                  return (
+                    <li key={draft.id} className="flex gap-3">
+                      <PenLine className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+                      <div className="min-w-0">
+                        <Link
+                          href={`/links/${draft.link.id}#relances`}
+                          className="font-medium hover:underline"
+                        >
+                          {draft.prospect.company ??
+                            draft.prospect.name ??
+                            draft.prospect.email}
+                        </Link>
+                        <p className="truncate text-muted-foreground">
+                          {t(`labels.channel.${draft.channel}`)}
+                          {draft.subject ? ` : ${draft.subject}` : ""}
+                        </p>
+                        <p className="text-small text-muted-foreground">
+                          {t("today.page.draftGoesOut", {
+                            date: formatInTimeZone(draft.scheduledFor, draft.timezone, locale),
+                          })}{" "}
+                          {t(`labels.followupSender.${sender.key}`, sender.values)}
+                        </p>
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             </section>
           )}
