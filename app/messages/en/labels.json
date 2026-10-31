@@ -39,9 +39,9 @@
     "EXPIRY_REMINDER": "Reminder before expiry",
     "WARM_READ": "After a cold email click",
     "INTEREST_RETURNED": "Back after reactivation",
-    "COLD_READ": "After the document was read (cold sequence)",
-    "COLD_READ_PRICING": "After a pricing read (cold sequence)",
-    "COLD_REACTIVATE": "Reactivation (cold sequence)"
+    "COLD_READ": "After the document was read (campaign)",
+    "COLD_READ_PRICING": "After a pricing read (campaign)",
+    "COLD_REACTIVATE": "Reactivation (campaign)"
   },
   "followupSender": {
     "platformNamed": "From Clozer, on behalf of {seller}. Replies land in your inbox.",

@@ -161,7 +161,7 @@
     "recentEmpty": "Nobody has opened this document yet. Reads will show up here.",
     "fallbackReader": "Reader",
     "anonymousNote": "These readers didn't give their email. Same letter, same browser; two letters, often two people (or the same person on two devices). To know exactly who's reading, turn on “Ask for email before reading” in the link settings.",
-    "followupsIntro": "Follow-ups for every prospect of this document. Clozer writes one when it thinks the timing is right; you review it here or on the prospect's page, then approve it.",
+    "followupsIntro": "Follow-ups for every prospect of this document. Clozer writes one when it thinks the timing is right; you review it here or on the prospect's page, then approve it. They go out from Clozer in your name, or from your mailbox for a campaign.",
     "alertsTitle": "Alerts",
     "pendingTitle": "Your link is ready, it hasn't gone out yet.",
     "pendingDescription": "Send it to your prospect: they'll show up here as soon as they open it.",

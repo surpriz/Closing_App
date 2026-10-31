@@ -227,7 +227,7 @@
     "forwardEnabled": "Transférer à un collègue",
     "forwardEnabledHint": "Le lecteur peut l'envoyer à son N+1 : vous voyez qui l'a reçu et ce qu'il lit. Coupez-le pour un document confidentiel.",
     "followupsEnabled": "Relances préparées par Clozer",
-    "followupsEnabledHint": "Coupé : le prospect reste suivi, sans relance.",
+    "followupsEnabledHint": "Activé : Clozer écrit au bon moment, vous validez ; la relance part de Clozer avec votre adresse en réponse. Coupé : le prospect reste suivi, vous relancez vous-même.",
     "videoCta": "Demander un devis",
     "videoCtaHint": "Un bouton sous la vidéo.",
     "bookingLabel": "Lien de l'agenda",

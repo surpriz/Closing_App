@@ -78,7 +78,7 @@
       },
       "approve": {
         "title": "You approve, or it sends on its own",
-        "body": "By default, the follow-up waits for you: an email lets you know, and you'll find it in “Follow-ups to approve” on the dashboard and on the prospect's page. You reread it, tweak it or have it rewritten, then approve. On Autopilot, only safe follow-ups go out on their own. The prospect's replies land in your inbox."
+        "body": "By default, the follow-up waits for you: an email lets you know, and you'll find it in “Follow-ups to approve” on the dashboard and on the prospect's page. You reread it, tweak it or have it rewritten, then approve. On Autopilot, only safe follow-ups go out on their own. The prospect's replies land in your inbox. For a link, the follow-up goes out from Clozer's address in your name, with your email as reply-to; for a campaign, from your mailbox, in the thread."
       },
       "watch": {
         "title": "And it keeps watching",
@@ -108,7 +108,6 @@
     "underTheHood1": "Two AI models from Anthropic. Claude Haiku, the fast one, reads documents and runs a second check before any automatic send. Claude Sonnet, the more thoughtful one, analyzes each prospect and writes the follow-ups.",
     "underTheHood2": "No email address or IP address is sent to the AI: readers go by a letter (reader A, reader B…). An analysis only reruns when something new has happened.",
     "notYetTitle": "What's not there yet",
-    "notYet1": "Follow-ups go out from Clozer's address, with your email as the reply-to.",
     "notYet2": "Replies to your own email (not a Clozer follow-up) are only seen with the extension in Gmail, or when your cold email tool reports them: otherwise, log them on the prospect's page.",
     "notYet3": "WhatsApp follow-ups are coming soon."
   },

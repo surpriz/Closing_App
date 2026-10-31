@@ -177,7 +177,6 @@ export default async function HowItWorksPage() {
       <section>
         <SectionTitle>{t("notYetTitle")}</SectionTitle>
         <ul className="list-inside list-disc space-y-1.5 text-body text-muted-foreground">
-          <li>{t("notYet1")}</li>
           <li>{t("notYet2")}</li>
           <li>{t("notYet3")}</li>
         </ul>

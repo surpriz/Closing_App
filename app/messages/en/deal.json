@@ -227,7 +227,7 @@
     "forwardEnabled": "Forward to a colleague",
     "forwardEnabledHint": "The reader can send it to their manager: you see who got it and what they read. Turn it off for a confidential document.",
     "followupsEnabled": "Follow-ups prepared by Clozer",
-    "followupsEnabledHint": "Off: the prospect is still tracked, with no follow-ups.",
+    "followupsEnabledHint": "On: Clozer writes at the right time, you approve; it goes out from Clozer with your address as reply-to. Off: the prospect is still tracked, you follow up yourself.",
     "videoCta": "Request a quote",
     "videoCtaHint": "A button under the video.",
     "bookingLabel": "Calendar link",

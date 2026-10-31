@@ -280,6 +280,9 @@ export function SettingsForm({
               </label>
             </div>
           </Row>
+          <p className="max-w-prose px-5 pb-4 text-small text-muted-foreground">
+            {t("pilot.senderNote")}
+          </p>
         </Section>
 
         <Section
