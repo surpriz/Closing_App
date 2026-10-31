@@ -43,6 +43,7 @@ import { dealLabel, linkLabelSelect } from "@/lib/closing/dashboard/labels";
 import type { DocType } from "@/lib/closing/documents/doc-types";
 import { showsCountdown } from "@/lib/closing/expiry";
 import { firstNameOf, guessMailClient } from "@/lib/closing/share/compose";
+import { followupsEmptyHint } from "@/lib/closing/followups/empty-hint";
 import { settingsSummary } from "@/lib/closing/share/summary";
 import type { SmartLinkProblem } from "@/lib/closing/shared/smart-params";
 import { sequencerWebhookUrl } from "@/lib/closing/sequencer/apply";
@@ -96,6 +97,12 @@ export default async function LinkDetailPage({
   const uploadPrefix = capsuleUploadPrefix(workspace.organization.id);
   // The follow-up chip says the same thing as the follow-ups section
   const summaryOpts = { autonomy: settings.autonomy, campaign: deal.campaign?.name ?? null };
+  const emptyHintKey = followupsEmptyHint({
+    campaign: summaryOpts.campaign,
+    followupsEnabled: link.followupsEnabled,
+    shared: link.shared,
+    hasEmail: !!mainProspect?.email,
+  });
 
   const welcome = deal.welcome ? (
     <WelcomeMessage
@@ -275,13 +282,9 @@ export default async function LinkDetailPage({
                   followups={deal.followupItems}
                   seller={settings.senderName}
                   emptyHint={
-                    deal.campaign
-                      ? tPanel("emptyHintCampaign", { name: deal.campaign.name })
-                      : !link.followupsEnabled
-                        ? tPanel("emptyHintOff")
-                        : !mainProspect?.email
-                          ? tPanel("emptyHintNoEmail")
-                          : null
+                    emptyHintKey
+                      ? tPanel(emptyHintKey, { name: deal.campaign?.name ?? "" })
+                      : null
                   }
                 />
               </div>

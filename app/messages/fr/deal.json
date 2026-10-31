@@ -360,6 +360,7 @@
     "emptyHint": "Dès que Clozer juge qu'il faut relancer, il écrit le message et le met ici. Vous recevez un email, vous relisez, vous validez. Elle part de Clozer en votre nom ; la réponse arrive dans votre boîte.",
     "emptyHintCampaign": "Relances gérées par la campagne {name} : elles partent de votre boîte, dans le fil.",
     "emptyHintOff": "Relances coupées pour ce lien : vous relancez vous-même. Réactivez-les dans Réglages du lien.",
+    "emptyHintShared": "Chaque lecteur a son propre lien : ses relances se préparent sur sa fiche.",
     "emptyHintNoEmail": "Sans email, pas de relance : ajoutez le contact.",
     "reconnect": "Reconnecter",
     "via": "par {channel} à {recipient}",
