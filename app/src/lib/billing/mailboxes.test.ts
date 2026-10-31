@@ -50,6 +50,7 @@ function org(over: Record<string, unknown> = {}) {
     stripeSubscriptionId: "sub_1",
     billingInterval: "month",
     mailboxQuantity: 1,
+    _count: { members: 1 },
     ...over,
   });
 }
@@ -58,7 +59,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   stripeOn = stripe;
   org();
-  db.count.mockResolvedValue(1);
+  // Solo includes one mailbox: two connected means one on the add-on
+  db.count.mockResolvedValue(2);
   db.update.mockResolvedValue({});
   stripe.prices.list.mockResolvedValue({ data: [{ id: "price_mb" }] });
   stripe.subscriptionItems.create.mockResolvedValue({});
@@ -75,7 +77,7 @@ describe("countBillableMailboxes", () => {
 });
 
 describe("syncMailboxQuantity", () => {
-  it("adds the item at the monthly price when the first mailbox is connected", async () => {
+  it("adds the item at the monthly price when the first mailbox over the included one is connected", async () => {
     stripe.subscriptions.retrieve.mockResolvedValue(sub(PLAN_ITEM("clozer_solo_monthly")));
     expect(await syncMailboxQuantity("org1", { stripe })).toBe("added");
     expect(stripe.prices.list.mock.calls[0][0].lookup_keys).toEqual(["clozer_mailbox_monthly"]);
@@ -84,7 +86,7 @@ describe("syncMailboxQuantity", () => {
   });
 
   it("updates the quantity of an existing item", async () => {
-    db.count.mockResolvedValue(3);
+    db.count.mockResolvedValue(4);
     stripe.subscriptions.retrieve.mockResolvedValue(sub(PLAN_ITEM("clozer_solo_monthly"), MAILBOX_ITEM("clozer_mailbox_monthly", 2)));
     expect(await syncMailboxQuantity("org1", { stripe })).toBe("updated");
     expect(stripe.subscriptionItems.update).toHaveBeenCalledWith("si_mb", { quantity: 3, ...PROTECTED });
@@ -107,7 +109,7 @@ describe("syncMailboxQuantity", () => {
   });
 
   it("refreshes a stale mirror when Stripe already holds the right quantity", async () => {
-    db.count.mockResolvedValue(2);
+    db.count.mockResolvedValue(3);
     org({ mailboxQuantity: 1 });
     stripe.subscriptions.retrieve.mockResolvedValue(sub(PLAN_ITEM("clozer_solo_monthly"), MAILBOX_ITEM("clozer_mailbox_monthly", 2)));
     expect(await syncMailboxQuantity("org1", { stripe })).toBe("unchanged");
@@ -176,8 +178,8 @@ describe("assertCanConnectMailbox", () => {
 
 describe("reconcileMailboxes", () => {
   it("only syncs the workspaces whose item drifted", async () => {
-    const ok = { id: "ok", plan: "solo", mailboxQuantity: 1, _count: { mailboxes: 1 + (PLANS.solo.includedMailboxes ?? 0) } };
-    const drifted = { id: "drift", plan: "solo", mailboxQuantity: null, _count: { mailboxes: 2 + (PLANS.solo.includedMailboxes ?? 0) } };
+    const ok = { id: "ok", plan: "solo", mailboxQuantity: 1, _count: { members: 1, mailboxes: 1 + (PLANS.solo.includedMailboxes ?? 0) } };
+    const drifted = { id: "drift", plan: "solo", mailboxQuantity: null, _count: { members: 1, mailboxes: 2 + (PLANS.solo.includedMailboxes ?? 0) } };
     db.findMany.mockResolvedValue([ok, drifted]);
     db.findUnique.mockResolvedValue(null); // the sync itself is skipped: only who it is called for matters
     expect(await reconcileMailboxes()).toBe(1);
@@ -185,8 +187,8 @@ describe("reconcileMailboxes", () => {
   });
 
   it("keeps going when one sync fails", async () => {
-    const a = { id: "a", plan: "team", mailboxQuantity: null, _count: { mailboxes: 5 } };
-    const b = { id: "b", plan: "team", mailboxQuantity: null, _count: { mailboxes: 5 } };
+    const a = { id: "a", plan: "team", mailboxQuantity: null, _count: { members: 2, mailboxes: 5 } };
+    const b = { id: "b", plan: "team", mailboxQuantity: null, _count: { members: 2, mailboxes: 5 } };
     db.findMany.mockResolvedValue([a, b]);
     db.findUnique.mockRejectedValueOnce(new Error("db")).mockResolvedValue(null);
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});

@@ -218,7 +218,7 @@
         "title": "Unsubscribe and stop list",
         "body": "An unsubscribe link in every email, a stop list for the whole workspace, and results step by step."
       },
-      "price": "Included in Solo and Team, with a connected mailbox at €15 a month excl. VAT. <link>See pricing</link>",
+      "price": "Included in Solo and Team, with a connected mailbox. <link>See pricing</link>",
       "smart": "Keeping your sequence tool? Paste a Smart Link into it: every reader is recognized without a form, and a webhook pauses their sequence when Clozer takes over.",
       "figure": {
         "name": "Campaign “E-commerce redesign” · Sarah Collins, Northwind",
@@ -292,7 +292,7 @@
       "enterprise": "Several teams, security, integrations",
       "enterpriseAction": "Write to us",
       "mailSubject": "Clozer for our team",
-      "addon": "Cold email campaigns: €15 excl. VAT per connected mailbox, on Solo and Team.",
+      "addon": "Cold email campaigns included on Solo and Team, with a connected mailbox (one per member on Team).",
       "details": "See full pricing"
     },
     "faq": {
@@ -320,7 +320,7 @@
       },
       "mailbox": {
         "q": "Do I need a dedicated mailbox for campaigns?",
-        "a": "Clozer sends from the mailbox you connect, with a daily cap and a gradual ramp-up that protect its reputation. For sustained outreach, an address on a secondary domain is still the best practice. Each connected mailbox costs €15 a month excl. VAT."
+        "a": "Clozer sends from the mailbox you connect, with a daily cap and a gradual ramp-up that protect its reputation. For sustained outreach, an address on a secondary domain is still the best practice. One mailbox is included in Solo and Team, each extra one costs €9 a month excl. VAT."
       },
       "auto": {
         "q": "Do follow-ups go out on their own?",
@@ -509,9 +509,9 @@
   },
   "pricing": {
     "title": "Pricing",
-    "description": "Free to start, Solo at €19 a month, Team at €39 per member per month, excl. VAT. Cold email campaigns: €15 per connected mailbox. 14-day Team trial, no credit card.",
+    "description": "Free to start, Solo at €19 a month, Team at €39 per member per month, excl. VAT. Cold email campaigns included, with a connected mailbox. 14-day Team trial, no credit card.",
     "heading": "Pick the plan that fits.",
-    "lead": "Every new workspace starts with a 14-day Team trial, no credit card. After that, stay on Free or move to a paid plan. Cold email campaigns come with Solo or Team plus a connected mailbox.",
+    "lead": "Every new workspace starts with a 14-day Team trial, no credit card. After that, stay on Free or move to a paid plan. Solo and Team include cold email campaigns, with a connected mailbox.",
     "vat": "Prices exclude VAT.",
     "interval": {
       "label": "Billing",
@@ -542,7 +542,7 @@
         "features": {
           "links": "Unlimited links",
           "followUps": "Unlimited AI follow-ups and autopilot",
-          "campaigns": "Cold email campaigns, with a connected mailbox as an option",
+          "campaigns": "Cold email campaigns, one connected mailbox included",
           "prospect": "Assistant, translation and voice notes on the prospect page",
           "video": "Unlimited video pitches",
           "badge": "No Clozer note"
@@ -557,6 +557,7 @@
         "trial": "14-day trial included",
         "features": {
           "solo": "Everything in Solo, for each rep",
+          "mailboxes": "One connected mailbox per member for campaigns",
           "teamView": "Team view for the manager",
           "invites": "Invite your teammates",
           "integrations": "Slack alerts and webhooks"
@@ -569,16 +570,16 @@
         "note": "Security, integrations, invoicing: we look at your case together.",
         "features": {
           "team": "Everything in Team",
-          "mailboxes": "Connected mailboxes included"
+          "mailboxes": "Unlimited connected mailboxes"
         }
       }
     },
     "addon": {
-      "name": "Connected mailbox",
-      "who": "To send campaigns from Clozer. Gmail, Microsoft 365 or IMAP.",
-      "period": "per mailbox per month, excl. VAT",
-      "monthNote": "On Solo and Team. Prorated, and a disconnected mailbox no longer counts. Included on Enterprise.",
-      "yearNote": "{total} excl. VAT per mailbox, billed once a year. On Solo and Team, included on Enterprise."
+      "name": "Extra connected mailbox",
+      "who": "Solo includes one mailbox, Team one per member. To connect more.",
+      "period": "per extra mailbox per month, excl. VAT",
+      "monthNote": "Prorated, and a disconnected mailbox no longer counts. Unlimited on Enterprise.",
+      "yearNote": "{total} excl. VAT per extra mailbox, billed once a year. Unlimited on Enterprise."
     },
     "table": {
       "title": "The details, plan by plan",
@@ -588,7 +589,8 @@
       "notIncluded": "Not included",
       "unlimited": "Unlimited",
       "perMonth": "{count} per month",
-      "perMailbox": "{price} / mailbox",
+      "mailboxIncluded": "1 included, then {price} / mailbox",
+      "mailboxPerSeat": "1 per member, then {price} / mailbox",
       "rows": {
         "links": "Links created",
         "tracking": "Reading tracking, heat score, alerts",
@@ -605,7 +607,7 @@
         "invites": "Invite teammates",
         "slack": "Slack alerts and webhooks",
         "campaigns": "Cold email campaigns",
-        "mailbox": "Connected mailbox"
+        "mailbox": "Connected mailboxes for campaigns"
       }
     },
     "faq": {
@@ -624,7 +626,7 @@
       },
       "coldEmail": {
         "q": "How much does cold email cost?",
-        "a": "The Solo or Team plan, plus €15 a month excl. VAT for each connected mailbox (€12 on yearly billing). A rep on their own with one mailbox pays €34 a month excl. VAT. On Enterprise, mailboxes are included."
+        "a": "Nothing beyond the plan. Solo includes one connected mailbox, Team one per member, and campaigns send from there. Each extra mailbox costs €9 a month excl. VAT (€7 on yearly billing). On Enterprise, mailboxes are unlimited."
       },
       "afterTrial": {
         "q": "What happens when the trial ends?",

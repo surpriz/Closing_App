@@ -20,7 +20,7 @@
         "followups": "Unlimited AI follow-ups, autopilot",
         "assistant": "Prospect assistant, translation, voice notes",
         "branding": "No Clozer badge for your prospects",
-        "mailbox": "Connected mailboxes for your campaigns: {price} excl. VAT per mailbox per month"
+        "mailbox": "Cold email campaigns: one connected mailbox included, {price} excl. VAT per extra mailbox per month"
       }
     },
     "team": {
@@ -31,7 +31,7 @@
         "teamView": "Team view for the manager",
         "integrations": "Slack and webhooks",
         "seats": "Billed per member, 2 minimum",
-        "mailbox": "Connected mailboxes for your campaigns: {price} excl. VAT per mailbox per month"
+        "mailbox": "One connected mailbox per member for campaigns, {price} excl. VAT per extra mailbox per month"
       }
     },
     "enterprise": {
@@ -70,7 +70,7 @@
     "unbilled": "Billing is not set up here: every feature is open.",
     "paymentIssue": "The last payment failed. Stripe will try again: update your card to keep your plan.",
     "seats": "{count, plural, one {# seat} other {# seats}}",
-    "mailboxes": "{count, plural, one {# mailbox connected} other {# mailboxes connected}} · {price} excl. VAT per mailbox per month",
+    "mailboxes": "{count, plural, one {# mailbox connected} other {# mailboxes connected}} · {billed, plural, =0 {included} one {# extra at {price} excl. VAT per month} other {# extra at {price} excl. VAT per mailbox per month}}",
     "mailboxesIncluded": "{count, plural, one {# mailbox connected} other {# mailboxes connected}} · included"
   },
   "usage": {
