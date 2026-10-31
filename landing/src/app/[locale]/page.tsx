@@ -32,9 +32,11 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { HeatScale } from "@/components/thermal-plate";
 import { ThermalReading } from "@/components/thermal-reading";
+import { ThermalSequence } from "@/components/thermal-sequence";
 import { ThermalVideo } from "@/components/thermal-video";
 import { READING_PAGES } from "@/components/thermal-reading-data";
 import { SoftwareStructuredData } from "@/components/structured-data";
+import { MONTHLY_PRICE, euros } from "@/content/pricing";
 import { Link } from "@/i18n/navigation";
 import { resolveLocale } from "@/i18n/page";
 import type { Locale } from "@/i18n/routing";
@@ -49,29 +51,32 @@ const STEP_SCREENS: Record<(typeof STEPS)[number], Record<Locale, StaticImageDat
   send: { fr: sendFr, en: sendEn },
   followUp: { fr: followUpFr, en: followUpEn },
 };
+// Where the link goes out, listed under the "send" step; the store button hangs off the first row.
+const CHANNELS = ["mail", "chat", "campaign"] as const;
 const READING_SCREENS: Record<"reading" | "chain", Record<Locale, StaticImageData>> = {
   reading: { fr: readingFr, en: readingEn },
   chain: { fr: chainFr, en: chainEn },
 };
-const CHANNELS = ["web", "outlook", "chat", "cold"] as const;
+const READING_POINTS = ["pages", "readers", "live", "score"] as const;
+const TEAM_SCREENS: Record<"desktop" | "mobile", Record<Locale, StaticImageData>> = {
+  desktop: { fr: teamFr, en: teamEn },
+  mobile: { fr: teamMobileFr, en: teamMobileEn },
+};
 const FOLLOWUP_POINTS = ["brief", "stuck", "approve", "delicate"] as const;
 const TODAY_SCREENS: Record<"desktop" | "mobile", Record<Locale, StaticImageData>> = {
   desktop: { fr: todayDesktopFr, en: todayDesktopEn },
   mobile: { fr: todayMobileFr, en: todayMobileEn },
 };
+const CAMPAIGN_POINTS = ["sequence", "pace", "read", "stop"] as const;
+const SEQUENCE_ROWS = ["step1", "step2", "read", "followUp", "cancelled"] as const;
 const PROSPECT_POINTS = ["approve", "book", "ask", "language"] as const;
 const PROSPECT_SCREENS: Record<"actions" | "change", Record<Locale, StaticImageData>> = {
   actions: { fr: actionsFr, en: actionsEn },
   change: { fr: changeFr, en: changeEn },
 };
-const READING_POINTS = ["pages", "readers", "live", "score"] as const;
-const VIDEO_POINTS = ["record", "watched", "transcript", "quote"] as const;
 const GUARANTEES = ["informed", "discreet", "limit", "unsubscribe", "europe", "private"] as const;
-const TEAM_SCREENS: Record<"desktop" | "mobile", Record<Locale, StaticImageData>> = {
-  desktop: { fr: teamFr, en: teamEn },
-  mobile: { fr: teamMobileFr, en: teamMobileEn },
-};
-const FAQ = ["email", "informed", "install", "tools", "cold", "auto", "beta", "data"] as const;
+const PLANS = ["free", "solo", "team", "enterprise"] as const;
+const FAQ = ["email", "informed", "install", "tools", "cold", "mailbox", "auto", "data"] as const;
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -81,25 +86,51 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 const WRAP = "mx-auto w-full max-w-[90rem] px-5 sm:px-8";
+const SPLIT = "grid gap-12 py-20 md:py-28 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-20";
+const ROW = "grid gap-6 border-b border-rule py-10 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:items-center md:gap-12 lg:gap-20";
+const POINT_TITLE = "text-[1.125rem] leading-snug font-semibold";
+const SCREEN = "w-full border border-rule";
+const ARROW = "size-5 transition-transform duration-300 ease-[var(--ease-out-expo)] group-hover:translate-x-1";
+const BUTTON_INK = "group flex h-12 items-center justify-between bg-ink px-4 font-semibold text-sheet transition-colors hover:bg-ink/90";
+const BUTTON_OUTLINE = "group flex h-12 items-center justify-between border border-ink px-4 font-semibold transition-colors hover:bg-ink hover:text-sheet";
 
 export default async function Home({ params }: Props) {
   const locale = await resolveLocale(params);
-  const [t, tr, ts] = await Promise.all([
+  const [t, tr, ts, tp] = await Promise.all([
     getTranslations({ locale, namespace: "home" }),
     getTranslations({ locale, namespace: "reading" }),
     getTranslations({ locale, namespace: "signup" }),
+    getTranslations({ locale, namespace: "pricing" }),
   ]);
 
   const anchors = ANCHORS[locale];
   const legacy = LEGACY_ANCHORS[locale];
   const alias = (section: keyof typeof anchors) =>
-    legacy[section] ? <span id={legacy[section]} aria-hidden className="block scroll-mt-14" /> : null;
+    legacy[section]?.map((id) => <span key={id} id={id} aria-hidden className="block scroll-mt-14" />);
   const pages = READING_PAGES.map((page) => ({
     label: tr(`pages.${page.key}.label`),
     heading: tr(`pages.${page.key}.heading`),
     time: page.time,
     heat: page.heat,
   }));
+  const pricingLink = (chunks: React.ReactNode) => (
+    <Link href="/pricing" className="font-medium text-ink underline underline-offset-4">
+      {chunks}
+    </Link>
+  );
+  const screen = (src: StaticImageData, alt: string, sizes: string, className = "") => (
+    <figure className={className}>
+      <Image src={src} alt={alt} sizes={sizes} className={SCREEN} />
+      <figcaption className="mt-2 font-mono text-micro text-ink-soft">{t("screen")}</figcaption>
+    </figure>
+  );
+  // The strip's price line per plan: the pricing page's own words, so the two never drift apart.
+  const planPrice: Record<(typeof PLANS)[number], string> = {
+    free: `${euros(locale, 0)} · ${tp("plans.free.period")}`,
+    solo: `${euros(locale, MONTHLY_PRICE.solo.month)} ${tp("plans.solo.period")}`,
+    team: `${euros(locale, MONTHLY_PRICE.team.month)} ${tp("plans.team.period")}`,
+    enterprise: tp("plans.enterprise.price"),
+  };
 
   return (
     <div className="flex min-h-full flex-col overflow-x-clip">
@@ -144,8 +175,9 @@ export default async function Home({ params }: Props) {
           </div>
         </section>
 
+        {/* The problem: what an attachment tells you, against what the link tells you. */}
         <section className="border-b border-ink">
-          <div className={`${WRAP} grid gap-12 py-20 md:py-28 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-20`}>
+          <div className={`${WRAP} ${SPLIT}`}>
             <div>
               <h2 className="condensed text-title font-bold">{t("silence.title")}</h2>
               <p className="mt-6 max-w-[56ch] text-lead text-ink-soft">{t("silence.body")}</p>
@@ -180,117 +212,112 @@ export default async function Home({ params }: Props) {
           </div>
         </section>
 
-        {/* How it works: the protocol, three rows. */}
+        {/* How it works: three rows; the second lists where the link goes out. */}
         <section id={anchors.how} className="scroll-mt-14 border-b border-ink">
           {alias("how")}
           <div className={`${WRAP} py-20 md:py-28`}>
             <h2 className="condensed max-w-[22ch] text-title font-bold">{t("steps.title")}</h2>
             <ol className="mt-12 border-t border-ink md:mt-14">
               {STEPS.map((step, index) => (
-                <li
-                  key={step}
-                  className="grid gap-6 border-b border-rule py-10 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:items-center md:gap-12 lg:gap-20"
-                >
+                <li key={step} className={`${ROW} md:items-start`}>
                   <div>
                     <span className="font-mono text-small text-ink-soft">{index + 1}/{STEPS.length}</span>
                     <h3 className="condensed mt-3 text-[1.75rem] leading-tight font-bold tracking-[-0.02em]">{t(`steps.${step}.title`)}</h3>
                     <p className="mt-3 max-w-[48ch] text-body text-ink-soft">{t(`steps.${step}.body`)}</p>
+                    {step === "send" && (
+                      <ul className="mt-6 border-t border-rule">
+                        {CHANNELS.map((channel) => (
+                          <li key={channel} className="border-b border-rule py-4">
+                            <h4 className={POINT_TITLE}>{t(`steps.send.channels.${channel}.name`)}</h4>
+                            <p className="mt-1 max-w-[52ch] text-body text-ink-soft">{t(`steps.send.channels.${channel}.how`)}</p>
+                            {channel === "mail" && (
+                              <>
+                                <a href={EXTENSION_STORE_URL} className={`${BUTTON_OUTLINE} mt-4 h-11 max-w-xs`}>
+                                  {t("steps.send.store")}
+                                  <Icon name="arrow" className={ARROW} />
+                                </a>
+                                <p className="mt-2 text-small text-ink-soft">{t("steps.send.storeNote")}</p>
+                              </>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
-                  <figure className="w-full max-w-[37rem] md:justify-self-end">
-                    <Image
-                      src={STEP_SCREENS[step][locale]}
-                      alt={t(`steps.${step}.alt`)}
-                      sizes="(min-width: 768px) 37rem, calc(100vw - 2.5rem)"
-                      className="w-full border border-rule"
-                    />
-                    <figcaption className="mt-2 font-mono text-micro text-ink-soft">{t("screen")}</figcaption>
-                  </figure>
+                  {screen(STEP_SCREENS[step][locale], t(`steps.${step}.alt`), "(min-width: 768px) 37rem, calc(100vw - 2.5rem)", "w-full max-w-[37rem] md:justify-self-end md:sticky md:top-24")}
                 </li>
               ))}
             </ol>
             <div className="mt-10 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
               <p className="max-w-[52ch] text-body">{t("steps.guided")}</p>
-              <a
-                href={appUrl(locale)}
-                className="group flex h-14 shrink-0 items-center justify-between gap-6 bg-ink px-5 text-lead font-semibold text-sheet transition-colors hover:bg-ink/90"
-              >
+              <a href={appUrl(locale)} className={`${BUTTON_INK} h-14 shrink-0 gap-6 px-5 text-lead`}>
                 {ts("submit")}
-                <Icon name="arrow" className="size-5 transition-transform duration-300 ease-[var(--ease-out-expo)] group-hover:translate-x-1" />
+                <Icon name="arrow" className={ARROW} />
               </a>
             </div>
           </div>
         </section>
 
+        {/* What you see: the same reading on a document, on a video, across the team. */}
         <section id={anchors.features} className="scroll-mt-14 border-b border-ink bg-sheet">
           {alias("features")}
-          <div className={`${WRAP} grid gap-12 py-20 md:py-28 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-20`}>
-            <div className="lg:sticky lg:top-24 lg:self-start">
-              <h2 className="condensed max-w-[16ch] text-title font-bold">{t("reading.title")}</h2>
-              <p className="mt-6 max-w-[52ch] text-lead text-ink-soft">{t("reading.body")}</p>
-              <ul className="mt-10 border-t border-ink">
-                {READING_POINTS.map((point) => (
-                  <li key={point} className="border-b border-rule py-5">
-                    <h3 className="text-[1.125rem] leading-snug font-semibold">{t(`reading.${point}.title`)}</h3>
-                    <p className="mt-1 max-w-[52ch] text-body text-ink-soft">{t(`reading.${point}.body`)}</p>
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-5 text-small text-ink-soft">{t("reading.ownOpens")}</p>
-            </div>
-            <div className="grid content-start gap-8">
-              {(["reading", "chain"] as const).map((screen) => (
-                <figure key={screen} className="w-full max-w-[39rem] lg:justify-self-end">
-                  <Image
-                    src={READING_SCREENS[screen][locale]}
-                    alt={t(`reading.${screen}Alt`)}
-                    sizes="(min-width: 1024px) 39rem, calc(100vw - 2.5rem)"
-                    className="w-full border border-rule"
+          <div className={`${WRAP} py-20 md:py-28`}>
+            <h2 className="condensed max-w-[20ch] text-title font-bold">{t("see.title")}</h2>
+            <p className="mt-6 max-w-[56ch] text-lead text-ink-soft">{t("see.body")}</p>
+            <ul className="mt-12 border-t border-ink md:mt-14">
+              <li className={`${ROW} md:items-start`}>
+                <div className="md:sticky md:top-24">
+                  <h3 className="condensed text-[1.75rem] leading-tight font-bold tracking-[-0.02em]">{t("see.doc.title")}</h3>
+                  <ul className="mt-6 border-t border-rule">
+                    {READING_POINTS.map((point) => (
+                      <li key={point} className="border-b border-rule py-4">
+                        <h4 className={POINT_TITLE}>{t(`see.doc.${point}.title`)}</h4>
+                        <p className="mt-1 max-w-[52ch] text-body text-ink-soft">{t(`see.doc.${point}.body`)}</p>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-4 text-small text-ink-soft">{t("see.doc.ownOpens")}</p>
+                </div>
+                <div className="grid content-start gap-8">
+                  {(["reading", "chain"] as const).map((key) =>
+                    screen(READING_SCREENS[key][locale], t(`see.doc.${key}Alt`), "(min-width: 1024px) 39rem, calc(100vw - 2.5rem)", "w-full max-w-[39rem] md:justify-self-end"),
+                  )}
+                </div>
+              </li>
+              <li className={`${ROW} md:items-start`}>
+                <div>
+                  <h3 className="condensed text-[1.75rem] leading-tight font-bold tracking-[-0.02em]">{t("see.video.title")}</h3>
+                  <p className="mt-3 max-w-[48ch] text-body text-ink-soft">{t("see.video.body")}</p>
+                  <p className="mt-4 max-w-[48ch] text-small text-ink-soft">{t("see.video.capsules")}</p>
+                </div>
+                <div className="w-full max-w-[39rem] md:justify-self-end">
+                  <ThermalVideo
+                    name={t("see.video.name")}
+                    caption={t("see.video.caption")}
+                    summary={t("see.video.summary")}
+                    labels={{
+                      example: t("demo"),
+                      skipped: t("see.video.skipped"),
+                      hottest: t("see.video.hottest"),
+                      quote: t("see.video.quoteButton"),
+                      hot: tr("hot"),
+                      cold: tr("cold"),
+                    }}
                   />
+                </div>
+              </li>
+              <li className={ROW}>
+                <div>
+                  <h3 className="condensed text-[1.75rem] leading-tight font-bold tracking-[-0.02em]">{t("see.team.title")}</h3>
+                  <p className="mt-3 max-w-[48ch] text-body text-ink-soft">{t("see.team.body")}</p>
+                </div>
+                <figure>
+                  <Image src={TEAM_SCREENS.mobile[locale]} alt={t("see.team.alt")} sizes="calc(100vw - 2.5rem)" className={`${SCREEN} mx-auto max-w-[24rem] md:hidden`} />
+                  <Image src={TEAM_SCREENS.desktop[locale]} alt={t("see.team.alt")} sizes="(min-width: 1440px) 52rem, (min-width: 768px) 58vw, calc(100vw - 4rem)" className={`${SCREEN} max-md:hidden`} />
                   <figcaption className="mt-2 font-mono text-micro text-ink-soft">{t("screen")}</figcaption>
                 </figure>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Video pitch: the same reading, on a recording. Drawn in HTML like the hero. */}
-        <section id={anchors.video} className="scroll-mt-14 border-b border-ink">
-          <div className={`${WRAP} grid gap-12 py-20 md:py-28 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-20`}>
-            <div>
-              <h2 className="condensed max-w-[18ch] text-title font-bold">{t("video.title")}</h2>
-              <p className="mt-6 max-w-[52ch] text-lead text-ink-soft">{t("video.body")}</p>
-              <ul className="mt-10 border-t border-ink">
-                {VIDEO_POINTS.map((point) => (
-                  <li key={point} className="border-b border-rule py-5">
-                    <h3 className="text-[1.125rem] leading-snug font-semibold">{t(`video.${point}.title`)}</h3>
-                    <p className="mt-1 max-w-[52ch] text-body text-ink-soft">{t(`video.${point}.body`)}</p>
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-5 max-w-[52ch] text-small text-ink-soft">{t("video.capsules")}</p>
-            </div>
-            <div className="grid content-start gap-6 lg:sticky lg:top-24 lg:self-start">
-              <ThermalVideo
-                name={t("video.name")}
-                caption={t("video.caption")}
-                summary={t("video.summary")}
-                labels={{
-                  example: t("demo"),
-                  skipped: t("video.skipped"),
-                  hottest: t("video.hottest"),
-                  quote: t("video.quoteButton"),
-                  hot: tr("hot"),
-                  cold: tr("cold"),
-                }}
-              />
-              <Link
-                href="/use-cases"
-                className="inline-block justify-self-start text-body font-semibold underline decoration-ink/30 underline-offset-4 transition-colors hover:decoration-ink"
-              >
-                {t("video.useCases")}
-                <Icon name="arrow" className="ml-2 inline size-4 align-[-0.15em]" />
-              </Link>
-            </div>
+              </li>
+            </ul>
           </div>
         </section>
 
@@ -303,24 +330,14 @@ export default async function Home({ params }: Props) {
             </h2>
             <p className="mt-6 max-w-[60ch] text-lead text-ink-soft">{t("followUps.body")}</p>
             <figure className="mt-12 md:mt-14">
-              <Image
-                src={TODAY_SCREENS.mobile[locale]}
-                alt={t("followUps.alt")}
-                sizes="calc(100vw - 2.5rem)"
-                className="mx-auto w-full max-w-[24rem] border border-rule md:hidden"
-              />
-              <Image
-                src={TODAY_SCREENS.desktop[locale]}
-                alt={t("followUps.alt")}
-                sizes="(min-width: 1440px) 85rem, calc(100vw - 4rem)"
-                className="w-full border border-rule max-md:hidden"
-              />
+              <Image src={TODAY_SCREENS.mobile[locale]} alt={t("followUps.alt")} sizes="calc(100vw - 2.5rem)" className={`${SCREEN} mx-auto max-w-[24rem] md:hidden`} />
+              <Image src={TODAY_SCREENS.desktop[locale]} alt={t("followUps.alt")} sizes="(min-width: 1440px) 85rem, calc(100vw - 4rem)" className={`${SCREEN} max-md:hidden`} />
               <figcaption className="mt-2 font-mono text-micro text-ink-soft">{t("screen")}</figcaption>
             </figure>
             <ul className="mt-12 grid border-t border-ink md:grid-cols-2 lg:grid-cols-4">
               {FOLLOWUP_POINTS.map((point) => (
                 <li key={point} className="border-b border-rule py-6 md:pr-8 lg:border-b-0">
-                  <h3 className="text-[1.125rem] leading-snug font-semibold">{t(`followUps.${point}.title`)}</h3>
+                  <h3 className={POINT_TITLE}>{t(`followUps.${point}.title`)}</h3>
                   <p className="mt-2 max-w-[44ch] text-body text-ink-soft">{t(`followUps.${point}.body`)}</p>
                 </li>
               ))}
@@ -328,8 +345,47 @@ export default async function Home({ params }: Props) {
           </div>
         </section>
 
+        {/* Campaigns: the sequence leaves from the seller's own mailbox, and the reading changes its pace. */}
+        <section id={anchors.campaigns} className="scroll-mt-14 border-b border-ink bg-sheet">
+          {alias("campaigns")}
+          <div className={`${WRAP} ${SPLIT}`}>
+            <div>
+              <h2 className="condensed max-w-[16ch] text-title font-bold">{t("campaigns.title")}</h2>
+              <p className="mt-6 max-w-[52ch] text-lead text-ink-soft">{t("campaigns.body")}</p>
+              <ul className="mt-10 border-t border-ink">
+                {CAMPAIGN_POINTS.map((point) => (
+                  <li key={point} className="border-b border-rule py-5">
+                    <h3 className={POINT_TITLE}>{t(`campaigns.${point}.title`)}</h3>
+                    <p className="mt-1 max-w-[52ch] text-body text-ink-soft">{t(`campaigns.${point}.body`)}</p>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-6 max-w-[52ch] text-body font-medium">{t.rich("campaigns.price", { link: pricingLink })}</p>
+              <p className="mt-4 max-w-[52ch] text-small text-ink-soft">{t("campaigns.smart")}</p>
+            </div>
+            <div className="lg:sticky lg:top-24 lg:self-start">
+              <ThermalSequence
+                name={t("campaigns.figure.name")}
+                caption={t("campaigns.figure.caption")}
+                rows={Object.fromEntries(
+                  SEQUENCE_ROWS.map((row) => [
+                    row,
+                    {
+                      when: t(`campaigns.figure.${row}.when`),
+                      text: t(`campaigns.figure.${row}.text`),
+                      badge: row === "read" ? t("campaigns.figure.read.badge") : undefined,
+                      action: row === "followUp" ? t("campaigns.figure.followUp.action") : undefined,
+                    },
+                  ]),
+                ) as Parameters<typeof ThermalSequence>[0]["rows"]}
+                labels={{ example: t("demo"), hot: tr("hot"), cold: tr("cold") }}
+              />
+            </div>
+          </div>
+        </section>
+
         {/* Prospect side: two real phone screens, then what the prospect can do without writing to the seller. */}
-        <section id={anchors.prospect} className="scroll-mt-14 border-b border-ink bg-sheet">
+        <section id={anchors.prospect} className="scroll-mt-14 border-b border-ink">
           {alias("prospect")}
           <div className={`${WRAP} grid gap-12 py-20 md:py-28 lg:grid-cols-[minmax(0,6fr)_minmax(0,6fr)] lg:gap-20`}>
             <div className="lg:order-2">
@@ -338,18 +394,18 @@ export default async function Home({ params }: Props) {
               <ul className="mt-10 border-t border-ink">
                 {PROSPECT_POINTS.map((point) => (
                   <li key={point} className="border-b border-rule py-5">
-                    <h3 className="text-[1.125rem] leading-snug font-semibold">{t(`prospect.${point}.title`)}</h3>
+                    <h3 className={POINT_TITLE}>{t(`prospect.${point}.title`)}</h3>
                     <p className="mt-1 max-w-[52ch] text-body text-ink-soft">{t(`prospect.${point}.body`)}</p>
                   </li>
                 ))}
               </ul>
             </div>
             <div className="grid content-start gap-4 sm:grid-cols-2 lg:order-1 lg:sticky lg:top-24 lg:self-start">
-              {(["actions", "change"] as const).map((screen) => (
-                <figure key={screen} className={screen === "change" ? "max-sm:hidden" : "mx-auto w-full max-w-[20rem] sm:max-w-none"}>
+              {(["actions", "change"] as const).map((key) => (
+                <figure key={key} className={key === "change" ? "max-sm:hidden" : "mx-auto w-full max-w-[20rem] sm:max-w-none"}>
                   <Image
-                    src={PROSPECT_SCREENS[screen][locale]}
-                    alt={t(`prospect.${screen}Alt`)}
+                    src={PROSPECT_SCREENS[key][locale]}
+                    alt={t(`prospect.${key}Alt`)}
                     sizes="(min-width: 1024px) 18rem, (min-width: 640px) 45vw, 20rem"
                     className="w-full border border-ink"
                   />
@@ -360,65 +416,19 @@ export default async function Home({ params }: Props) {
           </div>
         </section>
 
-        {/* Channels: where the link goes out, one row each; the only other button on the page leads to the store. */}
-        <section id={anchors.channels} className="scroll-mt-14 border-b border-ink">
-          {alias("channels")}
-          <div className={`${WRAP} grid gap-12 py-20 md:py-28 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-20`}>
-            <div>
-              <h2 className="condensed max-w-[16ch] text-title font-bold">{t("channels.title")}</h2>
-              <p className="mt-6 max-w-[44ch] text-lead text-ink-soft">{t("channels.body")}</p>
-              <a
-                href={EXTENSION_STORE_URL}
-                className="group mt-10 flex h-12 max-w-xs items-center justify-between border border-ink px-4 font-semibold transition-colors hover:bg-ink hover:text-sheet"
-              >
-                {t("channels.store")}
-                <Icon name="arrow" className="size-5 transition-transform duration-300 ease-[var(--ease-out-expo)] group-hover:translate-x-1" />
-              </a>
-              <p className="mt-3 text-small text-ink-soft">{t("channels.storeNote")}</p>
-            </div>
-            <table className="w-full border-t border-ink text-left">
-              <caption className="sr-only">{t("channels.caption")}</caption>
-              <thead className="sr-only">
-                <tr>
-                  <th scope="col">{t("channels.where")}</th>
-                  <th scope="col">{t("channels.how")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {CHANNELS.map((channel) => (
-                  <tr key={channel} className="grid gap-2 border-b border-rule py-6 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-8">
-                    <th scope="row" className="condensed text-[1.5rem] leading-tight font-bold tracking-[-0.02em]">
-                      {t(`channels.${channel}.name`)}
-                    </th>
-                    <td className="max-w-[52ch] text-body text-ink-soft">{t(`channels.${channel}.how`)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-
         {/* Respect: the one dark band. */}
         <section className="bg-ink text-sheet">
-          <div className={`${WRAP} grid gap-12 py-20 md:py-28 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-20`}>
+          <div className={`${WRAP} ${SPLIT}`}>
             <div>
               <h2 className="condensed text-title font-bold">{t("trust.title")}</h2>
               <p className="mt-6 max-w-[48ch] text-lead text-sheet/75">{t("trust.body")}</p>
               <div className="mt-8 flex flex-col items-start gap-3">
-                <Link
-                  href="/security"
-                  className="text-body font-semibold underline decoration-sheet/40 underline-offset-4 transition-colors hover:decoration-sheet"
-                >
-                  {t("trust.security")}
-                  <Icon name="arrow" className="ml-2 inline size-4 align-[-0.15em]" />
-                </Link>
-                <Link
-                  href="/subprocessors"
-                  className="text-body font-semibold underline decoration-sheet/40 underline-offset-4 transition-colors hover:decoration-sheet"
-                >
-                  {t("trust.subprocessors")}
-                  <Icon name="arrow" className="ml-2 inline size-4 align-[-0.15em]" />
-                </Link>
+                {(["security", "subprocessors"] as const).map((page) => (
+                  <Link key={page} href={`/${page}`} className="text-body font-semibold underline decoration-sheet/40 underline-offset-4 transition-colors hover:decoration-sheet">
+                    {t(`trust.${page}`)}
+                    <Icon name="arrow" className="ml-2 inline size-4 align-[-0.15em]" />
+                  </Link>
+                ))}
               </div>
             </div>
             <ul className="border-t border-sheet/30 self-center">
@@ -432,73 +442,34 @@ export default async function Home({ params }: Props) {
           </div>
         </section>
 
-        {/* Segments: the team offer first, with its real screen; prices in one line, the details on /pricing. */}
-        <section id={anchors.teams} className="scroll-mt-14 border-b border-ink">
-          {alias("teams")}
+        {/* Pricing: the four plans in one strip, the details on /pricing. */}
+        <section id={anchors.pricing} className="scroll-mt-14 border-b border-ink">
+          {alias("pricing")}
           <div className={`${WRAP} py-20 md:py-28`}>
-            <h2 className="condensed max-w-[20ch] text-title font-bold">{t("who.title")}</h2>
-            <p className="mt-6 max-w-[56ch] text-lead text-ink-soft">
-              {t.rich("who.beta", {
-                link: (chunks) => (
-                  <Link href="/pricing" className="font-medium text-ink underline underline-offset-4">
-                    {chunks}
-                  </Link>
-                ),
-              })}
-            </p>
-            <div className="mt-14 grid gap-10 border-t border-ink pt-10 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-16">
-              <article className="flex flex-col">
-                <h3 className="condensed text-[2.5rem] leading-none font-extrabold tracking-[-0.03em]">{t("who.team.name")}</h3>
-                <p className="mt-4 font-medium">{t("who.team.who")}</p>
-                <p className="mt-2 text-body text-ink-soft">{t("who.team.body")}</p>
-                <p className="mt-8 text-small font-semibold">{t("who.team.offer")}</p>
-                <a
-                  href={appUrl(locale)}
-                  className="group mt-3 flex h-12 items-center justify-between bg-ink px-4 font-semibold text-sheet transition-colors hover:bg-ink/90"
-                >
-                  {ts("submit")}
-                  <Icon name="arrow" className="size-5 transition-transform duration-300 ease-[var(--ease-out-expo)] group-hover:translate-x-1" />
-                </a>
-              </article>
-              <figure>
-                <Image
-                  src={TEAM_SCREENS.mobile[locale]}
-                  alt={t("who.teamAlt")}
-                  sizes="calc(100vw - 2.5rem)"
-                  className="mx-auto w-full max-w-[24rem] border border-rule md:hidden"
-                />
-                <Image
-                  src={TEAM_SCREENS.desktop[locale]}
-                  alt={t("who.teamAlt")}
-                  sizes="(min-width: 1440px) 56rem, (min-width: 1024px) 62vw, calc(100vw - 4rem)"
-                  className="w-full border border-rule max-md:hidden"
-                />
-                <figcaption className="mt-2 font-mono text-micro text-ink-soft">{t("screen")}</figcaption>
-              </figure>
-            </div>
-            <div className="mt-14 grid border-t border-ink md:grid-cols-2">
-              {(["solo", "enterprise"] as const).map((segment) => (
-                <article
-                  key={segment}
-                  className="flex flex-col border-b border-rule py-8 md:border-b-0 md:px-8 md:first:border-r md:first:pl-0 md:last:pr-0"
-                >
-                  <h3 className="condensed text-[2rem] leading-none font-extrabold tracking-[-0.03em]">{t(`who.${segment}.name`)}</h3>
-                  <p className="mt-4 font-medium">{t(`who.${segment}.who`)}</p>
-                  <p className="mt-2 flex-1 text-body text-ink-soft">{t(`who.${segment}.body`)}</p>
-                  <p className="mt-6 text-small font-semibold">{t(`who.${segment}.offer`)}</p>
+            <h2 className="condensed max-w-[20ch] text-title font-bold">{t("pricingStrip.title")}</h2>
+            <p className="mt-6 max-w-[56ch] text-lead text-ink-soft">{t("pricingStrip.body")}</p>
+            <ul aria-label={t("pricingStrip.caption")} className="mt-12 grid border-t border-l border-ink sm:grid-cols-2 lg:grid-cols-4">
+              {PLANS.map((plan) => (
+                <li key={plan} className={`flex flex-col border-r border-b border-ink p-5 ${plan === "team" ? "bg-sheet" : ""}`}>
+                  <h3 className="condensed text-[2rem] leading-none font-extrabold tracking-[-0.03em]">{tp(`plans.${plan}.name`)}</h3>
+                  <p className="mt-3 font-mono text-small">{planPrice[plan]}</p>
+                  <p className="mt-3 flex-1 text-body text-ink-soft">{t(`pricingStrip.${plan}`)}</p>
                   <a
-                    href={
-                      segment === "enterprise"
-                        ? `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(t("who.enterprise.mailSubject"))}`
-                        : appUrl(locale)
-                    }
-                    className="group mt-3 flex h-12 max-w-sm items-center justify-between border border-ink px-4 font-semibold transition-colors hover:bg-ink hover:text-sheet"
+                    href={plan === "enterprise" ? `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(t("pricingStrip.mailSubject"))}` : appUrl(locale)}
+                    className={`${plan === "team" ? BUTTON_INK : BUTTON_OUTLINE} mt-6 h-11 text-small`}
                   >
-                    {segment === "enterprise" ? t("who.enterprise.action") : ts("submit")}
-                    <Icon name="arrow" className="size-5 transition-transform duration-300 ease-[var(--ease-out-expo)] group-hover:translate-x-1" />
+                    {plan === "enterprise" ? t("pricingStrip.enterpriseAction") : ts("submit")}
+                    <Icon name="arrow" className={ARROW} />
                   </a>
-                </article>
+                </li>
               ))}
+            </ul>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-baseline sm:justify-between">
+              <p className="max-w-[56ch] text-body">{t("pricingStrip.addon")}</p>
+              <Link href="/pricing" className="shrink-0 text-body font-semibold underline decoration-ink/30 underline-offset-4 transition-colors hover:decoration-ink">
+                {t("pricingStrip.details")}
+                <Icon name="arrow" className="ml-2 inline size-4 align-[-0.15em]" />
+              </Link>
             </div>
           </div>
         </section>
@@ -527,7 +498,7 @@ export default async function Home({ params }: Props) {
               }).replace(/</g, "\\u003c"),
             }}
           />
-          <div className={`${WRAP} grid gap-12 py-20 md:py-28 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-20`}>
+          <div className={`${WRAP} ${SPLIT}`}>
             <div>
               <h2 className="condensed text-title font-bold">{t("faq.title")}</h2>
               <p className="mt-6 text-lead text-ink-soft">

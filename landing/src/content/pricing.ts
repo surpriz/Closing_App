@@ -17,8 +17,15 @@ export const MONTHLY_PRICE: Record<PaidPlanKey, Record<Interval, number>> = {
 export const TEAM_MIN_SEATS = 2;
 export const TRIAL_DAYS = 14;
 
-/** true / false: included or not. A number: a monthly cap, or a count for video pitches. null: unlimited. */
-type Cell = boolean | number | null;
+/** The connected-mailbox add-on (campaigns), euros excl. VAT per mailbox per month; Solo and Team only, included on Enterprise. */
+export const MAILBOX_MONTHLY_PRICE: Record<Interval, number> = { month: 15, year: 12 };
+
+export function euros(locale: string, amount: number) {
+  return new Intl.NumberFormat(locale, { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(amount);
+}
+
+/** true / false: included or not. A number: a monthly cap, or a count for video pitches. null: unlimited. "addon": paid per mailbox. */
+type Cell = boolean | number | null | "addon";
 type Row = { key: string; monthly?: boolean; cells: Record<PlanKey, Cell> };
 
 const all: Record<PlanKey, Cell> = { free: true, solo: true, team: true, enterprise: true };
@@ -42,4 +49,6 @@ export const COMPARISON = [
   { key: "teamView", cells: team },
   { key: "invites", cells: team },
   { key: "slack", cells: team },
+  { key: "campaigns", cells: paid },
+  { key: "mailbox", cells: { free: false, solo: "addon", team: "addon", enterprise: true } },
 ] as const satisfies readonly Row[];
