@@ -16,19 +16,16 @@ export async function SiteHeader({ locale, path }: { locale: Locale; path: AppPa
   const t = await getTranslations({ locale, namespace: "nav" });
   // Plain anchors to the home sections: they must work from the legal pages too.
   const home = `/${locale}`;
-  const sections = (["how", "features", "teams", "faq"] as const).map((section) => ({
+  const sections = (["how", "features", "campaigns"] as const).map((section) => ({
     href: `${home}#${ANCHORS[locale][section]}`,
     label: t(section),
     current: false,
-    // Six links don't fit next to the CTA at 1024px: "For teams" and the FAQ wait for xl (pricing covers the first).
-    wide: section === "teams" || section === "faq",
   }));
-  // The pages of their own in the nav, after the features they put in situation.
+  // The pages of their own in the nav, after the sections they put in situation.
   const nav = [
-    ...sections.slice(0, 2),
-    { href: localizedPath(locale, "/use-cases"), label: t("useCases"), current: path === "/use-cases", wide: false },
-    { href: localizedPath(locale, "/pricing"), label: t("pricing"), current: path === "/pricing", wide: false },
-    ...sections.slice(2),
+    ...sections,
+    { href: localizedPath(locale, "/use-cases"), label: t("useCases"), current: path === "/use-cases" },
+    { href: localizedPath(locale, "/pricing"), label: t("pricing"), current: path === "/pricing" },
   ];
 
   return (
@@ -43,7 +40,7 @@ export async function SiteHeader({ locale, path }: { locale: Locale; path: AppPa
               key={item.href}
               href={item.href}
               aria-current={item.current ? "page" : undefined}
-              className={`flex items-center border-r border-rule px-4 text-small whitespace-nowrap text-ink-soft transition-colors hover:bg-sheet hover:text-ink aria-[current=page]:bg-sheet aria-[current=page]:font-medium aria-[current=page]:text-ink ${item.wide ? "max-xl:hidden" : ""}`}
+              className={`flex items-center border-r border-rule px-4 text-small whitespace-nowrap text-ink-soft transition-colors hover:bg-sheet hover:text-ink aria-[current=page]:bg-sheet aria-[current=page]:font-medium aria-[current=page]:text-ink`}
             >
               {item.label}
             </a>

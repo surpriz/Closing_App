@@ -36,8 +36,8 @@ const CATALOGUE = [
     name: "Clozer Boîte connectée",
     unitLabel: "mailbox",
     prices: [
-      { lookupKey: "clozer_mailbox_monthly", interval: "month", amount: 1500 },
-      { lookupKey: "clozer_mailbox_yearly", interval: "year", amount: 14400 },
+      { lookupKey: "clozer_mailbox_monthly", interval: "month", amount: 900 },
+      { lookupKey: "clozer_mailbox_yearly", interval: "year", amount: 8400 },
     ],
   },
 ];

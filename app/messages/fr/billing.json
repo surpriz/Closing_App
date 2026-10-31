@@ -20,7 +20,7 @@
         "followups": "Relances IA illimitées, pilote automatique",
         "assistant": "Assistant prospect, traduction, messages vocaux",
         "branding": "Pas de badge Clozer chez vos prospects",
-        "mailbox": "Boîtes connectées pour vos campagnes : {price} HT par boîte et par mois"
+        "mailbox": "Campagnes de cold email : une boîte connectée incluse, {price} HT par boîte en plus et par mois"
       }
     },
     "team": {
@@ -31,7 +31,7 @@
         "teamView": "Vue équipe pour le manager",
         "integrations": "Slack et webhooks",
         "seats": "Facturé par membre, 2 minimum",
-        "mailbox": "Boîtes connectées pour vos campagnes : {price} HT par boîte et par mois"
+        "mailbox": "Une boîte connectée par membre pour les campagnes, {price} HT par boîte en plus et par mois"
       }
     },
     "enterprise": {
@@ -70,7 +70,7 @@
     "unbilled": "La facturation n'est pas configurée ici : tout est ouvert.",
     "paymentIssue": "Le dernier paiement a échoué. Stripe va réessayer : mettez à jour votre carte pour garder votre offre.",
     "seats": "{count, plural, one {# membre} other {# membres}}",
-    "mailboxes": "{count, plural, one {# boîte connectée} other {# boîtes connectées}} · {price} HT par boîte et par mois",
+    "mailboxes": "{count, plural, one {# boîte connectée} other {# boîtes connectées}} · {billed, plural, =0 {incluses} one {# en plus à {price} HT par mois} other {# en plus à {price} HT par boîte et par mois}}",
     "mailboxesIncluded": "{count, plural, one {# boîte connectée} other {# boîtes connectées}} · incluses"
   },
   "usage": {

@@ -87,6 +87,24 @@ export const SUBPROCESSORS: { name: string; purpose: Localized; location: Locali
     safeguard: { fr: "Data Privacy Framework", en: "Data Privacy Framework" },
   },
   {
+    name: "Unipile SAS",
+    purpose: {
+      fr: "Connexion d'une boîte Gmail pour les campagnes de cold email : envoi et lecture des emails de cette boîte, seulement si le vendeur la connecte",
+      en: "Connecting a Gmail mailbox for cold email campaigns: sending and reading that mailbox's emails, only if the seller connects it",
+    },
+    location: { fr: "Union européenne (France)", en: "European Union (France)" },
+    safeguard: { fr: "DPA Unipile", en: "Unipile DPA" },
+  },
+  {
+    name: "Microsoft Ireland Operations Ltd.",
+    purpose: {
+      fr: "Connexion d'une boîte Microsoft 365 pour les campagnes de cold email, seulement si le vendeur la connecte ; les emails restent dans sa boîte",
+      en: "Connecting a Microsoft 365 mailbox for cold email campaigns, only if the seller connects it; emails stay in their mailbox",
+    },
+    location: { fr: "Union européenne (Irlande), selon la région du compte Microsoft", en: "European Union (Ireland), depending on the Microsoft account's region" },
+    safeguard: { fr: "DPA Microsoft, clauses contractuelles types", en: "Microsoft DPA, standard contractual clauses" },
+  },
+  {
     name: "PostHog Inc.",
     purpose: {
       fr: "Mesure d'audience du site et de l'utilisation de l'application, sans cookie (jamais sur les pages de lecture)",

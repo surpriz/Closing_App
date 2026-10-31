@@ -72,6 +72,23 @@ export function PrivacyFr() {
         de TVA éventuel et l&apos;historique des factures, que la loi nous oblige à garder 10 ans.
       </p>
 
+      <h2>Campagnes de cold email</h2>
+      <p>
+        Si vous connectez une boîte mail et importez des prospects pour une campagne, vous êtes responsable du
+        traitement de leurs données et Clozer les traite pour votre compte, comme sous-traitant. Nous conservons les
+        adresses importées, les colonnes que vous ajoutez et l&apos;état de chaque envoi. Le contenu des emails
+        envoyés est supprimé 90 jours après l&apos;envoi. Chaque email contient un lien de désinscription : les
+        adresses désinscrites, en rebond ou ajoutées à votre liste d&apos;arrêt y restent, pour ne plus être
+        contactées. Votre boîte est jointe par le fournisseur que vous choisissez, Google via Unipile, Microsoft, ou
+        votre propre serveur IMAP, listé sur la page <Link href="/subprocessors">sous-traitants</Link>.
+      </p>
+      <p>
+        Si vous avez reçu un email de prospection envoyé via Clozer, il part de la boîte du vendeur, qui est
+        responsable du traitement. Le lien de désinscription en bas de l&apos;email arrête tout envoi ; votre
+        adresse est alors gardée dans sa liste d&apos;arrêt, uniquement pour ne plus vous écrire. Si l&apos;email
+        contient un lien vers un document, sa lecture est suivie comme décrit plus haut.
+      </p>
+
       <h2>L&apos;extension Chrome et le complément Outlook</h2>
       <p>
         Ils n&apos;agissent que dans un email en cours de rédaction. Ils ne lisent pas vos emails reçus et
@@ -134,6 +151,7 @@ export function PrivacyFr() {
           Données de lecture, messages, commentaires vocaux et relances : effacés automatiquement 12 mois après la
           dernière activité sur le lien.
         </li>
+        <li>Contenu des emails de campagne envoyés depuis votre boîte : 90 jours après l&apos;envoi.</li>
         <li>Preuve de validation d&apos;une proposition : 5 ans, durée de prescription commerciale.</li>
         <li>Documents supprimés par le vendeur : effacés définitivement, fichiers compris, après 30 jours.</li>
         <li>Compte vendeur : tant qu&apos;il est actif, effacé à sa suppression.</li>

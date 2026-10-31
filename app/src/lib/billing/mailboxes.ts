@@ -9,6 +9,7 @@ import {
   isPaidPlanId,
   isPaidStatus,
   mailboxItemOf,
+  seatQuantity,
   mailboxLookupKeyFor,
   planFromLookupKey,
   planItemOf,
@@ -57,13 +58,20 @@ export async function syncMailboxQuantity(
   if (!stripe) return "skipped";
   const org = await prisma.organization.findUnique({
     where: { id: organizationId },
-    select: { plan: true, planStatus: true, stripeSubscriptionId: true, billingInterval: true, mailboxQuantity: true },
+    select: {
+      plan: true,
+      planStatus: true,
+      stripeSubscriptionId: true,
+      billingInterval: true,
+      mailboxQuantity: true,
+      _count: { select: { members: true } },
+    },
   });
   if (!org?.stripeSubscriptionId || !isPaidStatus(org.planStatus) || !isPaidPlanId(org.plan)) return "skipped";
 
   const subscription = await stripe.subscriptions.retrieve(org.stripeSubscriptionId);
   // Counted after the retrieve: narrows the window in which a concurrent sync could write a stale quantity
-  const quantity = billableMailboxes(await countBillableMailboxes(organizationId), PLANS[org.plan]);
+  const quantity = billableMailboxes(await countBillableMailboxes(organizationId), PLANS[org.plan], seatQuantity(org._count.members));
   // Matched by lookup key: an item left on a price whose key moved elsewhere would not be found. Keep the keys on
   // the same price when amounts change (stripe-setup uses transfer_lookup_key, which moves the key with the price)
   const item = mailboxItemOf(subscription);
@@ -112,11 +120,15 @@ export async function reconcileMailboxes(limit = 20) {
       id: true,
       plan: true,
       mailboxQuantity: true,
-      _count: { select: { mailboxes: { where: { status: { not: "DISCONNECTED" } } } } },
+      _count: { select: { members: true, mailboxes: { where: { status: { not: "DISCONNECTED" } } } } },
     },
   });
   const drifted = orgs
-    .filter((org) => isPaidPlanId(org.plan) && (org.mailboxQuantity ?? 0) !== billableMailboxes(org._count.mailboxes, PLANS[org.plan]))
+    .filter(
+      (org) =>
+        isPaidPlanId(org.plan) &&
+        (org.mailboxQuantity ?? 0) !== billableMailboxes(org._count.mailboxes, PLANS[org.plan], seatQuantity(org._count.members)),
+    )
     .slice(0, limit);
   for (const org of drifted) {
     await syncMailboxQuantity(org.id).catch((error) => console.error("[billing:mailboxes]", org.id, error));

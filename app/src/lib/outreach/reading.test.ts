@@ -64,7 +64,10 @@ vi.mock("./messages", async () => ({
   scheduleStepMessage: (...a: unknown[]) => scheduleStepMessage(...a),
 }));
 const orgIds = vi.hoisted(() => ({ value: ["org"] as string[] }));
-vi.mock("./flag", () => ({ outreachOrgIds: () => orgIds.value }));
+vi.mock("./flag", () => ({
+  outreachOrgIds: () => orgIds.value,
+  isOutreachOrg: (id: string) => orgIds.value === undefined || orgIds.value.includes(id),
+}));
 const releaseCampaignLink = vi.fn();
 vi.mock("./ownership", () => ({ releaseCampaignLink: (...a: unknown[]) => releaseCampaignLink(...a) }));
 

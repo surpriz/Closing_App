@@ -35,8 +35,9 @@ export type PlanLimits = {
   webhooks: boolean;
   /** Connected mailboxes can be bought as the add-on. */
   mailboxAddon: boolean;
-  /** Mailboxes included in the plan; the rest are billed. Null: all included. */
+  /** Mailboxes included in the plan (per seat when `mailboxesPerSeat`); the rest are billed. Null: all included. */
   includedMailboxes: number | null;
+  mailboxesPerSeat: boolean;
 };
 
 const SOLO: PlanLimits = {
@@ -54,10 +55,11 @@ const SOLO: PlanLimits = {
   slack: false,
   webhooks: false,
   mailboxAddon: true,
-  includedMailboxes: 0,
+  includedMailboxes: 1,
+  mailboxesPerSeat: false,
 };
 
-const TEAM: PlanLimits = { ...SOLO, rank: 2, teamView: true, invites: true, slack: true, webhooks: true };
+const TEAM: PlanLimits = { ...SOLO, rank: 2, teamView: true, invites: true, slack: true, webhooks: true, mailboxesPerSeat: true };
 
 export const PLANS: Record<PlanId, PlanLimits> = {
   free: {
@@ -76,6 +78,7 @@ export const PLANS: Record<PlanId, PlanLimits> = {
     webhooks: false,
     mailboxAddon: false,
     includedMailboxes: 0,
+    mailboxesPerSeat: false,
   },
   solo: SOLO,
   team: TEAM,
@@ -99,8 +102,8 @@ export const LOOKUP_KEYS: Record<PaidPlanId, Record<Interval, string>> = {
   team: { month: "clozer_team_monthly", year: "clozer_team_yearly" },
 };
 
-/** Euro cents, excl. VAT, per connected mailbox: monthly, and per month on a yearly plan. */
-export const MAILBOX_MONTHLY_PRICE_CENTS: Record<Interval, number> = { month: 1500, year: 1200 };
+/** Euro cents, excl. VAT, per connected mailbox over what the plan includes: monthly, and per month on a yearly plan. */
+export const MAILBOX_MONTHLY_PRICE_CENTS: Record<Interval, number> = { month: 900, year: 700 };
 
 export const MAILBOX_LOOKUP_KEYS: Record<Interval, string> = { month: "clozer_mailbox_monthly", year: "clozer_mailbox_yearly" };
 
@@ -140,10 +143,10 @@ export function mailboxIntervalFromLookupKey(key: string | null | undefined): In
   return null;
 }
 
-/** Mailboxes charged on the add-on: those over what the plan includes. */
-export function billableMailboxes(count: number, limits: Pick<PlanLimits, "includedMailboxes">) {
+/** Mailboxes charged on the add-on: those over what the plan includes (`seats` times that on a per-seat plan). */
+export function billableMailboxes(count: number, limits: Pick<PlanLimits, "includedMailboxes" | "mailboxesPerSeat">, seats = 1) {
   if (limits.includedMailboxes === null) return 0;
-  return Math.max(0, count - limits.includedMailboxes);
+  return Math.max(0, count - limits.includedMailboxes * (limits.mailboxesPerSeat ? seats : 1));
 }
 
 /** Stripe statuses that keep the paid plan: past_due too, while Stripe retries the card. */

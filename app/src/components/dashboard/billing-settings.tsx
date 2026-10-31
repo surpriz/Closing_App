@@ -87,8 +87,11 @@ export function BillingSettings(props: BillingSettingsProps) {
     if (connected <= 0 || !PLANS[props.plan].mailboxAddon) return null;
     // The price only for a real subscription; trial, beta, comped and enterprise have them included
     if (props.source !== "subscription" || props.plan === "enterprise") return t("current.mailboxesIncluded", { count: connected });
-    const count = props.mailboxes.billed ?? connected;
-    return t("current.mailboxes", { count, price: money(MAILBOX_MONTHLY_PRICE_CENTS[props.interval ?? "month"]) });
+    return t("current.mailboxes", {
+      count: connected,
+      billed: props.mailboxes.billed ?? 0,
+      price: money(MAILBOX_MONTHLY_PRICE_CENTS[props.interval ?? "month"]),
+    });
   })();
 
   const status = (() => {

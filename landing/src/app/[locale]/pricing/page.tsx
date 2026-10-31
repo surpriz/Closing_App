@@ -8,14 +8,13 @@ import { SignupForm } from "@/components/signup-form";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { HeatScale } from "@/components/thermal-plate";
-import { COMPARISON, MONTHLY_PRICE, PLAN_KEYS, type Interval, type PaidPlanKey } from "@/content/pricing";
+import { COMPARISON, MAILBOX_MONTHLY_PRICE, MONTHLY_PRICE, PLAN_KEYS, euros, type Interval, type PaidPlanKey } from "@/content/pricing";
 import { MESSAGES } from "@/i18n/messages";
 import { Link } from "@/i18n/navigation";
 import { resolveLocale } from "@/i18n/page";
-import type { Locale } from "@/i18n/routing";
 import { alternatesFor, localizedPath } from "@/i18n/seo";
 
-const FAQ = ["vat", "cancel", "members", "afterTrial", "beta", "invoices", "payment", "security"] as const;
+const FAQ = ["vat", "cancel", "members", "coldEmail", "afterTrial", "beta", "invoices", "payment", "security"] as const;
 const INTERVALS = ["month", "year"] as const;
 
 // Hidden unless the toggle (components/billing-toggle.tsx) is on that interval; monthly by default.
@@ -40,10 +39,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 const WRAP = "mx-auto w-full max-w-[90rem] px-5 sm:px-8";
-
-function euros(locale: Locale, amount: number) {
-  return new Intl.NumberFormat(locale, { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(amount);
-}
 
 export default async function Pricing({ params }: Props) {
   const locale = await resolveLocale(params);
@@ -70,22 +65,22 @@ export default async function Pricing({ params }: Props) {
     </Link>
   );
 
-  const price = (plan: PaidPlanKey) =>
-    INTERVALS.map((interval) => (
+  // A price block for the toggle: both intervals in the HTML, SHOW reveals one. The add-on reuses it.
+  const price = (key: PaidPlanKey | "addon") => {
+    const amounts = key === "addon" ? MAILBOX_MONTHLY_PRICE : MONTHLY_PRICE[key];
+    const copy = key === "addon" ? ({ period: "addon.period", monthNote: "addon.monthNote", yearNote: "addon.yearNote" } as const) : ({ period: `plans.${key}.period`, monthNote: `plans.${key}.monthNote`, yearNote: `plans.${key}.yearNote` } as const);
+    return INTERVALS.map((interval) => (
       <div key={interval} className={SHOW[interval]}>
         <p className="flex flex-wrap items-baseline gap-x-2">
-          <span className="condensed text-[2.75rem] leading-none font-extrabold tracking-[-0.03em]">
-            {euros(locale, MONTHLY_PRICE[plan][interval])}
-          </span>
-          <span className="text-small text-ink-soft">{t(`plans.${plan}.period`)}</span>
+          <span className="condensed text-[2.75rem] leading-none font-extrabold tracking-[-0.03em]">{euros(locale, amounts[interval])}</span>
+          <span className="text-small text-ink-soft">{t(copy.period)}</span>
         </p>
         <p className="mt-2 text-small text-ink-soft">
-          {interval === "month"
-            ? t(`plans.${plan}.monthNote`)
-            : t(`plans.${plan}.yearNote`, { total: euros(locale, MONTHLY_PRICE[plan].year * 12) })}
+          {interval === "month" ? t(copy.monthNote) : t(copy.yearNote, { total: euros(locale, amounts.year * 12) })}
         </p>
       </div>
     ));
+  };
 
   return (
     <div className="flex min-h-full flex-col overflow-x-clip">
@@ -157,7 +152,7 @@ export default async function Pricing({ params }: Props) {
                     <a
                       href={
                         plan === "enterprise"
-                          ? `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(th("who.enterprise.mailSubject"))}`
+                          ? `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(th("pricingStrip.mailSubject"))}`
                           : appUrl(locale)
                       }
                       className={`group mt-6 flex h-12 items-center justify-between px-4 font-semibold transition-colors ${
@@ -166,11 +161,19 @@ export default async function Pricing({ params }: Props) {
                           : "border border-ink hover:bg-ink hover:text-sheet"
                       }`}
                     >
-                      {plan === "enterprise" ? th("who.enterprise.action") : ts("submit")}
+                      {plan === "enterprise" ? th("pricingStrip.enterpriseAction") : ts("submit")}
                       <Icon name="arrow" className="size-5 transition-transform duration-300 ease-[var(--ease-out-expo)] group-hover:translate-x-1" />
                     </a>
                   </article>
                 ))}
+              </div>
+              {/* The connected-mailbox add-on: campaigns send from the seller's own mailbox, paid per mailbox on Solo and Team. */}
+              <div className="grid gap-6 border-b border-rule py-8 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:gap-12 lg:gap-20">
+                <div>
+                  <h2 className="condensed text-[2rem] leading-none font-extrabold tracking-[-0.03em]">{t("addon.name")}</h2>
+                  <p className="mt-3 font-medium">{t("addon.who")}</p>
+                </div>
+                <div className="md:max-w-[32rem]">{price("addon")}</div>
               </div>
             </BillingToggle>
           </div>
@@ -219,6 +222,8 @@ export default async function Pricing({ params }: Props) {
                               </>
                             ) : cell === null ? (
                               t("table.unlimited")
+                            ) : cell === "oneIncluded" || cell === "onePerSeat" ? (
+                              t(cell === "oneIncluded" ? "table.mailboxIncluded" : "table.mailboxPerSeat", { price: euros(locale, MAILBOX_MONTHLY_PRICE.month) })
                             ) : "monthly" in row && row.monthly ? (
                               t("table.perMonth", { count: cell })
                             ) : (

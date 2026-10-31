@@ -1,15 +1,16 @@
 {
   "meta": {
-    "title": "Clozer · Sachez qui lit vos propositions commerciales",
-    "description": "Envoyez un lien suivi à la place du PDF. Clozer voit qui lit, quoi et qui d'autre, puis prépare la relance. 14 jours d'essai Équipe, sans carte bancaire.",
-    "shortDescription": "Envoyez un lien suivi à la place du PDF. Clozer voit qui lit, puis prépare la relance.",
-    "ogHeadline": "Sachez qui lit votre proposition."
+    "title": "Clozer · Sachez qui lit. Relancez au bon moment.",
+    "description": "Un lien Clozer à la place de la pièce jointe : vous voyez qui lit votre devis, votre deck ou votre CV, et Clozer relance au bon moment. Depuis Gmail, Outlook ou en campagne de cold email. Gratuit pour commencer.",
+    "shortDescription": "Un lien suivi à la place de la pièce jointe. Vous voyez qui lit, Clozer relance au bon moment.",
+    "ogHeadline": "Sachez qui lit. Relancez au bon moment."
   },
   "nav": {
     "label": "Navigation",
     "home": "Clozer, accueil",
     "how": "Comment ça marche",
     "features": "Fonctionnalités",
+    "campaigns": "Campagnes",
     "useCases": "Cas d'usage",
     "pricing": "Tarifs",
     "teams": "Pour les équipes",
@@ -63,8 +64,8 @@
   "home": {
     "demo": "Exemple de démonstration",
     "hero": {
-      "title": "Sachez qui lit votre proposition. Relancez <hot>au bon moment</hot>.",
-      "lead": "Pour les commerciaux B2B et leurs managers. Envoyez un lien Clozer à la place du PDF ou de la vidéo : vous voyez qui l'ouvre, ce qu'il lit et à qui il le transfère. Clozer prépare la relance.",
+      "title": "Sachez qui lit. Relancez <hot>au bon moment</hot>.",
+      "lead": "Un devis, un deck, un CV, une séquence : envoyez un lien Clozer à la place de la pièce jointe, depuis Gmail, Outlook ou en campagne. Vous voyez qui ouvre, ce qu'il lit, à qui il le transfère. Clozer écrit la relance et l'envoie quand c'est le moment.",
       "free": "14 jours d'essai Équipe",
       "noCard": "Sans carte bancaire",
       "europe": "Hébergé en Europe",
@@ -103,49 +104,79 @@
     "steps": {
       "title": "Trois étapes, rien à installer pour commencer.",
       "upload": {
-        "title": "Déposez la proposition.",
-        "body": "Un PDF, une page web (Notion, Google Slides, Figma…) ou un pitch vidéo de 3 minutes.",
+        "title": "Déposez ce que vous envoyez.",
+        "body": "Un PDF, une page web (Notion, Google Slides, Figma…) ou un pitch vidéo de 3 minutes enregistré dans Clozer.",
         "alt": "Écran de Clozer : la zone où déposer un PDF, et le champ pour coller le lien d'une page web."
       },
       "send": {
-        "title": "Envoyez le lien.",
-        "body": "Collez-le dans votre email, ou laissez l'extension Gmail et Outlook remplacer la pièce jointe. Un lien par prospect.",
-        "alt": "Écran de Clozer : le lien est prêt pour Marie Martin, avec les boutons Copier le lien et Envoyer par email."
+        "title": "Envoyez le lien, d'où vous voulez.",
+        "body": "Un lien par destinataire, toujours au nom de celui qui le reçoit.",
+        "alt": "Écran de Clozer : le lien est prêt pour Marie Martin, avec les boutons Copier le lien et Envoyer par email.",
+        "channels": {
+          "mail": {
+            "name": "Gmail et Outlook",
+            "how": "L'extension Chrome, ou le complément Outlook sur Windows et Mac, remplace la pièce jointe par un lien au nom du destinataire et vous prévient quand il lit."
+          },
+          "chat": {
+            "name": "WhatsApp, LinkedIn, SMS",
+            "how": "Copiez le lien, collez-le dans la conversation. Il s'ouvre sur téléphone comme sur ordinateur, sans compte."
+          },
+          "campaign": {
+            "name": "En campagne",
+            "how": "Importez vos prospects, écrivez la séquence : Clozer envoie depuis votre boîte, un lien par prospect. Vous avez déjà lemlist, Instantly ou Apollo ? Un Smart Link dans leur séquence fait la même chose."
+          }
+        },
+        "store": "Ajouter à Chrome",
+        "storeNote": "Gratuit, pour Gmail et Outlook sur le web."
       },
       "followUp": {
-        "title": "Validez la relance.",
-        "body": "Clozer l'écrit et propose l'heure. Vous relisez, vous envoyez.",
+        "title": "Laissez Clozer relancer.",
+        "body": "Il écrit la relance à partir de ce qui a été lu et propose l'heure. Vous validez d'un clic, ou vous le laissez envoyer seul.",
         "alt": "Écran de Clozer : une relance écrite après la lecture des tarifs, conseillée pour le lendemain à 9 h, qui attend le bouton Valider."
       },
       "guided": "Après l'inscription, un tour guidé crée avec vous un premier lien de test."
     },
-    "video": {
-      "title": "Un pitch vidéo, suivi comme une proposition.",
-      "body": "Face caméra ou en partageant votre écran, enregistrez jusqu'à 3 minutes directement dans Clozer. Le prospect la regarde dans son navigateur, et vous voyez ce qu'il en a vraiment vu.",
-      "record": {
-        "title": "Enregistrée dans Clozer",
-        "body": "Pas d'autre outil. Le pitch devient un document, avec un lien par prospect, comme un PDF."
+    "see": {
+      "title": "Tout ce qui se passe après l'envoi.",
+      "body": "Chaque page lue, chaque nouveau lecteur, chaque passage revu. Pour vous le matin, et pour le manager le lundi.",
+      "doc": {
+        "title": "Sur un devis, un deck, une page web",
+        "pages": {
+          "title": "Page par page",
+          "body": "Jusqu'où il est allé, et sur quelle page il s'est arrêté."
+        },
+        "readers": {
+          "title": "Qui d'autre lit",
+          "body": "Le nom ou l'email de chaque nouveau lecteur, et les pages qu'il a lues."
+        },
+        "live": {
+          "title": "Une alerte quand il lit",
+          "body": "Dans Chrome, en haut de Gmail et d'Outlook, ou dans Slack."
+        },
+        "score": {
+          "title": "Une température qui s'explique",
+          "body": "Un score sur 100, et chaque point a sa raison."
+        },
+        "ownOpens": "Vos propres ouvertures et les robots ne comptent pas.",
+        "readingAlt": "Écran de Clozer : la lecture page par page d'une proposition, la page Tarifs la plus lue avec 2 min 50, puis la température Chaud à 92 sur 100 et le détail des points : lu dans les dernières 24 h, visites répétées, longue lecture des tarifs, plusieurs lecteurs.",
+        "chainAlt": "Écran de Clozer : le circuit du document. Marie Martin l'a ouvert, puis un 2e lecteur chez le même client, julien.bernard@acme.example, l'a lu à son tour."
       },
-      "watched": {
-        "title": "Ce qu'il a vraiment regardé",
-        "body": "Le visionnage se mesure par dixième de la vidéo. Les passages sautés ne comptent pas."
+      "video": {
+        "title": "Sur un pitch vidéo",
+        "body": "Le visionnage se mesure par dixième, les passages sautés ne comptent pas. La vidéo est transcrite, la relance sait ce que vous y dites. Un bouton « Demander un devis » vous prévient s'il clique.",
+        "capsules": "Sur un PDF, vous pouvez aussi poser une capsule vidéo ou vocale de 90 secondes sur une page, pour expliquer vos tarifs par exemple.",
+        "name": "Pitch vidéo « Refonte du site e-commerce », 3:00",
+        "caption": "Exemple : visionnage d'un pitch vidéo de 3 minutes, découpé en dix passages. Le prospect a sauté le 3e passage, a revu deux fois le passage sur les tarifs et s'est arrêté à 70 %.",
+        "summary": "Regardé jusqu'à 70 %, tarifs revus 2 fois",
+        "skipped": "Passage sauté",
+        "hottest": "Tarifs, revus 2 fois",
+        "quoteButton": "Demander un devis"
       },
-      "transcript": {
-        "title": "Une relance qui sait ce que vous avez dit",
-        "body": "La vidéo est transcrite. Les relances et l'assistant savent de quoi vous parlez à chaque passage."
-      },
-      "quote": {
-        "title": "Un bouton « Demander un devis »",
-        "body": "Activez-le sur le lien. S'il clique, vous êtes prévenu et les relances automatiques s'arrêtent."
-      },
-      "capsules": "Sur un PDF, vous pouvez aussi poser une capsule vidéo ou vocale de 90 secondes sur une page, pour expliquer vos tarifs par exemple.",
-      "useCases": "Des idées d'envoi, situation par situation",
-      "name": "Pitch vidéo « Refonte du site e-commerce », 3:00",
-      "caption": "Exemple : visionnage d'un pitch vidéo de 3 minutes, découpé en dix passages. Le prospect a sauté le 3e passage, a revu deux fois le passage sur les tarifs et s'est arrêté à 70 %.",
-      "summary": "Regardé jusqu'à 70 %, tarifs revus 2 fois",
-      "skipped": "Passage sauté",
-      "hottest": "Tarifs, revus 2 fois",
-      "quoteButton": "Demander un devis"
+      "team": {
+        "title": "Sur toute l'équipe",
+        "body": "Le manager voit ce qui avance, ce qui glisse et le pipeline de chacun, sans demander de reporting. Offre Équipe.",
+        "alt": "Vue Équipe de Clozer : 7 deals en cours, 4 qui avancent, 141 200 € de pipeline, détaillés pour Léa Fontaine, Hugo Mercier et Sophie Noël."
+      }
     },
     "followUps": {
       "title": "Clozer prépare la relance. Vous la validez.",
@@ -167,6 +198,55 @@
         "body": "Un prospect qui vous a écrit, un lecteur arrivé par transfert, un lien jamais ouvert. Leur relance attend votre accord, même en mode automatique."
       },
       "alt": "Tableau Aujourd'hui de Clozer : 2 prospects chauds, Northwind et Acme, chacun avec une relance prête à valider, et Atelier Morel en lecture tiède."
+    },
+    "campaigns": {
+      "title": "Prospectez en masse. Relancez à l'unité.",
+      "body": "Connectez votre boîte Gmail, Microsoft 365 ou IMAP, importez vos prospects, écrivez la séquence. Clozer l'envoie depuis votre adresse et change de rythme dès qu'un prospect lit.",
+      "sequence": {
+        "title": "Une séquence, jusqu'à 8 étapes",
+        "body": "Dans le fil ou en nouveau message, avec un lien Clozer dans l'étape de votre choix. Les colonnes de votre CSV deviennent des variables."
+      },
+      "pace": {
+        "title": "Votre boîte, à son rythme",
+        "body": "30 emails par jour et par boîte au plus, en montée progressive les trois premières semaines, en heures ouvrées dans le fuseau du prospect."
+      },
+      "read": {
+        "title": "Il lit les tarifs, la séquence s'arrête",
+        "body": "Clozer met la séquence en pause, vous alerte et écrit la relance sur ce qu'il a lu. Elle part de votre boîte, dans le même fil. Une réponse ou un rebond arrêtent tout."
+      },
+      "stop": {
+        "title": "Désinscription et liste d'arrêt",
+        "body": "Un lien de désinscription dans chaque email, une liste d'arrêt pour tout l'espace, et les résultats par étape."
+      },
+      "price": "Inclus en Solo et Équipe, une boîte connectée comprise. <link>Voir les tarifs</link>",
+      "smart": "Vous gardez votre outil de séquence ? Collez un Smart Link dedans : chaque lecteur est reconnu sans formulaire, et un webhook met sa séquence en pause quand Clozer prend la suite.",
+      "figure": {
+        "name": "Campagne « Refonte e-commerce » · Marie Martin, Acme",
+        "caption": "Exemple : le parcours d'un prospect en campagne. Email 1 envoyé le premier jour, email 2 avec le lien Clozer trois jours plus tard. Le lendemain, lecture de la page Tarifs pendant 1 min 40 : la séquence est mise en pause. Le matin suivant, une relance Clozer attend validation, et l'email 3 prévu est annulé.",
+        "day": "J{n}",
+        "step1": {
+          "when": "J0 · 09:14",
+          "text": "Email 1 envoyé depuis votre boîte"
+        },
+        "step2": {
+          "when": "J+3 · 09:41",
+          "text": "Email 2, avec le lien Clozer"
+        },
+        "read": {
+          "when": "J+4 · 18:22",
+          "text": "Lecture de la page Tarifs, 1 min 40",
+          "badge": "Séquence en pause"
+        },
+        "followUp": {
+          "when": "J+5 · 09:00",
+          "text": "Relance Clozer prête, écrite sur les tarifs",
+          "action": "Valider"
+        },
+        "cancelled": {
+          "when": "J+7",
+          "text": "Email 3 annulé"
+        }
+      }
     },
     "prospect": {
       "title": "Votre prospect avance sans vous attendre.",
@@ -190,67 +270,30 @@
       "actionsAlt": "Proposition ouverte sur mobile, page des tarifs : en bas, Valider & signer, Prendre rendez-vous, Demander un ajustement, un vocal et le transfert ; en haut, le choix entre six langues.",
       "changeAlt": "Le prospect demande un ajustement depuis la proposition : « Est-il possible de régler en trois fois ? Et de démarrer le design en novembre ? »"
     },
-    "channels": {
-      "title": "Ça part d'où vous envoyez déjà.",
-      "body": "Gardez votre boîte mail et vos outils de prospection. Clozer se branche dessus.",
-      "caption": "Où envoyer un lien Clozer, et comment",
-      "where": "Où vous envoyez",
-      "how": "Ce qui se passe",
-      "web": {
-        "name": "Gmail et Outlook sur le web",
-        "how": "Joignez le PDF comme d'habitude. L'extension Chrome propose de le remplacer par un lien au nom du destinataire, puis vous prévient quand il lit."
-      },
-      "outlook": {
-        "name": "Outlook installé",
-        "how": "Sur Windows et Mac, votre administrateur Microsoft 365 ajoute le complément pour toute l'équipe. Le PDF joint devient un lien de la même façon."
-      },
-      "chat": {
-        "name": "WhatsApp, LinkedIn, SMS",
-        "how": "Copiez le lien et collez-le dans la conversation. Il s'ouvre dans le navigateur, sur téléphone comme sur ordinateur."
-      },
-      "cold": {
-        "name": "Outils de cold email",
-        "how": "Avec le Smart Link, un seul lien dans votre séquence, quel que soit l'outil. Quand un prospect lit, Clozer prend la suite, et le webhook met sa séquence en pause."
-      },
-      "store": "Ajouter à Chrome",
-      "storeNote": "Gratuit, pour Gmail et Outlook sur le web."
-    },
     "trust": {
       "title": "Suivre sans fliquer.",
       "body": "Vos prospects sont vos futurs clients. La chaleur se calcule sur ce qu'ils lisent, page par page.",
       "informed": "Le prospect est informé, sur la page, de ce que vous voyez.",
       "discreet": "Vos relances parlent de l'offre, jamais de ce que vous avez vu.",
-      "limit": "Trois relances par mois et par contact au maximum, jamais juste après une lecture.",
-      "unsubscribe": "Un lien de désinscription dans chaque relance, et les adresses IP ne sont jamais stockées en clair.",
+      "limit": "Trois relances au maximum par contact sur 30 jours, jamais juste après une lecture.",
+      "unsubscribe": "Un lien de désinscription dans chaque relance et chaque email de campagne, et les adresses IP ne sont jamais stockées en clair.",
       "europe": "Hébergé en Europe, chiffré en transit et au repos.",
       "private": "Vos PDF n'ont aucune adresse publique : chaque ouverture est vérifiée par nos serveurs.",
       "subprocessors": "Voir nos sous-traitants et où sont vos données",
       "security": "Comment on protège vos données"
     },
-    "who": {
-      "title": "Pour le commercial, et pour son manager.",
-      "beta": "Une offre gratuite pour commencer, puis 19 € par mois en Solo ou 39 € par membre en Équipe, hors TVA. <link>Voir les tarifs</link>",
-      "team": {
-        "name": "Équipe",
-        "who": "Commerciaux de PME avec un manager.",
-        "body": "Chacun suit ses prospects. Le manager voit l'ensemble dans la vue Équipe : ce qui avance, ce qui glisse, et le pipeline de chaque commercial.",
-        "offer": "39 € HT / membre / mois"
-      },
-      "solo": {
-        "name": "Solo",
-        "who": "Indépendants, consultants, agences de quelques personnes.",
-        "body": "Un lien par client, les relances écrites pour vous. Connexion avec Google ou votre email.",
-        "offer": "19 € HT / mois"
-      },
-      "enterprise": {
-        "name": "Entreprise",
-        "who": "Plusieurs équipes commerciales.",
-        "body": "Des besoins de sécurité ou d'intégration ? On regarde votre cas ensemble.",
-        "offer": "Sur échange",
-        "action": "Nous écrire",
-        "mailSubject": "Clozer pour notre équipe"
-      },
-      "teamAlt": "Vue Équipe de Clozer : 7 deals en cours, 4 qui avancent, 141 200 € de pipeline, détaillés pour Léa Fontaine, Hugo Mercier et Sophie Noël."
+    "pricingStrip": {
+      "title": "Gratuit pour commencer.",
+      "body": "Puis Solo à 19 € par mois, Équipe à 39 € par membre, hors TVA. 14 jours d'essai Équipe, sans carte bancaire.",
+      "caption": "Les quatre offres en un coup d'œil",
+      "free": "5 liens par mois, relances validées par vous",
+      "solo": "Liens et relances illimités, pilote automatique",
+      "team": "Tout Solo, vue Équipe, alertes Slack",
+      "enterprise": "Plusieurs équipes, sécurité, intégrations",
+      "enterpriseAction": "Nous écrire",
+      "mailSubject": "Clozer pour notre équipe",
+      "addon": "Campagnes de cold email incluses en Solo et Équipe, avec une boîte connectée (une par membre en Équipe).",
+      "details": "Voir le détail des tarifs"
     },
     "faq": {
       "title": "Ce qu'on nous demande.",
@@ -269,50 +312,27 @@
       },
       "tools": {
         "q": "Ça marche avec mes outils (Gmail, Outlook, CRM, prospection) ?",
-        "a": "Gmail et Outlook sur le web avec l'extension Chrome, Outlook installé avec le complément Microsoft 365, vos séquences de cold email avec le Smart Link. Il n'y a pas d'intégration CRM native : un webhook envoie vos alertes à l'adresse de votre choix."
+        "a": "Gmail et Outlook sur le web avec l'extension Chrome, Outlook installé avec le complément Microsoft 365, vos campagnes depuis une boîte Gmail, Microsoft 365 ou IMAP, et vos séquences lemlist, Instantly ou Apollo avec le Smart Link. Pour votre CRM, un webhook envoie chaque alerte à l'adresse de votre choix."
       },
       "cold": {
         "q": "Clozer remplace-t-il mon outil de cold email ?",
-        "a": "Non, il prend le relais. Votre outil envoie la séquence. Dès qu'un prospect ouvre votre document par le Smart Link, Clozer le suit et prépare une relance sur ce qu'il a lu. Branchez le webhook pour que sa séquence se mette en pause à ce moment-là : il ne reçoit pas deux messages."
+        "a": "Il peut. Clozer envoie vos séquences depuis votre propre boîte, à 30 emails par jour et par boîte au plus, et prend la main dès qu'un prospect lit. Si vous tenez à votre outil, gardez-le : un Smart Link dans sa séquence suffit, et le webhook met la séquence en pause au bon moment."
+      },
+      "mailbox": {
+        "q": "Faut-il une boîte dédiée pour les campagnes ?",
+        "a": "Clozer envoie depuis la boîte que vous connectez, avec un plafond quotidien et une montée progressive qui protègent sa réputation. Pour une prospection soutenue, une adresse sur un domaine secondaire reste la bonne pratique. Une boîte est incluse dans Solo et Équipe, chaque boîte en plus coûte 9 € HT par mois."
       },
       "auto": {
         "q": "Les relances partent-elles toutes seules ?",
         "a": "Par défaut, Clozer écrit la relance et propose le jour et l'heure d'envoi ; vous la relisez et la validez d'un clic. Vous pouvez ensuite le laisser envoyer seul les messages simples quand il est sûr de lui. Les cas délicats (une objection, une question du prospect) vous attendent toujours."
-      },
-      "beta": {
-        "q": "J'utilise Clozer pendant la bêta. Qu'est-ce qui change ?",
-        "a": "Rien pour l'instant. Votre espace reste en Équipe, gratuitement, jusqu'à une date que nous vous annoncerons par email. Vous serez prévenu avant tout changement."
       },
       "data": {
         "q": "Où sont mes données ?",
         "a": "En Europe : application et documents à Paris, base de données à Francfort. Seul le texte des documents part chez nos fournisseurs d'IA, aux États-Unis, sans l'email ni l'adresse IP des lecteurs. La page <security>Sécurité</security> détaille comment on protège tout ça, la page <subprocessors>Sous-traitants</subprocessors> liste chaque prestataire avec son pays, et la <privacy>politique de confidentialité</privacy> dit ce que nous collectons et pourquoi."
       }
     },
-    "final": "Votre prochaine proposition part avec un lien suivi.",
-    "screen": "Écran réel, données d'exemple",
-    "reading": {
-      "title": "Vous savez qui lit, quoi, et qui d'autre.",
-      "body": "Clozer note chaque page lue et le temps passé dessus. Quand la proposition circule chez le client, chaque nouveau lecteur apparaît.",
-      "pages": {
-        "title": "Page par page",
-        "body": "Jusqu'où il est allé, et sur quelle page il s'est arrêté."
-      },
-      "readers": {
-        "title": "Qui d'autre lit",
-        "body": "Le nom ou l'email de chaque nouveau lecteur, et les pages qu'il a lues."
-      },
-      "live": {
-        "title": "Une alerte quand il lit",
-        "body": "Dans Chrome, en haut de Gmail et d'Outlook, ou dans Slack."
-      },
-      "score": {
-        "title": "Une température qui s'explique",
-        "body": "Un score sur 100, et chaque point a sa raison."
-      },
-      "ownOpens": "Vos propres ouvertures et les robots ne comptent pas.",
-      "readingAlt": "Écran de Clozer : la lecture page par page d'une proposition, la page Tarifs la plus lue avec 2 min 50, puis la température Chaud à 92 sur 100 et le détail des points : lu dans les dernières 24 h, visites répétées, longue lecture des tarifs, plusieurs lecteurs.",
-      "chainAlt": "Écran de Clozer : le circuit du document. Marie Martin l'a ouvert, puis un 2e lecteur chez le même client, julien.bernard@acme.example, l'a lu à son tour."
-    }
+    "final": "Votre prochain envoi part avec un lien suivi.",
+    "screen": "Écran réel, données d'exemple"
   },
   "legal": {
     "updatedAt": "Mise à jour le {date}.",
@@ -353,7 +373,7 @@
   },
   "useCases": {
     "title": "Cas d'usage",
-    "description": "Un devis qui dort, un décideur invisible, un prospect à l'étranger, un pitch vidéo après un salon : ce qu'on peut envoyer avec Clozer, situation par situation.",
+    "description": "Un devis qui dort, un décideur invisible, une campagne de cold email, un pitch vidéo après un salon : ce qu'on peut envoyer avec Clozer, situation par situation.",
     "heading": "Des idées pour votre prochain envoi.",
     "lead": "Un devis qui dort, un décideur que vous ne voyez jamais, un prospect à l'étranger. Voici ce que vous pouvez envoyer avec Clozer, et ce que vous apprenez en retour.",
     "jump": "Aller à",
@@ -361,12 +381,12 @@
     "result": "Ce qui se passe",
     "workflow": {
       "title": "Où se place Clozer dans votre prospection",
-      "body": "Votre outil de cold email ouvre la porte. Dès qu'un prospect lit votre document, Clozer prend la suite.",
+      "body": "Deux départs possibles : la séquence part de Clozer, ou de l'outil que vous avez déjà. Dans les deux cas, dès qu'un prospect lit, Clozer prend la suite.",
       "caption": "Le parcours d'un prospect, de la séquence de cold email au deal",
       "sequence": {
-        "who": "Votre outil de cold email",
+        "who": "Clozer, ou votre outil",
         "title": "La séquence",
-        "body": "Il envoie vos emails à votre liste de prospects, avec le Smart Link dedans."
+        "body": "Depuis Clozer, votre boîte envoie la séquence avec un lien par prospect. Depuis lemlist, Instantly ou Apollo, un Smart Link dans la séquence suffit."
       },
       "read": {
         "who": "Le passage de relais",
@@ -383,13 +403,14 @@
         "title": "Le deal",
         "body": "Les alertes partent par webhook vers votre CRM ou votre outil d'automatisation."
       },
-      "scope": "Clozer ne gère ni listes ni envoi de masse. Il écrit seulement aux prospects qui ont lu, ou à qui vous avez envoyé une proposition."
+      "scope": "Clozer envoie depuis votre propre boîte, à 30 emails par jour et par boîte au plus, avec désinscription et liste d'arrêt. Vos listes restent les vôtres."
     },
     "formats": {
       "pdf": "PDF",
       "video": "Pitch vidéo",
       "web": "Page web",
       "smart": "Smart Link",
+      "campaign": "Campagne",
       "capsule": "PDF + capsule",
       "any": "Tout format",
       "team": "Vue Équipe"
@@ -419,8 +440,13 @@
         "send": "Un pitch vidéo de deux minutes, enregistré le soir même, avec un lien par contact rencontré.",
         "result": "Vous voyez qui l'a regardé et jusqu'où, et vous rappelez d'abord ceux qui sont allés au bout."
       },
+      "campaign": {
+        "title": "Une campagne de cold email depuis Clozer",
+        "send": "Votre CSV de prospects, une séquence de trois emails, un lien Clozer dans le deuxième.",
+        "result": "Celui qui lit vos tarifs sort de la séquence : vous êtes alerté, la relance est écrite, vous l'appelez."
+      },
       "cold": {
-        "title": "Une campagne de cold email",
+        "title": "Une séquence dans lemlist, Instantly ou Apollo",
         "send": "Un seul Smart Link dans votre séquence, quel que soit l'outil.",
         "result": "Chaque prospect qui clique est reconnu, sans formulaire. Un webhook prévient votre outil dès qu'il lit, pour mettre sa séquence en pause."
       },
@@ -483,9 +509,9 @@
   },
   "pricing": {
     "title": "Tarifs",
-    "description": "Gratuit pour commencer, Solo à 19 € par mois, Équipe à 39 € par membre et par mois, hors TVA. 14 jours d'essai Équipe, sans carte bancaire.",
+    "description": "Gratuit pour commencer, Solo à 19 € par mois, Équipe à 39 € par membre et par mois, hors TVA. Campagnes de cold email incluses, une boîte connectée comprise. 14 jours d'essai Équipe, sans carte bancaire.",
     "heading": "Choisissez l'offre qui vous va.",
-    "lead": "Chaque nouvel espace démarre avec 14 jours d'essai Équipe, sans carte bancaire. Ensuite, vous restez en Gratuit ou vous passez à une offre payante.",
+    "lead": "Chaque nouvel espace démarre avec 14 jours d'essai Équipe, sans carte bancaire. Ensuite, vous restez en Gratuit ou vous passez à une offre payante. Solo et Équipe incluent les campagnes de cold email, avec une boîte connectée.",
     "vat": "Prix hors TVA.",
     "interval": {
       "label": "Facturation",
@@ -516,6 +542,7 @@
         "features": {
           "links": "Liens illimités",
           "followUps": "Relances IA illimitées et pilote automatique",
+          "campaigns": "Campagnes de cold email, une boîte connectée incluse",
           "prospect": "Assistant, traduction et vocaux sur la page du prospect",
           "video": "Pitchs vidéo illimités",
           "badge": "Sans mention Clozer"
@@ -530,6 +557,7 @@
         "trial": "14 jours d'essai offerts",
         "features": {
           "solo": "Tout Solo, pour chaque commercial",
+          "mailboxes": "Une boîte connectée par membre pour les campagnes",
           "teamView": "Vue Équipe pour le manager",
           "invites": "Invitation de vos collègues",
           "integrations": "Alertes Slack et webhooks"
@@ -541,9 +569,17 @@
         "price": "Sur devis",
         "note": "Sécurité, intégrations, facturation : on regarde votre cas ensemble.",
         "features": {
-          "team": "Tout Équipe"
+          "team": "Tout Équipe",
+          "mailboxes": "Boîtes connectées illimitées"
         }
       }
+    },
+    "addon": {
+      "name": "Boîte connectée supplémentaire",
+      "who": "Solo inclut une boîte, Équipe une par membre. Pour en connecter d'autres.",
+      "period": "HT par boîte en plus et par mois",
+      "monthNote": "Au prorata, une boîte déconnectée ne compte plus. Illimité en Entreprise.",
+      "yearNote": "{total} HT par boîte en plus, facturés une fois par an. Illimité en Entreprise."
     },
     "table": {
       "title": "Le détail, offre par offre",
@@ -553,6 +589,8 @@
       "notIncluded": "Non inclus",
       "unlimited": "Illimité",
       "perMonth": "{count} par mois",
+      "mailboxIncluded": "1 incluse, puis {price} / boîte",
+      "mailboxPerSeat": "1 par membre, puis {price} / boîte",
       "rows": {
         "links": "Liens créés",
         "tracking": "Suivi de lecture, score de chaleur, alertes",
@@ -567,7 +605,9 @@
         "noBadge": "Sans mention « Envoyé avec Clozer »",
         "teamView": "Vue Équipe",
         "invites": "Invitation de collègues",
-        "slack": "Alertes Slack et webhooks"
+        "slack": "Alertes Slack et webhooks",
+        "campaigns": "Campagnes de cold email",
+        "mailbox": "Boîtes connectées pour les campagnes"
       }
     },
     "faq": {
@@ -583,6 +623,10 @@
       "members": {
         "q": "Comment sont comptés les membres en Équipe ?",
         "a": "Chaque personne de l'espace compte, manager compris, avec un minimum de 2. Si vous ajoutez ou retirez quelqu'un en cours de période, le montant est ajusté au prorata."
+      },
+      "coldEmail": {
+        "q": "Combien coûte le cold email ?",
+        "a": "Rien de plus que l'offre. Solo inclut une boîte connectée, Équipe une par membre, et les campagnes partent de là. Chaque boîte en plus coûte 9 € HT par mois (7 € en annuel). En Entreprise, les boîtes sont illimitées."
       },
       "afterTrial": {
         "q": "Que se passe-t-il à la fin de l'essai ?",

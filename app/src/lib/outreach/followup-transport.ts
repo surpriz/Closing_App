@@ -20,7 +20,7 @@ import { toUiLocale } from "@/lib/seller-locale";
 import { getNamespaceTranslator } from "@/lib/server-translator";
 import { textToHtml } from "@/lib/text-html";
 
-import { outreachOrgIds } from "./flag";
+import { isOutreachOrg } from "./flag";
 import { dedupeKeyOf, replanStepMessage, scheduleStepMessage, STEP_SELECT } from "./messages";
 import { businessHoursOf, localDayBounds, MAX_ATTEMPTS, READING_PAUSES, RETRY_DELAY_MS, stepSendAt } from "./planner";
 import { threadSubject } from "./render";
@@ -206,8 +206,8 @@ export async function sendCampaignFollowup(
 
   const inAnHour = new Date(now.getTime() + HOUR_MS);
   if (campaign.status === "DONE" || campaign.status === "ARCHIVED") return cancelFollowup(deps.endedReason ?? t("campaignEnded"));
-  // Beta kill switch and suspended workspaces, like a paused campaign: due again in an hour, not on every tick
-  const outOfBeta = !outreachOrgIds().includes(enrollment.organizationId) || campaign.organization.suspendedAt !== null;
+  // Kill switch (OUTREACH_ORG_IDS) and suspended workspaces, like a paused campaign: due again in an hour, not on every tick
+  const outOfBeta = !isOutreachOrg(enrollment.organizationId) || campaign.organization.suspendedAt !== null;
   if (outOfBeta || campaign.status !== "ACTIVE") {
     await postpone(inAnHour);
     return "ignored";

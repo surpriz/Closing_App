@@ -17,8 +17,21 @@ export const MONTHLY_PRICE: Record<PaidPlanKey, Record<Interval, number>> = {
 export const TEAM_MIN_SEATS = 2;
 export const TRIAL_DAYS = 14;
 
-/** true / false: included or not. A number: a monthly cap, or a count for video pitches. null: unlimited. */
-type Cell = boolean | number | null;
+/**
+ * Extra connected mailboxes for campaigns, euros excl. VAT per mailbox per month. Solo includes one, Team one per
+ * member, Enterprise all of them (mirrors includedMailboxes / mailboxesPerSeat in the app's plans.ts).
+ */
+export const MAILBOX_MONTHLY_PRICE: Record<Interval, number> = { month: 9, year: 7 };
+
+export function euros(locale: string, amount: number) {
+  return new Intl.NumberFormat(locale, { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(amount);
+}
+
+/**
+ * true / false: included or not. A number: a monthly cap, or a count for video pitches. null: unlimited.
+ * "oneIncluded" / "onePerSeat": one mailbox included (per member), the rest paid per mailbox.
+ */
+type Cell = boolean | number | null | "oneIncluded" | "onePerSeat";
 type Row = { key: string; monthly?: boolean; cells: Record<PlanKey, Cell> };
 
 const all: Record<PlanKey, Cell> = { free: true, solo: true, team: true, enterprise: true };
@@ -42,4 +55,6 @@ export const COMPARISON = [
   { key: "teamView", cells: team },
   { key: "invites", cells: team },
   { key: "slack", cells: team },
+  { key: "campaigns", cells: paid },
+  { key: "mailbox", cells: { free: false, solo: "oneIncluded", team: "onePerSeat", enterprise: null } },
 ] as const satisfies readonly Row[];

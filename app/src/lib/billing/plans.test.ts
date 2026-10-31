@@ -215,16 +215,22 @@ describe("mailbox add-on", () => {
   });
 
   it("bills the mailboxes over what the plan includes", () => {
-    expect(billableMailboxes(3, { includedMailboxes: 0 })).toBe(3);
-    expect(billableMailboxes(3, { includedMailboxes: null })).toBe(0);
-    expect(billableMailboxes(1, { includedMailboxes: 2 })).toBe(0);
-    expect(billableMailboxes(5, { includedMailboxes: 2 })).toBe(3);
+    expect(billableMailboxes(3, { includedMailboxes: 0, mailboxesPerSeat: false })).toBe(3);
+    expect(billableMailboxes(3, { includedMailboxes: null, mailboxesPerSeat: false })).toBe(0);
+    expect(billableMailboxes(1, { includedMailboxes: 2, mailboxesPerSeat: false })).toBe(0);
+    expect(billableMailboxes(5, { includedMailboxes: 2, mailboxesPerSeat: false })).toBe(3);
   });
 
-  it("sells the add-on on paid plans only", () => {
+  it("includes one mailbox per seat on a per-seat plan", () => {
+    expect(billableMailboxes(3, PLANS.team, 3)).toBe(0);
+    expect(billableMailboxes(5, PLANS.team, 3)).toBe(2);
+    expect(billableMailboxes(3, PLANS.solo, 3)).toBe(2);
+  });
+
+  it("sells the add-on on paid plans only, one mailbox included", () => {
     expect(PLANS.free).toMatchObject({ mailboxAddon: false, includedMailboxes: 0 });
-    expect(PLANS.solo).toMatchObject({ mailboxAddon: true, includedMailboxes: 0 });
-    expect(PLANS.team).toMatchObject({ mailboxAddon: true, includedMailboxes: 0 });
+    expect(PLANS.solo).toMatchObject({ mailboxAddon: true, includedMailboxes: 1, mailboxesPerSeat: false });
+    expect(PLANS.team).toMatchObject({ mailboxAddon: true, includedMailboxes: 1, mailboxesPerSeat: true });
     expect(PLANS.enterprise).toMatchObject({ mailboxAddon: true, includedMailboxes: null });
   });
 });
