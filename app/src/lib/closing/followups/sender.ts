@@ -21,18 +21,24 @@ export function followupSender(f: {
   return { kind: "platform" };
 }
 
-type LabelsTranslator = (key: string, values?: Record<string, string>) => string;
+export type FollowupSenderKey = "platformNamed" | "platform" | "mailbox" | "mailboxUnknown" | "manual";
 
-/** The sentence under a follow-up, from the `labels` translator. `seller` is the workspace sender name. */
-export function followupSenderText(tl: LabelsTranslator, sender: FollowupSender, seller: string | null): string {
+/**
+ * The sentence under a follow-up: a `labels.followupSender.*` key and its values, so each caller uses
+ * its own typed translator. `seller` is the workspace sender name, may be empty.
+ */
+export function followupSenderLabel(
+  sender: FollowupSender,
+  seller: string | null,
+): { key: FollowupSenderKey; values: Record<string, string> } {
   switch (sender.kind) {
     case "manual":
-      return tl("followupSender.manual");
+      return { key: "manual", values: {} };
     case "mailbox":
       return sender.mailbox
-        ? tl("followupSender.mailbox", { mailbox: sender.mailbox, campaign: sender.campaign })
-        : tl("followupSender.mailboxUnknown", { campaign: sender.campaign });
+        ? { key: "mailbox", values: { mailbox: sender.mailbox, campaign: sender.campaign } }
+        : { key: "mailboxUnknown", values: { campaign: sender.campaign } };
     default:
-      return seller ? tl("followupSender.platformNamed", { seller }) : tl("followupSender.platform");
+      return seller ? { key: "platformNamed", values: { seller } } : { key: "platform", values: {} };
   }
 }

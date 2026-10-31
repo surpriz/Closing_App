@@ -3,6 +3,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import type { TimelineItem } from "@/components/dashboard/activity-timeline";
 import type { TranscriptConversation } from "@/components/dashboard/chat-transcript";
 import {
+  followupCampaignInclude,
   toFollowupItem,
   type FollowupItem,
 } from "@/components/dashboard/followup-item";
@@ -167,7 +168,7 @@ export async function loadDeal(
       where: { linkId: link.id },
       orderBy: { createdAt: "desc" },
       take: 30,
-      include: { prospect: { select: { name: true, email: true } } },
+      include: { prospect: { select: { name: true, email: true } }, ...followupCampaignInclude },
     }),
     // Prospect actions and forwarded questions have their own timeline entries
     prisma.sellerAlert.findMany({

@@ -86,9 +86,10 @@ export default async function LinkDetailPage({
   if (!deal) notFound();
 
   const { link, now, canEdit, url, mainProspect, settings, insight } = deal;
-  const [t, tDocs, locale, smartProblems] = await Promise.all([
+  const [t, tDocs, tPanel, locale, smartProblems] = await Promise.all([
     getTranslations("deal.page"),
     getTranslations("documents"),
+    getTranslations("deal.followupsPanel"),
     getLocale(),
     canEdit ? loadSmartLinkProblems(link.id, link.shared, now) : [],
   ]);
@@ -268,7 +269,19 @@ export default async function LinkDetailPage({
 
             <DealSection id="relances" title={t("followupsTitle")}>
               <div className="pt-4">
-                <FollowupsPanel followups={deal.followupItems} />
+                <FollowupsPanel
+                  followups={deal.followupItems}
+                  seller={settings.senderName}
+                  emptyHint={
+                    deal.campaign
+                      ? tPanel("emptyHintCampaign", { name: deal.campaign.name })
+                      : !link.followupsEnabled
+                        ? tPanel("emptyHintOff")
+                        : !mainProspect?.email
+                          ? tPanel("emptyHintNoEmail")
+                          : null
+                  }
+                />
               </div>
             </DealSection>
 

@@ -1,10 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { followupSender, followupSenderText } from "./sender";
+import { followupSender, followupSenderLabel } from "./sender";
 
 const campaign = { name: "Onboarding Waltio", mailbox: "j@gmail.com" };
-const tl = (key: string, values?: Record<string, string>) =>
-  `${key}${values ? ` ${JSON.stringify(values)}` : ""}`;
 
 describe("followupSender", () => {
   it("is manual when the seller sent it themselves, campaign or not", () => {
@@ -36,30 +34,33 @@ describe("followupSender", () => {
   });
 });
 
-describe("followupSenderText", () => {
+describe("followupSenderLabel", () => {
   it("names the seller when the workspace has a sender name", () => {
-    expect(followupSenderText(tl, { kind: "platform" }, "Jérôme")).toBe(
-      'followupSender.platformNamed {"seller":"Jérôme"}',
-    );
+    expect(followupSenderLabel({ kind: "platform" }, "Jérôme")).toEqual({
+      key: "platformNamed",
+      values: { seller: "Jérôme" },
+    });
   });
 
   it("falls back to 'in your name' without a sender name", () => {
-    expect(followupSenderText(tl, { kind: "platform" }, null)).toBe("followupSender.platform");
+    expect(followupSenderLabel({ kind: "platform" }, null)).toEqual({ key: "platform", values: {} });
   });
 
   it("names the mailbox and the campaign", () => {
-    expect(followupSenderText(tl, { kind: "mailbox", mailbox: "j@gmail.com", campaign: "Waltio" }, null)).toBe(
-      'followupSender.mailbox {"mailbox":"j@gmail.com","campaign":"Waltio"}',
-    );
+    expect(followupSenderLabel({ kind: "mailbox", mailbox: "j@gmail.com", campaign: "Waltio" }, null)).toEqual({
+      key: "mailbox",
+      values: { mailbox: "j@gmail.com", campaign: "Waltio" },
+    });
   });
 
   it("skips the mailbox when its email is unknown", () => {
-    expect(followupSenderText(tl, { kind: "mailbox", mailbox: null, campaign: "Waltio" }, null)).toBe(
-      'followupSender.mailboxUnknown {"campaign":"Waltio"}',
-    );
+    expect(followupSenderLabel({ kind: "mailbox", mailbox: null, campaign: "Waltio" }, null)).toEqual({
+      key: "mailboxUnknown",
+      values: { campaign: "Waltio" },
+    });
   });
 
   it("says sent by you for a manual send", () => {
-    expect(followupSenderText(tl, { kind: "manual" }, "Jérôme")).toBe("followupSender.manual");
+    expect(followupSenderLabel({ kind: "manual" }, "Jérôme")).toEqual({ key: "manual", values: {} });
   });
 });
