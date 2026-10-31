@@ -311,6 +311,7 @@
     },
     "lastError": {
       "AUTH_REVOKED": "Le serveur a refusé les identifiants. Reconnectez la boîte avec un mot de passe valide.",
+      "AUTH_REVOKED_OAUTH": "{provider} a coupé l'accès à cette boîte. Reconnectez-la en un clic.",
       "QUOTA": "Le quota d'envoi du fournisseur est atteint.",
       "RATE_LIMITED": "Le fournisseur limite les envois.",
       "REJECTED": "Le fournisseur a refusé le message.",

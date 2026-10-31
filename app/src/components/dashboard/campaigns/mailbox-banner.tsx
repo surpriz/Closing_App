@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
+import type { MailboxProvider } from "@/generated/prisma/enums";
 import { BILLING_HREF } from "@/lib/billing/plans";
+import { mailboxErrorKey, providerLabel } from "@/lib/mailboxes/error-copy";
 
 const ERROR_CODES = ["AUTH_REVOKED", "QUOTA", "RATE_LIMITED", "REJECTED", "TRANSIENT", "CONFIG", "POLICY"] as const;
 type ErrorCode = (typeof ERROR_CODES)[number];
@@ -22,13 +24,16 @@ export function MailboxBanner({
   hasActive,
   planBlocked = false,
   campaignsRunning = true,
+  lead,
 }: {
-  mailboxes: { email: string; lastError: string | null }[];
+  mailboxes: { email: string; lastError: string | null; provider: MailboxProvider }[];
   hasActive: boolean;
   /** The plan no longer sells the mailbox add-on: campaigns are paused until the workspace upgrades. */
   planBlocked?: boolean;
   /** At least one campaign is ACTIVE: "paused" is true only then, otherwise the line just says what sending takes. */
   campaignsRunning?: boolean;
+  /** What the error costs here, e.g. on Today: "your campaigns and their follow-ups are paused". */
+  lead?: string;
 }) {
   const t = useTranslations("campaigns.banner");
   const te = useTranslations("campaigns.errors");
@@ -37,6 +42,7 @@ export function MailboxBanner({
 
   return (
     <div role="status" className="space-y-2 border-l-2 border-foreground bg-muted px-4 py-3 text-small">
+      {lead && mailboxes.length > 0 && <p className="font-medium">{lead}</p>}
       {planBlocked && (
         <p>
           {t(campaignsRunning ? "planBlocked" : "planNeeded")}{" "}
@@ -45,12 +51,15 @@ export function MailboxBanner({
           </Link>
         </p>
       )}
-      {mailboxes.map(({ email, lastError }) => {
+      {mailboxes.map(({ email, lastError, provider }) => {
         const { code, detail } = parseLastError(lastError);
+        // The raw provider detail ("unipile CREDENTIALS") helps support, not the seller: kept on hover only
         return (
-          <p key={email}>
-            {t("mailboxError", { mailbox: email, error: te(code) })}
-            {detail && <span className="text-muted-foreground"> ({detail})</span>}
+          <p key={email} title={detail || undefined}>
+            {t("mailboxError", {
+              mailbox: email,
+              error: te(mailboxErrorKey(code, provider), { provider: providerLabel(provider) }),
+            })}
           </p>
         );
       })}

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { AutopilotBanner } from "@/components/dashboard/autopilot-banner";
+import { MailboxBanner } from "@/components/dashboard/campaigns/mailbox-banner";
 import { NewLinkButton } from "@/components/dashboard/create-link-form";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { FirstSteps } from "@/components/dashboard/first-steps";
@@ -62,6 +63,7 @@ import { getWorkspaceLiveState } from "@/lib/closing/live";
 import { getSellerPrefs } from "@/lib/closing/notify/preferences";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
 import { prisma } from "@/lib/db";
+import { isOutreachOrg } from "@/lib/outreach/flag";
 import { formatInTimeZone, formatRelative } from "@/lib/format";
 import { shouldForceOnboarding } from "@/lib/onboarding";
 import { isManagerRole } from "@/lib/roles";
@@ -108,6 +110,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
     sentAlone,
     readyDrafts,
     progress,
+    failingMailboxes,
   ] = await Promise.all([
     prisma.document.count({ where: { organizationId, archivedAt: null } }),
     prisma.document.findFirst({
@@ -157,6 +160,13 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
       },
     }),
     getSellerProgress(organizationId, scope),
+    // A mailbox in error stops campaigns and their follow-ups: the seller learns it here, not in Settings
+    isOutreachOrg(organizationId)
+      ? prisma.mailbox.findMany({
+          where: { organizationId, userId: user.id, status: "ERROR" },
+          select: { email: true, lastError: true, provider: true },
+        })
+      : Promise.resolve([]),
   ]);
   // A fresh seller is walked through a first document once; anyone joining a workspace in use is not
   if (shouldForceOnboarding({ onboardingCompletedAt, documentCount }))
@@ -324,6 +334,13 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
           </div>
         </div>
         <LiveStrip key={live.stamp} initial={live} />
+        {failingMailboxes.length > 0 && (
+          <MailboxBanner
+            mailboxes={failingMailboxes}
+            hasActive={false}
+            lead={t("campaigns.banner.todayLead")}
+          />
+        )}
         {draftsToReview > 1 && (
           <Link
             href="/drafts"

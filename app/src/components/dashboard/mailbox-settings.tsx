@@ -30,6 +30,7 @@ import {
 import { Input } from "@/components/ui/input";
 import type { DnsReport } from "@/lib/mailboxes/dns/checks";
 import type { MailboxDetection } from "@/lib/mailboxes/connect";
+import { mailboxErrorKey, providerLabel } from "@/lib/mailboxes/error-copy";
 import { cn } from "@/lib/utils";
 
 export type MailboxRow = {
@@ -202,14 +203,14 @@ function parseLastError(value: string): { code: ErrorCode; detail: string } | nu
   return code && (ERROR_CODES as readonly string[]).includes(code) ? { code: code as ErrorCode, detail: match[2].trim() } : null;
 }
 
-function LastError({ value }: { value: string }) {
+function LastError({ value, provider }: { value: string; provider: MailboxRow["provider"] }) {
   const t = useTranslations("settings.mailbox.lastError");
   const parsed = parseLastError(value);
   if (!parsed) return <p className="text-small text-destructive">{value}</p>;
+  // The raw provider detail ("unipile CREDENTIALS") helps support, not the seller: kept on hover only
   return (
-    <p className="text-small text-destructive">
-      {t(parsed.code)}
-      {parsed.detail && <span className="text-muted-foreground"> ({parsed.detail})</span>}
+    <p className="text-small text-destructive" title={parsed.detail || undefined}>
+      {t(mailboxErrorKey(parsed.code, provider), { provider: providerLabel(provider) })}
     </p>
   );
 }
@@ -293,7 +294,9 @@ function MailboxItem({
           <DisconnectButton id={mailbox.id} />
         </div>
       </div>
-      {mailbox.status === "ERROR" && mailbox.lastError && <LastError value={mailbox.lastError} />}
+      {mailbox.status === "ERROR" && mailbox.lastError && (
+        <LastError value={mailbox.lastError} provider={mailbox.provider} />
+      )}
       <DnsLine dns={mailbox.dns} mailboxId={mailbox.id} />
       <Button
         variant="outline"

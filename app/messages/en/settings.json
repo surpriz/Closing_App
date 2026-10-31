@@ -311,6 +311,7 @@
     },
     "lastError": {
       "AUTH_REVOKED": "The server refused the credentials. Reconnect the mailbox with a valid password.",
+      "AUTH_REVOKED_OAUTH": "{provider} cut off access to this mailbox. Reconnect it in one click.",
       "QUOTA": "The provider's sending quota is reached.",
       "RATE_LIMITED": "The provider is limiting sending.",
       "REJECTED": "The provider rejected the message.",
