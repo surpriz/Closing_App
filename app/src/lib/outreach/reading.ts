@@ -12,7 +12,7 @@ import { toUiLocale } from "@/lib/seller-locale";
 import { getNamespaceTranslator } from "@/lib/server-translator";
 
 import { dedupeKeyOf, scheduleStepMessage, STEP_SELECT, type StepRow } from "./messages";
-import { outreachOrgIds } from "./flag";
+import { isOutreachOrg } from "./flag";
 import { releaseCampaignLink } from "./ownership";
 import {
   businessHoursOf,
@@ -66,9 +66,9 @@ export async function evaluateEnrollmentReading(linkId: string, now: Date): Prom
     },
   });
   if (!enrollment || (enrollment.status !== "ACTIVE" && enrollment.status !== "PAUSED")) return null;
-  // The hooks call this for any campaign link: out of the beta (kill switch) or suspended, nothing is read, not even
-  // stamped, so the reading is still there to evaluate if the workspace comes back
-  if (!outreachOrgIds().includes(enrollment.organizationId) || enrollment.campaign.organization.suspendedAt !== null) return null;
+  // The hooks call this for any campaign link: outside OUTREACH_ORG_IDS (kill switch) or suspended, nothing is read,
+  // not even stamped, so the reading is still there to evaluate if the workspace comes back
+  if (!isOutreachOrg(enrollment.organizationId) || enrollment.campaign.organization.suspendedAt !== null) return null;
   // Stamped even when nothing applies, so the tick does not pick the same enrollment up again and again
   const stamp = () => prisma.campaignProspect.updateMany({ where: { id: enrollment.id }, data: { readEvaluatedAt: now } });
   const paused = enrollment.status === "PAUSED";

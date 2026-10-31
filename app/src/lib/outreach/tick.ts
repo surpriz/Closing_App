@@ -25,17 +25,23 @@ async function step<T>(label: string, task: () => Promise<T>): Promise<T | null>
 
 /**
  * `deadline` (real clock) is when the caller must be done: the sync and the send budgets shrink to fit before it.
- * Only the beta workspaces of OUTREACH_ORG_IDS run: emptying the variable stops every send and sync at once.
+ * Only the workspaces of OUTREACH_ORG_IDS run (`*` for all): emptying the variable stops every send and sync at once.
  */
 export async function runOutreachTick(
   now = new Date(),
   scope: { organizationId?: string; syncBudgetMs?: number; deadline?: Date } = {},
 ) {
   const organizationIds = outreachOrgIds();
-  if (organizationIds.length === 0 || (scope.organizationId !== undefined && !organizationIds.includes(scope.organizationId))) {
+  if (
+    organizationIds &&
+    (organizationIds.length === 0 || (scope.organizationId !== undefined && !organizationIds.includes(scope.organizationId)))
+  ) {
     return { stale: null, synced: null, planned: null, sent: null, read: null, finished: null };
   }
-  const base: OutreachScope = { ...(scope.organizationId ? { organizationId: scope.organizationId } : {}), organizationIds };
+  const base: OutreachScope = {
+    ...(scope.organizationId ? { organizationId: scope.organizationId } : {}),
+    ...(organizationIds ? { organizationIds } : {}),
+  };
 
   const stale = await step("stale", () => expireStaleLeases(now, base));
   const budgetMs = budgetLeft(scope.syncBudgetMs ?? DEFAULT_SYNC_BUDGET_MS, scope.deadline);

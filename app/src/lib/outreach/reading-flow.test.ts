@@ -167,7 +167,7 @@ vi.mock("@/lib/closing/followups/queue", () => ({
   },
 }));
 vi.mock("@/lib/billing/mailboxes", () => ({ canUseMailboxes: async () => true }));
-vi.mock("./flag", () => ({ outreachOrgIds: () => ["org"] }));
+vi.mock("./flag", () => ({ outreachOrgIds: () => ["org"], isOutreachOrg: (id: string) => id === "org" }));
 vi.mock("./suppression", () => ({ isSuppressed: async () => false }));
 vi.mock("./ownership", async () => ({
   ...(await vi.importActual<typeof import("./ownership")>("./ownership")),

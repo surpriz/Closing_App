@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isOutreachAllowed, outreachOrgIds } from "./flag";
+import { isOutreachAllowed, isOutreachOrg, outreachOrgIds } from "./flag";
 
 const verified = { emailVerified: true };
 
@@ -25,5 +25,16 @@ describe("isOutreachAllowed", () => {
   it("refuses everyone when the list is empty", () => {
     expect(isOutreachAllowed(verified, "org-a", { orgIds: "" })).toBe(false);
     expect(isOutreachAllowed(verified, "", { orgIds: "" })).toBe(false);
+  });
+
+  it("lets every verified workspace in on `*`, and reports no filter", () => {
+    expect(outreachOrgIds({ OUTREACH_ORG_IDS: " * " })).toBeUndefined();
+    expect(isOutreachOrg("org-z", { OUTREACH_ORG_IDS: "*" })).toBe(true);
+    expect(isOutreachAllowed(verified, "org-z", { orgIds: "*" })).toBe(true);
+    expect(isOutreachAllowed({ emailVerified: false }, "org-z", { orgIds: "*" })).toBe(false);
+  });
+
+  it("does not read `*` inside a list as a wildcard", () => {
+    expect(isOutreachOrg("org-z", { OUTREACH_ORG_IDS: "org-a, *" })).toBe(false);
   });
 });
