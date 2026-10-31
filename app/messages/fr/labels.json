@@ -43,6 +43,14 @@
     "COLD_READ_PRICING": "Après lecture des tarifs (séquence à froid)",
     "COLD_REACTIVATE": "Réactivation (séquence à froid)"
   },
+  "followupSender": {
+    "platformNamed": "De Clozer, au nom de {seller}. Il vous répond dans votre boîte.",
+    "platform": "De Clozer, en votre nom. Il vous répond dans votre boîte.",
+    "mailbox": "De votre boîte {mailbox}, dans le fil de la campagne {campaign}.",
+    "mailboxUnknown": "De votre boîte, dans le fil de la campagne {campaign}.",
+    "manual": "Envoyée par vous.",
+    "mailboxDown": "Boîte {mailbox} déconnectée : elle ne partira pas."
+  },
   "sellerActivity": {
     "CALL": "Appel",
     "EMAIL_REPLY_RECEIVED": "Réponse reçue",
