@@ -79,7 +79,8 @@ const serverEnvSchema = z.object({
   PROSPECTING_MOCK: z.enum(["true", "false"]).optional(),
 
   // Native cold email (outreach)
-  // Native cold email, beta: workspaces allowed to connect a mailbox and run campaigns (comma-separated org ids)
+  // Native cold email: workspaces allowed to connect a mailbox and run campaigns (comma-separated org ids, or `*` for
+  // every workspace; the plan gate still applies). Unset: nothing runs (kill switch).
   OUTREACH_ORG_IDS: z.string().optional(),
   // Gmail goes through an intermediary that carries Google's verification; pinned on each mailbox at connect time
   GMAIL_CONNECTOR: z.enum(["unipile", "nylas"]).optional(),

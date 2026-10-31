@@ -25,7 +25,10 @@ vi.mock("@/lib/db", () => ({ prisma: db }));
 vi.mock("@/lib/mailboxes/caps/counter", () => ({ reserveSend: mocks.reserveSend }));
 vi.mock("@/lib/mailboxes/notify-owner", () => ({ notifyMailboxOwner: mocks.notifyMailboxOwner }));
 vi.mock("@/lib/billing/mailboxes", () => ({ canUseMailboxes: mocks.canUseMailboxes }));
-vi.mock("./flag", () => ({ outreachOrgIds: () => mocks.orgIds }));
+vi.mock("./flag", () => ({
+  outreachOrgIds: () => mocks.orgIds,
+  isOutreachOrg: (id: string) => mocks.orgIds === undefined || mocks.orgIds.includes(id),
+}));
 vi.mock("./suppression", () => ({ isSuppressed: mocks.isSuppressed }));
 vi.mock("@/lib/app-origin", () => ({ getPublicAppUrl: () => "https://app.test" }));
 vi.mock("@/lib/env", () => ({ getEnv: () => ({ MAILBOX_DAILY_CAP_MAX: 100 }) }));
