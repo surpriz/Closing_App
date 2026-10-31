@@ -222,8 +222,8 @@ export default async function Pricing({ params }: Props) {
                               </>
                             ) : cell === null ? (
                               t("table.unlimited")
-                            ) : cell === "addon" ? (
-                              t("table.perMailbox", { price: euros(locale, MAILBOX_MONTHLY_PRICE.month) })
+                            ) : cell === "oneIncluded" || cell === "onePerSeat" ? (
+                              t(cell === "oneIncluded" ? "table.mailboxIncluded" : "table.mailboxPerSeat", { price: euros(locale, MAILBOX_MONTHLY_PRICE.month) })
                             ) : "monthly" in row && row.monthly ? (
                               t("table.perMonth", { count: cell })
                             ) : (

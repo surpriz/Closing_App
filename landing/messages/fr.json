@@ -218,7 +218,7 @@
         "title": "Désinscription et liste d'arrêt",
         "body": "Un lien de désinscription dans chaque email, une liste d'arrêt pour tout l'espace, et les résultats par étape."
       },
-      "price": "Inclus en Solo et Équipe, avec une boîte connectée à 15 € HT par mois. <link>Voir les tarifs</link>",
+      "price": "Inclus en Solo et Équipe, une boîte connectée comprise. <link>Voir les tarifs</link>",
       "smart": "Vous gardez votre outil de séquence ? Collez un Smart Link dedans : chaque lecteur est reconnu sans formulaire, et un webhook met sa séquence en pause quand Clozer prend la suite.",
       "figure": {
         "name": "Campagne « Refonte e-commerce » · Marie Martin, Acme",
@@ -292,7 +292,7 @@
       "enterprise": "Plusieurs équipes, sécurité, intégrations",
       "enterpriseAction": "Nous écrire",
       "mailSubject": "Clozer pour notre équipe",
-      "addon": "Campagnes de cold email : 15 € HT par boîte connectée, en Solo et Équipe.",
+      "addon": "Campagnes de cold email incluses en Solo et Équipe, avec une boîte connectée (une par membre en Équipe).",
       "details": "Voir le détail des tarifs"
     },
     "faq": {
@@ -320,7 +320,7 @@
       },
       "mailbox": {
         "q": "Faut-il une boîte dédiée pour les campagnes ?",
-        "a": "Clozer envoie depuis la boîte que vous connectez, avec un plafond quotidien et une montée progressive qui protègent sa réputation. Pour une prospection soutenue, une adresse sur un domaine secondaire reste la bonne pratique. Chaque boîte connectée coûte 15 € HT par mois."
+        "a": "Clozer envoie depuis la boîte que vous connectez, avec un plafond quotidien et une montée progressive qui protègent sa réputation. Pour une prospection soutenue, une adresse sur un domaine secondaire reste la bonne pratique. Une boîte est incluse dans Solo et Équipe, chaque boîte en plus coûte 9 € HT par mois."
       },
       "auto": {
         "q": "Les relances partent-elles toutes seules ?",
@@ -509,9 +509,9 @@
   },
   "pricing": {
     "title": "Tarifs",
-    "description": "Gratuit pour commencer, Solo à 19 € par mois, Équipe à 39 € par membre et par mois, hors TVA. Campagnes de cold email : 15 € par boîte connectée. 14 jours d'essai Équipe, sans carte bancaire.",
+    "description": "Gratuit pour commencer, Solo à 19 € par mois, Équipe à 39 € par membre et par mois, hors TVA. Campagnes de cold email incluses, une boîte connectée comprise. 14 jours d'essai Équipe, sans carte bancaire.",
     "heading": "Choisissez l'offre qui vous va.",
-    "lead": "Chaque nouvel espace démarre avec 14 jours d'essai Équipe, sans carte bancaire. Ensuite, vous restez en Gratuit ou vous passez à une offre payante. Les campagnes de cold email s'ajoutent à Solo ou Équipe avec une boîte connectée.",
+    "lead": "Chaque nouvel espace démarre avec 14 jours d'essai Équipe, sans carte bancaire. Ensuite, vous restez en Gratuit ou vous passez à une offre payante. Solo et Équipe incluent les campagnes de cold email, avec une boîte connectée.",
     "vat": "Prix hors TVA.",
     "interval": {
       "label": "Facturation",
@@ -542,7 +542,7 @@
         "features": {
           "links": "Liens illimités",
           "followUps": "Relances IA illimitées et pilote automatique",
-          "campaigns": "Campagnes de cold email, avec une boîte connectée en option",
+          "campaigns": "Campagnes de cold email, une boîte connectée incluse",
           "prospect": "Assistant, traduction et vocaux sur la page du prospect",
           "video": "Pitchs vidéo illimités",
           "badge": "Sans mention Clozer"
@@ -557,6 +557,7 @@
         "trial": "14 jours d'essai offerts",
         "features": {
           "solo": "Tout Solo, pour chaque commercial",
+          "mailboxes": "Une boîte connectée par membre pour les campagnes",
           "teamView": "Vue Équipe pour le manager",
           "invites": "Invitation de vos collègues",
           "integrations": "Alertes Slack et webhooks"
@@ -569,16 +570,16 @@
         "note": "Sécurité, intégrations, facturation : on regarde votre cas ensemble.",
         "features": {
           "team": "Tout Équipe",
-          "mailboxes": "Boîtes connectées incluses"
+          "mailboxes": "Boîtes connectées illimitées"
         }
       }
     },
     "addon": {
-      "name": "Boîte mail connectée",
-      "who": "Pour envoyer des campagnes depuis Clozer. Gmail, Microsoft 365 ou IMAP.",
-      "period": "HT par boîte et par mois",
-      "monthNote": "En Solo et Équipe. Au prorata, une boîte déconnectée ne compte plus. Incluses en Entreprise.",
-      "yearNote": "{total} HT par boîte, facturés une fois par an. En Solo et Équipe, incluses en Entreprise."
+      "name": "Boîte connectée supplémentaire",
+      "who": "Solo inclut une boîte, Équipe une par membre. Pour en connecter d'autres.",
+      "period": "HT par boîte en plus et par mois",
+      "monthNote": "Au prorata, une boîte déconnectée ne compte plus. Illimité en Entreprise.",
+      "yearNote": "{total} HT par boîte en plus, facturés une fois par an. Illimité en Entreprise."
     },
     "table": {
       "title": "Le détail, offre par offre",
@@ -588,7 +589,8 @@
       "notIncluded": "Non inclus",
       "unlimited": "Illimité",
       "perMonth": "{count} par mois",
-      "perMailbox": "{price} / boîte",
+      "mailboxIncluded": "1 incluse, puis {price} / boîte",
+      "mailboxPerSeat": "1 par membre, puis {price} / boîte",
       "rows": {
         "links": "Liens créés",
         "tracking": "Suivi de lecture, score de chaleur, alertes",
@@ -605,7 +607,7 @@
         "invites": "Invitation de collègues",
         "slack": "Alertes Slack et webhooks",
         "campaigns": "Campagnes de cold email",
-        "mailbox": "Boîte mail connectée"
+        "mailbox": "Boîtes connectées pour les campagnes"
       }
     },
     "faq": {
@@ -624,7 +626,7 @@
       },
       "coldEmail": {
         "q": "Combien coûte le cold email ?",
-        "a": "L'offre Solo ou Équipe, plus 15 € HT par mois pour chaque boîte connectée (12 € en annuel). Un commercial seul avec une boîte paie 34 € HT par mois. En Entreprise, les boîtes sont incluses."
+        "a": "Rien de plus que l'offre. Solo inclut une boîte connectée, Équipe une par membre, et les campagnes partent de là. Chaque boîte en plus coûte 9 € HT par mois (7 € en annuel). En Entreprise, les boîtes sont illimitées."
       },
       "afterTrial": {
         "q": "Que se passe-t-il à la fin de l'essai ?",
