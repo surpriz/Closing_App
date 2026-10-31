@@ -67,6 +67,22 @@ export function PrivacyEn() {
         which the law requires us to keep for 10 years.
       </p>
 
+      <h2>Cold email campaigns</h2>
+      <p>
+        If you connect a mailbox and import prospects for a campaign, you are the controller of their data and Clozer
+        processes it on your behalf, as a processor. We keep the imported addresses, the columns you add and the
+        state of each send. The content of sent emails is deleted 90 days after sending. Every email carries an
+        unsubscribe link: unsubscribed, bounced or stop-listed addresses stay in your stop list so they are never
+        contacted again. Your mailbox is reached through the provider you choose, Google via Unipile, Microsoft, or
+        your own IMAP server, listed on the <Link href="/subprocessors">subprocessors</Link> page.
+      </p>
+      <p>
+        If you received an outreach email sent through Clozer, it left from the seller&apos;s mailbox, and the seller
+        is the controller. The unsubscribe link at the bottom of the email stops every send; your address is then
+        kept in their stop list, only so you are not written to again. If the email links to a document, its reading
+        is tracked as described above.
+      </p>
+
       <h2>The Chrome extension and the Outlook add-in</h2>
       <p>
         They only act within an email being drafted. They do not read the emails you receive and do not send the text
@@ -126,6 +142,7 @@ export function PrivacyEn() {
           Reading data, messages, voice comments and follow-ups: automatically deleted 12 months after the last
           activity on the link.
         </li>
+        <li>Content of campaign emails sent from your mailbox: 90 days after sending.</li>
         <li>Proof of acceptance of a proposal: 5 years, the commercial limitation period.</li>
         <li>Documents deleted by the seller: permanently erased, files included, after 30 days.</li>
         <li>Seller account: kept while it is active, erased when deleted.</li>
