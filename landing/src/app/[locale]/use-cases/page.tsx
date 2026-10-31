@@ -12,12 +12,12 @@ import type { Locale } from "@/i18n/routing";
 import { alternatesFor, localizedPath } from "@/i18n/seo";
 
 type CaseKey = keyof Messages["useCases"]["cases"];
-type Format = "pdf" | "video" | "web" | "smart" | "capsule" | "any" | "team";
+type Format = "pdf" | "video" | "web" | "smart" | "campaign" | "capsule" | "any" | "team";
 
 // Copy lives in messages/<locale>.json under "useCases"; this sets the order and what each case sends.
 // Every case is a feature in production; the format tag says what goes out.
 const MOMENTS: { key: "prospect" | "propose" | "close" | "manage"; cases: [CaseKey, Format][] }[] = [
-  { key: "prospect", cases: [["fair", "video"], ["cold", "smart"], ["chat", "any"]] },
+  { key: "prospect", cases: [["campaign", "campaign"], ["cold", "smart"], ["fair", "video"], ["chat", "any"]] },
   {
     key: "propose",
     cases: [["sleeping", "pdf"], ["decider", "pdf"], ["price", "capsule"], ["abroad", "pdf"], ["web", "web"], ["demo", "video"]],
@@ -31,7 +31,7 @@ const MOMENT_IDS: Record<Locale, Record<(typeof MOMENTS)[number]["key"], string>
   en: { prospect: "prospect", propose: "propose", close: "close", manage: "manage" },
 };
 
-// Where Clozer sits next to a cold email tool: heat starts when the prospect reads.
+// Where Clozer sits in outreach, from its own campaigns or another tool: heat starts when the prospect reads.
 const WORKFLOW = [
   { key: "sequence", clozer: false },
   { key: "read", clozer: true },
