@@ -43,6 +43,7 @@ import { dealLabel, linkLabelSelect } from "@/lib/closing/dashboard/labels";
 import type { DocType } from "@/lib/closing/documents/doc-types";
 import { showsCountdown } from "@/lib/closing/expiry";
 import { firstNameOf, guessMailClient } from "@/lib/closing/share/compose";
+import { followupsEmptyHint } from "@/lib/closing/followups/empty-hint";
 import { settingsSummary } from "@/lib/closing/share/summary";
 import type { SmartLinkProblem } from "@/lib/closing/shared/smart-params";
 import { sequencerWebhookUrl } from "@/lib/closing/sequencer/apply";
@@ -86,13 +87,22 @@ export default async function LinkDetailPage({
   if (!deal) notFound();
 
   const { link, now, canEdit, url, mainProspect, settings, insight } = deal;
-  const [t, tDocs, locale, smartProblems] = await Promise.all([
+  const [t, tDocs, tPanel, locale, smartProblems] = await Promise.all([
     getTranslations("deal.page"),
     getTranslations("documents"),
+    getTranslations("deal.followupsPanel"),
     getLocale(),
     canEdit ? loadSmartLinkProblems(link.id, link.shared, now) : [],
   ]);
   const uploadPrefix = capsuleUploadPrefix(workspace.organization.id);
+  // The follow-up chip says the same thing as the follow-ups section
+  const summaryOpts = { autonomy: settings.autonomy, campaign: deal.campaign?.name ?? null };
+  const emptyHintKey = followupsEmptyHint({
+    campaign: summaryOpts.campaign,
+    followupsEnabled: link.followupsEnabled,
+    shared: link.shared,
+    hasEmail: !!mainProspect?.email,
+  });
 
   const welcome = deal.welcome ? (
     <WelcomeMessage
@@ -143,7 +153,7 @@ export default async function LinkDetailPage({
         }
         signature={settings.senderSignature}
         processing={deal.reading}
-        summary={settingsSummary(link, now, locale)}
+        summary={settingsSummary(link, now, locale, summaryOpts)}
         shared={link.shared}
         welcome={welcome}
         notice={
@@ -268,7 +278,15 @@ export default async function LinkDetailPage({
 
             <DealSection id="relances" title={t("followupsTitle")}>
               <div className="pt-4">
-                <FollowupsPanel followups={deal.followupItems} />
+                <FollowupsPanel
+                  followups={deal.followupItems}
+                  seller={settings.senderName}
+                  emptyHint={
+                    emptyHintKey
+                      ? tPanel(emptyHintKey, { name: deal.campaign?.name ?? "" })
+                      : null
+                  }
+                />
               </div>
             </DealSection>
 
@@ -416,7 +434,7 @@ export default async function LinkDetailPage({
 
         {canEdit && (
           <DealSettings
-            summary={settingsSummary(link, now, locale)}
+            summary={settingsSummary(link, now, locale, summaryOpts)}
             name={link.name ?? ""}
             panel={deal.settingsPanel}
             welcome={!deal.sharing ? welcome : null}

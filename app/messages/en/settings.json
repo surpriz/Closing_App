@@ -41,13 +41,14 @@
     "pilot": {
       "title": "Autopilot",
       "descriptionAi": "Clozer reads every prospect like a seasoned closer: who reads what, what's blocking, when to follow up. It drafts the follow-ups on its own.",
-      "descriptionNoAi": "Follow-ups are drafted from simple rules until an AI is configured.",
+      "descriptionNoAi": "Without an AI configured, Clozer writes the follow-up from a template. You choose whether it waits for your approval.",
       "hint": "Either way: at most 3 follow-ups per contact per month, never right after a read, always during the prospect's business hours, and never a hint that you can see what they read.",
       "question": "When Clozer has drafted a follow-up",
       "copilot": "I review and approve it",
       "copilotHint": "Recommended to start. You get an email, and the follow-up waits for you on the dashboard (\"Follow-ups to approve\") and on the prospect's page, under Follow-ups.",
       "autopilot": "It goes out on its own when Clozer is confident",
-      "autopilotHint": "Tricky cases (an objection, a message from the prospect, any doubt) still wait for your approval. You get a recap every morning."
+      "autopilotHint": "Tricky cases (an objection, a message from the prospect, any doubt) still wait for your approval. You get a recap every morning.",
+      "senderNote": "Where follow-ups go out from: for a link, from Clozer in your name, with your address as reply-to; for a campaign, from your connected mailbox, in the thread."
     },
     "alerts": {
       "title": "Notifications",
@@ -119,7 +120,7 @@
     },
     "messages": {
       "title": "Your messages",
-      "description": "Follow-ups are written in your name: how you sign, and in what tone.",
+      "description": "Follow-ups are written in your name (sent by Clozer, replies to your address): how you sign, and in what tone.",
       "senderLabel": "Signed by",
       "senderPlaceholder": "Alex",
       "toneLabel": "Tone",
@@ -311,6 +312,7 @@
     },
     "lastError": {
       "AUTH_REVOKED": "The server refused the credentials. Reconnect the mailbox with a valid password.",
+      "AUTH_REVOKED_OAUTH": "{provider} cut off access to this mailbox. Reconnect it in one click.",
       "QUOTA": "The provider's sending quota is reached.",
       "RATE_LIMITED": "The provider is limiting sending.",
       "REJECTED": "The provider rejected the message.",

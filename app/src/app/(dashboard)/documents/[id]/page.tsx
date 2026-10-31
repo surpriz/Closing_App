@@ -26,6 +26,7 @@ import { ReportStrip } from "@/components/dashboard/document/reading-bits";
 import { RecentReads } from "@/components/dashboard/document/recent-reads";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import {
+  followupCampaignInclude,
   toFollowupItem,
   type FollowupItem,
 } from "@/components/dashboard/followup-item";
@@ -63,6 +64,7 @@ import {
 import { videoProvider } from "@/lib/closing/documents/web-link";
 import { shareLink } from "@/lib/closing/link-url";
 import { buttonVariants } from "@/components/ui/button";
+import { getWorkspaceSettings } from "@/lib/closing/settings";
 import { prisma } from "@/lib/db";
 import {
   formatBytes,
@@ -175,7 +177,7 @@ export default async function DocumentDetailPage({
       label={document.links.length === 0 ? t("createLink") : undefined}
     />
   );
-  const [analytics, origin, followups, alerts, furthest, insights, readings] =
+  const [analytics, origin, followups, alerts, furthest, insights, readings, settings] =
     await Promise.all([
       getDocumentAnalytics(document.id),
       getAppOrigin(),
@@ -186,6 +188,7 @@ export default async function DocumentDetailPage({
         include: {
           prospect: { select: { name: true, email: true } },
           link: { select: linkLabelSelect },
+          ...followupCampaignInclude,
         },
       }),
       prisma.sellerAlert.findMany({
@@ -216,6 +219,7 @@ export default async function DocumentDetailPage({
         select: { linkId: true, frictions: true },
       }),
       getPageReadings(linkIds),
+      getWorkspaceSettings(organization.id),
     ]);
 
   // The latest analysis of each deal only
@@ -748,7 +752,7 @@ export default async function DocumentDetailPage({
               {t("followupsIntro")}
             </p>
             <Surface className="p-4">
-              <FollowupsPanel followups={followupItems} showLink />
+              <FollowupsPanel followups={followupItems} showLink seller={settings.senderName} />
             </Surface>
           </section>
 

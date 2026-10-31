@@ -14,6 +14,8 @@
     "openDeals": "Active prospects",
     "draftsTitle": "Follow-ups to approve",
     "draftsHint": "nothing goes out without you",
+    "draftsHintAutopilot": "tricky cases wait for your approval",
+    "draftGoesOut": "Goes out {date}.",
     "feedTitle": "What happened",
     "feedEmpty": "Reads, your prospects' replies and sent follow-ups will show up here.",
     "upcomingTitle": "Upcoming follow-ups",

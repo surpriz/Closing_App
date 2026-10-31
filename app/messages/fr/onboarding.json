@@ -175,7 +175,7 @@
     "alertTitle": "Vous êtes prévenu quand il lit",
     "alertBody": "Par email, et en direct sur votre tableau de bord. C'est le bon moment pour appeler.",
     "approveTitle": "Vous validez les relances",
-    "approveBody": "Clozer les écrit au bon moment. Vous les retrouvez dans « Relances à valider ».",
+    "approveBody": "Clozer les écrit, vous validez. Elles partent avec votre adresse en réponse : le prospect vous répond à vous.",
     "mailQuestion": "Vous écrivez vos emails depuis…",
     "optional": "(facultatif)",
     "mailboxAria": "Votre messagerie",

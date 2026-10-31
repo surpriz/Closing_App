@@ -60,10 +60,12 @@
     "connect": "Connect a mailbox",
     "planBlocked": "Your campaigns are paused: connecting a mailbox and sending campaigns takes Solo or Team.",
     "planNeeded": "Sending campaigns takes Solo or Team.",
-    "seePlans": "See plans"
+    "seePlans": "See plans",
+    "todayLead": "Your campaigns and their follow-ups are paused."
   },
   "errors": {
     "AUTH_REVOKED": "The server refused the credentials. Reconnect the mailbox with a valid password.",
+    "AUTH_REVOKED_OAUTH": "{provider} cut off access to this mailbox. Reconnect it in one click.",
     "QUOTA": "The provider's sending quota is reached.",
     "RATE_LIMITED": "The provider is limiting sends.",
     "REJECTED": "The provider rejected the message.",

@@ -48,7 +48,7 @@ export default async function CampaignsPage() {
     prisma.mailbox.findMany({
       where: { organizationId: organization.id, status: { in: ["ACTIVE", "ERROR"] } },
       orderBy: { createdAt: "asc" },
-      select: { id: true, email: true, status: true, lastError: true, userId: true },
+      select: { id: true, email: true, status: true, lastError: true, userId: true, provider: true },
     }),
   ]);
 
@@ -99,7 +99,11 @@ export default async function CampaignsPage() {
   const usedMailboxIds = new Set(campaigns.map((campaign) => campaign.mailbox?.id));
   const teammatesFailing = mailboxes
     .filter((mailbox) => mailbox.status === "ERROR" && mailbox.userId !== user.id && usedMailboxIds.has(mailbox.id))
-    .map(({ email, lastError }) => ({ email, lastError: lastError ? `${lastError.split(":")[0]}:` : null }));
+    .map(({ email, lastError, provider }) => ({
+      email,
+      provider,
+      lastError: lastError ? `${lastError.split(":")[0]}:` : null,
+    }));
   const own = active.find((mailbox) => mailbox.userId === user.id);
   const uiLocale = locale as UiLocale;
   const planAllowed = await canUseMailboxes(organization.id);

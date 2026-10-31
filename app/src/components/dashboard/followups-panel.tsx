@@ -1,6 +1,7 @@
 "use client";
 
 import { Check, Copy, Mail, RefreshCw } from "lucide-react";
+import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -20,6 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { FollowupStatus } from "@/generated/prisma/enums";
 import { copyMessage } from "@/lib/clipboard";
 import { buildMailto } from "@/lib/closing/followups/mailto";
+import { followupSenderLabel } from "@/lib/closing/followups/sender";
 import { formatInTimeZone } from "@/lib/format";
 
 import type { FollowupItem } from "./followup-item";
@@ -52,11 +54,14 @@ export function FollowupsPanel({
   followups,
   showLink = false,
   emptyHint,
+  seller = null,
 }: {
   followups: FollowupItem[];
   showLink?: boolean;
   /** Why there is nothing yet, e.g. what the latest analysis advised. */
   emptyHint?: string | null;
+  /** The workspace sender name: "from Clozer, on behalf of {seller}". */
+  seller?: string | null;
 }) {
   const t = useTranslations("deal.followupsPanel");
   if (followups.length === 0) {
@@ -73,18 +78,28 @@ export function FollowupsPanel({
   return (
     <ul className="divide-y divide-border">
       {followups.map((f) => (
-        <FollowupRow key={f.id} followup={f} showLink={showLink} />
+        <FollowupRow key={f.id} followup={f} showLink={showLink} seller={seller} />
       ))}
     </ul>
   );
 }
 
-function FollowupRow({ followup: f, showLink }: { followup: FollowupItem; showLink: boolean }) {
+function FollowupRow({
+  followup: f,
+  showLink,
+  seller,
+}: {
+  followup: FollowupItem;
+  showLink: boolean;
+  seller: string | null;
+}) {
   const editable = f.status === "DRAFT" || f.status === "GENERATED" || f.status === "SCHEDULED";
   const t = useTranslations("deal.followupsPanel");
   const tl = useTranslations("labels");
   const locale = useLocale();
   const formatInZone = (date: Date, timeZone: string) => formatInTimeZone(date, timeZone, locale);
+  const pending = !f.sentAt && f.status !== "CANCELLED" && f.status !== "FAILED" && f.status !== "SKIPPED";
+  const sender = followupSenderLabel(f.sender, seller);
 
   return (
     <li className="space-y-2.5 py-4 first:pt-0 last:pb-0">
@@ -99,11 +114,20 @@ function FollowupRow({ followup: f, showLink }: { followup: FollowupItem; showLi
 
       <p className="text-small text-muted-foreground">
         {f.sentAt
-          ? `${t("sentOn", { date: formatInZone(f.sentAt, f.timezone) })}${f.sentVia === "MANUAL" ? t("byYou") : ""}`
+          ? t("sentOn", { date: formatInZone(f.sentAt, f.timezone) })
           : f.status === "DRAFT"
             ? t("draftFor", { date: formatInZone(f.scheduledFor, f.timezone) })
             : t("plannedFor", { date: formatInZone(f.scheduledFor, f.timezone) })}
       </p>
+      <p className="text-small text-muted-foreground">{tl(`followupSender.${sender.key}`, sender.values)}</p>
+      {pending && f.mailboxDown && (
+        <p className="text-small text-destructive">
+          {tl("followupSender.mailboxDown", { mailbox: f.mailboxDown })}{" "}
+          <Link href="/settings#boite" className="font-medium underline underline-offset-2">
+            {t("reconnect")}
+          </Link>
+        </p>
+      )}
 
       {f.rationale && (
         <p className="text-body">

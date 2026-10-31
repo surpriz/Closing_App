@@ -1,5 +1,6 @@
+import type { FollowupChannel, FollowupSentVia, FollowupStatus, FollowupTrigger, MailboxStatus } from "@/generated/prisma/enums";
+import { followupSender, type FollowupSender } from "@/lib/closing/followups/sender";
 import type { TitledLink } from "@/lib/text-html";
-import type { FollowupChannel, FollowupSentVia, FollowupStatus, FollowupTrigger } from "@/generated/prisma/enums";
 
 export type FollowupItem = {
   id: string;
@@ -20,6 +21,10 @@ export type FollowupItem = {
   confidence: number | null;
   sentAt: Date | null;
   sentVia: FollowupSentVia | null;
+  /** Who sends it, as the seller reads it: Clozer, their campaign mailbox, or themselves. */
+  sender: FollowupSender;
+  /** The campaign mailbox it depends on is in error: that address, else null. */
+  mailboxDown: string | null;
   edited: boolean;
   recipient: string;
   recipientEmail: string;
@@ -28,13 +33,29 @@ export type FollowupItem = {
   share: TitledLink;
 };
 
-type FollowupRow = Omit<FollowupItem, "version" | "edited" | "recipient" | "recipientEmail" | "linkName" | "share"> & {
+type FollowupRow = Omit<
+  FollowupItem,
+  "version" | "edited" | "recipient" | "recipientEmail" | "linkName" | "share" | "sender" | "mailboxDown"
+> & {
   updatedAt: Date;
   editedAt: Date | null;
   prospect: { name: string | null; email: string };
+  campaignProspect: { campaign: { name: string; mailbox: { email: string; status: MailboxStatus } | null } } | null;
 };
 
+/** What `toFollowupItem` reads from a campaign follow-up, ready to spread into a Prisma followup include. */
+export const followupCampaignInclude = {
+  campaignProspect: {
+    select: { campaign: { select: { name: true, mailbox: { select: { email: true, status: true } } } } },
+  },
+} as const;
+
 export function toFollowupItem(f: FollowupRow, linkName: string, share: TitledLink): FollowupItem {
+  const campaign = f.campaignProspect?.campaign ?? null;
+  const sender = followupSender({
+    sentVia: f.sentVia,
+    campaign: campaign ? { name: campaign.name, mailbox: campaign.mailbox?.email ?? null } : null,
+  });
   return {
     id: f.id,
     version: f.updatedAt.toISOString(),
@@ -52,6 +73,8 @@ export function toFollowupItem(f: FollowupRow, linkName: string, share: TitledLi
     confidence: f.confidence,
     sentAt: f.sentAt,
     sentVia: f.sentVia,
+    sender,
+    mailboxDown: sender.kind === "mailbox" && campaign?.mailbox?.status === "ERROR" ? campaign.mailbox.email : null,
     edited: f.editedAt !== null,
     recipient: f.prospect.name ?? f.prospect.email,
     recipientEmail: f.prospect.email,

@@ -14,6 +14,8 @@
     "openDeals": "Prospects en cours",
     "draftsTitle": "Relances à valider",
     "draftsHint": "rien ne part sans vous",
+    "draftsHintAutopilot": "les cas délicats attendent votre accord",
+    "draftGoesOut": "Part le {date}.",
     "feedTitle": "Ce qui s'est passé",
     "feedEmpty": "Les lectures, les réponses de vos prospects et les relances envoyées s'afficheront ici.",
     "upcomingTitle": "Relances à venir",

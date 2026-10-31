@@ -6,6 +6,7 @@ import { getPublicAppUrl } from "@/lib/app-origin";
 import { PlanLimitError } from "@/lib/billing/workspace-plan";
 import { createDocumentLink } from "@/lib/closing/documents/create-link";
 import { prospectFromRecipient } from "@/lib/closing/prospects/from-recipient";
+import { getWorkspaceSettings } from "@/lib/closing/settings";
 import { settingsSummary } from "@/lib/closing/share/summary";
 import { extError, extPlanLimit, withExtensionAuth } from "@/lib/extension-auth";
 
@@ -39,7 +40,7 @@ export const POST = withExtensionAuth(async (request, { user, organization }) =>
   if (!link) return extError(404, "not_found", getTranslator(user.locale)("server.ext.documentNotFound"));
 
   revalidatePath(`/documents/${documentId}`);
-  const appUrl = getPublicAppUrl();
+  const [appUrl, settings] = [getPublicAppUrl(), await getWorkspaceSettings(organization.id)];
   return Response.json(
     {
       link: {
@@ -48,7 +49,7 @@ export const POST = withExtensionAuth(async (request, { user, organization }) =>
         title: link.title,
         url: `${appUrl}${link.path}`,
         // What the prospect will meet, and where to change it or add a welcome message
-        summary: settingsSummary(link, new Date(), user.locale),
+        summary: settingsSummary(link, new Date(), user.locale, { autonomy: settings.autonomy }),
         manageUrl: `${appUrl}/links/${link.id}?new=1`,
       },
     },

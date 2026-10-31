@@ -457,8 +457,13 @@ export function getDraftsToReview(organizationId: string, owner?: SellerScope) {
       id: true,
       channel: true,
       subject: true,
+      scheduledFor: true,
+      timezone: true,
+      sentVia: true,
       link: { select: { id: true } },
       prospect: { select: { name: true, email: true, company: true } },
+      // Who sends it: the campaign mailbox, or Clozer
+      campaignProspect: { select: { campaign: { select: { name: true, mailbox: { select: { email: true } } } } } },
     },
   });
 }
