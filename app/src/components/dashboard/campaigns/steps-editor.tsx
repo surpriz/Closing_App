@@ -227,11 +227,11 @@ export function StepsEditor({
 
               {hasSubject ? (
                 <div className="space-y-1.5">
-                  <label htmlFor={`${step.key}-subject`} className="text-small font-medium">
+                  <label htmlFor={`step-${step.order}-subject`} className="text-small font-medium">
                     {t("subject")}
                   </label>
                   <Input
-                    id={`${step.key}-subject`}
+                    id={`step-${step.order}-subject`}
                     value={step.subject ?? ""}
                     maxLength={200}
                     onChange={(event) => patch(step.key, { subject: event.target.value })}
