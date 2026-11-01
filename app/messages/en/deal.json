@@ -98,7 +98,9 @@
     "reactivateManagerOnly": "Archived document: a manager can bring it back.",
     "report": "Reading report",
     "sentOn": "Sent {date}",
-    "total": "{time} total"
+    "total": "{time} total",
+    "noRecipientLine": "No recipient ·",
+    "addRecipient": "add"
   },
   "dealSettings": {
     "title": "Link settings",
@@ -135,7 +137,8 @@
     "liveNow": "being read now",
     "pricingTag": "Pricing",
     "avgPerView": "{time} per view on average",
-    "avgPerRead": "{time} per read on average"
+    "avgPerRead": "{time} per read on average",
+    "onePage": "1 page · {time}"
   },
   "dealContextDetails": {
     "title": "Sales context",
@@ -166,7 +169,8 @@
     "reopened": "Reopened",
     "changed": "Status “{status}”, pending follow-ups cancelled",
     "failed": "Couldn't save the change",
-    "ariaLabel": "Prospect status"
+    "ariaLabel": "Prospect status",
+    "statusLabel": "Status"
   },
   "dealVerdict": {
     "severityLow": "low",
@@ -214,7 +218,8 @@
   "linkSettingsForm": {
     "name": "Link name",
     "title": "Link settings",
-    "description": "Every change is saved right away."
+    "description": "Every change is saved right away.",
+    "open": "Edit"
   },
   "linkSettingsPanel": {
     "groupAccess": "Access",
@@ -443,7 +448,7 @@
     "description": "The prospect won't be able to open the document anymore, and scheduled follow-ups are cancelled.",
     "keep": "Keep the link",
     "archiving": "Archiving…",
-    "archive": "Archive the link"
+    "archive": "Archive"
   },
   "reactivateLinkButton": {
     "trigger": "Reactivate the link",
@@ -551,7 +556,7 @@
     "followupSent": "Follow-up sent ({trigger})",
     "followupDetail": "{channel} to {recipient}",
     "sellerNoted": "{activity} (logged by you)",
-    "alert": "Alert: {type}",
+    "alert": "Clozer let you know: {type}",
     "liveViewers": "{count} readers at once",
     "inactive": "after {days} days without a read",
     "pricingTime": "{time} on pricing",

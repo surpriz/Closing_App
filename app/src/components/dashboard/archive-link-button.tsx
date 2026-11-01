@@ -24,8 +24,9 @@ export function ArchiveLinkButton({ linkId }: { linkId: string }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button variant="ghost" size="icon-lg" aria-label={t("ariaLabel")} />}>
+      <DialogTrigger render={<Button variant="ghost" size="sm" aria-label={t("ariaLabel")} />}>
         <Archive />
+        {t("archive")}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

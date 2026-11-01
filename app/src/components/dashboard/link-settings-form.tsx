@@ -62,7 +62,7 @@ export function LinkSettingsDialog({ name, ...panel }: Props) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={<Button variant="outline" size="lg" className="bg-card" />}>
         <Settings2 />
-        {t("title")}
+        {t("open")}
       </DialogTrigger>
       <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-md">
         <DialogHeader>
