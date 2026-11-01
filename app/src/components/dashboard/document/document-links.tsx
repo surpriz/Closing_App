@@ -27,6 +27,8 @@ export type ProspectLinkRow = {
   /** What the prospect clicks on once pasted in an email. */
   title: string;
   followupsEnabled: boolean;
+  /** Autopilot on a personal link: its follow-ups go out alone, the state must say so. */
+  autoSend: boolean;
   /** The campaign driving this link's messages, while it owns them. */
   campaign: { id: string; name: string } | null;
 };
@@ -63,7 +65,12 @@ export function DocumentLinks({ rows, video }: { rows: ProspectLinkRow[]; video:
             </p>
           </div>
           <div className="relative z-10 flex items-center gap-3">
-            <LinkFollowupsToggle linkId={row.id} enabled={row.followupsEnabled} campaign={row.campaign} />
+            <LinkFollowupsToggle
+              linkId={row.id}
+              enabled={row.followupsEnabled}
+              autoSend={row.autoSend}
+              campaign={row.campaign}
+            />
             <CopyButton value={row.url} title={row.title} />
           </div>
         </li>

@@ -374,6 +374,8 @@ export default async function DocumentDetailPage({
       heat: pages && pages.length > 0 ? pageHeat(pages, heatPages) : null,
       ...shareLink(origin, { slug: link.slug, document, company: prospect?.company }),
       followupsEnabled: link.followupsEnabled,
+      // Same rule as the share screen's chip (settingsSummary): Autopilot sends a personal link's follow-ups alone
+      autoSend: settings.autonomy === "AUTOPILOT" && !link.shared,
       campaign: linkCampaign(link),
     };
   });

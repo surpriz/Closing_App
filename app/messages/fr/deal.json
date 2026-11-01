@@ -206,6 +206,7 @@
     "failed": "Modification impossible",
     "drivenByCampaign": "Relances : campagne {name}",
     "stateOn": "Relances : à valider",
+    "stateAuto": "Relances : automatiques (Pilote)",
     "stateOff": "Relances : coupées",
     "turnOff": "couper",
     "turnOn": "activer"

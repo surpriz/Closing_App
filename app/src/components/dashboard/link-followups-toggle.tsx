@@ -15,10 +15,13 @@ import { Button } from "@/components/ui/button";
 export function LinkFollowupsToggle({
   linkId,
   enabled,
+  autoSend = false,
   campaign = null,
 }: {
   linkId: string;
   enabled: boolean;
+  /** The workspace is on Autopilot and this is a personal link: enabled follow-ups go out alone. */
+  autoSend?: boolean;
   /** While a campaign drives the link, its follow-ups are the campaign's to manage. */
   campaign?: { id: string; name: string } | null;
 }) {
@@ -56,7 +59,7 @@ export function LinkFollowupsToggle({
 
   return (
     <span className="flex items-center gap-1.5 text-small text-muted-foreground">
-      <span>{optimistic ? t("stateOn") : t("stateOff")}</span>
+      <span>{optimistic ? (autoSend ? t("stateAuto") : t("stateOn")) : t("stateOff")}</span>
       <Button size="xs" variant="ghost" disabled={pending} onClick={() => toggle(!optimistic)}>
         {optimistic ? t("turnOff") : t("turnOn")}
       </Button>

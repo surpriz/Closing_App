@@ -206,6 +206,7 @@
     "failed": "Couldn't save the change",
     "drivenByCampaign": "Follow-ups: campaign {name}",
     "stateOn": "Follow-ups: to approve",
+    "stateAuto": "Follow-ups: automatic (Autopilot)",
     "stateOff": "Follow-ups: off",
     "turnOff": "turn off",
     "turnOn": "turn on"
