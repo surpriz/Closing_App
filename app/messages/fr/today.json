@@ -48,6 +48,7 @@
   },
   "headline": {
     "drafts": "{count, plural, one {Une relance attend votre accord.} other {# relances attendent votre accord.}}",
+    "draftsNext": "Ensuite : {count, plural, one {une relance} other {# relances}} à valider.",
     "callFirst": "Appelez {name} en premier.",
     "validatedOne": "{name} a validé.",
     "validatedMany": "{name} et {others, plural, one {# autre} other {# autres}} ont validé.",
@@ -56,7 +57,7 @@
     "changeMany": "{count} prospects demandent un ajustement.",
     "changeOneHint": "Répondez-lui aujourd'hui.",
     "changeManyHint": "Commencez par {name}.",
-    "aiFocus": "{label} : {headline}",
+    "aiFocus": "{label} · {headline}",
     "startThere": "Commencez par là.",
     "hotOne": "{name} est chaud.",
     "hotMany": "{count} prospects sont chauds.",
@@ -72,6 +73,7 @@
     "createLinkHint": "Créez un lien pour l'envoyer à un prospect.",
     "nextFollowup": "Prochaine relance {when}.",
     "autoFollowups": "Clozer prépare les relances quand il le faut.",
+    "noFollowups": "Relances coupées sur ces liens : vous relancez vous-même.",
     "warmOne": "Un prospect consulte votre document.",
     "warmMany": "{count} prospects consultent vos documents.",
     "nothingUrgent": "Rien d'urgent. {hint}",
@@ -86,7 +88,8 @@
     "aiAnalysis": "Analyse IA",
     "handle": "Traiter",
     "unopenedCount": "{count, plural, one {# lien pas encore ouvert} other {# liens pas encore ouverts}}",
-    "unopenedHint": "· vous êtes prévenu dès que l'un est lu"
+    "unopenedHint": "· vous êtes prévenu dès que l'un est lu",
+    "testSuffix": "{label} (votre test)"
   },
   "readyLinks": {
     "copiedToast": "Lien copié. Collez-le dans votre message : vous serez prévenu dès qu'il est ouvert.",
@@ -198,8 +201,8 @@
       "REQUEST_CHANGE": "demande un ajustement"
     },
     "alert": {
-      "callMomentReason": "est lu en ce moment ({reason})",
-      "callMoment": "est lu en ce moment",
+      "callMomentReason": "a lu votre proposition : {reason}",
+      "callMoment": "a lu votre proposition, c'était le moment d'appeler",
       "prospectValidated": "a été validé",
       "changeRequested": "fait l'objet d'une demande d'ajustement",
       "quoteRequested": "a débouché sur une demande de devis",

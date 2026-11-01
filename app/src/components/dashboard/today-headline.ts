@@ -26,13 +26,11 @@ export type TodayHeadlineInput = {
   draftsToReview?: number;
   /** Links created on drop and not sent yet, with the latest one's document. */
   readyLinks?: { count: number; documentName: string } | null;
+  /** At least one open deal has Clozer's follow-ups on: false means the seller follows up alone. */
+  followupsOn?: boolean;
 };
 
 export type TodayHeadline = { headline: string; hint: string };
-
-function lowerFirst(text: string) {
-  return text.charAt(0).toLowerCase() + text.slice(1);
-}
 
 function draftsHint(t: AppT, input: TodayHeadlineInput) {
   const drafts = input.draftsToReview ?? 0;
@@ -73,9 +71,11 @@ export function buildTodayHeadline(t: AppT, input: TodayHeadlineInput): TodayHea
   }
 
   if (input.aiFocus) {
+    // The analysis wrote a sentence, often starting with a first name: shown as written
+    const drafts = input.draftsToReview ?? 0;
     return {
-      headline: t("today.headline.aiFocus", { label: input.aiFocus.label, headline: lowerFirst(input.aiFocus.headline) }),
-      hint: draftsHint(t, input) ?? t("today.headline.startThere"),
+      headline: t("today.headline.aiFocus", { label: input.aiFocus.label, headline: input.aiFocus.headline }),
+      hint: drafts > 0 ? t("today.headline.draftsNext", { count: drafts }) : t("today.headline.startThere"),
     };
   }
 
@@ -117,7 +117,9 @@ export function buildTodayHeadline(t: AppT, input: TodayHeadlineInput): TodayHea
     draftsHint(t, input) ??
     (input.nextFollowupLabel
       ? t("today.headline.nextFollowup", { when: input.nextFollowupLabel })
-      : t("today.headline.autoFollowups"));
+      : input.followupsOn === false
+        ? t("today.headline.noFollowups")
+        : t("today.headline.autoFollowups"));
 
   if (input.warmCount > 0) {
     return {

@@ -128,8 +128,8 @@ describe("with the deal analysis", () => {
         draftsToReview: 2,
       }),
     ).toEqual({
-      headline: "Acme : le DAF entre dans la boucle.",
-      hint: "2 relances attendent votre accord.",
+      headline: "Acme · Le DAF entre dans la boucle.",
+      hint: "Ensuite : 2 relances à valider.",
     });
     expect(
       buildTodayHeadline({
@@ -166,5 +166,12 @@ describe("with the deal analysis", () => {
         readyLinks: { count: 2, documentName: "Devis Acme" },
       }).headline,
     ).toBe("2 liens prêts à envoyer.");
+  });
+
+  it("says follow-ups are off instead of promising them", () => {
+    expect(buildTodayHeadline({ ...base, warmCount: 1, activeCount: 1, followupsOn: false })).toEqual({
+      headline: "Un prospect consulte votre document.",
+      hint: "Rien d'urgent. Relances coupées sur ces liens : vous relancez vous-même.",
+    });
   });
 });

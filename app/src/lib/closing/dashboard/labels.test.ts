@@ -18,8 +18,12 @@ const prospect = (over: Partial<LabelledLink["prospects"][number]> = {}) => ({
 });
 
 describe("dealLabel", () => {
-  it("names the deal after the company first", () => {
-    expect(dealLabel(link({ name: "Devis 2026", prospects: [prospect({ company: "Acme", name: "Léa", email: "lea@acme.fr" })] }))).toBe("Acme");
+  it("names the deal after the company and the person, so two contacts at Acme read apart", () => {
+    expect(dealLabel(link({ name: "Devis 2026", prospects: [prospect({ company: "Acme", name: "Léa", email: "lea@acme.fr" })] }))).toBe("Acme · Léa");
+  });
+
+  it("names the company alone when the contact has only an email", () => {
+    expect(dealLabel(link({ prospects: [prospect({ company: "Acme", email: "lea@acme.fr" })] }))).toBe("Acme");
   });
 
   it("falls back to the contact name, then the email", () => {
@@ -59,8 +63,13 @@ describe("customLinkName", () => {
 
 describe("dealDocumentMeta", () => {
   it("gives the document unless it is already the label", () => {
-    expect(dealDocumentMeta(link({ prospects: [prospect({ company: "Acme" })] }))).toBe("Devis 2026.pdf");
-    expect(dealDocumentMeta(link({ prospects: [prospect({ company: "Devis 2026.pdf" })] }))).toBeNull();
+    expect(dealDocumentMeta(link({ prospects: [prospect({ company: "Acme" })] }))).toBe("Devis 2026");
+    expect(dealDocumentMeta(link({ prospects: [prospect({ company: "Devis 2026" })] }))).toBeNull();
     expect(dealDocumentMeta(link({ document: undefined }))).toBeNull();
+  });
+
+  it("shows the document by its title, not its file name", () => {
+    expect(dealDocumentMeta(link({ prospects: [prospect({ company: "Acme" })], document: { name: "modele_de_devis_batiment.pdf", displayTitle: "Devis n°624 – Prestation de service" } }))).toBe("Devis n°624 – Prestation de service");
+    expect(dealDocumentMeta(link({ document: { name: "modele_de_devis_batiment.pdf", displayTitle: null } }))).toBe("modele_de_devis_batiment.pdf");
   });
 });

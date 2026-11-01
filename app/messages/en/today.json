@@ -48,6 +48,7 @@
   },
   "headline": {
     "drafts": "{count, plural, one {A follow-up is waiting for your OK.} other {# follow-ups are waiting for your OK.}}",
+    "draftsNext": "Next: {count, plural, one {one follow-up} other {# follow-ups}} to approve.",
     "callFirst": "Call {name} first.",
     "validatedOne": "{name} approved.",
     "validatedMany": "{name} and {others, plural, one {# other} other {# others}} approved.",
@@ -56,7 +57,7 @@
     "changeMany": "{count} prospects are asking for changes.",
     "changeOneHint": "Reply to them today.",
     "changeManyHint": "Start with {name}.",
-    "aiFocus": "{label}: {headline}",
+    "aiFocus": "{label} · {headline}",
     "startThere": "Start there.",
     "hotOne": "{name} is hot.",
     "hotMany": "{count} prospects are hot.",
@@ -72,6 +73,7 @@
     "createLinkHint": "Create a link to send it to a prospect.",
     "nextFollowup": "Next follow-up {when}.",
     "autoFollowups": "Clozer prepares follow-ups when they're needed.",
+    "noFollowups": "Follow-ups are off on these links: you follow up yourself.",
     "warmOne": "A prospect is looking at your document.",
     "warmMany": "{count} prospects are looking at your documents.",
     "nothingUrgent": "Nothing urgent. {hint}",
@@ -86,7 +88,8 @@
     "aiAnalysis": "AI analysis",
     "handle": "Open",
     "unopenedCount": "{count, plural, one {# link not opened yet} other {# links not opened yet}}",
-    "unopenedHint": "· you'll hear as soon as one is read"
+    "unopenedHint": "· you'll hear as soon as one is read",
+    "testSuffix": "{label} (your test)"
   },
   "readyLinks": {
     "copiedToast": "Link copied. Paste it into your message: you'll hear as soon as it's opened.",
@@ -198,8 +201,8 @@
       "REQUEST_CHANGE": "is asking for changes"
     },
     "alert": {
-      "callMomentReason": "is being read right now ({reason})",
-      "callMoment": "is being read right now",
+      "callMomentReason": "read your proposal: {reason}",
+      "callMoment": "read your proposal, a good moment to call",
       "prospectValidated": "was approved",
       "changeRequested": "has a change request",
       "quoteRequested": "led to a quote request",
