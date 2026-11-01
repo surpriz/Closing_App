@@ -401,13 +401,10 @@ export default async function LinkDetailPage({
               </DealSection>
             )}
 
-            <DealSection
-              id="noter"
-              title={t("logTitle")}
-              hint={t("logHint")}
-            >
+            {/* An empty form on every page is weight: one click opens it (D2) */}
+            <DealFold id="noter" title={t("logTitle")} hint={t("logHint")}>
               <SellerActivityForm linkId={link.id} />
-            </DealSection>
+            </DealFold>
 
             <DealContextSummaryDetails
               summary={dealContextSummary(
