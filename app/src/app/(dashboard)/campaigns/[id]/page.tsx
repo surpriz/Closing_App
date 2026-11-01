@@ -12,9 +12,11 @@ import { ImportProspects } from "@/components/dashboard/campaigns/import-prospec
 import { MailboxBanner } from "@/components/dashboard/campaigns/mailbox-banner";
 import { StepStats } from "@/components/dashboard/campaigns/step-stats";
 import { StepsEditor } from "@/components/dashboard/campaigns/steps-editor";
+import { DealFold } from "@/components/dashboard/deal/deal-section";
 import { SectionTitle, Surface } from "@/components/dashboard/page-header";
 import type { UiLocale } from "@/i18n/locale";
 import { inBackground } from "@/lib/closing/background";
+import { getWorkspaceSettings } from "@/lib/closing/settings";
 import { documentTitle } from "@/lib/closing/documents/link-title";
 import { canUseMailboxes } from "@/lib/billing/mailboxes";
 import { prisma } from "@/lib/db";
@@ -241,6 +243,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
   const locked = archived || !canEdit;
   const uiLocale = locale as UiLocale;
   const planBlocked = campaign.status === "ACTIVE" && !(await canUseMailboxes(organization.id));
+  const settings = await getWorkspaceSettings(organization.id);
 
   return (
     <div className="space-y-10">
@@ -255,8 +258,67 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
       />
       {!canEdit && <p className="text-small text-muted-foreground">{t("detail.readOnly")}</p>}
 
+      {/* What happens first: the prospects, then the results; the setup folds once the campaign runs (D7) */}
       <section>
-        <SectionTitle>{t("settings.title")}</SectionTitle>
+        <SectionTitle hint={t("enrollments.pricingHint", { seconds: settings.hotPricingThresholdSec })}>
+          {t("enrollments.title")}
+        </SectionTitle>
+        <Surface>
+          <EnrollmentsTable
+            rows={rows}
+            totalSteps={campaign.steps.length}
+            locale={uiLocale}
+            disabled={locked}
+            truncated={total > rows.length}
+          />
+        </Surface>
+      </section>
+
+      <StepStats campaignId={campaign.id} />
+
+      {!locked && forwardedContacts.length > 0 && (
+        <section>
+          <SectionTitle>{t("forwarded.title")}</SectionTitle>
+          <ForwardedContacts campaignId={campaign.id} contacts={forwardedContacts} locale={uiLocale} />
+        </section>
+      )}
+
+      <DealFold
+        id="etapes"
+        title={t("steps.title")}
+        hint={t("steps.foldHint", { count: campaign.steps.length })}
+        open={campaign.status === "DRAFT" || counts.enrolled === 0}
+      >
+        <StepsEditor
+          campaignId={campaign.id}
+          initialSteps={campaign.steps.map((step) => ({
+            order: step.order,
+            delayDays: step.delayDays,
+            subject: step.subject,
+            newThread: step.newThread,
+            body: step.body,
+            carriesLink: step.carriesLink,
+          }))}
+          extraVars={Object.keys(extra)}
+          sampleVars={sampleVars}
+          sampleEmail={firstEnrollment?.email ?? null}
+          canTest={campaign.mailbox?.status === "ACTIVE"}
+          disabled={locked}
+        />
+      </DealFold>
+
+      {!locked && (
+        <DealFold id="import" title={t("import.title")} hint={t("import.foldHint")} open={counts.enrolled === 0}>
+          <ImportProspects campaignId={campaign.id} />
+        </DealFold>
+      )}
+
+      <DealFold
+        id="reglages"
+        title={t("settings.title")}
+        hint={campaign.mailbox?.email ?? t("settings.mailboxPlaceholder")}
+        open={campaign.status === "DRAFT"}
+      >
         <CampaignSettings
           id={campaign.id}
           name={campaign.name}
@@ -278,56 +340,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
           stepCarriesLink={campaign.steps.some((step) => step.carriesLink)}
           disabled={locked}
         />
-      </section>
-
-      <section>
-        <SectionTitle>{t("steps.title")}</SectionTitle>
-        <StepsEditor
-          campaignId={campaign.id}
-          initialSteps={campaign.steps.map((step) => ({
-            order: step.order,
-            delayDays: step.delayDays,
-            subject: step.subject,
-            newThread: step.newThread,
-            body: step.body,
-            carriesLink: step.carriesLink,
-          }))}
-          extraVars={Object.keys(extra)}
-          sampleVars={sampleVars}
-          sampleEmail={firstEnrollment?.email ?? null}
-          canTest={campaign.mailbox?.status === "ACTIVE"}
-          disabled={locked}
-        />
-      </section>
-
-      <StepStats campaignId={campaign.id} />
-
-      {!locked && (
-        <section>
-          <SectionTitle>{t("import.title")}</SectionTitle>
-          <ImportProspects campaignId={campaign.id} />
-        </section>
-      )}
-
-      {!locked && forwardedContacts.length > 0 && (
-        <section>
-          <SectionTitle>{t("forwarded.title")}</SectionTitle>
-          <ForwardedContacts campaignId={campaign.id} contacts={forwardedContacts} locale={uiLocale} />
-        </section>
-      )}
-
-      <section>
-        <SectionTitle>{t("enrollments.title")}</SectionTitle>
-        <Surface>
-          <EnrollmentsTable
-            rows={rows}
-            totalSteps={campaign.steps.length}
-            locale={uiLocale}
-            disabled={locked}
-            truncated={total > rows.length}
-          />
-        </Surface>
-      </section>
+      </DealFold>
 
       {testToolsEnabled() && canEdit && (
         <CampaignTestTools

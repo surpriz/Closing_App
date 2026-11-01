@@ -16,7 +16,8 @@
       "bounced": "Rebonds",
       "updated": "Mise à jour"
     },
-    "noMailbox": "Aucune boîte"
+    "noMailbox": "Aucune boîte",
+    "reconnectHint": "Reconnectez votre boîte pour créer une campagne."
   },
   "status": {
     "DRAFT": "Brouillon",
@@ -201,7 +202,8 @@
       "several_link_steps": "Une seule étape peut porter le lien Clozer.",
       "link_outside_link_step": "L'étape {order} utilise la variable du lien sans porter le lien.",
       "too_long": "L'étape {order} est trop longue."
-    }
+    },
+    "foldHint": "{count, plural, one {# étape} other {# étapes}}"
   },
   "import": {
     "title": "Importer des prospects",
@@ -252,7 +254,8 @@
       "reasonInvalidEmail": "adresse invalide",
       "line": "ligne {line} : {reason}",
       "needsActivation": "La campagne n'est pas en cours : rien ne partira tant que vous ne cliquez pas « Activer » en haut de la page."
-    }
+    },
+    "foldHint": "collez ou déposez un CSV"
   },
   "enrollments": {
     "title": "Prospects",
@@ -312,7 +315,8 @@
       "draft": "Brouillon à relire",
       "scheduled": "Programmée {date}",
       "sent": "Envoyée {date}"
-    }
+    },
+    "pricingHint": "un prospect qui lit les tarifs {seconds} s ou plus met sa séquence en pause : Clozer vous alerte et prépare la relance"
   },
   "testTools": {
     "title": "Outils de test",

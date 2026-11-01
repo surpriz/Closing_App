@@ -16,7 +16,8 @@
       "bounced": "Bounced",
       "updated": "Updated"
     },
-    "noMailbox": "No mailbox"
+    "noMailbox": "No mailbox",
+    "reconnectHint": "Reconnect your mailbox to create a campaign."
   },
   "status": {
     "DRAFT": "Draft",
@@ -201,7 +202,8 @@
       "several_link_steps": "Only one step can carry the Clozer link.",
       "link_outside_link_step": "Step {order} uses the link variable but does not carry the link.",
       "too_long": "Step {order} is too long."
-    }
+    },
+    "foldHint": "{count, plural, one {# step} other {# steps}}"
   },
   "import": {
     "title": "Import prospects",
@@ -252,7 +254,8 @@
       "reasonInvalidEmail": "invalid address",
       "line": "line {line}: {reason}",
       "needsActivation": "The campaign is not running: nothing goes out until you click \"Activate\" at the top of the page."
-    }
+    },
+    "foldHint": "paste or drop a CSV"
   },
   "enrollments": {
     "title": "Prospects",
@@ -312,7 +315,8 @@
       "draft": "Draft to review",
       "scheduled": "Scheduled {date}",
       "sent": "Sent {date}"
-    }
+    },
+    "pricingHint": "a prospect who reads the pricing for {seconds} s or more pauses their sequence: Clozer alerts you and drafts the follow-up"
   },
   "testTools": {
     "title": "Test tools",

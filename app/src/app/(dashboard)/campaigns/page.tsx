@@ -122,7 +122,11 @@ export default async function CampaignsPage() {
           />
         }
       />
-      {active.length === 0 && <p className="text-small text-muted-foreground">{t("page.noMailboxHint")}</p>}
+      {active.length === 0 && (
+        <p className="text-small text-muted-foreground">
+          {t(failing.length > 0 ? "page.reconnectHint" : "page.noMailboxHint")}
+        </p>
+      )}
       <MailboxBanner
         mailboxes={[...failing, ...teammatesFailing]}
         hasActive={active.length > 0}
