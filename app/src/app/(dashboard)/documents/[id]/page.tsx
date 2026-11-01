@@ -1,4 +1,4 @@
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft, ExternalLink, Send } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -66,6 +66,7 @@ import { shareLink } from "@/lib/closing/link-url";
 import { buttonVariants } from "@/components/ui/button";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
 import { prisma } from "@/lib/db";
+import { isOutreachAllowed } from "@/lib/outreach/flag";
 import {
   formatBytes,
   formatDate,
@@ -94,7 +95,7 @@ export default async function DocumentDetailPage({
   params,
 }: PageProps<"/documents/[id]">) {
   const { id } = await params;
-  const { organization, role } = await requireWorkspace();
+  const { user, organization, role } = await requireWorkspace();
   const [t, td, tl, tApp, locale] = await Promise.all([
     getTranslations("documents.detail"),
     getTranslations("documents"),
@@ -373,6 +374,8 @@ export default async function DocumentDetailPage({
       heat: pages && pages.length > 0 ? pageHeat(pages, heatPages) : null,
       ...shareLink(origin, { slug: link.slug, document, company: prospect?.company }),
       followupsEnabled: link.followupsEnabled,
+      // Same rule as the share screen's chip (settingsSummary): Autopilot sends a personal link's follow-ups alone
+      autoSend: settings.autonomy === "AUTOPILOT" && !link.shared,
       campaign: linkCampaign(link),
     };
   });
@@ -449,6 +452,13 @@ export default async function DocumentDetailPage({
               {linkAction}
               {document.status !== "FAILED" && (
                 <NewLinkButton documentId={document.id} variant="outline" smart />
+              )}
+              {/* The second door of the landing: a campaign from the seller's own mailbox */}
+              {document.status !== "FAILED" && isOutreachAllowed(user, organization.id) && (
+                <Link href="/campaigns" className={buttonVariants({ variant: "outline", size: "lg" })}>
+                  <Send />
+                  {tApp("deal.newLinkButton.campaignLabel")}
+                </Link>
               )}
               {/* Deleting takes every seller's links down with it */}
               {isManagerRole(role) && (

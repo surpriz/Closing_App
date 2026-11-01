@@ -46,6 +46,8 @@
     "pages": {
       "today": "Aujourd'hui",
       "documents": "Documents",
+      "results": "Résultats",
+      "campaigns": "Campagnes",
       "howItWorks": "Comment ça marche",
       "settings": "Réglages",
       "onboarding": "Prise en main",
@@ -72,5 +74,12 @@
     "inputAria": "Votre question ou votre idée",
     "send": "Envoyer",
     "disclaimer": "Réponses automatiques, l'assistant peut se tromper. Rien n'est transmis sans votre accord."
+  },
+  "newMenu": {
+    "label": "Nouveau",
+    "send": "Un envoi",
+    "sendHint": "document ou lien",
+    "campaign": "Une campagne",
+    "campaignHint": "depuis votre boîte"
   }
 }

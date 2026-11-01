@@ -3,6 +3,9 @@
     "metaTitleFallback": "Prospect",
     "theProspect": "Le prospect",
     "autoNotice": "Reconnu comme « {docType} » : le prospect a jusqu'au {date} et voit le décompte.",
+    "foldedReportLabel": "Rapport de lecture",
+    "foldedReportHint": "s'ouvrira à la première lecture",
+    "foldedReportOpen": "Voir la fiche",
     "pageTimeTitle": "Temps par page en détail",
     "pageTimeHintVideo": "sur chaque passage de la vidéo",
     "pageTimeHint": "total et moyenne par lecture",
@@ -201,7 +204,12 @@
     "enabled": "Relances activées",
     "disabled": "Relances désactivées, relances en attente annulées",
     "failed": "Modification impossible",
-    "drivenByCampaign": "Relances gérées par la campagne {name}"
+    "drivenByCampaign": "Relances : campagne {name}",
+    "stateOn": "Relances : à valider",
+    "stateAuto": "Relances : automatiques (Pilote)",
+    "stateOff": "Relances : coupées",
+    "turnOff": "couper",
+    "turnOn": "activer"
   },
   "linkSettingsForm": {
     "name": "Nom du lien",
@@ -249,7 +257,8 @@
     "cycleHint": "rappels « pas ouvert », envois à l'heure prévue, analyses en retard"
   },
   "newLinkButton": {
-    "smartLabel": "Smart Link pour cold email",
+    "smartLabel": "Smart Link (lemlist, post, signature)",
+    "campaignLabel": "Campagne depuis ma boîte",
     "defaultLabel": "Un lien pour un autre prospect",
     "creating": "Création…"
   },
@@ -275,6 +284,7 @@
     "copyFailed": "Copie impossible : sélectionnez le lien à la main.",
     "liveShared": "C'est en ligne. Chaque nouveau lecteur apparaît ici.",
     "sentPersonal": "C'est parti. Vous serez prévenu dès qu'il l'ouvre.",
+    "openedNoRecipient": "Quelqu'un l'a déjà ouvert. Dites pour qui il est : Clozer pourra relancer.",
     "linkCopied": "Lien copié",
     "ready": "Votre lien est prêt",
     "pasteAndSend": "Collez-le dans votre message et envoyez-le. Le suivi démarre dès qu'il l'ouvre.",
@@ -282,16 +292,18 @@
     "sharedIntro": "Mettez-le dans votre séquence de cold email, ou postez-le : chaque lecteur est identifié et reçoit son propre lien, suivi comme vos autres prospects.",
     "personalIntro": "Il l'ouvre et lit tout de suite, sans rien remplir. Vous saurez quelles pages, combien de temps, et quand relancer.",
     "forRecipient": "Pour <b>{email}</b>",
-    "whoLabel": "Pour qui est ce lien ?",
+    "whoLabel": "Pour qui ?",
     "optional": "(facultatif)",
     "whoPlaceholder": "Marie Dupont, Acme ou marie@acme.fr",
-    "save": "Enregistrer",
-    "whoHint": "Avec un email, Clozer pourra le relancer pour vous.",
+    "save": "Enregistrer le destinataire",
+    "whoHint": "Avec son email, Clozer relance pour vous.",
+    "whoHintOff": "Relances coupées pour ce lien : l'email sert à nommer le prospect.",
     "noEmailHint": "Sans email, Clozer ne pourra pas le relancer.",
     "copyTitle": "Copier le lien",
     "copied": "Copié",
     "copyLink": "Copier le lien",
-    "sendByEmail": "Envoyer par email",
+    "sendByEmail": "Ouvrir ma messagerie avec le lien",
+    "sendByEmailIn": "Ouvrir dans {client} avec le lien",
     "processing": "Clozer lit votre document pour adapter les réglages. Vous pouvez déjà l'envoyer.",
     "welcomeTitle": "Mot d'accueil",
     "welcomeHint": "Une vidéo ou un vocal pour présenter le document : le prospect voit votre bulle dès l'ouverture.",
@@ -299,9 +311,10 @@
     "preview": "Voir ce que verra le prospect",
     "sharedMode": "Smart Link : chaque lecteur est identifié par son email, donné par votre outil de cold email ou tapé à l'ouverture, et reçoit son propre lien.",
     "backToPersonal": "Revenir à un lien personnel",
-    "broadcastAsk": "Pour une séquence de cold email, ou à diffuser largement (post, signature) ?",
+    "broadcastAsk": "Pour le diffuser à plusieurs (post, signature, séquence lemlist) ?",
     "makeOpen": "En faire un Smart Link",
-    "makeOpenAfter": ", chaque lecteur sera identifié."
+    "makeOpenAfter": " : chaque lecteur sera identifié.",
+    "campaignAsk": "Pour une campagne depuis votre boîte : <link>Campagnes</link>."
   },
   "sharedReaders": {
     "empty": "Personne pour l'instant. Chaque lecteur apparaîtra ici avec son propre suivi.",

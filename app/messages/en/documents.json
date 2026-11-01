@@ -339,8 +339,7 @@
     "hottestPage": "Page {page} most read"
   },
   "links": {
-    "reads": "{count, plural, =1 {read} other {reads}}",
-    "followups": "Follow-ups"
+    "reads": "{count, plural, =1 {read} other {reads}}"
   },
   "recentReads": {
     "forDeal": "for {deal}"

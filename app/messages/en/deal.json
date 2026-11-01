@@ -3,6 +3,9 @@
     "metaTitleFallback": "Prospect",
     "theProspect": "The prospect",
     "autoNotice": "Recognized as “{docType}”: the prospect has until {date} and sees the countdown.",
+    "foldedReportLabel": "Reading report",
+    "foldedReportHint": "opens at the first read",
+    "foldedReportOpen": "Open the page",
     "pageTimeTitle": "Time per page, in detail",
     "pageTimeHintVideo": "on each segment of the video",
     "pageTimeHint": "total and average per read",
@@ -201,7 +204,12 @@
     "enabled": "Follow-ups on",
     "disabled": "Follow-ups off, pending ones cancelled",
     "failed": "Couldn't save the change",
-    "drivenByCampaign": "Follow-ups driven by campaign {name}"
+    "drivenByCampaign": "Follow-ups: campaign {name}",
+    "stateOn": "Follow-ups: to approve",
+    "stateAuto": "Follow-ups: automatic (Autopilot)",
+    "stateOff": "Follow-ups: off",
+    "turnOff": "turn off",
+    "turnOn": "turn on"
   },
   "linkSettingsForm": {
     "name": "Link name",
@@ -249,7 +257,8 @@
     "cycleHint": "“not opened” reminders, scheduled sends, overdue analyses"
   },
   "newLinkButton": {
-    "smartLabel": "Smart Link for cold email",
+    "smartLabel": "Smart Link (lemlist, post, signature)",
+    "campaignLabel": "Campaign from my mailbox",
     "defaultLabel": "A link for another prospect",
     "creating": "Creating…"
   },
@@ -275,6 +284,7 @@
     "copyFailed": "Couldn't copy: select the link by hand.",
     "liveShared": "It's live. Every new reader shows up here.",
     "sentPersonal": "It's out. You'll know as soon as they open it.",
+    "openedNoRecipient": "Someone already opened it. Say who it is for: Clozer can follow up.",
     "linkCopied": "Link copied",
     "ready": "Your link is ready",
     "pasteAndSend": "Paste it into your message and send it. Tracking starts as soon as they open it.",
@@ -282,16 +292,18 @@
     "sharedIntro": "Put it in your cold email sequence, or post it: each reader is identified and gets their own link, tracked like your other prospects.",
     "personalIntro": "They open it and read right away, nothing to fill in. You'll see which pages, for how long, and when to follow up.",
     "forRecipient": "For <b>{email}</b>",
-    "whoLabel": "Who is this link for?",
+    "whoLabel": "Who is it for?",
     "optional": "(optional)",
     "whoPlaceholder": "Jane Smith, Acme or jane@acme.com",
-    "save": "Save",
-    "whoHint": "With an email, Clozer can follow up for you.",
+    "save": "Save the recipient",
+    "whoHint": "With their email, Clozer follows up for you.",
+    "whoHintOff": "Follow-ups are off for this link: the email names the prospect.",
     "noEmailHint": "Without an email, Clozer can't follow up.",
     "copyTitle": "Copy the link",
     "copied": "Copied",
     "copyLink": "Copy link",
-    "sendByEmail": "Send by email",
+    "sendByEmail": "Open my mail app with the link",
+    "sendByEmailIn": "Open in {client} with the link",
     "processing": "Clozer is reading your document to tune the settings. You can already send it.",
     "welcomeTitle": "Welcome message",
     "welcomeHint": "A video or a voice note to introduce the document: the prospect sees your bubble on opening.",
@@ -299,9 +311,10 @@
     "preview": "See what the prospect will see",
     "sharedMode": "Smart Link: each reader is identified by their email, given by your cold email tool or typed when they open it, and gets their own link.",
     "backToPersonal": "Back to a personal link",
-    "broadcastAsk": "For a cold email sequence, or to share widely (post, signature)?",
+    "broadcastAsk": "Sharing it widely (post, signature, lemlist sequence)?",
     "makeOpen": "Make it a Smart Link",
-    "makeOpenAfter": ", each reader will be identified."
+    "makeOpenAfter": ": every reader gets identified.",
+    "campaignAsk": "For a campaign from your mailbox: <link>Campaigns</link>."
   },
   "sharedReaders": {
     "empty": "Nobody yet. Each reader will show up here with their own tracking.",

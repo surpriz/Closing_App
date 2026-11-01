@@ -46,6 +46,8 @@
     "pages": {
       "today": "Today",
       "documents": "Documents",
+      "results": "Results",
+      "campaigns": "Campaigns",
       "howItWorks": "How it works",
       "settings": "Settings",
       "onboarding": "Getting started",
@@ -72,5 +74,12 @@
     "inputAria": "Your question or idea",
     "send": "Send",
     "disclaimer": "Automatic answers, the assistant can get things wrong. Nothing is passed on without your OK."
+  },
+  "newMenu": {
+    "label": "New",
+    "send": "A send",
+    "sendHint": "document or link",
+    "campaign": "A campaign",
+    "campaignHint": "from your mailbox"
   }
 }

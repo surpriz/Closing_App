@@ -23,6 +23,7 @@ export function MailToolTip({
   mailbox,
   action,
   returnTo,
+  inline = false,
 }: {
   tool: MailToolTipKind;
   /** "Gmail" or "Outlook", for the Chrome extension. */
@@ -31,13 +32,21 @@ export function MailToolTip({
   action?: React.ReactNode;
   /** Where the setup step's "Terminé" leads back to: the page the tip sits on. */
   returnTo?: string;
+  /** Inside another frame (the share screen): no border or background of its own. */
+  inline?: boolean;
 }) {
   const t = useTranslations("onboarding.mailToolTip");
   const [hidden, setHidden] = useState(false);
   if (hidden) return null;
 
   return (
-    <aside className="flex items-start gap-3 border-y border-border bg-card px-4 py-3">
+    <aside
+      className={
+        inline
+          ? "flex items-start gap-3 border-t border-border pt-3"
+          : "flex items-start gap-3 border-y border-border bg-card px-4 py-3"
+      }
+    >
       <Paperclip className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
       <div className="min-w-0 flex-1 space-y-2">
         <p className="text-body">{t(COPY_KEY[tool], { mailbox })}</p>

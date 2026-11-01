@@ -15,12 +15,15 @@ export async function ShareMailToolTip({
   organizationId,
   prefs,
   returnTo,
+  inline = false,
 }: {
   user: { id: string; email: string };
   organizationId: string;
   prefs: Pick<StoredPrefs, "mailClient" | "mailToolTipHiddenAt">;
   /** The share screen it sits under, for the setup step's way back. */
   returnTo: string;
+  /** Rendered inside the share screen's own frame. */
+  inline?: boolean;
 }) {
   if (prefs.mailToolTipHiddenAt) return null;
   const tokens = await prisma.extensionToken.findMany({
@@ -33,7 +36,9 @@ export async function ShareMailToolTip({
   if (!tool || (tool === "chrome" && !getEnv().EXTENSION_STORE_URL)) return null;
   const mailbox = client === "gmail" ? "Gmail" : "Outlook";
   if (tool === "chrome") {
-    return <ChromeMailToolTip probe={extensionProbe(user.email, tokens)} mailbox={mailbox} returnTo={returnTo} />;
+    return (
+      <ChromeMailToolTip probe={extensionProbe(user.email, tokens)} mailbox={mailbox} returnTo={returnTo} inline={inline} />
+    );
   }
-  return <MailToolTip tool={tool} mailbox={mailbox} returnTo={returnTo} />;
+  return <MailToolTip tool={tool} mailbox={mailbox} returnTo={returnTo} inline={inline} />;
 }
