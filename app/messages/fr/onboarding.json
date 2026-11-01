@@ -25,7 +25,7 @@
     }
   },
   "wizard": {
-    "skip": "Passer",
+    "skip": "Passer, aller au tableau de bord",
     "stepsAria": "Étapes",
     "back": "Retour",
     "continueWithDocument": "Continuer avec ce document",
@@ -171,7 +171,7 @@
     "title": "Maintenant, pour de vrai.",
     "lead": "Au quotidien, vous vendez comme avant. Clozer fait le suivi.",
     "sendTitle": "Vous envoyez le lien à votre prospect",
-    "sendBody": "Copiez le lien de votre document et collez-le dans votre email, à la place de la pièce jointe. Ou cliquez sur « Envoyer par email » : le message est déjà prêt.",
+    "sendBody": "Copiez le lien de votre document et collez-le dans votre email, à la place de la pièce jointe, ou cliquez sur « Envoyer par email ». À plusieurs prospects d'un coup ? Campagnes, depuis votre boîte.",
     "alertTitle": "Vous êtes prévenu quand il lit",
     "alertBody": "Par email, et en direct sur votre tableau de bord. C'est le bon moment pour appeler.",
     "approveTitle": "Vous validez les relances",

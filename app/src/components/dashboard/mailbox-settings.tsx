@@ -1,5 +1,7 @@
 "use client";
 
+import { Plus } from "lucide-react";
+
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
@@ -618,6 +620,9 @@ export function MailboxSettings({
 }) {
   const t = useTranslations("settings.mailbox");
   const [reconnect, setReconnect] = useState<{ email: string; mailboxId: string; n: number } | null>(null);
+  // The connect form opens by itself when there is no mailbox or a reconnect; otherwise it waits behind a button (D5)
+  const [showConnect, setShowConnect] = useState(false);
+  const formOpen = mailboxes.length === 0 || reconnect !== null || showConnect;
   // The banner lives in state so the query flags can be stripped from the URL without losing it.
   const [shownFlash] = useState(flash);
   const [initialActive] = useState(() => new Set(mailboxes.filter((m) => m.status === "ACTIVE").map((m) => m.id)));
@@ -648,11 +653,20 @@ export function MailboxSettings({
             ))}
           </ul>
         )}
-        <ConnectForm
-          key={reconnect?.n ?? 0}
-          availability={availability}
-          prefill={reconnect ? { email: reconnect.email, mailboxId: reconnect.mailboxId } : null}
-        />
+        {formOpen ? (
+          <ConnectForm
+            key={reconnect?.n ?? 0}
+            availability={availability}
+            prefill={reconnect ? { email: reconnect.email, mailboxId: reconnect.mailboxId } : null}
+          />
+        ) : (
+          <div className="border-t border-border px-5 py-3">
+            <Button variant="outline" size="sm" onClick={() => setShowConnect(true)}>
+              <Plus />
+              {t("addAnother")}
+            </Button>
+          </div>
+        )}
       </div>
     </section>
   );
