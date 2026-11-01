@@ -44,6 +44,7 @@ import type { DocType } from "@/lib/closing/documents/doc-types";
 import { showsCountdown } from "@/lib/closing/expiry";
 import { firstNameOf, guessMailClient } from "@/lib/closing/share/compose";
 import { followupsEmptyHint } from "@/lib/closing/followups/empty-hint";
+import { isOutreachAllowed } from "@/lib/outreach/flag";
 import { settingsSummary } from "@/lib/closing/share/summary";
 import type { SmartLinkProblem } from "@/lib/closing/shared/smart-params";
 import { sequencerWebhookUrl } from "@/lib/closing/sequencer/apply";
@@ -167,15 +168,21 @@ export default async function LinkDetailPage({
             : null
         }
         settings={deal.settingsPanel}
+        opened={deal.opened}
+        followupsEnabled={link.followupsEnabled}
+        campaigns={isOutreachAllowed(workspace.user, workspace.organization.id)}
+        mailTip={
+          deal.sellerPrefs && (
+            <ShareMailToolTip
+              user={workspace.user}
+              organizationId={workspace.organization.id}
+              prefs={deal.sellerPrefs}
+              returnTo={`/links/${link.id}`}
+              inline
+            />
+          )
+        }
       />
-      {deal.sellerPrefs && (
-        <ShareMailToolTip
-          user={workspace.user}
-          organizationId={workspace.organization.id}
-          prefs={deal.sellerPrefs}
-          returnTo={`/links/${link.id}`}
-        />
-      )}
     </div>
   );
   const refresh = deal.sharing && deal.reading && <AutoRefresh intervalMs={3000} />;

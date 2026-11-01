@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { composeUrl, firstNameOf, guessMailClient, parseShareRecipient, shareDraft } from "./compose";
+import { composeUrl, firstNameOf, guessMailClient, mailClientLabel, parseShareRecipient, shareDraft } from "./compose";
 
 const draft = shareDraft({ url: "https://clozer.app/v/abc", title: "Devis Acme", to: "marie@acme.com", firstName: "Marie" });
 
@@ -60,5 +60,18 @@ describe("guessMailClient", () => {
     expect(guessMailClient("paul@gmail.com")).toBe("gmail");
     expect(guessMailClient("paul@hotmail.fr")).toBe("outlook_web");
     expect(guessMailClient("paul@acme.com")).toBeNull();
+  });
+});
+
+describe("mailClientLabel", () => {
+  it("names Gmail and Outlook as the seller knows them", () => {
+    expect(mailClientLabel("gmail")).toBe("Gmail");
+    expect(mailClientLabel("outlook_web")).toBe("Outlook");
+    expect(mailClientLabel("outlook_desktop")).toBe("Outlook");
+  });
+
+  it("has no name for an unknown or missing client", () => {
+    expect(mailClientLabel("apple_mail")).toBeNull();
+    expect(mailClientLabel(null)).toBeNull();
   });
 });

@@ -77,3 +77,10 @@ export function guessMailClient(email: string | null | undefined) {
   if (/^(outlook|hotmail|live|msn)\.[a-z.]+$/.test(domain)) return "outlook_web";
   return null;
 }
+
+/** The mail client as the seller names it, for "Open in Gmail": null when there is no known app. */
+export function mailClientLabel(client: string | null): "Gmail" | "Outlook" | null {
+  if (client === "gmail") return "Gmail";
+  if (client === "outlook_web" || client === "outlook_desktop") return "Outlook";
+  return null;
+}

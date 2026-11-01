@@ -9,6 +9,7 @@ import {
   Sparkles,
   Users,
 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import {
@@ -28,7 +29,8 @@ import {
 } from "@/app/(dashboard)/links/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { composeUrl, parseShareRecipient, shareDraft } from "@/lib/closing/share/compose";
+import { composeUrl, mailClientLabel, parseShareRecipient, shareDraft } from "@/lib/closing/share/compose";
+import { shareHeading } from "@/lib/closing/share/heading";
 import { cn } from "@/lib/utils";
 
 import { LinkSettingsPanel } from "./link-settings-panel";
@@ -52,6 +54,10 @@ export function ShareReady({
   shared,
   welcome,
   settings,
+  opened = false,
+  followupsEnabled = true,
+  campaigns = false,
+  mailTip = null,
 }: {
   linkId: string;
   url: string;
@@ -74,10 +80,19 @@ export function ShareReady({
   /** The seller's video or voice message, optional. */
   welcome: ReactNode;
   settings: ComponentProps<typeof LinkSettingsPanel>;
+  /** A reader already opened it: the title asks who it is for when nobody is named. */
+  opened?: boolean;
+  /** Clozer prepares follow-ups on this link: the recipient hint says what the email is for. */
+  followupsEnabled?: boolean;
+  /** Campaigns are open to this workspace: the broadcast line also points at them. */
+  campaigns?: boolean;
+  /** The extension / add-in tip, rendered inside this frame. */
+  mailTip?: ReactNode;
 }) {
   const router = useRouter();
   const t = useTranslations("deal.shareReady");
   const locale = useLocale();
+  const clientLabel = mailClientLabel(mailClient);
   const [copied, setCopied] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [who, setWho] = useState("");
@@ -152,13 +167,7 @@ export function ShareReady({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-1">
           <h2 className="text-heading">
-            {sent
-              ? shared
-                ? t("liveShared")
-                : t("sentPersonal")
-              : wasCopied
-                ? t("linkCopied")
-                : t("ready")}
+            {t(shareHeading({ sent, shared, wasCopied, opened, hasRecipient: !!recipient }))}
           </h2>
           {!sent && wasCopied && (
             <div className="flex max-w-xl flex-wrap items-center gap-x-3 gap-y-2">
@@ -216,7 +225,11 @@ export function ShareReady({
           </div>
           {/* Follow-ups need an email: say so while it can still be typed */}
           <p className="text-small text-muted-foreground">
-            {who.trim() && !parseShareRecipient(who).email ? t("noEmailHint") : t("whoHint")}
+            {!followupsEnabled
+              ? t("whoHintOff")
+              : who.trim() && !parseShareRecipient(who).email
+                ? t("noEmailHint")
+                : t("whoHint")}
           </p>
         </form>
       )}
@@ -236,7 +249,7 @@ export function ShareReady({
         </Button>
         <Button size="lg" variant="outline" onClick={sendByEmail}>
           <Mail />
-          {t("sendByEmail")}
+          {clientLabel ? t("sendByEmailIn", { client: clientLabel }) : t("sendByEmail")}
         </Button>
       </div>
 
@@ -253,7 +266,39 @@ export function ShareReady({
         </p>
       )}
 
-      <div className="space-y-2 border-t border-border pt-4">
+      {/* What the prospect will meet: read as text, changed behind one button */}
+      <div className="space-y-4 border-t border-border pt-4">
+        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-2 text-small">
+          <ul className="contents">
+            {summary.map((item) => (
+              <li
+                key={item}
+                className="rounded-sm bg-muted px-2 py-0.5 text-muted-foreground"
+              >
+                {item}
+              </li>
+            ))}
+          </ul>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setShowSettings((open) => !open)}
+            aria-expanded={showSettings}
+          >
+            {t("customize")}
+            <ChevronDown
+              className={cn(
+                "size-4 transition-transform",
+                showSettings && "rotate-180",
+              )}
+              aria-hidden
+            />
+          </Button>
+        </div>
+        {showSettings && <LinkSettingsPanel {...settings} />}
+      </div>
+
+      <div className="space-y-2">
         <p className="text-body font-medium">
           {t("welcomeTitle")}{" "}
           <span className="font-normal text-muted-foreground">
@@ -264,35 +309,6 @@ export function ShareReady({
           {t("welcomeHint")}
         </p>
         {welcome}
-      </div>
-
-      <div className="space-y-4">
-        <button
-          type="button"
-          onClick={() => setShowSettings((open) => !open)}
-          aria-expanded={showSettings}
-          className="flex w-full flex-wrap items-center gap-x-1.5 gap-y-1 text-left text-small"
-        >
-          {summary.map((item) => (
-            <span
-              key={item}
-              className="rounded-sm bg-muted px-2 py-0.5 text-muted-foreground"
-            >
-              {item}
-            </span>
-          ))}
-          <span className="inline-flex items-center gap-1 px-1 text-muted-foreground hover:text-foreground">
-            {t("customize")}
-            <ChevronDown
-              className={cn(
-                "size-4 transition-transform",
-                showSettings && "rotate-180",
-              )}
-              aria-hidden
-            />
-          </span>
-        </button>
-        {showSettings && <LinkSettingsPanel {...settings} />}
       </div>
 
       <a
@@ -334,11 +350,26 @@ export function ShareReady({
                   {t("makeOpen")}
                 </button>
                 {t("makeOpenAfter")}
+                {campaigns && (
+                  <>
+                    {" "}
+                    {t.rich("campaignAsk", {
+                      link: (chunks) => (
+                        <Link href="/campaigns" className="font-medium text-foreground underline underline-offset-4">
+                          {chunks}
+                        </Link>
+                      ),
+                    })}
+                  </>
+                )}
               </>
             )}
           </span>
         </p>
       )}
+
+      {/* The extension would paste the link for them next time: one line, same frame */}
+      {mailTip && <div className="border-t border-border pt-3">{mailTip}</div>}
     </section>
   );
 }
