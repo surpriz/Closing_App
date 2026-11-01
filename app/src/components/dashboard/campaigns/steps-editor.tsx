@@ -170,6 +170,7 @@ export function StepsEditor({
   return (
     <div className="space-y-5">
       <p className="text-small text-muted-foreground">{t("description")}</p>
+      <p className="text-small text-muted-foreground">{t("test.hint")}</p>
 
       <ol className="space-y-5">
         {steps.map((step) => {
@@ -226,11 +227,11 @@ export function StepsEditor({
 
               {hasSubject ? (
                 <div className="space-y-1.5">
-                  <label htmlFor={`${step.key}-subject`} className="text-small font-medium">
+                  <label htmlFor={`step-${step.order}-subject`} className="text-small font-medium">
                     {t("subject")}
                   </label>
                   <Input
-                    id={`${step.key}-subject`}
+                    id={`step-${step.order}-subject`}
                     value={step.subject ?? ""}
                     maxLength={200}
                     onChange={(event) => patch(step.key, { subject: event.target.value })}
@@ -242,11 +243,11 @@ export function StepsEditor({
               )}
 
               <div className="space-y-1.5">
-                <label htmlFor={`${step.key}-body`} className="text-small font-medium">
+                <label htmlFor={`step-${step.order}-body`} className="text-small font-medium">
                   {t("body")}
                 </label>
                 <Textarea
-                  id={`${step.key}-body`}
+                  id={`step-${step.order}-body`}
                   ref={(element) => {
                     bodyRefs.current[step.key] = element;
                   }}
@@ -327,7 +328,6 @@ export function StepsEditor({
                     </Button>
                     {dirty && <span className="text-small text-muted-foreground">{t("saveFirst")}</span>}
                   </div>
-                  <p className="text-small text-muted-foreground">{t("test.hint")}</p>
                 </div>
               )}
             </li>
