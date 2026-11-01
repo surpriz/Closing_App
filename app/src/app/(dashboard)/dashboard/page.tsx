@@ -27,7 +27,7 @@ import {
   type UnopenedRow,
   type TodoRow,
 } from "@/components/dashboard/today/todo-list";
-import { buildTodayHeadline } from "@/components/dashboard/today-headline";
+import { buildTodayHeadline, focusLabel } from "@/components/dashboard/today-headline";
 import { UploadDropzone } from "@/components/dashboard/upload-dropzone";
 import { INTL_LOCALE, type UiLocale } from "@/i18n/locale";
 import { getAppOrigin } from "@/lib/app-origin";
@@ -302,7 +302,10 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
       ? formatRelative(upcomingFollowups[0].scheduledFor, locale, now)
       : null,
     aiFocus: focus
-      ? { label: focus.label, headline: focus.insightHeadline! }
+      ? {
+          label: focusLabel({ label: focus.label, company: focus.company, headline: focus.insightHeadline! }),
+          headline: focus.insightHeadline!,
+        }
       : null,
     draftsToReview,
     readyLinks: readyLinks.length

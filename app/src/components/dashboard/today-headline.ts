@@ -32,6 +32,16 @@ export type TodayHeadlineInput = {
 
 export type TodayHeadline = { headline: string; hint: string };
 
+/**
+ * The label in front of the analysis headline: "Waltio · Thomas · Thomas se dit intéressé" says the
+ * name twice, so when the headline opens with the person, the label keeps the company alone.
+ */
+export function focusLabel(input: { label: string; company: string | null; headline: string }): string {
+  const person = input.label.split(" · ").slice(1).join(" · ").trim();
+  if (!input.company || !person) return input.label;
+  return input.headline.trim().toLowerCase().startsWith(person.toLowerCase()) ? input.company : input.label;
+}
+
 function draftsHint(t: AppT, input: TodayHeadlineInput) {
   const drafts = input.draftsToReview ?? 0;
   if (drafts === 0) return null;
