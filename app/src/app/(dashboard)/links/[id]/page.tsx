@@ -193,6 +193,25 @@ export default async function LinkDetailPage({
     <AutoRefresh intervalMs={deal.reading ? 3000 : 15000} />
   );
 
+  // The follow-up to approve is the day's action: when the next action says so, it comes before the report
+  const followupsFirst = deal.nextAction.kind === "review_draft";
+  const followupsSection = (
+    <DealSection id="relances" title={t("followupsTitle")}>
+      <div className="pt-4">
+        <FollowupsPanel
+          followups={deal.followupItems}
+          seller={settings.senderName}
+          mailClient={deal.sellerPrefs?.mailClient ?? guessMailClient(workspace.user.email)}
+          emptyHint={
+            emptyHintKey
+              ? tPanel(emptyHintKey, { name: deal.campaign?.name ?? "" })
+              : null
+          }
+        />
+      </div>
+    </DealSection>
+  );
+
   return (
     <div className="space-y-10">
       {share}
@@ -247,6 +266,7 @@ export default async function LinkDetailPage({
 
       {/* Disables every form and button below for a read-only visit */}
       <fieldset disabled={!canEdit} className="min-w-0 space-y-12">
+        {followupsFirst && followupsSection}
         <LiveActivity
           key={deal.live.stamp}
           linkId={link.id}
@@ -299,20 +319,7 @@ export default async function LinkDetailPage({
               }}
             />
 
-            <DealSection id="relances" title={t("followupsTitle")}>
-              <div className="pt-4">
-                <FollowupsPanel
-                  followups={deal.followupItems}
-                  seller={settings.senderName}
-                  mailClient={deal.sellerPrefs?.mailClient ?? guessMailClient(workspace.user.email)}
-                  emptyHint={
-                    emptyHintKey
-                      ? tPanel(emptyHintKey, { name: deal.campaign?.name ?? "" })
-                      : null
-                  }
-                />
-              </div>
-            </DealSection>
+            {!followupsFirst && followupsSection}
 
             {deal.transcript.length > 0 && (
               <DealSection
