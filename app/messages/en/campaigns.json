@@ -215,7 +215,7 @@
     "sampleFile": "prospects-sample.csv",
     "columns": "Recognized columns: {columns}. Country or timezone are optional; the other columns become variables.",
     "limit": "{max, number} rows at most.",
-    "personal": "Personal addresses are accepted but flagged.",
+    "personal": "Personal addresses (gmail, hotmail…) are accepted but flagged: B2C sending needs consent.",
     "submit": "Import",
     "importing": "Importing…",
     "errors": {
@@ -291,7 +291,8 @@
       "suppressed": "on the stop list",
       "archived": "campaign archived",
       "missingVariable": "missing variable: {name}",
-      "interrupted": "send interrupted: check your Sent folder"
+      "interrupted": "send interrupted: check your Sent folder",
+      "callMoment": "time to call, a Clozer follow-up waits for you"
     },
     "resumeTitle": "Resume this prospect?",
     "resumeInterrupted": "The last email to {email} was interrupted: it may have left already. Check your Sent folder before resuming, otherwise the prospect could receive it twice.",
@@ -316,7 +317,8 @@
       "scheduled": "Scheduled {date}",
       "sent": "Sent {date}"
     },
-    "pricingHint": "a prospect who reads the pricing for {seconds} s or more pauses their sequence: Clozer alerts you and drafts the follow-up"
+    "pricingHint": "a prospect who reads the pricing for {seconds} s or more pauses their sequence: Clozer alerts you and drafts the follow-up",
+    "actionsMenu": "Actions for {email}"
   },
   "testTools": {
     "title": "Test tools",
@@ -333,7 +335,11 @@
     "simulateApply": "Record",
     "evaluate": "Evaluate the reading",
     "evaluateApply": "Evaluate",
-    "noLinkOption": "no link"
+    "noLinkOption": "no link",
+    "tickSummary": "{sent, plural, =0 {Nothing sent} one {# sent} other {# sent}}, {rescheduled, plural, =0 {none scheduled for tomorrow} one {# scheduled for tomorrow} other {# scheduled for tomorrow}}, {failed, plural, =0 {no failure} one {# failure} other {# failures}}.",
+    "tickNothing": "Nothing to do: no send is due right now.",
+    "tickDetail": "Details",
+    "help": "Staging tools: « Faire avancer » skips a prospect's delays, « Vieillir la boîte » lifts the ramp-up."
   },
   "detail": {
     "readOnly": "A teammate created this campaign: you can read it but not change it."

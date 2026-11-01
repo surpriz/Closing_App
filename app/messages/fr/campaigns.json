@@ -215,7 +215,7 @@
     "sampleFile": "prospects-exemple.csv",
     "columns": "Colonnes reconnues : {columns}. Le pays ou le fuseau sont facultatifs ; les autres colonnes deviennent des variables.",
     "limit": "{max, number} lignes au maximum.",
-    "personal": "Les adresses personnelles sont acceptées mais signalées.",
+    "personal": "Les adresses personnelles (gmail, hotmail…) sont acceptées mais signalées : en B2C, l'envoi suppose un consentement.",
     "submit": "Importer",
     "importing": "Import…",
     "errors": {
@@ -291,7 +291,8 @@
       "suppressed": "sur la liste d'arrêt",
       "archived": "campagne archivée",
       "missingVariable": "variable manquante : {name}",
-      "interrupted": "envoi interrompu : vérifiez vos éléments envoyés"
+      "interrupted": "envoi interrompu : vérifiez vos éléments envoyés",
+      "callMoment": "moment d'appeler, relance Clozer à valider"
     },
     "resumeTitle": "Reprendre ce prospect ?",
     "resumeInterrupted": "Le dernier email à {email} a été interrompu : il est peut-être déjà parti. Vérifiez vos éléments envoyés avant de reprendre, sinon le prospect pourrait le recevoir deux fois.",
@@ -316,7 +317,8 @@
       "scheduled": "Programmée {date}",
       "sent": "Envoyée {date}"
     },
-    "pricingHint": "un prospect qui lit les tarifs {seconds} s ou plus met sa séquence en pause : Clozer vous alerte et prépare la relance"
+    "pricingHint": "un prospect qui lit les tarifs {seconds} s ou plus met sa séquence en pause : Clozer vous alerte et prépare la relance",
+    "actionsMenu": "Actions pour {email}"
   },
   "testTools": {
     "title": "Outils de test",
@@ -333,7 +335,11 @@
     "simulateApply": "Enregistrer",
     "evaluate": "Évaluer la lecture",
     "evaluateApply": "Évaluer",
-    "noLinkOption": "sans lien"
+    "noLinkOption": "sans lien",
+    "tickSummary": "{sent, plural, =0 {Aucun envoi} one {# envoyé} other {# envoyés}}, {rescheduled, plural, =0 {aucun planifié demain} one {# planifié demain} other {# planifiés demain}}, {failed, plural, =0 {aucun échec} one {# échec} other {# échecs}}.",
+    "tickNothing": "Rien à faire : aucun envoi dû pour l'instant.",
+    "tickDetail": "Détail",
+    "help": "Outils de staging : « Faire avancer » saute les délais d'un prospect, « Vieillir la boîte » lève la montée progressive."
   },
   "detail": {
     "readOnly": "Cette campagne a été créée par un collègue : vous pouvez la consulter mais pas la modifier."

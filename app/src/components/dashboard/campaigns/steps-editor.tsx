@@ -170,6 +170,7 @@ export function StepsEditor({
   return (
     <div className="space-y-5">
       <p className="text-small text-muted-foreground">{t("description")}</p>
+      <p className="text-small text-muted-foreground">{t("test.hint")}</p>
 
       <ol className="space-y-5">
         {steps.map((step) => {
@@ -327,7 +328,6 @@ export function StepsEditor({
                     </Button>
                     {dirty && <span className="text-small text-muted-foreground">{t("saveFirst")}</span>}
                   </div>
-                  <p className="text-small text-muted-foreground">{t("test.hint")}</p>
                 </div>
               )}
             </li>
