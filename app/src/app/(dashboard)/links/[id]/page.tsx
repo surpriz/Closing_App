@@ -44,6 +44,7 @@ import { dealLabel, linkLabelSelect } from "@/lib/closing/dashboard/labels";
 import type { DocType } from "@/lib/closing/documents/doc-types";
 import { showsCountdown } from "@/lib/closing/expiry";
 import { firstNameOf, guessMailClient } from "@/lib/closing/share/compose";
+import { DEAL_ANCHORS } from "@/lib/closing/dashboard/deal-cta";
 import { followupsEmptyHint } from "@/lib/closing/followups/empty-hint";
 import { isOutreachAllowed } from "@/lib/outreach/flag";
 import { settingsSummary } from "@/lib/closing/share/summary";
@@ -402,7 +403,13 @@ export default async function LinkDetailPage({
             )}
 
             {/* An empty form on every page is weight: one click opens it (D2) */}
-            <DealFold id="noter" title={t("logTitle")} hint={t("logHint")}>
+            <DealFold
+              id="noter"
+              title={t("logTitle")}
+              hint={t("logHint")}
+              // Folded by default (D2), open when the day's action is to log an exchange
+              open={deal.cta?.kind === "href" && deal.cta.href === DEAL_ANCHORS.log}
+            >
               <SellerActivityForm linkId={link.id} />
             </DealFold>
 

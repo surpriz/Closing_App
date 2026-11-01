@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { FollowupStatus } from "@/generated/prisma/enums";
 import { copyMessage } from "@/lib/clipboard";
+import { followupDueNow } from "@/lib/closing/followups/due";
 import { buildMailto } from "@/lib/closing/followups/mailto";
 import { mailClientLabel } from "@/lib/closing/share/compose";
 import { followupSenderLabel } from "@/lib/closing/followups/sender";
@@ -171,6 +172,7 @@ function DraftEditor({ followup: f, mailClient }: { followup: FollowupItem; mail
 
   const dirty = subject !== (f.subject ?? "") || body !== (f.body ?? "");
   const isEmail = f.channel === "EMAIL";
+  const dueNow = followupDueNow(f.scheduledFor, new Date());
   const when = formatInTimeZone(f.scheduledFor, f.timezone, locale);
   const clientLabel = mailClientLabel(mailClient);
   const mailto = isEmail ? buildMailto({ to: f.recipientEmail, subject: subject || null, body }) : null;
@@ -257,9 +259,13 @@ function DraftEditor({ followup: f, mailClient }: { followup: FollowupItem; mail
           <Button
             size="sm"
             disabled={pending}
-            onClick={() => run(async () => toastResult(await approveFollowup(f.id), t("approvedAt", { date: when })))}
+            onClick={() =>
+              run(async () =>
+                toastResult(await approveFollowup(f.id), dueNow ? t("approvedNow") : t("approvedAt", { date: when })),
+              )
+            }
           >
-            {t("approveAt", { date: when })}
+            {dueNow ? t("approveNow") : t("approveAt", { date: when })}
           </Button>
         )}
         <Button
