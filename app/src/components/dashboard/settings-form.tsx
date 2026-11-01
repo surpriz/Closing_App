@@ -88,7 +88,7 @@ function Section({
     <section id={id} className="scroll-mt-24 space-y-3">
       <div className="space-y-1">
         <h2 className="text-heading">{title}</h2>
-        <p className="text-body text-muted-foreground">{description}</p>
+        <p className="max-w-prose text-body text-muted-foreground">{description}</p>
         {locked && (
           <p className="text-small text-muted-foreground">{t("lockedNote")}</p>
         )}
@@ -113,7 +113,7 @@ function Row({
   return (
     <div className="space-y-1.5 px-5 py-4">
       <div className="text-body leading-9">{children}</div>
-      {hint && <p className="text-small text-muted-foreground">{hint}</p>}
+      {hint && <p className="max-w-prose text-small text-muted-foreground">{hint}</p>}
     </div>
   );
 }
