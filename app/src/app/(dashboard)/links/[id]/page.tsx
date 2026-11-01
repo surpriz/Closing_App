@@ -304,6 +304,7 @@ export default async function LinkDetailPage({
                 <FollowupsPanel
                   followups={deal.followupItems}
                   seller={settings.senderName}
+                  mailClient={deal.sellerPrefs?.mailClient ?? guessMailClient(workspace.user.email)}
                   emptyHint={
                     emptyHintKey
                       ? tPanel(emptyHintKey, { name: deal.campaign?.name ?? "" })
