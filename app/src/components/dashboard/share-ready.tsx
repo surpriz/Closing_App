@@ -169,7 +169,7 @@ export function ShareReady({
           <h2 className="text-heading">
             {t(shareHeading({ sent, shared, wasCopied, opened, hasRecipient: !!recipient }))}
           </h2>
-          {!sent && wasCopied && (
+          {!sent && wasCopied && !opened && (
             <div className="flex max-w-xl flex-wrap items-center gap-x-3 gap-y-2">
               <p className="text-body text-muted-foreground">
                 {t("pasteAndSend")}
@@ -180,7 +180,7 @@ export function ShareReady({
               </Button>
             </div>
           )}
-          {!sent && !wasCopied && (
+          {!sent && !wasCopied && !opened && (
             <p className="max-w-xl text-body text-muted-foreground">
               {shared
                 ? t("sharedIntro")
@@ -368,8 +368,8 @@ export function ShareReady({
         </p>
       )}
 
-      {/* The extension would paste the link for them next time: one line, same frame */}
-      {mailTip && <div className="border-t border-border pt-3">{mailTip}</div>}
+      {/* The extension would paste the link for them next time: one line, same frame (its own rule, so nothing shows when it renders null) */}
+      {mailTip}
     </section>
   );
 }

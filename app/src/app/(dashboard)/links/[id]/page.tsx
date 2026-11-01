@@ -188,7 +188,10 @@ export default async function LinkDetailPage({
   );
   // D1: a link just created and never read is a send screen; the report opens itself at the first read
   const foldReport = justCreated && deal.sharing && !deal.opened;
-  const refresh = deal.sharing && (deal.reading || foldReport) && <AutoRefresh intervalMs={3000} />;
+  // Reading the document polls fast and briefly; waiting for a first read polls slowly, until it comes
+  const refresh = deal.sharing && (deal.reading || foldReport) && (
+    <AutoRefresh intervalMs={deal.reading ? 3000 : 15000} />
+  );
 
   return (
     <div className="space-y-10">

@@ -489,6 +489,17 @@ export function UploadButton({
 
   return (
     <>
+      {/* Without its own button, the import still shows its progress where that button stood */}
+      {!trigger && source.busy && (
+        <Button disabled aria-live="polite" className="max-sm:size-9 max-sm:px-0">
+          <Plus />
+          <span className="max-sm:sr-only">
+            {source.uploading
+              ? t("importProgress", { percent: Math.round(source.progress ?? 0) })
+              : t("addingLink")}
+          </span>
+        </Button>
+      )}
       <Dialog open={open} onOpenChange={setOpen}>
         {trigger && (
           <DialogTrigger

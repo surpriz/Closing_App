@@ -15,6 +15,9 @@ describe("shareHeading", () => {
 
   it("asks who the link is for when a reader opened it before a recipient was named", () => {
     expect(shareHeading({ ...base, sent: true, opened: true })).toBe("openedNoRecipient");
+    // The everyday path: copied, pasted, opened by the prospect before the seller confirmed the send
+    expect(shareHeading({ ...base, wasCopied: true, opened: true })).toBe("openedNoRecipient");
+    expect(shareHeading({ ...base, opened: true })).toBe("openedNoRecipient");
   });
 
   it("says it went out when sent to a named recipient", () => {

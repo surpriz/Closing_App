@@ -40,7 +40,13 @@ export function MailToolTip({
   if (hidden) return null;
 
   return (
-    <aside className={inline ? "flex items-start gap-3" : "flex items-start gap-3 border-y border-border bg-card px-4 py-3"}>
+    <aside
+      className={
+        inline
+          ? "flex items-start gap-3 border-t border-border pt-3"
+          : "flex items-start gap-3 border-y border-border bg-card px-4 py-3"
+      }
+    >
       <Paperclip className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
       <div className="min-w-0 flex-1 space-y-2">
         <p className="text-body">{t(COPY_KEY[tool], { mailbox })}</p>

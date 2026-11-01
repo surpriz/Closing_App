@@ -13,7 +13,8 @@ export function shareHeading(s: {
   hasRecipient: boolean;
 }): ShareHeading {
   if (s.sent && s.shared) return "liveShared";
-  if (s.sent && s.opened && !s.hasRecipient) return "openedNoRecipient";
+  // A prospect's first view does not mark a personal link sent: the opening itself is the news
+  if (s.opened && !s.shared && !s.hasRecipient) return "openedNoRecipient";
   if (s.sent) return "sentPersonal";
   if (s.wasCopied) return "linkCopied";
   return "ready";
