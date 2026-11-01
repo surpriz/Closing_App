@@ -101,12 +101,14 @@ export function DealVerdict({
         )}
       </div>
 
+      {/* One fold for the whole reading: the score, then the analysis when there is one (D9) */}
       <details className="group border-t border-border">
         <summary className={detailsSummary}>
           <ChevronRight className="size-4 transition-transform group-open:rotate-90" aria-hidden />
-          {t("whyTemperature")}
+          {insight ? t("details") : t("whyTemperature")}
         </summary>
         <div className="space-y-4 pb-4">
+          {insight && <h3 className="text-small font-medium">{t("whyTemperature")}</h3>}
           {score ? (
             <>
               <p className="text-small text-muted-foreground">
@@ -138,15 +140,8 @@ export function DealVerdict({
           )}
           <ScoreGuide {...scoreGuide} />
         </div>
-      </details>
-
-      {insight && (
-        <details className="group border-t border-border">
-          <summary className={detailsSummary}>
-            <ChevronRight className="size-4 transition-transform group-open:rotate-90" aria-hidden />
-            {t("details")}
-          </summary>
-          <div className="space-y-4 pb-4">
+        {insight && (
+          <div className="space-y-4 border-t border-border pt-4 pb-4">
             <div className="flex flex-wrap items-center justify-between gap-3 text-small text-muted-foreground">
               <span>
                 {t(insight.byAi ? "analyzed" : "updated", {
@@ -233,8 +228,9 @@ export function DealVerdict({
               </details>
             )}
           </div>
-        </details>
-      )}
+        )}
+      </details>
+
     </section>
   );
 }

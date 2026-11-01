@@ -44,6 +44,7 @@ import { dealLabel, linkLabelSelect } from "@/lib/closing/dashboard/labels";
 import type { DocType } from "@/lib/closing/documents/doc-types";
 import { showsCountdown } from "@/lib/closing/expiry";
 import { firstNameOf, guessMailClient } from "@/lib/closing/share/compose";
+import { DEAL_ANCHORS } from "@/lib/closing/dashboard/deal-cta";
 import { followupsEmptyHint } from "@/lib/closing/followups/empty-hint";
 import { isOutreachAllowed } from "@/lib/outreach/flag";
 import { settingsSummary } from "@/lib/closing/share/summary";
@@ -193,6 +194,25 @@ export default async function LinkDetailPage({
     <AutoRefresh intervalMs={deal.reading ? 3000 : 15000} />
   );
 
+  // The follow-up to approve is the day's action: when the next action says so, it comes before the report
+  const followupsFirst = deal.nextAction.kind === "review_draft";
+  const followupsSection = (
+    <DealSection id="relances" title={t("followupsTitle")}>
+      <div className="pt-4">
+        <FollowupsPanel
+          followups={deal.followupItems}
+          seller={settings.senderName}
+          mailClient={deal.sellerPrefs?.mailClient ?? guessMailClient(workspace.user.email)}
+          emptyHint={
+            emptyHintKey
+              ? tPanel(emptyHintKey, { name: deal.campaign?.name ?? "" })
+              : null
+          }
+        />
+      </div>
+    </DealSection>
+  );
+
   return (
     <div className="space-y-10">
       {share}
@@ -247,6 +267,7 @@ export default async function LinkDetailPage({
 
       {/* Disables every form and button below for a read-only visit */}
       <fieldset disabled={!canEdit} className="min-w-0 space-y-12">
+        {followupsFirst && followupsSection}
         <LiveActivity
           key={deal.live.stamp}
           linkId={link.id}
@@ -299,19 +320,7 @@ export default async function LinkDetailPage({
               }}
             />
 
-            <DealSection id="relances" title={t("followupsTitle")}>
-              <div className="pt-4">
-                <FollowupsPanel
-                  followups={deal.followupItems}
-                  seller={settings.senderName}
-                  emptyHint={
-                    emptyHintKey
-                      ? tPanel(emptyHintKey, { name: deal.campaign?.name ?? "" })
-                      : null
-                  }
-                />
-              </div>
-            </DealSection>
+            {!followupsFirst && followupsSection}
 
             {deal.transcript.length > 0 && (
               <DealSection
@@ -393,13 +402,16 @@ export default async function LinkDetailPage({
               </DealSection>
             )}
 
-            <DealSection
+            {/* An empty form on every page is weight: one click opens it (D2) */}
+            <DealFold
               id="noter"
               title={t("logTitle")}
               hint={t("logHint")}
+              // Folded by default (D2), open when the day's action is to log an exchange
+              open={deal.cta?.kind === "href" && deal.cta.href === DEAL_ANCHORS.log}
             >
               <SellerActivityForm linkId={link.id} />
-            </DealSection>
+            </DealFold>
 
             <DealContextSummaryDetails
               summary={dealContextSummary(

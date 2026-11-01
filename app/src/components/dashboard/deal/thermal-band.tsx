@@ -40,6 +40,8 @@ export function ThermalBand({
   );
   const hottest = plates.plates.find((plate) => plate.hottest);
   const t = useTranslations("deal.thermalBand");
+  // A one-page document: one small plate and a line, no timeline for a single page (D10)
+  const single = !video && count === 1 && plates.pagesPerPlate === 1;
 
   return (
     <section aria-labelledby="lecture-titre" className="space-y-4">
@@ -48,7 +50,12 @@ export function ThermalBand({
           {video ? t("titleVideo") : t("title")}
         </h2>
         <p className="font-mono text-micro text-muted-foreground">
-          {hottest && plates.hottest ? (
+          {single && opened ? (
+            <>
+              <span className="text-foreground">{t("onePage", { time: formatClock(plates.totalSeconds) })}</span>
+              {plates.plates[0].pricing && <> · {t("pricingTag")}</>}
+            </>
+          ) : hottest && plates.hottest ? (
             <>
               <span className="text-foreground">
                 {video
@@ -77,7 +84,7 @@ export function ThermalBand({
             "--n-sm": Math.min(count, 6),
             "--n": count,
             // A short document keeps report-size sheets instead of stretching them across the page
-            maxWidth: `${count * 8}rem`,
+            maxWidth: `${count * (single ? 4 : 8)}rem`,
           } as React.CSSProperties
         }
       >
@@ -88,7 +95,7 @@ export function ThermalBand({
         ))}
       </ol>
 
-      {opened ? (
+      {opened && single ? null : opened ? (
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 font-mono text-micro text-muted-foreground">
           <span className="flex items-center gap-2">
             0:00

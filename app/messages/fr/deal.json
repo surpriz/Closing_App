@@ -98,7 +98,9 @@
     "reactivateManagerOnly": "Document archivé : un manager peut le remettre en ligne.",
     "report": "Rapport de lecture",
     "sentOn": "Envoyé le {date}",
-    "total": "{time} au total"
+    "total": "{time} au total",
+    "noRecipientLine": "Sans destinataire ·",
+    "addRecipient": "ajouter"
   },
   "dealSettings": {
     "title": "Réglages du lien",
@@ -135,7 +137,8 @@
     "liveNow": "lue en ce moment",
     "pricingTag": "Tarifs",
     "avgPerView": "{time} par visionnage en moyenne",
-    "avgPerRead": "{time} par lecture en moyenne"
+    "avgPerRead": "{time} par lecture en moyenne",
+    "onePage": "1 page · {time}"
   },
   "dealContextDetails": {
     "title": "Contexte commercial",
@@ -166,7 +169,8 @@
     "reopened": "Rouvert",
     "changed": "Statut « {status} », relances en attente annulées",
     "failed": "Modification impossible",
-    "ariaLabel": "Statut du prospect"
+    "ariaLabel": "Statut du prospect",
+    "statusLabel": "Statut"
   },
   "dealVerdict": {
     "severityLow": "faible",
@@ -214,7 +218,8 @@
   "linkSettingsForm": {
     "name": "Nom du lien",
     "title": "Réglages du lien",
-    "description": "Chaque changement est enregistré tout de suite."
+    "description": "Chaque changement est enregistré tout de suite.",
+    "open": "Modifier"
   },
   "linkSettingsPanel": {
     "groupAccess": "Accès",
@@ -393,15 +398,19 @@
     "changeAria": "Ce qu'il faut changer",
     "changePlaceholder": "Ou dites ce qu'il faut changer…",
     "rewrite": "Réécrire",
-    "approved": "Relance validée, elle partira à l'heure prévue",
-    "approve": "Valider",
+    "approvedAt": "Relance validée, elle partira le {date}.",
+    "approvedNow": "Relance validée, elle part tout de suite.",
+    "approveAt": "Valider · part le {date}",
+    "approveNow": "Valider · part tout de suite",
     "sendNow": "Envoyer maintenant",
     "changesSaved": "Modifications enregistrées",
     "save": "Enregistrer",
     "openInMail": "Ouvrir dans ma messagerie",
+    "openInMailIn": "Ouvrir dans {client}",
     "copy": "Copier",
     "markedSent": "Notée comme envoyée par vous",
-    "sentMyself": "Je l'ai envoyée moi-même",
+    "sentMyself": "C'est fait",
+    "myselfLead": "L'envoyer moi-même :",
     "cancelled": "Relance annulée",
     "cancel": "Annuler"
   },
@@ -439,7 +448,7 @@
     "description": "Le prospect ne pourra plus ouvrir le document, et les relances prévues sont annulées.",
     "keep": "Garder le lien",
     "archiving": "Archivage…",
-    "archive": "Archiver le lien"
+    "archive": "Archiver"
   },
   "reactivateLinkButton": {
     "trigger": "Réactiver le lien",
@@ -547,7 +556,7 @@
     "followupSent": "Relance envoyée ({trigger})",
     "followupDetail": "{channel} à {recipient}",
     "sellerNoted": "{activity} (noté par vous)",
-    "alert": "Alerte : {type}",
+    "alert": "Clozer vous a prévenu : {type}",
     "liveViewers": "{count} lecteurs en même temps",
     "inactive": "après {days} jours sans lecture",
     "pricingTime": "{time} sur le tarif",
