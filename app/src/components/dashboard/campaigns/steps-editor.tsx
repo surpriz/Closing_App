@@ -243,11 +243,11 @@ export function StepsEditor({
               )}
 
               <div className="space-y-1.5">
-                <label htmlFor={`${step.key}-body`} className="text-small font-medium">
+                <label htmlFor={`step-${step.order}-body`} className="text-small font-medium">
                   {t("body")}
                 </label>
                 <Textarea
-                  id={`${step.key}-body`}
+                  id={`step-${step.order}-body`}
                   ref={(element) => {
                     bodyRefs.current[step.key] = element;
                   }}

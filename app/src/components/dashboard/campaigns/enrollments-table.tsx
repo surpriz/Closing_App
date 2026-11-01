@@ -27,6 +27,8 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { UiLocale } from "@/i18n/locale";
+
+import { enrollmentActions } from "./enrollment-actions";
 import { formatInTimeZone } from "@/lib/format";
 
 type EnrollmentStatus =
@@ -77,7 +79,6 @@ const KNOWN_REASONS = ["rejected", "send_failed", "plan_limit", "document_missin
 // The reading signals the evaluator writes; a reactivation is told by reactivatedAt, never by lastSignal
 const SIGNALS = ["pricing", "deep"] as const;
 const CALL_REASONS = ["call_moment", "deep_read"];
-const REMOVABLE: EnrollmentStatus[] = ["QUEUED", "ACTIVE", "PAUSED"];
 
 export function EnrollmentsTable({
   rows,
@@ -169,6 +170,7 @@ export function EnrollmentsTable({
         <TableBody>
           {visible.map((row) => {
             const reason = reasonLabel(row);
+            const actions = enrollmentActions(row, disabled);
             return (
               <TableRow key={row.id}>
                 <TableCell className="max-w-64">
@@ -221,51 +223,53 @@ export function EnrollmentsTable({
                 <TableCell className="text-muted-foreground">{when(row.nextAt, row)}</TableCell>
                 <TableCell className="text-muted-foreground">{when(row.lastAt, row)}</TableCell>
                 <TableCell className="text-right">
-                  {/* Every action of the row, behind one quiet button (D8) */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger
-                      aria-label={te("actionsMenu", { email: row.email })}
-                      className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/30 aria-expanded:bg-muted aria-expanded:text-foreground"
-                    >
-                      <Ellipsis className="size-4" aria-hidden />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56">
-                      {row.linkId && (
-                        <DropdownMenuItem render={<Link href={`/links/${row.linkId}`} />}>{te("openLink")}</DropdownMenuItem>
-                      )}
-                      {!disabled && row.status === "ACTIVE" && row.blockedStep && (
-                        <>
+                  {/* Every action of the row, behind one quiet button (D8); no button when there is nothing to offer */}
+                  {actions.length > 0 && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger
+                        aria-label={te("actionsMenu", { email: row.email })}
+                        className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/30 aria-expanded:bg-muted aria-expanded:text-foreground"
+                      >
+                        <Ellipsis className="size-4" aria-hidden />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-56">
+                        {actions.includes("openLink") && (
+                          <DropdownMenuItem render={<Link href={`/links/${row.linkId}`} />}>{te("openLink")}</DropdownMenuItem>
+                        )}
+                        {actions.includes("resendStep") && (
                           <DropdownMenuItem disabled={pending} onClick={() => setResending(row)}>
                             {te("resendStep")}
                           </DropdownMenuItem>
+                        )}
+                        {actions.includes("skipStep") && (
                           <DropdownMenuItem disabled={pending} onClick={() => run(skipStepAction, row.id)}>
                             {te("skipStep")}
                           </DropdownMenuItem>
-                        </>
-                      )}
-                      {!disabled && row.status === "ACTIVE" && (
-                        <DropdownMenuItem disabled={pending} onClick={() => run(pauseEnrollmentAction, row.id)}>
-                          {te("pause")}
-                        </DropdownMenuItem>
-                      )}
-                      {!disabled && row.status === "PAUSED" && (
-                        <DropdownMenuItem
-                          disabled={pending}
-                          onClick={() => (row.pausedReason === "interrupted" ? setResuming(row) : run(resumeEnrollmentAction, row.id))}
-                        >
-                          {te("resume")}
-                        </DropdownMenuItem>
-                      )}
-                      {!disabled && REMOVABLE.includes(row.status) && (
-                        <>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem variant="destructive" disabled={pending} onClick={() => setRemoving(row)}>
-                            {te("remove")}
+                        )}
+                        {actions.includes("pause") && (
+                          <DropdownMenuItem disabled={pending} onClick={() => run(pauseEnrollmentAction, row.id)}>
+                            {te("pause")}
                           </DropdownMenuItem>
-                        </>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                        )}
+                        {actions.includes("resume") && (
+                          <DropdownMenuItem
+                            disabled={pending}
+                            onClick={() => (row.pausedReason === "interrupted" ? setResuming(row) : run(resumeEnrollmentAction, row.id))}
+                          >
+                            {te("resume")}
+                          </DropdownMenuItem>
+                        )}
+                        {actions.includes("remove") && (
+                          <>
+                            {actions.length > 1 && <DropdownMenuSeparator />}
+                            <DropdownMenuItem variant="destructive" disabled={pending} onClick={() => setRemoving(row)}>
+                              {te("remove")}
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </TableCell>
               </TableRow>
             );
