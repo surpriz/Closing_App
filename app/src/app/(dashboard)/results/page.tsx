@@ -28,7 +28,10 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function ResultsPage(props: PageProps<"/results">) {
   const workspace = await requireWorkspace("/results");
   const manager = isManagerRole(workspace.role);
-  const mine = !manager || (await props.searchParams).scope === "mine";
+  // Same rule as the Équipe tab: alone, there is no team to compare with (D11)
+  const memberCount = await prisma.member.count({ where: { organizationId: workspace.organization.id } });
+  const hasTeam = memberCount >= 2;
+  const mine = !manager || !hasTeam || (await props.searchParams).scope === "mine";
   const [t, tl] = await Promise.all([getTranslations("results"), getTranslations("labels")]);
   const owner = mine ? workspace.scope : null;
   const outreach = isOutreachAllowed(workspace.user, workspace.organization.id);
@@ -47,7 +50,7 @@ export default async function ResultsPage(props: PageProps<"/results">) {
   const label = (key: string, prefix: "followupTrigger" | "followupGoal") =>
     tl.has(`${prefix}.${key}` as never) ? tl(`${prefix}.${key}` as never) : key;
 
-  const scopeSwitch = manager && (
+  const scopeSwitch = manager && hasTeam && (
     <div className="flex gap-1.5">
       <Link href="/results" className={buttonVariants({ size: "sm", variant: mine ? "outline" : "default" })}>
         {t("scopeTeam")}
@@ -149,7 +152,7 @@ export default async function ResultsPage(props: PageProps<"/results">) {
         )}
       </section>
 
-      {results.reactions.length > 0 && (
+      {hasTeam && results.reactions.length > 0 && (
         <section>
           <SectionTitle hint={t("reactionHint")}>{t("reaction")}</SectionTitle>
           <div className="border-b border-foreground bg-card">
