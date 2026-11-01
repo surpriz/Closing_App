@@ -57,7 +57,7 @@
       "actionsHint": "Approval, change request or meeting booked: it's rare, and the prospect is waiting on you.",
       "actionsLabel": "An email as soon as a prospect approves, asks for a change or books a meeting",
       "callConnected": "{which, select, both {Chrome and Outlook connected.} chrome {Chrome connected.} other {Outlook connected.}} You get an alert when a prospect opens your proposal for the first time, comes back after a silence, lingers on pricing or reads it with others. Never in the evening or on weekends, 4 per hour at most.",
-      "callNothingConnected": "Nothing connected: install Chrome or Outlook (the « Chrome and Outlook » section below) to be told during the read.",
+      "callNothingConnected": "Nothing connected: install Chrome or Outlook (the “Chrome and Outlook” section below) to get notified while they read.",
       "callQuestion": "When it's time to call",
       "callExtension": "Notification in Chrome, alert in the Outlook pane",
       "callEmail": "An email too",

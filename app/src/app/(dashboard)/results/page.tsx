@@ -29,10 +29,14 @@ export default async function ResultsPage(props: PageProps<"/results">) {
   const workspace = await requireWorkspace("/results");
   const manager = isManagerRole(workspace.role);
   // Same rule as the Équipe tab: alone, there is no team to compare with (D11)
-  const memberCount = await prisma.member.count({ where: { organizationId: workspace.organization.id } });
+  const [memberCount, query, t, tl] = await Promise.all([
+    prisma.member.count({ where: { organizationId: workspace.organization.id } }),
+    props.searchParams,
+    getTranslations("results"),
+    getTranslations("labels"),
+  ]);
   const hasTeam = memberCount >= 2;
-  const mine = !manager || !hasTeam || (await props.searchParams).scope === "mine";
-  const [t, tl] = await Promise.all([getTranslations("results"), getTranslations("labels")]);
+  const mine = !manager || !hasTeam || query.scope === "mine";
   const owner = mine ? workspace.scope : null;
   const outreach = isOutreachAllowed(workspace.user, workspace.organization.id);
   const [results, campaigns] = await Promise.all([

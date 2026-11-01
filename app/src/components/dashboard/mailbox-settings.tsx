@@ -376,9 +376,11 @@ function Field({ label, htmlFor, children }: { label: string; htmlFor: string; c
 function ConnectForm({
   prefill,
   availability,
+  onConnected,
 }: {
   prefill: { email: string; mailboxId: string } | null;
   availability: ProviderAvailability;
+  onConnected?: () => void;
 }) {
   const t = useTranslations("settings.mailbox");
   const [form, setForm] = useState({ ...EMPTY_FORM, email: prefill?.email ?? "" });
@@ -397,6 +399,7 @@ function ConnectForm({
       setDetection(null);
       setDetectedFor("");
       toast.success(t("connected"));
+      onConnected?.();
     }
     return result;
   }, null);
@@ -658,6 +661,11 @@ export function MailboxSettings({
             key={reconnect?.n ?? 0}
             availability={availability}
             prefill={reconnect ? { email: reconnect.email, mailboxId: reconnect.mailboxId } : null}
+            onConnected={() => {
+              // Back behind the button once the new row is in the list (D5)
+              setShowConnect(false);
+              setReconnect(null);
+            }}
           />
         ) : (
           <div className="border-t border-border px-5 py-3">

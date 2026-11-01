@@ -189,8 +189,8 @@ export const HELP_GUIDE = `## Ce qu'est Clozer
 - Archiver le lien : le prospect ne peut plus ouvrir le document, les relances prévues sont annulées.
 
 ## Réglages (/settings)
-- L'essentiel est visible d'emblée : Chrome et Outlook, Pilote automatique, Être prévenu, Votre agenda. Le
-  bouton « Réglages avancés » déplie le reste : Votre offre, Vos liens, Assistant prospect, Vos messages,
+- L'essentiel est visible d'emblée : Boîte mail (quand les campagnes sont ouvertes), Pilote automatique, Être
+  prévenu, Votre agenda, Chrome et Outlook, Facturation. Le bouton « Réglages avancés » déplie le reste : Votre offre, Vos liens, Assistant prospect, Vos messages,
   Équipe, Données. Un lien direct vers une section avancée (/settings#offre…) la déplie tout seul.
 
 ## Relances et pilote automatique
