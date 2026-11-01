@@ -16,7 +16,7 @@ import { LocaleMenu } from "@/components/dashboard/locale-menu";
 import { DashboardExtensionBanner } from "@/components/onboarding/dashboard-extension-banner";
 import { offerEndsAt } from "@/lib/billing/offers";
 import { planFor } from "@/lib/billing/workspace-plan";
-import { dealDocumentMeta, dealLabel, linkLabelSelect } from "@/lib/closing/dashboard/labels";
+import { dealDocumentMeta, dealLabel, labelSays, linkLabelSelect } from "@/lib/closing/dashboard/labels";
 import { sellerLinks } from "@/lib/closing/dashboard/queries";
 import { prisma } from "@/lib/db";
 import { isPlatformAdminEmail } from "@/lib/platform-admin";
@@ -73,7 +73,7 @@ export default async function DashboardLayout({
         kind: "deal" as const,
         href: `/links/${link.id}`,
         label,
-        hint: [who !== label ? who : null, dealDocumentMeta(link)].filter(Boolean).join(" · "),
+        hint: [labelSays(label, who) ? null : who, dealDocumentMeta(link)].filter(Boolean).join(" · "),
       };
     }),
     ...documents.map((doc) => ({ kind: "document" as const, href: `/documents/${doc.id}`, label: doc.name })),

@@ -5,7 +5,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { ApproveAllButton, ApproveDraftButton } from "@/components/dashboard/drafts/approve-buttons";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { PageHeader } from "@/components/dashboard/page-header";
-import { dealLabel, linkLabelSelect } from "@/lib/closing/dashboard/labels";
+import { dealLabel, labelSays, linkLabelSelect } from "@/lib/closing/dashboard/labels";
 import { sellerLinks } from "@/lib/closing/dashboard/queries";
 import { isLinkExpired } from "@/lib/closing/expiry";
 import { followupSender, followupSenderLabel } from "@/lib/closing/followups/sender";
@@ -90,8 +90,9 @@ export default async function DraftsPage() {
                     <span className="text-small text-muted-foreground">
                       {" · "}
                       {draft.campaignProspect && <>{t("campaign", { name: draft.campaignProspect.campaign.name })} · </>}
-                      {tl(`followupTrigger.${draft.trigger}`)} · {tl(`channel.${draft.channel}`)} ·{" "}
-                      {draft.prospect.name ?? draft.prospect.email}
+                      {tl(`followupTrigger.${draft.trigger}`)} · {tl(`channel.${draft.channel}`)}
+                      {!labelSays(dealLabel(draft.link, noRecipient), draft.prospect.name ?? draft.prospect.email) &&
+                        ` · ${draft.prospect.name ?? draft.prospect.email}`}
                     </span>
                   </p>
                   {expired ? (

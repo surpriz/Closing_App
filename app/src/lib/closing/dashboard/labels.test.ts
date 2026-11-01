@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { customLinkName, dealDocumentMeta, dealLabel, type LabelledLink } from "./labels";
+import { customLinkName, dealDocumentMeta, dealLabel, labelSays, type LabelledLink } from "./labels";
 
 const document = { name: "Devis 2026.pdf", displayTitle: "Devis 2026", docType: "QUOTE" };
 const link = (over: Partial<LabelledLink> = {}): LabelledLink => ({
@@ -71,5 +71,15 @@ describe("dealDocumentMeta", () => {
   it("shows the document by its title, not its file name", () => {
     expect(dealDocumentMeta(link({ prospects: [prospect({ company: "Acme" })], document: { name: "modele_de_devis_batiment.pdf", displayTitle: "Devis n°624 – Prestation de service" } }))).toBe("Devis n°624 – Prestation de service");
     expect(dealDocumentMeta(link({ document: { name: "modele_de_devis_batiment.pdf", displayTitle: null } }))).toBe("modele_de_devis_batiment.pdf");
+  });
+});
+
+describe("labelSays", () => {
+  it("knows which names a label already carries", () => {
+    expect(labelSays("Acme · Léa", "Léa")).toBe(true);
+    expect(labelSays("Acme · Léa", "Acme")).toBe(true);
+    expect(labelSays("Acme", "Acme")).toBe(true);
+    expect(labelSays("Acme · Léa", "lea@acme.fr")).toBe(false);
+    expect(labelSays("Acme · Léa", null)).toBe(false);
   });
 });

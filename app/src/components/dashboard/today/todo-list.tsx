@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 
 import { buttonVariants } from "@/components/ui/button";
+import { labelSays } from "@/lib/closing/dashboard/labels";
 import type { EngagementTier } from "@/generated/prisma/enums";
 import {
   describeNextAction,
@@ -80,7 +81,7 @@ export function TodoList({
               : null;
         const urgent = isUrgent(row.action);
         const meta = [
-          row.contact && !row.label.includes(row.contact) ? row.contact : null,
+          row.contact && !labelSays(row.label, row.contact) ? row.contact : null,
           row.documentName,
         ]
           .filter(Boolean)

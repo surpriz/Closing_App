@@ -64,6 +64,12 @@ export function dealLabel(link: LabelledLink, noRecipient = "Sans destinataire")
   );
 }
 
+/** Whether a "Company · Person" label already carries this name: the line below must not repeat it. */
+export function labelSays(label: string, who: string | null | undefined): boolean {
+  if (!who) return false;
+  return label.split(" · ").some((part) => fold(part) === fold(who));
+}
+
 /** The document as a second line, by the title the app gives it: null when the label already says it. */
 export function dealDocumentMeta(link: LabelledLink): string | null {
   const name = link.document?.displayTitle?.trim() || link.document?.name;
