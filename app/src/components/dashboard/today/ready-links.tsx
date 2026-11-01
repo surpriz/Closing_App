@@ -25,6 +25,8 @@ export type ReadyLink = {
   /** Who it is for, or "Sans destinataire" (today.page.noRecipient). */
   label: string;
   documentName: string;
+  /** When the drop created it: a link waiting for days reads differently from one made a minute ago. */
+  createdAt: Date;
 };
 
 /**

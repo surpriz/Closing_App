@@ -128,6 +128,7 @@ export async function getOpenDeals(
       createdAt: true,
       lastActivityAt: true,
       followupsEnabled: true,
+      isOnboardingTest: true,
       snoozedUntil: true,
       meetingBookedAt: true,
       meetingAt: true,
@@ -228,6 +229,8 @@ export async function getFunnelFacts(
     where: {
       organizationId,
       archivedAt: null,
+      // The onboarding test is the seller reading their own link: not a send
+      isOnboardingTest: false,
       // ORs side by side would replace one another: each sits in the AND
       AND: [
         // Sent, or copied by the seller: as far as they know it went out

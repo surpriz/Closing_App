@@ -39,6 +39,7 @@ import {
   buildHeatDistribution,
 } from "@/lib/closing/dashboard/funnel";
 import { dealDocumentMeta, dealLabel } from "@/lib/closing/dashboard/labels";
+import { documentTitle } from "@/lib/closing/documents/link-title";
 import { followupSender, followupSenderLabel } from "@/lib/closing/followups/sender";
 import { parsePeriod, periodStart } from "@/lib/closing/dashboard/period";
 import { pageHeat } from "@/lib/closing/dashboard/page-heat";
@@ -152,6 +153,9 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
         slug: true,
         name: true,
         copiedAt: true,
+        createdAt: true,
+        // A draft a prospect already opened went out, whatever the seller confirmed
+        views: { where: { isBot: false }, take: 1, select: { id: true } },
         document: { select: { name: true, displayTitle: true, docType: true } },
         prospects: {
           take: 1,
@@ -213,15 +217,18 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
   const stage = sellerStage(progress);
   // Never copied: still to send. Copied: gone out as far as the seller sees, it waits for its first
   // opening with the other unopened links, and after two days Clozer asks whether it really left
-  const readyLinks: ReadyLink[] = readyDrafts
+  // Opened by a prospect: neither "to send" nor "unopened", whatever the seller confirmed
+  const unopenedDrafts = readyDrafts.filter((draft) => draft.views.length === 0);
+  const readyLinks: ReadyLink[] = unopenedDrafts
     .filter((draft) => !draft.copiedAt)
     .map((draft) => ({
       id: draft.id,
       ...shareLink(origin, { slug: draft.slug, document: draft.document, company: draft.prospects[0]?.company }),
       label: dealLabel(draft, noRecipient),
-      documentName: draft.document.name,
+      documentName: documentTitle(draft.document),
+      createdAt: draft.createdAt,
     }));
-  const copiedRows: UnopenedRow[] = readyDrafts
+  const copiedRows: UnopenedRow[] = unopenedDrafts
     .filter((draft) => draft.copiedAt)
     .map((draft) => ({
       id: draft.id,
@@ -301,6 +308,8 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
     readyLinks: readyLinks.length
       ? { count: readyLinks.length, documentName: readyLinks[0].documentName }
       : null,
+    // No open deal lets Clozer follow up: the hint must not promise it
+    followupsOn: deals.length === 0 || deals.some((deal) => deal.followupsEnabled),
   });
 
   const periodHint = t(`today.period.${period}.hint`);
@@ -583,7 +592,9 @@ function toTodoRow(
     id: deal.id,
     dealStatus: deal.dealStatus,
     opened: deal.opened,
-    label: dealLabel(deal, noRecipient),
+    label: deal.isOnboardingTest
+      ? t("today.todo.testSuffix", { label: dealLabel(deal, noRecipient) })
+      : dealLabel(deal, noRecipient),
     company: prospect?.company ?? null,
     contact: prospect ? (prospect.name ?? prospect.email) : null,
     documentName: dealDocumentMeta(deal),
