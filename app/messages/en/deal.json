@@ -204,7 +204,11 @@
     "enabled": "Follow-ups on",
     "disabled": "Follow-ups off, pending ones cancelled",
     "failed": "Couldn't save the change",
-    "drivenByCampaign": "Follow-ups driven by campaign {name}"
+    "drivenByCampaign": "Follow-ups: campaign {name}",
+    "stateOn": "Follow-ups: to approve",
+    "stateOff": "Follow-ups: off",
+    "turnOff": "turn off",
+    "turnOn": "turn on"
   },
   "linkSettingsForm": {
     "name": "Link name",
@@ -252,7 +256,8 @@
     "cycleHint": "“not opened” reminders, scheduled sends, overdue analyses"
   },
   "newLinkButton": {
-    "smartLabel": "Smart Link for cold email",
+    "smartLabel": "Smart Link (lemlist, post, signature)",
+    "campaignLabel": "Campaign from my mailbox",
     "defaultLabel": "A link for another prospect",
     "creating": "Creating…"
   },

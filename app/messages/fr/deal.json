@@ -204,7 +204,11 @@
     "enabled": "Relances activées",
     "disabled": "Relances désactivées, relances en attente annulées",
     "failed": "Modification impossible",
-    "drivenByCampaign": "Relances gérées par la campagne {name}"
+    "drivenByCampaign": "Relances : campagne {name}",
+    "stateOn": "Relances : à valider",
+    "stateOff": "Relances : coupées",
+    "turnOff": "couper",
+    "turnOn": "activer"
   },
   "linkSettingsForm": {
     "name": "Nom du lien",
@@ -252,7 +256,8 @@
     "cycleHint": "rappels « pas ouvert », envois à l'heure prévue, analyses en retard"
   },
   "newLinkButton": {
-    "smartLabel": "Smart Link pour cold email",
+    "smartLabel": "Smart Link (lemlist, post, signature)",
+    "campaignLabel": "Campagne depuis ma boîte",
     "defaultLabel": "Un lien pour un autre prospect",
     "creating": "Création…"
   },

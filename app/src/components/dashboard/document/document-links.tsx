@@ -63,10 +63,7 @@ export function DocumentLinks({ rows, video }: { rows: ProspectLinkRow[]; video:
             </p>
           </div>
           <div className="relative z-10 flex items-center gap-3">
-            <label className="flex items-center gap-2 text-small text-muted-foreground">
-              <span className="hidden md:inline">{t("followups")}</span>
-              <LinkFollowupsToggle linkId={row.id} enabled={row.followupsEnabled} campaign={row.campaign} />
-            </label>
+            <LinkFollowupsToggle linkId={row.id} enabled={row.followupsEnabled} campaign={row.campaign} />
             <CopyButton value={row.url} title={row.title} />
           </div>
         </li>
