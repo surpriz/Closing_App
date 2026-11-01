@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { ActivityTimeline } from "@/components/dashboard/activity-timeline";
@@ -185,13 +186,25 @@ export default async function LinkDetailPage({
       />
     </div>
   );
-  const refresh = deal.sharing && deal.reading && <AutoRefresh intervalMs={3000} />;
+  // D1: a link just created and never read is a send screen; the report opens itself at the first read
+  const foldReport = justCreated && deal.sharing && !deal.opened;
+  const refresh = deal.sharing && (deal.reading || foldReport) && <AutoRefresh intervalMs={3000} />;
 
   return (
     <div className="space-y-10">
       {share}
       {refresh}
 
+      {foldReport ? (
+        <p className="flex flex-wrap gap-x-6 gap-y-1 border-b border-border pb-2 font-mono text-micro text-muted-foreground">
+          <span className="text-foreground">{t("foldedReportLabel")}</span>
+          <span>{t("foldedReportHint")}</span>
+          <Link href={`/links/${link.id}`} className="underline underline-offset-2 hover:text-foreground">
+            {t("foldedReportOpen")}
+          </Link>
+        </p>
+      ) : (
+      <>
       <div className="space-y-6">
         <DealHeader deal={deal} />
         {link.parentLinkId && <p className="text-small text-muted-foreground">{t("readerLinkNote")}</p>}
@@ -478,6 +491,8 @@ export default async function LinkDetailPage({
 
         {testToolsEnabled() && <LinkTestTools linkId={link.id} />}
       </fieldset>
+      </>
+      )}
     </div>
   );
 }
