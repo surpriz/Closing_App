@@ -295,7 +295,7 @@
     "pricing": "S'attarde sur les tarifs",
     "firstOpen": "Ouvre votre proposition pour la première fois",
     "hotDeal": "Prospect chaud, en train de relire",
-    "campaignPricing": "S'attarde sur les tarifs (campagne à froid)",
-    "campaignDeepRead": "Lit votre proposition avec attention (campagne à froid)"
+    "campaignPricing": "S'attarde sur les tarifs (campagne)",
+    "campaignDeepRead": "Lit votre proposition avec attention (campagne)"
   }
 }

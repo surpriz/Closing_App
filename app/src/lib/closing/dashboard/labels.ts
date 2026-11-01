@@ -45,14 +45,18 @@ export function customLinkName(link: Pick<LabelledLink, "name" | "document" | "p
 }
 
 /**
- * How a deal is named everywhere: the person first, never the document.
+ * How a deal is named everywhere: the person first, never the document. With a company and a
+ * person, both: two contacts at the same company must read apart ("Acme · Léa", "Acme · Marc").
  * `noRecipient` is the translated "today.page.noRecipient", for a link nobody is named on yet.
  */
 export function dealLabel(link: LabelledLink, noRecipient = "Sans destinataire"): string {
   const prospect = link.prospects[0];
+  const company = prospect?.company?.trim();
+  const name = prospect?.name?.trim();
+  if (company && name) return `${company} · ${name}`;
   return (
-    prospect?.company?.trim() ||
-    prospect?.name?.trim() ||
+    company ||
+    name ||
     prospect?.email?.trim() ||
     customLinkName(link) ||
     // Nobody named yet: the document shows on the line below
@@ -60,9 +64,15 @@ export function dealLabel(link: LabelledLink, noRecipient = "Sans destinataire")
   );
 }
 
-/** The document as a second line: null when the label already says it. */
+/** Whether a "Company · Person" label already carries this name: the line below must not repeat it. */
+export function labelSays(label: string, who: string | null | undefined): boolean {
+  if (!who) return false;
+  return label.split(" · ").some((part) => fold(part) === fold(who));
+}
+
+/** The document as a second line, by the title the app gives it: null when the label already says it. */
 export function dealDocumentMeta(link: LabelledLink): string | null {
-  const name = link.document?.name;
+  const name = link.document?.displayTitle?.trim() || link.document?.name;
   if (!name) return null;
   return fold(name) === fold(dealLabel(link, "")) ? null : name;
 }

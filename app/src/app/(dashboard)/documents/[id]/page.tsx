@@ -345,9 +345,9 @@ export default async function DocumentDetailPage({
     return {
       id: link.id,
       label: dealLabel({ ...link, document }, link.shared ? t("sharedLink") : undefined),
+      // The label says "Company · Person" when both are known: the line under it keeps the email
       contact:
         [
-          prospect?.company ? prospect.name : null,
           prospect?.email,
           link.links > 1 ? t("browsers", { count: link.links }) : null,
         ]

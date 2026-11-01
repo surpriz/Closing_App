@@ -128,6 +128,7 @@ export async function getOpenDeals(
       createdAt: true,
       lastActivityAt: true,
       followupsEnabled: true,
+      isOnboardingTest: true,
       snoozedUntil: true,
       meetingBookedAt: true,
       meetingAt: true,
@@ -228,6 +229,8 @@ export async function getFunnelFacts(
     where: {
       organizationId,
       archivedAt: null,
+      // The onboarding test is the seller reading their own link: not a send
+      isOnboardingTest: false,
       // ORs side by side would replace one another: each sits in the AND
       AND: [
         // Sent, or copied by the seller: as far as they know it went out
@@ -352,7 +355,7 @@ export async function getFeedSource(
       linkId: view.link.id,
       linkLabel: dealLabel(view.link),
       reader: view.prospect?.name ?? view.prospect?.email ?? view.email,
-      documentName: view.link.document.name,
+      documentName: view.link.document.displayTitle ?? view.link.document.name,
       totalDurationMs: view.totalDurationMs,
       pricingDurationMs: pricingByView.get(view.id) ?? 0,
     })),
@@ -363,7 +366,7 @@ export async function getFeedSource(
       who: action.prospect?.company ?? action.prospect?.name ?? dealLabel(action.link),
       linkLabel: dealLabel(action.link),
       type: action.type,
-      documentName: action.link.document.name,
+      documentName: action.link.document.displayTitle ?? action.link.document.name,
       message: action.message,
     })),
     alerts: alerts.map((alert) => ({
@@ -371,7 +374,7 @@ export async function getFeedSource(
       createdAt: alert.createdAt,
       linkId: alert.link.id,
       linkLabel: dealLabel(alert.link),
-      documentName: alert.link.document.name,
+      documentName: alert.link.document.displayTitle ?? alert.link.document.name,
       type: alert.type,
       payload: alert.payload,
     })),
