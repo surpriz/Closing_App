@@ -244,7 +244,7 @@ export function OnboardingWizard({
               {step === "daily" && (
                 <div className="ml-auto flex flex-wrap justify-end gap-2">
                   {added && (
-                    <Button size="lg" variant="ghost" disabled={leaving} onClick={() => leave("/dashboard")}>
+                    <Button size="lg" variant="link" disabled={leaving} onClick={() => leave("/dashboard")}>
                       {t("dashboard")}
                     </Button>
                   )}

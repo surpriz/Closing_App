@@ -7,7 +7,6 @@ import { ToolSetup } from "@/components/onboarding/tool-setup";
 import { documentUploadPrefix } from "@/lib/blob";
 import { getSellerPrefs } from "@/lib/closing/notify/preferences";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
-import { guessMailClient } from "@/lib/closing/share/compose";
 import { prisma } from "@/lib/db";
 import { getEnv } from "@/lib/env";
 import { connectedClients } from "@/lib/extension-tokens";
@@ -85,7 +84,7 @@ export default async function WelcomePage(props: PageProps<"/welcome">) {
       <UpgradeDialogHost />
       <OnboardingWizard
         firstName={firstName}
-        initialMailClient={parseMailClient(prefs.mailClient) ?? parseMailClient(guessMailClient(user.email))}
+        initialMailClient={parseMailClient(prefs.mailClient)}
         connected={connected}
         chromeStoreUrl={getEnv().EXTENSION_STORE_URL ?? null}
         askOffer={isManagerRole(role) && !settings.offerDescription?.trim()}
