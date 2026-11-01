@@ -431,7 +431,11 @@ export function UploadDropzone({
  * dropped file or a pasted link, with a veil to show where it lands; page buttons open the same
  * dialog through openAddDocument().
  */
-export function UploadButton({ uploadPrefix, pitchUploadPrefix }: { uploadPrefix: string } & PitchProps) {
+export function UploadButton({
+  uploadPrefix,
+  pitchUploadPrefix,
+  trigger = true,
+}: { uploadPrefix: string; /** false: another button opens the dialog through `openAddDocument()`. */ trigger?: boolean } & PitchProps) {
   const t = useTranslations("documents.upload");
   const [open, setOpen] = useState(false);
   const [recording, setRecording] = useState(false);
@@ -486,18 +490,20 @@ export function UploadButton({ uploadPrefix, pitchUploadPrefix }: { uploadPrefix
   return (
     <>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger
-          render={<Button disabled={source.busy} aria-label={t("addDocument")} className="max-sm:size-9 max-sm:px-0" />}
-        >
-          <Plus />
-          <span className="max-sm:sr-only">
-            {source.uploading
-              ? t("importProgress", { percent: Math.round(source.progress ?? 0) })
-              : source.addingUrl
-                ? t("addingLink")
-                : t("addDocument")}
-          </span>
-        </DialogTrigger>
+        {trigger && (
+          <DialogTrigger
+            render={<Button disabled={source.busy} aria-label={t("addDocument")} className="max-sm:size-9 max-sm:px-0" />}
+          >
+            <Plus />
+            <span className="max-sm:sr-only">
+              {source.uploading
+                ? t("importProgress", { percent: Math.round(source.progress ?? 0) })
+                : source.addingUrl
+                  ? t("addingLink")
+                  : t("addDocument")}
+            </span>
+          </DialogTrigger>
+        )}
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="text-heading">{t("dialogTitle")}</DialogTitle>

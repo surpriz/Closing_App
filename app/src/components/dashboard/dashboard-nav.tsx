@@ -76,10 +76,19 @@ export function DashboardNav(access: Access) {
 }
 
 /** Fixed tab bar at the bottom of the screen on phones. */
-export function MobileNav({ isManager, hasTeam }: { isManager: boolean; hasTeam: boolean }) {
+export function MobileNav({
+  isManager,
+  hasTeam,
+  campaigns = false,
+}: {
+  isManager: boolean;
+  hasTeam: boolean;
+  campaigns?: boolean;
+}) {
   const isActive = useActive();
   const t = useTranslations("nav.dashboardNav");
-  const items = itemsFor({ isManager, hasTeam }).filter((item) => !item.prospectingOnly && !item.campaignsOnly);
+  // Prospecting stays desktop-only; campaigns get their tab once they are open to the workspace
+  const items = itemsFor({ isManager, hasTeam, campaigns }).filter((item) => !item.prospectingOnly);
 
   return (
     <nav
