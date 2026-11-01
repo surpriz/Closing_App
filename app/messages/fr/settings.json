@@ -17,7 +17,8 @@
       "donnees": "Données",
       "boite": "Boîte mail"
     },
-    "instantSave": "Ces sections s'enregistrent dès que vous les modifiez."
+    "instantSave": "Ces sections s'enregistrent dès que vous les modifiez.",
+    "languageReminder": "Langue : {language}, à changer depuis le globe en haut à droite."
   },
   "advanced": {
     "show": "Réglages avancés",
@@ -56,7 +57,7 @@
       "actionsHint": "Validation, demande d'ajustement ou rendez-vous pris : c'est rare, et le prospect attend votre retour.",
       "actionsLabel": "Un email dès qu'un prospect valide, demande un ajustement ou prend rendez-vous",
       "callConnected": "{which, select, both {Chrome et Outlook connectés.} chrome {Chrome connecté.} other {Outlook connecté.}} Une alerte arrive quand un prospect ouvre votre proposition pour la première fois, revient après un silence, s'attarde sur les tarifs ou la lit à plusieurs. Jamais le soir ni le week-end, 4 par heure au plus.",
-      "callNothingConnected": "Rien de connecté : installez Chrome ou Outlook plus bas (Réglages avancés) pour être prévenu pendant la lecture.",
+      "callNothingConnected": "Rien de connecté : installez Chrome ou Outlook (section « Chrome et Outlook », plus bas) pour être prévenu pendant la lecture.",
       "callQuestion": "Quand c'est le moment d'appeler",
       "callExtension": "Notification dans Chrome, alerte dans le volet Outlook",
       "callEmail": "Un email aussi",
@@ -349,7 +350,8 @@
       "limit": "Vous avez atteint le nombre maximum de boîtes.",
       "failed": "La connexion a échoué. Réessayez dans quelques minutes.",
       "pendingSlow": "Toujours rien. Rechargez dans un instant, ou reconnectez la boîte."
-    }
+    },
+    "addAnother": "Connecter une autre boîte"
   },
   "suppressions": {
     "title": "Liste d'arrêt",

@@ -25,7 +25,7 @@
     }
   },
   "wizard": {
-    "skip": "Skip",
+    "skip": "Skip, go to the dashboard",
     "stepsAria": "Steps",
     "back": "Back",
     "continueWithDocument": "Continue with this document",
@@ -171,7 +171,7 @@
     "title": "Now, for real.",
     "lead": "Day to day, you sell like you always have. Clozer does the tracking.",
     "sendTitle": "You send the link to your prospect",
-    "sendBody": "Copy your document's link and paste it into your email instead of the attachment. Or click “Send by email”: the message is already written.",
+    "sendBody": "Copy your document's link and paste it into your email instead of the attachment, or click “Send by email”. Many prospects at once? Campaigns, from your mailbox.",
     "alertTitle": "You get notified when they read",
     "alertBody": "By email, and live on your dashboard. That's the right time to call.",
     "approveTitle": "You approve the follow-ups",

@@ -17,7 +17,8 @@
       "donnees": "Data",
       "boite": "Mailbox"
     },
-    "instantSave": "These sections save as soon as you change them."
+    "instantSave": "These sections save as soon as you change them.",
+    "languageReminder": "Language: {language}, change it from the globe at the top right."
   },
   "advanced": {
     "show": "Advanced settings",
@@ -56,7 +57,7 @@
       "actionsHint": "Approval, change request or meeting booked: it's rare, and the prospect is waiting on you.",
       "actionsLabel": "An email as soon as a prospect approves, asks for a change or books a meeting",
       "callConnected": "{which, select, both {Chrome and Outlook connected.} chrome {Chrome connected.} other {Outlook connected.}} You get an alert when a prospect opens your proposal for the first time, comes back after a silence, lingers on pricing or reads it with others. Never in the evening or on weekends, 4 per hour at most.",
-      "callNothingConnected": "Nothing connected: install Chrome or Outlook below (Advanced settings) to get notified while they read.",
+      "callNothingConnected": "Nothing connected: install Chrome or Outlook (the “Chrome and Outlook” section below) to get notified while they read.",
       "callQuestion": "When it's time to call",
       "callExtension": "Notification in Chrome, alert in the Outlook pane",
       "callEmail": "An email too",
@@ -349,7 +350,8 @@
       "limit": "You reached the maximum number of mailboxes.",
       "failed": "The connection failed. Try again in a few minutes.",
       "pendingSlow": "Still not there. Reload in a moment, or connect again."
-    }
+    },
+    "addAnother": "Connect another mailbox"
   },
   "suppressions": {
     "title": "Stop list",
