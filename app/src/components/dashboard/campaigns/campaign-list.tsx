@@ -20,9 +20,9 @@ export type CampaignRow = {
 
 const STATUS_VARIANT = {
   DRAFT: "secondary",
-  ACTIVE: "success",
-  PAUSED: "warning",
-  DONE: "info",
+  ACTIVE: "info",
+  PAUSED: "outline",
+  DONE: "secondary",
   ARCHIVED: "secondary",
 } as const;
 

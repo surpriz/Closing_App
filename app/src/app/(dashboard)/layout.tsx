@@ -16,7 +16,7 @@ import { LocaleMenu } from "@/components/dashboard/locale-menu";
 import { DashboardExtensionBanner } from "@/components/onboarding/dashboard-extension-banner";
 import { offerEndsAt } from "@/lib/billing/offers";
 import { planFor } from "@/lib/billing/workspace-plan";
-import { dealDocumentMeta, dealLabel, linkLabelSelect } from "@/lib/closing/dashboard/labels";
+import { dealDocumentMeta, dealLabel, labelSays, linkLabelSelect } from "@/lib/closing/dashboard/labels";
 import { sellerLinks } from "@/lib/closing/dashboard/queries";
 import { prisma } from "@/lib/db";
 import { isPlatformAdminEmail } from "@/lib/platform-admin";
@@ -24,6 +24,7 @@ import { isOutreachAllowed } from "@/lib/outreach/flag";
 import { isProspectingAllowed } from "@/lib/prospecting/flag";
 import { isManagerRole } from "@/lib/roles";
 import { requireWorkspace } from "@/lib/session";
+import { NewMenu } from "@/components/dashboard/new-menu";
 import { UploadButton } from "@/components/dashboard/upload-dropzone";
 import { documentUploadPrefix, pitchUploadPrefix } from "@/lib/blob";
 
@@ -62,6 +63,7 @@ export default async function DashboardLayout({
   ]);
   // Alone in the workspace, there is no team to look at: the tab waits for a second member
   const hasTeam = memberCount >= 2;
+  const campaigns = isOutreachAllowed(user, organization.id);
   const entries: CommandEntry[] = [
     ...links.map((link) => {
       const contact = link.prospects[0];
@@ -71,7 +73,7 @@ export default async function DashboardLayout({
         kind: "deal" as const,
         href: `/links/${link.id}`,
         label,
-        hint: [who !== label ? who : null, dealDocumentMeta(link)].filter(Boolean).join(" · "),
+        hint: [labelSays(label, who) ? null : who, dealDocumentMeta(link)].filter(Boolean).join(" · "),
       };
     }),
     ...documents.map((doc) => ({ kind: "document" as const, href: `/documents/${doc.id}`, label: doc.name })),
@@ -94,14 +96,17 @@ export default async function DashboardLayout({
             isManager={isManager}
             hasTeam={hasTeam}
             prospecting={isProspectingAllowed(user, organization.id)}
-            campaigns={isOutreachAllowed(user, organization.id)}
+            campaigns={campaigns}
           />
           <div className="ml-auto flex items-center gap-2">
+            {/* With campaigns open, "+ Nouveau" offers both doors; the upload dialog stays mounted behind it */}
             <UploadButton
               uploadPrefix={documentUploadPrefix(organization.id)}
               pitchUploadPrefix={pitchUploadPrefix(organization.id)}
+              trigger={!campaigns}
             />
-            <CommandMenu entries={entries} />
+            {campaigns && <NewMenu />}
+            <CommandMenu entries={entries} campaigns={campaigns} />
             <LocaleMenu />
             <HelpMenu />
             <UserMenu
@@ -120,7 +125,7 @@ export default async function DashboardLayout({
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 pt-8 pb-28 sm:px-6 sm:pt-10 sm:pb-16">
         {children}
       </main>
-      <MobileNav isManager={isManager} hasTeam={hasTeam} />
+      <MobileNav isManager={isManager} hasTeam={hasTeam} campaigns={campaigns} />
       <HelpWidget firstName={user.name?.trim().split(/\s+/)[0] || null} />
       <UpgradeDialogHost />
       <IdentifySeller userId={user.id} />

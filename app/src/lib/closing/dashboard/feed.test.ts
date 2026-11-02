@@ -139,6 +139,11 @@ describe("feedContext", () => {
     expect(feedContext("Devis 2026", "Devis 2026", "Devis 2026")).toBeNull();
     expect(feedContext("Norda", "Norda", null)).toBeNull();
   });
+
+  it("drops the part of the label the line already says, person or company", () => {
+    expect(feedContext("Léa", "Acme · Léa", "Devis 2026")).toBe("Acme · Devis 2026");
+    expect(feedContext("Acme", "Acme · Léa", "Devis 2026")).toBe("Léa · Devis 2026");
+  });
 });
 
 describe("buildFeed on dead links", () => {

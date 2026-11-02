@@ -1,5 +1,5 @@
 import { getPublicAppUrl } from "@/lib/app-origin";
-import { dealLabel, linkLabelSelect } from "@/lib/closing/dashboard/labels";
+import { dealLabel, labelSays, linkLabelSelect } from "@/lib/closing/dashboard/labels";
 import { getWorkspaceLiveState } from "@/lib/closing/live";
 import { extensionNotice } from "@/lib/closing/notify/extension-notice";
 import { sellerTimezone, upsertSellerPrefs } from "@/lib/closing/notify/preferences";
@@ -73,7 +73,8 @@ export const GET = withExtensionAuth(async (request, { user, organization }) => 
       viewId: reader.viewId,
       linkId: reader.linkId,
       label: reader.label,
-      name: reader.name,
+      // The extension appends the name after the label: not when the label already says it
+      name: labelSays(reader.label, reader.name) ? null : reader.name,
       currentPage: reader.currentPage,
       startedAt: reader.startedAt,
     })),

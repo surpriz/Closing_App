@@ -182,7 +182,7 @@ describe("evaluateEnrollmentReading", () => {
       linkId: "l1",
       type: "CALL_MOMENT",
       dedupeKey: "cold_call:l1:call_moment",
-      payload: { reason: "Lingering on the pricing (cold campaign)" },
+      payload: { reason: "Lingering on the pricing (campaign)" },
       now,
     });
     const queued = queueFollowup.mock.calls[0][0];

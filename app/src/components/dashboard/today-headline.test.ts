@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { MESSAGES } from "@/i18n/messages";
 
-import { buildTodayHeadline as build, type TodayHeadlineInput } from "./today-headline";
+import { buildTodayHeadline as build, focusLabel, type TodayHeadlineInput } from "./today-headline";
 
 const fr = createTranslator({ locale: "fr", messages: MESSAGES.fr });
 const en = createTranslator({ locale: "en", messages: MESSAGES.en });
@@ -128,8 +128,8 @@ describe("with the deal analysis", () => {
         draftsToReview: 2,
       }),
     ).toEqual({
-      headline: "Acme : le DAF entre dans la boucle.",
-      hint: "2 relances attendent votre accord.",
+      headline: "Acme · Le DAF entre dans la boucle.",
+      hint: "Ensuite : 2 relances à valider.",
     });
     expect(
       buildTodayHeadline({
@@ -166,5 +166,26 @@ describe("with the deal analysis", () => {
         readyLinks: { count: 2, documentName: "Devis Acme" },
       }).headline,
     ).toBe("2 liens prêts à envoyer.");
+  });
+
+  it("says follow-ups are off instead of promising them", () => {
+    expect(buildTodayHeadline({ ...base, warmCount: 1, activeCount: 1, followupsOn: false })).toEqual({
+      headline: "Un prospect consulte votre document.",
+      hint: "Rien d'urgent. Relances coupées sur ces liens : vous relancez vous-même.",
+    });
+  });
+});
+
+describe("focusLabel", () => {
+  it("drops the person from the label when the analysis already opens with their name", () => {
+    expect(focusLabel({ label: "Waltio · Thomas", company: "Waltio", headline: "Thomas se dit intéressé." })).toBe("Waltio");
+  });
+
+  it("keeps the full label when the headline speaks of something else", () => {
+    expect(focusLabel({ label: "Waltio · Thomas", company: "Waltio", headline: "Le DAF entre dans la boucle." })).toBe("Waltio · Thomas");
+  });
+
+  it("keeps the label without a company", () => {
+    expect(focusLabel({ label: "Thomas", company: null, headline: "Thomas se dit intéressé." })).toBe("Thomas");
   });
 });

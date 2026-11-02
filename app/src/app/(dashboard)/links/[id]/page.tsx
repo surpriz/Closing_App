@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { ActivityTimeline } from "@/components/dashboard/activity-timeline";
@@ -43,6 +44,9 @@ import { dealLabel, linkLabelSelect } from "@/lib/closing/dashboard/labels";
 import type { DocType } from "@/lib/closing/documents/doc-types";
 import { showsCountdown } from "@/lib/closing/expiry";
 import { firstNameOf, guessMailClient } from "@/lib/closing/share/compose";
+import { DEAL_ANCHORS } from "@/lib/closing/dashboard/deal-cta";
+import { followupsEmptyHint } from "@/lib/closing/followups/empty-hint";
+import { isOutreachAllowed } from "@/lib/outreach/flag";
 import { settingsSummary } from "@/lib/closing/share/summary";
 import type { SmartLinkProblem } from "@/lib/closing/shared/smart-params";
 import { sequencerWebhookUrl } from "@/lib/closing/sequencer/apply";
@@ -86,13 +90,22 @@ export default async function LinkDetailPage({
   if (!deal) notFound();
 
   const { link, now, canEdit, url, mainProspect, settings, insight } = deal;
-  const [t, tDocs, locale, smartProblems] = await Promise.all([
+  const [t, tDocs, tPanel, locale, smartProblems] = await Promise.all([
     getTranslations("deal.page"),
     getTranslations("documents"),
+    getTranslations("deal.followupsPanel"),
     getLocale(),
     canEdit ? loadSmartLinkProblems(link.id, link.shared, now) : [],
   ]);
   const uploadPrefix = capsuleUploadPrefix(workspace.organization.id);
+  // The follow-up chip says the same thing as the follow-ups section
+  const summaryOpts = { autonomy: settings.autonomy, campaign: deal.campaign?.name ?? null };
+  const emptyHintKey = followupsEmptyHint({
+    campaign: summaryOpts.campaign,
+    followupsEnabled: link.followupsEnabled,
+    shared: link.shared,
+    hasEmail: !!mainProspect?.email,
+  });
 
   const welcome = deal.welcome ? (
     <WelcomeMessage
@@ -143,7 +156,7 @@ export default async function LinkDetailPage({
         }
         signature={settings.senderSignature}
         processing={deal.reading}
-        summary={settingsSummary(link, now, locale)}
+        summary={settingsSummary(link, now, locale, summaryOpts)}
         shared={link.shared}
         welcome={welcome}
         notice={
@@ -157,24 +170,64 @@ export default async function LinkDetailPage({
             : null
         }
         settings={deal.settingsPanel}
+        opened={deal.opened}
+        followupsEnabled={link.followupsEnabled}
+        campaigns={isOutreachAllowed(workspace.user, workspace.organization.id)}
+        mailTip={
+          deal.sellerPrefs && (
+            <ShareMailToolTip
+              user={workspace.user}
+              organizationId={workspace.organization.id}
+              prefs={deal.sellerPrefs}
+              returnTo={`/links/${link.id}`}
+              inline
+            />
+          )
+        }
       />
-      {deal.sellerPrefs && (
-        <ShareMailToolTip
-          user={workspace.user}
-          organizationId={workspace.organization.id}
-          prefs={deal.sellerPrefs}
-          returnTo={`/links/${link.id}`}
-        />
-      )}
     </div>
   );
-  const refresh = deal.sharing && deal.reading && <AutoRefresh intervalMs={3000} />;
+  // D1: a link just created and never read is a send screen; the report opens itself at the first read
+  const foldReport = justCreated && deal.sharing && !deal.opened;
+  // Reading the document polls fast and briefly; waiting for a first read polls slowly, until it comes
+  const refresh = deal.sharing && (deal.reading || foldReport) && (
+    <AutoRefresh intervalMs={deal.reading ? 3000 : 15000} />
+  );
+
+  // The follow-up to approve is the day's action: when the next action says so, it comes before the report
+  const followupsFirst = deal.nextAction.kind === "review_draft";
+  const followupsSection = (
+    <DealSection id="relances" title={t("followupsTitle")}>
+      <div className="pt-4">
+        <FollowupsPanel
+          followups={deal.followupItems}
+          seller={settings.senderName}
+          mailClient={deal.sellerPrefs?.mailClient ?? guessMailClient(workspace.user.email)}
+          emptyHint={
+            emptyHintKey
+              ? tPanel(emptyHintKey, { name: deal.campaign?.name ?? "" })
+              : null
+          }
+        />
+      </div>
+    </DealSection>
+  );
 
   return (
     <div className="space-y-10">
       {share}
       {refresh}
 
+      {foldReport ? (
+        <p className="flex flex-wrap gap-x-6 gap-y-1 border-b border-border pb-2 font-mono text-micro text-muted-foreground">
+          <span className="text-foreground">{t("foldedReportLabel")}</span>
+          <span>{t("foldedReportHint")}</span>
+          <Link href={`/links/${link.id}`} className="underline underline-offset-2 hover:text-foreground">
+            {t("foldedReportOpen")}
+          </Link>
+        </p>
+      ) : (
+      <>
       <div className="space-y-6">
         <DealHeader deal={deal} />
         {link.parentLinkId && <p className="text-small text-muted-foreground">{t("readerLinkNote")}</p>}
@@ -214,6 +267,7 @@ export default async function LinkDetailPage({
 
       {/* Disables every form and button below for a read-only visit */}
       <fieldset disabled={!canEdit} className="min-w-0 space-y-12">
+        {followupsFirst && followupsSection}
         <LiveActivity
           key={deal.live.stamp}
           linkId={link.id}
@@ -266,11 +320,7 @@ export default async function LinkDetailPage({
               }}
             />
 
-            <DealSection id="relances" title={t("followupsTitle")}>
-              <div className="pt-4">
-                <FollowupsPanel followups={deal.followupItems} />
-              </div>
-            </DealSection>
+            {!followupsFirst && followupsSection}
 
             {deal.transcript.length > 0 && (
               <DealSection
@@ -352,13 +402,16 @@ export default async function LinkDetailPage({
               </DealSection>
             )}
 
-            <DealSection
+            {/* An empty form on every page is weight: one click opens it (D2) */}
+            <DealFold
               id="noter"
               title={t("logTitle")}
               hint={t("logHint")}
+              // Folded by default (D2), open when the day's action is to log an exchange
+              open={deal.cta?.kind === "href" && deal.cta.href === DEAL_ANCHORS.log}
             >
               <SellerActivityForm linkId={link.id} />
-            </DealSection>
+            </DealFold>
 
             <DealContextSummaryDetails
               summary={dealContextSummary(
@@ -416,7 +469,7 @@ export default async function LinkDetailPage({
 
         {canEdit && (
           <DealSettings
-            summary={settingsSummary(link, now, locale)}
+            summary={settingsSummary(link, now, locale, summaryOpts)}
             name={link.name ?? ""}
             panel={deal.settingsPanel}
             welcome={!deal.sharing ? welcome : null}
@@ -453,6 +506,8 @@ export default async function LinkDetailPage({
 
         {testToolsEnabled() && <LinkTestTools linkId={link.id} />}
       </fieldset>
+      </>
+      )}
     </div>
   );
 }

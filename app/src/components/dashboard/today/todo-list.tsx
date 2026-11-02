@@ -1,8 +1,9 @@
-import { ArrowRight, ChevronDown, Sparkles } from "lucide-react";
+import { ArrowRight, ChevronDown, ChevronRight, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 
 import { buttonVariants } from "@/components/ui/button";
+import { labelSays } from "@/lib/closing/dashboard/labels";
 import type { EngagementTier } from "@/generated/prisma/enums";
 import {
   describeNextAction,
@@ -80,7 +81,7 @@ export function TodoList({
               : null;
         const urgent = isUrgent(row.action);
         const meta = [
-          row.contact && row.contact !== row.label ? row.contact : null,
+          row.contact && !labelSays(row.label, row.contact) ? row.contact : null,
           row.documentName,
         ]
           .filter(Boolean)
@@ -175,7 +176,7 @@ export function TodoList({
               ) : (
                 <CopyButton value={row.url} title={row.title} />
               )}
-              {index === 0 && (
+              {index === 0 ? (
                 <Link
                   href={`/links/${row.id}`}
                   className={buttonVariants({ size: "sm" })}
@@ -183,6 +184,9 @@ export function TodoList({
                   {t("today.todo.handle")}
                   <ArrowRight data-icon="inline-end" />
                 </Link>
+              ) : (
+                // The whole row opens the deal: a quiet chevron says so without a second button
+                <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
               )}
             </div>
           </li>

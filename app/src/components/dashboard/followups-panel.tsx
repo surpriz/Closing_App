@@ -1,6 +1,7 @@
 "use client";
 
 import { Check, Copy, Mail, RefreshCw } from "lucide-react";
+import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -19,7 +20,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { FollowupStatus } from "@/generated/prisma/enums";
 import { copyMessage } from "@/lib/clipboard";
+import { followupDueNow } from "@/lib/closing/followups/due";
 import { buildMailto } from "@/lib/closing/followups/mailto";
+import { mailClientLabel } from "@/lib/closing/share/compose";
+import { followupSenderLabel } from "@/lib/closing/followups/sender";
 import { formatInTimeZone } from "@/lib/format";
 
 import type { FollowupItem } from "./followup-item";
@@ -52,11 +56,17 @@ export function FollowupsPanel({
   followups,
   showLink = false,
   emptyHint,
+  seller = null,
+  mailClient = null,
 }: {
   followups: FollowupItem[];
   showLink?: boolean;
   /** Why there is nothing yet, e.g. what the latest analysis advised. */
   emptyHint?: string | null;
+  /** The workspace sender name: "from Clozer, on behalf of {seller}". */
+  seller?: string | null;
+  /** The seller's mail app, to name it on "Open in Gmail". */
+  mailClient?: string | null;
 }) {
   const t = useTranslations("deal.followupsPanel");
   if (followups.length === 0) {
@@ -73,18 +83,30 @@ export function FollowupsPanel({
   return (
     <ul className="divide-y divide-border">
       {followups.map((f) => (
-        <FollowupRow key={f.id} followup={f} showLink={showLink} />
+        <FollowupRow key={f.id} followup={f} showLink={showLink} seller={seller} mailClient={mailClient} />
       ))}
     </ul>
   );
 }
 
-function FollowupRow({ followup: f, showLink }: { followup: FollowupItem; showLink: boolean }) {
+function FollowupRow({
+  followup: f,
+  showLink,
+  seller,
+  mailClient,
+}: {
+  followup: FollowupItem;
+  showLink: boolean;
+  seller: string | null;
+  mailClient: string | null;
+}) {
   const editable = f.status === "DRAFT" || f.status === "GENERATED" || f.status === "SCHEDULED";
   const t = useTranslations("deal.followupsPanel");
   const tl = useTranslations("labels");
   const locale = useLocale();
   const formatInZone = (date: Date, timeZone: string) => formatInTimeZone(date, timeZone, locale);
+  const pending = !f.sentAt && f.status !== "CANCELLED" && f.status !== "FAILED" && f.status !== "SKIPPED";
+  const sender = followupSenderLabel(f.sender, seller);
 
   return (
     <li className="space-y-2.5 py-4 first:pt-0 last:pb-0">
@@ -99,11 +121,20 @@ function FollowupRow({ followup: f, showLink }: { followup: FollowupItem; showLi
 
       <p className="text-small text-muted-foreground">
         {f.sentAt
-          ? `${t("sentOn", { date: formatInZone(f.sentAt, f.timezone) })}${f.sentVia === "MANUAL" ? t("byYou") : ""}`
+          ? t("sentOn", { date: formatInZone(f.sentAt, f.timezone) })
           : f.status === "DRAFT"
             ? t("draftFor", { date: formatInZone(f.scheduledFor, f.timezone) })
             : t("plannedFor", { date: formatInZone(f.scheduledFor, f.timezone) })}
       </p>
+      <p className="text-small text-muted-foreground">{tl(`followupSender.${sender.key}`, sender.values)}</p>
+      {pending && f.mailboxDown && (
+        <p className="text-small text-destructive">
+          {tl("followupSender.mailboxDown", { mailbox: f.mailboxDown })}{" "}
+          <Link href="/settings#boite" className="font-medium underline underline-offset-2">
+            {t("reconnect")}
+          </Link>
+        </p>
+      )}
 
       {f.rationale && (
         <p className="text-body">
@@ -114,7 +145,7 @@ function FollowupRow({ followup: f, showLink }: { followup: FollowupItem; showLi
       )}
 
       {editable && f.body ? (
-        <DraftEditor key={f.version} followup={f} />
+        <DraftEditor key={f.version} followup={f} mailClient={mailClient} />
       ) : (
         f.body && (
           <details className="group border-l border-foreground/30 pl-3 text-body">
@@ -129,7 +160,8 @@ function FollowupRow({ followup: f, showLink }: { followup: FollowupItem; showLi
   );
 }
 
-function DraftEditor({ followup: f }: { followup: FollowupItem }) {
+function DraftEditor({ followup: f, mailClient }: { followup: FollowupItem; mailClient: string | null }) {
+  const locale = useLocale();
   const [pending, startTransition] = useTransition();
   const [subject, setSubject] = useState(f.subject ?? "");
   const [body, setBody] = useState(f.body ?? "");
@@ -140,6 +172,9 @@ function DraftEditor({ followup: f }: { followup: FollowupItem }) {
 
   const dirty = subject !== (f.subject ?? "") || body !== (f.body ?? "");
   const isEmail = f.channel === "EMAIL";
+  const dueNow = followupDueNow(f.scheduledFor, new Date());
+  const when = formatInTimeZone(f.scheduledFor, f.timezone, locale);
+  const clientLabel = mailClientLabel(mailClient);
   const mailto = isEmail ? buildMailto({ to: f.recipientEmail, subject: subject || null, body }) : null;
 
   // Edits are saved before any action, so what is approved is what is on screen
@@ -218,14 +253,19 @@ function DraftEditor({ followup: f }: { followup: FollowupItem }) {
         </div>
       )}
 
+      {/* One full button: what Clozer does next. The other ways out stay, grouped by who sends. */}
       <div className="flex flex-wrap gap-2">
         {f.status === "DRAFT" && (
           <Button
             size="sm"
             disabled={pending}
-            onClick={() => run(async () => toastResult(await approveFollowup(f.id), t("approved")))}
+            onClick={() =>
+              run(async () =>
+                toastResult(await approveFollowup(f.id), dueNow ? t("approvedNow") : t("approvedAt", { date: when })),
+              )
+            }
           >
-            {t("approve")}
+            {dueNow ? t("approveNow") : t("approveAt", { date: when })}
           </Button>
         )}
         <Button
@@ -260,13 +300,16 @@ function DraftEditor({ followup: f }: { followup: FollowupItem }) {
         <Button size="sm" variant="ghost" disabled={pending} onClick={() => setRewriting((v) => !v)}>
           <RefreshCw /> {t("rewrite")}
         </Button>
+      </div>
+      <div className="flex flex-wrap items-center gap-x-1 gap-y-1 text-small text-muted-foreground">
+        <span className="mr-1">{t("myselfLead")}</span>
         {mailto && (
-          <Button size="sm" variant="ghost" render={<a href={mailto} />} nativeButton={false}>
-            <Mail /> {t("openInMail")}
+          <Button size="xs" variant="ghost" render={<a href={mailto} />} nativeButton={false}>
+            <Mail /> {clientLabel ? t("openInMailIn", { client: clientLabel }) : t("openInMail")}
           </Button>
         )}
         <Button
-          size="sm"
+          size="xs"
           variant="ghost"
           onClick={async () => {
             await copyMessage(isEmail && subject ? `${subject}\n\n${body}` : body, isEmail ? f.share : null);
@@ -277,7 +320,7 @@ function DraftEditor({ followup: f }: { followup: FollowupItem }) {
           {copied ? <Check /> : <Copy />} {t("copy")}
         </Button>
         <Button
-          size="sm"
+          size="xs"
           variant="ghost"
           disabled={pending}
           onClick={() => run(async () => toastResult(await markFollowupSentByMe(f.id), t("markedSent")))}
@@ -285,9 +328,10 @@ function DraftEditor({ followup: f }: { followup: FollowupItem }) {
           {t("sentMyself")}
         </Button>
         <Button
-          size="sm"
+          size="xs"
           variant="ghost"
           disabled={pending}
+          className="ml-auto"
           onClick={() =>
             startTransition(async () => {
               await cancelFollowup(f.id);

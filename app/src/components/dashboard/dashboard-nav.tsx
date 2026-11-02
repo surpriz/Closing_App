@@ -17,9 +17,9 @@ type Item = {
   managerOnly?: boolean;
   /** Only once the workspace has a second member: alone, there is no team to look at. */
   teamOnly?: boolean;
-  /** Prospecting POC workspaces only, and not in the phone tab bar (5 columns at most). */
+  /** Prospecting POC workspaces only, and not in the phone tab bar. */
   prospectingOnly?: boolean;
-  /** Native cold email beta workspaces only, and not in the phone tab bar either. */
+  /** Workspaces with campaigns open, on desktop and in the phone tab bar. */
   campaignsOnly?: boolean;
 };
 
@@ -76,17 +76,27 @@ export function DashboardNav(access: Access) {
 }
 
 /** Fixed tab bar at the bottom of the screen on phones. */
-export function MobileNav({ isManager, hasTeam }: { isManager: boolean; hasTeam: boolean }) {
+export function MobileNav({
+  isManager,
+  hasTeam,
+  campaigns = false,
+}: {
+  isManager: boolean;
+  hasTeam: boolean;
+  campaigns?: boolean;
+}) {
   const isActive = useActive();
   const t = useTranslations("nav.dashboardNav");
-  const items = itemsFor({ isManager, hasTeam }).filter((item) => !item.prospectingOnly && !item.campaignsOnly);
+  // Prospecting stays desktop-only; campaigns get their tab once they are open to the workspace
+  const items = itemsFor({ isManager, hasTeam, campaigns }).filter((item) => !item.prospectingOnly);
 
   return (
     <nav
       aria-label={t("mainNav")}
       className="fixed inset-x-0 bottom-0 z-40 border-t border-foreground bg-background pb-[env(safe-area-inset-bottom)] sm:hidden"
     >
-      <div className={cn("grid", items.length === 5 ? "grid-cols-5" : items.length === 4 ? "grid-cols-4" : "grid-cols-3")}>
+      {/* One equal column per tab, whatever the count (3 to 6) */}
+      <div className={cn("grid grid-flow-col auto-cols-fr")}>
         {items.map((item) => {
           const active = isActive(item.match);
           const Icon = item.icon;

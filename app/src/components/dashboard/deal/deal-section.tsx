@@ -1,5 +1,7 @@
 import { ChevronRight } from "lucide-react";
 
+import { DetailsFold } from "./details-fold";
+
 import { cn } from "@/lib/utils";
 
 /**
@@ -58,9 +60,9 @@ export function DealFold({
   children: React.ReactNode;
 }) {
   return (
-    <details
+    <DetailsFold
       id={id}
-      open={open}
+      defaultOpen={open}
       className="group scroll-mt-20 border-b border-border"
     >
       <summary className="flex cursor-pointer list-none flex-wrap items-baseline gap-x-2 gap-y-1 py-3 outline-none focus-visible:underline [&::-webkit-details-marker]:hidden">
@@ -76,6 +78,6 @@ export function DealFold({
         )}
       </summary>
       <div className="pb-4">{children}</div>
-    </details>
+    </DetailsFold>
   );
 }

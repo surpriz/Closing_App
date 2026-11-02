@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import {
   evaluateReadingAction,
   runOutreachTickAction,
+  type TickResult,
   shiftMailboxRampAction,
   simulateReadingAction,
   timeTravelEnrollmentAction,
@@ -26,7 +27,7 @@ export function CampaignTestTools({
 }) {
   const t = useTranslations("campaigns.testTools");
   const [pending, startTransition] = useTransition();
-  const [tick, setTick] = useState<string | null>(null);
+  const [tick, setTick] = useState<TickResult | null>(null);
   const [enrollmentId, setEnrollmentId] = useState(enrollments[0]?.id ?? "");
   const [enrollmentDays, setEnrollmentDays] = useState(1);
   const [mailboxDays, setMailboxDays] = useState(7);
@@ -48,6 +49,7 @@ export function CampaignTestTools({
         <FlaskConical className="size-3.5" /> {t("title")}
       </summary>
       <div className="mt-3 space-y-4">
+        <p>{t("help")}</p>
         <div className="space-y-2">
           <Button
             size="sm"
@@ -57,7 +59,19 @@ export function CampaignTestTools({
           >
             {pending ? t("running") : t("runTick")}
           </Button>
-          {tick && <pre className="overflow-x-auto bg-muted px-3 py-2 font-mono text-micro text-foreground">{tick}</pre>}
+          {tick && (
+            <div className="space-y-1">
+              <p className="text-foreground">
+                {tick.sent + tick.rescheduled + tick.failed === 0
+                  ? t("tickNothing")
+                  : t("tickSummary", { sent: tick.sent, rescheduled: tick.rescheduled, failed: tick.failed })}
+              </p>
+              <details>
+                <summary className="cursor-pointer">{t("tickDetail")}</summary>
+                <pre className="mt-1 overflow-x-auto bg-muted px-3 py-2 font-mono text-micro text-foreground">{tick.raw}</pre>
+              </details>
+            </div>
+          )}
         </div>
 
         {enrollments.length > 0 && (

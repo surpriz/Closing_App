@@ -26,8 +26,9 @@
     "onlineApproval": "Validation en ligne",
     "aiAssistant": "Assistant IA",
     "followupsReview": "Relances à valider",
-    "followupsAuto": "Relances auto",
-    "noFollowups": "Sans relance"
+    "followupsAuto": "Relances automatiques (Pilote)",
+    "noFollowups": "Relances coupées",
+    "followupsCampaign": "Relances : campagne {name}"
   },
   "team": {
     "USER_IS_ALREADY_A_MEMBER_OF_THIS_ORGANIZATION": "Cette personne fait déjà partie de l'équipe.",

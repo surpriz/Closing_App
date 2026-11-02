@@ -17,7 +17,8 @@
       "donnees": "Données",
       "boite": "Boîte mail"
     },
-    "instantSave": "Ces sections s'enregistrent dès que vous les modifiez."
+    "instantSave": "Ces sections s'enregistrent dès que vous les modifiez.",
+    "languageReminder": "Langue : {language}, à changer depuis le globe en haut à droite."
   },
   "advanced": {
     "show": "Réglages avancés",
@@ -41,13 +42,14 @@
     "pilot": {
       "title": "Pilote automatique",
       "descriptionAi": "Clozer lit chaque prospect comme un closer expérimenté : qui lit quoi, ce qui coince, quand relancer. Il prépare les relances tout seul.",
-      "descriptionNoAi": "Les relances sont préparées à partir de règles simples tant qu'aucune IA n'est configurée.",
+      "descriptionNoAi": "Sans IA configurée, Clozer écrit la relance à partir d'un modèle. Vous choisissez si elle attend votre accord.",
       "hint": "Dans tous les cas : 3 relances par mois et par contact au maximum, jamais juste après une lecture, toujours aux heures de bureau du prospect, et jamais d'allusion au fait que vous voyez ce qu'il lit.",
       "question": "Quand Clozer a préparé une relance",
       "copilot": "Je la relis et je valide",
       "copilotHint": "Recommandé pour commencer. Vous recevez un email, et la relance vous attend sur le tableau de bord (« Relances à valider ») et sur la fiche du prospect, rubrique Relances.",
       "autopilot": "Elle part seule quand Clozer est sûr de lui",
-      "autopilotHint": "Les cas délicats (objection, message du prospect, doute) attendent quand même votre accord. Un récapitulatif vous arrive chaque matin."
+      "autopilotHint": "Les cas délicats (objection, message du prospect, doute) attendent quand même votre accord. Un récapitulatif vous arrive chaque matin.",
+      "senderNote": "D'où partent les relances : pour un lien, de Clozer en votre nom, avec votre adresse en réponse ; pour une campagne, de votre boîte connectée, dans le fil."
     },
     "alerts": {
       "title": "Être prévenu",
@@ -55,7 +57,7 @@
       "actionsHint": "Validation, demande d'ajustement ou rendez-vous pris : c'est rare, et le prospect attend votre retour.",
       "actionsLabel": "Un email dès qu'un prospect valide, demande un ajustement ou prend rendez-vous",
       "callConnected": "{which, select, both {Chrome et Outlook connectés.} chrome {Chrome connecté.} other {Outlook connecté.}} Une alerte arrive quand un prospect ouvre votre proposition pour la première fois, revient après un silence, s'attarde sur les tarifs ou la lit à plusieurs. Jamais le soir ni le week-end, 4 par heure au plus.",
-      "callNothingConnected": "Rien de connecté : installez Chrome ou Outlook plus bas (Réglages avancés) pour être prévenu pendant la lecture.",
+      "callNothingConnected": "Rien de connecté : installez Chrome ou Outlook (section « Chrome et Outlook », plus bas) pour être prévenu pendant la lecture.",
       "callQuestion": "Quand c'est le moment d'appeler",
       "callExtension": "Notification dans Chrome, alerte dans le volet Outlook",
       "callEmail": "Un email aussi",
@@ -119,7 +121,7 @@
     },
     "messages": {
       "title": "Vos messages",
-      "description": "Les relances sont écrites en votre nom : comment vous signez, et sur quel ton.",
+      "description": "Les relances sont écrites en votre nom (envoyées par Clozer, réponse à votre adresse) : comment vous signez, et sur quel ton.",
       "senderLabel": "Signé par",
       "senderPlaceholder": "Jérôme",
       "toneLabel": "Ton",
@@ -311,6 +313,7 @@
     },
     "lastError": {
       "AUTH_REVOKED": "Le serveur a refusé les identifiants. Reconnectez la boîte avec un mot de passe valide.",
+      "AUTH_REVOKED_OAUTH": "{provider} a coupé l'accès à cette boîte. Reconnectez-la en un clic.",
       "QUOTA": "Le quota d'envoi du fournisseur est atteint.",
       "RATE_LIMITED": "Le fournisseur limite les envois.",
       "REJECTED": "Le fournisseur a refusé le message.",
@@ -347,7 +350,8 @@
       "limit": "Vous avez atteint le nombre maximum de boîtes.",
       "failed": "La connexion a échoué. Réessayez dans quelques minutes.",
       "pendingSlow": "Toujours rien. Rechargez dans un instant, ou reconnectez la boîte."
-    }
+    },
+    "addAnother": "Connecter une autre boîte"
   },
   "suppressions": {
     "title": "Liste d'arrêt",

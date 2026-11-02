@@ -3,6 +3,9 @@
     "metaTitleFallback": "Prospect",
     "theProspect": "Le prospect",
     "autoNotice": "Reconnu comme « {docType} » : le prospect a jusqu'au {date} et voit le décompte.",
+    "foldedReportLabel": "Rapport de lecture",
+    "foldedReportHint": "s'ouvrira à la première lecture",
+    "foldedReportOpen": "Voir la fiche",
     "pageTimeTitle": "Temps par page en détail",
     "pageTimeHintVideo": "sur chaque passage de la vidéo",
     "pageTimeHint": "total et moyenne par lecture",
@@ -95,7 +98,9 @@
     "reactivateManagerOnly": "Document archivé : un manager peut le remettre en ligne.",
     "report": "Rapport de lecture",
     "sentOn": "Envoyé le {date}",
-    "total": "{time} au total"
+    "total": "{time} au total",
+    "noRecipientLine": "Sans destinataire ·",
+    "addRecipient": "ajouter"
   },
   "dealSettings": {
     "title": "Réglages du lien",
@@ -132,7 +137,8 @@
     "liveNow": "lue en ce moment",
     "pricingTag": "Tarifs",
     "avgPerView": "{time} par visionnage en moyenne",
-    "avgPerRead": "{time} par lecture en moyenne"
+    "avgPerRead": "{time} par lecture en moyenne",
+    "onePage": "1 page · {time}"
   },
   "dealContextDetails": {
     "title": "Contexte commercial",
@@ -163,7 +169,8 @@
     "reopened": "Rouvert",
     "changed": "Statut « {status} », relances en attente annulées",
     "failed": "Modification impossible",
-    "ariaLabel": "Statut du prospect"
+    "ariaLabel": "Statut du prospect",
+    "statusLabel": "Statut"
   },
   "dealVerdict": {
     "severityLow": "faible",
@@ -201,12 +208,18 @@
     "enabled": "Relances activées",
     "disabled": "Relances désactivées, relances en attente annulées",
     "failed": "Modification impossible",
-    "drivenByCampaign": "Relances gérées par la campagne {name}"
+    "drivenByCampaign": "Relances : campagne {name}",
+    "stateOn": "Relances : à valider",
+    "stateAuto": "Relances : automatiques (Pilote)",
+    "stateOff": "Relances : coupées",
+    "turnOff": "couper",
+    "turnOn": "activer"
   },
   "linkSettingsForm": {
     "name": "Nom du lien",
     "title": "Réglages du lien",
-    "description": "Chaque changement est enregistré tout de suite."
+    "description": "Chaque changement est enregistré tout de suite.",
+    "open": "Modifier"
   },
   "linkSettingsPanel": {
     "groupAccess": "Accès",
@@ -227,7 +240,7 @@
     "forwardEnabled": "Transférer à un collègue",
     "forwardEnabledHint": "Le lecteur peut l'envoyer à son N+1 : vous voyez qui l'a reçu et ce qu'il lit. Coupez-le pour un document confidentiel.",
     "followupsEnabled": "Relances préparées par Clozer",
-    "followupsEnabledHint": "Coupé : le prospect reste suivi, sans relance.",
+    "followupsEnabledHint": "Activé : Clozer écrit au bon moment, vous validez ; la relance part de Clozer avec votre adresse en réponse. Coupé : le prospect reste suivi, vous relancez vous-même.",
     "videoCta": "Demander un devis",
     "videoCtaHint": "Un bouton sous la vidéo.",
     "bookingLabel": "Lien de l'agenda",
@@ -249,7 +262,8 @@
     "cycleHint": "rappels « pas ouvert », envois à l'heure prévue, analyses en retard"
   },
   "newLinkButton": {
-    "smartLabel": "Smart Link pour cold email",
+    "smartLabel": "Smart Link (lemlist, post, signature)",
+    "campaignLabel": "Campagne depuis ma boîte",
     "defaultLabel": "Un lien pour un autre prospect",
     "creating": "Création…"
   },
@@ -275,6 +289,7 @@
     "copyFailed": "Copie impossible : sélectionnez le lien à la main.",
     "liveShared": "C'est en ligne. Chaque nouveau lecteur apparaît ici.",
     "sentPersonal": "C'est parti. Vous serez prévenu dès qu'il l'ouvre.",
+    "openedNoRecipient": "Quelqu'un l'a déjà ouvert. Dites pour qui il est : Clozer pourra relancer.",
     "linkCopied": "Lien copié",
     "ready": "Votre lien est prêt",
     "pasteAndSend": "Collez-le dans votre message et envoyez-le. Le suivi démarre dès qu'il l'ouvre.",
@@ -282,16 +297,18 @@
     "sharedIntro": "Mettez-le dans votre séquence de cold email, ou postez-le : chaque lecteur est identifié et reçoit son propre lien, suivi comme vos autres prospects.",
     "personalIntro": "Il l'ouvre et lit tout de suite, sans rien remplir. Vous saurez quelles pages, combien de temps, et quand relancer.",
     "forRecipient": "Pour <b>{email}</b>",
-    "whoLabel": "Pour qui est ce lien ?",
+    "whoLabel": "Pour qui ?",
     "optional": "(facultatif)",
     "whoPlaceholder": "Marie Dupont, Acme ou marie@acme.fr",
-    "save": "Enregistrer",
-    "whoHint": "Avec un email, Clozer pourra le relancer pour vous.",
+    "save": "Enregistrer le destinataire",
+    "whoHint": "Avec son email, Clozer relance pour vous.",
+    "whoHintOff": "Relances coupées pour ce lien : l'email sert à nommer le prospect.",
     "noEmailHint": "Sans email, Clozer ne pourra pas le relancer.",
     "copyTitle": "Copier le lien",
     "copied": "Copié",
     "copyLink": "Copier le lien",
-    "sendByEmail": "Envoyer par email",
+    "sendByEmail": "Ouvrir ma messagerie avec le lien",
+    "sendByEmailIn": "Ouvrir dans {client} avec le lien",
     "processing": "Clozer lit votre document pour adapter les réglages. Vous pouvez déjà l'envoyer.",
     "welcomeTitle": "Mot d'accueil",
     "welcomeHint": "Une vidéo ou un vocal pour présenter le document : le prospect voit votre bulle dès l'ouverture.",
@@ -299,9 +316,10 @@
     "preview": "Voir ce que verra le prospect",
     "sharedMode": "Smart Link : chaque lecteur est identifié par son email, donné par votre outil de cold email ou tapé à l'ouverture, et reçoit son propre lien.",
     "backToPersonal": "Revenir à un lien personnel",
-    "broadcastAsk": "Pour une séquence de cold email, ou à diffuser largement (post, signature) ?",
+    "broadcastAsk": "Pour le diffuser à plusieurs (post, signature, séquence lemlist) ?",
     "makeOpen": "En faire un Smart Link",
-    "makeOpenAfter": ", chaque lecteur sera identifié."
+    "makeOpenAfter": " : chaque lecteur sera identifié.",
+    "campaignAsk": "Pour une campagne depuis votre boîte : <link>Campagnes</link>."
   },
   "sharedReaders": {
     "empty": "Personne pour l'instant. Chaque lecteur apparaîtra ici avec son propre suivi.",
@@ -357,10 +375,14 @@
     "presetCall": "Proposer un appel",
     "presetAngle": "Autre angle",
     "emptyTitle": "Aucune relance pour l'instant.",
-    "emptyHint": "Dès que Clozer juge qu'il faut relancer, il écrit le message et le met ici. Vous recevez un email, vous relisez, vous validez.",
+    "emptyHint": "Dès que Clozer juge qu'il faut relancer, il écrit le message et le met ici. Vous recevez un email, vous relisez, vous validez. Elle part de Clozer en votre nom ; la réponse arrive dans votre boîte.",
+    "emptyHintCampaign": "Relances gérées par la campagne {name} : elles partent de votre boîte, dans le fil.",
+    "emptyHintOff": "Relances coupées pour ce lien : vous relancez vous-même. Réactivez-les dans Réglages du lien.",
+    "emptyHintShared": "Chaque lecteur a son propre lien : ses relances se préparent sur sa fiche.",
+    "emptyHintNoEmail": "Sans email, pas de relance : ajoutez le contact.",
+    "reconnect": "Reconnecter",
     "via": "par {channel} à {recipient}",
     "sentOn": "Envoyée le {date}",
-    "byYou": ", par vous",
     "draftFor": "Conseillée pour le {date}, heure du prospect. Elle attend votre accord.",
     "plannedFor": "Prévue le {date}, heure du prospect",
     "why": "Pourquoi :",
@@ -376,15 +398,19 @@
     "changeAria": "Ce qu'il faut changer",
     "changePlaceholder": "Ou dites ce qu'il faut changer…",
     "rewrite": "Réécrire",
-    "approved": "Relance validée, elle partira à l'heure prévue",
-    "approve": "Valider",
+    "approvedAt": "Relance validée, elle partira le {date}.",
+    "approvedNow": "Relance validée, elle part tout de suite.",
+    "approveAt": "Valider · part le {date}",
+    "approveNow": "Valider · part tout de suite",
     "sendNow": "Envoyer maintenant",
     "changesSaved": "Modifications enregistrées",
     "save": "Enregistrer",
     "openInMail": "Ouvrir dans ma messagerie",
+    "openInMailIn": "Ouvrir dans {client}",
     "copy": "Copier",
     "markedSent": "Notée comme envoyée par vous",
-    "sentMyself": "Je l'ai envoyée moi-même",
+    "sentMyself": "C'est fait",
+    "myselfLead": "L'envoyer moi-même :",
     "cancelled": "Relance annulée",
     "cancel": "Annuler"
   },
@@ -422,7 +448,7 @@
     "description": "Le prospect ne pourra plus ouvrir le document, et les relances prévues sont annulées.",
     "keep": "Garder le lien",
     "archiving": "Archivage…",
-    "archive": "Archiver le lien"
+    "archive": "Archiver"
   },
   "reactivateLinkButton": {
     "trigger": "Réactiver le lien",
@@ -530,7 +556,7 @@
     "followupSent": "Relance envoyée ({trigger})",
     "followupDetail": "{channel} à {recipient}",
     "sellerNoted": "{activity} (noté par vous)",
-    "alert": "Alerte : {type}",
+    "alert": "Clozer vous a prévenu : {type}",
     "liveViewers": "{count} lecteurs en même temps",
     "inactive": "après {days} jours sans lecture",
     "pricingTime": "{time} sur le tarif",

@@ -2,7 +2,7 @@
 
 import { Check, Copy } from "lucide-react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -16,6 +16,7 @@ import {
 } from "@/app/(dashboard)/links/actions";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { copyLink } from "@/lib/clipboard";
+import { formatRelative } from "@/lib/format";
 
 export type ReadyLink = {
   id: string;
@@ -25,24 +26,44 @@ export type ReadyLink = {
   /** Who it is for, or "Sans destinataire" (today.page.noRecipient). */
   label: string;
   documentName: string;
+  /** When the drop created it: a link waiting for days reads differently from one made a minute ago. */
+  createdAt: Date;
 };
 
 /**
- * Links made when a file was dropped and never copied, one row each. Copying takes the row away:
- * the link then waits for its first opening under "À traiter", like any sent link.
+ * Links made when a file was dropped and never copied, grouped by document: two drops of the same
+ * file read as one document with two links, not two identical rows. Copying takes a row away: the
+ * link then waits for its first opening under "À traiter", like any sent link.
  */
 export function ReadyLinks({ links }: { links: ReadyLink[] }) {
+  const t = useTranslations("today.readyLinks");
+  const groups = new Map<string, ReadyLink[]>();
+  for (const link of links) groups.set(link.documentName, [...(groups.get(link.documentName) ?? []), link]);
+
   return (
-    <ul className="divide-y divide-border border-y border-foreground bg-card">
-      {links.map((link) => (
-        <ReadyLinkRow key={link.id} link={link} />
+    <div className="divide-y divide-foreground border-y border-foreground bg-card">
+      {[...groups].map(([documentName, group]) => (
+        <section key={documentName} className="px-3 py-3 sm:px-4">
+          <h3 className="flex flex-wrap items-baseline gap-x-2 text-body font-semibold">
+            <span className="truncate">{documentName}</span>
+            {group.length > 1 && (
+              <span className="text-small font-normal text-muted-foreground">{t("group", { count: group.length })}</span>
+            )}
+          </h3>
+          <ul className="divide-y divide-border">
+            {group.map((link) => (
+              <ReadyLinkRow key={link.id} link={link} />
+            ))}
+          </ul>
+        </section>
       ))}
-    </ul>
+    </div>
   );
 }
 
 function ReadyLinkRow({ link }: { link: ReadyLink }) {
   const router = useRouter();
+  const locale = useLocale();
   const [pending, startTransition] = useTransition();
   const [copied, setCopied] = useState(false);
   const t = useTranslations("today.readyLinks");
@@ -80,23 +101,24 @@ function ReadyLinkRow({ link }: { link: ReadyLink }) {
   }
 
   return (
-    <li className="flex flex-wrap items-center gap-x-4 gap-y-3 px-3 py-4 sm:px-4">
-      <div className="min-w-0 flex-1">
-        <p className="truncate font-semibold">{link.documentName}</p>
-        <p className="truncate text-small text-muted-foreground">
-          {t.rich("for", {
-            label: link.label,
-            who: (chunks) => <span className="text-foreground">{chunks}</span>,
-          })}
-        </p>
-      </div>
+    // On a phone the name takes the full width and the buttons sit under it
+    <li className="flex flex-col gap-x-4 gap-y-2 py-3 sm:flex-row sm:items-center">
+      <p className="min-w-0 flex-1 truncate text-small text-muted-foreground">
+        {t.rich("for", {
+          label: link.label,
+          who: (chunks) => <span className="text-foreground">{chunks}</span>,
+        })}
+        {" · "}
+        {t("createdAgo", { when: formatRelative(link.createdAt, locale) })}
+      </p>
       <div className="flex flex-wrap items-center gap-2">
         <Button size="sm" disabled={pending} onClick={() => void copy()}>
           {copied ? <Check /> : <Copy />}
           {copied ? t("copied") : t("copyLink")}
         </Button>
+        {/* The recipient field is the first thing on the share screen */}
         <Link
-          href={`/links/${link.id}`}
+          href={`/links/${link.id}?new=1`}
           className={buttonVariants({ size: "sm", variant: "outline" })}
         >
           {t("forWhom")}

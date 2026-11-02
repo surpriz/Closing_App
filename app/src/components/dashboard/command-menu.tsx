@@ -1,17 +1,6 @@
 "use client";
 
-import {
-  Brain,
-  CircleHelp,
-  Compass,
-  CornerDownLeft,
-  FileText,
-  LifeBuoy,
-  Search,
-  Settings2,
-  Sun,
-  User,
-} from "lucide-react";
+import { Brain, ChartColumn, CircleHelp, Compass, CornerDownLeft, FileText, LifeBuoy, Search, Send, Settings2, Sun, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
@@ -32,12 +21,14 @@ export type CommandEntry = {
 // `help` opens the help assistant instead of navigating
 type Item = CommandEntry | { kind: "page"; href: string; label: string; hint?: string; help?: true };
 
-type PageKey = "today" | "documents" | "howItWorks" | "settings" | "onboarding" | "faq" | "ask";
+type PageKey = "today" | "documents" | "results" | "campaigns" | "howItWorks" | "settings" | "onboarding" | "faq" | "ask";
 
 // Labels and hints are in "nav.commandMenu.pages"
-const PAGES: { href: string; key: PageKey; hint?: "faqHint" | "askHint"; help?: true }[] = [
+const PAGES: { href: string; key: PageKey; hint?: "faqHint" | "askHint"; help?: true; campaignsOnly?: true }[] = [
   { href: "/dashboard", key: "today" },
   { href: "/documents", key: "documents" },
+  { href: "/results", key: "results" },
+  { href: "/campaigns", key: "campaigns", campaignsOnly: true },
   { href: "/how-it-works", key: "howItWorks" },
   { href: "/settings", key: "settings" },
   { href: "/welcome", key: "onboarding" },
@@ -48,6 +39,8 @@ const PAGES: { href: string; key: PageKey; hint?: "faqHint" | "askHint"; help?: 
 const PAGE_ICONS: Record<string, typeof Sun> = {
   "/dashboard": Sun,
   "/documents": FileText,
+  "/results": ChartColumn,
+  "/campaigns": Send,
   "/how-it-works": Brain,
   "/settings": Settings2,
   "/welcome": Compass,
@@ -64,7 +57,7 @@ const fold = (text: string) =>
     .toLowerCase();
 
 /** ⌘K: jump to any prospect, document or page. Everything is filtered client side. */
-export function CommandMenu({ entries }: { entries: CommandEntry[] }) {
+export function CommandMenu({ entries, campaigns = false }: { entries: CommandEntry[]; campaigns?: boolean }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -72,14 +65,14 @@ export function CommandMenu({ entries }: { entries: CommandEntry[] }) {
   const t = useTranslations("nav.commandMenu");
   const pages = useMemo<Item[]>(
     () =>
-      PAGES.map(({ href, key, hint, help }) => ({
+      PAGES.filter((page) => campaigns || !page.campaignsOnly).map(({ href, key, hint, help }) => ({
         kind: "page" as const,
         href,
         label: t(`pages.${key}`),
         ...(hint && { hint: t(`pages.${hint}`) }),
         ...(help && { help }),
       })),
-    [t],
+    [t, campaigns],
   );
 
   useEffect(() => {

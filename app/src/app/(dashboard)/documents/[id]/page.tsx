@@ -1,4 +1,4 @@
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft, ExternalLink, Send } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -26,6 +26,7 @@ import { ReportStrip } from "@/components/dashboard/document/reading-bits";
 import { RecentReads } from "@/components/dashboard/document/recent-reads";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import {
+  followupCampaignInclude,
   toFollowupItem,
   type FollowupItem,
 } from "@/components/dashboard/followup-item";
@@ -63,7 +64,9 @@ import {
 import { videoProvider } from "@/lib/closing/documents/web-link";
 import { shareLink } from "@/lib/closing/link-url";
 import { buttonVariants } from "@/components/ui/button";
+import { getWorkspaceSettings } from "@/lib/closing/settings";
 import { prisma } from "@/lib/db";
+import { isOutreachAllowed } from "@/lib/outreach/flag";
 import {
   formatBytes,
   formatDate,
@@ -92,7 +95,7 @@ export default async function DocumentDetailPage({
   params,
 }: PageProps<"/documents/[id]">) {
   const { id } = await params;
-  const { organization, role } = await requireWorkspace();
+  const { user, organization, role } = await requireWorkspace();
   const [t, td, tl, tApp, locale] = await Promise.all([
     getTranslations("documents.detail"),
     getTranslations("documents"),
@@ -175,7 +178,7 @@ export default async function DocumentDetailPage({
       label={document.links.length === 0 ? t("createLink") : undefined}
     />
   );
-  const [analytics, origin, followups, alerts, furthest, insights, readings] =
+  const [analytics, origin, followups, alerts, furthest, insights, readings, settings] =
     await Promise.all([
       getDocumentAnalytics(document.id),
       getAppOrigin(),
@@ -186,6 +189,7 @@ export default async function DocumentDetailPage({
         include: {
           prospect: { select: { name: true, email: true } },
           link: { select: linkLabelSelect },
+          ...followupCampaignInclude,
         },
       }),
       prisma.sellerAlert.findMany({
@@ -216,6 +220,7 @@ export default async function DocumentDetailPage({
         select: { linkId: true, frictions: true },
       }),
       getPageReadings(linkIds),
+      getWorkspaceSettings(organization.id),
     ]);
 
   // The latest analysis of each deal only
@@ -340,9 +345,9 @@ export default async function DocumentDetailPage({
     return {
       id: link.id,
       label: dealLabel({ ...link, document }, link.shared ? t("sharedLink") : undefined),
+      // The label says "Company · Person" when both are known: the line under it keeps the email
       contact:
         [
-          prospect?.company ? prospect.name : null,
           prospect?.email,
           link.links > 1 ? t("browsers", { count: link.links }) : null,
         ]
@@ -369,6 +374,8 @@ export default async function DocumentDetailPage({
       heat: pages && pages.length > 0 ? pageHeat(pages, heatPages) : null,
       ...shareLink(origin, { slug: link.slug, document, company: prospect?.company }),
       followupsEnabled: link.followupsEnabled,
+      // Same rule as the share screen's chip (settingsSummary): Autopilot sends a personal link's follow-ups alone
+      autoSend: settings.autonomy === "AUTOPILOT" && !link.shared,
       campaign: linkCampaign(link),
     };
   });
@@ -445,6 +452,13 @@ export default async function DocumentDetailPage({
               {linkAction}
               {document.status !== "FAILED" && (
                 <NewLinkButton documentId={document.id} variant="outline" smart />
+              )}
+              {/* The second door of the landing: a campaign from the seller's own mailbox */}
+              {document.status !== "FAILED" && isOutreachAllowed(user, organization.id) && (
+                <Link href="/campaigns" className={buttonVariants({ variant: "outline", size: "lg" })}>
+                  <Send />
+                  {tApp("deal.newLinkButton.campaignLabel")}
+                </Link>
               )}
               {/* Deleting takes every seller's links down with it */}
               {isManagerRole(role) && (
@@ -748,7 +762,7 @@ export default async function DocumentDetailPage({
               {t("followupsIntro")}
             </p>
             <Surface className="p-4">
-              <FollowupsPanel followups={followupItems} showLink />
+              <FollowupsPanel followups={followupItems} showLink seller={settings.senderName} />
             </Surface>
           </section>
 

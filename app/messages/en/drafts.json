@@ -3,6 +3,7 @@
   "metaTitle": "Follow-ups to review",
   "title": "Follow-ups to review",
   "description": "Everything waiting for your OK before it goes out. Each follow-up is checked again at send time: if the prospect replied or opened it in the meantime, it doesn't go.",
+  "goesOut": "Goes out {date}.",
   "emptyTitle": "Nothing to review",
   "emptyDescription": "Follow-ups Clozer prepares show up here before they go out.",
   "approve": "Approve",

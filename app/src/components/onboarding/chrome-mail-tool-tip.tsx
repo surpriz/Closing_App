@@ -13,10 +13,12 @@ export function ChromeMailToolTip({
   probe,
   mailbox,
   returnTo,
+  inline = false,
 }: {
   probe: ExtensionProbe;
   mailbox: string;
   returnTo?: string;
+  inline?: boolean;
 }) {
   const t = useTranslations("onboarding.chromeTip");
   const { state, extensionId } = useExtensionState(probe);
@@ -27,6 +29,7 @@ export function ChromeMailToolTip({
       tool="chrome"
       mailbox={mailbox}
       returnTo={returnTo}
+      inline={inline}
       action={
         connect ? (
           <Button size="sm" variant="outline" onClick={() => startExtensionConnect(connect)}>

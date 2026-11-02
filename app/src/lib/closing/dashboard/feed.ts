@@ -84,8 +84,8 @@ const CHANNEL: Record<FollowupChannel, string> = { EMAIL: "email", WHATSAPP: "Wh
 
 /** The quiet second line: deal, then document, each only when the line above does not say it. */
 export function feedContext(who: string, linkLabel: string, documentName: string | null): string | null {
-  const parts: string[] = [];
-  if (linkLabel !== who) parts.push(linkLabel);
+  // "Acme · Léa" after "Léa a lu…" keeps only "Acme"
+  const parts = linkLabel.split(" · ").filter((part) => part !== who);
   if (documentName && documentName !== linkLabel && documentName !== who) parts.push(documentName);
   return parts.length ? parts.join(" · ") : null;
 }

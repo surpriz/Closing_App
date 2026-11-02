@@ -1,5 +1,6 @@
 "use client";
 
+import { Ellipsis } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
@@ -16,9 +17,18 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { UiLocale } from "@/i18n/locale";
+
+import { enrollmentActions } from "./enrollment-actions";
 import { formatInTimeZone } from "@/lib/format";
 
 type EnrollmentStatus =
@@ -52,15 +62,16 @@ export type EnrollmentRow = {
   blockedStep: boolean;
 };
 
+// Achromatic: the only colour on this screen is a send error (DESIGN.md, chrome stays graphite)
 const STATUS_VARIANT = {
   QUEUED: "secondary",
-  ACTIVE: "success",
-  PAUSED: "warning",
+  ACTIVE: "info",
+  PAUSED: "outline",
   REPLIED: "info",
   BOUNCED: "destructive",
   UNSUBSCRIBED: "secondary",
   SUPPRESSED: "secondary",
-  FINISHED: "info",
+  FINISHED: "secondary",
   STOPPED: "secondary",
 } as const;
 
@@ -68,7 +79,6 @@ const KNOWN_REASONS = ["rejected", "send_failed", "plan_limit", "document_missin
 // The reading signals the evaluator writes; a reactivation is told by reactivatedAt, never by lastSignal
 const SIGNALS = ["pricing", "deep"] as const;
 const CALL_REASONS = ["call_moment", "deep_read"];
-const REMOVABLE: EnrollmentStatus[] = ["QUEUED", "ACTIVE", "PAUSED"];
 
 export function EnrollmentsTable({
   rows,
@@ -110,6 +120,8 @@ export function EnrollmentsTable({
     if (!reason) return null;
     if (reason.startsWith("missing_variable:")) return te("reasons.missingVariable", { name: reason.slice("missing_variable:".length) });
     if (reason === "seller") return row.status === "PAUSED" ? te("reasons.seller") : null;
+    // Paused for a call: the signal column says so, the status says what waits on the seller
+    if (CALL_REASONS.includes(reason)) return row.status === "PAUSED" ? te("reasons.callMoment") : null;
     return (KNOWN_REASONS as readonly string[]).includes(reason) ? te(`reasons.${reason as (typeof KNOWN_REASONS)[number]}`) : null;
   };
 
@@ -158,6 +170,7 @@ export function EnrollmentsTable({
         <TableBody>
           {visible.map((row) => {
             const reason = reasonLabel(row);
+            const actions = enrollmentActions(row, disabled);
             return (
               <TableRow key={row.id}>
                 <TableCell className="max-w-64">
@@ -198,7 +211,7 @@ export function EnrollmentsTable({
                 <TableCell className="text-muted-foreground">
                   {row.followup?.status === "PENDING" && te("followup.pending")}
                   {row.followup?.status === "DRAFT" && (
-                    <Link href="/drafts" className="underline underline-offset-2">
+                    <Link href={row.linkId ? `/links/${row.linkId}#relances` : "/drafts"} className="underline underline-offset-2">
                       {te("followup.draft")}
                     </Link>
                   )}
@@ -209,39 +222,54 @@ export function EnrollmentsTable({
                 </TableCell>
                 <TableCell className="text-muted-foreground">{when(row.nextAt, row)}</TableCell>
                 <TableCell className="text-muted-foreground">{when(row.lastAt, row)}</TableCell>
-                <TableCell>
-                  <div className="flex flex-wrap justify-end gap-1">
-                    {row.linkId && (
-                      <Button variant="ghost" size="sm" render={<Link href={`/links/${row.linkId}`} />} nativeButton={false}>
-                        {te("openLink")}
-                      </Button>
-                    )}
-                    {!disabled && row.status === "ACTIVE" && row.blockedStep && (
-                      <>
-                        <Button variant="ghost" size="sm" disabled={pending} onClick={() => setResending(row)}>
-                          {te("resendStep")}
-                        </Button>
-                        <Button variant="ghost" size="sm" disabled={pending} onClick={() => run(skipStepAction, row.id)}>
-                          {te("skipStep")}
-                        </Button>
-                      </>
-                    )}
-                    {!disabled && row.status === "ACTIVE" && (
-                      <Button variant="ghost" size="sm" disabled={pending} onClick={() => run(pauseEnrollmentAction, row.id)}>
-                        {te("pause")}
-                      </Button>
-                    )}
-                    {!disabled && row.status === "PAUSED" && (
-                      <Button variant="ghost" size="sm" disabled={pending} onClick={() => (row.pausedReason === "interrupted" ? setResuming(row) : run(resumeEnrollmentAction, row.id))}>
-                        {te("resume")}
-                      </Button>
-                    )}
-                    {!disabled && REMOVABLE.includes(row.status) && (
-                      <Button variant="ghost" size="sm" disabled={pending} onClick={() => setRemoving(row)}>
-                        {te("remove")}
-                      </Button>
-                    )}
-                  </div>
+                <TableCell className="text-right">
+                  {/* Every action of the row, behind one quiet button (D8); no button when there is nothing to offer */}
+                  {actions.length > 0 && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger
+                        aria-label={te("actionsMenu", { email: row.email })}
+                        className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/30 aria-expanded:bg-muted aria-expanded:text-foreground"
+                      >
+                        <Ellipsis className="size-4" aria-hidden />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-56">
+                        {actions.includes("openLink") && (
+                          <DropdownMenuItem render={<Link href={`/links/${row.linkId}`} />}>{te("openLink")}</DropdownMenuItem>
+                        )}
+                        {actions.includes("resendStep") && (
+                          <DropdownMenuItem disabled={pending} onClick={() => setResending(row)}>
+                            {te("resendStep")}
+                          </DropdownMenuItem>
+                        )}
+                        {actions.includes("skipStep") && (
+                          <DropdownMenuItem disabled={pending} onClick={() => run(skipStepAction, row.id)}>
+                            {te("skipStep")}
+                          </DropdownMenuItem>
+                        )}
+                        {actions.includes("pause") && (
+                          <DropdownMenuItem disabled={pending} onClick={() => run(pauseEnrollmentAction, row.id)}>
+                            {te("pause")}
+                          </DropdownMenuItem>
+                        )}
+                        {actions.includes("resume") && (
+                          <DropdownMenuItem
+                            disabled={pending}
+                            onClick={() => (row.pausedReason === "interrupted" ? setResuming(row) : run(resumeEnrollmentAction, row.id))}
+                          >
+                            {te("resume")}
+                          </DropdownMenuItem>
+                        )}
+                        {actions.includes("remove") && (
+                          <>
+                            {actions.length > 1 && <DropdownMenuSeparator />}
+                            <DropdownMenuItem variant="destructive" disabled={pending} onClick={() => setRemoving(row)}>
+                              {te("remove")}
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </TableCell>
               </TableRow>
             );

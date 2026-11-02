@@ -1,5 +1,7 @@
 "use client";
 
+import { Plus } from "lucide-react";
+
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
@@ -30,6 +32,7 @@ import {
 import { Input } from "@/components/ui/input";
 import type { DnsReport } from "@/lib/mailboxes/dns/checks";
 import type { MailboxDetection } from "@/lib/mailboxes/connect";
+import { mailboxErrorKey, providerLabel } from "@/lib/mailboxes/error-copy";
 import { cn } from "@/lib/utils";
 
 export type MailboxRow = {
@@ -202,14 +205,14 @@ function parseLastError(value: string): { code: ErrorCode; detail: string } | nu
   return code && (ERROR_CODES as readonly string[]).includes(code) ? { code: code as ErrorCode, detail: match[2].trim() } : null;
 }
 
-function LastError({ value }: { value: string }) {
+function LastError({ value, provider }: { value: string; provider: MailboxRow["provider"] }) {
   const t = useTranslations("settings.mailbox.lastError");
   const parsed = parseLastError(value);
   if (!parsed) return <p className="text-small text-destructive">{value}</p>;
+  // The raw provider detail ("unipile CREDENTIALS") helps support, not the seller: kept on hover only
   return (
-    <p className="text-small text-destructive">
-      {t(parsed.code)}
-      {parsed.detail && <span className="text-muted-foreground"> ({parsed.detail})</span>}
+    <p className="text-small text-destructive" title={parsed.detail || undefined}>
+      {t(mailboxErrorKey(parsed.code, provider), { provider: providerLabel(provider) })}
     </p>
   );
 }
@@ -293,7 +296,9 @@ function MailboxItem({
           <DisconnectButton id={mailbox.id} />
         </div>
       </div>
-      {mailbox.status === "ERROR" && mailbox.lastError && <LastError value={mailbox.lastError} />}
+      {mailbox.status === "ERROR" && mailbox.lastError && (
+        <LastError value={mailbox.lastError} provider={mailbox.provider} />
+      )}
       <DnsLine dns={mailbox.dns} mailboxId={mailbox.id} />
       <Button
         variant="outline"
@@ -371,9 +376,11 @@ function Field({ label, htmlFor, children }: { label: string; htmlFor: string; c
 function ConnectForm({
   prefill,
   availability,
+  onConnected,
 }: {
   prefill: { email: string; mailboxId: string } | null;
   availability: ProviderAvailability;
+  onConnected?: () => void;
 }) {
   const t = useTranslations("settings.mailbox");
   const [form, setForm] = useState({ ...EMPTY_FORM, email: prefill?.email ?? "" });
@@ -392,6 +399,7 @@ function ConnectForm({
       setDetection(null);
       setDetectedFor("");
       toast.success(t("connected"));
+      onConnected?.();
     }
     return result;
   }, null);
@@ -615,6 +623,9 @@ export function MailboxSettings({
 }) {
   const t = useTranslations("settings.mailbox");
   const [reconnect, setReconnect] = useState<{ email: string; mailboxId: string; n: number } | null>(null);
+  // The connect form opens by itself when there is no mailbox or a reconnect; otherwise it waits behind a button (D5)
+  const [showConnect, setShowConnect] = useState(false);
+  const formOpen = mailboxes.length === 0 || reconnect !== null || showConnect;
   // The banner lives in state so the query flags can be stripped from the URL without losing it.
   const [shownFlash] = useState(flash);
   const [initialActive] = useState(() => new Set(mailboxes.filter((m) => m.status === "ACTIVE").map((m) => m.id)));
@@ -645,11 +656,25 @@ export function MailboxSettings({
             ))}
           </ul>
         )}
-        <ConnectForm
-          key={reconnect?.n ?? 0}
-          availability={availability}
-          prefill={reconnect ? { email: reconnect.email, mailboxId: reconnect.mailboxId } : null}
-        />
+        {formOpen ? (
+          <ConnectForm
+            key={reconnect?.n ?? 0}
+            availability={availability}
+            prefill={reconnect ? { email: reconnect.email, mailboxId: reconnect.mailboxId } : null}
+            onConnected={() => {
+              // Back behind the button once the new row is in the list (D5)
+              setShowConnect(false);
+              setReconnect(null);
+            }}
+          />
+        ) : (
+          <div className="border-t border-border px-5 py-3">
+            <Button variant="outline" size="sm" onClick={() => setShowConnect(true)}>
+              <Plus />
+              {t("addAnother")}
+            </Button>
+          </div>
+        )}
       </div>
     </section>
   );

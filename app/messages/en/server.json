@@ -26,8 +26,9 @@
     "onlineApproval": "Online approval",
     "aiAssistant": "AI assistant",
     "followupsReview": "Follow-ups to review",
-    "followupsAuto": "Auto follow-ups",
-    "noFollowups": "No follow-ups"
+    "followupsAuto": "Auto follow-ups (Autopilot)",
+    "noFollowups": "Follow-ups off",
+    "followupsCampaign": "Follow-ups: campaign {name}"
   },
   "team": {
     "USER_IS_ALREADY_A_MEMBER_OF_THIS_ORGANIZATION": "This person is already on the team.",

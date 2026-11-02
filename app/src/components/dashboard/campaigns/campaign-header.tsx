@@ -22,11 +22,12 @@ export type CampaignStatus = "DRAFT" | "ACTIVE" | "PAUSED" | "DONE" | "ARCHIVED"
 
 export type CampaignCounts = { enrolled: number; sent: number; replied: number; bounced: number; unsubscribed: number };
 
+// Achromatic: state is a word, not a colour (DESIGN.md)
 const STATUS_VARIANT = {
   DRAFT: "secondary",
-  ACTIVE: "success",
-  PAUSED: "warning",
-  DONE: "info",
+  ACTIVE: "info",
+  PAUSED: "outline",
+  DONE: "secondary",
   ARCHIVED: "secondary",
 } as const;
 

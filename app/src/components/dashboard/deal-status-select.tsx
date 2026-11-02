@@ -40,6 +40,7 @@ export function DealStatusSelect({ linkId, status }: { linkId: string; status: D
         });
       }}
     >
+      <span className="text-small text-muted-foreground">{t("statusLabel")}</span>
       <SelectTrigger aria-label={t("ariaLabel")} className="h-9 min-w-44 bg-card">
         <SelectValue />
       </SelectTrigger>

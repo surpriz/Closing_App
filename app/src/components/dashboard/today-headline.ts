@@ -26,12 +26,20 @@ export type TodayHeadlineInput = {
   draftsToReview?: number;
   /** Links created on drop and not sent yet, with the latest one's document. */
   readyLinks?: { count: number; documentName: string } | null;
+  /** At least one open deal has Clozer's follow-ups on: false means the seller follows up alone. */
+  followupsOn?: boolean;
 };
 
 export type TodayHeadline = { headline: string; hint: string };
 
-function lowerFirst(text: string) {
-  return text.charAt(0).toLowerCase() + text.slice(1);
+/**
+ * The label in front of the analysis headline: "Waltio · Thomas · Thomas se dit intéressé" says the
+ * name twice, so when the headline opens with the person, the label keeps the company alone.
+ */
+export function focusLabel(input: { label: string; company: string | null; headline: string }): string {
+  const person = input.label.split(" · ").slice(1).join(" · ").trim();
+  if (!input.company || !person) return input.label;
+  return input.headline.trim().toLowerCase().startsWith(person.toLowerCase()) ? input.company : input.label;
 }
 
 function draftsHint(t: AppT, input: TodayHeadlineInput) {
@@ -73,9 +81,11 @@ export function buildTodayHeadline(t: AppT, input: TodayHeadlineInput): TodayHea
   }
 
   if (input.aiFocus) {
+    // The analysis wrote a sentence, often starting with a first name: shown as written
+    const drafts = input.draftsToReview ?? 0;
     return {
-      headline: t("today.headline.aiFocus", { label: input.aiFocus.label, headline: lowerFirst(input.aiFocus.headline) }),
-      hint: draftsHint(t, input) ?? t("today.headline.startThere"),
+      headline: t("today.headline.aiFocus", { label: input.aiFocus.label, headline: input.aiFocus.headline }),
+      hint: drafts > 0 ? t("today.headline.draftsNext", { count: drafts }) : t("today.headline.startThere"),
     };
   }
 
@@ -117,7 +127,9 @@ export function buildTodayHeadline(t: AppT, input: TodayHeadlineInput): TodayHea
     draftsHint(t, input) ??
     (input.nextFollowupLabel
       ? t("today.headline.nextFollowup", { when: input.nextFollowupLabel })
-      : t("today.headline.autoFollowups"));
+      : input.followupsOn === false
+        ? t("today.headline.noFollowups")
+        : t("today.headline.autoFollowups"));
 
   if (input.warmCount > 0) {
     return {

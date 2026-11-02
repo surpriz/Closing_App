@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 
-import { LocaleSwitcher } from "@/components/locale-switcher";
+import type { UiLocale } from "@/i18n/locale";
+
 import { BillingSettings } from "@/components/dashboard/billing-settings";
 import { ExtensionTokens } from "@/components/dashboard/extension-tokens";
 import { MailboxSettings } from "@/components/dashboard/mailbox-settings";
@@ -50,13 +51,16 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("metaTitle") };
 }
 
-// Chrome and Outlook lead: the call alerts depend on them
+// Language names are not translated: a reader finds their own
+const LOCALE_NAMES: Record<UiLocale, string> = { en: "English", fr: "Français" };
+
+// The mailbox and the pilot lead; the extension comes after what it serves
 const ESSENTIAL = [
-  { id: "extension" },
   { id: "boite", outreachOnly: true },
   { id: "pilote" },
   { id: "alertes" },
   { id: "agenda" },
+  { id: "extension" },
   { id: "facturation" },
 ] as const;
 
@@ -107,13 +111,18 @@ export default async function SettingsPage({
   ]);
   const llm = getLanguageModel("followup");
   const t = await getTranslations("settings.page");
+  const locale = await getLocale();
 
   return (
     <div className="space-y-10">
       <PageHeader
         title={t("title")}
         description={t("description")}
-        action={<LocaleSwitcher />}
+        action={
+          <p className="text-small text-muted-foreground">
+            {t("languageReminder", { language: LOCALE_NAMES[locale as UiLocale] })}
+          </p>
+        }
       />
 
       <AdvancedSettingsProvider>
@@ -128,18 +137,6 @@ export default async function SettingsPage({
             ).map(({ id }) => ({ id, label: t(`nav.${id}`) }))}
           />
           <div className="space-y-10">
-            {/* Saved on its own, outside the form: it leads because the call alerts depend on it */}
-            <div className="max-w-2xl">
-              <ExtensionTokens
-                tokens={tokens.map((token) => ({
-                  ...token,
-                  createdAt: token.createdAt.toISOString(),
-                  lastUsedAt: token.lastUsedAt?.toISOString() ?? null,
-                }))}
-                chromeStoreUrl={getEnv().EXTENSION_STORE_URL ?? null}
-                probe={extensionProbe(user.email, tokens)}
-              />
-            </div>
             {mailboxes && (
               <div className="max-w-2xl">
                 <MailboxSettings
@@ -203,6 +200,18 @@ export default async function SettingsPage({
               }}
               canEditWorkspace={isManager}
             />
+            {/* Saved on its own, outside the form: after the settings it serves, before billing */}
+            <div className="max-w-2xl">
+              <ExtensionTokens
+                tokens={tokens.map((token) => ({
+                  ...token,
+                  createdAt: token.createdAt.toISOString(),
+                  lastUsedAt: token.lastUsedAt?.toISOString() ?? null,
+                }))}
+                chromeStoreUrl={getEnv().EXTENSION_STORE_URL ?? null}
+                probe={extensionProbe(user.email, tokens)}
+              />
+            </div>
             <BillingSettings
               plan={billing.plan}
               source={billing.source}

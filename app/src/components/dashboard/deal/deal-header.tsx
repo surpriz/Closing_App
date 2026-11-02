@@ -44,6 +44,8 @@ export function DealHeader({ deal }: { deal: Deal }) {
     canReactivate,
     canDraftOnReactivate,
   } = deal;
+  // A personal link nobody is named on yet: the document is the title, the missing person the line under it
+  const unnamed = !link.shared && link.prospects.length === 0 && !customLinkName(link);
   const t = useTranslations("deal.dealHeader");
   const tl = useTranslations("labels");
   const locale = useLocale();
@@ -108,8 +110,16 @@ export function DealHeader({ deal }: { deal: Deal }) {
       <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
         <div className="min-w-0 space-y-3">
           <h1 className="condensed text-title break-words text-balance sm:text-display">
-            {title}
+            {unnamed ? documentTitle(link.document) : title}
           </h1>
+          {unnamed && (
+            <p className="text-small text-muted-foreground">
+              {t("noRecipientLine")}{" "}
+              <a href={deal.sharing ? "#share-who" : "#prospect"} className="font-medium text-foreground underline underline-offset-4">
+                {t("addRecipient")}
+              </a>
+            </p>
+          )}
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-body">
             {deal.opened && score ? (
               <HeatDot

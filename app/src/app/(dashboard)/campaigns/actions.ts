@@ -126,13 +126,21 @@ export async function archiveCampaignAction(id: string): Promise<ActionResult> {
   return { ok: true, notice: t("archived") };
 }
 
+export type TickResult = { sent: number; rescheduled: number; failed: number; raw: string };
+
 /** Test environments only: runs a tick on demand instead of waiting for the engine. */
-export async function runOutreachTickAction(): Promise<string> {
+export async function runOutreachTickAction(): Promise<TickResult> {
   const { organization } = await requireOutreach();
   if (!testToolsEnabled()) throw new Error("Test tools are disabled");
   const summary = await runOutreachTick(new Date(), { organizationId: organization.id });
   revalidatePath("/campaigns", "layout");
-  return JSON.stringify(summary);
+  // The seller reads a sentence; the raw summary stays for debugging
+  return {
+    sent: summary.sent?.sent ?? 0,
+    rescheduled: summary.sent?.rescheduled ?? 0,
+    failed: summary.sent?.failed ?? 0,
+    raw: JSON.stringify(summary),
+  };
 }
 
 const updateSchema = z.object({

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { AutopilotBanner } from "@/components/dashboard/autopilot-banner";
+import { MailboxBanner } from "@/components/dashboard/campaigns/mailbox-banner";
 import { NewLinkButton } from "@/components/dashboard/create-link-form";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { FirstSteps } from "@/components/dashboard/first-steps";
@@ -26,7 +27,7 @@ import {
   type UnopenedRow,
   type TodoRow,
 } from "@/components/dashboard/today/todo-list";
-import { buildTodayHeadline } from "@/components/dashboard/today-headline";
+import { buildTodayHeadline, focusLabel } from "@/components/dashboard/today-headline";
 import { UploadDropzone } from "@/components/dashboard/upload-dropzone";
 import { INTL_LOCALE, type UiLocale } from "@/i18n/locale";
 import { getAppOrigin } from "@/lib/app-origin";
@@ -38,6 +39,8 @@ import {
   buildHeatDistribution,
 } from "@/lib/closing/dashboard/funnel";
 import { dealDocumentMeta, dealLabel } from "@/lib/closing/dashboard/labels";
+import { documentTitle } from "@/lib/closing/documents/link-title";
+import { followupSender, followupSenderLabel } from "@/lib/closing/followups/sender";
 import { parsePeriod, periodStart } from "@/lib/closing/dashboard/period";
 import { pageHeat } from "@/lib/closing/dashboard/page-heat";
 import type { AppT } from "@/lib/closing/dashboard/i18n";
@@ -61,6 +64,7 @@ import { getWorkspaceLiveState } from "@/lib/closing/live";
 import { getSellerPrefs } from "@/lib/closing/notify/preferences";
 import { getWorkspaceSettings } from "@/lib/closing/settings";
 import { prisma } from "@/lib/db";
+import { isOutreachOrg } from "@/lib/outreach/flag";
 import { formatInTimeZone, formatRelative } from "@/lib/format";
 import { shouldForceOnboarding } from "@/lib/onboarding";
 import { isManagerRole } from "@/lib/roles";
@@ -107,6 +111,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
     sentAlone,
     readyDrafts,
     progress,
+    failingMailboxes,
   ] = await Promise.all([
     prisma.document.count({ where: { organizationId, archivedAt: null } }),
     prisma.document.findFirst({
@@ -148,6 +153,9 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
         slug: true,
         name: true,
         copiedAt: true,
+        createdAt: true,
+        // A draft a prospect already opened went out, whatever the seller confirmed
+        views: { where: { isBot: false }, take: 1, select: { id: true } },
         document: { select: { name: true, displayTitle: true, docType: true } },
         prospects: {
           take: 1,
@@ -156,6 +164,13 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
       },
     }),
     getSellerProgress(organizationId, scope),
+    // A mailbox in error stops campaigns and their follow-ups: the seller learns it here, not in Settings
+    isOutreachOrg(organizationId)
+      ? prisma.mailbox.findMany({
+          where: { organizationId, userId: user.id, status: "ERROR" },
+          select: { email: true, lastError: true, provider: true },
+        })
+      : Promise.resolve([]),
   ]);
   // A fresh seller is walked through a first document once; anyone joining a workspace in use is not
   if (shouldForceOnboarding({ onboardingCompletedAt, documentCount }))
@@ -202,15 +217,18 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
   const stage = sellerStage(progress);
   // Never copied: still to send. Copied: gone out as far as the seller sees, it waits for its first
   // opening with the other unopened links, and after two days Clozer asks whether it really left
-  const readyLinks: ReadyLink[] = readyDrafts
+  // Opened by a prospect: neither "to send" nor "unopened", whatever the seller confirmed
+  const unopenedDrafts = readyDrafts.filter((draft) => draft.views.length === 0);
+  const readyLinks: ReadyLink[] = unopenedDrafts
     .filter((draft) => !draft.copiedAt)
     .map((draft) => ({
       id: draft.id,
       ...shareLink(origin, { slug: draft.slug, document: draft.document, company: draft.prospects[0]?.company }),
       label: dealLabel(draft, noRecipient),
-      documentName: draft.document.name,
+      documentName: documentTitle(draft.document),
+      createdAt: draft.createdAt,
     }));
-  const copiedRows: UnopenedRow[] = readyDrafts
+  const copiedRows: UnopenedRow[] = unopenedDrafts
     .filter((draft) => draft.copiedAt)
     .map((draft) => ({
       id: draft.id,
@@ -284,12 +302,17 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
       ? formatRelative(upcomingFollowups[0].scheduledFor, locale, now)
       : null,
     aiFocus: focus
-      ? { label: focus.label, headline: focus.insightHeadline! }
+      ? {
+          label: focusLabel({ label: focus.label, company: focus.company, headline: focus.insightHeadline! }),
+          headline: focus.insightHeadline!,
+        }
       : null,
     draftsToReview,
     readyLinks: readyLinks.length
       ? { count: readyLinks.length, documentName: readyLinks[0].documentName }
       : null,
+    // No open deal lets Clozer follow up: the hint must not promise it
+    followupsOn: deals.length === 0 || deals.some((deal) => deal.followupsEnabled),
   });
 
   const periodHint = t(`today.period.${period}.hint`);
@@ -323,6 +346,13 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
           </div>
         </div>
         <LiveStrip key={live.stamp} initial={live} />
+        {failingMailboxes.length > 0 && (
+          <MailboxBanner
+            mailboxes={failingMailboxes}
+            hasActive={false}
+            lead={t("campaigns.banner.todayLead")}
+          />
+        )}
         {draftsToReview > 1 && (
           <Link
             href="/drafts"
@@ -424,29 +454,53 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
 
           {drafts.length > 0 && (
             <section>
-              <SectionTitle hint={t("today.page.draftsHint")}>
+              <SectionTitle
+                hint={t(
+                  settings.autonomy === "AUTOPILOT"
+                    ? "today.page.draftsHintAutopilot"
+                    : "today.page.draftsHint",
+                )}
+              >
                 {t("today.page.draftsTitle")}
               </SectionTitle>
               <ul className="space-y-3 text-sm">
-                {drafts.map((draft) => (
-                  <li key={draft.id} className="flex gap-3">
-                    <PenLine className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
-                    <div className="min-w-0">
-                      <Link
-                        href={`/links/${draft.link.id}#relances`}
-                        className="font-medium hover:underline"
-                      >
-                        {draft.prospect.company ??
-                          draft.prospect.name ??
-                          draft.prospect.email}
-                      </Link>
-                      <p className="truncate text-muted-foreground">
-                        {t(`labels.channel.${draft.channel}`)}
-                        {draft.subject ? ` : ${draft.subject}` : ""}
-                      </p>
-                    </div>
-                  </li>
-                ))}
+                {drafts.map((draft) => {
+                  const campaign = draft.campaignProspect?.campaign;
+                  const sender = followupSenderLabel(
+                    followupSender({
+                      sentVia: draft.sentVia,
+                      campaign: campaign
+                        ? { name: campaign.name, mailbox: campaign.mailbox?.email ?? null }
+                        : null,
+                    }),
+                    settings.senderName,
+                  );
+                  return (
+                    <li key={draft.id} className="flex gap-3">
+                      <PenLine className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+                      <div className="min-w-0">
+                        <Link
+                          href={`/links/${draft.link.id}#relances`}
+                          className="font-medium hover:underline"
+                        >
+                          {draft.prospect.company ??
+                            draft.prospect.name ??
+                            draft.prospect.email}
+                        </Link>
+                        <p className="truncate text-muted-foreground">
+                          {t(`labels.channel.${draft.channel}`)}
+                          {draft.subject ? ` : ${draft.subject}` : ""}
+                        </p>
+                        <p className="text-small text-muted-foreground">
+                          {t("today.page.draftGoesOut", {
+                            date: formatInTimeZone(draft.scheduledFor, draft.timezone, locale),
+                          })}{" "}
+                          {t(`labels.followupSender.${sender.key}`, sender.values)}
+                        </p>
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             </section>
           )}
@@ -541,7 +595,9 @@ function toTodoRow(
     id: deal.id,
     dealStatus: deal.dealStatus,
     opened: deal.opened,
-    label: dealLabel(deal, noRecipient),
+    label: deal.isOnboardingTest
+      ? t("today.todo.testSuffix", { label: dealLabel(deal, noRecipient) })
+      : dealLabel(deal, noRecipient),
     company: prospect?.company ?? null,
     contact: prospect ? (prospect.name ?? prospect.email) : null,
     documentName: dealDocumentMeta(deal),

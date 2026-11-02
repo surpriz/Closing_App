@@ -170,8 +170,8 @@ export const HELP_GUIDE_EN = `## What Clozer is
 - Archive link: the prospect can no longer open the document, scheduled follow-ups are canceled.
 
 ## Settings (/settings)
-- The essentials are visible right away: Chrome and Outlook, Autopilot, Notifications, Your calendar. The
-  “Advanced settings” button expands the rest: Your offer, Your links, Prospect assistant, Your messages, Team, Data. A
+- The essentials are visible right away: Mailbox (when campaigns are open), Autopilot, Notifications, Your
+  calendar, Chrome and Outlook, Billing. The “Advanced settings” button expands the rest: Your offer, Your links, Prospect assistant, Your messages, Team, Data. A
   direct link to an advanced section (/settings#offre…) expands it on its own.
 
 ## Follow-ups and Autopilot
