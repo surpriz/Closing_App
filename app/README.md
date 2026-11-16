@@ -24,8 +24,9 @@ email.
 ## Follow-up engine
 
 `runClosingTick()` is exposed at `POST /api/cron/closing` (header
-`Authorization: Bearer $CRON_SECRET`). The live caller is the GitHub Actions
-cron (`.github/workflows/closing-tick.yml`, every 5 minutes).
+`Authorization: Bearer $CRON_SECRET`). In production the Vercel cron
+(`vercel.json`, every 5 minutes) calls it. On staging the GitHub Actions cron
+(`.github/workflows/closing-tick.yml`) does, every few hours.
 `src/trigger/closing-tick.ts` does the same from Trigger.dev but is not
 deployed.
 

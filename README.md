@@ -19,5 +19,5 @@ More docs: [`docs/i18n.md`](./docs/i18n.md) (translations) and
 [`docs/security/`](./docs/security) (security answers and runbooks).
 
 CI (`.github/workflows/ci.yml`) checks every package in parallel.
-`closing-tick.yml` pings the production follow-up engine every 5 minutes and
-does not touch this repo.
+`closing-tick.yml` pings the staging follow-up engine and does not touch this
+repo. Production is ticked by the Vercel cron in `app/vercel.json`.
