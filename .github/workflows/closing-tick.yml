@@ -1,9 +1,9 @@
-# Runs one cycle of the follow-up engine every 5 minutes (anti-ghosting scan,
-# sending due follow-ups, deal analyses) on production and staging. Vercel Hobby
-# only allows daily crons, hence GitHub.
-# Repository secrets: APP_URL + CRON_SECRET for production, STAGING_APP_URL +
-# STAGING_CRON_SECRET for staging (same values as on Vercel). A target whose
-# secrets are missing is skipped.
+# Runs one cycle of the follow-up engine on staging. Production is ticked by
+# the Vercel cron in app/vercel.json (every 5 min, Pro plan), which only runs on
+# production deployments. GitHub only fires this schedule every few hours, which
+# is enough for staging.
+# Repository secrets: STAGING_APP_URL + STAGING_CRON_SECRET (same values as on
+# Vercel). The job is skipped when they are missing.
 # Scheduled runs use the workflow file of the default branch (main).
 name: Closing engine tick
 
@@ -20,18 +20,14 @@ jobs:
   tick:
     runs-on: ubuntu-latest
     timeout-minutes: 6
-    strategy:
-      fail-fast: false
-      matrix:
-        target: [production, staging]
     steps:
       - name: Run one engine cycle
         env:
-          APP_URL: ${{ matrix.target == 'production' && secrets.APP_URL || secrets.STAGING_APP_URL }}
-          CRON_SECRET: ${{ matrix.target == 'production' && secrets.CRON_SECRET || secrets.STAGING_CRON_SECRET }}
+          APP_URL: ${{ secrets.STAGING_APP_URL }}
+          CRON_SECRET: ${{ secrets.STAGING_CRON_SECRET }}
         run: |
           if [ -z "$APP_URL" ] || [ -z "$CRON_SECRET" ]; then
-            echo "::warning::secrets for ${{ matrix.target }} are missing, skipping"
+            echo "::warning::staging secrets are missing, skipping"
             exit 0
           fi
           # The route may run up to 300 s (page reading and deal analyses call an LLM)
